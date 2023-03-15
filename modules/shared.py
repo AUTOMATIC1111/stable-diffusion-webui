@@ -25,6 +25,8 @@ sd_model_file = os.path.join(script_path, 'model.ckpt')
 default_sd_model_file = sd_model_file
 
 parser = argparse.ArgumentParser()
+parser.add_argument("--exit", action='store_true', help="only setup environment and exit")
+parser.add_argument("--skip-install", action='store_true', help="skip pip and extensions install/upgrade")
 parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="base path where all user data is stored",)
 parser.add_argument("--config", type=str, default=sd_default_config, help="path to config which constructs model",)
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded",)
@@ -116,10 +118,9 @@ parser.add_argument("--no-download-sd-model", action='store_true', help="don't d
 script_loading.preload_extensions(extensions.extensions_dir, parser)
 script_loading.preload_extensions(extensions.extensions_builtin_dir, parser)
 
-if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
-    cmd_opts = parser.parse_args()
-else:
-    cmd_opts, _ = parser.parse_known_args()
+cmd_opts, unknown_args = parser.parse_known_args()
+if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None and unknown_args:
+    print('unknown command line arguments:', ' '.join(unknown_args))
 
 restricted_opts = {
     "samples_filename_pattern",
