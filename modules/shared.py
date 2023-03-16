@@ -18,6 +18,9 @@ from modules import localization, extensions, script_loading, errors, ui_compone
 from modules.paths import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file
 from modules.app_args import parser, cmd_opts
 
+# modules.safe allows adds safer torch model loading (safe unpickle)
+import modules.safe
+
 demo = None
 
 restricted_opts = {

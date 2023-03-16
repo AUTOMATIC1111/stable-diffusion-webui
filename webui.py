@@ -16,6 +16,8 @@ from modules import paths, timer, import_hook, errors
 
 startup_timer = timer.Timer()
 
+# modules.safe allows adds safer torch model loading (safe unpickle)
+import modules.safe
 import torch
 startup_timer.record("import torch")
 
