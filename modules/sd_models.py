@@ -302,15 +302,12 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if depth_model:
             model.depth_model = depth_model
 
-        timer.record("apply half")
-
     devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
     devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
     devices.dtype_unet = model.model.diffusion_model.dtype
     devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
     model.first_stage_model.to(devices.dtype_vae)
-    timer.record("apply dtype to VAE")
 
     # clean up cache if limit is reached
     while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
@@ -327,7 +324,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     sd_vae.clear_loaded_vae()
     vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
     sd_vae.load_vae(model, vae_file, vae_source)
-    timer.record("load VAE")
+    timer.record("load vae")
 
 
 def enable_midas_autodownload():
@@ -440,7 +437,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
     else:
         sd_model.to(shared.device)
 
-    timer.record("move model to device")
+    timer.record("device move")
 
     sd_hijack.model_hijack.hijack(sd_model)
 
@@ -512,7 +509,7 @@ def reload_model_weights(sd_model=None, info=None):
 
         if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
             sd_model.to(devices.device)
-            timer.record("move model to device")
+            timer.record("device move")
 
     print(f"Weights loaded in {timer.summary()}.")
 

@@ -2,22 +2,23 @@
 
 *Heavily opinionated custom fork of* <https://github.com/AUTOMATIC1111/stable-diffusion-webui>  
 
-![](ui-screenshot.jpg)
+![screenshot](ui-screenshot.jpg)
 
 <br>
 
-### Notes
+## Notes
 
 Fork is as close as up-to-date with origin as time allows  
 All code changes are merged upstream whenever possible  
 
 Fork adds extra functionality:
+
 - New skin and UI layout  
 - Ships with set of **CLI** tools that rely on *SD API* for execution:  
   e.g. `generate`, `train`, `bench`, etc.  
   [Full list](<cli/>)
 
-### Integrated Extensions:
+### Integrated Extensions
 
 - [System Info](https://github.com/vladmandic/sd-extension-system-info)
 - [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
@@ -59,6 +60,7 @@ Use this for troubleshooting
 > ./automatic.sh install
 
 Installs and updates to latest supported version:
+
 - Dependencies
 - Fixed sub-repositories
 - Extensions
@@ -105,12 +107,13 @@ Start with listen on public IP with authentication enabled
       Updating wiki
       Detached repos
       Local changes
- 
+
 <br>
 
 ## Differences
 
 Fork does differ in few things:
+
 - Drops compatibility with `python` **3.7** and requires **3.9**  
   Recommended is **Python 3.10**  
   Note that **Python 3.11** or **3.12** are NOT supported  

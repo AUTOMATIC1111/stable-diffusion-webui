@@ -41,6 +41,8 @@
     "disable_weights_auto_swap": false,
     "disabled_extensions": [
         "openOutpaint-webUI-extension",
+        "openpose-editor",
+        "sd-webui-3d-open-pose-editor",
         "ScuNET"
     ],
     "do_not_add_watermark": true,

@@ -23,10 +23,7 @@ warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="py
 startup_timer.record("import torch")
 
 import gradio
-startup_timer.record("import gradio")
-
 import ldm.modules.encoders.modules
-startup_timer.record("import ldm")
 
 from modules import extra_networks, ui_extra_networks_checkpoints
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
@@ -58,7 +55,7 @@ from modules import modelloader
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
-startup_timer.record("other imports")
+startup_timer.record("import libraries")
 
 
 if cmd_opts.server_name:
@@ -111,7 +108,7 @@ def initialize():
 
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
-    startup_timer.record("list SD models")
+    startup_timer.record("list models")
 
     codeformer.setup_model(cmd_opts.codeformer_models_path)
     startup_timer.record("setup codeformer")
@@ -134,18 +131,6 @@ def initialize():
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")
 
-    try:
-        modules.sd_models.load_model()
-    except Exception as e:
-        errors.display(e, "loading stable diffusion model")
-        print("", file=sys.stderr)
-        print("Stable diffusion model failed to load, exiting", file=sys.stderr)
-        exit(1)
-    startup_timer.record("load SD checkpoint")
-
-    shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
-
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
@@ -178,11 +163,27 @@ def initialize():
         startup_timer.record("TLS")
 
     # make the program just exit at ctrl+c without waiting for anything
-    def sigint_handler(sig, frame):
+    def sigint_handler(_sig, _frame):
         print('Exiting')
         os._exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)
+
+
+def load_model():
+    shared.state.begin()
+    shared.state.job = 'load model'
+    try:
+        modules.sd_models.load_model()
+    except Exception as e:
+        errors.display(e, "loading stable diffusion model")
+        print("", file=sys.stderr)
+        print("Stable diffusion model failed to load, exiting", file=sys.stderr)
+        exit(1)
+    shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+    shared.state.end()
+    startup_timer.record("load checkpoint")
 
 
 def setup_middleware(app):
@@ -203,19 +204,9 @@ def create_api(app):
     return api
 
 
-def wait_on_server(demo=None):
-    while 1:
-        time.sleep(0.5)
-        if shared.state.need_restart:
-            shared.state.need_restart = False
-            time.sleep(0.5)
-            demo.close()
-            time.sleep(0.5)
-            break
-
-
 def api_only():
     initialize()
+    load_model()
 
     app = FastAPI()
     setup_middleware(app)
@@ -231,110 +222,71 @@ def webui():
     launch_api = cmd_opts.api
     initialize()
 
-    while 1:
-        if shared.opts.clean_temp_dir_at_start:
-            ui_tempdir.cleanup_tmpdr()
-            startup_timer.record("cleanup temp dir")
+    if shared.opts.clean_temp_dir_at_start:
+        ui_tempdir.cleanup_tmpdr()
+        startup_timer.record("cleanup temp dir")
 
-        modules.script_callbacks.before_ui_callback()
-        startup_timer.record("scripts before_ui_callback")
+    modules.script_callbacks.before_ui_callback()
+    startup_timer.record("scripts before_ui_callback")
 
-        shared.demo = modules.ui.create_ui()
-        startup_timer.record("create ui")
+    shared.demo = modules.ui.create_ui()
+    startup_timer.record("create ui")
 
-        if cmd_opts.gradio_queue:
-            shared.demo.queue(16)
+    if cmd_opts.gradio_queue:
+        shared.demo.queue(16)
 
-        gradio_auth_creds = []
-        if cmd_opts.gradio_auth:
-            gradio_auth_creds += [x.strip() for x in cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',') if x.strip()]
-        if cmd_opts.gradio_auth_path:
-            with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
-                for line in file.readlines():
-                    gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
+    gradio_auth_creds = []
+    if cmd_opts.gradio_auth:
+        gradio_auth_creds += [x.strip() for x in cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',') if x.strip()]
+    if cmd_opts.gradio_auth_path:
+        with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
+            for line in file.readlines():
+                gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
-        app, local_url, share_url = shared.demo.launch(
-            share=cmd_opts.share,
-            server_name=server_name,
-            server_port=cmd_opts.port,
-            ssl_keyfile=cmd_opts.tls_keyfile,
-            ssl_certfile=cmd_opts.tls_certfile,
-            debug=cmd_opts.gradio_debug,
-            auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
-            inbrowser=cmd_opts.autolaunch,
-            prevent_thread_lock=True,
-        )
-        for dep in shared.demo.dependencies:
-            dep['show_progress'] = False  # disable gradio css animation on component update
+    app, _local_url, _share_url = shared.demo.launch(
+        share=cmd_opts.share,
+        server_name=server_name,
+        server_port=cmd_opts.port,
+        ssl_keyfile=cmd_opts.tls_keyfile,
+        ssl_certfile=cmd_opts.tls_certfile,
+        debug=cmd_opts.gradio_debug,
+        auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
+        inbrowser=cmd_opts.autolaunch,
+        prevent_thread_lock=True,
+        favicon_path='automatic.svg',
+    )
+    for dep in shared.demo.dependencies:
+        dep['show_progress'] = False  # disable gradio css animation on component update
 
-        # app is instance of FastAPI server
-        # shared.demo.server is instance of gradio class which inherits from uvicorn.Server
-        # shared.demo.config is instance of uvicorn.Config
-        # shared.demo.app is instance of ASGIApp
+    # app is instance of FastAPI server
+    # shared.demo.server is instance of gradio class which inherits from uvicorn.Server
+    # shared.demo.config is instance of uvicorn.Config
+    # shared.demo.app is instance of ASGIApp
 
-        cmd_opts.autolaunch = False
+    cmd_opts.autolaunch = False
 
-        startup_timer.record("gradio launch")
+    startup_timer.record("gradio launch")
 
-        # gradio uses a very open CORS policy via app.user_middleware, which makes it possible for
-        # an attacker to trick the user into opening a malicious HTML page, which makes a request to the
-        # running web ui and do whatever the attacker wants, including installing an extension and
-        # running its code. We disable this here. Suggested by RyotaK.
-        app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
+    app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
 
-        setup_middleware(app)
+    setup_middleware(app)
 
-        modules.progress.setup_progress_api(app)
+    modules.progress.setup_progress_api(app)
 
-        if launch_api:
-            create_api(app)
+    if launch_api:
+        create_api(app)
 
-        ui_extra_networks.add_pages_to_demo(app)
+    ui_extra_networks.add_pages_to_demo(app)
 
-        modules.script_callbacks.app_started_callback(shared.demo, app)
-        startup_timer.record("scripts app_started_callback")
+    modules.script_callbacks.app_started_callback(shared.demo, app)
+    startup_timer.record("scripts app_started_callback")
 
-        print(f"Startup time: {startup_timer.summary()}.")
+    load_model()
 
-        wait_on_server(shared.demo)
-        print('Restarting UI...')
+    print(f"Startup time: {startup_timer.summary()}.")
 
-        startup_timer.reset()
-
-        sd_samplers.set_samplers()
-
-        modules.script_callbacks.script_unloaded_callback()
-        extensions.list_extensions()
-        startup_timer.record("list extensions")
-
-        modelloader.forbid_loaded_nonbuiltin_upscalers()
-        modules.scripts.reload_scripts()
-        startup_timer.record("load scripts")
-
-        modules.script_callbacks.model_loaded_callback(shared.sd_model)
-        startup_timer.record("model loaded callback")
-
-        modelloader.load_upscalers()
-        startup_timer.record("load upscalers")
-
-        for module in [module for name, module in sys.modules.items() if name.startswith("modules.ui")]:
-            importlib.reload(module)
-        startup_timer.record("reload script modules")
-
-        modules.sd_models.list_models()
-        startup_timer.record("list SD models")
-
-        shared.reload_hypernetworks()
-        startup_timer.record("reload hypernetworks")
-
-        ui_extra_networks.intialize()
-        ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
-        ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
-        ui_extra_networks.register_page(ui_extra_networks_checkpoints.ExtraNetworksPageCheckpoints())
-
-        extra_networks.initialize()
-        extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
-        startup_timer.record("initialize extra networks")
+    while True:
+        time.sleep(0.1)
 
 
 if __name__ == "__main__":
