@@ -10,6 +10,7 @@ parser.add_argument("--skip-python-version-check", action='store_true', help="sk
 parser.add_argument("--reinstall-xformers", action='store_true', help="reinstall xformers")
 parser.add_argument("--reinstall-torch", action='store_true', help="reinstall torch")
 parser.add_argument("--update-check", action='store_true', help="")
+parser.add_argument("--fast-boot", action='store_true', help="shorthand for: --skip-install --skip-version-check --skip-torch-cuda-test --skip-python-version-check")
 parser.add_argument("--tests", dest="test_dir", help="run tests", nargs="?", const="test")
 parser.add_argument("--tests-subproc", action='store_true', help="used internally when launching tests")
 parser.add_argument("--exit", action='store_true', help="only setup environment and exit")
@@ -107,3 +108,9 @@ script_loading.preload_extensions(extensions_builtin_dir, parser)
 cmd_opts, unknown_args = parser.parse_known_args()
 if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None and unknown_args:
     print('unknown command line arguments:', ' '.join(unknown_args))
+
+if cmd_opts.fast_boot:
+    cmd_opts.skip_install = True
+    cmd_opts.skip_version_check = True
+    cmd_opts.skip_python_version_check = True
+    cmd_opts.skip_torch_cuda_test = True
