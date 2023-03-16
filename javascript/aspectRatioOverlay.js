@@ -3,6 +3,37 @@ let currentWidth = null;
 let currentHeight = null;
 let arFrameTimeout = setTimeout(function(){},0);
 
+// Create the button element
+const btn = document.createElement('button');
+btn.innerText = 'Set Output Size to Input Size';
+btn.style.marginLeft = '10px';
+
+// Add click event listener to the button
+btn.addEventListener('click', function() {
+  // Get the input image element
+  const inputImg = document.querySelector('div[data-testid=image] img');
+
+  // Set the currentWidth and currentHeight variables to the input image dimensions
+  currentWidth = inputImg.naturalWidth;
+  currentHeight = inputImg.naturalHeight;
+
+  // Set the width and height of the output image element
+  const outputImg = document.querySelector('#output_image img');
+  outputImg.style.width = `${currentWidth}px`;
+  outputImg.style.height = `${currentHeight}px`;
+
+  // Update the AR preview rectangle dimensions
+  const arPreviewRect = document.querySelector('#imageARPreview');
+  if (arPreviewRect) {
+    arPreviewRect.style.width = `${currentWidth}px`;
+    arPreviewRect.style.height = `${currentHeight}px`;
+  }
+});
+
+// Append the button to the DOM
+const buttonContainer = document.querySelector('.gradio-toolbar-right');
+buttonContainer.appendChild(btn);
+
 function dimensionChange(e, is_width, is_height){
 
 	if(is_width){
@@ -42,34 +73,7 @@ function dimensionChange(e, is_width, is_height){
 		}
 
 
-		var inputSizeBtn = gradioApp().querySelector('#inputSizeBtn');
-		if(!inputSizeBtn){
-		  inputSizeBtn = document.createElement('button');
-		  inputSizeBtn.id = "inputSizeBtn";
-		  inputSizeBtn.innerHTML = "Match Input Size";
-		  inputSizeBtn.style.marginLeft = "10px";
-		  inputSizeBtn.style.fontSize = "14px";
-		  inputSizeBtn.style.backgroundColor = "#5a5a5a";
-		  inputSizeBtn.style.color = "white";
-		  inputSizeBtn.style.border = "none";
-		  inputSizeBtn.style.borderRadius = "5px";
-		  inputSizeBtn.style.cursor = "pointer";
-		  inputSizeBtn.addEventListener('click', function(e){
-			currentWidth = targetElement.naturalWidth;
-			currentHeight = targetElement.naturalHeight;
-			var widthInput = gradioApp().querySelector('#img2img_width input');
-			var heightInput = gradioApp().querySelector('#img2img_height input');
-			if(widthInput && heightInput){
-			  widthInput.value = currentWidth;
-			  heightInput.value = currentHeight;
-			  dimensionChange({target: widthInput}, true, false);
-			  dimensionChange({target: heightInput}, false, true);
-			}
-		  });
-		  var widthInput = gradioApp().querySelector('#img2img_width input');
-		  var heightInput = gradioApp().querySelector('#img2img_height input');
-		  widthInput.parentNode.appendChild(inputSizeBtn);
-		}
+		
 
 
 
