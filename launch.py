@@ -6,6 +6,7 @@ import importlib.util
 import shlex
 import platform
 import json
+from modules.paths import data_path, script_path
 from modules.app_args import cmd_opts
 
 dir_repos = "repositories"
@@ -104,7 +105,7 @@ def is_installed(package):
 
 
 def repo_dir(name):
-    return os.path.join(dir_repos, name)
+    return os.path.join(script_path, dir_repos, name)
 
 
 def run_python(code, desc=None, errdesc=None):
@@ -200,7 +201,7 @@ def list_extensions(settings_file):
 
     disabled_extensions = set(settings.get('disabled_extensions', []))
 
-    return [x for x in os.listdir(dir_extensions) if x not in disabled_extensions]
+    return [x for x in os.listdir(os.path.join(data_path, dir_extensions)) if x not in disabled_extensions]
 
 
 def run_extensions_installers(settings_file):
@@ -273,7 +274,7 @@ def prepare_environment():
     if not is_installed("pyngrok") and cmd_opts.ngrok:
         run_pip("install pyngrok", "ngrok")
 
-    os.makedirs(dir_repos, exist_ok=True)
+    os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 
     git_clone(stable_diffusion_repo, repo_dir('stable-diffusion-stability-ai'), "Stable Diffusion", stable_diffusion_commit_hash)
     git_clone(taming_transformers_repo, repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
@@ -282,9 +283,11 @@ def prepare_environment():
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
     if not is_installed("lpips"):
-        run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
+        run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\"", "requirements for CodeFormer")
 
-    run_pip(f"install -r {requirements_file}", "requirements for Web UI")
+    if not os.path.isfile(requirements_file):
+        requirements_file = os.path.join(script_path, requirements_file)
+    run_pip(f"install -r \"{requirements_file}\"", "requirements for Web UI")
 
     run_extensions_installers(settings_file=cmd_opts.ui_settings_file)
 
@@ -292,7 +295,7 @@ def prepare_environment():
         version_check(commit)
 
     if cmd_opts.update_all_extensions:
-        git_pull_recursive(dir_extensions)
+        git_pull_recursive(os.path.join(data_path, dir_extensions))
     
     # cmd_opts.tests is the test directory or defaults to 'test' if no path provided
     # cmd_opts.tests_subproc is used to avoid fork bomb because tests run subprocess with same args
