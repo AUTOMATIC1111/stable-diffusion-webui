@@ -20,5 +20,5 @@ def run_tests(proc, test_dir):
         result = unittest.TextTestRunner(verbosity=2).run(suite)
         return len(result.failures) + len(result.errors)
     else:
-        print("Launch unsuccessful")
+        print("Launching test unsuccessful")
         return 1

@@ -5,8 +5,8 @@ import sys
 import importlib.util
 import shlex
 import platform
-import argparse
 import json
+from modules.app_args import cmd_opts
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -14,7 +14,6 @@ python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
-skip_install = False
 
 
 def check_python_version():
@@ -60,23 +59,6 @@ def commit_hash():
         stored_commit_hash = "<none>"
 
     return stored_commit_hash
-
-
-def extract_arg(args, name):
-    return [x for x in args if x != name], name in args
-
-
-def extract_opt(args, name):
-    opt = None
-    is_present = False
-    if name in args:
-        is_present = True
-        idx = args.index(name)
-        del args[idx]
-        if idx < len(args) and args[idx][0] != "-":
-            opt = args[idx]
-            del args[idx]
-    return args, is_present, opt
 
 
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
@@ -130,7 +112,7 @@ def run_python(code, desc=None, errdesc=None):
 
 
 def run_pip(args, desc=None):
-    if skip_install:
+    if cmd_opts.skip_install:
         return
 
     index_url_line = f' --index-url {index_url}' if index_url != '' else ''
@@ -190,7 +172,7 @@ def version_check(commit):
 
 
 def run_extension_installer(extension_dir):
-    if skip_install:
+    if cmd_opts.skip_install:
         return
 
     path_installer = os.path.join(extension_dir, "install.py")
@@ -230,8 +212,6 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_environment():
-    global skip_install
-
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -255,23 +235,7 @@ def prepare_environment():
 
     sys.argv += shlex.split(commandline_args)
 
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default='config.json')
-    args, _ = parser.parse_known_args(sys.argv)
-
-    sys.argv, _ = extract_arg(sys.argv, '-f')
-    sys.argv, update_all_extensions = extract_arg(sys.argv, '--update-all-extensions')
-    sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
-    sys.argv, skip_python_version_check = extract_arg(sys.argv, '--skip-python-version-check')
-    sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
-    sys.argv, reinstall_torch = extract_arg(sys.argv, '--reinstall-torch')
-    sys.argv, update_check = extract_arg(sys.argv, '--update-check')
-    sys.argv, run_tests, test_dir = extract_opt(sys.argv, '--tests')
-    sys.argv, skip_install = extract_arg(sys.argv, '--skip-install')
-    xformers = '--xformers' in sys.argv
-    ngrok = '--ngrok' in sys.argv
-
-    if not skip_python_version_check:
+    if not cmd_opts.skip_python_version_check:
         check_python_version()
 
     commit = commit_hash()
@@ -279,10 +243,10 @@ def prepare_environment():
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
 
-    if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
+    if cmd_opts.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
 
-    if not skip_torch_cuda_test:
+    if not cmd_opts.skip_torch_cuda_test:
         run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
 
     if not is_installed("gfpgan"):
@@ -294,7 +258,7 @@ def prepare_environment():
     if not is_installed("open_clip"):
         run_pip(f"install {openclip_package}", "open_clip")
 
-    if (not is_installed("xformers") or reinstall_xformers) and xformers:
+    if (not is_installed("xformers") or cmd_opts.reinstall_xformers) and cmd_opts.xformers:
         if platform.system() == "Windows":
             if platform.python_version().startswith("3.10"):
                 run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
@@ -306,7 +270,7 @@ def prepare_environment():
         elif platform.system() == "Linux":
             run_pip(f"install {xformers_package}", "xformers")
 
-    if not is_installed("pyngrok") and ngrok:
+    if not is_installed("pyngrok") and cmd_opts.ngrok:
         run_pip("install pyngrok", "ngrok")
 
     os.makedirs(dir_repos, exist_ok=True)
@@ -322,21 +286,24 @@ def prepare_environment():
 
     run_pip(f"install -r {requirements_file}", "requirements for Web UI")
 
-    run_extensions_installers(settings_file=args.ui_settings_file)
+    run_extensions_installers(settings_file=cmd_opts.ui_settings_file)
 
-    if update_check:
+    if cmd_opts.update_check:
         version_check(commit)
 
-    if update_all_extensions:
+    if cmd_opts.update_all_extensions:
         git_pull_recursive(dir_extensions)
     
+    # cmd_opts.tests is the test directory or defaults to 'test' if no path provided
+    # cmd_opts.tests_subproc is used to avoid fork bomb because tests run subprocess with same args
+    # (this is easier than removing the '--tests' flags)
+    if cmd_opts.test_dir and not cmd_opts.tests_subproc:
+        exitcode = tests(cmd_opts.test_dir)
+        exit(exitcode)
+
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
-
-    if run_tests:
-        exitcode = tests(test_dir)
-        exit(exitcode)
 
 
 def tests(test_dir):
@@ -344,7 +311,7 @@ def tests(test_dir):
         sys.argv.append("--api")
     if "--ckpt" not in sys.argv:
         sys.argv.append("--ckpt")
-        sys.argv.append("./test/test_files/empty.pt")
+        sys.argv.append(os.path.join(test_dir, "test_files/empty.pt"))
     if "--skip-torch-cuda-test" not in sys.argv:
         sys.argv.append("--skip-torch-cuda-test")
     if "--disable-nan-check" not in sys.argv:
@@ -353,8 +320,8 @@ def tests(test_dir):
     print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
 
     os.environ['COMMANDLINE_ARGS'] = ""
-    with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
-        proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
+    with open(os.path.join(test_dir, 'stdout.txt'), "w", encoding="utf8") as stdout, open(os.path.join(test_dir, 'stderr.txt'), "w", encoding="utf8") as stderr:
+        proc = subprocess.Popen([sys.executable, *sys.argv, '--tests-subproc'], stdout=stdout, stderr=stderr)
 
     import test.server_poll
     exitcode = test.server_poll.run_tests(proc, test_dir)
