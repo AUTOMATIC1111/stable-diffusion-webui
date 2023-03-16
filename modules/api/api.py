@@ -3,6 +3,7 @@ import io
 import time
 import datetime
 import uvicorn
+import copy
 from threading import Lock
 from io import BytesIO
 from gradio.processing_utils import decode_base64_to_file
@@ -202,6 +203,7 @@ class Api:
             script_args[0] = 0
 
         # Now check for always on scripts
+        alwayson_script_to_run = [] # list to replace the one from the global ScriptRunner we copied
         if request.alwayson_scripts and (len(request.alwayson_scripts) > 0):
             for alwayson_script_name in request.alwayson_scripts.keys():
                 alwayson_script = self.get_script(alwayson_script_name, script_runner)
@@ -210,13 +212,21 @@ class Api:
                 # Selectable script in always on script param check
                 if alwayson_script.alwayson == False:
                     raise HTTPException(status_code=422, detail=f"Cannot have a selectable script in the always on scripts params")
-                # always on script with no arg should always run so you don't really need to add them to the requests
+                # all good, so add to run list and set its args if any
+                alwayson_script_to_run.append(alwayson_script)
                 if "args" in request.alwayson_scripts[alwayson_script_name]:
                     script_args[alwayson_script.args_from:alwayson_script.args_to] = request.alwayson_scripts[alwayson_script_name]["args"]
+
+        # Remove always on scripts that were not included in the request by resetting the script list in out ScriptRunner
+        script_runner.alwayson_scripts.clear()
+        script_runner.alwayson_scripts = alwayson_script_to_run
+        script_runner.scripts.clear()
+        script_runner.scripts = alwayson_script_to_run + script_runner.selectable_scripts
+
         return script_args
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
-        script_runner = scripts.scripts_txt2img
+        script_runner = copy.copy(scripts.scripts_txt2img) # copy so we don't overwrite our globals
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
             ui.create_ui()
@@ -268,7 +278,7 @@ class Api:
         if mask:
             mask = decode_base64_to_image(mask)
 
-        script_runner = scripts.scripts_img2img
+        script_runner = copy.copy(scripts.scripts_img2img) # copy so we don't overwrite our globals
         if not script_runner.scripts:
             script_runner.initialize_scripts(True)
             ui.create_ui()
