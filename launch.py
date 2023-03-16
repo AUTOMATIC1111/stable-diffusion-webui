@@ -6,7 +6,7 @@ import importlib.util
 import shlex
 import platform
 import json
-from modules.paths import data_path, script_path
+from modules.paths import data_path, script_path, update_paths
 from modules.app_args import cmd_opts
 
 dir_repos = "repositories"
@@ -288,6 +288,8 @@ def prepare_environment():
     if not os.path.isfile(requirements_file):
         requirements_file = os.path.join(script_path, requirements_file)
     run_pip(f"install -r \"{requirements_file}\"", "requirements for Web UI")
+
+    update_paths()
 
     run_extensions_installers(settings_file=cmd_opts.ui_settings_file)
 
