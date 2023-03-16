@@ -20,9 +20,6 @@ from modules.app_args import parser, cmd_opts
 
 demo = None
 
-script_loading.preload_extensions(extensions.extensions_dir, parser)
-script_loading.preload_extensions(extensions.extensions_builtin_dir, parser)
-
 restricted_opts = {
     "samples_filename_pattern",
     "directories_filename_pattern",

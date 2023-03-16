@@ -6,13 +6,11 @@ import time
 import git
 
 from modules import paths, shared
+from modules.paths import extensions_dir, extensions_builtin_dir
 
 extensions = []
-extensions_dir = os.path.join(paths.data_path, "extensions")
-extensions_builtin_dir = os.path.join(paths.script_path, "extensions-builtin")
-
-if not os.path.exists(extensions_dir):
-    os.makedirs(extensions_dir)
+if not os.path.exists(paths.extensions_dir):
+    os.makedirs(paths.extensions_dir)
 
 def active():
     return [x for x in extensions if x.enabled]

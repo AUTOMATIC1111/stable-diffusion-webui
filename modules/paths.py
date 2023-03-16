@@ -17,6 +17,9 @@ cmd_opts_pre = parser.parse_known_args()[0]
 data_path = cmd_opts_pre.data_dir
 models_path = os.path.join(data_path, "models")
 
+extensions_dir = os.path.join(data_path, "extensions")
+extensions_builtin_dir = os.path.join(script_path, "extensions-builtin")
+
 # data_path = cmd_opts_pre.data
 sys.path.insert(0, script_path)
 
