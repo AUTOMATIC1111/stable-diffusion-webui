@@ -9,6 +9,7 @@ import git
 import gradio as gr
 import html
 import shutil
+import errno
 
 from modules import extensions, shared, paths
 from modules.call_queue import wrap_gradio_gpu_call
@@ -143,7 +144,16 @@ def install_extension_from_url(dirname, url):
             repo.remote().fetch()
             for submodule in repo.submodules:
                 submodule.update()
-        os.rename(tmpdir, target_dir)
+        try:
+            os.rename(tmpdir, target_dir)
+        except OSError as err:
+            if err.errno == errno.EXDEV:
+                # Cross device link, typical in docker or when tmp/ and extensions/ are on different file systems
+                # Since we can't use a rename, do the slower but more versitile shutil.move()
+                shutil.move(tmpdir, target_dir)
+            else:
+                # Something else, not enough free space, permissions, etc.  rethrow it so that it gets handled.
+                raise err
 
         import launch
         launch.run_extension_installer(target_dir)
