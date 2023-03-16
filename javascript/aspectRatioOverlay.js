@@ -42,6 +42,36 @@ function dimensionChange(e, is_width, is_height){
 		}
 
 
+		var inputSizeBtn = gradioApp().querySelector('#inputSizeBtn');
+		if(!inputSizeBtn){
+		  inputSizeBtn = document.createElement('button');
+		  inputSizeBtn.id = "inputSizeBtn";
+		  inputSizeBtn.innerHTML = "Match Input Size";
+		  inputSizeBtn.style.marginLeft = "10px";
+		  inputSizeBtn.style.fontSize = "14px";
+		  inputSizeBtn.style.backgroundColor = "#5a5a5a";
+		  inputSizeBtn.style.color = "white";
+		  inputSizeBtn.style.border = "none";
+		  inputSizeBtn.style.borderRadius = "5px";
+		  inputSizeBtn.style.cursor = "pointer";
+		  inputSizeBtn.addEventListener('click', function(e){
+			currentWidth = targetElement.naturalWidth;
+			currentHeight = targetElement.naturalHeight;
+			var widthInput = gradioApp().querySelector('#img2img_width input');
+			var heightInput = gradioApp().querySelector('#img2img_height input');
+			if(widthInput && heightInput){
+			  widthInput.value = currentWidth;
+			  heightInput.value = currentHeight;
+			  dimensionChange({target: widthInput}, true, false);
+			  dimensionChange({target: heightInput}, false, true);
+			}
+		  });
+		  var widthInput = gradioApp().querySelector('#img2img_width input');
+		  var heightInput = gradioApp().querySelector('#img2img_height input');
+		  widthInput.parentNode.appendChild(inputSizeBtn);
+		}
+
+
 
 		var viewportOffset = targetElement.getBoundingClientRect();
 
