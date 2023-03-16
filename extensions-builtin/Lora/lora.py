@@ -192,6 +192,12 @@ def list_available_loras():
         glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.safetensors'), recursive=True) + \
         glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.ckpt'), recursive=True)
 
+    user_lora_dir = os.path.join(os.path.dirname(os.path.dirname(shared.cmd_opts.lora_dir)), "user-models", 'Lora')
+    if os.path.isdir(user_lora_dir):
+        candidates += glob.glob(os.path.join(user_lora_dir, '**/*.pt'), recursive=True)
+        candidates += glob.glob(os.path.join(user_lora_dir, '**/*.safetensors'), recursive=True)
+        candidates += glob.glob(os.path.join(user_lora_dir, '**/*.ckpt'), recursive=True)
+
     for filename in sorted(candidates):
         if os.path.isdir(filename):
             continue

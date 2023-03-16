@@ -91,7 +91,7 @@ RUN cd ~/stable-diffusion-webui  \
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/CompVis/taming-transformers.git ~/stable-diffusion-webui/repositories/taming-transformers
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Stability-AI/stablediffusion.git ~/stable-diffusion-webui/repositories/stable-diffusion-stability-ai
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/crowsonkb/k-diffusion.git ~/stable-diffusion-webui/repositories/k-diffusion
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/sczhou/CodeFormer.git ~/stable-diffusion-webui/repositories/CodeFormer
+RUN https_proxy=${HTTP_PROXY} git clone -b v0.1.0 https://github.com/sczhou/CodeFormer.git ~/stable-diffusion-webui/repositories/CodeFormer
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/salesforce/BLIP.git ~/stable-diffusion-webui/repositories/BLIP
 
 RUN pip3 install setuptools_rust -i https://pypi.tuna.tsinghua.edu.cn/simple

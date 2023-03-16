@@ -5,6 +5,10 @@ import lora
 from modules import shared, ui_extra_networks
 
 
+user_lora_dir = os.path.join(os.path.dirname(os.path.dirname(shared.cmd_opts.lora_dir)), "user-models", 'Lora')
+if not os.path.isdir(user_lora_dir):
+    user_lora_dir = None
+
 class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
         super().__init__('Lora')
@@ -26,5 +30,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             }
 
     def allowed_directories_for_previews(self):
-        return [shared.cmd_opts.lora_dir]
-
+        previews = [shared.cmd_opts.lora_dir]
+        if user_lora_dir:
+            previews.append(user_lora_dir)
+        return previews
