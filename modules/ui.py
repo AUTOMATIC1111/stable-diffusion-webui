@@ -495,7 +495,10 @@ def create_ui():
                         with FormRow(elem_id="txt2img_checkboxes", variant="compact"):
                             restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
-                            enable_hr = gr.Checkbox(label='Hires. fix', value=False, elem_id="txt2img_enable_hr")
+                            enable_hr = gr.Checkbox(label='Hires. fix',
+                                                    value=False,
+                                                    elem_id="txt2img_enable_hr",
+                                                    visible=False)
                             hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
 
                     elif category == "hires_fix":
