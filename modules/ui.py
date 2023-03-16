@@ -498,7 +498,7 @@ def create_ui():
                             enable_hr = gr.Checkbox(label='Hires. fix',
                                                     value=False,
                                                     elem_id="txt2img_enable_hr",
-                                                    visible=False)
+                                                    visible=True)
                             hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
 
                     elif category == "hires_fix":
@@ -1564,9 +1564,9 @@ def create_ui():
         css += css_hide_progressbar
 
     interfaces += script_callbacks.ui_tabs_callback()
-    # interfaces += [(settings_interface, "Settings", "settings")]
+    interfaces += [(settings_interface, "Settings", "settings")]
 
-    extensions_interface = ui_extensions.create_ui()
+    # extensions_interface = ui_extensions.create_ui()
     # interfaces += [(extensions_interface, "Extensions", "extensions")]
 
     shared.tab_names = []

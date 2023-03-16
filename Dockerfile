@@ -106,7 +106,7 @@ RUN cd  ~/stable-diffusion-webui/repositories/stable-diffusion-stability-ai \
 #    && python3 setup.py install
 #RUN cd  ~/stable-diffusion-webui/repositories/BLIP/ && \
 #    python3 setup.py install
-# ControlNet
+# ControlNet && extensions
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git ~/stable-diffusion-webui/extensions/sd-webui-controlnet
 RUN https_proxy=${HTTP_PROXY} git clone https://huggingface.co/webui/ControlNet-modules-safetensors ~/stable-diffusion-webui/models/ControlNet
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN ~/stable-diffusion-webui/extensions/stable-diffusion-webui-localization-zh_CN
@@ -119,6 +119,8 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/pkuliyi2015/multidiff
 RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/stable-diffusion-webui-tokenizer ~/stable-diffusion-webui/extensions/stable-diffusion-webui-tokenizer
 # RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients ~/stable-diffusion-webui/extensions/aesthetic-gradients
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen ~/stable-diffusion-webui/extensions/stable-diffusion-webui-promptgen
+RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/a1111-sd-webui-tagcomplete  ~/stable-diffusion-webui/extensions/tagcomplete
+
 RUN mkdir -p  ~/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
 RUN echo "{\"localization\": \"zh_CN\"}" >  ~/stable-diffusion-webui/config.json
 
@@ -134,4 +136,4 @@ RUN pip3 uninstall gradio -y
 WORKDIR /root/stable-diffusion-webui
 
 # 启动时必须将models下面的一些必要文件挂载进去，例如：VAE-approx/models.pt
-CMD bash -c "cd /root/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --xformers --enable-insecure-extension-access --cors-allow-origins=\"*\">>nohup.out"
+CMD bash -c "cd /root/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --xformers --enable-insecure-extension-access --no-half-vae --cors-allow-origins=\"*\">>nohup.out"
