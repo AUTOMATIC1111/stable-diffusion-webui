@@ -50,7 +50,7 @@ def on_ui_tabs():
             with gr.Row(elem_id="ui_theme_settings"):
                 with gr.Column():
                     with gr.Column():
-                        with gr.Accordion(label="Main colors", open=True):                   
+                        with gr.Accordion(label="Main", open=True):                   
                             gr.ColorPicker(elem_id="--main-bg-color", interactive=True, label="Background color")
                             gr.ColorPicker(elem_id="--primary-color", label="Primary color")
                                                                       
@@ -66,7 +66,7 @@ def on_ui_tabs():
                             gr.Slider(elem_id="--mobile-outside-gap-size", label='Mobile Gap size', minimum=1, maximum=16, step=1, interactive=True)
                             gr.Slider(elem_id="--mobile-inside-padding-size", label='Mobile Padding size', minimum=1, maximum=16, step=1, interactive=True)                            
                                         
-                        with gr.Accordion(label="Panel colors", open=True):                   
+                        with gr.Accordion(label="Panel", open=True):                   
                             gr.ColorPicker(elem_id="--label-color", label="Label color")
                             gr.ColorPicker(elem_id="--frame-bg-color", label="Frame Background color")
                             gr.ColorPicker(elem_id="--panel-bg-color", label="Background color")
@@ -79,7 +79,7 @@ def on_ui_tabs():
                 with gr.Column(): 
                     with gr.Row(elem_id="theme_sub-group-collapse"): 
                          
-                        with gr.Accordion(label="Subgroup / Panel colors", open=True):               
+                        with gr.Accordion(label="SubPanel", open=True):               
                             gr.ColorPicker(elem_id="--subgroup-bg-color", label="Subgoup background color")                       
                             #gr.ColorPicker(elem_id="--subgroup-label-color", label="Label color", value="#000000")                   
                             gr.ColorPicker(elem_id="--subpanel-bg-color", label="Background color")
@@ -92,28 +92,32 @@ def on_ui_tabs():
                             
                     with gr.Row(): 
                         with gr.Column():
-                            with gr.Accordion(label="Navigation menu colors", open=True):
+                            with gr.Accordion(label="Navigation menu", open=True):
                                 gr.ColorPicker(elem_id="--nav-bg-color", label="Background color")
                                 gr.ColorPicker(elem_id="--nav-color", label="Text color")
                                 gr.ColorPicker(elem_id="--nav-hover-color", label="Hover color")
                                 
-                            with gr.Accordion(label="Icon colors", open=True):
+                            with gr.Accordion(label="Icon", open=True):
                                 gr.ColorPicker(elem_id="--icon-color", label="Text color")
                                 gr.ColorPicker(elem_id="--icon-hover-color", label="Hover color")  
                                 
-                            with gr.Accordion(label="Other colors", open=True):    
+                            with gr.Accordion(label="Other", open=True):    
                                 gr.ColorPicker(elem_id="--text-color", label="Text color")
                                 gr.ColorPicker(elem_id="--placeholder-color", label="Placeholder color")
                                 gr.ColorPicker(elem_id="--cancel-color", label="Cancel/Interrupt color")
+                                
+                            with gr.Accordion(label="Modal", open=True):    
+                                gr.ColorPicker(elem_id="--modal-bg-color", label="Background color")
+                                gr.ColorPicker(elem_id="--modal-icon-color", label="Icon color")
                           
 
 
         def save_theme( vars_text, css_text, filename):           
             style_data= ":host{" + vars_text + "}" + css_text          
-            with open(os.path.join(themes_folder, f"{filename}.css"), 'w') as file:                
+            with open(os.path.join(themes_folder, f"{filename}.css"), 'w', encoding="utf-8") as file:                
                 file.write(vars_text)
                 file.close()
-            with open(webui_style_path, 'w') as file:                
+            with open(webui_style_path, 'w', encoding="utf-8") as file:                
                 file.write(style_data)
                 file.close()            
             themes_dropdown.choices=get_files(themes_folder,[".css, .txt"])

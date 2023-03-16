@@ -1,4 +1,4 @@
-:host{--main-bg-color:hsl(0deg 0% 10%);--primary-color:hsl(168deg 97% 41%);--input-bg-color:hsl(225deg 6% 13%);--input-border-color:hsl(214deg 5% 30%);--panel-bg-color:hsl(225deg 5% 17%);--panel-border-color:hsl(214deg 5% 30%);--panel-border-radius:0px;--subgroup-bg-color:hsl(0deg 0% 10%);--subgroup-input-bg-color:hsl(225deg 6% 13%);--subgroup-input-border-color:hsl(214deg 5% 30%);--subpanel-bg-color:hsl(220deg 4% 14%);--subpanel-border-color:hsl(214deg 5% 30%);--subpanel-border-radius:8px;--textarea-focus-color:hsl(210deg 3% 36%);--input-focus-color:hsl(168deg 97% 41%);--outside-gap-size:8px;--inside-padding-size:8px;--tool-button-size:34px;--tool-button-radius:16px;--generate-button-height:70px;--cancel-color:hsl(0deg 84% 60%);--max-padding:max(var(--outside-gap-size),var(--inside-padding-size));--icon-color:hsl(168deg 97% 41%);--icon-hover-color:hsl(0deg 0% 10%);--icon-size:22px;--nav-bg-color:hsl(0deg 0% 4%);--nav-color:hsl(210deg 4% 80%);--nav-hover-color:hsl(0deg 0% 4%);--input-color:hsl(210deg 4% 80%);--label-color:hsl(210deg 4% 80%);--subgroup-input-color:hsl(0deg 0% 0%);--placeholder-color:hsl(214deg 5% 30%);--text-color:hsl(210deg 4% 80%);--mobile-outside-gap-size:2px;--mobile-inside-padding-size:2px;--frame-bg-color:hsl(225deg 6% 13%);}/*BREAKPOINT_CSS_CONTENT*/
+:host{--main-bg-color:hsl(0deg 0% 10%);--primary-color:hsl(168deg 97% 41%);--input-bg-color:hsl(225deg 6% 13%);--input-border-color:hsl(214deg 5% 30%);--panel-bg-color:hsl(225deg 5% 17%);--panel-border-color:hsl(214deg 5% 30%);--panel-border-radius:0px;--subgroup-bg-color:hsl(0deg 0% 10%);--subgroup-input-bg-color:hsl(225deg 6% 13%);--subgroup-input-border-color:hsl(214deg 5% 30%);--subpanel-bg-color:hsl(220deg 4% 14%);--subpanel-border-color:hsl(214deg 5% 30%);--subpanel-border-radius:8px;--textarea-focus-color:hsl(210deg 3% 36%);--input-focus-color:hsl(168deg 97% 41%);--outside-gap-size:8px;--inside-padding-size:8px;--tool-button-size:34px;--tool-button-radius:16px;--generate-button-height:70px;--cancel-color:hsl(0deg 84% 60%);--max-padding:max(var(--outside-gap-size),var(--inside-padding-size));--icon-color:hsl(168deg 97% 41%);--icon-hover-color:hsl(0deg 0% 10%);--icon-size:22px;--nav-bg-color:hsl(0deg 0% 4%);--nav-color:hsl(210deg 4% 80%);--nav-hover-color:hsl(0deg 0% 4%);--input-color:hsl(210deg 4% 80%);--label-color:hsl(210deg 4% 80%);--subgroup-input-color:hsl(0deg 0% 0%);--placeholder-color:hsl(214deg 5% 30%);--text-color:hsl(210deg 4% 80%);--mobile-outside-gap-size:2px;--mobile-inside-padding-size:2px;--frame-bg-color:hsl(225deg 6% 13%);--modal-bg-color:hsl(0deg 0% 10%);--modal-icon-color:hsl(168deg 97% 41%);}/*BREAKPOINT_CSS_CONTENT*/
 
 /*
 Theme Name: DarkUX
@@ -4020,7 +4020,7 @@ input[type=range]::-ms-fill-upper {
   width: 100%;
   z-index: 99999;
   color: #fff;
-  background-color: #000;
+  background-color: var(--modal-bg-color);
   opacity: 0;
   overflow: hidden;
   user-select: none;
@@ -4174,7 +4174,7 @@ input[type=range]::-ms-fill-upper {
   top: 0;
   width: 100%;
   height: 3px;
-  background-color: rgba(255, 255, 255, 0.45);
+  background-color: var(--modal-icon-color);
   transform: translateX(-100%);
   transition: transform linear;
 }
@@ -4226,34 +4226,34 @@ input[type=range]::-ms-fill-upper {
   float: right;
 }
 .spl-fullscreen {
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/fullscreen-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/fullscreen-line.svg") no-repeat 50% 50%;
 }
 .spl-fullscreen.on {
-  	background-color:var(--primary-color);
+  	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/fullscreen-exit-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/fullscreen-exit-line.svg") no-repeat 50% 50%;
 }
 .spl-autofit {
-    background-color:var(--primary-color);
+    background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/aspect-ratio-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/aspect-ratio-line.svg") no-repeat 50% 50%;
 }
 .spl-zoom-out {
-    background-color:var(--primary-color);
+    background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/zoom-out-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/zoom-out-line.svg") no-repeat 50% 50%;
   background-size: 22px;
 }
 .spl-zoom-in {
-    background-color:var(--primary-color);
+    background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/zoom-in-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/zoom-in-line.svg") no-repeat 50% 50%;
   background-size: 22px;
 }
 .spl-download {
-    background-color:var(--primary-color);
+    background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/file-download-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/file-download-line.svg") no-repeat 50% 50%;
   background-size: 20px;
@@ -4269,48 +4269,48 @@ input[type=range]::-ms-fill-upper {
   animation: pulsate 1s ease infinite;
 }
 .spl-close {
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/close-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/close-line.svg") no-repeat 50% 50%;
 }
 .spl-like{
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/heart-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/heart-line.svg") no-repeat 50% 50%;
     background-size: 22px;
 }
 .spl-like.on{
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/heart-fill.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/heart-fill.svg") no-repeat 50% 50%;
 }
 .spl-tile{
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/grid-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/grid-line.svg") no-repeat 50% 50%;
     background-size: 22px;
 }
 .spl-tile.on{
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/grid-fill.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/grid-fill.svg") no-repeat 50% 50%;
 }
 
 .spl-undo{
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/arrow-go-back-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/arrow-go-back-line.svg") no-repeat 50% 50%;
     background-size: 22px;
 }
 .spl-clear{
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/delete-bin-2-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/delete-bin-2-line.svg") no-repeat 50% 50%;
     background-size: 22px;
 }
 
 .spl-pan{
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/drag-move-2-fill.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/drag-move-2-fill.svg") no-repeat 50% 50%;
     background-size: 22px;
@@ -4320,7 +4320,7 @@ input[type=range]::-ms-fill-upper {
 }
 
 .spl-draw{
-	background-color:var(--primary-color);
+	background-color:var(--modal-icon-color);
 	-webkit-mask: url("./file=html/svg/ball-pen-line.svg") no-repeat 50% 50%;
 	mask: url("./file=html/svg/ball-pen-line.svg") no-repeat 50% 50%;
     background-size: 22px;
