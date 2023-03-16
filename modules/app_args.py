@@ -1,7 +1,12 @@
 import os
+import sys
+import shlex
 import argparse
 from modules.paths import models_path, script_path, data_path, sd_default_config, sd_model_file, extensions_dir, extensions_builtin_dir
 from modules import script_loading
+
+commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
+sys.argv += shlex.split(commandline_args)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--skip-torch-cuda-test", action='store_true', help="skip torch cuda test")

@@ -3,7 +3,6 @@ import subprocess
 import os
 import sys
 import importlib.util
-import shlex
 import platform
 import json
 from modules.paths import data_path, script_path, update_paths
@@ -215,7 +214,6 @@ def run_extensions_installers(settings_file):
 def prepare_environment():
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
-    commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16rc425')
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
@@ -233,8 +231,6 @@ def prepare_environment():
     k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "5b3af030dd83e0297272d861c19477735d0317ec")
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
-
-    sys.argv += shlex.split(commandline_args)
 
     if not cmd_opts.skip_python_version_check:
         check_python_version()
