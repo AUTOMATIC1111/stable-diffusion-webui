@@ -111,7 +111,7 @@ def http_request(url, method='GET', headers=None, cookies=None, data=None, timeo
 
 
 def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progress()):
-    model = 'models'
+    model = 'user-models'
     if not os.path.exists(model):
         os.mkdir(model)
     target_dir = os.path.join(model, model_type)

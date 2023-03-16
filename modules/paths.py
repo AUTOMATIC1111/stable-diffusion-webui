@@ -11,6 +11,7 @@ parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirn
 cmd_opts_pre = parser.parse_known_args()[0]
 data_path = cmd_opts_pre.data_dir
 models_path = os.path.join(data_path, "models")
+user_models_path = os.path.join(data_path, "user-models")
 
 # data_path = cmd_opts_pre.data
 sys.path.insert(0, script_path)
