@@ -291,12 +291,18 @@ function showGalleryImage() {
 	//need to clean up the old code 
 }
 
+let isDomLoaded;
+
 let like;
 let tile;
+let undo;
+let clear;
+let pan;
+
 let slide = 0;
 let gallery = [];
 let fullImg_src;
-let control = ["like","tile","page","fullscreen","autofit","zoom-in","zoom-out","close","download","prev","next"];
+let control = ["pan","undo","clear","like","tile","page","fullscreen","autofit","zoom-in","zoom-out","close","download","prev","next"];
 
 let img_browser;
 let img_file_name;
@@ -360,7 +366,7 @@ function tile_handler(event) {
     this.classList.toggle("on");
 
     if(current_tile_state){	
-		const spl_img = document.querySelector("#spotlight .spl-pane img");
+		const spl_img = gradioApp().querySelector("#spotlight .spl-pane img");
 		addTile(spl_img);
     } else {			
 		removeTile();	
@@ -396,7 +402,7 @@ function createGallerySpotlight(src) {
 			src: elem.src,
 			like: false,
 			tile:false,
-			tile_size: 50
+			tile_size: 50,	
 		}
 	})
 	
@@ -405,7 +411,7 @@ function createGallerySpotlight(src) {
 		class: "sd-gallery",
 		index: slide,
 		//control: ["like","page","theme","fullscreen","autofit","zoom-in","zoom-out","close","download","play","prev","next"],
-		control: control,
+		control: control,	
 		//animation: animation,
 		//onshow: function(index){
 			//like = Spotlight.addControl("like", handler);
@@ -419,9 +425,9 @@ function createGallerySpotlight(src) {
 			//}
 			
 			const current_tile_state = gallery[slide].tile;
-			spl_pane = document.querySelector("#spotlight .spl-pane:nth-child("+index+")");
-			spl_zoom_out = document.querySelector("#spotlight .spl-zoom-out");
-			spl_zoom_in = document.querySelector("#spotlight .spl-zoom-in");
+			spl_pane = gradioApp().querySelector("#spotlight .spl-pane:nth-child("+index+")");
+			spl_zoom_out = gradioApp().querySelector("#spotlight .spl-zoom-out");
+			spl_zoom_in = gradioApp().querySelector("#spotlight .spl-zoom-in");
 			
 			if(current_tile_state){
 				addTile();
@@ -437,7 +443,16 @@ function createGallerySpotlight(src) {
 	};
 	
 	//assign(options, modifier);
-	Spotlight.show(gallery, options);
+	Spotlight.show(gallery, options);	
+	
+	Spotlight.removeControl("undo");
+	Spotlight.removeControl("clear");
+	Spotlight.removeControl("pan");
+	
+	const spl_track = gradioApp().querySelector("#spotlight .spl-track");
+	Spotlight.panzoom(spl_track, true);
+	
+
 	
 }
 
@@ -457,7 +472,12 @@ function onUiUpdateIViewer(){
 		fullImg_src = fullImg_preview.src;
 		fullImg_preview.removeEventListener('click', fullImg_click_handler );
 		fullImg_preview.addEventListener('click', fullImg_click_handler, true );//bubbling phase
-		
+		if(!isDomLoaded){
+			isDomLoaded = true;
+			tile = Spotlight.addControl("tile", tile_handler);
+			like = Spotlight.addControl("like", like_handler);
+			
+		}
 		/*
 		// this is an idea to integrate image browser extension seamlesly, 
 		// without the need to change to the image browser tab extension users will be able to review images after generation
@@ -487,19 +507,20 @@ onUiUpdate(function() {
 })
 
 document.addEventListener("DOMContentLoaded", function() {
-	
+	//const head = gradioApp();		
+
+	/*
 	const head = document.head;
 	const link = document.createElement("link");
-
 	link.type = "text/css";
 	link.rel = "stylesheet";
 	link.href = "file=html/spotlight.css";
 	head.appendChild(link);
+	*/
+	Spotlight.init(); 
 	
-	Spotlight.init();
 	
-	tile = Spotlight.addControl("tile", tile_handler);
-	like = Spotlight.addControl("like", like_handler);
+	
 	
 	
 });
