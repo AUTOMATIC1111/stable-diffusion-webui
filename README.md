@@ -87,8 +87,7 @@ Start with listen on public IP with authentication enabled
 
 1. Install `Python`, `Git`  
 2. Install `PyTorch` and `Xformers`  
-   See [Wiki](wiki/Torch%20Optimizations.md) for details
-   If you don't want to use `xformers`, edit `automatic.sh` as they are enabled by default
+   See [Wiki](wiki/Torch%20Optimizations.md) for details or TL;DR below  
 3. Clone and initialize repository  
 
 > git clone https://github.com/vladmandic/automatic  
@@ -143,9 +142,16 @@ Optimizations:
 - Fallback to `XFormers` if SDP is not supported  
 - If either `SDP` or `XFormers` are not supported, falls back to usual cmd line arguments  
 
+## Torch
+
 Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
 
 Fork is compatible with regular **PyTorch 1.13**, **PyTorch 2.0** as well as pre-releases of **PyTorch** **2.1**  
+
+TL;DR: Install **PyTorch 2.0.0** compiled with **CUDA 11.8**:
+
+> pip install torch torchaudio torchvision triton --force --extra-index-url https://download.pytorch.org/whl/cu118  
+
 See [Wiki](https://github.com/vladmandic/automatic/wiki/Torch-Optimizations) for **Torch** optimization notes
 
 <br>
