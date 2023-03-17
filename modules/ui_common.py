@@ -95,6 +95,11 @@ def save_files(js_data, images, do_make_zip, index):
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
 
+def initial_image():
+    from PIL import Image
+    img = Image.open('automatic.png')
+    return [img]
+
 def create_output_panel(tabname, outdir):
     from modules import shared
     import modules.generation_parameters_copypaste as parameters_copypaste
@@ -125,7 +130,7 @@ Requested path was: {f}
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
+            result_gallery = gr.Gallery(initial_image, label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
 
         generation_info = None
         with gr.Column():

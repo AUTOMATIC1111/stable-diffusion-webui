@@ -220,7 +220,7 @@ def webui():
         auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
         inbrowser=cmd_opts.autolaunch,
         prevent_thread_lock=True,
-        favicon_path='automatic.svg',
+        favicon_path='automatic.ico',
     )
     for dep in shared.demo.dependencies:
         dep['show_progress'] = False  # disable gradio css animation on component update
