@@ -4,7 +4,6 @@ import glob
 import html
 import os
 import sys
-import traceback
 import inspect
 
 import modules.textual_inversion.dataset
@@ -332,7 +331,7 @@ def load_hypernetwork(name):
         hypernetwork.load(path)
     except Exception:
         print(f"Error loading hypernetwork {path}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        shared.exception()
         return None
 
     return hypernetwork
@@ -771,7 +770,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
     except Exception:
-        print(traceback.format_exc(), file=sys.stderr)
+        shared.exception()
     finally:
         pbar.leave = False
         pbar.close()

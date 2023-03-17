@@ -17,10 +17,11 @@ if [ "$PYTHON" == "" ]; then
 fi
 
 # Note: Some defaults are changed in shared.py
-CMD="launch.py --xformers --skip-install --skip-torch-cuda-test --cors-allow-origins=http://127.0.0.1:7860"
+CMD="launch.py --skip-install --cors-allow-origins=http://127.0.0.1:7860"
 
 MODE=optimized
 
+# Sanity checks
 if [[ $(id -u) -eq 0 ]]; then
     echo "Running as root, aborting"
     exit 1
@@ -32,6 +33,7 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
+# Parse arguments
 for i in "$@"; do
   case $i in
     update)
@@ -57,7 +59,6 @@ for i in "$@"; do
 done
 
 echo "SD server: $MODE"
-
 VER=$(git log -1 --pretty=format:"%h %ad")
 URL=$(git remote get-url origin)
 LSB=$(lsb_release -ds 2>/dev/null)
@@ -70,7 +71,6 @@ echo "Last Merge: $MERGE"
 echo "System"
 echo "- Platform: $LSB $UNAME"
 echo "- nVIDIA: $SMI"
-"$PYTHON" -c 'import torch; import platform; print("- Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
 
 git-version () {
     pushd $1 >/dev/null
@@ -108,6 +108,7 @@ fi
 
 if [ "$MODE" == install ]; then
   "$PYTHON" -m pip --version
+  "$PYTHON" -c 'import torch; import platform; print("- Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
 
   echo "Installing general requirements"
   "$PYTHON" -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements.txt
@@ -159,4 +160,3 @@ exec "$PYTHON" $CMD
 # export LD_PRELOAD=libtcmalloc.so
 # TORCH_CUDA_ARCH_LIST="8.6"
 # --opt-channelslast
-# --opt-sdp-attention

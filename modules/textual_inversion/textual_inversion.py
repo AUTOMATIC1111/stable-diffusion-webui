@@ -1,6 +1,5 @@
 import os
 import sys
-import traceback
 import inspect
 from collections import namedtuple
 
@@ -206,7 +205,7 @@ class EmbeddingDatabase:
                     self.load_from_file(fullfn, fn)
                 except Exception:
                     print(f"Error loading embedding {fn}:", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
+                    shared.exception()
                     continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
@@ -623,7 +622,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
         filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
         save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, remove_cached_checksum=True)
     except Exception:
-        print(traceback.format_exc(), file=sys.stderr)
+        shared.exception()
         pass
     finally:
         pbar.leave = False

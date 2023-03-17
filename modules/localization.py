@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-import traceback
+import modules.shared as shared
 
 
 localizations = {}
@@ -33,6 +33,6 @@ def localization_js(current_localization_name):
                 data = json.load(file)
         except Exception:
             print(f"Error loading localization from {fn}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            shared.exception()
 
     return f"var localization = {json.dumps(data)}\n"

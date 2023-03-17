@@ -39,12 +39,7 @@ def apply_optimizations():
 
     can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention")) # not everyone has torch 2.x to use sdp
 
-    if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
-        print("Applying xformers cross attention optimization.")
-        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
-        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
-        optimization_method = 'xformers'
-    elif cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
+    if cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
         print("Applying scaled dot product cross attention optimization (without memory efficient attention).")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_no_mem_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_no_mem_attnblock_forward
@@ -54,6 +49,11 @@ def apply_optimizations():
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_attnblock_forward
         optimization_method = 'sdp'
+    elif cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
+        print("Applying xformers cross attention optimization.")
+        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
+        optimization_method = 'xformers'
     elif cmd_opts.opt_sub_quad_attention:
         print("Applying sub-quadratic cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.sub_quad_attention_forward
@@ -62,16 +62,16 @@ def apply_optimizations():
     elif cmd_opts.opt_split_attention_v1:
         print("Applying v1 cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
-        optimization_method = 'V1'
+        optimization_method = 'v1'
     elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention_invokeai or not cmd_opts.opt_split_attention and not torch.cuda.is_available()):
         print("Applying cross attention optimization (InvokeAI).")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_invokeAI
-        optimization_method = 'InvokeAI'
+        optimization_method = 'invokeai'
     elif not cmd_opts.disable_opt_split_attention and (cmd_opts.opt_split_attention or torch.cuda.is_available()):
         print("Applying cross attention optimization (Doggettx).")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.cross_attention_attnblock_forward
-        optimization_method = 'Doggettx'
+        optimization_method = 'doggettx'
 
     return optimization_method
 

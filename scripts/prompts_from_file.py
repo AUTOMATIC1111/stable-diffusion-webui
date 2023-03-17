@@ -3,7 +3,7 @@ import math
 import os
 import random
 import sys
-import traceback
+import modules.shared as shared
 import shlex
 
 import modules.scripts as scripts
@@ -141,7 +141,7 @@ class Script(scripts.Script):
                     args = cmdargs(line)
                 except Exception:
                     print(f"Error parsing line {line} as commandline:", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
+                    shared.exception()
                     args = {"prompt": line}
             else:
                 args = {"prompt": line}

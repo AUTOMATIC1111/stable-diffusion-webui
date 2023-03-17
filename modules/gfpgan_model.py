@@ -1,6 +1,5 @@
 import os
 import sys
-import traceback
 
 import facexlib
 import gfpgan
@@ -113,4 +112,4 @@ def setup_model(dirname):
         shared.face_restorers.append(FaceRestorerGFPGAN())
     except Exception:
         print("Error setting up GFPGAN:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        shared.exception()

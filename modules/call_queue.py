@@ -1,7 +1,6 @@
 import html
 import sys
 import threading
-import traceback
 import time
 import cProfile, pstats, io
 
@@ -75,8 +74,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             if len(argStr) > max_debug_str_len:
                 print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
 
-            print(traceback.format_exc(), file=sys.stderr)
-
+            shared.exception()
             shared.state.job = ""
             shared.state.job_count = 0
 

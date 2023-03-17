@@ -8,7 +8,6 @@ import random
 import sys
 import tempfile
 import time
-import traceback
 from functools import partial, reduce
 import warnings
 
@@ -1637,7 +1636,7 @@ def create_ui():
                 results = modules.extras.run_modelmerger(*args)
             except Exception as e:
                 print("Error loading/saving model file:", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                shared.exception()
                 modules.sd_models.list_models()  # to remove the potentially missing models from the list
                 return [*[gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(4)], f"Error merging checkpoints: {e}"]
             return results
@@ -1681,7 +1680,7 @@ def create_ui():
     except Exception:
         error_loading = True
         print("Error loading settings:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        shared.exception()
 
     def loadsave(path, x):
         def apply_field(obj, field, condition=None, init_field=None):

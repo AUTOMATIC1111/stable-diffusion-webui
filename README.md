@@ -117,22 +117,35 @@ Fork does differ in few things:
 - Drops compatibility with `python` **3.7** and requires **3.9**  
   Recommended is **Python 3.10**  
   Note that **Python 3.11** or **3.12** are NOT supported  
+- New global exception handler
 - Drops localizations  
 - Updated **Python** libraries to latest known compatible versions  
   e.g. `accelerate`, `transformers`, `numpy`, etc.  
 - Includes opinionated **System** and **Options** configuration  
   e.g. `samplers`, `upscalers`, etc.  
-- Includes reskinned **UI**  
-  Black and orange dark theme with fixed width options panels and larger previews  
+- Does not rely on `Accelerate` as it only affects distributed systems  
+- Optimized startup order  
+  Gradio web server will be initialized much earlier which model load is done in the background  
 - Includes **SD2** configuration files  
 - Uses simplified folder structure  
   e.g. `/train`, `/outputs/*`  
 - Modified training templates  
 - Built-in `LoRA`, `LyCORIS`, `Custom Diffusion`, `Dreambooth` training  
 
+User Interface:
+
+- Includes reskinned **UI**  
+  Black and orange dark theme with fixed width options panels and larger previews  
+
+Optimizations:
+
+- Runs with `SDP` memory attention enabled by default if supported by system  
+- Fallback to `XFormers` if SDP is not supported  
+- If either `SDP` or `XFormers` are not supported, falls back to usual cmd line arguments  
+
 Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
 
-Fork is compatible with regular **PyTorch 1.13** as well as pre-releases of **PyTorch** **2.0** and **2.1**  
+Fork is compatible with regular **PyTorch 1.13**, **PyTorch 2.0** as well as pre-releases of **PyTorch** **2.1**  
 See [Wiki](https://github.com/vladmandic/automatic/wiki/Torch-Optimizations) for **Torch** optimization notes
 
 <br>

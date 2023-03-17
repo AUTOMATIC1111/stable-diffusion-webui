@@ -1,6 +1,6 @@
 import os
 import sys
-import traceback
+import modules.shared as shared
 import importlib.util
 from types import ModuleType
 
@@ -29,4 +29,4 @@ def preload_extensions(extensions_dir, parser):
 
         except Exception:
             print(f"Error running preload() for {preload_script}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            shared.exception()

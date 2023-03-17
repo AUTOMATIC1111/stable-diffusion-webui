@@ -1,6 +1,5 @@
 import os
 import sys
-import traceback
 from collections import namedtuple
 from pathlib import Path
 import re
@@ -218,7 +217,7 @@ class InterrogateModels:
 
         except Exception:
             print("Error interrogating", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            shared.exception()
             res += "<error>"
 
         self.unload()

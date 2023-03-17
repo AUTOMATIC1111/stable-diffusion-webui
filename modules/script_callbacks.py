@@ -1,7 +1,7 @@
 import sys
-import traceback
 from collections import namedtuple
 import inspect
+import modules.shared as shared
 from typing import Optional, Dict, Any
 
 from fastapi import FastAPI
@@ -10,7 +10,7 @@ from gradio import Blocks
 
 def report_exception(c, job):
     print(f"Error executing callback {job} for {c.script}", file=sys.stderr)
-    print(traceback.format_exc(), file=sys.stderr)
+    shared.exception()
 
 
 class ImageSaveParams:

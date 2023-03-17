@@ -1,6 +1,5 @@
 import os
 import sys
-import traceback
 
 import cv2
 import torch
@@ -138,6 +137,6 @@ def setup_model(dirname):
 
     except Exception:
         print("Error setting up CodeFormer:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        shared.exception()
 
    # sys.path = stored_sys_path

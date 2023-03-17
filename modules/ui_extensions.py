@@ -3,7 +3,6 @@ import os.path
 import shutil
 import sys
 import time
-import traceback
 
 import git
 
@@ -41,7 +40,7 @@ def apply_and_restart(disable_list, update_list):
             ext.fetch_and_reset_hard()
         except Exception:
             print(f"Error getting updates for {ext.name}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            shared.exception()
 
     shared.opts.disabled_extensions = disabled
     shared.opts.save(shared.config_filename)
@@ -66,7 +65,7 @@ def check_updates(id_task, disable_list):
             ext.check_updates()
         except Exception:
             print(f"Error checking updates for {ext.name}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            shared.exception()
 
         shared.state.nextjob()
 

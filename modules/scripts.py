@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-import traceback
 from collections import namedtuple
 
 import gradio as gr
@@ -250,7 +249,8 @@ def load_scripts():
 
         except Exception:
             print(f"Error loading script: {scriptfile.filename}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            shared.exception()
+
 
         finally:
             sys.path = syspath
@@ -263,7 +263,7 @@ def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
         return res
     except Exception:
         print(f"Error calling: {filename}/{funcname}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        shared.exception()
 
     return default
 
@@ -409,7 +409,7 @@ class ScriptRunner:
                 script.process(p, *script_args)
             except Exception:
                 print(f"Error running process: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                shared.exception()
 
     def before_process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
@@ -418,7 +418,7 @@ class ScriptRunner:
                 script.before_process_batch(p, *script_args, **kwargs)
             except Exception:
                 print(f"Error running before_process_batch: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                shared.exception()
 
     def process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
@@ -427,7 +427,7 @@ class ScriptRunner:
                 script.process_batch(p, *script_args, **kwargs)
             except Exception:
                 print(f"Error running process_batch: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                shared.exception()
 
     def postprocess(self, p, processed):
         for script in self.alwayson_scripts:
@@ -436,7 +436,7 @@ class ScriptRunner:
                 script.postprocess(p, processed, *script_args)
             except Exception:
                 print(f"Error running postprocess: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                shared.exception()
 
     def postprocess_batch(self, p, images, **kwargs):
         for script in self.alwayson_scripts:
@@ -445,7 +445,7 @@ class ScriptRunner:
                 script.postprocess_batch(p, *script_args, images=images, **kwargs)
             except Exception:
                 print(f"Error running postprocess_batch: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                shared.exception()
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         for script in self.alwayson_scripts:
@@ -454,7 +454,7 @@ class ScriptRunner:
                 script.postprocess_image(p, pp, *script_args)
             except Exception:
                 print(f"Error running postprocess_batch: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                shared.exception()
 
     def before_component(self, component, **kwargs):
         for script in self.scripts:
@@ -462,7 +462,7 @@ class ScriptRunner:
                 script.before_component(component, **kwargs)
             except Exception:
                 print(f"Error running before_component: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                shared.exception()
 
     def after_component(self, component, **kwargs):
         for script in self.scripts:
@@ -470,7 +470,7 @@ class ScriptRunner:
                 script.after_component(component, **kwargs)
             except Exception:
                 print(f"Error running after_component: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                shared.exception()
 
     def reload_sources(self, cache):
         for si, script in list(enumerate(self.scripts)):
