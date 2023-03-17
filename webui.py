@@ -347,9 +347,11 @@ def check_resource():
 
 if __name__ == "__main__":
     import sys
+    from tools.mysql import dispose
     print(sys.argv)
     check_resource()
     if cmd_opts.nowebui:
         api_only()
     else:
         webui()
+    dispose()

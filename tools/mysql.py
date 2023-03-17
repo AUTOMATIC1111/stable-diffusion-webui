@@ -5,6 +5,10 @@
 # @Site    : 
 # @File    : mysql.py
 # @Software: Hifive
+import os
+import threading
+import typing
+
 import pymysql
 
 
@@ -13,10 +17,15 @@ class MySQLClient(object):
     def __init__(self, addr=None, db=None, user=None, pwd=None, port=3306):
         settings = self.get_mysql_config(addr, port, db, user, pwd)
         self.conn = pymysql.connect(**settings)
+        self._closed = False
 
     @property
     def connect(self):
         return self.conn
+
+    @property
+    def available(self):
+        return not self._closed
 
     def get_mysql_config(self, addr=None, port=3306, db=None, user=None, passwd=None):
         return {
@@ -45,7 +54,7 @@ class MySQLClient(object):
         connect = self.connect
         with connect.cursor() as cursor:
             r = cursor.executemany(cmd, list(args))
-            if not connect.autocommit_mode:
+            if hasattr(connect, 'autocommit_mode') and not connect.autocommit_mode:
                 connect.commit()
             return r
 
@@ -55,11 +64,16 @@ class MySQLClient(object):
         def query_callback(cmd, args, connect, cursor):
             fields = [field_info[0] for field_info in cursor.description]
             if not fetchall:
-                res = {item[0]: item[1] for item in zip(fields, cursor.fetchone())}
-                result.append(res)
+                row = cursor.fetchone()
+                if row:
+                    res = {item[0]: item[1] for item in zip(fields, row)}
+                    result.append(res)
+                else:
+                    return None
             else:
                 res_list = [{item[0]: item[1] for item in zip(fields, info)} for info in cursor.fetchall()]
                 result.extend(res_list)
+
         self.execute_noquery_cmd(cmd, args, connect, query_callback)
         if not result:
             return None
@@ -77,7 +91,7 @@ class MySQLClient(object):
         except Exception as ex:
             connect.rollback()
         else:
-            if not connect.autocommit_mode:
+            if hasattr(connect, 'autocommit_mode') and not connect.autocommit_mode:
                 connect.commit()
         finally:
             cursor.close()
@@ -85,9 +99,53 @@ class MySQLClient(object):
     def close(self, conn=None):
         conn = conn or self.connect
         conn.close()
+        self._closed = True
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close()
+
+
+mysql_clis = {}
+locker = threading.RLock()
+
+
+def get_mysql_cli(host: str = None, port: typing.Optional[int] = None, user: str = None,
+                  pwd: str = None, db: str = None) -> MySQLClient:
+    if not host:
+        host = os.getenv('MysqlHost')
+    if not port:
+        port = os.getenv('MysqlPort', 3306)
+    if not user:
+        user = os.getenv('MysqlUser', 'root')
+    if not pwd:
+        pwd = os.getenv('MysqlPass')
+    if not db:
+        db = os.getenv('MysqlDB', 'draw-ai')
+
+    key = f"{host},{user},{port},{db}"
+
+    def get_cli_from_caches():
+        if key in mysql_clis:
+            client = mysql_clis[key]
+            if getattr(client, 'available', False):
+                return client
+
+    mysql_cli = get_cli_from_caches()
+    if mysql_cli is not None:
+        return mysql_cli
+
+    with locker:
+        mysql_cli = get_cli_from_caches()
+        if mysql_cli is not None:
+            return mysql_cli
+        mysql_clis[key] = MySQLClient(host, db, user, pwd, port)
+        return mysql_clis[key]
+
+
+def dispose():
+    for cli in mysql_clis.values():
+        if hasattr(cli, 'close'):
+            cli.close()

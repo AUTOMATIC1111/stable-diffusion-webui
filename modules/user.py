@@ -10,7 +10,7 @@ import os
 import time
 import typing
 
-from tools.mysql import MySQLClient
+from tools.mysql import get_mysql_cli
 
 
 def authorization(user, password):
@@ -26,25 +26,20 @@ def authorization(user, password):
 
 
 def find_users_from_models(username, password) -> int:
-    host = os.getenv('MysqlHost', '172.16.241.104')
-    user = os.getenv('MysqlUser', 'root')
-    pwd = os.getenv('MysqlPass', 'jE%r__hk&2OB')
-    db = os.getenv('MysqlDB', 'draw-ai')
-    port = os.getenv('MysqlPort', 3306)
-
+    host = os.getenv('MysqlHost')
     if host:
-        with MySQLClient(host, db, user, pwd, port) as cli:
-            try:
-                res = cli.query("SELECT * FROM user WHERE username=%s AND password=%s", (username, password))
-                if res:
-                    expire = res.get('expire', -1)
-                    if 0 == expire or expire > time.time():
-                        endpoint = os.getenv("Endpoint")
-                        if endpoint and res.get('endpoint'):
-                            if endpoint != res['endpoint']:
-                                return -1
-                        return expire
-            except Exception:
-                return -1
+        cli = get_mysql_cli()
+        try:
+            res = cli.query("SELECT * FROM user WHERE username=%s AND password=%s", (username, password))
+            if res:
+                expire = res.get('expire', -1)
+                if 0 == expire or expire > time.time():
+                    endpoint = os.getenv("Endpoint")
+                    if endpoint and res.get('endpoint'):
+                        if endpoint != res['endpoint']:
+                            return -1
+                    return expire
+        except Exception:
+            return -1
     return -1
 
