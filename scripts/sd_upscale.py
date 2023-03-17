@@ -66,35 +66,83 @@ class Script(scripts.Script):
         print(f"SD upscaling will process a total of {len(work)} images tiled as {len(grid.tiles[0][2])}x{len(grid.tiles)} per upscale in a total of {state.job_count} batches.")
 
         result_images = []
-        for n in range(upscale_count):
-            start_seed = seed + n
-            p.seed = start_seed
-
-            work_results = []
-            for i in range(batch_count):
-                p.batch_size = batch_size
-                p.init_images = work[i * batch_size:(i + 1) * batch_size]
-
-                state.job = f"Batch {i + 1 + n * batch_count} out of {state.job_count}"
-                processed = processing.process_images(p)
-
-                if initial_info is None:
-                    initial_info = processed.info
-
-                p.seed = processed.seed + 1
-                work_results += processed.images
-
-            image_index = 0
-            for y, h, row in grid.tiles:
+        if p.image_mask is not None and upscaler.name != "None":
+            # Upscale the image mask and create tiles from it
+            mask = upscaler.scaler.upscale(p.image_mask, scale_factor, upscaler.data_path)
+            mask_grid = images.split_grid(mask, tile_w=p.width, tile_h=p.height, overlap=overlap)
+            mask_tiles = []
+            for y, h, row in mask_grid.tiles:
                 for tiledata in row:
-                    tiledata[2] = work_results[image_index] if image_index < len(work_results) else Image.new("RGB", (p.width, p.height))
-                    image_index += 1
+                    mask_tiles.append(tiledata[2])
 
-            combined_image = images.combine_grid(grid)
-            result_images.append(combined_image)
+            # Iterate over "Batch Count" in increments of "Batch Size"
+            for i in range(0, upscale_count, batch_size):
+                # Set the batch_size for the final iteration
+                p.batch_size = upscale_count - i if i + batch_size > upscale_count else batch_size
 
-            if opts.samples_save:
-                images.save_image(combined_image, p.outpath_samples, "", start_seed, p.prompt, opts.samples_format, info=initial_info, p=p)
+                start_seed = seed + i
+                p.seed = start_seed
+
+                # Each sublist will contain tiles for a different image.
+                tiled_results = [[] for _ in range(p.batch_size)]
+
+                for n in range(len(work)):
+                    # Batch tiles together that use the same mask
+                    p.init_images = [work[n] for _ in range(p.batch_size)]
+                    p.image_mask = mask_tiles[n]
+
+                    processed = processing.process_images(p)
+                    p.seed = processed.seed + 1
+                    if initial_info is None:
+                        initial_info = processed.info
+
+                    for c, result in enumerate(processed.images):
+                        tiled_results[c].append(result)
+
+                # Combine tiles into {batch_size} images, and save them
+                for seed_offset, tiled_result in enumerate(tiled_results):
+                    image_index = 0
+                    for y, h, row in grid.tiles:
+                        for tiledata in row:
+                            tiledata[2] = tiled_result[image_index]
+                            image_index += 1
+
+                    combined_image = images.combine_grid(grid)
+                    result_images.append(combined_image)
+
+                    if opts.samples_save:
+                        images.save_image(combined_image, p.outpath_samples, "", start_seed + seed_offset, p.prompt, opts.samples_format, info=initial_info, p=p)
+
+        else:
+            for n in range(upscale_count):
+                start_seed = seed + n
+                p.seed = start_seed
+
+                work_results = []
+                for i in range(batch_count):
+                    p.batch_size = batch_size
+                    p.init_images = work[i * batch_size:(i + 1) * batch_size]
+
+                    state.job = f"Batch {i + 1 + n * batch_count} out of {state.job_count}"
+                    processed = processing.process_images(p)
+
+                    if initial_info is None:
+                        initial_info = processed.info
+
+                    p.seed = processed.seed + 1
+                    work_results += processed.images
+
+                image_index = 0
+                for y, h, row in grid.tiles:
+                    for tiledata in row:
+                        tiledata[2] = work_results[image_index] if image_index < len(work_results) else Image.new("RGB", (p.width, p.height))
+                        image_index += 1
+
+                combined_image = images.combine_grid(grid)
+                result_images.append(combined_image)
+
+                if opts.samples_save:
+                    images.save_image(combined_image, p.outpath_samples, "", start_seed, p.prompt, opts.samples_format, info=initial_info, p=p)
 
         processed = Processed(p, result_images, seed, initial_info)
 
