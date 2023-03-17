@@ -42,7 +42,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .extra-network-cards .card:hover { transform: scale(2); transition: all 0.3s ease; z-index: 99; box-shadow: none; }
 .feather .feather-image { display: none }
 .gap-2 { padding-top: 8px; }
-.gr-box > div > div > input.gr-text-input { right: 0.5rem; width: 4em; padding: 0; }
+.gr-box > div > div > input.gr-text-input { right: 0.5rem; width: 4em; padding: 0; top: -12px; border: none; max-height: 20px; }
 .output-html { line-height: 1.2rem; overflow-x: hidden; }
 .output-html > div { margin-bottom: 8px; }
 .overflow-hidden .flex .flex-col .relative col .gap-4 { min-width: var(--left-column); max-width: var(--left-column); } /* this is a problematic one */
@@ -53,8 +53,8 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .tabs { background-color: black; }
 
 /* automatic style classes */
-.progressDiv { border-radius: 0; position: fixed; top: 40px; right: 30px; max-width: 250px; height: 32px; }
-.progressDiv .progress { background: var(--highlight-color); line-height: 2rem; height: 32px; }
+.progressDiv { border-radius: 0; position: fixed; top: 326px; right: 30px; max-width: 248px; height: 36px; }
+.progressDiv .progress { background: var(--highlight-color); line-height: 2.1rem; height: 36px; }
 .gallery-item { box-shadow: none !important; }
 .performance { color: #888; }
 .modalControls { background-color: #4E1400; }
@@ -76,8 +76,8 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
 #txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }
 #txt2img_gallery, #img2img_gallery, #extras_gallery { background: black; padding: 0; margin: 0; object-fit: contain; box-shadow: none; min-height: 0; }
-#txt2img_generate, #img2img_generate { margin-left: 10px; min-height: 2rem; height: 2rem; margin-top: 15px; border: none; border-radius: 0; }
-#txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { margin-left: 10px; min-height: 2rem; height: 2rem; max-width: 120px; margin-top: 15px; border: none; border-radius: 0; background-color: var(--inactive-color); margin-top: -84px; }
+#txt2img_generate, #img2img_generate { margin-left: 10px; height: 36px; margin-top: 15px; border: none; border-radius: 0; min-height: 36px; }
+#txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { margin-left: 10px; height: 36px; max-width: 116px; border: none; border-radius: 0; background-color: var(--inactive-color); margin-top: 62px; display: block !important }
 #txt2img_neg_prompt > label > textarea { font-size: 1.2rem; background-color: black }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }
 #txt2img_prompt > label > textarea { font-size: 1.2rem; }
@@ -87,7 +87,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #txt2img_subseed_row { padding: 0; margin-top: 16px; }
 #txt2img_subseed_show { min-width: 74px; padding: 8px 0 0 0 }
 #txt2img_subseed_strength { margin-top: 0; }
-#txt2img_tools, #img2img_tools { margin-top: 8px; scale: 120%; margin-left: 30px; gap: 5px; max-width: 210px; }
+#txt2img_tools, #img2img_tools { margin-top: 56px; scale: 120%; margin-left: 28px; gap: 5px; max-width: 210px; }
 #txtimg_hr_finalres { max-width: 200px; }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { background-color: black; }
 #refresh_txt2img_styles, #refresh_img2img_styles, #open_folder_txt2img, #open_folder_img2img, #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #save_zip_txt2img, #save_zip_img2img, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_res_switch_btn, #img2img_res_switch_btn, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h, #txt2img_subseed_show, #txt2img_reuse_seed, #txt2img_reuse_subseed, #txt2img_tiling, #img2img_subseed_show { display: none; }
@@ -95,4 +95,5 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 
 /* custom elements overrides */
 #steps-animation, #controlnet { border-width: 0; }
+
 

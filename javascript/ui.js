@@ -129,8 +129,10 @@ function create_submit_args(args){
 }
 
 function showSubmitButtons(tabname, show){
-    gradioApp().getElementById(tabname+'_interrupt').style.display = show ? "none" : "block"
-    gradioApp().getElementById(tabname+'_skip').style.display = show ? "none" : "block"
+    // gradioApp().getElementById(tabname+'_interrupt').style.display = show ? "none" : "block"
+    // gradioApp().getElementById(tabname+'_skip').style.display = show ? "none" : "block"
+    gradioApp().getElementById(tabname+'_interrupt').style.display = "block"
+    gradioApp().getElementById(tabname+'_skip').style.display = "block"
 }
 
 function submit(){
