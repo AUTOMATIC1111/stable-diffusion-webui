@@ -214,8 +214,14 @@ function recalculate_prompts_img2img(){
     return args_to_array(arguments);
 }
 
+function recalculate_prompts_inpaint(){
+	//console.log("img2img_prompt");
+    recalculatePromptTokens('img2img_prompt')
+    recalculatePromptTokens('img2img_neg_prompt')
+    return args_to_array(arguments);
+}
 
-
+let selectedTabItemId = "tab_txt2img";
 
 opts = {}
 onUiUpdate(function(){
@@ -391,8 +397,8 @@ onUiUpdate(function(){
 		
 	})
 	
-	
-	let selectedTabItemId = "tab_txt2img";
+	// set this globally
+	//let selectedTabItemId = "tab_txt2img";
 	/* switch tab item from instance button, this is the only method that works i havent found a workaround yet */ 
 	const Observe = (sel, opt, cb) => {
 	  const Obs = new MutationObserver((m) => [...m].forEach(cb));
@@ -414,6 +420,7 @@ onUiUpdate(function(){
 		
 		gradioApp().querySelectorAll('#tabs > div > button:nth-child('+(idx+1)+'), #nav_menu_header_tabs > button:nth-child('+(idx+1)+')').forEach(function (tab){
 			tab.classList.add("bg-white");
+			
 		})
 		//gardio removes listeners and attributes from tab buttons we add them again here 
 		gradioApp().querySelectorAll('#tabs > div > button').forEach(function (tab, index){
@@ -423,6 +430,8 @@ onUiUpdate(function(){
 			if(tab.innerHTML.indexOf("Theme") != -1) tab.style.display = "none";
 			
 		})
+		
+		window.onUiHeaderTabUpdate();
 		// also here the same issue
 		/*
 		gradioApp().querySelectorAll('[id^="image_buttons"] [id$="_tab"]').forEach(function (button, index){
@@ -1074,13 +1083,7 @@ onUiUpdate(function(){
 			pnginfo.querySelector('#img2img_tab').click();		
 		}
 		
-		/* const test = gradioApp().querySelector('#txt2img_gallery_container img');
-		new PanZoom( test,{
-			minScale: 1.0,
-			maxScale: 10.0,
-			zoomFactor: 0.1,
-			zoomConstraintContent: true
-		}); */
+	
 		//setTimeout(function() { update_performant_inputs(button_id.split("_")[0]); }, 100);
 	}
 	
@@ -1323,7 +1326,7 @@ function restart_reload(){
 	
 	let bg_color = getComputedStyle(gradioApp().querySelector(".container")).getPropertyValue('--main-bg-color');
 	let primary_color = getComputedStyle(gradioApp().querySelector(".icon-info")).getPropertyValue('--primary-color');
-	let panel_color = getComputedStyle(gradioApp().querySelector(".dark .gr-box")).getPropertyValue('--panel-bg-color');
+	let panel_color = getComputedStyle(gradioApp().querySelector(".gr-box")).getPropertyValue('--panel-bg-color');
 	
 	localStorage.setItem("bg_color", bg_color);
 	localStorage.setItem("primary_color", primary_color);
