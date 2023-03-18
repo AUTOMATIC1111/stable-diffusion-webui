@@ -1105,9 +1105,9 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as modelmerger_interface:
         gr.Row(elem_id="modelmerger_2img_prompt_image", visible=False)
         with gr.Row():       
-            with gr.Column(elem_id="modelmerger_2img_results"):                
-                with gr.Row():
-                    modelmerger_result = gr.HTML(elem_id="modelmerger_result", show_label=False)
+            with gr.Column(elem_id="modelmerger_2img_results"):  
+                with gr.Group(elem_id="modelmerger_results_panel"):
+                    modelmerger_result = gr.HTML(elem_id="modelmerger_result", show_label=False)                
 
             gr.Row(elem_id="modelmerger_2img_splitter")
             with gr.Column(variant='panel', elem_id="modelmerger_2img_settings"):  

@@ -2097,6 +2097,17 @@ canvas[key=mask] {
     --tw-ring-color: var(--panel-border-color) !important;
 }
 
+.file-preview{
+	margin:0;
+	color: var(--text-color);
+}
+.file-preview > div > div:first-child{
+	flex-grow:1;
+}
+
+.w-3\/12 {width: auto;}
+a{color:var(--primary-color)!important;}
+
 /***********************************/
 /* Live preview don't mess with it */
 /***********************************/
@@ -3234,6 +3245,10 @@ ul.list-none {
 /* Mobile breakpoint */
 /*********************/
 
+/*dummy image height */
+.md\:min-h-\[15rem\] {
+    min-height: 20vh !important;
+}
 @media only screen and (max-width: 860px) {
   /* For tablets: */
 	[id$=_splitter]
@@ -4037,6 +4052,21 @@ input[type=range]::-ms-fill-upper {
   transition: none;
   pointer-events: auto;
 }
+#spotlight.relative {
+	position: relative !important;
+	width:auto;
+	height:50vh;
+	z-index:99;
+}
+
+#spotlight.relative .spl-pane > * {
+  position: relative;
+}
+
+#spotlight.relative .spl-close {
+  display: none;
+}
+
 #spotlight.white {
   color: #212529;
   background-color: #fff;
@@ -4127,6 +4157,7 @@ input[type=range]::-ms-fill-upper {
   will-change: transform, opacity;
   visibility: hidden;
 }
+
 .spl-pane {
   position: absolute;
   top: 0;
