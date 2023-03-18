@@ -3056,7 +3056,7 @@ ul.list-none {
 }
 
 #settings_result {
-    height: 20px !important;
+    height: auto !important;
     width: 100%;
     text-align: center;
 	color:var(--primary-color);
