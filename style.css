@@ -37,7 +37,10 @@
     cursor: default;
 }
 
-.output-html p {margin: 0 0.5em;}
+.output-html p {
+    margin: 0 0.5em;
+    overflow-wrap: break-word;
+}
 
 .row > *,
 .row > .gr-form > * {
