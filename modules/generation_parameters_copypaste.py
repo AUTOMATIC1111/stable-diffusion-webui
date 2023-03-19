@@ -8,7 +8,7 @@ from pathlib import Path
 
 import gradio as gr
 from modules.paths import data_path
-from modules import shared, ui_tempdir, script_callbacks
+from modules import shared, ui_tempdir, script_callbacks, images
 import tempfile
 from PIL import Image
 
@@ -131,16 +131,31 @@ def connect_paste_params_buttons():
                 outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
             )
 
-        if binding.source_text_component is not None and fields is not None:
-            connect_paste(binding.paste_button, fields, binding.source_text_component, override_settings_component, binding.tabname)
-
-        if binding.source_tabname is not None and fields is not None:
+        if fields is not None:
             paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else []) + binding.paste_field_names
-            binding.paste_button.click(
-                fn=lambda *x: x,
-                inputs=[field for field, name in paste_fields[binding.source_tabname]["fields"] if name in paste_field_names],
-                outputs=[field for field, name in fields if name in paste_field_names],
-            )
+            if shared.opts.send_embedded_infotext and binding.source_image_component and binding.source_tabname is not None:
+                if isinstance(binding.source_image_component, gr.Gallery):
+                    jsfunc = "prepare_gallery_paste_params"
+                else:
+                    jsfunc = None
+
+                source_fields = [x for x in paste_fields[binding.source_tabname]["fields"] if isinstance(x[0], gr.components.IOComponent)]
+                binding.paste_button.click(
+                    fn=lambda image, *x: send_paste_params_from_embedded_infotext(fields, source_fields, paste_field_names, image, x),
+                    _js=jsfunc,
+                    inputs=[binding.source_image_component] + [field for field, name in source_fields],
+                    outputs=[field for field, name in fields],
+                )
+            else:
+                if binding.source_text_component is not None:
+                    connect_paste(binding.paste_button, fields, binding.source_text_component, override_settings_component, binding.tabname)
+
+                if binding.source_tabname is not None:
+                    binding.paste_button.click(
+                        fn=lambda *x: x,
+                        inputs=[field for field, name in paste_fields[binding.source_tabname]["fields"] if name in paste_field_names],
+                        outputs=[field for field, name in fields if name in paste_field_names],
+                    )
 
         binding.paste_button.click(
             fn=None,
@@ -336,43 +351,79 @@ def create_override_settings_dict(text_pairs):
     return res
 
 
-def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname):
-    def paste_func(prompt):
-        if not prompt and not shared.cmd_opts.hide_ui_dir_config:
-            filename = os.path.join(data_path, "params.txt")
-            if os.path.exists(filename):
-                with open(filename, "r", encoding="utf8") as file:
-                    prompt = file.read()
+def send_paste_params_from_embedded_infotext(dest_fields, source_fields, paste_field_names, image_filedata, source_field_values):
+    source_field_mapping = {}
+    for i, (field, name) in enumerate(source_fields):
+        source_field_mapping[name] = {"index": i, "field": field}
 
-        params = parse_generation_parameters(prompt)
-        script_callbacks.infotext_pasted_callback(prompt, params)
-        res = []
+    if image_filedata:
+        image = image_from_url_text(image_filedata)
+        prompt, items = images.read_info_from_image(image)
+        results = paste_func(prompt, dest_fields)
+    else:
+        results = [gr.update() for _ in range(len(dest_fields))]
 
-        for output, key in paste_fields:
-            if callable(key):
-                v = key(params)
-            else:
-                v = params.get(key, None)
+    # Embedded prompt parameters override UI parameters
+    generic_update = gr.update()
+    for i in range(len(results)):
+        field_name = dest_fields[i][1]
 
-            if v is None:
+        if not shared.opts.send_size and (field_name == "Size-1" or field_name == "Size-2"):
+            results[i] = gr.update()
+            continue
+        if not shared.opts.send_seed and field_name == "Seed":
+            results[i] = gr.update()
+            continue
+
+        if results[i] == generic_update and field_name in paste_field_names:
+            # find where in source_field_values the value for the destination field is
+            # as the lengths of dest_fields and source_fields may be different
+            mapping = source_field_mapping.get(field_name)
+            if mapping:
+                value = source_field_values[mapping["index"]]
+                results[i] = value
+
+    return results
+
+
+def paste_func(prompt, paste_fields):
+    if not prompt and not shared.cmd_opts.hide_ui_dir_config:
+        filename = os.path.join(data_path, "params.txt")
+        if os.path.exists(filename):
+            with open(filename, "r", encoding="utf8") as file:
+                prompt = file.read()
+
+    params = parse_generation_parameters(prompt)
+    script_callbacks.infotext_pasted_callback(prompt, params)
+    res = []
+
+    for output, key in paste_fields:
+        if callable(key):
+            v = key(params)
+        else:
+            v = params.get(key, None)
+
+        if v is None:
+            res.append(gr.update())
+        elif isinstance(v, type_of_gr_update):
+            res.append(v)
+        else:
+            try:
+                valtype = type(output.value)
+
+                if valtype == bool and v == "False":
+                    val = False
+                else:
+                    val = valtype(v)
+
+                res.append(gr.update(value=val))
+            except Exception:
                 res.append(gr.update())
-            elif isinstance(v, type_of_gr_update):
-                res.append(v)
-            else:
-                try:
-                    valtype = type(output.value)
 
-                    if valtype == bool and v == "False":
-                        val = False
-                    else:
-                        val = valtype(v)
+    return res
 
-                    res.append(gr.update(value=val))
-                except Exception:
-                    res.append(gr.update())
 
-        return res
-
+def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname):
     if override_settings_component is not None:
         def paste_settings(params):
             vals = {}
@@ -400,7 +451,8 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         paste_fields = paste_fields + [(override_settings_component, paste_settings)]
 
     button.click(
-        fn=paste_func,
+        fn=lambda prompt: paste_func(prompt, paste_fields),
+        _js=f"recalculate_prompts_{tabname}",
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],
     )

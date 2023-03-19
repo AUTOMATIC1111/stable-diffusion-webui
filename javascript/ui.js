@@ -57,6 +57,12 @@ function extract_image_from_gallery(gallery){
     return [gallery[index]];
 }
 
+function prepare_gallery_paste_params(){
+    gallery = arguments[0];
+    arguments[0] = extract_image_from_gallery(gallery)[0];
+    return args_to_array(arguments)
+}
+
 function args_to_array(args){
     res = []
     for(var i=0;i<args.length;i++){
