@@ -105,6 +105,6 @@ var shadowRootLoaded = setInterval(function() {
 
     setupBracketChecking('txt2img_prompt', 'txt2img_token_counter')
     setupBracketChecking('txt2img_neg_prompt', 'txt2img_negative_token_counter')
-    setupBracketChecking('img2img_prompt', 'imgimg_token_counter')
+    setupBracketChecking('img2img_prompt', 'img2img_token_counter')
     setupBracketChecking('img2img_neg_prompt', 'img2img_negative_token_counter')
 }, 1000);
