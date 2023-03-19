@@ -20,6 +20,7 @@ License: GNU General Public License
 	--top-header-height: calc( var(--top-header-padding-top) + var(--top-header-inner-height) + var(--top-header-padding-bottom) );
 	--container-padding:16px;
 	--footer-height: calc( 38px + (var(--container-padding) * 2) );
+	--gallery-bottom-height: calc(24px + (var(--max-padding) * 2) + 16px + (var(--inside-padding-size) * 2) + (var(--outside-gap-size)* 3 ));
 	
 	--subtract-total: calc( var(--top-header-height) + var(--footer-height));
 	--container-height : calc(100vh - var(--subtract-total));
@@ -32,6 +33,8 @@ License: GNU General Public License
 	--processing-border-double: var(--processing-border) * 2;
 	
 	--slider-bg-overlay : transparent;
+	
+	
 
   
 
@@ -1261,6 +1264,7 @@ input
 	padding-top: var(--max-padding) !important;
 	padding-bottom: var(--max-padding) !important;
     width: auto !important;
+	line-height:24px !important;
 	
 }
 .dark\:hover\:border-gray-600>div.cursor-pointer+div,
@@ -2034,6 +2038,7 @@ canvas[key=mask] {
     display: flex;
     flex-direction: row;
     overflow: hidden !important;
+	margin-bottom:0!important;
 	
 }
 .gr-box:not(.border-dashed),
@@ -2046,15 +2051,15 @@ canvas[key=mask] {
 {
 
     width: 100%;
-	max-height: calc(var(--container-height-gap) - 2px)!important;
-    min-height: calc(var(--container-height-gap) - 2px)!important;
+	max-height: calc(var(--container-height-gap) - 2px - var(--gallery-bottom-height))!important;
+    min-height: calc(var(--container-height-gap) - 2px - var(--gallery-bottom-height))!important;
     overflow-x: hidden !important;
 	
 }
 
 [id$="2img_gallery"] .overflow-y-auto>div:first-child
 {
-    height: calc(var(--container-total-height) - (var(--outside-gap-size) * 2));
+    height: calc(var(--container-total-height) - (var(--outside-gap-size) * 2) - var(--gallery-bottom-height) );
 }
 
 [id$="2img_gallery"] div>img
@@ -2107,6 +2112,15 @@ canvas[key=mask] {
 
 .w-3\/12 {width: auto;}
 a{color:var(--primary-color)!important;}
+
+
+#image_buttons_txt2img + div,
+#image_buttons_img2img + div,
+#image_buttons_extras_2img + div
+{
+	margin-top: calc(var(--outside-gap-size) * -0.5);
+	margin-bottom: calc(var(--outside-gap-size) * -0.5);
+}
 
 /***********************************/
 /* Live preview don't mess with it */
