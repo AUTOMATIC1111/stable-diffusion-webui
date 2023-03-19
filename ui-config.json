@@ -1441,5 +1441,21 @@
     "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/value": 75,
     "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/minimum": 0,
     "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/maximum": 100,
-    "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/step": 1
+    "customscript/seed_travel.py/img2img/Desired min SSIM threshold (% of threshold)/step": 1,
+    "customscript/seed_travel.py/txt2img/Frames per second (0 to disable video)/visible": true,
+    "customscript/seed_travel.py/txt2img/Frames per second (0 to disable video)/value": 30.0,
+    "customscript/seed_travel.py/txt2img/RIFE passes/visible": true,
+    "customscript/seed_travel.py/txt2img/RIFE passes/value": 0.0,
+    "customscript/seed_travel.py/txt2img/Drop original frames/visible": true,
+    "customscript/seed_travel.py/txt2img/Drop original frames/value": false,
+    "customscript/seed_travel.py/img2img/Frames per second (0 to disable video)/visible": true,
+    "customscript/seed_travel.py/img2img/Frames per second (0 to disable video)/value": 30.0,
+    "customscript/seed_travel.py/img2img/RIFE passes/visible": true,
+    "customscript/seed_travel.py/img2img/RIFE passes/value": 0.0,
+    "customscript/seed_travel.py/img2img/Drop original frames/visible": true,
+    "customscript/seed_travel.py/img2img/Drop original frames/value": false,
+    "customscript/movie2movie.py/txt2img/Save preprocessed/visible": true,
+    "customscript/movie2movie.py/txt2img/Save preprocessed/value": false,
+    "customscript/movie2movie.py/img2img/Save preprocessed/visible": true,
+    "customscript/movie2movie.py/img2img/Save preprocessed/value": false
 }

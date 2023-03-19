@@ -14,6 +14,7 @@ import modules.styles
 import modules.devices as devices
 from modules import localization, extensions, script_loading, errors, ui_components, shared_items
 from modules.paths import models_path, script_path, data_path
+from rich import print
 
 
 demo = None
@@ -744,8 +745,12 @@ def html(filename):
     return ""
 
 try:
+    from rich.pretty import install as pretty_install
+    from rich.traceback import install as traceback_install
     from rich.console import Console
-    console = Console()
+    console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
+    pretty_install(console=console)
+    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, show_locals=True, max_frames=2)
 except:
     console = None
     import traceback

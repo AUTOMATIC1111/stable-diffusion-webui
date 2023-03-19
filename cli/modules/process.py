@@ -432,7 +432,7 @@ def process_file(f: str, dst: str = None, preview: bool = False, offline: bool =
     if params.keep_original:
         resized = save_original(image)
         fn = save(resized, f, 'original')
-        log.info({ 'keep original': fn })
+        log.info({ 'original': fn })
 
     image.close()
     return i, metadata

@@ -93,7 +93,7 @@ args = Map({
       "tag_drop_out": 0,
       "clip_grad_mode": "disabled",
       "clip_grad_value": "0.1",
-      "latent_sampling_method": "deterministic",
+      "latent_sampling_method": "once",
       "create_image_every": -1,
       "save_embedding_every": -1,
       "save_image_with_stored_embedding": False,
@@ -107,6 +107,7 @@ args = Map({
       "preview_width": 512,
       "preview_height": 512,
       "varsize": False,
+      "use_weight": False,
   },
 })
 
@@ -498,7 +499,7 @@ async def monitor(params):
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="sd train pipeline")
+    parser = argparse.ArgumentParser(description="sd train ti pipeline")
     parser.add_argument("--name", type = str, required = True, help = "embedding name, set to auto to use src folder name")
     parser.add_argument("--src", type = str, required = True, help = "source image folder or movie file")
     parser.add_argument("--init", type = str, default = "person", required = False, help = "initialization class, default: %(default)s")

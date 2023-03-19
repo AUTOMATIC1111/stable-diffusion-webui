@@ -190,7 +190,6 @@ if __name__ == '__main__':
     options.unet_lr = args.unetlr
     options.text_encoder_lr = args.textlr
     options.train_batch_size = args.batch
-    options.network_alpha = args.alpha
     log.info({ 'train lora args': vars(options) })
     transformers.logging.set_verbosity_error()
     mem_stats()

@@ -129,6 +129,12 @@ async def progress():
     return res
 
 
+def progresssync():
+    res = getsync('/sdapi/v1/progress?skip_current_image=true')
+    log.debug({ 'progress': res })
+    return res
+
+
 def options():
     options = getsync('/sdapi/v1/options')
     flags = getsync('/sdapi/v1/cmd-flags')

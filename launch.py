@@ -8,6 +8,7 @@ import platform
 import argparse
 import json
 import warnings
+from rich import print
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("--ui-settings-file", type=str, default='config.json')
@@ -282,10 +283,12 @@ def start():
 
     rich_installed = False
     try:
-        from rich.traceback import install
+        from rich.pretty import install as pretty_install
+        from rich.traceback import install as traceback_install
         from rich.console import Console
-        console = Console()
-        install(show_locals=True, max_frames=2, extra_lines=1, word_wrap=False, width=min([console.width, 200]))
+        console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
+        pretty_install(console=console)
+        traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, show_locals=True, max_frames=2)
         rich_installed = True
     except:
         import traceback
