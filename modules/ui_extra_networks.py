@@ -7,6 +7,7 @@ from modules import shared
 import gradio as gr
 import json
 import html
+import tqdm
 
 from modules.generation_parameters_copypaste import image_from_url_text
 
@@ -64,7 +65,7 @@ class ExtraNetworksPage:
 
     def create_html(self, tabname):
         view = shared.opts.extra_networks_default_view
-        items_html = ''
+        items_html = []
 
         subdirs = {}
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
@@ -91,12 +92,15 @@ class ExtraNetworksPage:
 </button>
 """ for subdir in subdirs])
 
-        for item in self.list_items():
-            items_html += self.create_html_for_item(item, tabname)
+        print(f"Loading extra networks page: {self.title}")
+        for item in tqdm.tqdm(self.list_items(), total=self.item_count()):
+            items_html.append(self.create_html_for_item(item, tabname))
 
-        if items_html == '':
+        if not items_html:
             dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
-            items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
+            items_html = [shared.html("extra-networks-no-cards.html").format(dirs=dirs)]
+
+        items_html = "".join(items_html)
 
         self_name_id = self.name.replace(" ", "_")
 
@@ -110,6 +114,9 @@ class ExtraNetworksPage:
 """
 
         return res
+
+    def item_count(self):
+        raise NotImplementedError()
 
     def list_items(self):
         raise NotImplementedError()
@@ -213,6 +220,7 @@ def create_ui(container, button, tabname):
     ui.tabname = tabname
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
+        print(f"Building extra networks UI for {tabname} tab...")
         for page in ui.stored_extra_pages:
             with gr.Tab(page.title):
                 page_elem = gr.HTML(page.create_html(ui.tabname))

@@ -12,6 +12,9 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def refresh(self):
         sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
+    def item_count(self):
+        return len(sd_hijack.model_hijack.embedding_db.word_embeddings)
+
     def list_items(self):
         for embedding in sd_hijack.model_hijack.embedding_db.word_embeddings.values():
             path, ext = os.path.splitext(embedding.filename)

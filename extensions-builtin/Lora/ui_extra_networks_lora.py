@@ -12,6 +12,9 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
     def refresh(self):
         lora.list_available_loras()
 
+    def item_count(self):
+        return len(lora.available_loras)
+
     def list_items(self):
         for name, lora_on_disk in lora.available_loras.items():
             path, ext = os.path.splitext(lora_on_disk.filename)
