@@ -103,8 +103,10 @@ Alternatively, use online services (like Google Colab):
 ### Automatic Installation on Windows
 1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH"
 2. Install [git](https://git-scm.com/download/win).
-3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
+3. Download the stable-diffusion-webui repository on the same* partition is Python installed, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
 4. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
+
+*3 You need to git clone on the same partition as python is installed, if you have on C/ python and you want this on D:/ it will fail.
 
 ### Automatic Installation on Linux
 1. Install the dependencies:
