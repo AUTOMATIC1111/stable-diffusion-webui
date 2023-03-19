@@ -21,6 +21,7 @@ startup_timer.record("import torch")
 
 import gradio
 startup_timer.record("import gradio")
+print(f"Gradio version: {gradio.__version__}")
 
 import ldm.modules.encoders.modules
 startup_timer.record("import ldm")
