@@ -362,6 +362,46 @@ input[type="range"]{
     height: 100%;
 }
 
+.popup-metadata{
+    color: black;
+    background: white;
+    display: inline-block;
+    padding: 1em;
+    white-space: pre-wrap;
+}
+
+.global-popup{
+    display: flex;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(20, 20, 20, 0.95);
+}
+
+
+.global-popup-close:before {
+    content: "×";
+}
+
+.global-popup-close{
+    position: fixed;
+    right: 0.25em;
+    top: 0;
+    cursor: pointer;
+    color: white;
+    font-size: 32pt;
+}
+
+.global-popup-inner{
+    display: inline-block;
+    margin: auto;
+    padding: 2em;
+}
+
 #lightboxModal{
   display: none;
   position: fixed;
@@ -436,9 +476,7 @@ input[type="range"]{
 
 #modalImage {
     display: block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-top: auto;
+    margin: auto;
     width: auto;
 }
 
@@ -839,6 +877,27 @@ footer {
     margin-left: 0.5em;
 }
 
+
+.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before{
+    content: "🛈";
+}
+.extra-network-cards .card .metadata-button, .extra-network-thumbs .card .metadata-button{
+    display: none;
+    position: absolute;
+    right: 0;
+    color: white;
+    text-shadow: 2px 2px 3px black;
+    padding: 0.25em;
+    font-size: 22pt;
+}
+.extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{
+    display: inline-block;
+}
+.extra-network-cards .card .metadata-button:hover, .extra-network-thumbs .card .metadata-button:hover{
+    color: red;
+}
+
+
 .extra-network-thumbs {
     display: flex;
     flex-flow: row wrap;
@@ -856,7 +915,7 @@ footer {
 }
 
 .extra-network-thumbs .card:hover .additional a {
-    display: block;
+    display: inline-block;
 }
 
 .extra-network-thumbs .actions .additional a {
@@ -937,6 +996,17 @@ footer {
     font-size: 1.7em;
     font-weight: bold;
     line-break: anywhere;
+}
+
+.extra-network-cards .card .actions .description {
+    display: block;
+    max-height: 3em;
+    white-space: pre-wrap;
+    line-height: 1.1;
+}
+
+.extra-network-cards .card .actions .description:hover {
+    max-height: none;
 }
 
 .extra-network-cards .card .actions:hover .additional{

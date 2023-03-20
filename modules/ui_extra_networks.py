@@ -30,8 +30,8 @@ def add_pages_to_demo(app):
             raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
         ext = os.path.splitext(filename)[1].lower()
-        if ext not in (".png", ".jpg"):
-            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg.")
+        if ext not in (".png", ".jpg", ".webp"):
+            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
 
         # would profit from returning 304
         return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
@@ -124,18 +124,55 @@ class ExtraNetworksPage:
         if onclick is None:
             onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
 
+        metadata_button = ""
+        metadata = item.get("metadata")
+        if metadata:
+            metadata_onclick = '"' + html.escape(f"""extraNetworksShowMetadata({json.dumps(metadata)}); return false;""") + '"'
+            metadata_button = f"<div class='metadata-button' title='Show metadata' onclick={metadata_onclick}></div>"
+
         args = {
             "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
             "name": item["name"],
+            "description": (item.get("description") or ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
+            "metadata_button": metadata_button,
         }
 
         return self.card_page.format(**args)
+
+    def find_preview(self, path):
+        """
+        Find a preview PNG for a given path (without extension) and call link_preview on it.
+        """
+
+        preview_extensions = ["png", "jpg", "webp"]
+        if shared.opts.samples_format not in preview_extensions:
+            preview_extensions.append(shared.opts.samples_format)
+
+        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
+
+        for file in potential_files:
+            if os.path.isfile(file):
+                return self.link_preview(file)
+
+        return None
+
+    def find_description(self, path):
+        """
+        Find and read a description file for a given path (without extension).
+        """
+        for file in [f"{path}.txt", f"{path}.description.txt"]:
+            try:
+                with open(file, "r", encoding="utf-8", errors="replace") as f:
+                    return f.read()
+            except OSError:
+                pass
+        return None
 
 
 def intialize():
@@ -183,7 +220,6 @@ def create_ui(container, button, tabname):
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
-    button_close = gr.Button('Close', elem_id=tabname+"_extra_close")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
@@ -194,7 +230,6 @@ def create_ui(container, button, tabname):
 
     state_visible = gr.State(value=False)
     button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
-    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     def refresh():
         res = []
