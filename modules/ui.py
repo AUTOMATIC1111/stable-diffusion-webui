@@ -15,6 +15,7 @@ import warnings
 import gradio as gr
 import gradio.routes
 import gradio.utils
+from gradio.events import Releaseable
 import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
@@ -1622,11 +1623,18 @@ def create_ui():
         for i, k, item in quicksettings_list:
             component = component_dict[k]
 
-            component.change(
-                fn=lambda value, k=k: run_settings_single(value, key=k),
-                inputs=[component],
-                outputs=[component, text_settings],
-            )
+            if isinstance(component, Releaseable):
+                component.release(
+                    fn=lambda value, k=k: run_settings_single(value, key=k),
+                    inputs=[component],
+                    outputs=[component, text_settings],
+                )
+            else:
+                component.change(
+                    fn=lambda value, k=k: run_settings_single(value, key=k),
+                    inputs=[component],
+                    outputs=[component, text_settings],
+                )
 
         text_settings.change(
             fn=lambda: gr.update(visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit"),
