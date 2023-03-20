@@ -50,7 +50,7 @@ function updateOnBackgroundChange() {
 }
 
 function modalImageSwitch(offset) {
-    var allgalleryButtons = gradioApp().querySelectorAll(".gallery-item.transition-all")
+    var allgalleryButtons = gradioApp().querySelectorAll(".thumbnails > .thumbnail-item")
     var galleryButtons = []
     allgalleryButtons.forEach(function(elem) {
         if (elem.parentElement.offsetParent) {
@@ -59,7 +59,7 @@ function modalImageSwitch(offset) {
     })
 
     if (galleryButtons.length > 1) {
-        var allcurrentButtons = gradioApp().querySelectorAll(".gallery-item.transition-all.\\!ring-2")
+        var allcurrentButtons = gradioApp().querySelectorAll(".thumbnails > .thumbnail-item.selected")
         var currentButton = null
         allcurrentButtons.forEach(function(elem) {
             if (elem.parentElement.offsetParent) {
@@ -145,7 +145,7 @@ function showGalleryImage() {
                 if (e.dataset.modded)
                     return;
                 e.dataset.modded = true;
-                if(e && e.parentElement.tagName == 'DIV'){
+                if(e.parentElement.tagName == 'DIV'){
                     e.style.cursor='pointer'
                     e.style.userSelect='none'
 
@@ -205,7 +205,7 @@ function galleryImageHandler(e) {
 }
 
 onUiUpdate(function() {
-    fullImg_preview = gradioApp().querySelectorAll('.preview > img');
+    fullImg_preview = gradioApp().querySelectorAll('button.thumbnail-item > img');
     if (fullImg_preview != null) {
         fullImg_preview.forEach(galleryImageHandler);
     }

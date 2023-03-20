@@ -497,13 +497,14 @@ input[type="range"] {
 
 #modalImage {
     display: block;
-    margin: auto;
+    margin: 0 auto;
     width: auto;
 }
 
 .modalImageFullscreen {
     object-fit: contain;
     height: 90%;
+    overflow: inherit;
 }
 
 .modalPrev, .modalNext {
@@ -523,6 +524,11 @@ input[type="range"] {
     &:hover {
         background-color: rgba(0, 0, 0, 0.8);
     }
+}
+
+.modalNext {
+  right: 0;
+  border-radius: 3px 0 0 3px;
 }
 
 #imageARPreview {
