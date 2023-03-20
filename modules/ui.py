@@ -1156,12 +1156,12 @@ def create_ui():
 
         gr.Row(elem_id="ti_2img_prompt_image", visible=False)
         with gr.Row(): 
-            with gr.Column(elem_id="ti_2img_results"):
-                with gr.Column(elem_id='ti_gallery_container'):
-                    ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
-                    ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(grid=4)
+            with gr.Column(elem_id="ti_2img_results"):              
+                with gr.Column(elem_id='ti_gallery_container'):                                 
+                    ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(grid=4)                   
                     ti_progress = gr.HTML(elem_id="ti_progress", value="")
-                    ti_outcome = gr.HTML(elem_id="ti_error", value="")        
+                    ti_outcome = gr.HTML(elem_id="ti_error", value="") 
+                    ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
             gr.Row(elem_id="ti_2img_splitter")  
             with gr.Tabs(elem_id="train_tabs_2img_settings"):
                 with gr.Tab(label="Create embedding"):
@@ -1171,14 +1171,12 @@ def create_ui():
                         initialization_text = gr.Textbox(label="Initialization text", value="*", elem_id="train_initialization_text")
                         nvpt = gr.Slider(label="Number of vectors per token", minimum=1, maximum=75, step=1, value=1, elem_id="train_nvpt")
                         overwrite_old_embedding = gr.Checkbox(value=False, label="Overwrite Old Embedding", elem_id="train_overwrite_old_embedding")
-
+                      
                         with gr.Row():
-                            with gr.Column(scale=3):
-                                gr.HTML(value="")
-
                             with gr.Column():
                                 create_embedding = gr.Button(value="Create embedding", variant='primary', elem_id="train_create_embedding")
-           
+                        with gr.Row():                           
+                            gr.HTML(value="")
                 
                 with gr.Tab(label="Create hypernetwork"):
                     #create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary', elem_id="train_create_hypernetwork")
@@ -1194,11 +1192,10 @@ def create_ui():
                         overwrite_old_hypernetwork = gr.Checkbox(value=False, label="Overwrite Old Hypernetwork", elem_id="train_overwrite_old_hypernetwork")
 
                         with gr.Row():
-                            with gr.Column(scale=3):
-                                gr.HTML(value="")
-
                             with gr.Column():
                                 create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary', elem_id="train_create_hypernetwork")
+                        with gr.Row():                         
+                            gr.HTML(value="")       
 
                 with gr.Tab(label="Preprocess images"):
                     # with gr.Column():
@@ -1241,15 +1238,14 @@ def create_ui():
                             with gr.Row():
                                 process_multicrop_objective = gr.Radio(["Maximize area", "Minimize error"], value="Maximize area", label="Resizing objective", elem_id="train_process_multicrop_objective")
                                 process_multicrop_threshold = gr.Slider(minimum=0, maximum=1, step=0.01, label="Error threshold", value=0.1, elem_id="train_process_multicrop_threshold")
-
+                      
                         with gr.Row():
-                            with gr.Column(scale=3):
-                                gr.HTML(value="")
-
                             with gr.Column():
                                 with gr.Row():
                                     interrupt_preprocessing = gr.Button("Interrupt", elem_id="train_interrupt_preprocessing")
                                     run_preprocess = gr.Button(value="Preprocess", variant='primary', elem_id="train_run_preprocess")
+                        with gr.Row():                           
+                            gr.HTML(value="")            
 
                     process_split.change(
                         fn=lambda show: gr_show(show),

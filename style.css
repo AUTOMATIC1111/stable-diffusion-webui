@@ -2576,6 +2576,97 @@ ul.list-none {
     padding-right: 16px;
 }
 
+/* train */
+#tab_ti .gr-box:not(input, select, label, [id*="collapse"] > *){
+	min-width:256px;
+}
+#ti_2img_splitter,
+#ti_2img_results{
+	margin-top:42px;
+}
+#train_tabs_2img_settings > div:first-child{
+	width:calc(100vw - (var(--container-padding) * 2 ) - 4px);
+}
+#train_tabs_2img_settings .gr-button-primary{
+	min-height: var(--generate-button-height);
+}
+#ti_output{
+	padding:0;
+	border: 0;
+	background:0;
+}
+#ti_output label span{
+	display:none;
+}
+.cover-bg
+{
+	background-color: transparent !important;
+}
+[id^="setting_"] > div.wrap.svelte-5usjvi.inset-0
+{
+	height:5px;
+}
+.eta-bar.svelte-5usjvi{
+	background-color:var(--primary-color) !important;
+	width:5px;
+	height:5px;
+	position:absolute;
+	top:2px;
+	left:2px;
+	border-radius:50%;
+}
+[id*="sd_vae"] div.eta-bar.svelte-5usjvi,
+[id*="sd_model_checkpoint"] div.eta-bar.svelte-5usjvi{
+	width:100%;
+	left:0;
+	top:0;
+	border-radius:0;
+	height:2px;
+}
+
+#tab_ti .meta-text{
+	background-color:var(--main-bg-color);
+	
+}
+#tab_ti .livePreview,
+#tab_ti .livePreview.init {
+	position: relative !important;
+    min-height: calc(var(--container-height-gap) - 260px ) !important;
+    width: auto !important;
+    left: 0;
+    top: 0;
+    max-height: unset !important;
+}
+#ti_gallery_container > div{
+	background-color:transparent !important;
+	position:initial !important;
+}
+#ti_gallery_container > div.gr-form{
+	border:0;
+}
+#ti_output div{
+	background-color:transparent !important;
+	position:initial !important;
+	margin:0;
+}
+#ti_gallery_container textarea{
+    height: auto !important;
+    display: inline-table;
+    background: 0;
+    border: 0;
+    padding: 0;
+	margin-top: 8px;
+	color:var(--primary-color);
+}
+#ti_gallery{
+	display:none;
+}
+#ti_gallery_container{
+	overflow-y: auto;
+    max-height: calc(var(--container-height-gap) - 60px);
+}
+
+
 
 /******************/
 /* extra-network-cards */
@@ -3472,7 +3563,21 @@ ul.list-none {
 		margin-right: 8px;
 	}
 		
-		
+	#ti_2img_splitter,
+	#ti_2img_results{
+		margin-top:0;
+	}
+	#train_tabs_2img_settings > div:first-child{
+		width:100%;
+	}
+	
+	#tab_ti .livePreview,
+	#tab_ti .livePreview.init {
+		min-height: unset !important;
+	}
+	#ti_gallery_container {
+		max-height: unset !important;
+	}
 	
 
 }
