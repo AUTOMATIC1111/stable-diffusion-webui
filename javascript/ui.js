@@ -336,3 +336,8 @@ function selectCheckpoint(name){
     desiredCheckpointName = name;
     gradioApp().getElementById('change_checkpoint').click()
 }
+
+function updateInlineStylesheet(css) {
+    document.querySelector("gradio-app > div > style").textContent = css;
+    return [];
+}

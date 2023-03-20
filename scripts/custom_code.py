@@ -13,7 +13,7 @@ class Script(scripts.Script):
         return cmd_opts.allow_code
 
     def ui(self, is_img2img):
-        code = gr.Textbox(label="Python code", lines=1, elem_id=self.elem_id("code"))
+        code = gr.Code(language="python", label="Python code", elem_id=self.elem_id("code"))
 
         return [code]
 
@@ -37,5 +37,3 @@ class Script(scripts.Script):
         exec(compiled, module.__dict__)
 
         return Processed(p, *display_result_data)
-    
-    
