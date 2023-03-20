@@ -838,6 +838,14 @@ footer {
 
 #img2img_copy_to_img2img, #img2img_copy_to_sketch, #img2img_copy_to_inpaint, #img2img_copy_to_inpaint_sketch {
     margin-left: 0em;
+    gap: 0px;
+    align-items: stretch;
+    padding: 0px;
+    margin-top: 0.75em;
+    >button {
+        min-width: unset;
+        font-size: 15px;
+    }
 }
 
 #axis_options {
@@ -894,7 +902,7 @@ footer {
     font-size: 1.0em;
     font-weight: bold;
     text-align: center;
-    line-height: 2.4em;
+    line-height: 2.6em;
 }
 
 .extra-networks > div > [id *= '_extra_']{
