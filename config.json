@@ -18,7 +18,7 @@
     "control_net_detectedmap_dir": "detected_maps",
     "control_net_models_path": "",
     "control_net_max_models_num": 1,
-    "control_net_model_cache_size": 2,
+    "control_net_model_cache_size": 1,
     "control_net_control_transfer": false,
     "control_net_no_detectmap": false,
     "control_net_detectmap_autosaving": true,

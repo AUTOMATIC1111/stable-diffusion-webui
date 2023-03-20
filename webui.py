@@ -66,6 +66,16 @@ else:
 
 
 def initialize():
+    if torch.cuda.is_available():
+        if torch.version.cuda: cuda_version = f'CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version()}'
+        elif torch.version.hip: cuda_version = f'HIP {torch.version.hip}'
+        else: cuda_version = ''
+        print(f'Torch {getattr(torch, "__long_version__", torch.__version__)} {cuda_version}')
+        for device in [torch.cuda.device(i) for i in range(torch.cuda.device_count())]:
+            print(f'GPU {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
+    else:
+        print(f'Torch {getattr(torch, "__long_version__", torch.__version__)} running on CPU')
+
     extensions.list_extensions()
     startup_timer.record("list extensions")
 
@@ -156,7 +166,7 @@ def load_model():
 
 def setup_middleware(app):
     app.middleware_stack = None # reset current middleware to allow modifying user provided list
-    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
     if cmd_opts.cors_allow_origins and cmd_opts.cors_allow_origins_regex:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
     elif cmd_opts.cors_allow_origins:

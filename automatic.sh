@@ -59,19 +59,15 @@ for i in "$@"; do
   shift
 done
 
-echo "SD server: $MODE"
+echo "Stable Diffusion server: $MODE"
 VER=$(git log -1 --pretty=format:"%h %ad")
 URL=$(git remote get-url origin)
 LSB=$(lsb_release -ds 2>/dev/null)
 UNAME=$(uname -rm 2>/dev/null)
-MERGE=$(git log --pretty=format:"%ad %s" | grep "Merge pull" | head -1)
-SMI=$(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader --id=0 2>/dev/null)
+# SMI=$(nvidia-smi --query-gpu=name,driver_version --format=csv,noheader --id=0 2>/dev/null)
 echo "Version: $VER"
 echo "Repository: $URL"
-echo "Last Merge: $MERGE"
-echo "System"
-echo "- Platform: $LSB $UNAME"
-echo "- nVIDIA: $SMI"
+echo "Platform: $LSB $UNAME"
 
 git-version () {
     pushd $1 >/dev/null
@@ -92,6 +88,9 @@ git-update () {
 }
 
 if [ "$MODE" == update ]; then
+  MERGE=$(git log --pretty=format:"%ad %s" | grep "Merge pull" | head -1)
+  echo "Last Merge: $MERGE"
+
   echo "Updating main repository"
   git-update .
 
@@ -115,6 +114,9 @@ if [ "$MODE" == help ]; then
 fi
 
 if [ "$MODE" == install ]; then
+  MERGE=$(git log --pretty=format:"%ad %s" | grep "Merge pull" | head -1)
+  echo "Last Merge: $MERGE"
+
   "$PYTHON" -m pip --version
   "$PYTHON" -c 'import torch; import platform; print("- Python:", platform.python_version(), "Torch:", torch.__version__, "CUDA:", torch.version.cuda, "cuDNN:", torch.backends.cudnn.version(), "GPU:", torch.cuda.get_device_name(torch.cuda.current_device()), "Arch:", torch.cuda.get_device_capability());'
 
