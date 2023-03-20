@@ -43,11 +43,3 @@ class Timer:
 
     def reset(self):
         self.__init__()
-
-    def decorator(self, func, category, extra_time_ns=0):
-        def wrapper(*args, **kwargs):
-            result = func(args, kwargs)
-            self.record(category, extra_time_ns)
-            return result
-
-        return wrapper
