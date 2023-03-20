@@ -130,7 +130,7 @@ Requested path was: {f}
         generation_info = None
         with gr.Column():
             with gr.Row(elem_id=f"image_buttons_{tabname}"):
-                open_folder_button = gr.Button(folder_symbol, elem_id="hidden_element" if shared.cmd_opts.hide_ui_dir_config else f'open_folder_{tabname}')
+                open_folder_button = gr.Button(folder_symbol, visible=not shared.cmd_opts.hide_ui_dir_config)
 
                 if tabname != "extras":
                     save = gr.Button('Save', elem_id=f'save_{tabname}')
@@ -160,6 +160,7 @@ Requested path was: {f}
                             _js="function(x, y, z){ return [x, y, selected_gallery_index()] }",
                             inputs=[generation_info, html_info, html_info],
                             outputs=[html_info, html_info],
+                            show_progress=False,
                         )
 
                     save.click(
