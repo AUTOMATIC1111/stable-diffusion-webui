@@ -18,6 +18,7 @@ import gradio.utils
 import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
+import sass
 
 from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
@@ -278,6 +279,37 @@ def update_token_counter(text, steps):
     return f"<span class='gr-box gr-text-input'>{token_count}/{max_length}</span>"
 
 
+def compile_css():
+    css = ""
+
+    for scssfile in modules.scripts.list_files_with_name("style.scss"):
+        if not os.path.isfile(scssfile):
+            continue
+
+        css += sass.compile(filename=scssfile) + "\n"
+
+    for cssfile in modules.scripts.list_files_with_name("style.css"):
+        if not os.path.isfile(cssfile):
+            continue
+
+        with open(cssfile, "r", encoding="utf8") as file:
+            css += file.read() + "\n"
+
+    user_scss = os.path.join(data_path, "user.scss")
+    if os.path.isfile(user_scss):
+        css += sass.compile(filename=user_scss) + "\n"
+
+    user_css = os.path.join(data_path, "user.css")
+    if os.path.isfile(user_css):
+        with open(user_css, "r", encoding="utf8") as file:
+            css += file.read() + "\n"
+
+    if not cmd_opts.no_progressbar_hiding:
+        css += css_hide_progressbar
+
+    return css
+
+
 def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
 
@@ -324,6 +356,7 @@ def create_toprow(is_img2img):
                 extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks")
                 prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
                 save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
+                reload_css = ToolButton(value='\u219C\ufe0f', elem_id=f"{id_part}_reload_css")
 
                 token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
                 token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
@@ -336,6 +369,10 @@ def create_toprow(is_img2img):
                     inputs=[prompt, negative_prompt],
                     outputs=[prompt, negative_prompt],
                 )
+
+                css_state = gr.Textbox("", visible=False)
+                reload_css.click(fn=compile_css, inputs=[], outputs=[css_state]) \
+                          .success(fn=None, _js="updateInlineStylesheet", inputs=[css_state], outputs=[])
 
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
@@ -1541,21 +1578,7 @@ def create_ui():
         (train_interface, "Train", "ti"),
     ]
 
-    css = ""
-
-    for cssfile in modules.scripts.list_files_with_name("style.css"):
-        if not os.path.isfile(cssfile):
-            continue
-
-        with open(cssfile, "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if os.path.exists(os.path.join(data_path, "user.css")):
-        with open(os.path.join(data_path, "user.css"), "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if not cmd_opts.no_progressbar_hiding:
-        css += css_hide_progressbar
+    css = compile_css()
 
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
