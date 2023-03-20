@@ -64,6 +64,7 @@ label > div {
     }
 
     // Increase the size of the dropdown list and reduce blank space
+    // https://github.com/gradio-app/gradio/issues/3530
     >ul.options.svelte-1setfeu  {
         max-height: var(--size-96);
 
@@ -88,6 +89,12 @@ label > div {
 
 #txt2img_gallery img, #img2img_gallery img{
     object-fit: scale-down;
+}
+
+// Fix for img2img canvases not resizing to fit full element size
+// https://github.com/gradio-app/gradio/issues/1721
+.block > .svelte-rlgzoo.fixed-height {
+    height: 100%;
 }
 
 #txt2img_actions_column, #img2img_actions_column {

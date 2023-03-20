@@ -86,7 +86,7 @@ function get_tab_index(tabId){
     var res = 0
 
     gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
-        if(button.className.indexOf('bg-white') != -1)
+        if(button.className.indexOf('selected') != -1)
             res = i
     })
 
