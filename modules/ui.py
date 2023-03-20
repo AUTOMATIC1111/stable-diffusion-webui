@@ -564,19 +564,34 @@ def create_ui():
 
             hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
             for input in hr_resolution_preview_inputs:
-                input.change(
-                    fn=calc_resolution_hires,
-                    inputs=hr_resolution_preview_inputs,
-                    outputs=[hr_final_resolution],
-                    show_progress=False,
-                )
-                input.change(
-                    None,
-                    _js="onCalcResolutionHires",
-                    inputs=hr_resolution_preview_inputs,
-                    outputs=[],
-                    show_progress=False,
-                )
+                if isinstance(input, Releaseable):
+                    input.release(
+                        fn=calc_resolution_hires,
+                        inputs=hr_resolution_preview_inputs,
+                        outputs=[hr_final_resolution],
+                        show_progress=False,
+                    )
+                    input.release(
+                        None,
+                        _js="onCalcResolutionHires",
+                        inputs=hr_resolution_preview_inputs,
+                        outputs=[],
+                        show_progress=False,
+                    )
+                else:
+                    input.change(
+                        fn=calc_resolution_hires,
+                        inputs=hr_resolution_preview_inputs,
+                        outputs=[hr_final_resolution],
+                        show_progress=False,
+                    )
+                    input.change(
+                        None,
+                        _js="onCalcResolutionHires",
+                        inputs=hr_resolution_preview_inputs,
+                        outputs=[],
+                        show_progress=False,
+                    )
 
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
 
