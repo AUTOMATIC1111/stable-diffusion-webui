@@ -50,7 +50,7 @@ function updateOnBackgroundChange() {
 }
 
 function modalImageSwitch(offset) {
-    var allgalleryButtons = gradioApp().querySelectorAll(".gallery-item.transition-all")
+    var allgalleryButtons = gradioApp().querySelectorAll(".gradio-gallery .thumbnail-item")
     var galleryButtons = []
     allgalleryButtons.forEach(function(elem) {
         if (elem.parentElement.offsetParent) {
@@ -59,7 +59,7 @@ function modalImageSwitch(offset) {
     })
 
     if (galleryButtons.length > 1) {
-        var allcurrentButtons = gradioApp().querySelectorAll(".gallery-item.transition-all.\\!ring-2")
+        var allcurrentButtons = gradioApp().querySelectorAll(".gradio-gallery .thumbnail-item.selected")
         var currentButton = null
         allcurrentButtons.forEach(function(elem) {
             if (elem.parentElement.offsetParent) {
@@ -136,37 +136,29 @@ function modalKeyHandler(event) {
     }
 }
 
-function showGalleryImage() {
-    setTimeout(function() {
-        fullImg_preview = gradioApp().querySelectorAll('img.w-full.object-contain')
+function setupImageForLightbox(e) {
+	if (e.dataset.modded)
+		return;
 
-        if (fullImg_preview != null) {
-            fullImg_preview.forEach(function function_name(e) {
-                if (e.dataset.modded)
-                    return;
-                e.dataset.modded = true;
-                if(e && e.parentElement.tagName == 'DIV'){
-                    e.style.cursor='pointer'
-                    e.style.userSelect='none'
+	e.dataset.modded = true;
+	e.style.cursor='pointer'
+	e.style.userSelect='none'
 
-                    var isFirefox = isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1
+	var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1
 
-                    // For Firefox, listening on click first switched to next image then shows the lightbox.
-                    // If you know how to fix this without switching to mousedown event, please.
-                    // For other browsers the event is click to make it possiblr to drag picture.
-                    var event = isFirefox ? 'mousedown' : 'click'
+	// For Firefox, listening on click first switched to next image then shows the lightbox.
+	// If you know how to fix this without switching to mousedown event, please.
+	// For other browsers the event is click to make it possiblr to drag picture.
+	var event = isFirefox ? 'mousedown' : 'click'
 
-                    e.addEventListener(event, function (evt) {
-                        if(!opts.js_modal_lightbox || evt.button != 0) return;
-                        modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed)
-                        evt.preventDefault()
-                        showModal(evt)
-                    }, true);
-                }
-            });
-        }
+	e.addEventListener(event, function (evt) {
+		if(!opts.js_modal_lightbox || evt.button != 0) return;
 
-    }, 100);
+		modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed)
+		evt.preventDefault()
+		showModal(evt)
+	}, true);
+
 }
 
 function modalZoomSet(modalImage, enable) {
@@ -199,21 +191,21 @@ function modalTileImageToggle(event) {
 }
 
 function galleryImageHandler(e) {
-    if (e && e.parentElement.tagName == 'BUTTON') {
+    //if (e && e.parentElement.tagName == 'BUTTON') {
         e.onclick = showGalleryImage;
-    }
+    //}
 }
 
 onUiUpdate(function() {
-    fullImg_preview = gradioApp().querySelectorAll('img.w-full')
+    fullImg_preview = gradioApp().querySelectorAll('.gradio-gallery > div > img')
     if (fullImg_preview != null) {
-        fullImg_preview.forEach(galleryImageHandler);
+        fullImg_preview.forEach(setupImageForLightbox);
     }
     updateOnBackgroundChange();
 })
 
 document.addEventListener("DOMContentLoaded", function() {
-    const modalFragment = document.createDocumentFragment();
+    //const modalFragment = document.createDocumentFragment();
     const modal = document.createElement('div')
     modal.onclick = closeModal;
     modal.id = "lightboxModal";
@@ -277,9 +269,9 @@ document.addEventListener("DOMContentLoaded", function() {
 
     modal.appendChild(modalNext)
 
+    gradioApp().appendChild(modal)
 
-    gradioApp().getRootNode().appendChild(modal)
 
-    document.body.appendChild(modalFragment);
+    document.body.appendChild(modal);
 
 });

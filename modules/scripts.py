@@ -521,6 +521,9 @@ def IOComponent_init(self, *args, **kwargs):
 
     res = original_IOComponent_init(self, *args, **kwargs)
 
+    # this adds gradio-* to every component for css styling (ie gradio-button to gr.Button)
+    self.elem_classes = ["gradio-" + self.get_block_name(), *(self.elem_classes or [])]
+
     script_callbacks.after_component_callback(self, **kwargs)
 
     if scripts_current is not None:
