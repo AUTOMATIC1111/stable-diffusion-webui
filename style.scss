@@ -136,9 +136,12 @@ label > div {
 [id$=_seed_row], [id$=_subseed_row]{
     gap: 0.5rem;
     padding: 0.6em;
-    >div {
-        overflow: unset;
-    }
+}
+
+// Prevent blocks from cutting off inner elements like labels and the tag
+// autocomplete window
+.svelte-awbtu4 {
+    overflow: unset !important;
 }
 
 [id$=_subseed_show_box] {
