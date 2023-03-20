@@ -6,17 +6,10 @@ from tqdm import trange
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import processing, shared, sd_samplers, prompt_parser, sd_samplers_common
-from modules.processing import Processed
-from modules.shared import opts, cmd_opts, state
+from modules import processing, shared, sd_samplers, sd_samplers_common
 
 import torch
 import k_diffusion as K
-
-from PIL import Image
-from torch import autocast
-from einops import rearrange, repeat
-
 
 def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
     x = p.init_latent
@@ -135,7 +128,7 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return is_img2img
 
-    def ui(self, is_img2img):     
+    def ui(self, is_img2img):
         info = gr.Markdown('''
         * `CFG Scale` should be 2 or lower.
         ''')
@@ -223,4 +216,3 @@ class Script(scripts.Script):
         processed = processing.process_images(p)
 
         return processed
-
