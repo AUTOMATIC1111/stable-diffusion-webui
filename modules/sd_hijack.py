@@ -7,6 +7,7 @@ from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoi
 from modules.hypernetworks import hypernetwork
 from modules.shared import cmd_opts
 from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr
+from rich import print
 
 import ldm.modules.attention
 import ldm.modules.diffusionmodules.model
@@ -168,6 +169,17 @@ class StableDiffusionModelHijack:
         apply_weighted_forward(m)
         if m.cond_stage_key == "edit":
             sd_hijack_unet.hijack_ddpm_edit()
+
+        """
+        try:
+            import torch._dynamo as dynamo
+            torch._dynamo.config.verbose = True
+            torch.backends.cudnn.benchmark = True
+            m.model = torch.compile(m.model, mode="default", backend="inductor", fullgraph=False, dynamic=False)
+            print("Model compiled set")
+        except Exception as err:
+            print(f"Model compile not supported: {err}")
+        """
 
         self.optimization_method = apply_optimizations()
 

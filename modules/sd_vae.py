@@ -6,7 +6,7 @@ from collections import namedtuple
 from modules import paths, shared, devices, script_callbacks, sd_models
 import glob
 from copy import deepcopy
-
+from rich import print
 
 vae_path = os.path.abspath(os.path.join(paths.models_path, "VAE"))
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}

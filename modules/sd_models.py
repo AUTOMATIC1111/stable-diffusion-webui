@@ -9,6 +9,7 @@ from omegaconf import OmegaConf
 from os import mkdir
 from urllib import request
 import ldm.modules.midas as midas
+import io
 
 from ldm.util import instantiate_from_config
 
@@ -16,6 +17,9 @@ from modules import paths, shared, modelloader, devices, script_callbacks, sd_va
 from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
+
+import rich
+from rich import print
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
@@ -236,11 +240,15 @@ def read_metadata_from_safetensors(filename):
 
 def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
     _, extension = os.path.splitext(checkpoint_file)
+    device = map_location or shared.weight_load_location or devices.get_optimal_device_name()
     if extension.lower() == ".safetensors":
-        device = map_location or shared.weight_load_location or devices.get_optimal_device_name()
         pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
+    elif extension.lower() == ".ckpt":
+        with rich.progress.open(checkpoint_file, 'rb') as f:
+            buffer = io.BytesIO(f.read())
+            pl_sd = torch.load(buffer, map_location=device)
     else:
-        pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
+        raise Exception(f"Unknown model type: {extension}")
 
     if print_global_state and "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
@@ -255,12 +263,12 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
 
     if checkpoint_info in checkpoints_loaded:
         # use checkpoint cache
-        print(f"Loading weights [{sd_model_hash}] from cache")
+        print(f"Loading weights from cache")
         return checkpoints_loaded[checkpoint_info]
 
-    print(f"Loading weights [{sd_model_hash}] from {checkpoint_info.filename}")
+    print(f"Loading weights from {checkpoint_info.filename}")
     res = read_state_dict(checkpoint_info.filename)
-    timer.record("load weights from disk")
+    timer.record("load weights")
 
     return res
 
