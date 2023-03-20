@@ -94,6 +94,13 @@ git-update () {
 if [ "$MODE" == update ]; then
   echo "Updating main repository"
   git-update .
+
+    echo "Installing general requirements"
+  "$PYTHON" -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements.txt
+
+  echo "Installing versioned requirements"
+  "$PYTHON" -m pip install --disable-pip-version-check --quiet --no-warn-conflicts --requirement requirements_versions.txt
+
   "$PYTHON" launch.py --exit
   echo "Local changes"
   git status --untracked=no --ignore-submodules=all --short

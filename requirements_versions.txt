@@ -1,5 +1,5 @@
 accelerate==0.17.1
-clip_interrogator=0.6.0
+clip_interrogator==0.6.0
 diffusers==0.14.0
 einops==0.4.1
 fastapi==0.94.0
