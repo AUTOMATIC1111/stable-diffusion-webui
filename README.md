@@ -121,9 +121,14 @@ sudo pacman -S wget git python3
 bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
 ```
 3. Run `webui.sh`.
+
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
+
+### Build Docker Image And Run
+
+On the  [docker hub](https://hub.docker.com/repository/docker/cocytuselias2023/stable-diffusion-webui/general).
 
 ## Contributing
 Here's how to add code to this repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)
