@@ -56,7 +56,7 @@ return process_images(p)
 
 
         code = gr.Code(value=example, language="python", label="Python code", elem_id=self.elem_id("code"))
-        indent_level = gr.Number(label='Indent level', value=4, precision=0, elem_id=self.elem_id("indent_level"))
+        indent_level = gr.Number(label='Indent level', value=2, precision=0, elem_id=self.elem_id("indent_level"))
 
         return [code, indent_level]
 

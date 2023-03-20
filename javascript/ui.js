@@ -200,16 +200,16 @@ function recalculatePromptTokens(name){
     }
 }
 
-function recalculate_prompts_txt2img(){
+function recalculate_prompts_txt2img(prompt){
     recalculatePromptTokens('txt2img_prompt')
     recalculatePromptTokens('txt2img_neg_prompt')
-    return args_to_array(arguments);
+    return prompt;
 }
 
-function recalculate_prompts_img2img(){
+function recalculate_prompts_img2img(prompt){
     recalculatePromptTokens('img2img_prompt')
     recalculatePromptTokens('img2img_neg_prompt')
-    return args_to_array(arguments);
+    return prompt;
 }
 
 
