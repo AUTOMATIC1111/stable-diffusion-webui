@@ -38,7 +38,7 @@ function dimensionChange(e, is_width, is_height){
 		if(!arPreviewRect){
 		    arPreviewRect = document.createElement('div')
 		    arPreviewRect.id = "imageARPreview";
-		    gradioApp().getRootNode().appendChild(arPreviewRect)
+		    gradioApp().getRootNode().body.appendChild(arPreviewRect)
 		}
 
 

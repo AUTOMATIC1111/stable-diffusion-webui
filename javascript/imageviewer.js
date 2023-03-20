@@ -138,7 +138,7 @@ function modalKeyHandler(event) {
 
 function showGalleryImage() {
     setTimeout(function() {
-        fullImg_preview = gradioApp().querySelectorAll('img.w-full.object-contain')
+        fullImg_preview = gradioApp().querySelectorAll('.preview > img')
 
         if (fullImg_preview != null) {
             fullImg_preview.forEach(function function_name(e) {
@@ -205,14 +205,14 @@ function galleryImageHandler(e) {
 }
 
 onUiUpdate(function() {
-    fullImg_preview = gradioApp().querySelectorAll('img.w-full')
+    fullImg_preview = gradioApp().querySelectorAll('.preview > img');
     if (fullImg_preview != null) {
         fullImg_preview.forEach(galleryImageHandler);
     }
     updateOnBackgroundChange();
 })
 
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function() {
     const modalFragment = document.createDocumentFragment();
     const modal = document.createElement('div')
     modal.onclick = closeModal;
@@ -277,8 +277,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     modal.appendChild(modalNext)
 
-
-    gradioApp().getRootNode().appendChild(modal)
+    gradioApp().getRootNode().body.appendChild(modal)
 
     document.body.appendChild(modalFragment);
 
