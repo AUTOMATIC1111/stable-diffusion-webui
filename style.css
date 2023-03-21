@@ -8,7 +8,7 @@
 }
 
 .block.padded{
-    padding: 0.2em 0.5em !important;
+    padding: 0 !important;
 }
 
 div.gradio-container{
@@ -38,7 +38,8 @@ div.form{
 .block.gradio-textbox,
 .block.gradio-radio,
 .block.gradio-checkboxgroup,
-.block.gradio-number
+.block.gradio-number,
+.block.gradio-colorpicker
 {
     border-width: 0 !important;
     box-shadow: none !important;
@@ -46,11 +47,11 @@ div.form{
 
 .gap.compact{
     padding: 0;
-    gap: 0;
+    gap: 0.2em 0;
 }
 
 div.compact{
-    gap: 0.5em;
+    gap: 1em;
 }
 
 .gradio-dropdown ul.options{
@@ -58,12 +59,23 @@ div.compact{
     z-index: 3000;
 }
 
-.gradio-dropdown label span:not(.has-info){
+.gradio-dropdown label span:not(.has-info),
+.gradio-textbox label span:not(.has-info),
+.gradio-number label span:not(.has-info)
+{
     margin-bottom: 0;
 }
 
 .gradio-dropdown div.wrap.wrap.wrap.wrap{
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.gradio-dropdown .token-remove.remove-all.remove-all{
+    display: none;
+}
+
+.gradio-dropdown.multiselect .token-remove.remove-all.remove-all{
+    display: flex;
 }
 
 .gradio-slider input[type="number"]{
@@ -80,6 +92,17 @@ div.compact{
 div.gradio-html.min{
     min-height: 0;
 }
+
+.block.gradio-gallery{
+    background: var(--input-background-fill);
+}
+
+.gradio-container .prose a, .gradio-container .prose a:visited{
+    color: unset;
+    text-decoration: none;
+}
+
+
 
 /* general styled components */
 
@@ -188,9 +211,7 @@ div.gradio-html.min{
     gap: 0.5em;
 }
 .interrogate-col > button{
-    min-width: 8em;
-    max-width: 8em;
-    height: 5.45em;
+    flex: 1;
 }
 
 .generate-box{
@@ -241,6 +262,10 @@ div.gradio-html.min{
     min-height: 480px !important;
 }
 
+.image-buttons button{
+    min-width: auto;
+}
+
 
 /* settings */
 #quicksettings {
@@ -254,7 +279,6 @@ div.gradio-html.min{
     border: none;
     box-shadow: none;
     background: none;
-    margin-right: 10px;
 }
 
 #quicksettings .gradio-dropdown .wrap-inner{
@@ -286,6 +310,7 @@ div.gradio-html.min{
     display: block;
     border: none;
     text-align: left;
+    white-space: initial;
 }
 
 #settings_result{

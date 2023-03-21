@@ -513,6 +513,18 @@ def reload_scripts():
     scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
 
 
+def add_classes_to_gradio_component(comp):
+    """
+    this adds gradio-* to the component for css styling (ie gradio-button to gr.Button), as well as some others
+    """
+
+    comp.elem_classes = ["gradio-" + comp.get_block_name(), *(comp.elem_classes or [])]
+
+    if getattr(comp, 'multiselect', False):
+        comp.elem_classes.append('multiselect')
+
+
+
 def IOComponent_init(self, *args, **kwargs):
     if scripts_current is not None:
         scripts_current.before_component(self, **kwargs)
@@ -521,8 +533,7 @@ def IOComponent_init(self, *args, **kwargs):
 
     res = original_IOComponent_init(self, *args, **kwargs)
 
-    # this adds gradio-* to every component for css styling (ie gradio-button to gr.Button)
-    self.elem_classes = ["gradio-" + self.get_block_name(), *(self.elem_classes or [])]
+    add_classes_to_gradio_component(self)
 
     script_callbacks.after_component_callback(self, **kwargs)
 

@@ -1601,11 +1601,13 @@ def create_ui():
 
         for i, k, item in quicksettings_list:
             component = component_dict[k]
+            info = opts.data_labels[k]
 
             component.change(
                 fn=lambda value, k=k: run_settings_single(value, key=k),
                 inputs=[component],
                 outputs=[component, text_settings],
+                show_progress=info.refresh is not None,
             )
 
         text_settings.change(

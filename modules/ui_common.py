@@ -129,7 +129,7 @@ Requested path was: {f}
 
         generation_info = None
         with gr.Column():
-            with gr.Row(elem_id=f"image_buttons_{tabname}"):
+            with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
                 open_folder_button = gr.Button(folder_symbol, visible=not shared.cmd_opts.hide_ui_dir_config)
 
                 if tabname != "extras":
