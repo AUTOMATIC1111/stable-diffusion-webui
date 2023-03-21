@@ -204,7 +204,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     if bake_in_vae_filename is not None:
         print(f"Baking in VAE from {bake_in_vae_filename}")
         shared.state.textinfo = 'Baking in VAE'
-        vae_dict = sd_vae.load_vae_dict(bake_in_vae_filename, map_location='cpu')
+        vae_dict = sd_vae.load_vae_dict(bake_in_vae_filename)
 
         for key in vae_dict.keys():
             theta_0_key = 'first_stage_model.' + key

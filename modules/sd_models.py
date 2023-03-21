@@ -238,7 +238,7 @@ def read_metadata_from_safetensors(filename):
         return res
 
 
-def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
+def read_state_dict(checkpoint_file):
     _, extension = os.path.splitext(checkpoint_file)
     with rich.progress.open(checkpoint_file, 'rb') as f:
         if extension.lower() == ".safetensors":
@@ -247,13 +247,9 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
             pl_sd = safetensors.torch.load(buffer)
         elif extension.lower() == ".ckpt":
             buffer = io.BytesIO(f.read())
-            # map_location is mostly superfluous as its always None or `cpu`, bue keeping for backwads compatibility
-            pl_sd = torch.load(buffer, map_location)
+            pl_sd = torch.load(buffer)
         else:
             raise Exception(f"Unknown model type: {extension}")
-
-    if print_global_state and "global_step" in pl_sd:
-        print(f"Global Step: {pl_sd['global_step']}")
 
     sd = get_state_dict_from_checkpoint(pl_sd)
     return sd

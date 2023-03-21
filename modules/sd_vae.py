@@ -119,8 +119,8 @@ def resolve_vae(checkpoint_file):
     return None, None
 
 
-def load_vae_dict(filename, map_location):
-    vae_ckpt = sd_models.read_state_dict(filename, map_location=map_location)
+def load_vae_dict(filename):
+    vae_ckpt = sd_models.read_state_dict(filename)
     vae_dict_1 = {k: v for k, v in vae_ckpt.items() if k[0:4] != "loss" and k not in vae_ignore_keys}
     return vae_dict_1
 
