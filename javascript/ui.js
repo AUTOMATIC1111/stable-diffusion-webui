@@ -914,10 +914,15 @@ onUiUpdate(function(){
 
 		if(active_clone_input.length > 0) return;
 		
+		//img2img_width
+		let parent = elem.parentElement;
+		let comp_parent = parent.parentElement.parentElement;		
+		if(comp_parent.id == ("img2img_width" || "img2img_height" )) return;
+		
 		let clone_num = elem.cloneNode();
 		active_clone_input.push(clone_num);
 		
-		let parent = elem.parentElement;
+		
 		let label = parent.querySelector("label");
 		
 		clone_num.id = "num_clone";			
@@ -931,7 +936,7 @@ onUiUpdate(function(){
 		})
 
 		if(label){				
-			let comp_range = parent.parentElement.parentElement.querySelector("input[type='range']");
+			let comp_range = comp_parent.querySelector("input[type='range']");
 			let clone_range = comp_range.cloneNode();
 			active_clone_input.push(clone_range);
 			
