@@ -22,7 +22,7 @@ function dimensionChange(e, is_width, is_height){
 
     var tabIndex = get_tab_index('mode_img2img')
 	if(tabIndex == 0){ // img2img
-		targetElement = gradioApp().querySelector('div[data-testid=image] img');
+		targetElement = gradioApp().querySelector('#img2img_image div[data-testid=image] img');
 	} else if(tabIndex == 1){ //Sketch
 		targetElement = gradioApp().querySelector('#img2img_sketch div[data-testid=image] img');
 	} else if(tabIndex == 2){ // Inpaint
