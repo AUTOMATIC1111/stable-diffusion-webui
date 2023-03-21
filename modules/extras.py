@@ -137,14 +137,14 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     if theta_func2:
         shared.state.textinfo = f"Loading B"
         print(f"Loading {secondary_model_info.filename}...")
-        theta_1 = sd_models.read_state_dict(secondary_model_info.filename, map_location='cpu')
+        theta_1 = sd_models.read_state_dict(secondary_model_info.filename)
     else:
         theta_1 = None
 
     if theta_func1:
         shared.state.textinfo = f"Loading C"
         print(f"Loading {tertiary_model_info.filename}...")
-        theta_2 = sd_models.read_state_dict(tertiary_model_info.filename, map_location='cpu')
+        theta_2 = sd_models.read_state_dict(tertiary_model_info.filename)
 
         shared.state.textinfo = 'Merging B and C'
         shared.state.sampling_steps = len(theta_1.keys())
@@ -166,7 +166,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     shared.state.textinfo = f"Loading {primary_model_info.filename}..."
     print(f"Loading {primary_model_info.filename}...")
-    theta_0 = sd_models.read_state_dict(primary_model_info.filename, map_location='cpu')
+    theta_0 = sd_models.read_state_dict(primary_model_info.filename)
 
     print("Merging...")
     shared.state.textinfo = 'Merging A and B'

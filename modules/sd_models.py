@@ -1,6 +1,7 @@
 import collections
 import os.path
 import sys
+import io
 import gc
 import torch
 import re
@@ -234,7 +235,7 @@ def read_metadata_from_safetensors(filename):
         return res
 
 
-def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
+def read_state_dict(checkpoint_file):
     _, extension = os.path.splitext(checkpoint_file)
     with open(checkpoint_file, 'rb') as f:
         if extension.lower() == ".safetensors":
