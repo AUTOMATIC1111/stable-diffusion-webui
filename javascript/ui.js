@@ -327,8 +327,7 @@ onUiUpdate(function(){
 		}				
 	}
 	function ui_input_release_handler(e){
-		const len = active_clone_input.length;
-		console.log(e.target);
+		const len = active_clone_input.length;		
 		if(len > 0){
 			if(e.target.id.indexOf("_clone") == -1){
 				for(var i=len-1; i>=0; i--){
