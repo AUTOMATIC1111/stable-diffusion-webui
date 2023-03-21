@@ -523,8 +523,6 @@ def add_classes_to_gradio_component(comp):
     if getattr(comp, 'multiselect', False):
         comp.elem_classes.append('multiselect')
 
-    print(f"CLASSES ({comp.__class__}): {comp.elem_classes}")
-
 
 def IOComponent_init(self, *args, **kwargs):
     if scripts_current is not None:
