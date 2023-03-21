@@ -636,12 +636,12 @@ footer {
 .extra-network-subdirs button{
     margin: 0 0.15em;
 }
-
-#txt2img_extra_networks .search, #img2img_extra_networks .search{
+.extra-networks .tab-nav .search{
     display: inline-block;
     max-width: 16em;
     margin: 0.3em;
     align-self: center;
+    width: 16em;
 }
 
 #txt2img_extra_view, #img2img_extra_view {
@@ -766,10 +766,13 @@ footer {
     left: 0;
     right: 0;
     padding: 0.5em;
-    color: white;
     background: rgba(0,0,0,0.5);
     box-shadow: 0 0 0.25em 0.25em rgba(0,0,0,0.5);
     text-shadow: 0 0 0.2em black;
+}
+
+.extra-network-cards .card .actions *{
+    color: white;
 }
 
 .extra-network-cards .card .actions:hover{

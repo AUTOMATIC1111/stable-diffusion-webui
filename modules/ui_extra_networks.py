@@ -86,7 +86,7 @@ class ExtraNetworksPage:
             subdirs = {"": 1, **subdirs}
 
         subdirs_html = "".join([f"""
-<button class='gr-button gr-button-lg gr-button-secondary{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
+<button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
 {html.escape(subdir if subdir!="" else "all")}
 </button>
 """ for subdir in subdirs])
