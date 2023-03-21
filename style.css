@@ -70,6 +70,15 @@ div.compact{
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
+.gradio-dropdown .wrap-inner.wrap-inner.wrap-inner{
+    flex-wrap: unset;
+}
+
+.gradio-dropdown .single-select{
+    white-space: nowrap;
+    overflow: hidden;
+}
+
 .gradio-dropdown .token-remove.remove-all.remove-all{
     display: none;
 }
@@ -123,6 +132,22 @@ div.gradio-html.min{
     flex: 0;
     white-space: nowrap;
     min-width: auto;
+}
+
+button.custom-button{
+    border-radius: var(--button-large-radius);
+    padding: var(--button-large-padding);
+    font-weight: var(--button-large-text-weight);
+    border: var(--button-border-width) solid var(--button-secondary-border-color);
+    background: var(--button-secondary-background-fill);
+    color: var(--button-secondary-text-color);
+    font-size: var(--button-large-text-size);
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    transition: var(--button-transition);
+    box-shadow: var(--button-shadow);
+    text-align: center;
 }
 
 
@@ -250,10 +275,11 @@ div.gradio-html.min{
     min-width: min(13.5em, 100%) !important;
 }
 
-[id$=_dimensions_row]{
+div.dimensions-tools{
     min-width: 0 !important;
     max-width: fit-content;
-    padding: 0 1em;
+    flex-direction: row;
+    align-content: center;
 }
 
 #mode_img2img .gradio-image > div.fixed-height, #mode_img2img .gradio-image > div.fixed-height img{
@@ -279,15 +305,6 @@ div.gradio-html.min{
     border: none;
     box-shadow: none;
     background: none;
-}
-
-#quicksettings .gradio-dropdown .wrap-inner{
-    flex-wrap: unset;
-}
-
-#quicksettings .gradio-dropdown .single-select{
-    white-space: nowrap;
-    overflow: hidden;
 }
 
 #settings{
