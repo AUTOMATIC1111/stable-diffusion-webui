@@ -85,6 +85,8 @@ RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/stable-di
 # RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients ~/stable-diffusion-webui/extensions/aesthetic-gradients
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen ~/stable-diffusion-webui/extensions/stable-diffusion-webui-promptgen
 RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/a1111-sd-webui-tagcomplete  ~/stable-diffusion-webui/extensions/tagcomplete
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-composable-lora.git  ~/stable-diffusion-webui/extensions/composable-lora
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-two-shot.git  ~/stable-diffusion-webui/extensions/two-shot
 
 RUN mkdir -p  ~/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
 RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3}" >  ~/stable-diffusion-webui/config.json

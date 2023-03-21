@@ -92,11 +92,14 @@ def sha256_from_cache(filename, title):
         def query_mysql():
             cli = get_mysql_cli()
             if cli:
-                name, _ = os.path.splitext(os.path.basename(title))
-                r = cli.query("SELECT hash FROM model WHERE name=%s", name)
-                if r:
-                    print(f"query cache from mysql:{r['hash']}")
-                    return r.get('hash')
+                try:
+                    name, _ = os.path.splitext(os.path.basename(title))
+                    r = cli.query("SELECT hash FROM model WHERE name=%s", name)
+                    if r:
+                        print(f"query cache from mysql:{r['hash']}")
+                        return r.get('hash')
+                except Exception as err:
+                    print(f'query model hash err:{err}')
             return None
         sha256 = query_mysql()
         if sha256:
