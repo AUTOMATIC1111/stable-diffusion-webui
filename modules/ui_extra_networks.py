@@ -92,8 +92,14 @@ class ExtraNetworksPage:
 </button>
 """ for subdir in subdirs])
 
-        print(f"Loading extra networks page: {self.title}")
-        for item in tqdm.tqdm(self.list_items(), total=self.item_count()):
+        total_items = self.item_count()
+        if total_items >= 1000:
+            print(f"Loading extra networks page: {self.title}")
+            iterator = tqdm.tqdm(self.list_items(), total=total_items)
+        else:
+            iterator = self.list_items()
+
+        for item in iterator:
             items_html.append(self.create_html_for_item(item, tabname))
 
         if not items_html:
@@ -220,10 +226,10 @@ def create_ui(container, button, tabname):
     ui.tabname = tabname
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
-        print(f"Building extra networks UI for {tabname} tab...")
+        has_loaded = gr.State(False)
         for page in ui.stored_extra_pages:
             with gr.Tab(page.title):
-                page_elem = gr.HTML(page.create_html(ui.tabname))
+                page_elem = gr.HTML("")
                 ui.pages.append(page_elem)
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
@@ -231,13 +237,6 @@ def create_ui(container, button, tabname):
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
-
-    def toggle_visibility(is_visible):
-        is_visible = not is_visible
-        return is_visible, gr.update(visible=is_visible)
-
-    state_visible = gr.State(value=False)
-    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     def refresh():
         res = []
@@ -249,6 +248,21 @@ def create_ui(container, button, tabname):
         return res
 
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
+
+    def toggle_visibility(is_visible, has_loaded, *pages):
+        is_visible = not is_visible
+        if is_visible and not has_loaded:
+            pages = []
+            for pg in ui.stored_extra_pages:
+                pages.append(pg.create_html(ui.tabname))
+            has_loaded = True
+        return [is_visible, has_loaded, gr.update(visible=is_visible)] + pages
+
+    # TODO: Use .then() so the extra networks drawer/loading spinner appears
+    # instead of nothing happening for X seconds
+    # Requires a newer Gradio version
+    state_visible = gr.State(value=False)
+    button.click(fn=toggle_visibility, inputs=[state_visible, has_loaded] + ui.pages, outputs=[state_visible, has_loaded, container] + ui.pages)
 
     return ui
 
