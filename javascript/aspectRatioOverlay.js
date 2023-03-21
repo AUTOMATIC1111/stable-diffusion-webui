@@ -12,7 +12,7 @@ function dimensionChange(e, is_width, is_height){
 		currentHeight = e.target.value*1.0
 	}
 
-	var inImg2img   = Boolean(gradioApp().querySelector("button.rounded-t-lg.border-gray-200"))
+	var inImg2img = gradioApp().querySelector("#tab_img2img").style.display == "block";
 
 	if(!inImg2img){
 		return;
@@ -91,7 +91,7 @@ onUiUpdate(function(){
 	if(arPreviewRect){
 		arPreviewRect.style.display = 'none';
 	}
-	var inImg2img   = Boolean(gradioApp().querySelector("button.rounded-t-lg.border-gray-200"))
+	var inImg2img = gradioApp().querySelector("#tab_img2img").style.display == "block";
 	if(inImg2img){
 		let inputs = gradioApp().querySelectorAll('input');
 		inputs.forEach(function(e){
