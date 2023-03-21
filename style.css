@@ -1,9 +1,10 @@
 
 /* general gradio fixes */
 
-:root{
+:root, .dark{
     --checkbox-label-gap: 0.25em 0.1em;
     --section-header-text-size: 12pt;
+    --block-background-fill: transparent;
 }
 
 .block.padded{
@@ -54,6 +55,7 @@ div.compact{
 
 .gradio-dropdown ul.options{
     max-height: 35em;
+    z-index: 3000;
 }
 
 .gradio-dropdown label span:not(.has-info){
@@ -70,6 +72,13 @@ div.compact{
 
 .block.gradio-checkbox {
     margin: 0.75em 1.5em 0 0;
+}
+
+.gradio-html div.wrap{
+    height: 100%;
+}
+div.gradio-html.min{
+    min-height: 0;
 }
 
 /* general styled components */
@@ -103,6 +112,7 @@ div.compact{
     min-width: 0 !important;
     width: auto;
     z-index: 100;
+    top: -0.75em;
 }
 
 .block.token-counter span{
