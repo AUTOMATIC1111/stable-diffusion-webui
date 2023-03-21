@@ -75,7 +75,6 @@ callback_map = dict(
     callbacks_script_unloaded=[],
     callbacks_before_ui=[],
     callbacks_on_reload=[],
-    callbacks_on_reload=[],
     callbacks_on_polling=[],
 )
 
