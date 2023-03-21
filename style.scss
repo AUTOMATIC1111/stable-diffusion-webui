@@ -8,7 +8,7 @@ $popup_color: rgba(20, 20, 20, 0.95);
     --block-background-fill: transparent;
 }
 
-.block.padded {
+.block.padded:not(.gradio-accordion) {
     padding: 0 !important;
 }
 
