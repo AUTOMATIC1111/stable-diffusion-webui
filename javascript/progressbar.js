@@ -10,8 +10,8 @@ function rememberGallerySelection(id_gallery){
 }
 
 function getGallerySelectedIndex(id_gallery){
-    let galleryButtons = gradioApp().querySelectorAll('#'+id_gallery+' .gallery-item')
-    let galleryBtnSelected = gradioApp().querySelector('#'+id_gallery+' .gallery-item.\\!ring-2')
+    let galleryButtons = gradioApp().querySelectorAll('#'+id_gallery+' .thumbnails > .thumbnail-item')
+    let galleryBtnSelected = gradioApp().querySelector('#'+id_gallery+' .thumbnails > .thumbnail-item.selected')
 
      let currentlySelectedIndex = -1
      galleryButtons.forEach(function(v, i){ if(v==galleryBtnSelected) { currentlySelectedIndex = i } })
