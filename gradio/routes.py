@@ -212,7 +212,10 @@ class App(FastAPI):
                 token = secrets.token_urlsafe(16)
                 for tk, u in app.tokens.items():
                     app.expired_users[u] = now
-                app.tokens = {token: username}
+                # 如果限制单人只能同时一个设备登录，每次只保留一个token
+                # app.tokens = {token: username}
+                # 允许相同账号多点登录
+                app.tokens[token] = username
                 base_path = "/" + os.getenv("Endpoint", "")
                 response = RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
                 exp = expire_time_or_auth - int(time.time()) if isinstance(expire_time_or_auth,

@@ -1608,6 +1608,7 @@ def create_ui():
                 </div>
                 """)
 
+
         parameters_copypaste.connect_paste_params_buttons()
 
         with gr.Tabs(elem_id="tabs") as tabs:

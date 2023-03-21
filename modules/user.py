@@ -39,7 +39,8 @@ def find_users_from_models(username, password) -> int:
                         if endpoint != res['endpoint']:
                             return -1
                     return expire
-        except Exception:
+        except Exception as ex:
+            print(ex)
             return -1
     return -1
 
