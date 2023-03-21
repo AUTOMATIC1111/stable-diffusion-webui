@@ -131,7 +131,7 @@ class ExtraNetworksPage:
             metadata_button = f"<div class='metadata-button' title='Show metadata' onclick={metadata_onclick}></div>"
 
         args = {
-            "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
+            "preview_html": f'<img src="{html.escape(preview)}" class="preview" loading="lazy">' if preview else '',
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
