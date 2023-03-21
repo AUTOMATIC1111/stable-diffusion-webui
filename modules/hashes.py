@@ -35,8 +35,10 @@ def dump_cache(title, sha256):
                   `updated_at` datetime DEFAULT NULL,
                   `deleted_at` datetime DEFAULT NULL,
                   `name` char(64) NOT NULL DEFAULT '' COMMENT '名称',
+                  `user_id` int(11) NOT NULL DEFAULT '0' COMMENT '用户ID，0代表系统',
                   PRIMARY KEY (`id`),
-                  UNIQUE KEY `name` (`name`)
+                  UNIQUE KEY `name-user` (`name`,`user_id`),
+                  UNIQUE KEY `hash` (`hash`)
                 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
             ''')
             r = mysql_cli.query("SELECT 1 FROM model WHERE name = %s", name)

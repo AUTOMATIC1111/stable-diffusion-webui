@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import traceback
 from collections import namedtuple
@@ -40,8 +41,8 @@ def download_default_clip_interrogate_categories(content_dir):
     except Exception as e:
         errors.display(e, "downloading default CLIP interrogate categories")
     finally:
-        if os.path.exists(tmpdir):
-            os.remove(tmpdir)
+        if os.path.isdir(tmpdir):
+            shutil.rmtree(tmpdir)
 
 
 class InterrogateModels:

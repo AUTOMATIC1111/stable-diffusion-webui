@@ -113,7 +113,7 @@ locker = threading.RLock()
 
 
 def get_mysql_cli(host: str = None, port: typing.Optional[int] = None, user: str = None,
-                  pwd: str = None, db: str = None) -> MySQLClient:
+                  pwd: str = None, db: str = None) -> typing.Optional[MySQLClient]:
     if not host:
         host = os.getenv('MysqlHost')
     if not port:
@@ -124,6 +124,9 @@ def get_mysql_cli(host: str = None, port: typing.Optional[int] = None, user: str
         pwd = os.getenv('MysqlPass')
     if not db:
         db = os.getenv('MysqlDB', 'draw-ai')
+
+    if not host:
+        return None
 
     key = f"{host},{user},{port},{db}"
 

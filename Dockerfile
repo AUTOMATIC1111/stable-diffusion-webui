@@ -42,47 +42,12 @@ RUN apt-get update \
         python3-venv \
         wget
 
-RUN python3 -V
-#RUN python3 -c "import sys; print(sys.executable)"
 RUN pip3 install --upgrade pip -i https://pypi.douban.com/simple/
 
-
-# 创建用户
-#RUN groupadd --gid $USER_GID $USERNAME \
-#       && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
-#       && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
-#       && chmod 0440 /etc/sudoers.d/$USERNAME
-
-# 安装stable-diffusion-webui
-# RUN pip3 install torch torchvision torchaudio -i https://pypi.tuna.tsinghua.edu.cn/simple
-
-# RUN curl -sL https://raw.githubusercontent.com/Jackstrawcd/stable-diffusion-webui/master/webui.sh | sudo -u $USERNAME env COMMANDLINE_ARGS="${BUILD_ARGS}" bash \
-#    && sudo -u $USERNAME python3 -m pip install xformers\
-#    && sudo -u $USERNAME git clone https://github.com/Mikubill/sd-webui-controlnet.git /home/$USERNAME/stable-diffusion-webui/extensions/sd-webui-controlnet \
-#    && sudo -u $USERNAME git clone https://huggingface.co/webui/ControlNet-modules-safetensors /home/$USERNAME/stable-diffusion-webui/models/ControlNet \
-#    && sudo -u $USERNAME mkdir -p /home/$USERNAME/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose \
-#       && sudo -u $USERNAME curl -Lo /home/$USERNAME/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose/body_pose_model.pth https://huggingface.co/lllyasviel/ControlNet/resolve/main/annotator/ckpts/body_pose_model.pth \
-#       && sudo -u $USERNAME curl -Lo /home/$USERNAME/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose/hand_pose_model.pth https://huggingface.co/lllyasviel/ControlNet/resolve/main/annotator/ckpts/hand_pose_model.pth
-
-#COPY --chown=$USERNAME:$USERNAME ${VOLUME}/config.json /home/$USERNAME/stable-diffusion-webui/config.json
-#
-#RUN \
-#    sed -i -e 's/"outputs\//"\/'${VOLUME}'\/outputs\//g' -e 's/\(.*outdir_save.*:\ \).*/\1"\/'${VOLUME}'\/outputs\/save"/' /home/$USERNAME/stable-diffusion-webui/config.json
-#
-#WORKDIR /home/$USERNAME/stable-diffusion-webui
-#USER $USERNAME
-#
-#CMD bash -c ". $HOME/stable-diffusion-webui/venv/bin/activate ; bash /${VOLUME}/linking.sh ; python3 -u webui.py --server-name 0.0.0.0 --xformers --enable-insecure-extension-access"
 # 从GITHUB下载代码，在GITHUB托管方便合并最新代码
-
-# RUN git config --global http.proxy $HTTP_PROXY
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Jackstrawcd/stable-diffusion-webui.git ~/stable-diffusion-webui
 
 # 安装requirements
-# xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16rc425')
-# gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
-# clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
-# openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
 RUN cd ~/stable-diffusion-webui  \
     && pip3 install xformers -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple \
     && pip3 install -r requirements.txt -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple \
@@ -97,15 +62,14 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/salesforce/BLIP.git ~
 RUN pip3 install setuptools_rust -i https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip3 install -r  ~/stable-diffusion-webui/repositories/CodeFormer/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 RUN pip3 install -r  ~/stable-diffusion-webui/repositories/k-diffusion/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-# RUN pip3 install -r  ~/stable-diffusion-webui/repositories/BLIP/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-# RUN ls ~/stable-diffusion-webui/repositories/BLIP/
-#RUN pip install -e  ~/stable-diffusion-webui/repositories/k-diffusion
+
 RUN cd  ~/stable-diffusion-webui/repositories/stable-diffusion-stability-ai \
     && python3 setup.py install
 #RUN ~/stable-diffusion-webui/repositories/taming-transformers  \
 #    && python3 setup.py install
 #RUN cd  ~/stable-diffusion-webui/repositories/BLIP/ && \
 #    python3 setup.py install
+
 # ControlNet && extensions
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git ~/stable-diffusion-webui/extensions/sd-webui-controlnet
 RUN https_proxy=${HTTP_PROXY} git clone https://huggingface.co/webui/ControlNet-modules-safetensors ~/stable-diffusion-webui/models/ControlNet
@@ -123,7 +87,7 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-
 RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/a1111-sd-webui-tagcomplete  ~/stable-diffusion-webui/extensions/tagcomplete
 
 RUN mkdir -p  ~/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
-RUN echo "{\"localization\": \"zh_CN\"}" >  ~/stable-diffusion-webui/config.json
+RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3}" >  ~/stable-diffusion-webui/config.json
 
 # 下载模型(默认不下载)
 #RUN cd  ~/stable-diffusion-webui/models/Stable-diffusion \
