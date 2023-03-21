@@ -906,11 +906,94 @@ onUiUpdate(function(){
 		}
 	})
 	//addModelCheckpoint();
+
+
+	// input release component dispatcher
+	let active_clone_input = [];
+	function ui_input_release_component(elem){
+
+		if(active_clone_input.length > 0) return;
+		
+		let clone_num = elem.cloneNode();
+		active_clone_input.push(clone_num);
+		
+		let parent = elem.parentElement;
+		let label = parent.querySelector("label");
+		
+		clone_num.id = "num_clone";			
+		clone_num.value = elem.value;	
+		parent.append(clone_num);		
+		elem.classList.add("hidden");
+		
+		clone_num.addEventListener('change', function (e) {			
+			elem.value = clone_num.value;
+			updateInput(elem);
+		})
+
+		if(label){				
+			let comp_range = parent.parentElement.parentElement.querySelector("input[type='range']");
+			let clone_range = comp_range.cloneNode();
+			active_clone_input.push(clone_range);
+			
+			clone_range.id = comp_range.id+"_clone";
+			clone_range.value = comp_range.value;					
+			comp_range.parentElement.append(clone_range);				
+			comp_range.classList.add("hidden");
+			
+			clone_range.addEventListener('input', function (e) {								
+				clone_num.value = e.target.value;	
+			})
+			clone_range.addEventListener('change', function (e) {
+				elem.value = clone_range.value;
+				updateInput(elem);	
+			})				
+			clone_num.addEventListener('input', function (e) {								
+				clone_range.value = e.target.value;	
+			})								
+		}				
+	}
+	function ui_input_release_handler(e){
+		const len = active_clone_input.length;
+		if(len > 0){
+			if(e.target.id.indexOf("_clone") == -1){
+				for(var i=len-1; i>=0; i--){
+					let relem = active_clone_input[i];
+					relem.previousElementSibling.classList.remove("hidden");
+					relem.remove();
+					active_clone_input.pop();
+				}
+			}
+		}
+	
+		let elem_type = e.target.tagName;
+		if(elem_type == "INPUT"){
+			let elem = e.target;			
+			if(elem.type == "number"){								
+				ui_input_release_component(elem);				
+			}else if(elem.type == "range"){
+				elem = e.target.parentElement.querySelector("input[type='number']");
+				ui_input_release_component(elem);				
+			}
+		}
+	}
+	function ui_dispatch_input_release(value){	
+		if(value){
+			gradioApp().querySelector(".gradio-container").addEventListener('mouseover',  ui_input_release_handler);
+		}else{
+			gradioApp().querySelector(".gradio-container").removeEventListener('mouseover',  ui_input_release_handler);
+		}
+	}
+	gradioApp().querySelector("#setting_ui_dispatch_input_release input").addEventListener('click', function (e) {		
+		ui_dispatch_input_release(e.target.checked);
+	})
+	ui_dispatch_input_release(opts.ui_dispatch_input_release);
+	
 	
 	// performant dispatch for gradio's range slider and input number fields
+	/* 	
 	function ui_performant_gradio_input_components(sel){
 		let selectors = sel.split(",");
-		selectors.push("#quicksettings_overflow_container");//, "#tab_txt2img", "#tab_img2img", "#tab_extras", "#tab_modelmerger", "#tab_ti");
+		selectors.push("#quicksettings_overflow_container", "#tab_txt2img", "#tab_img2img", "#tab_extras", "#tab_modelmerger", "#tab_ti");
 		selectors = selectors.filter(e => e);
 		for (let i = 0; i < selectors.length; i++) {
 			selectors[i] = selectors[i]+" input[type='number']";
@@ -927,20 +1010,21 @@ onUiUpdate(function(){
 			clone_num.id = "num_clone_"+index;
 			clone_num.value = elem.value;	
 			parent.append(clone_num);			
-			elem.classList.add("hidden");
+			//elem.classList.add("hidden");
 			
 			clone_num.addEventListener('change', function (e) {			
 				elem.value = clone_num.value;
 				updateInput(elem);
-			})			
+			})
 			
+
 			if(label){				
 				let comp_range = parent.parentElement.parentElement.querySelector("input[type='range']");
 				let clone_range = comp_range.cloneNode(true);
 				clone_range.id = comp_range.id+"_clone";
 				clone_range.value = comp_range.value;					
 				comp_range.parentElement.append(clone_range);				
-				comp_range.classList.add("hidden");
+				//comp_range.classList.add("hidden");
 
 				clone_range.addEventListener('input', function (e) {								
 					clone_num.value = e.target.value;	
@@ -955,8 +1039,9 @@ onUiUpdate(function(){
 			}
 					
 		})
-	}	
-	ui_performant_gradio_input_components(opts.ui_performant_gradio_input_components);
+	}	 
+	*/
+	//ui_performant_gradio_input_components(opts.ui_performant_gradio_input_components);
 	
 	// step ticks for performant input range
 	function ui_show_range_ticks(value, interactive){
@@ -1040,14 +1125,16 @@ onUiUpdate(function(){
 	})
 	
 	
-	function update_performant_inputs(tab){
+	
+	function update_input_fields(tab){
+		/* 
 		let input_selectors = "#tab_"+ tab + " [id^='num_clone']:is(input[type='number'])";
-		//console.log(input_selectors);
 		gradioApp().querySelectorAll(input_selectors).forEach(function (elem){
 			let elem_source = elem.previousElementSibling;		
 			elem.value = elem_source.value;
 			updateInput(elem);	
-		})
+		}) 
+		*/
 		remove_overrides();		
 		autoGrowPromptTextarea();
 	}
@@ -1060,7 +1147,7 @@ onUiUpdate(function(){
 			}else{
 				button_id = e.target.id.split("_")[0];
 			}
-			setTimeout(function() { update_performant_inputs(button_id); }, 500);		
+			setTimeout(function() { update_input_fields(button_id); }, 500);		
 		})	
 	})			
 
@@ -1083,8 +1170,6 @@ onUiUpdate(function(){
 			pnginfo.querySelector('#img2img_tab').click();		
 		}
 		
-	
-		//setTimeout(function() { update_performant_inputs(button_id.split("_")[0]); }, 100);
 	}
 	
 	function fetchPngInfoData(files){
@@ -1300,8 +1385,7 @@ let token_timeouts = {};
 
 function update_txt2img_tokens(...args) {
 	update_token_counter("txt2img_token_button")
-	//setTimeout(function() { update_performant_inputs("txt2img"); }, 500);	
-	console.log("update_txt2img_tokens");
+	//console.log("update_txt2img_tokens");
 	if (args.length == 2)
 		return args[0]
 	return args;
@@ -1309,8 +1393,7 @@ function update_txt2img_tokens(...args) {
 
 function update_img2img_tokens(...args) {
 	update_token_counter("img2img_token_button")
-	console.log("update_img2img_tokens");
-	//setTimeout(function() { update_performant_inputs("img2img"); }, 500);	
+	//console.log("update_img2img_tokens");
 	if (args.length == 2)
 		return args[0]
 	return args;
