@@ -337,7 +337,7 @@ def xformers_attention_forward(self, x, context=None, mask=None):
 
     dtype = q.dtype
     if shared.opts.upcast_attn:
-        q, k = q.float(), k.float()
+        q, k, v = q.float(), k.float(), v.float()
 
     out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None, op=get_xformers_flash_attention_op(q, k, v))
 
