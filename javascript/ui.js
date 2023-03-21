@@ -277,6 +277,92 @@ onUiUpdate(function(){
             })
         }
     }
+	
+	// input release component dispatcher
+	let active_clone_input = [];
+	function ui_input_release_component(elem){
+
+		if(active_clone_input.length > 0) return;
+		
+		let parent = elem.parentElement;
+		let comp_parent = parent.parentElement.parentElement;		
+		if(comp_parent.id == ("img2img_width" || "img2img_height" )) return;
+		
+		let clone_num = elem.cloneNode();
+		active_clone_input.push(clone_num);
+		
+		
+		let label = parent.querySelector("label");
+		
+		clone_num.id = "num_clone";			
+		clone_num.value = elem.value;	
+		parent.append(clone_num);		
+		elem.classList.add("hidden");
+		
+		clone_num.addEventListener('change', function (e) {			
+			elem.value = clone_num.value;
+			updateInput(elem);
+		})
+
+		if(label){				
+			let comp_range = comp_parent.querySelector("input[type='range']");
+			let clone_range = comp_range.cloneNode();
+			active_clone_input.push(clone_range);
+			
+			clone_range.id = comp_range.id+"_clone";
+			clone_range.value = comp_range.value;					
+			comp_range.parentElement.append(clone_range);				
+			comp_range.classList.add("hidden");
+			
+			clone_range.addEventListener('input', function (e) {								
+				clone_num.value = e.target.value;	
+			})
+			clone_range.addEventListener('change', function (e) {
+				elem.value = clone_range.value;
+				updateInput(elem);	
+			})				
+			clone_num.addEventListener('input', function (e) {								
+				clone_range.value = e.target.value;	
+			})								
+		}				
+	}
+	function ui_input_release_handler(e){
+		const len = active_clone_input.length;
+		console.log(e.target);
+		if(len > 0){
+			if(e.target.id.indexOf("_clone") == -1){
+				for(var i=len-1; i>=0; i--){
+					let relem = active_clone_input[i];
+					relem.previousElementSibling.classList.remove("hidden");
+					relem.remove();
+					active_clone_input.pop();
+				}
+			}
+		}
+	
+		let elem_type = e.target.tagName;
+		if(elem_type == "INPUT"){
+			let elem = e.target;			
+			if(elem.type == "number"){								
+				ui_input_release_component(elem);				
+			}else if(elem.type == "range"){
+				elem = e.target.parentElement.querySelector("input[type='number']");
+				ui_input_release_component(elem);				
+			}
+		}
+	}
+	function ui_dispatch_input_release(value){	
+		if(value){			
+			gradioApp().querySelector(".mx-auto.container").addEventListener('mouseover',  ui_input_release_handler);
+		}else{
+			gradioApp().querySelector(".mx-auto.container").removeEventListener('mouseover',  ui_input_release_handler);
+		}
+	}
+	gradioApp().querySelector("#setting_ui_dispatch_input_release input").addEventListener('click', function (e) {		
+		ui_dispatch_input_release(e.target.checked);
+	})
+	ui_dispatch_input_release(opts.ui_dispatch_input_release);
+	
 })
 
 onOptionsChanged(function(){

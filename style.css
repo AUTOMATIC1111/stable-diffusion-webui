@@ -1029,3 +1029,6 @@ footer {
 [id*='_prompt_container'] > div {
 	margin: 0!important;
 }
+.hidden{
+	display:none
+}
