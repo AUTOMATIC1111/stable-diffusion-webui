@@ -291,7 +291,6 @@ onUiUpdate(function(){
 		let clone_num = elem.cloneNode();
 		active_clone_input.push(clone_num);
 		
-		
 		let label = parent.querySelector("label");
 		
 		clone_num.id = "num_clone";			
