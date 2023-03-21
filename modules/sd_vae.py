@@ -142,7 +142,7 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
             print(f"Loading VAE weights {vae_source}: {vae_file}")
             store_base_vae(model)
 
-            vae_dict_1 = load_vae_dict(vae_file, map_location=shared.weight_load_location)
+            vae_dict_1 = load_vae_dict(vae_file)
             _load_vae_dict(model, vae_dict_1)
 
             if cache_enabled:

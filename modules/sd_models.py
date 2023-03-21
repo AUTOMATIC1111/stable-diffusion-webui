@@ -240,15 +240,17 @@ def read_metadata_from_safetensors(filename):
 
 def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
     _, extension = os.path.splitext(checkpoint_file)
-    device = map_location or shared.weight_load_location or devices.get_optimal_device_name()
-    if extension.lower() == ".safetensors":
-        pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
-    elif extension.lower() == ".ckpt":
-        with rich.progress.open(checkpoint_file, 'rb') as f:
+    with rich.progress.open(checkpoint_file, 'rb') as f:
+        if extension.lower() == ".safetensors":
+            buffer = f.read()
+            # load function always loads to cpu anyhow and model gets moved as needed
+            pl_sd = safetensors.torch.load(buffer)
+        elif extension.lower() == ".ckpt":
             buffer = io.BytesIO(f.read())
-            pl_sd = torch.load(buffer, map_location=device)
-    else:
-        raise Exception(f"Unknown model type: {extension}")
+            # map_location is mostly superfluous as its always None or `cpu`, bue keeping for backwads compatibility
+            pl_sd = torch.load(buffer, map_location)
+        else:
+            raise Exception(f"Unknown model type: {extension}")
 
     if print_global_state and "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
@@ -284,7 +286,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     model.load_state_dict(state_dict, strict=False)
     del state_dict
-    timer.record("apply weights to model")
+    timer.record("apply weights")
 
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
@@ -499,7 +501,7 @@ def reload_model_weights(sd_model=None, info=None):
     if sd_model is None or checkpoint_config != sd_model.used_config:
         del sd_model
         checkpoints_loaded.clear()
-        load_model(checkpoint_info, already_loaded_state_dict=state_dict, time_taken_to_load_state_dict=timer.records["load weights from disk"])
+        load_model(checkpoint_info, already_loaded_state_dict=state_dict, time_taken_to_load_state_dict=timer.records["load weights"])
         return shared.sd_model
 
     try:
