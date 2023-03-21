@@ -240,7 +240,7 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
         if extension.lower() == ".safetensors":
             buffer = f.read()
             pl_sd = safetensors.torch.load(buffer)
-        elif extension.lower() == ".ckpt":
+        elif extension.lower() == ".ckpt" or extension.lower() == ".pt":
             buffer = io.BytesIO(f.read())
             pl_sd = torch.load(buffer, map_location)
         else:
