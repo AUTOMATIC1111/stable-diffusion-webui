@@ -256,7 +256,7 @@ def create_ui(container, button, tabname):
             for pg in ui.stored_extra_pages:
                 pages.append(pg.create_html(ui.tabname))
             has_loaded = True
-        return [is_visible, has_loaded, gr.update(visible=is_visible)] + pages
+        return [is_visible, has_loaded, gr.update(visible=is_visible)] + list(pages)
 
     # TODO: Use .then() so the extra networks drawer/loading spinner appears
     # instead of nothing happening for X seconds
