@@ -123,7 +123,7 @@ function popup(contents){
         globalPopupInner.classList.add('global-popup-inner');
         globalPopup.appendChild(globalPopupInner)
 
-        gradioApp().getRootNode().body.appendChild(globalPopup);
+        gradioApp().appendChild(globalPopup);
     }
 
     globalPopupInner.innerHTML = '';

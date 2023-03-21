@@ -134,7 +134,6 @@ function showSubmitButtons(tabname, show){
 }
 
 function submit(){
-    rememberGallerySelection('txt2img_gallery')
     showSubmitButtons('txt2img', false)
 
     var id = randomId()
@@ -151,7 +150,6 @@ function submit(){
 }
 
 function submit_img2img(){
-    rememberGallerySelection('img2img_gallery')
     showSubmitButtons('img2img', false)
 
     var id = randomId()
