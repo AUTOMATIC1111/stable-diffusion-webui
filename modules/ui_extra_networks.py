@@ -127,7 +127,7 @@ class ExtraNetworksPage:
         metadata_button = ""
         metadata = item.get("metadata")
         if metadata:
-            metadata_onclick = '"' + html.escape(f"""extraNetworksShowMetadata({json.dumps(metadata)}); event.stopPropagation(); return false;""") + '"'
+            metadata_onclick = '"' + html.escape(f"""return extraNetworksShowMetadata(event, {json.dumps(metadata)})""") + '"'
             metadata_button = f"<div class='metadata-button' title='Show metadata' onclick={metadata_onclick}></div>"
 
         args = {
