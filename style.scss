@@ -621,7 +621,6 @@ input[type="range"] {
         border-style: unset !important;
         box-shadow: none;
         background: none;
-        margin-right: 10px;
         >label {
             >div {
                 >ul {
@@ -642,8 +641,10 @@ input[type="range"] {
     }
     .webui-button-tool {
         margin: 1.75em 0 0 0;
-        border-color: unset;
-        background-color: unset;
+        border: var(--input-border-width) solid var(--input-border-color) !important;
+        border-radius: var(--button-large-radius) !important;
+        background-color: unset !important;
+        margin-right: 10px;
     }
 }
 
