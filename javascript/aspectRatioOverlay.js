@@ -91,23 +91,26 @@ onUiUpdate(function(){
 	if(arPreviewRect){
 		arPreviewRect.style.display = 'none';
 	}
-	var inImg2img = gradioApp().querySelector("#tab_img2img").style.display == "block";
-	if(inImg2img){
-		let inputs = gradioApp().querySelectorAll('input');
-		inputs.forEach(function(e){
-		    var is_width = e.parentElement.id == "img2img_width"
-		    var is_height = e.parentElement.id == "img2img_height"
+    var tabImg2img = gradioApp().querySelector("#tab_img2img");
+    if (tabImg2img) {
+        var inImg2img = tabImg2img.style.display == "block";
+        if(inImg2img){
+            let inputs = gradioApp().querySelectorAll('input');
+            inputs.forEach(function(e){
+                var is_width = e.parentElement.id == "img2img_width"
+                var is_height = e.parentElement.id == "img2img_height"
 
-			if((is_width || is_height) && !e.classList.contains('scrollwatch')){
-				e.addEventListener('input', function(e){dimensionChange(e, is_width, is_height)} )
-				e.classList.add('scrollwatch')
-			}
-			if(is_width){
-				currentWidth = e.value*1.0
-			}
-			if(is_height){
-				currentHeight = e.value*1.0
-			}
-		})
-	}
+                if((is_width || is_height) && !e.classList.contains('scrollwatch')){
+                    e.addEventListener('input', function(e){dimensionChange(e, is_width, is_height)} )
+                    e.classList.add('scrollwatch')
+                }
+                if(is_width){
+                    currentWidth = e.value*1.0
+                }
+                if(is_height){
+                    currentHeight = e.value*1.0
+                }
+            })
+        }
+    }
 });
