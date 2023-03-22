@@ -1,8 +1,13 @@
 function gradioApp() {
     const elems = document.getElementsByTagName('gradio-app')
-    const elem = elems.length == 0 ? document : elems[0]
+    let elem = elems.length == 0 ? document : elems[0]
 
-    elem.getElementById = function(id){ return document.getElementById(id) }
+    if (elem === document && document.body) {
+        elem = document.body;
+    }
+    if (elem !== document) {
+        elem.getElementById = function(id){ return document.getElementById(id) }
+    }
     return elem.shadowRoot ? elem.shadowRoot : elem}
 
 function get_uiCurrentTab() {
