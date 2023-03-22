@@ -247,7 +247,7 @@ def load_scripts():
                 return priority[key]
         return 9999
 
-    for scriptfile in sorted(scripts_list, key=lambda x: [orderby(x.basedir), x.filename, x.path]):
+    for scriptfile in sorted(scripts_list, key=lambda x: [orderby(x.basedir), x]):
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path
