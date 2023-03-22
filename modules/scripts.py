@@ -239,7 +239,15 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    for scriptfile in sorted(scripts_list):
+    def orderby(basedir):
+        # 1st webui, 2nd extensions-builtin, 3rd extensions
+        priority = {os.path.join(paths.script_path, "extensions-builtin"):1, paths.script_path:0}
+        for key in priority:
+            if basedir.startswith(key):
+                return priority[key]
+        return 9999
+
+    for scriptfile in sorted(scripts_list, key=lambda x: [orderby(x.basedir), x.filename, x.path]):
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path
