@@ -11,7 +11,7 @@ function showModal(event) {
     if (modalImage.style.display === 'none') {
         lb.style.setProperty('background-image', 'url(' + source.src + ')');
     }
-    lb.style.display = "block";
+    lb.style.display = "flex";
     lb.focus()
 
     const tabTxt2Img = gradioApp().getElementById("tab_txt2img")

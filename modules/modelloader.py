@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from basicsr.utils.download_util import load_file_from_url
 from modules import shared
-from modules.upscaler import Upscaler
+from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
 
 
@@ -169,4 +169,8 @@ def load_upscalers():
         scaler = cls(commandline_options.get(cmd_name, None))
         datas += scaler.scalers
 
-    shared.sd_upscalers = datas
+    shared.sd_upscalers = sorted(
+        datas,
+        # Special case for UpscalerNone keeps it at the beginning of the list.
+        key=lambda x: x.name.lower() if not isinstance(x.scaler, (UpscalerNone, UpscalerLanczos, UpscalerNearest)) else ""
+    )

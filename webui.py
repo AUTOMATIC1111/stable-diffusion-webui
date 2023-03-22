@@ -12,11 +12,22 @@ from packaging import version
 import logging
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
-from modules import import_hook, errors, extra_networks, ui_extra_networks_checkpoints
-from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
-from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
+from modules import paths, timer, import_hook, errors
+
+startup_timer = timer.Timer()
 
 import torch
+startup_timer.record("import torch")
+
+import gradio
+startup_timer.record("import gradio")
+
+import ldm.modules.encoders.modules
+startup_timer.record("import ldm")
+
+from modules import extra_networks, ui_extra_networks_checkpoints
+from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
+from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
 
 # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
 if ".dev" in torch.__version__ or "+git" in torch.__version__:
@@ -30,7 +41,6 @@ import modules.gfpgan_model as gfpgan
 import modules.img2img
 
 import modules.lowvram
-import modules.paths
 import modules.scripts
 import modules.sd_hijack
 import modules.sd_models
@@ -44,6 +54,8 @@ import modules.ui
 from modules import modelloader
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
+
+startup_timer.record("other imports")
 
 
 if cmd_opts.server_name:
@@ -88,6 +100,7 @@ def initialize():
 
     extensions.list_extensions()
     localization.list_localizations(cmd_opts.localizations_dir)
+    startup_timer.record("list extensions")
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
@@ -96,16 +109,28 @@ def initialize():
 
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
+    startup_timer.record("list SD models")
+
     codeformer.setup_model(cmd_opts.codeformer_models_path)
+    startup_timer.record("setup codeformer")
+
     gfpgan.setup_model(cmd_opts.gfpgan_models_path)
+    startup_timer.record("setup gfpgan")
 
     modelloader.list_builtin_upscalers()
+    startup_timer.record("list builtin upscalers")
+
     modules.scripts.load_scripts()
+    startup_timer.record("load scripts")
+
     modelloader.load_upscalers()
+    startup_timer.record("load upscalers")
 
     modules.sd_vae.refresh_vae_list()
+    startup_timer.record("refresh VAE")
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
+    startup_timer.record("refresh textual inversion templates")
 
     try:
         modules.sd_models.load_model()
@@ -114,6 +139,7 @@ def initialize():
         print("", file=sys.stderr)
         print("Stable diffusion model failed to load, exiting", file=sys.stderr)
         exit(1)
+    startup_timer.record("load SD checkpoint")
 
     shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
 
@@ -121,8 +147,10 @@ def initialize():
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
+    startup_timer.record("opts onchange")
 
     shared.reload_hypernetworks()
+    startup_timer.record("reload hypernets")
 
     ui_extra_networks.intialize()
     ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
@@ -131,6 +159,7 @@ def initialize():
 
     extra_networks.initialize()
     extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
+    startup_timer.record("extra networks")
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
 
@@ -144,6 +173,7 @@ def initialize():
             print("TLS setup invalid, running webui without TLS")
         else:
             print("Running with TLS")
+        startup_timer.record("TLS")
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
@@ -153,13 +183,16 @@ def initialize():
     signal.signal(signal.SIGINT, sigint_handler)
 
 
-def setup_cors(app):
+def setup_middleware(app):
+    app.middleware_stack = None # reset current middleware to allow modifying user provided list
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
     if cmd_opts.cors_allow_origins and cmd_opts.cors_allow_origins_regex:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
     elif cmd_opts.cors_allow_origins:
         app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
     elif cmd_opts.cors_allow_origins_regex:
         app.add_middleware(CORSMiddleware, allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
+    app.build_middleware_stack() # rebuild middleware stack on-the-fly
 
 
 def create_api(app):
@@ -183,12 +216,12 @@ def api_only():
     initialize()
 
     app = FastAPI()
-    setup_cors(app)
-    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    setup_middleware(app)
     api = create_api(app)
 
     modules.script_callbacks.app_started_callback(None, app)
 
+    print(f"Startup time: {startup_timer.summary()}.")
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
@@ -199,21 +232,24 @@ def webui():
     while 1:
         if shared.opts.clean_temp_dir_at_start:
             ui_tempdir.cleanup_tmpdr()
+            startup_timer.record("cleanup temp dir")
 
         modules.script_callbacks.before_ui_callback()
+        startup_timer.record("scripts before_ui_callback")
 
         shared.demo = modules.ui.create_ui()
+        startup_timer.record("create ui")
 
         if cmd_opts.gradio_queue:
             shared.demo.queue(64)
 
         gradio_auth_creds = []
         if cmd_opts.gradio_auth:
-            gradio_auth_creds += cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',')
+            gradio_auth_creds += [x.strip() for x in cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',') if x.strip()]
         if cmd_opts.gradio_auth_path:
             with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
                 for line in file.readlines():
-                    gradio_auth_creds += [x.strip() for x in line.split(',')]
+                    gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
@@ -229,15 +265,15 @@ def webui():
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
 
+        startup_timer.record("gradio launch")
+
         # gradio uses a very open CORS policy via app.user_middleware, which makes it possible for
         # an attacker to trick the user into opening a malicious HTML page, which makes a request to the
         # running web ui and do whatever the attacker wants, including installing an extension and
         # running its code. We disable this here. Suggested by RyotaK.
         app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
 
-        setup_cors(app)
-
-        app.add_middleware(GZipMiddleware, minimum_size=1000)
+        setup_middleware(app)
 
         modules.progress.setup_progress_api(app)
 
@@ -247,28 +283,42 @@ def webui():
         ui_extra_networks.add_pages_to_demo(app)
 
         modules.script_callbacks.app_started_callback(shared.demo, app)
+        startup_timer.record("scripts app_started_callback")
+
+        print(f"Startup time: {startup_timer.summary()}.")
 
         wait_on_server(shared.demo)
         print('Restarting UI...')
+
+        startup_timer.reset()
 
         sd_samplers.set_samplers()
 
         modules.script_callbacks.script_unloaded_callback()
         extensions.list_extensions()
+        startup_timer.record("list extensions")
 
         localization.list_localizations(cmd_opts.localizations_dir)
 
         modelloader.forbid_loaded_nonbuiltin_upscalers()
         modules.scripts.reload_scripts()
+        startup_timer.record("load scripts")
+
         modules.script_callbacks.model_loaded_callback(shared.sd_model)
+        startup_timer.record("model loaded callback")
+
         modelloader.load_upscalers()
+        startup_timer.record("load upscalers")
 
         for module in [module for name, module in sys.modules.items() if name.startswith("modules.ui")]:
             importlib.reload(module)
+        startup_timer.record("reload script modules")
 
         modules.sd_models.list_models()
+        startup_timer.record("list SD models")
 
         shared.reload_hypernetworks()
+        startup_timer.record("reload hypernetworks")
 
         ui_extra_networks.intialize()
         ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
@@ -277,6 +327,7 @@ def webui():
 
         extra_networks.initialize()
         extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
+        startup_timer.record("initialize extra networks")
 
 
 if __name__ == "__main__":
