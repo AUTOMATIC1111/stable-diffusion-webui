@@ -8,7 +8,7 @@
 import os
 import threading
 import typing
-
+import time
 import pymysql
 
 
@@ -18,6 +18,8 @@ class MySQLClient(object):
         settings = self.get_mysql_config(addr, port, db, user, pwd)
         self.conn = pymysql.connect(**settings)
         self._closed = False
+        self._connection_time = time.time()
+        self.config = settings
 
     @property
     def connect(self):
@@ -26,6 +28,17 @@ class MySQLClient(object):
     @property
     def available(self):
         return not self._closed
+
+    @property
+    def must_reconnct(self):
+        return time.time() - self._connection_time > 10
+
+    def check_connection(self):
+        if self.available:
+            if self.must_reconnct:
+                self.conn.close()
+                self.conn = pymysql.connect(**self.config)
+                self._connection_time = time.time()
 
     def get_mysql_config(self, addr=None, port=3306, db=None, user=None, passwd=None):
         return {
@@ -128,24 +141,7 @@ def get_mysql_cli(host: str = None, port: typing.Optional[int] = None, user: str
     if not host:
         return None
 
-    key = f"{host},{user},{port},{db}"
-
-    def get_cli_from_caches():
-        if key in mysql_clis:
-            client = mysql_clis[key]
-            if getattr(client, 'available', False):
-                return client
-
-    mysql_cli = get_cli_from_caches()
-    if mysql_cli is not None:
-        return mysql_cli
-
-    with locker:
-        mysql_cli = get_cli_from_caches()
-        if mysql_cli is not None:
-            return mysql_cli
-        mysql_clis[key] = MySQLClient(host, db, user, pwd, port)
-        return mysql_clis[key]
+    return MySQLClient(host, db, user, pwd, port)
 
 
 def dispose():

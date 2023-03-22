@@ -42,5 +42,7 @@ def find_users_from_models(username, password) -> int:
         except Exception as ex:
             print(ex)
             return -1
+        finally:
+            cli.close()
     return -1
 

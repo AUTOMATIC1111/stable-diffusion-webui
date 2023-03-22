@@ -52,6 +52,8 @@ def dump_cache(title, sha256):
                 ''', (title, sha256, now, now, name))
         except Exception as ex:
             print(f"cannot write cache to mysql:{ex}")
+        finally:
+            mysql_cli.close()
 
     if cli:
         write_model_hash(cli)
@@ -100,6 +102,8 @@ def sha256_from_cache(filename, title):
                         return r.get('hash')
                 except Exception as err:
                     print(f'query model hash err:{err}')
+                finally:
+                    cli.close()
             return None
         sha256 = query_mysql()
         if sha256:
