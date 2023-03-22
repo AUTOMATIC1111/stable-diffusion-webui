@@ -373,7 +373,7 @@ div.dimensions-tools {
 .progressDiv {
     position: relative;
     height: 20px;
-    background: #b4c0cc;
+    background: var(--input-background-fill);
     border-radius: 3px !important;
     margin-bottom: -3px;
     .progress {
@@ -390,10 +390,6 @@ div.dimensions-tools {
         white-space: nowrap;
         padding: 0 0.5em;
     }
-}
-
-.dark .progressDiv{
-    background: #424c5b;
 }
 
 .livePreview {
