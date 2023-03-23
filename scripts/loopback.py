@@ -42,6 +42,7 @@ class Script(scripts.Script):
         all_images = []
         original_init_image = p.init_images
         original_prompt = p.prompt
+        original_inpainting_fill = p.inpainting_fill
         state.job_count = loops * batch_count
 
         initial_color_corrections = [processing.setup_color_correction(p.init_images[0])]
@@ -112,6 +113,7 @@ class Script(scripts.Script):
 
                 last_image = processed.images[0]
                 p.init_images = [last_image]
+                p.inpainting_fill = 1 # Set "masked content" to "original" for next loop.
 
                 if batch_count == 1:
                     history.append(last_image)
@@ -120,6 +122,8 @@ class Script(scripts.Script):
             if batch_count > 1 and not state.skipped and not state.interrupted:
                 history.append(last_image)
                 all_images.append(last_image)
+
+            p.inpainting_fill = original_inpainting_fill
                 
             if state.interrupted:
                     break
