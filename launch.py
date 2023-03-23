@@ -149,7 +149,7 @@ def check_run_python(code):
     return check_run(f'"{python}" -c "{code}"')
 
 
-def git_clone(url, dir, name, commithash=None, start_time=0):
+def git_clone(url, dir, name, commithash=None, start_time="0"):
     # TODO clone into temporary dir and move if successful
 
     if os.path.exists(dir):
