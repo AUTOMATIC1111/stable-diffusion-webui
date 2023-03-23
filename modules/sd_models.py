@@ -243,13 +243,10 @@ def read_state_dict(checkpoint_file):
     with rich.progress.open(checkpoint_file, 'rb') as f:
         if extension.lower() == ".safetensors":
             buffer = f.read()
-            # load function always loads to cpu anyhow and model gets moved as needed
             pl_sd = safetensors.torch.load(buffer)
-        elif extension.lower() == ".ckpt":
-            buffer = io.BytesIO(f.read())
-            pl_sd = torch.load(buffer)
         else:
-            raise Exception(f"Unknown model type: {extension}")
+            buffer = io.BytesIO(f.read())
+            pl_sd = torch.load(buffer, map_location='cpu')
 
     sd = get_state_dict_from_checkpoint(pl_sd)
     return sd
