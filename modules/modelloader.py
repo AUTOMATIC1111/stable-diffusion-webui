@@ -28,6 +28,14 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
 
     try:
         places = []
+        
+        # searching for SD models subfolders inside the 'models/Stable-diffusion' directory:
+        custom_places_path = os.path.join(models_path, "Stable-diffusion")
+        custom_places = next(os.walk(custom_places_path))[1]
+        for custom_place in custom_places:
+            if os.path.exists(custom_place):
+                custom_place_path = os.path.join(custom_places_path, custom_place)
+                places.append(custom_place_path)
 
         if command_path is not None and command_path != model_path:
             pretrained_path = os.path.join(command_path, 'experiments/pretrained_models')
