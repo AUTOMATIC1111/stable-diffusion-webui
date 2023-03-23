@@ -106,7 +106,14 @@ function create_tab_index_args(tabId, args){
 
 function get_img2img_tab_index() {
     let res = args_to_array(arguments)
-    res.splice(-2)
+    res.splice(-2) // gradio also sends outputs to the arguments, pop them off
+    res[0] = get_tab_index('mode_img2img')
+    return res
+}
+
+function get_img2img_tab_index_for_res_preview() {
+    let res = args_to_array(arguments)
+    res.splice(-1) // gradio also sends outputs to the arguments, pop them off
     res[0] = get_tab_index('mode_img2img')
     return res
 }
@@ -345,7 +352,7 @@ function selectCheckpoint(name){
 }
 
 
-function onCalcResolutionImg2Img(init_img, scale, width, height, resize_mode){
+function onCalcResolutionImg2Img(mode, scale, width, height, resize_mode, init_img, sketch, init_img_with_mask, inpaint_color_sketch, init_img_inpaint){
     i2iScale = gradioApp().getElementById('img2img_scale')
     i2iWidth = gradioApp().getElementById('img2img_width')
     i2iHeight = gradioApp().getElementById('img2img_height')
@@ -354,5 +361,5 @@ function onCalcResolutionImg2Img(init_img, scale, width, height, resize_mode){
     setInactive(i2iWidth, scale > 1)
     setInactive(i2iHeight, scale > 1)
 
-    return [init_img, width, height, scale, resize_mode]
+    return [];
 }
