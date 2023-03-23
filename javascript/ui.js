@@ -7,9 +7,31 @@ function set_theme(theme){
     }
 }
 
+function all_gallery_buttons() {
+    var allGalleryButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnails > .thumbnail-item');
+    var visibleGalleryButtons = [];
+    allGalleryButtons.forEach(function(elem) {
+        if (elem.parentElement.offsetParent) {
+            visibleGalleryButtons.push(elem);
+        }
+    })
+    return visibleGalleryButtons;
+}
+
+function selected_gallery_button() {
+    var allCurrentButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnail-item.thumbnail-small.selected');
+    var visibleCurrentButton = null;
+    allCurrentButtons.forEach(function(elem) {
+        if (elem.parentElement.offsetParent) {
+            visibleCurrentButton = elem;
+        }
+    })
+    return visibleCurrentButton;
+}
+
 function selected_gallery_index(){
-    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery] .thumbnails > .thumbnail-item')
-    var button = gradioApp().querySelector('[style="display: block;"].tabitem div[id$=_gallery] .thumbnails > .thumbnail-item.selected')
+    var buttons = all_gallery_buttons();
+    var button = selected_gallery_button();
 
     var result = -1
     buttons.forEach(function(v, i){ if(v==button) { result = i } })
