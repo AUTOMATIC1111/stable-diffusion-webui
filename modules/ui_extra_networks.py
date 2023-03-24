@@ -229,7 +229,11 @@ def create_ui(container, button, tabname):
         tab_name_state = gr.Textbox(tabname, visible=False)
         for page in ui.stored_extra_pages:
             with gr.Tab(page.title):
-                page_elem = gr.HTML("")
+                if shared.opts.ui_extra_networks_defer_load:
+                    html = ""
+                else:
+                    html = page.create_html(ui.tabname)
+                page_elem = gr.HTML(html)
                 ui.pages.append(page_elem)
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
@@ -249,33 +253,40 @@ def create_ui(container, button, tabname):
 
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
-    def toggle_visibility(is_visible, *pages):
-        is_visible = not is_visible
-        if is_visible:
-            new_pages = []
-            for i, pg in enumerate(ui.stored_extra_pages):
-                html = pages[i]
-                if not html:
-                    html = pg.create_html(ui.tabname)
-                new_pages.append(html)
-            pages = new_pages
-        return [is_visible, gr.update(visible=is_visible)] + list(pages)
-
-    # TODO: Use .then() so the extra networks drawer/loading spinner appears
-    # instead of nothing happening for X seconds
-    # Requires a newer Gradio version
     state_visible = gr.State(value=False)
-    button.click(fn=toggle_visibility, inputs=[state_visible] + ui.pages, outputs=[state_visible, container] + ui.pages)
 
-    # Gradio has to send the rendered HTML for the extra networks UI to the
-    # frontend every time the toggle_visibility event handler is called, even if
-    # all it does is change a single flag on and off. This causes a serious
-    # performance drop if the pages are huge strings.
-    # This callback removes Gradio's "click" event listener on the button in the
-    # frontend once it receives the pages HTML, by replacing the button and
-    # adding a new click listener to it that toggles the ".hidden" CSS class
-    # instead, thus bypassing Gradio entirely.
-    button.click(fn=None, _js="extraNetworksHookPageToggleIfBuilt", inputs=[tab_name_state], outputs=[])
+    if shared.opts.ui_extra_networks_defer_load:
+        def toggle_visibility_defer_load(is_visible, *pages):
+            is_visible = not is_visible
+            if is_visible:
+                new_pages = []
+                for i, pg in enumerate(ui.stored_extra_pages):
+                    html = pages[i]
+                    if not html:
+                        html = pg.create_html(ui.tabname)
+                    new_pages.append(html)
+                pages = new_pages
+            return [is_visible, gr.update(visible=is_visible)] + list(pages)
+        # TODO: Use .then() so the extra networks drawer/loading spinner appears
+        # instead of nothing happening for X seconds
+        # Requires a newer Gradio version
+        button.click(fn=toggle_visibility_defer_load, inputs=[state_visible] + ui.pages, outputs=[state_visible, container] + ui.pages)
+
+        # Gradio has to send the rendered HTML for the extra networks UI to the
+        # frontend every time the toggle_visibility event handler is called, even if
+        # all it does is change a single flag on and off. This causes a serious
+        # performance drop if the pages are huge strings.
+        # This callback removes Gradio's "click" event listener on the button in the
+        # frontend once it receives the pages HTML, by replacing the button and
+        # adding a new click listener to it that toggles the ".hidden" CSS class
+        # instead, thus bypassing Gradio entirely.
+        button.click(fn=None, _js="extraNetworksHookPageToggleIfBuilt", inputs=[tab_name_state], outputs=[])
+    else:
+        def toggle_visibility(is_visible):
+            is_visible = not is_visible
+            return is_visible, gr.update(visible=is_visible)
+
+        button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     return ui
 
