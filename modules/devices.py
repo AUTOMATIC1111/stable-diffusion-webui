@@ -110,7 +110,7 @@ def autocast(disable=False):
     if disable:
         return contextlib.nullcontext()
 
-    if dtype == torch.float32 or shared.cmd_opts.precision == "full" or shared.cmd_opts.upcast_sampling:
+    if dtype == torch.float32 or shared.cmd_opts.precision == "full":
         return contextlib.nullcontext()
 
     return torch.autocast("cuda")
