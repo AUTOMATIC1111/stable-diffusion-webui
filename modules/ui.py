@@ -939,7 +939,7 @@ def create_ui():
                 )
 
             token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
-            negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[img2img_negative_prompt, steps], outputs=[negative_token_counter])
+            negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[txt2img_negative_prompt, steps], outputs=[negative_token_counter])
 
             ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
 
@@ -1095,6 +1095,7 @@ def create_ui():
                     preprocess_txt_action = gr.Dropdown(label='Existing Caption txt Action', value="ignore", choices=["ignore", "copy", "prepend", "append"], elem_id="train_preprocess_txt_action")
 
                     with gr.Row():
+                        process_keep_origin_size = gr.Checkbox(label='Keep origin size', elem_id="keep_origin_size")
                         process_flip = gr.Checkbox(label='Create flipped copies', elem_id="train_process_flip")
                         process_split = gr.Checkbox(label='Split oversized images', elem_id="train_process_split")
                         process_focal_crop = gr.Checkbox(label='Auto focal point crop', elem_id="train_process_focal_crop")
@@ -1261,6 +1262,7 @@ def create_ui():
                 process_width,
                 process_height,
                 preprocess_txt_action,
+                process_keep_origin_size,
                 process_flip,
                 process_split,
                 process_caption,
@@ -1563,10 +1565,6 @@ def create_ui():
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
 
-    shared.tab_names = []
-    for _interface, label, _ifid in interfaces:
-        shared.tab_names.append(label)
-
     with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
@@ -1577,8 +1575,6 @@ def create_ui():
 
         with gr.Tabs(elem_id="tabs") as tabs:
             for interface, label, ifid in interfaces:
-                if label in shared.opts.hidden_tabs:
-                    continue
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
 
@@ -1751,8 +1747,7 @@ def create_ui():
 
 
 def reload_javascript():
-    script_js = os.path.join(script_path, "script.js")
-    head = f'<script type="text/javascript" src="file={os.path.abspath(script_js)}?{os.path.getmtime(script_js)}"></script>\n'
+    head = f'<script type="text/javascript" src="file={os.path.abspath("script.js")}?{os.path.getmtime("script.js")}"></script>\n'
 
     inline = f"{localization.localization_js(shared.opts.localization)};"
     if cmd_opts.theme is not None:
@@ -1760,9 +1755,6 @@ def reload_javascript():
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
         head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
-
-    for script in modules.scripts.list_scripts("javascript", ".mjs"):
-        head += f'<script type="module" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
 
     head += f'<script type="text/javascript">{inline}</script>\n'
 

@@ -11,7 +11,7 @@ from modules.shared import opts, cmd_opts
 from modules.textual_inversion import autocrop
 
 
-def preprocess(id_task, process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None):
+def preprocess(id_task, process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_origin_size, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None):
     try:
         if process_caption:
             shared.interrogator.load()
@@ -19,7 +19,7 @@ def preprocess(id_task, process_src, process_dst, process_width, process_height,
         if process_caption_deepbooru:
             deepbooru.model.start()
 
-        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight, process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop, process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea, process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold)
+        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_origin_size, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight, process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop, process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea, process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold)
 
     finally:
 
@@ -131,7 +131,7 @@ def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, thr
     return wh and center_crop(image, *wh)
     
 
-def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None):
+def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_origin_size, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None):
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
@@ -151,6 +151,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
 
     params = PreprocessParams()
     params.dstdir = dst
+    params.keep_origin_size = process_keep_origin_size
     params.flip = process_flip
     params.process_caption = process_caption
     params.process_caption_deepbooru = process_caption_deepbooru
@@ -189,6 +190,10 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
 
         process_default_resize = True
 
+        if process_keep_origin_size:
+            save_pic(img, index, params, existing_caption=existing_caption)
+            process_default_resize = True
+
         if process_split and ratio < 1.0 and ratio <= split_threshold:
             for splitted in split_pic(img, inverse_xy, width, height, overlap_ratio):
                 save_pic(splitted, index, params, existing_caption=existing_caption)
@@ -224,7 +229,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
             process_default_resize = False
 
         if process_default_resize:
-            img = images.resize_image(1, img, width, height)
+            img = images.resize_image(1, img, img.width, img.height)
             save_pic(img, index, params, existing_caption=existing_caption)
 
         shared.state.nextjob()
