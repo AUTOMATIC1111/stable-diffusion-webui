@@ -9,6 +9,7 @@ titles = {
 	"UniPC": "Unified Predictor-Corrector Framework for Fast Sampling of Diffusion Models",
 	"DPM adaptive": "Ignores step count - uses a number of steps determined by the CFG and resolution", 
 
+    "\u{1F4D0}": "Auto detect size from img2img",
 	"Batch count": "How many batches of images to create (has no impact on generation performance or VRAM usage)",
 	"Batch size": "How many image to create in a single batch (increases generation performance at cost of higher VRAM usage)",
     "CFG Scale": "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results",

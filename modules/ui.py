@@ -92,7 +92,7 @@ apply_style_symbol = '\U0001f4cb'  # 📋
 clear_prompt_symbol = '\U0001F5D1'  # 🗑️
 extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
-
+detect_image_size_symbol = '\U0001F4D0'  # 📐
 
 def plaintext_to_html(text):
     return ui_common.plaintext_to_html(text)
@@ -756,8 +756,10 @@ def create_ui():
                             with gr.Column(elem_id="img2img_column_size", scale=4):
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
-
+                                
+                            detect_image_size_btn = ToolButton(value=detect_image_size_symbol, elem_id="img2img_detect_image_size_btn")
                             res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                            
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="img2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
@@ -904,6 +906,7 @@ def create_ui():
 
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
+            detect_image_size_btn.click(lambda i, w, h : i.size if i is not None else (w, h), inputs=[init_img, width, height], outputs=[width, height])
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
 
             img2img_interrogate.click(
