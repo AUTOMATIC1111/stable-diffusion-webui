@@ -139,3 +139,28 @@ function extraNetworksShowMetadata(text){
 
     popup(elem);
 }
+
+var hookedExtraNetworksButtons = {};
+function extraNetworksHookPageToggleIfBuilt(tab_name) {
+    if (hookedExtraNetworksButtons[tab_name]) {
+        return;
+    }
+
+    let button = gradioApp().querySelector("#" + tab_name + "_extra_networks.gr-button");
+    let extra_networks_section = gradioApp().querySelector("div#" + tab_name + "_extra_networks");
+    let extra_networks_html = extra_networks_section.getElementsByClassName("output-html");
+    let loaded = new Array(extra_networks_html).some(html => html.innerHTML != "");
+    if (loaded && button) {
+        console.log("Replacing Gradio native callback with CSS toggle for extra networks button: " + tab_name)
+
+        // Remove event handlers by recreating button node
+        hookedExtraNetworksButtons[tab_name] = button;
+        var new_button = button.cloneNode(true);
+        button.parentNode.replaceChild(new_button, button);
+
+        // Add our own event to toggle extra networks section with CSS instead of Gradio
+        new_button.addEventListener("click", function() {
+            extra_networks_section.classList.toggle("hidden");
+        }, false);
+    }
+}

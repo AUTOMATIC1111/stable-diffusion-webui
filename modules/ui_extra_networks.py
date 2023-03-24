@@ -226,6 +226,7 @@ def create_ui(container, button, tabname):
     ui.tabname = tabname
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
+        tab_name_state = gr.Textbox(tabname, visible=False)
         for page in ui.stored_extra_pages:
             with gr.Tab(page.title):
                 page_elem = gr.HTML("")
@@ -265,6 +266,16 @@ def create_ui(container, button, tabname):
     # Requires a newer Gradio version
     state_visible = gr.State(value=False)
     button.click(fn=toggle_visibility, inputs=[state_visible] + ui.pages, outputs=[state_visible, container] + ui.pages)
+
+    # Gradio has to send the rendered HTML for the extra networks UI to the
+    # frontend every time the toggle_visibility event handler is called, even if
+    # all it does is change a single flag on and off. This causes a serious
+    # performance drop if the pages are huge strings.
+    # This callback removes Gradio's "click" event listener on the button in the
+    # frontend once it receives the pages HTML, by replacing the button and
+    # adding a new click listener to it that toggles the ".hidden" CSS class
+    # instead, thus bypassing Gradio entirely.
+    button.click(fn=None, _js="extraNetworksHookPageToggleIfBuilt", inputs=[tab_name_state], outputs=[])
 
     return ui
 
