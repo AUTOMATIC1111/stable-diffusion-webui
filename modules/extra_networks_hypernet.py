@@ -1,4 +1,4 @@
-from modules import extra_networks, shared, extra_networks
+from modules import extra_networks, shared, extra_networks, hashes
 from modules.hypernetworks import hypernetwork
 
 
@@ -25,3 +25,19 @@ class ExtraNetworkHypernet(extra_networks.ExtraNetwork):
 
     def deactivate(self, p):
         pass
+
+    def infotext_params(self, p, params_list):
+        infotext_params = {}
+
+        for params in params_list:
+            assert len(params.items) > 0
+            name = params.items[0]
+
+            filename = shared.hypernetworks.get(name, None)
+            if filename:
+                sha256 = hashes.sha256(filename, f'hypernet/{name}')
+                if sha256:
+                    shorthash = sha256[0:10]
+                    infotext_params[f"hypernet/{name}"] = shorthash
+
+        return infotext_params

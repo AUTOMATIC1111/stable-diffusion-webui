@@ -3,7 +3,7 @@ import os
 import re
 import torch
 
-from modules import shared, devices, sd_models, errors
+from modules import shared, devices, sd_models, errors, hashes
 
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
 
@@ -62,6 +62,18 @@ class LoraOnDisk:
             self.metadata = m
 
         self.ssmd_cover_images = self.metadata.pop('ssmd_cover_images', None)  # those are cover images and they are too big to display in UI as text
+
+    def hash(self):
+        result = self.metadata.get("sshs_model_hash", None)
+        if not result:
+            if self.filename.endswith(".safetensors"):
+                result = sd_models.safetensors_hash(self.filename)
+            else:
+                result = hashes.sha256_from_cache(self.filename, "lora/" + self.name)
+        return result
+
+    def shorthash(self):
+        return self.hash()[0:12]
 
 
 class LoraModule:

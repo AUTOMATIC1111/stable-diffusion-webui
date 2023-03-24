@@ -4,6 +4,8 @@ import sys
 import gc
 import torch
 import re
+import mmap
+import hashlib
 import safetensors.torch
 from omegaconf import OmegaConf
 from os import mkdir
@@ -152,6 +154,26 @@ def model_hash(filename):
             return m.hexdigest()[0:8]
     except FileNotFoundError:
         return 'NOFILE'
+
+
+def safetensors_hash(filename):
+    """Hashes a .safetensors file using the special hashing method.
+    Only hashes the weights of the model."""
+    hash_sha256 = hashlib.sha256()
+    blksize = 1024 * 1024
+
+    with open(filename, mode="r", encoding="utf8") as file_obj:
+        with mmap.mmap(file_obj.fileno(), length=0, access=mmap.ACCESS_READ) as m:
+            header = m.read(8)
+            n = int.from_bytes(header, "little")
+
+    with open(filename, mode="rb") as file_obj:
+        offset = n + 8
+        file_obj.seek(offset)
+        for chunk in iter(lambda: file_obj.read(blksize), b""):
+            hash_sha256.update(chunk)
+
+    return hash_sha256.hexdigest()
 
 
 def select_checkpoint():

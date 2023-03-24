@@ -1,4 +1,4 @@
-from modules import extra_networks, shared
+from modules import extra_networks, shared, sd_models
 import lora
 
 class ExtraNetworkLora(extra_networks.ExtraNetwork):
@@ -24,3 +24,16 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
 
     def deactivate(self, p):
         pass
+
+    def infotext_params(self, p, params_list):
+        infotext_params = {}
+
+        for params in params_list:
+            assert len(params.items) > 0
+            name = params.items[0]
+
+            lora_on_disk = lora.available_loras.get(name, None)
+            if lora_on_disk:
+                infotext_params[f"lora/{name}"] = lora_on_disk.shorthash()
+
+        return infotext_params
