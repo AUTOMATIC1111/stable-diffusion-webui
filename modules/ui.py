@@ -802,7 +802,7 @@ def create_ui():
                                 inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
 
                             with FormRow():
-                                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
+                                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing', 'patch match'], value='original', type="index", elem_id="img2img_inpainting_fill")
 
                             with FormRow():
                                 with gr.Column():

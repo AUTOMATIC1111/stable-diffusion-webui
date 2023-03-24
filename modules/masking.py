@@ -1,5 +1,5 @@
 from PIL import Image, ImageFilter, ImageOps
-
+from patchmatch import patch_match
 
 def get_crop_region(mask, pad=0):
     """finds a rectangular region that contains all masked ares in an image. Returns (x1, y1, x2, y2) coordinates of the rectangle.
@@ -97,3 +97,7 @@ def fill(image, mask):
 
     return image_mod.convert("RGB")
 
+def pm(image: Image.Image, mask: Image.Image, patch_size=4):
+    mask = mask.convert('L')
+    image_mod = patch_match.inpaint(image.convert('RGB'), mask.convert('L'), patch_size=patch_size)
+    return Image.fromarray(image_mod, mode='RGB')

@@ -991,7 +991,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(2, image, self.width, self.height)
 
             if image_mask is not None:
-                if self.inpainting_fill != 1:
+                if self.inpainting_fill == 4:
+                    image = masking.pm(image, latent_mask)
+                elif self.inpainting_fill != 1:
                     image = masking.fill(image, latent_mask)
 
             if add_color_corrections:
