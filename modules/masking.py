@@ -99,5 +99,5 @@ def fill(image, mask):
 
 def pm(image: Image.Image, mask: Image.Image, patch_size=4):
     mask = mask.convert('L')
-    image_mod = patch_match.inpaint(image.convert('RGB'), mask.convert('L'), patch_size=patch_size)
+    image_mod = patch_match.inpaint(image.convert('RGB'), mask, patch_size=patch_size)
     return Image.fromarray(image_mod, mode='RGB')
