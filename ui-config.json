@@ -1533,5 +1533,9 @@
     "customscript/seed_travel.py/img2img/SSIM min threshold/value": 75,
     "customscript/seed_travel.py/img2img/SSIM min threshold/minimum": 0,
     "customscript/seed_travel.py/img2img/SSIM min threshold/maximum": 100,
-    "customscript/seed_travel.py/img2img/SSIM min threshold/step": 1
+    "customscript/seed_travel.py/img2img/SSIM min threshold/step": 1,
+    "customscript/seed_travel.py/txt2img/Interpolation curve/visible": true,
+    "customscript/seed_travel.py/txt2img/Interpolation curve/value": "Linear",
+    "customscript/seed_travel.py/img2img/Interpolation curve/visible": true,
+    "customscript/seed_travel.py/img2img/Interpolation curve/value": "Linear"
 }

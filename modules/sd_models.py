@@ -239,14 +239,17 @@ def read_metadata_from_safetensors(filename):
 
 
 def read_state_dict(checkpoint_file):
-    _, extension = os.path.splitext(checkpoint_file)
-    with rich.progress.open(checkpoint_file, 'rb') as f:
-        if extension.lower() == ".safetensors":
-            buffer = f.read()
-            pl_sd = safetensors.torch.load(buffer)
-        else:
-            buffer = io.BytesIO(f.read())
-            pl_sd = torch.load(buffer, map_location='cpu')
+    if 'v1-5-pruned-emaonly.safetensors' in checkpoint_file:
+        pl_sd = safetensors.torch.load_file(checkpoint_file, device='cpu')
+    else:
+        _, extension = os.path.splitext(checkpoint_file)
+        with rich.progress.open(checkpoint_file, 'rb') as f:
+            if extension.lower() == ".safetensors":
+                buffer = f.read()
+                pl_sd = safetensors.torch.load(buffer)
+            else:
+                buffer = io.BytesIO(f.read())
+                pl_sd = torch.load(buffer, map_location='cpu')
 
     sd = get_state_dict_from_checkpoint(pl_sd)
     return sd
