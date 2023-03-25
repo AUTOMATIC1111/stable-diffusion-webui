@@ -786,8 +786,8 @@ footer {
 }
 
 button[id$='_extra_networks'] {
-    margin: 0.6em 0em 0.55em 0;
-    max-width: 2.5em;
-    min-width: 2.5em !important;
+    max-width: 2.2em;
+    min-width: 2.2em !important;
     height: 2.4em;
+    line-height: 1em !important;
 }
