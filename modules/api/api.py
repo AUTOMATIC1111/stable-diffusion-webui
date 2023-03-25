@@ -217,7 +217,7 @@ class Api:
                 if "args" in request.alwayson_scripts[alwayson_script_name]:
                     script_args[alwayson_script.args_from:alwayson_script.args_to] = request.alwayson_scripts[alwayson_script_name]["args"]
 
-        # Remove always on scripts that were not included in the request by resetting the script list in our ScriptRunner
+        # Remove always on scripts that were not included in the request by resetting the script list in out ScriptRunner
         script_runner.alwayson_scripts.clear()
         script_runner.alwayson_scripts = alwayson_script_to_run
         script_runner.scripts.clear()
