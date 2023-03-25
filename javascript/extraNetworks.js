@@ -132,12 +132,14 @@ function popup(contents){
     globalPopup.style.display = "flex";
 }
 
-function extraNetworksShowMetadata(text){
+function extraNetworksShowMetadata(event, text){
     elem = document.createElement('pre')
     elem.classList.add('popup-metadata');
     elem.textContent = text;
 
     popup(elem);
+    
+    event.stopPropagation()
 }
 
 function requestGet(url, data, handler, errorHandler){

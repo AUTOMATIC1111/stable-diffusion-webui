@@ -150,7 +150,7 @@ class ExtraNetworksPage:
         metadata_button = ""
         metadata = item.get("metadata")
         if metadata:
-            metadata_button = f"<div class='metadata-button' title='Show metadata' onclick='extraNetworksRequestMetadata({json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
+            metadata_button = f"<div class='metadata-button' title='Show metadata' onclick='extraNetworksRequestMetadata(event, {json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
 
         args = {
             "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
