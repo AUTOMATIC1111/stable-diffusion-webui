@@ -130,7 +130,7 @@ def install_extension_from_url(dirname, url):
 
         dirname = last_part
 
-    target_dir = os.path.join(extensions.extensions_dir, dirname)
+    target_dir = os.path.join(paths.extensions_dir, dirname)
     assert not os.path.exists(target_dir), f'Extension directory already exists: {target_dir}'
 
     normalized_url = normalize_git_url(url)
