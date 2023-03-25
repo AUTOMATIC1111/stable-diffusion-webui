@@ -150,6 +150,7 @@ def initialize():
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
+    shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
     startup_timer.record("opts onchange")
 
     shared.reload_hypernetworks()

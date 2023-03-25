@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import time
+import requests
 
 from PIL import Image
 import gradio as gr
@@ -53,6 +54,21 @@ ui_reorder_categories = [
     "override_settings",
     "scripts",
 ]
+
+# https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json
+gradio_hf_hub_themes = [
+    "gradio/glass",
+    "gradio/monochrome",
+    "gradio/seafoam",
+    "gradio/soft",
+    "freddyaboulton/dracula_revamped",
+    "gradio/dracula_test",
+    "abidlabs/dracula_test",
+    "abidlabs/pakistan",
+    "dawood/microsoft_windows",
+    "ysharma/steampunk"
+]
+
 
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.enable_insecure_extension_access
 
@@ -387,6 +403,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
     "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
+    "gradio_theme": OptionInfo("Default", "Gradio theme (requires restart)", gr.Dropdown, lambda: {"choices": ["Default"] + gradio_hf_hub_themes})
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {
@@ -598,6 +615,24 @@ sd_model = None
 clip_model = None
 
 progress_print_out = sys.stdout
+
+gradio_theme = gr.themes.Base()
+
+
+def reload_gradio_theme(theme_name=None):
+    global gradio_theme
+    if not theme_name:
+        theme_name = opts.gradio_theme
+
+    if theme_name == "Default":
+        gradio_theme = gr.themes.Default()
+    else:
+        try:
+            gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
+        except requests.exceptions.ConnectionError:
+            print("Can't access HuggingFace Hub, falling back to default Gradio theme")
+            gradio_theme = gr.themes.Default()
+
 
 
 class TotalTQDM:
