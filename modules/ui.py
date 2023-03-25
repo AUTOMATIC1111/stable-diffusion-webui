@@ -855,7 +855,7 @@ def create_ui():
             img2img_resolution_preview_inputs = [dummy_component, # filled in by selected img2img tab index in _js
                                                  scale, width, height, resize_mode,
                                                  init_img, sketch, init_img_with_mask, inpaint_color_sketch, init_img_inpaint]
-            for input in img2img_resolution_preview_inputs:
+            for input in img2img_resolution_preview_inputs[1:]:
                 if isinstance(input, Releaseable):
                     input.release(
                         fn=calc_resolution_img2img,
@@ -863,8 +863,7 @@ def create_ui():
                         inputs=img2img_resolution_preview_inputs,
                         outputs=[final_resolution],
                         show_progress=False,
-                    )
-                    input.release(
+                    ).success(
                         None,
                         _js="onCalcResolutionImg2Img",
                         inputs=img2img_resolution_preview_inputs,
@@ -878,8 +877,7 @@ def create_ui():
                         inputs=img2img_resolution_preview_inputs,
                         outputs=[final_resolution],
                         show_progress=False,
-                    )
-                    input.change(
+                    ).success(
                         None,
                         _js="onCalcResolutionImg2Img",
                         inputs=img2img_resolution_preview_inputs,

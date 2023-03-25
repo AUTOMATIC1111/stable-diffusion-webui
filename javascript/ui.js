@@ -118,14 +118,6 @@ function get_img2img_tab_index_for_res_preview() {
     return res
 }
 
-function get_img2img_tab_index_for_res_preview() {
-    let res = args_to_array(arguments)
-    res.splice(-1) // gradio also sends outputs to the arguments, pop them off
-    res[0] = get_tab_index('mode_img2img')
-    debugger;
-    return res
-}
-
 function create_submit_args(args){
     res = []
     for(var i=0;i<args.length;i++){
