@@ -37,11 +37,23 @@ def apply_optimizations():
     
     optimization_method = None
 
+    can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention")) # not everyone has torch 2.x to use sdp
+
     if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
         print("Applying xformers cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
         optimization_method = 'xformers'
+    elif cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
+        print("Applying scaled dot product cross attention optimization (without memory efficient attention).")
+        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_no_mem_attention_forward
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_no_mem_attnblock_forward
+        optimization_method = 'sdp-no-mem'
+    elif cmd_opts.opt_sdp_attention and can_use_sdp:
+        print("Applying scaled dot product cross attention optimization.")
+        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_attention_forward
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_attnblock_forward
+        optimization_method = 'sdp'
     elif cmd_opts.opt_sub_quad_attention:
         print("Applying sub-quadratic cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.sub_quad_attention_forward

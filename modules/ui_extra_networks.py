@@ -22,21 +22,37 @@ def register_page(page):
     allowed_dirs.update(set(sum([x.allowed_directories_for_previews() for x in extra_pages], [])))
 
 
+def fetch_file(filename: str = ""):
+    from starlette.responses import FileResponse
+
+    if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
+        raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
+
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in (".png", ".jpg", ".webp"):
+        raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
+
+    # would profit from returning 304
+    return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
+
+
+def get_metadata(page: str = "", item: str = ""):
+    from starlette.responses import JSONResponse
+
+    page = next(iter([x for x in extra_pages if x.name == page]), None)
+    if page is None:
+        return JSONResponse({})
+
+    metadata = page.metadata.get(item)
+    if metadata is None:
+        return JSONResponse({})
+
+    return JSONResponse({"metadata": metadata})
+
+
 def add_pages_to_demo(app):
-    def fetch_file(filename: str = ""):
-        from starlette.responses import FileResponse
-
-        if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
-            raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
-
-        ext = os.path.splitext(filename)[1].lower()
-        if ext not in (".png", ".jpg"):
-            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg.")
-
-        # would profit from returning 304
-        return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
-
     app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
 
 
 class ExtraNetworksPage:
@@ -45,6 +61,7 @@ class ExtraNetworksPage:
         self.name = title.lower()
         self.card_page = shared.html("extra-networks-card.html")
         self.allow_negative_prompt = False
+        self.metadata = {}
 
     def refresh(self):
         pass
@@ -66,6 +83,8 @@ class ExtraNetworksPage:
         view = shared.opts.extra_networks_default_view
         items_html = ''
 
+        self.metadata = {}
+
         subdirs = {}
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
             for x in glob.glob(os.path.join(parentdir, '**/*'), recursive=True):
@@ -86,12 +105,16 @@ class ExtraNetworksPage:
             subdirs = {"": 1, **subdirs}
 
         subdirs_html = "".join([f"""
-<button class='gr-button gr-button-lg gr-button-secondary{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
+<button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
 {html.escape(subdir if subdir!="" else "all")}
 </button>
 """ for subdir in subdirs])
 
         for item in self.list_items():
+            metadata = item.get("metadata")
+            if metadata:
+                self.metadata[item["name"]] = metadata
+
             items_html += self.create_html_for_item(item, tabname)
 
         if items_html == '':
@@ -124,9 +147,13 @@ class ExtraNetworksPage:
         if onclick is None:
             onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
 
-        height = f"height: {shared.opts.extra_networks_card_height}em;" if shared.opts.extra_networks_card_height else ''
-        width = f"width: {shared.opts.extra_networks_card_width}em;" if shared.opts.extra_networks_card_width else ''
+        height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
+        width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
         background_image = f"background-image: url(\"{html.escape(preview)}\");" if preview else ''
+        metadata_button = ""
+        metadata = item.get("metadata")
+        if metadata:
+            metadata_button = f"<div class='metadata-button' title='Show metadata' onclick='extraNetworksRequestMetadata({json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
 
         args = {
             "style": f"'{height}{width}{background_image}'",
@@ -134,12 +161,43 @@ class ExtraNetworksPage:
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
             "name": item["name"],
+            "description": (item.get("description") or ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
+            "metadata_button": metadata_button,
         }
 
         return self.card_page.format(**args)
+
+    def find_preview(self, path):
+        """
+        Find a preview PNG for a given path (without extension) and call link_preview on it.
+        """
+
+        preview_extensions = ["png", "jpg", "webp"]
+        if shared.opts.samples_format not in preview_extensions:
+            preview_extensions.append(shared.opts.samples_format)
+
+        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
+
+        for file in potential_files:
+            if os.path.isfile(file):
+                return self.link_preview(file)
+
+        return None
+
+    def find_description(self, path):
+        """
+        Find and read a description file for a given path (without extension).
+        """
+        for file in [f"{path}.txt", f"{path}.description.txt"]:
+            try:
+                with open(file, "r", encoding="utf-8", errors="replace") as f:
+                    return f.read()
+            except OSError:
+                pass
+        return None
 
 
 def intialize():
@@ -182,12 +240,12 @@ def create_ui(container, button, tabname):
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
         for page in ui.stored_extra_pages:
             with gr.Tab(page.title):
+
                 page_elem = gr.HTML(page.create_html(ui.tabname))
                 ui.pages.append(page_elem)
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
-    button_close = gr.Button('Close', elem_id=tabname+"_extra_close")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
@@ -198,7 +256,6 @@ def create_ui(container, button, tabname):
 
     state_visible = gr.State(value=False)
     button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
-    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     def refresh():
         res = []
