@@ -132,14 +132,12 @@ function popup(contents){
     globalPopup.style.display = "flex";
 }
 
-function extraNetworksShowMetadata(event, text){
+function extraNetworksShowMetadata(text){
     elem = document.createElement('pre')
     elem.classList.add('popup-metadata');
     elem.textContent = text;
 
     popup(elem);
-    
-    event.stopPropagation()
 }
 
 function requestGet(url, data, handler, errorHandler){
@@ -166,7 +164,7 @@ function requestGet(url, data, handler, errorHandler){
     xhr.send(js);
 }
 
-function extraNetworksRequestMetadata(extraPage, cardName){
+function extraNetworksRequestMetadata(event, extraPage, cardName){
     showError = function(){ extraNetworksShowMetadata("there was an error getting metadata"); }
 
     requestGet("./sd_extra_networks/metadata", {"page": extraPage, "item": cardName}, function(data){
@@ -176,4 +174,6 @@ function extraNetworksRequestMetadata(extraPage, cardName){
             showError()
         }
     }, showError)
+
+    event.stopPropagation()
 }
