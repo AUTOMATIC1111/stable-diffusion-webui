@@ -645,6 +645,8 @@ Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}
 
 
 def image_data(data):
+    import gradio as gr
+
     try:
         image = Image.open(io.BytesIO(data))
         textinfo, _ = read_info_from_image(image)
@@ -660,7 +662,7 @@ def image_data(data):
     except Exception:
         pass
 
-    return '', None
+    return gr.update(), None
 
 
 def flatten(img, bgcolor):
