@@ -301,7 +301,7 @@ def create_toprow(is_img2img):
 
         with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
             with gr.Row(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
-                interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
+                interrupt = gr.Button('Stop', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
                 skip = gr.Button('Skip', elem_id=f"{id_part}_skip", elem_classes="generate-box-skip")
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
 
@@ -1133,7 +1133,7 @@ def create_ui():
 
                         with gr.Column():
                             with gr.Row():
-                                interrupt_preprocessing = gr.Button("Interrupt", elem_id="train_interrupt_preprocessing")
+                                interrupt_preprocessing = gr.Button("Stop", elem_id="train_interrupt_preprocessing")
                             run_preprocess = gr.Button(value="Preprocess", variant='primary', elem_id="train_run_preprocess")
 
                     process_split.change(
@@ -1206,7 +1206,7 @@ def create_ui():
 
                     with gr.Row():
                         train_embedding = gr.Button(value="Train Embedding", variant='primary', elem_id="train_train_embedding")
-                        interrupt_training = gr.Button(value="Interrupt", elem_id="train_interrupt_training")
+                        interrupt_training = gr.Button(value="Stop", elem_id="train_interrupt_training")
                         train_hypernetwork = gr.Button(value="Train Hypernetwork", variant='primary', elem_id="train_train_hypernetwork")
 
                 params = script_callbacks.UiTrainTabParams(txt2img_preview_params)

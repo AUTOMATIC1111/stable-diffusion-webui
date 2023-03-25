@@ -5,9 +5,9 @@ import os
 import sys
 import time
 
-from PIL import Image
 import gradio as gr
 import tqdm
+from rich import print
 
 import modules.interrogate
 import modules.memmon
@@ -20,6 +20,17 @@ demo = None
 
 parser = cmd_args.parser
 
+try:
+    from rich.pretty import install as pretty_install
+    from rich.traceback import install as traceback_install
+    from rich.console import Console
+    console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
+    pretty_install(console=console)
+    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, show_locals=True, max_frames=2)
+except:
+    console = None
+    import traceback
+
 script_loading.preload_extensions(extensions_dir, parser)
 script_loading.preload_extensions(extensions_builtin_dir, parser)
 
@@ -27,7 +38,6 @@ if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
     cmd_opts = parser.parse_args()
 else:
     cmd_opts, _ = parser.parse_known_args()
-
 
 restricted_opts = {
     "samples_filename_pattern",
@@ -60,7 +70,6 @@ devices.device, devices.device_interrogate, devices.device_gfpgan, devices.devic
     (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
 
 device = devices.device
-weight_load_location = None if cmd_opts.lowram else "cpu"
 
 batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
@@ -606,7 +615,7 @@ class TotalTQDM:
 
     def reset(self):
         self._tqdm = tqdm.tqdm(
-            desc="Total progress",
+            desc="Total",
             total=state.job_count * state.sampling_steps,
             position=1,
             file=progress_print_out
@@ -656,3 +665,9 @@ def html(filename):
             return file.read()
 
     return ""
+
+def exception():
+    if console is not None:
+        console.print_exception(show_locals=True, max_frames=10, extra_lines=1, suppress=[gr], word_wrap=False, width=min([console.width, 200]))
+    else:
+        print(traceback.format_exc(), file=sys.stderr)

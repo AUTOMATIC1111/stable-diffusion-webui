@@ -30,6 +30,7 @@ __pycache__
 # unexcluded so folders get created
 !/repositories/.placeholder
 !/extensions/.placeholder
-!/embeddings/.placeholder
 !/outputs/.placeholder
 !/models/.placeholder
+!/models/embeddings/.placeholder
+!/models/hypernetworks/.placeholder

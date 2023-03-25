@@ -18,7 +18,7 @@ if [ "$PYTHON" == "" ]; then
 fi
 
 # Note: Some defaults are changed in shared.py
-CMD="launch.py --skip-install --cors-allow-origins=http://127.0.0.1:7860"
+CMD="launch.py --cors-allow-origins=http://127.0.0.1:7860"
 
 MODE=optimized
 

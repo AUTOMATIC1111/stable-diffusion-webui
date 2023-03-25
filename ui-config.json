@@ -1537,5 +1537,12 @@
     "customscript/seed_travel.py/txt2img/Interpolation curve/visible": true,
     "customscript/seed_travel.py/txt2img/Interpolation curve/value": "Linear",
     "customscript/seed_travel.py/img2img/Interpolation curve/visible": true,
-    "customscript/seed_travel.py/img2img/Interpolation curve/value": "Linear"
+    "customscript/seed_travel.py/img2img/Interpolation curve/value": "Linear",
+    "customscript/loopback.py/img2img/Final denoising strength/visible": true,
+    "customscript/loopback.py/img2img/Final denoising strength/value": 0.5,
+    "customscript/loopback.py/img2img/Final denoising strength/minimum": 0,
+    "customscript/loopback.py/img2img/Final denoising strength/maximum": 1,
+    "customscript/loopback.py/img2img/Final denoising strength/step": 0.01,
+    "customscript/loopback.py/img2img/Denoising strength curve/visible": true,
+    "customscript/loopback.py/img2img/Denoising strength curve/value": "Linear"
 }
