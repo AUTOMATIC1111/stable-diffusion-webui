@@ -240,7 +240,7 @@ def webui():
         shared.demo = modules.ui.create_ui()
         startup_timer.record("create ui")
 
-        if cmd_opts.gradio_queue:
+        if not cmd_opts.no_gradio_queue:
             shared.demo.queue(64)
 
         gradio_auth_creds = []
@@ -262,6 +262,9 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
+        for dep in shared.demo.dependencies:
+            dep['show_progress'] = False  # disable gradio css animation on component update
+
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
 

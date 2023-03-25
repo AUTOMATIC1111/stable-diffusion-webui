@@ -14,7 +14,7 @@ parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.real
 args, _ = parser.parse_known_args(sys.argv)
 
 script_path = os.path.dirname(__file__)
-data_path = os.getcwd()
+data_path = args.data_dir
 
 dir_repos = "repositories"
 dir_extensions = "extensions"
@@ -24,6 +24,8 @@ index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
 skip_install = False
 
+if 'GRADIO_ANALYTICS_ENABLED' not in os.environ:
+    os.environ['GRADIO_ANALYTICS_ENABLED'] = 'False'
 
 def check_python_version():
     is_windows = platform.system() == "Windows"
@@ -231,7 +233,7 @@ def run_extensions_installers(settings_file):
         return
 
     for dirname_extension in list_extensions(settings_file):
-        run_extension_installer(os.path.join(dir_extensions, dirname_extension))
+        run_extension_installer(os.path.join(data_path, dir_extensions, dirname_extension))
 
 
 def prepare_environment():
