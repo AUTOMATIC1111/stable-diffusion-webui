@@ -9,7 +9,7 @@ from realesrgan import RealESRGANer
 
 from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import cmd_opts, opts
-
+from modules import modelloader
 
 class UpscalerRealESRGAN(Upscaler):
     def __init__(self, path):
@@ -23,7 +23,15 @@ class UpscalerRealESRGAN(Upscaler):
             self.enable = True
             self.scalers = []
             scalers = self.load_models(path)
+
+            local_model_paths = self.find_models(ext_filter=[".pth"])
             for scaler in scalers:
+                if scaler.local_data_path.startswith("http"):
+                    filename = modelloader.friendly_name(scaler.local_data_path)
+                    local = next(iter([local_model for local_model in local_model_paths if local_model.endswith(filename + '.pth')]), None)
+                    if local:
+                        scaler.local_data_path = local
+
                 if scaler.name in opts.realesrgan_enabled_models:
                     self.scalers.append(scaler)
 
@@ -64,7 +72,9 @@ class UpscalerRealESRGAN(Upscaler):
                 print(f"Unable to find model info: {path}")
                 return None
 
-            info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
+            if info.local_data_path.startswith("http"):
+                info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
+
             return info
         except Exception as e:
             print(f"Error making Real-ESRGAN models list: {e}", file=sys.stderr)
