@@ -24,6 +24,7 @@ index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
 skip_install = False
 
+os.environ['GRADIO_ANALYTICS_ENABLED'] = 'False'
 
 def check_python_version():
     is_windows = platform.system() == "Windows"
