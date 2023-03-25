@@ -9,6 +9,7 @@ from omegaconf import OmegaConf
 from os import mkdir
 from urllib import request
 import ldm.modules.midas as midas
+import io
 
 from ldm.util import instantiate_from_config
 
@@ -16,6 +17,9 @@ from modules import paths, shared, modelloader, devices, script_callbacks, sd_va
 from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
+
+import rich
+from rich import print
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
@@ -234,16 +238,18 @@ def read_metadata_from_safetensors(filename):
         return res
 
 
-def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
-    _, extension = os.path.splitext(checkpoint_file)
-    if extension.lower() == ".safetensors":
-        device = map_location or shared.weight_load_location or devices.get_optimal_device_name()
-        pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
+def read_state_dict(checkpoint_file):
+    if 'v1-5-pruned-emaonly.safetensors' in checkpoint_file:
+        pl_sd = safetensors.torch.load_file(checkpoint_file, device='cpu')
     else:
-        pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
-
-    if print_global_state and "global_step" in pl_sd:
-        print(f"Global Step: {pl_sd['global_step']}")
+        _, extension = os.path.splitext(checkpoint_file)
+        with rich.progress.open(checkpoint_file, 'rb') as f:
+            if extension.lower() == ".safetensors":
+                buffer = f.read()
+                pl_sd = safetensors.torch.load(buffer)
+            else:
+                buffer = io.BytesIO(f.read())
+                pl_sd = torch.load(buffer, map_location='cpu')
 
     sd = get_state_dict_from_checkpoint(pl_sd)
     return sd
@@ -255,12 +261,12 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
 
     if checkpoint_info in checkpoints_loaded:
         # use checkpoint cache
-        print(f"Loading weights [{sd_model_hash}] from cache")
+        print(f"Loading weights from cache")
         return checkpoints_loaded[checkpoint_info]
 
-    print(f"Loading weights [{sd_model_hash}] from {checkpoint_info.filename}")
+    print(f"Loading weights from {checkpoint_info.filename}")
     res = read_state_dict(checkpoint_info.filename)
-    timer.record("load weights from disk")
+    timer.record("load weights")
 
     return res
 
@@ -276,7 +282,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     model.load_state_dict(state_dict, strict=False)
     del state_dict
-    timer.record("apply weights to model")
+    timer.record("apply weights")
 
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
@@ -302,15 +308,12 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if depth_model:
             model.depth_model = depth_model
 
-        timer.record("apply half()")
-
     devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
     devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
     devices.dtype_unet = model.model.diffusion_model.dtype
     devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
     model.first_stage_model.to(devices.dtype_vae)
-    timer.record("apply dtype to VAE")
 
     # clean up cache if limit is reached
     while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
@@ -327,7 +330,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     sd_vae.clear_loaded_vae()
     vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
     sd_vae.load_vae(model, vae_file, vae_source)
-    timer.record("load VAE")
+    timer.record("load vae")
 
 
 def enable_midas_autodownload():
@@ -387,7 +390,7 @@ def repair_config(sd_config):
 sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embedding.weight'
 sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight'
 
-def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_to_load_state_dict=None):
+def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
 
@@ -440,7 +443,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
     else:
         sd_model.to(shared.device)
 
-    timer.record("move model to device")
+    timer.record("device move")
 
     sd_hijack.model_hijack.hijack(sd_model)
 
@@ -512,11 +515,9 @@ def reload_model_weights(sd_model=None, info=None):
 
         if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
             sd_model.to(devices.device)
-            timer.record("move model to device")
+            timer.record("device move")
 
     print(f"Weights loaded in {timer.summary()}.")
-
-    return sd_model
 
 def unload_model_weights(sd_model=None, info=None):
     from modules import lowvram, devices, sd_hijack
