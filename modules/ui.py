@@ -1098,6 +1098,7 @@ def create_ui():
                     preprocess_txt_action = gr.Dropdown(label='Existing Caption txt Action', value="ignore", choices=["ignore", "copy", "prepend", "append"], elem_id="train_preprocess_txt_action")
 
                     with gr.Row():
+                        process_keep_original_size = gr.Checkbox(label='Keep original size', elem_id="train_process_keep_original_size")
                         process_flip = gr.Checkbox(label='Create flipped copies', elem_id="train_process_flip")
                         process_split = gr.Checkbox(label='Split oversized images', elem_id="train_process_split")
                         process_focal_crop = gr.Checkbox(label='Auto focal point crop', elem_id="train_process_focal_crop")
@@ -1264,6 +1265,7 @@ def create_ui():
                 process_width,
                 process_height,
                 preprocess_txt_action,
+                process_keep_original_size,
                 process_flip,
                 process_split,
                 process_caption,
