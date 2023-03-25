@@ -55,7 +55,6 @@ div.compact{
 }
 
 .gradio-dropdown ul.options{
-    max-height: 35em;
     z-index: 3000;
 }
 

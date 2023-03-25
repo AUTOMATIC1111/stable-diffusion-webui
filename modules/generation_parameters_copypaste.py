@@ -401,9 +401,14 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
 
     button.click(
         fn=paste_func,
-        _js=f"recalculate_prompts_{tabname}",
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],
+    )
+    button.click(
+        fn=None,
+        _js=f"recalculate_prompts_{tabname}",
+        inputs=[],
+        outputs=[],
     )
 
 
