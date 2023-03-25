@@ -15,7 +15,7 @@
     "comma_padding_backtrack": 20,
     "control_net_model_config": "models/cldm_v15.yaml",
     "control_net_model_adapter_config": "models/sketch_adapter_v14.yaml",
-    "control_net_detectedmap_dir": "detected_maps",
+    "control_net_detectedmap_dir": "outputs/maps",
     "control_net_models_path": "",
     "control_net_max_models_num": 1,
     "control_net_model_cache_size": 1,
