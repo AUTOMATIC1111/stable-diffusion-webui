@@ -129,7 +129,7 @@ class EmbeddingDatabase:
         if first_id not in self.ids_lookup:
             self.ids_lookup[first_id] = []
 
-        self.ids_lookup[first_id] = sorted(self.ids_lookup[first_id] + [(ids, embedding)], key=lambda x: (len(x[0]), x[0].casefold()), reverse=True)
+        self.ids_lookup[first_id] = sorted(self.ids_lookup[first_id] + [(ids, embedding)], key=lambda x: len(x[0]), reverse=True)
 
         return embedding
 
@@ -196,7 +196,7 @@ class EmbeddingDatabase:
             return
 
         for root, dirs, fns in os.walk(embdir.path, followlinks=True):
-            for fn in sorted(fns, key=str.lower):
+            for fn in fns:
                 try:
                     fullfn = os.path.join(root, fn)
 
