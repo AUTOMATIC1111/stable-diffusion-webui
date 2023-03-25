@@ -149,7 +149,7 @@ Requested path was: {f}
                     download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
 
                 with gr.Group():
-                    html_info = gr.HTML(elem_id=f'html_info_{tabname}')
+                    html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
                     html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
                     generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
@@ -196,7 +196,7 @@ Requested path was: {f}
 
             else:
                 html_info_x = gr.HTML(elem_id=f'html_info_x_{tabname}')
-                html_info = gr.HTML(elem_id=f'html_info_{tabname}')
+                html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
                 html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
             paste_field_names = []
