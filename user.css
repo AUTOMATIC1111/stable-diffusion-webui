@@ -1,6 +1,6 @@
 /* generic html tags */
 html { font-size: 16px; }
-body, button, input, select, textarea { font-family: "Segoe UI"; font-variant: small-caps; overflow-x: hidden; background-color: black !important }
+body, button, input, select, textarea { font-family: "Segoe UI"; font-variant: small-caps; overflow-x: hidden; }
 button { font-size: 1.2rem; }
 img { background-color: black; }
 input[type=range] { height: 16px; appearance: none; margin-top: 0; min-width: 160px }
