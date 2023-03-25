@@ -34,6 +34,6 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
 
             lora_on_disk = lora.available_loras.get(name, None)
             if lora_on_disk:
-                lora_hashes.append(f"lora/{name}:{lora_on_disk.shorthash()}")
+                lora_hashes.append(f"{name}:{lora_on_disk.shorthash()}")
 
         return {"Lora hashes": ", ".join(lora_hashes)}

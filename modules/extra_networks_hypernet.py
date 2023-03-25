@@ -38,6 +38,6 @@ class ExtraNetworkHypernet(extra_networks.ExtraNetwork):
                 sha256 = hashes.sha256(filename, f'hypernet/{name}')
                 if sha256:
                     shorthash = sha256[0:10]
-                    hypernet_hashes.append(f"hypernet/{name}:{shorthash}")
+                    hypernet_hashes.append(f"{name}:{shorthash}")
 
         return {"Hypernet hashes": ", ".join(hypernet_hashes)}
