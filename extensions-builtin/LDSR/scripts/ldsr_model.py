@@ -25,22 +25,28 @@ class UpscalerLDSR(Upscaler):
         yaml_path = os.path.join(self.model_path, "project.yaml")
         old_model_path = os.path.join(self.model_path, "model.pth")
         new_model_path = os.path.join(self.model_path, "model.ckpt")
-        safetensors_model_path = os.path.join(self.model_path, "model.safetensors")
+
+        local_model_paths = self.find_models(ext_filter=[".ckpt", ".safetensors"])
+        local_ckpt_path = next(iter([local_model for local_model in local_model_paths if local_model.endswith("model.ckpt")]), None)
+        local_safetensors_path = next(iter([local_model for local_model in local_model_paths if local_model.endswith("model.safetensors")]), None)
+        local_yaml_path = next(iter([local_model for local_model in local_model_paths if local_model.endswith("project.yaml")]), None)
+
         if os.path.exists(yaml_path):
             statinfo = os.stat(yaml_path)
             if statinfo.st_size >= 10485760:
                 print("Removing invalid LDSR YAML file.")
                 os.remove(yaml_path)
+
         if os.path.exists(old_model_path):
             print("Renaming model from model.pth to model.ckpt")
             os.rename(old_model_path, new_model_path)
-        if os.path.exists(safetensors_model_path):
-            model = safetensors_model_path
+
+        if local_safetensors_path is not None and os.path.exists(local_safetensors_path):
+            model = local_safetensors_path
         else:
-            model = load_file_from_url(url=self.model_url, model_dir=self.model_path,
-                                       file_name="model.ckpt", progress=True)
-        yaml = load_file_from_url(url=self.yaml_url, model_dir=self.model_path,
-                                  file_name="project.yaml", progress=True)
+            model = local_ckpt_path if local_ckpt_path is not None else load_file_from_url(url=self.model_url, model_dir=self.model_path, file_name="model.ckpt", progress=True)
+
+        yaml = local_yaml_path if local_yaml_path is not None else load_file_from_url(url=self.yaml_url, model_dir=self.model_path, file_name="project.yaml", progress=True)
 
         try:
             return LDSR(model, yaml)
