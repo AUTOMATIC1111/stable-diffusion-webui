@@ -7,8 +7,6 @@ import shlex
 import platform
 import argparse
 import json
-import warnings
-from rich import print
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument("--ui-settings-file", type=str, default='config.json')
@@ -17,6 +15,7 @@ args, _ = parser.parse_known_args(sys.argv)
 
 script_path = os.path.dirname(__file__)
 data_path = os.getcwd()
+
 dir_repos = "repositories"
 dir_extensions = "extensions"
 python = sys.executable
@@ -25,7 +24,6 @@ index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
 skip_install = False
 
-warnings.filterwarnings(action="ignore", category=UserWarning)
 
 def check_python_version():
     is_windows = platform.system() == "Windows"
@@ -36,11 +34,26 @@ def check_python_version():
     if is_windows:
         supported_minors = [10]
     else:
-        supported_minors = [9, 10, 11]
+        supported_minors = [7, 8, 9, 10, 11]
 
     if not (major == 3 and minor in supported_minors):
         import modules.errors
-        modules.errors.print_error_explanation(f"Incompatible Python version: {major}.{minor}.{micro} required 3.9-3.11")
+
+        modules.errors.print_error_explanation(f"""
+INCOMPATIBLE PYTHON VERSION
+
+This program is tested with 3.10.6 Python, but you have {major}.{minor}.{micro}.
+If you encounter an error with "RuntimeError: Couldn't install torch." message,
+or any other error regarding unsuccessful package (library) installation,
+please downgrade (or upgrade) to the latest version of 3.10 Python
+and delete current Python and "venv" folder in WebUI's directory.
+
+You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3109/
+
+{"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases" if is_windows else ""}
+
+Use --skip-python-version-check to suppress this warning.
+""")
 
 
 def commit_hash():
@@ -167,6 +180,23 @@ def git_pull_recursive(dir):
                 print(f"Couldn't perform 'git pull' on repository in '{subdir}':\n{e.output.decode('utf-8').strip()}\n")
 
 
+def version_check(commit):
+    try:
+        import requests
+        commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master').json()
+        if commit != "<none>" and commits['commit']['sha'] != commit:
+            print("--------------------------------------------------------")
+            print("| You are not up to date with the most recent release. |")
+            print("| Consider running `git pull` to update.               |")
+            print("--------------------------------------------------------")
+        elif commits['commit']['sha'] == commit:
+            print("You are up to date with the most recent release.")
+        else:
+            print("Not a git clone, can't perform version check.")
+    except Exception as e:
+        print("version check failed", e)
+
+
 def run_extension_installer(extension_dir):
     path_installer = os.path.join(extension_dir, "install.py")
     if not os.path.isfile(path_installer):
@@ -176,9 +206,7 @@ def run_extension_installer(extension_dir):
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.abspath(".")
 
-        stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env)
-        if stdout is not None:
-            print(stdout)
+        print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env))
     except Exception as e:
         print(e, file=sys.stderr)
 
@@ -209,9 +237,11 @@ def run_extensions_installers(settings_file):
 def prepare_environment():
     global skip_install
 
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
     commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
+    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16rc425')
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
     openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
@@ -222,10 +252,9 @@ def prepare_environment():
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
 
-    stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "fc1488421a2761937b9d54784194157882cbc3b1")
-    taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "3ba01b241669f5ade541ce990f7650a3b8f65318")
-    # k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "5b3af030dd83e0297272d861c19477735d0317ec")
-    k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "b43db16749d51055f813255eea2fdf1def801919")
+    stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "47b6b607fdd31875c9279cd2f4f16b92e4ea958e")
+    taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
+    k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "5b3af030dd83e0297272d861c19477735d0317ec")
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
@@ -233,14 +262,29 @@ def prepare_environment():
 
     sys.argv, _ = extract_arg(sys.argv, '-f')
     sys.argv, update_all_extensions = extract_arg(sys.argv, '--update-all-extensions')
+    sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
     sys.argv, skip_python_version_check = extract_arg(sys.argv, '--skip-python-version-check')
+    sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
+    sys.argv, reinstall_torch = extract_arg(sys.argv, '--reinstall-torch')
+    sys.argv, update_check = extract_arg(sys.argv, '--update-check')
+    sys.argv, run_tests, test_dir = extract_opt(sys.argv, '--tests')
     sys.argv, skip_install = extract_arg(sys.argv, '--skip-install')
+    xformers = '--xformers' in sys.argv
     ngrok = '--ngrok' in sys.argv
 
     if not skip_python_version_check:
         check_python_version()
 
     commit = commit_hash()
+
+    print(f"Python {sys.version}")
+    print(f"Commit hash: {commit}")
+
+    if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
+        run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
+
+    if not skip_torch_cuda_test:
+        run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
 
     if not is_installed("gfpgan"):
         run_pip(f"install {gfpgan_package}", "gfpgan")
@@ -250,6 +294,18 @@ def prepare_environment():
 
     if not is_installed("open_clip"):
         run_pip(f"install {openclip_package}", "open_clip")
+
+    if (not is_installed("xformers") or reinstall_xformers) and xformers:
+        if platform.system() == "Windows":
+            if platform.python_version().startswith("3.10"):
+                run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
+            else:
+                print("Installation of xformers is not supported in this version of Python.")
+                print("You can also check this and build manually: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers#building-xformers-on-windows-by-duckness")
+                if not is_installed("xformers"):
+                    exit(0)
+        elif platform.system() == "Linux":
+            run_pip(f"install {xformers_package}", "xformers")
 
     if not is_installed("pyngrok") and ngrok:
         run_pip("install pyngrok", "ngrok")
@@ -269,31 +325,50 @@ def prepare_environment():
         requirements_file = os.path.join(script_path, requirements_file)
     run_pip(f"install -r \"{requirements_file}\"", "requirements for Web UI")
 
-    if "--exit" in sys.argv:
-        exit(0)
-
     run_extensions_installers(settings_file=args.ui_settings_file)
+
+    if update_check:
+        version_check(commit)
 
     if update_all_extensions:
         git_pull_recursive(os.path.join(data_path, dir_extensions))
     
+    if "--exit" in sys.argv:
+        print("Exiting because of --exit argument")
+        exit(0)
+
+    if run_tests:
+        exitcode = tests(test_dir)
+        exit(exitcode)
+
+
+def tests(test_dir):
+    if "--api" not in sys.argv:
+        sys.argv.append("--api")
+    if "--ckpt" not in sys.argv:
+        sys.argv.append("--ckpt")
+        sys.argv.append(os.path.join(script_path, "test/test_files/empty.pt"))
+    if "--skip-torch-cuda-test" not in sys.argv:
+        sys.argv.append("--skip-torch-cuda-test")
+    if "--disable-nan-check" not in sys.argv:
+        sys.argv.append("--disable-nan-check")
+
+    print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
+
+    os.environ['COMMANDLINE_ARGS'] = ""
+    with open(os.path.join(script_path, 'test/stdout.txt'), "w", encoding="utf8") as stdout, open(os.path.join(script_path, 'test/stderr.txt'), "w", encoding="utf8") as stderr:
+        proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
+
+    import test.server_poll
+    exitcode = test.server_poll.run_tests(proc, test_dir)
+
+    print(f"Stopping Web UI process with id {proc.pid}")
+    proc.kill()
+    return exitcode
+
 
 def start():
-    print(f"Launching server with arguments: {' '.join(sys.argv[1:])}")
-
-    rich_installed = False
-    try:
-        from rich.pretty import install as pretty_install
-        from rich.traceback import install as traceback_install
-        from rich.console import Console
-        console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
-        pretty_install(console=console)
-        traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, show_locals=True, max_frames=2)
-        rich_installed = True
-    except:
-        import traceback
-        pass # if rich is not installed do nothing
-
+    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
     if '--nowebui' in sys.argv:
         webui.api_only()
