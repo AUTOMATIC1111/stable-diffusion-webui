@@ -246,6 +246,10 @@ button.custom-button{
     width: 50%;
     height: 100%;
     display: none;
+    background: #b4c0cc;
+}
+.gradio-button.generate-box-skip:hover, .gradio-button.generate-box-interrupt:hover{
+    background: #c2cfdb;
 }
 .gradio-button.generate-box-interrupt{
     left: 0;
