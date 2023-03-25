@@ -94,6 +94,37 @@ extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 
 
+def compile_css():
+    css = []
+
+    for cssfile in modules.scripts.list_files_with_name("style.css"):
+        if not os.path.isfile(cssfile):
+            continue
+
+        with open(cssfile, "r", encoding="utf8") as file:
+            css.append(file.read())
+
+    if os.path.exists(os.path.join(data_path, "user.css")):
+        with open(os.path.join(data_path, "user.css"), "r", encoding="utf8") as file:
+            css.append(file.read())
+
+    if not cmd_opts.no_progressbar_hiding:
+        css.append(css_hide_progressbar)
+
+    return "\n".join(css)
+
+
+def reload_gradio_css(demo):
+    css = compile_css()
+
+    demo.css = css
+    demo.config["css"] = css
+
+    print("Reloaded CSS.")
+
+    return css
+
+
 def plaintext_to_html(text):
     return ui_common.plaintext_to_html(text)
 
@@ -1445,6 +1476,8 @@ def create_ui():
             with gr.Column(scale=6):
                 settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
             with gr.Column():
+                reload_css = gr.Button(value='Reload CSS', elem_id="settings_reload_css")
+            with gr.Column():
                 restart_gradio = gr.Button(value='Reload UI', variant='primary', elem_id="settings_restart_gradio")
 
         result = gr.HTML(elem_id="settings_result")
@@ -1566,21 +1599,7 @@ def create_ui():
         (train_interface, "Train", "ti"),
     ]
 
-    css = ""
-
-    for cssfile in modules.scripts.list_files_with_name("style.css"):
-        if not os.path.isfile(cssfile):
-            continue
-
-        with open(cssfile, "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if os.path.exists(os.path.join(data_path, "user.css")):
-        with open(os.path.join(data_path, "user.css"), "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if not cmd_opts.no_progressbar_hiding:
-        css += css_hide_progressbar
+    css = compile_css()
 
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
@@ -1606,6 +1625,10 @@ def create_ui():
                     continue
                 with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
                     interface.render()
+
+        css_state = gr.Textbox("", visible=False)
+        reload_css.click(fn=lambda demo=demo: reload_gradio_css(demo), inputs=[], outputs=[css_state]) \
+                  .success(fn=None, _js="updateInlineStylesheet", inputs=[css_state], outputs=[])
 
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
