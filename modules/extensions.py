@@ -6,6 +6,7 @@ import time
 import git
 
 from modules import paths, shared
+from modules.paths_internal import extensions_dir, extensions_builtin_dir
 
 extensions = []
 
