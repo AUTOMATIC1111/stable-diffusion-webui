@@ -641,6 +641,7 @@ footer {
     text-shadow: 2px 2px 3px black;
     padding: 0.25em;
     font-size: 22pt;
+    width: 1.5em;
 }
 .extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{
     display: inline-block;
