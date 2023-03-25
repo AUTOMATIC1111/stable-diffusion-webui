@@ -27,7 +27,7 @@ class ExtraNetworkHypernet(extra_networks.ExtraNetwork):
         pass
 
     def infotext_params(self, p, params_list):
-        infotext_params = {}
+        hypernet_hashes = []
 
         for params in params_list:
             assert len(params.items) > 0
@@ -38,6 +38,6 @@ class ExtraNetworkHypernet(extra_networks.ExtraNetwork):
                 sha256 = hashes.sha256(filename, f'hypernet/{name}')
                 if sha256:
                     shorthash = sha256[0:10]
-                    infotext_params[f"hypernet/{name}"] = shorthash
+                    hypernet_hashes.append(f"hypernet/{name}:{shorthash}")
 
-        return infotext_params
+        return {"Hypernet hashes": ", ".join(hypernet_hashes)}

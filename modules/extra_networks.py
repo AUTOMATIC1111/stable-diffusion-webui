@@ -153,11 +153,7 @@ def get_infotext_params(p: StableDiffusionProcessing, extra_network_data: Dict[s
         except Exception as e:
             errors.display(e, f"getting unmentioned extra network params {extra_network_name}")
 
-    result = []
-    for k, v in params.items():
-        result.append(f"{k}: {v}".replace('"', '\\"'))
-
-    return ", ".join(result)
+    return dict(params)
 
 
 re_extra_net = re.compile(r"<(\w+):([^>]+)>")
