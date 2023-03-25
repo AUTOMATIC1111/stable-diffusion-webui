@@ -1494,11 +1494,33 @@ def create_ui():
                 request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
                 download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
                 reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
+                with gr.Row():
+                    unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
+                    reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
 
             with gr.TabItem("Licenses"):
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
             gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
+            
+
+        def unload_sd_weights():
+            modules.sd_models.unload_model_weights()
+
+        def reload_sd_weights():
+            modules.sd_models.reload_model_weights()
+
+        unload_sd_model.click(
+            fn=unload_sd_weights,
+            inputs=[],
+            outputs=[]
+        )
+
+        reload_sd_model.click(
+            fn=reload_sd_weights,
+            inputs=[],
+            outputs=[]
+        )
 
         request_notifications.click(
             fn=lambda: None,
