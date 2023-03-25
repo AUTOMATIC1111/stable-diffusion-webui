@@ -178,7 +178,7 @@ def select_checkpoint():
     return checkpoint_info
 
 
-chckpoint_dict_replacements = {
+checkpoint_dict_replacements = {
     'cond_stage_model.transformer.embeddings.': 'cond_stage_model.transformer.text_model.embeddings.',
     'cond_stage_model.transformer.encoder.': 'cond_stage_model.transformer.text_model.encoder.',
     'cond_stage_model.transformer.final_layer_norm.': 'cond_stage_model.transformer.text_model.final_layer_norm.',
@@ -186,7 +186,7 @@ chckpoint_dict_replacements = {
 
 
 def transform_checkpoint_dict_key(k):
-    for text, replacement in chckpoint_dict_replacements.items():
+    for text, replacement in checkpoint_dict_replacements.items():
         if k.startswith(text):
             k = replacement + k[len(text):]
 
@@ -208,6 +208,30 @@ def get_state_dict_from_checkpoint(pl_sd):
     pl_sd.update(sd)
 
     return pl_sd
+
+
+def read_metadata_from_safetensors(filename):
+    import json
+
+    with open(filename, mode="rb") as file:
+        metadata_len = file.read(8)
+        metadata_len = int.from_bytes(metadata_len, "little")
+        json_start = file.read(2)
+
+        assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
+        json_data = json_start + file.read(metadata_len-2)
+        json_obj = json.loads(json_data)
+
+        res = {}
+        for k, v in json_obj.get("__metadata__", {}).items():
+            res[k] = v
+            if isinstance(v, str) and v[0:1] == '{':
+                try:
+                    res[k] = json.loads(v)
+                except Exception as e:
+                    pass
+
+        return res
 
 
 def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
@@ -470,7 +494,7 @@ def reload_model_weights(sd_model=None, info=None):
     if sd_model is None or checkpoint_config != sd_model.used_config:
         del sd_model
         checkpoints_loaded.clear()
-        load_model(checkpoint_info, already_loaded_state_dict=state_dict, time_taken_to_load_state_dict=timer.records["load weights from disk"])
+        load_model(checkpoint_info, already_loaded_state_dict=state_dict)
         return shared.sd_model
 
     try:
@@ -491,5 +515,25 @@ def reload_model_weights(sd_model=None, info=None):
             timer.record("move model to device")
 
     print(f"Weights loaded in {timer.summary()}.")
+
+    return sd_model
+
+def unload_model_weights(sd_model=None, info=None):
+    from modules import lowvram, devices, sd_hijack
+    timer = Timer()
+
+    if shared.sd_model:
+
+        # shared.sd_model.cond_stage_model.to(devices.cpu)
+        # shared.sd_model.first_stage_model.to(devices.cpu)
+        shared.sd_model.to(devices.cpu)
+        sd_hijack.model_hijack.undo_hijack(shared.sd_model)
+        shared.sd_model = None
+        sd_model = None
+        gc.collect()
+        devices.torch_gc()
+        torch.cuda.empty_cache()
+
+    print(f"Unloaded weights {timer.summary()}.")
 
     return sd_model
