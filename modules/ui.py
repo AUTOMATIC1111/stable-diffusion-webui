@@ -15,6 +15,7 @@ import warnings
 import gradio as gr
 import gradio.routes
 import gradio.utils
+from gradio.events import Releaseable
 import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
@@ -136,6 +137,26 @@ def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resiz
         p.init([""], [0], [0])
 
     return f"resize: from <span class='resolution'>{p.width}x{p.height}</span> to <span class='resolution'>{p.hr_resize_x or p.hr_upscale_to_x}x{p.hr_resize_y or p.hr_upscale_to_y}</span>"
+
+
+def calc_resolution_img2img(mode, scale, resize_x, resize_y, resize_mode, *i2i_images):
+    init_img = None
+    if mode in {0, 1, 3, 4}:
+        init_img = i2i_images[mode]
+    elif mode == 2:
+        init_img = i2i_images[mode]["image"]
+
+    if not init_img:
+        return ""
+
+    if scale > 1:
+        width = int(init_img.width * scale)
+        height = int(init_img.height * scale)
+    else:
+        width = resize_x
+        height = resize_y
+
+    return f"resize: from <span class='resolution'>{init_img.width}x{init_img.height}</span> to <span class='resolution'>{width}x{height}</span>"
 
 
 def apply_styles(prompt, prompt_neg, styles):
@@ -755,8 +776,13 @@ def create_ui():
                     elif category == "dimensions":
                         with FormRow():
                             with gr.Column(elem_id="img2img_column_size", scale=4):
-                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
-                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                                with FormRow(variant="compact"):
+                                    final_resolution = FormHTML(value="", elem_id="img2img_finalres", label="Upscaled resolution", interactive=False)
+                                with FormRow(variant="compact"):
+                                    scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=1.0, elem_id="img2img_scale")
+                                with FormRow(variant="compact"):
+                                    width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
+                                    height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
                             with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
@@ -824,6 +850,41 @@ def create_ui():
                                     outputs=[inpaint_controls, mask_alpha],
                                 )
 
+            img2img_resolution_preview_inputs = [dummy_component, # filled in by selected img2img tab index in _js
+                                                 scale, width, height, resize_mode,
+                                                 init_img, sketch, init_img_with_mask, inpaint_color_sketch, init_img_inpaint]
+            for input in img2img_resolution_preview_inputs:
+                if isinstance(input, Releaseable):
+                    input.release(
+                        fn=calc_resolution_img2img,
+                        _js="get_img2img_tab_index_for_res_preview",
+                        inputs=img2img_resolution_preview_inputs,
+                        outputs=[final_resolution],
+                        show_progress=False,
+                    )
+                    input.release(
+                        None,
+                        _js="onCalcResolutionImg2Img",
+                        inputs=img2img_resolution_preview_inputs,
+                        outputs=[],
+                        show_progress=False,
+                    )
+                else:
+                    input.change(
+                        fn=calc_resolution_img2img,
+                        _js="get_img2img_tab_index_for_res_preview",
+                        inputs=img2img_resolution_preview_inputs,
+                        outputs=[final_resolution],
+                        show_progress=False,
+                    )
+                    input.change(
+                        None,
+                        _js="onCalcResolutionImg2Img",
+                        inputs=img2img_resolution_preview_inputs,
+                        outputs=[],
+                        show_progress=False,
+                    )
+
             img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
@@ -872,6 +933,7 @@ def create_ui():
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
                     height,
                     width,
+                    scale,
                     resize_mode,
                     inpaint_full_res,
                     inpaint_full_res_padding,
@@ -957,6 +1019,7 @@ def create_ui():
                 (seed, "Seed"),
                 (width, "Size-1"),
                 (height, "Size-2"),
+                (scale, "Img2Img Upscale"),
                 (batch_size, "Batch size"),
                 (subseed, "Variation seed"),
                 (subseed_strength, "Variation seed strength"),

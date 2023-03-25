@@ -929,7 +929,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.75, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, **kwargs):
+    def __init__(self, init_images: Optional[list] = None, resize_mode: int = 0, denoising_strength: float = 0.75, image_cfg_scale: Optional[float] = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: Optional[float] = None, scale: float = 0, **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
@@ -949,10 +949,26 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask = None
         self.nmask = None
         self.image_conditioning = None
+        self.scale = scale
+
+    def get_final_size(self):
+        if self.scale > 1:
+            img = self.init_images[0]
+            width = int(img.width * self.scale)
+            height = int(img.height * self.scale)
+            return width, height
+        else:
+            return self.width, self.height
+
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         crop_region = None
+
+        if self.scale > 1:
+            self.extra_generation_params["Img2Img Upscale"] = self.scale
+
+        self.width, self.height = self.get_final_size()
 
         image_mask = self.image_mask
 
