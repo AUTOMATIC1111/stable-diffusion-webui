@@ -426,86 +426,51 @@ div.dimensions-tools{
 /* fullpage image viewer */
 
 #lightboxModal{
-  display: none;
-  position: fixed;
-  z-index: 1001;
-  padding-top: 100px;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(20, 20, 20, 0.95);
-  user-select: none;
-  -webkit-user-select: none;
+    display: none;
+    position: fixed;
+    z-index: 1001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(20, 20, 20, 0.95);
+    user-select: none;
+    -webkit-user-select: none;
+    flex-direction: column;
 }
 
 .modalControls {
-    display: grid;
-    grid-template-columns: 32px 32px 32px 1fr 32px;
-    grid-template-areas: "zoom tile save space close";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    padding: 16px;
-    gap: 16px;
+    display: flex;
+    gap: 1em;
+    padding: 1em;
     background-color: rgba(0,0,0,0.2);
 }
-
 .modalClose {
-    grid-area: close;
+    margin-left: auto;
 }
-
-.modalZoom {
-    grid-area: zoom;
-}
-
-.modalSave {
-    grid-area: save;
-}
-
-.modalTileImage {
-    grid-area: tile;
-}
-
-.modalClose,
-.modalZoom,
-.modalTileImage {
-  color: white;
-  font-size: 35px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.modalSave {
+.modalControls span{
     color: white;
-    font-size: 28px;
-    margin-top: 8px;
+    font-size: 35px;
     font-weight: bold;
     cursor: pointer;
+    width: 1em;
 }
 
-.modalClose:hover,
-.modalClose:focus,
-.modalSave:hover,
-.modalSave:focus,
-.modalZoom:hover,
-.modalZoom:focus {
-  color: #999;
-  text-decoration: none;
-  cursor: pointer;
+.modalControls span:hover, .modalControls span:focus{
+    color: #999;
+    text-decoration: none;
 }
 
-#modalImage {
+#lightboxModal > img {
     display: block;
     margin: auto;
     width: auto;
 }
 
-.modalImageFullscreen {
+#lightboxModal > img.modalImageFullscreen{
     object-fit: contain;
-    height: 90%;
+    height: 100%;
 }
 
 .modalPrev,
