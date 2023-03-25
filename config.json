@@ -40,10 +40,12 @@
     "directories_max_prompt_words": 8,
     "disable_weights_auto_swap": false,
     "disabled_extensions": [
+        "a1111-sd-webui-locon",
         "openOutpaint-webUI-extension",
         "openpose-editor",
         "sd-webui-3d-open-pose-editor",
-        "ScuNET"
+        "ScuNET",
+        "sd-webui-model-converter"
     ],
     "do_not_add_watermark": true,
     "do_not_show_images": false,
@@ -175,11 +177,11 @@
     "save_training_settings_to_txt": false,
     "save_txt": false,
     "sd_checkpoint_cache": 0,
-    "sd_checkpoint_hash": "cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516",
+    "sd_checkpoint_hash": "6ce0161689b3853acaa03779ec93eafe75a02f4ced659bee03f50797806fa2fa",
     "sd_hypernetwork_strength": 1.0,
     "sd_hypernetwork": "None",
     "sd_lora": "",
-    "sd_model_checkpoint": "sd-v15-runwayml.ckpt [cc6cb27103]",
+    "sd_model_checkpoint": "v1-5-pruned-emaonly.safetensors [6ce0161689]",
     "sd_vae_as_default": false,
     "sd_vae_checkpoint_cache": 0,
     "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
@@ -223,5 +225,12 @@
     "uni_pc_variant": "bh1",
     "uni_pc_skip_type": "time_uniform",
     "uni_pc_lower_order_final": true,
-    "image_browser_hidden_components": []
+    "image_browser_hidden_components": [],
+    "save_mask": false,
+    "save_mask_composite": false,
+    "extra_networks_card_width": 0.0,
+    "extra_networks_card_height": 0.0,
+    "return_mask": false,
+    "return_mask_composite": false,
+    "control_net_sync_field_args": false
 }
