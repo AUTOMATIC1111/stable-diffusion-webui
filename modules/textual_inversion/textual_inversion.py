@@ -152,7 +152,11 @@ class EmbeddingDatabase:
                 name = data.get('name', name)
             else:
                 data = extract_image_data_embed(embed_image)
-                name = data.get('name', name)
+                if data:
+                    name = data.get('name', name)
+                else:
+                    # if data is None, means this is not an embeding, just a preview image
+                    return
         elif ext in ['.BIN', '.PT']:
             data = torch.load(path, map_location="cpu")
         elif ext in ['.SAFETENSORS']:

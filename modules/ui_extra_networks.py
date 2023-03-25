@@ -23,21 +23,37 @@ def register_page(page):
     allowed_dirs.update(set(sum([x.allowed_directories_for_previews() for x in extra_pages], [])))
 
 
+def fetch_file(filename: str = ""):
+    from starlette.responses import FileResponse
+
+    if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
+        raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
+
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in (".png", ".jpg", ".webp"):
+        raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
+
+    # would profit from returning 304
+    return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
+
+
+def get_metadata(page: str = "", item: str = ""):
+    from starlette.responses import JSONResponse
+
+    page = next(iter([x for x in extra_pages if x.name == page]), None)
+    if page is None:
+        return JSONResponse({})
+
+    metadata = page.metadata.get(item)
+    if metadata is None:
+        return JSONResponse({})
+
+    return JSONResponse({"metadata": metadata})
+
+
 def add_pages_to_demo(app):
-    def fetch_file(filename: str = ""):
-        from starlette.responses import FileResponse
-
-        if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
-            raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
-
-        ext = os.path.splitext(filename)[1].lower()
-        if ext not in (".png", ".jpg", ".webp"):
-            raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
-
-        # would profit from returning 304
-        return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
-
     app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
 
 
 class ExtraNetworksPage:
@@ -46,6 +62,7 @@ class ExtraNetworksPage:
         self.name = title.lower()
         self.card_page = shared.html("extra-networks-card.html")
         self.allow_negative_prompt = False
+        self.metadata = {}
 
     def refresh(self):
         pass
@@ -67,6 +84,8 @@ class ExtraNetworksPage:
         view = shared.opts.extra_networks_default_view
         items_html = []
 
+        self.metadata = {}
+
         subdirs = {}
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
             for x in glob.glob(os.path.join(parentdir, '**/*'), recursive=True):
@@ -87,7 +106,7 @@ class ExtraNetworksPage:
             subdirs = {"": 1, **subdirs}
 
         subdirs_html = "".join([f"""
-<button class='gr-button gr-button-lg gr-button-secondary{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
+<button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
 {html.escape(subdir if subdir!="" else "all")}
 </button>
 """ for subdir in subdirs])
@@ -100,6 +119,10 @@ class ExtraNetworksPage:
             iterator = self.list_items()
 
         for item in iterator:
+            metadata = item.get("metadata")
+            if metadata:
+                self.metadata[item["name"]] = metadata
+
             items_html.append(self.create_html_for_item(item, tabname))
 
         if not items_html:
@@ -137,14 +160,16 @@ class ExtraNetworksPage:
         if onclick is None:
             onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
 
+        height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
+        width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
+        background_image = f"background-image: url(\"{html.escape(preview)}\");" if preview else ''
         metadata_button = ""
         metadata = item.get("metadata")
         if metadata:
-            metadata_onclick = '"' + html.escape(f"""extraNetworksShowMetadata({json.dumps(metadata)}); return false;""") + '"'
-            metadata_button = f"<div class='metadata-button' title='Show metadata' onclick={metadata_onclick}></div>"
+            metadata_button = f"<div class='metadata-button' title='Show metadata' onclick='extraNetworksRequestMetadata(event, {json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
 
         args = {
-            "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
+            "style": f"'{height}{width}{background_image}'",
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
@@ -269,7 +294,6 @@ def create_ui(container, button, tabname):
             return [is_visible, gr.update(visible=is_visible)] + list(pages)
         # TODO: Use .then() so the extra networks drawer/loading spinner appears
         # instead of nothing happening for X seconds
-        # Requires a newer Gradio version
         button.click(fn=toggle_visibility_defer_load, inputs=[state_visible] + ui.pages, outputs=[state_visible, container] + ui.pages)
 
         # Gradio has to send the rendered HTML for the extra networks UI to the
