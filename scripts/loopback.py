@@ -54,15 +54,12 @@ class Script(scripts.Script):
                 return strength
 
             progress = loop / (loops - 1)
-            match denoising_curve:
-                case "Aggressive":
-                    strength = math.sin((progress) * math.pi * 0.5)
-
-                case "Lazy":
-                    strength = 1 - math.cos((progress) * math.pi * 0.5)
-
-                case _:
-                    strength = progress
+            if denoising_curve == "Aggressive":
+                strength = math.sin((progress) * math.pi * 0.5)
+            elif denoising_curve == "Lazy":
+                strength = 1 - math.cos((progress) * math.pi * 0.5)
+            else:
+                strength = progress
 
             change = (final_denoising_strength - initial_denoising_strength) * strength
             return initial_denoising_strength + change
