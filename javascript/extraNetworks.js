@@ -118,6 +118,12 @@ function popup(contents){
         close.title = "Close";
         globalPopup.appendChild(close)
 
+        var addDescrip = document.createElement('div')
+        addDescrip.classList.add('global-popup-addDescrip');
+        addDescrip.onclick = function(){ alert("add descript you idiot") };
+        addDescrip.title = "add descript";
+        globalPopup.appendChild(addDescrip)
+
         globalPopupInner = document.createElement('div')
         globalPopupInner.onclick = function(event){ event.stopPropagation(); return false; };
         globalPopupInner.classList.add('global-popup-inner');

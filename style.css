@@ -424,6 +424,20 @@ div.dimensions-tools{
     font-size: 32pt;
 }
 
+.global-popup-addDescrip:before {
+    content: "+";
+}
+
+.global-popup-addDescrip{
+    position: fixed;
+    right: 2em;
+    top: 0;
+    cursor: pointer;
+    color: white;
+    font-size: 32pt;
+}
+
+
 .global-popup-inner{
     display: inline-block;
     margin: auto;
