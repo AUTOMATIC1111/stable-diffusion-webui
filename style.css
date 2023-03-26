@@ -596,6 +596,12 @@ footer {
 
 /* extra networks UI */
 
+.extra-network-cards{
+    height: 400px;
+    overflow: scroll;
+    resize: vertical;
+}
+
 .extra-networks > div > [id *= '_extra_']{
     margin: 0.3em;
 }
