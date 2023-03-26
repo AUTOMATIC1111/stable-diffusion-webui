@@ -225,40 +225,60 @@ class SharedSettingsStackHelper(object):
 
 class Script(scripts.Script):
     def title(self):
-        return "Prompt Translate to english"
+        return "Translate prompt to english"
+    
+    def load_mbart(self, progress=gr.Progress()):
+        progress(0, desc="Starting...")
+        if not hasattr(self, "translator"):
+            self.translator = MBartTranslator()
+        progress.update(100)
+        return "Loaded successfully", self.language.update(visible=True)
+
 
     def ui(self, is_img2img):
         self.current_axis_options = [x for x in language_options]
 
         with gr.Row():
             with gr.Column(scale=19):
-                with gr.Row():
-                    language = gr.Dropdown(label="Source language", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
-
-        return [language]
+                with gr.Accordion("Help",open=False):
+                    md = gr.Markdown("""
+                    # Description
+                    This script translates your prompt from another language to english before generating the image allowing you to write prompts in your native language.
+                    # How to use
+                    Press Load languagge model and wait until you get Loaded successfully in the status label and the list of languages will show up.
+                    Once the languages are shown, select the prompt language, write the prompt in the prompt field then press generate. The script will translate the prompt and generate the text.
+                    # Note
+                    First time this may take a long time, but once loaded, it will be faster.
+                    """)
+                with gr.Column():
+                    load_language_model = gr.Button("Load language model")
+                    self.language = gr.Dropdown(label="Source language", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
+                    self.status = gr.Label("", label="status")
+                    load_language_model.click(self.load_mbart,[],[self.status,self.language ], show_progress=True)
+        self.language.visible=False
+        return [self.language]
 
     def run(self, p, language):
-        if not hasattr(self, "translator"):
-            self.translator = MBartTranslator()
-        print(f"Translating to English from {language_options[language].label}")
-        print(f"Initial prompt:{p.prompt}")
-        ln_code = language_options[language].language_code
-        p.prompt = self.translator.translate(p.prompt, ln_code, "en_XX")
-        print(f"Translated prompt:{p.prompt}")
-        if not opts.return_grid:
-            p.batch_size = 1
+        if hasattr(self, "translator"):
+            print(f"Translating to English from {language_options[language].label}")
+            print(f"Initial prompt:{p.prompt}")
+            ln_code = language_options[language].language_code
+            p.prompt = self.translator.translate(p.prompt, ln_code, "en_XX")
+            print(f"Translated prompt:{p.prompt}")
+            if not opts.return_grid:
+                p.batch_size = 1
 
 
-        with SharedSettingsStackHelper():
-            if shared.state.interrupted:
-                return Processed(p, [], p.seed, "")
+            with SharedSettingsStackHelper():
+                if shared.state.interrupted:
+                    return Processed(p, [], p.seed, "")
 
-            pc = copy(p)
-            processed = process_images(pc)
+                pc = copy(p)
+                processed = process_images(pc)
 
 
-        if opts.grid_save:
-            grid_infotext = processing.create_infotext(pc, pc.all_prompts, pc.all_seeds, pc.all_subseeds)
-            images.save_image(processed.images[0], p.outpath_grids, "xyz_grid", info=grid_infotext[0], extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
+            if opts.grid_save:
+                grid_infotext = processing.create_infotext(pc, pc.all_prompts, pc.all_seeds, pc.all_subseeds)
+                images.save_image(processed.images[0], p.outpath_grids, "xyz_grid", info=grid_infotext[0], extension=opts.grid_format, prompt=p.prompt, seed=processed.seed, grid=True, p=p)
 
         return processed
