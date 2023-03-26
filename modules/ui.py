@@ -1088,12 +1088,34 @@ def create_ui():
                             create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary', elem_id="train_create_hypernetwork")
 
                 with gr.Tab(label="Preprocess images"):
+                    
+                    btn_select_folder = gr.Button("Select a folder")
                     process_src = gr.Textbox(label='Source directory', elem_id="train_process_src")
+                    btn_select_folder.click(
+                        None, None, None, _js="""
+		function selectFolder() {
+			// Create a file input field
+            console.log("here");
+			var fileInput = document.createElement('input');
+			fileInput.type = 'file';
+			fileInput.webkitdirectory = true;
+			
+			// Trigger the folder selection dialog
+			fileInput.click();
+			
+			// Set the onchange event handler to write the folder path to the text input field
+			fileInput.onchange = function(event) {
+				var selectedFolder = event.target.files[0];
+				document.getElementById("train_process_src").value = selectedFolder.webkitRelativePath;
+			};
+		}                        
+                        """
+                    )
                     process_dst = gr.Textbox(label='Destination directory', elem_id="train_process_dst")
                     process_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="train_process_width")
                     process_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="train_process_height")
-                    preprocess_txt_action = gr.Dropdown(label='Existing Caption txt Action', value="ignore", choices=["ignore", "copy", "prepend", "append"], elem_id="train_preprocess_txt_action")
-
+                    preprocess_txt_action = gr.Dropdown(label='Existing Caption txt Action', value="ignore", choices=["ignore", "copy", "prepend", "append", "replace"], elem_id="train_preprocess_txt_action")
+                    preprocess_replace_txt = gr.Textbox(label="Replace word with the word", value="man")
                     with gr.Row():
                         process_flip = gr.Checkbox(label='Create flipped copies', elem_id="train_process_flip")
                         process_split = gr.Checkbox(label='Split oversized images', elem_id="train_process_split")
@@ -1279,6 +1301,7 @@ def create_ui():
                 process_multicrop_maxarea,
                 process_multicrop_objective,
                 process_multicrop_threshold,
+                preprocess_replace_txt
             ],
             outputs=[
                 ti_output,
