@@ -1,3 +1,9 @@
+# MBartTranslator :
+# Author : ParisNeo
+# Description : This script translates Stable diffusion prompt from one of the 50 languages supported by MBART
+#    It uses MBartTranslator class that provides a simple interface for translating text using the MBart language model.
+
+
 from collections import namedtuple
 from copy import copy
 from itertools import permutations, chain
@@ -22,12 +28,6 @@ import os
 import re
 
 from modules.ui_components import ToolButton
-# MBartTranslator :
-# Author : ParisNeo inspired by hugging face examples
-# Description : MBartTranslator class provides a simple interface for translating text using the MBart language model.
-#
-#    The class can translate between 50 languages and is based on the "facebook/mbart-large-50-many-to-one-mmt"
-#    pre-trained MBart model. However, it is possible to use a different MBart model by specifying its name.
 
 from transformers import MBart50TokenizerFast, MBartForConditionalGeneration
 
@@ -221,12 +221,6 @@ class SharedSettingsStackHelper(object):
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
 
-
-re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
-re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\(([+-]\d+(?:.\d*)?)\s*\))?\s*")
-
-re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
-re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
 
 
 class Script(scripts.Script):
