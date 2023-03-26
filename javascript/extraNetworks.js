@@ -95,6 +95,23 @@ function saveCardPreview(event, tabname, filename){
     event.preventDefault()
 }
 
+function saveCardDescription(event, tabname, filename,descript){
+    var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+    var button = gradioApp().getElementById(tabname + '_save_description')
+    var description = gradioApp().getElementById(tabname+ '_description_input')
+
+    textarea.value = filename
+    description.value=descript
+    updateInput(textarea)
+
+    button.click()
+
+    //alert("add description here!")
+
+    event.stopPropagation()
+    event.preventDefault()
+}
+
 function extraNetworksSearchButton(tabs_id, event){
     searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea')
     button = event.target
@@ -117,12 +134,6 @@ function popup(contents){
         close.onclick = function(){ globalPopup.style.display = "none"; };
         close.title = "Close";
         globalPopup.appendChild(close)
-
-        var addDescrip = document.createElement('div')
-        addDescrip.classList.add('global-popup-addDescrip');
-        addDescrip.onclick = function(){ alert("add descript you idiot") };
-        addDescrip.title = "add descript";
-        globalPopup.appendChild(addDescrip)
 
         globalPopupInner = document.createElement('div')
         globalPopupInner.onclick = function(event){ event.stopPropagation(); return false; };
