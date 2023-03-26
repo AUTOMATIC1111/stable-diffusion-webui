@@ -217,6 +217,8 @@ def run_extensions_installers(settings_file):
     for dirname_extension in list_extensions(settings_file):
         run_extension_installer(os.path.join(extensions_dir, dirname_extension))
 
+def extract_arg(args, name):
+    return [x for x in args if x != name], name in args
 
 def prepare_environment():
     global skip_install
@@ -240,6 +242,8 @@ def prepare_environment():
     k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "5b3af030dd83e0297272d861c19477735d0317ec")
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
+
+    sys.argv, _ = extract_arg(sys.argv, '-f')
 
     if not args.skip_python_version_check:
         check_python_version()
