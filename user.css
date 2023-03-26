@@ -100,10 +100,10 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 
 /* gradio built-in theme */
 .dark {
-  --body-background-fill: var(--background-fill-primary);
+  --body-background-fill: black;
   --body-text-color: var(--neutral-100);
   --color-accent-soft: var(--neutral-700);
-  --background-fill-primary: none;
+  --background-fill-primary: #222222;
   --background-fill-secondary: none;
   --border-color-accent: black;
   --border-color-primary: black;

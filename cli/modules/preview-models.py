@@ -15,20 +15,39 @@ from generate import sd, generate
 
 
 default = 'sd-v15-runwayml.ckpt [cc6cb27103]'
-embeddings = ['blonde', 'bruntette', 'sexy', 'naked', 'ti-mia', 'ti-lin', 'ti-kelly', 'ti-hanna', 'ti-rreid-random']
 exclude = ['sd-v20', 'sd-v21', 'inpainting', 'pix2pix']
+# used by lora
 prompt = "photo of <keyword> <embedding>, photograph, posing, pose, high detailed, intricate, elegant, sharp focus, skin texture, looking forward, facing camera, 135mm, shot on dslr, canon 5d, 4k, modelshoot style, cinematic lighting"
+
+# used by models
+prompts = [
+    ('photo citiscape', 'cityscape during night, photorealistic, high detailed, sharp focus, depth of field, 4k'),
+    ('photo car', 'photo of a sports car, high detailed, sharp focus, dslr, cinematic lighting, realistic'),
+    ('photo woman', 'portrait photo of beautiful woman, high detailed, dslr, 35mm'),
+    ('photo naked', 'full body photo of beautiful sexy naked woman, high detailed, dslr, 35mm'),
+
+    ('photo taylor', 'portrait photo of beautiful woman taylor swift, high detailed, sharp focus, depth of field, dslr, 35mm <lora:taylor-swift:1>'),
+    ('photo ti-mia', 'portrait photo of beautiful woman "ti-mia", naked, high detailed, dslr, 35mm'),
+    ('photo ti-vlado', 'portrait photo of man "ti-vlado", high detailed, dslr, 35mm'),
+    ('photo lora-vlado', 'portrait photo of man vlado, high detailed, dslr, 35mm <lora:vlado-original:1>'),
+
+    ('wlop', 'a stunning portrait of sexy teen girl in a wet t-shirt, vivid color palette, digital painting, octane render, highly detailed, particles, light effect, volumetric lighting, art by wlop'),
+    ('greg rutkowski', 'beautiful woman, high detailed, sharp focus, depth of field, 4k, art by greg rutkowski'),
+    ('carne griggiths', 'beautiful woman taylor swift, high detailed, sharp focus, depth of field, art by carne griffiths <lora:taylor-swift:1>'),
+    ('carne griggiths', 'man vlado, high detailed, sharp focus, depth of field, art by carne griffiths <lora:vlado-full:1>'),
+]
+
 options = Map({
     'generate': {
         'restore_faces': True,
         'prompt': '',
         'negative_prompt': 'digital art, cgi, render, foggy, blurry, blurred, duplicate, ugly, mutilated, mutation, mutated, out of frame, bad anatomy, disfigured, deformed, censored, low res, low resolution, watermark, text, poorly drawn face, poorly drawn hands, signature',
-        'steps': 30,
-        'batch_size': 4,
+        'steps': 20,
+        'batch_size': 2,
         'n_iter': 1,
         'seed': -1,
-        'sampler_name': 'DPM2 Karras',
-        'cfg_scale': 7,
+        'sampler_name': 'UniPC',
+        'cfg_scale': 6,
         'width': 512,
         'height': 512,
     },
@@ -44,7 +63,7 @@ options = Map({
         "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
     },
     'lora': {
-        'strength': 1.0,
+        'strength': 0.9,
     },
     'hypernetwork': {
         'keyword': 'beautiful sexy woman',
@@ -81,7 +100,6 @@ async def models(params):
         models = filtered
     log.info({ 'models preview' })
     log.info({ 'models': len(models), 'excluded': len(excluded) })
-    log.info({ 'embeddings': embeddings })
     cmdflags = await get('/sdapi/v1/cmd-flags')
     opt = await get('/sdapi/v1/options')
     if params.output != '':
@@ -89,10 +107,10 @@ async def models(params):
     else:
         dir = os.path.abspath(os.path.join(cmdflags['hypernetwork_dir'], '..', 'Stable-diffusion'))
     log.info({ 'output directory': dir })
-    log.info({ 'total jobs': len(models) * len(embeddings) * options.generate.batch_size, 'per-model': len(embeddings) * options.generate.batch_size })
+    log.info({ 'total jobs': len(models) * options.generate.batch_size, 'per-model': options.generate.batch_size })
     log.info(json.dumps(options, indent=2))
     for model in models:
-        fn = os.path.join(dir, model + options.format)
+        fn = os.path.join(dir, os.path.basename(model) + options.format)
         if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'model preview exists': model })
             continue
@@ -104,19 +122,19 @@ async def models(params):
         images = []
         labels = []
         t0 = time.time()
-        for embedding in embeddings:
-            options.generate.prompt = prompt.replace('<embedding>', f'\"{embedding}\"')
-            options.generate.prompt = options.generate.prompt.replace('<keyword>', 'beautiful woman')
-            log.info({ 'model generating': model, 'embedding': embedding, 'prompt': options.generate.prompt })
+        for label, prompt in prompts:
+            options.generate.prompt = prompt
+            log.info({ 'model generating': model, 'label': label, 'prompt': options.generate.prompt })
             data = await generate(options = options, quiet=True)
             if 'image' in data:
                 for img in data['image']:
                     images.append(img)
-                    labels.append(embedding)
+                    labels.append(label)
             else:
-                log.error({ 'model': model, 'embedding': embedding, 'error': data })
+                log.error({ 'model': model, 'error': data })
         t1 = time.time()
         image = grid(images = images, labels = labels, border = 8)
+        log.info({ 'saving preview': fn, 'images': len(images), 'size': [image.width, image.height] })
         image.save(fn)
         t = t1 - t0
         its = 1.0 * options.generate.steps * len(images) / t
