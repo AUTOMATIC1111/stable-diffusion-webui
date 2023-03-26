@@ -56,6 +56,9 @@ div.compact{
 
 .gradio-dropdown ul.options{
     z-index: 3000;
+    min-width: fit-content;
+    max-width: inherit;
+    white-space: nowrap;
 }
 
 .gradio-dropdown label span:not(.has-info),
