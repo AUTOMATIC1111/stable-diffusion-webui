@@ -225,7 +225,7 @@ class SharedSettingsStackHelper(object):
 
 class Script(scripts.Script):
     def title(self):
-        return "Text Translate to english"
+        return "Prompt Translate to english"
 
     def ui(self, is_img2img):
         self.current_axis_options = [x for x in language_options]
