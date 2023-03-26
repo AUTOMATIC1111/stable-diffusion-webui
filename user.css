@@ -39,7 +39,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .eta-bar { display: none !important }
 .extra-network-cards .card .actions .name { font-weight: 400; font-size: 1.2rem; }
 .extra-network-cards .card { width: 10em; height: 10em; box-shadow: none; }
-.extra-network-cards .card:hover { transform: scale(2); transition: all 0.3s ease; z-index: 99; box-shadow: none; }
+.extra-network-cards .card:hover { transform: scale(1.3); transition: all 0.3s ease; z-index: 99; box-shadow: none; }
 .feather .feather-image { display: none }
 .gap-2 { padding-top: 8px; }
 .gr-box > div > div > input.gr-text-input { right: 0; width: 4em; padding: 0; top: -12px; border: none; max-height: 20px; }
@@ -67,8 +67,8 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 /* gradio elements overrides */
 #div.gradio-container.dark { overflow-x: hidden; }
 #img2img_label_copy_to_img2img { font-weight: normal; }
-#img2img_neg_prompt > label > textarea { font-size: 1.2rem; }
-#img2img_prompt > label > textarea { font-size: 1.2rem; }
+#txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { background-color: black; box-shadow: 4px 4px 4px 0px #333333  !important; }
+#txt2img_prompt > label > textarea, #txt2img_neg_prompt > label > textarea, #img2img_prompt > label > textarea, #img2img_neg_prompt > label > textarea { font-size: 1.2rem; }
 #img2img_settings { min-width: calc(2 * var(--left-column)); max-width: calc(2 * var(--left-column)); background-color: #111111; padding-top: 16px; }
 #interrogate, #deepbooru { margin: 16px 0px 16px 0px; max-width: 100px; max-height: 74px; font-weight: normal; font-size: 14px; }
 #lightboxModal { background-color: rgba(20, 20, 20, 0.8) }
@@ -85,10 +85,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #txt2img_gallery, #img2img_gallery, #extras_gallery { background: black !important; padding: 0; margin: 0; object-fit: contain; box-shadow: none; min-height: 0; }
 #txt2img_generate, #img2img_generate { margin-left: 10px; height: 36px; border: none; border-radius: 0; min-height: 36px; padding: 0; }
 #txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { margin-left: 10px; height: 36px; min-width: 116px; max-width: 116px; border: none; border-radius: 0; background-color: var(--inactive-color); margin-top: 46px; display: block !important; padding: 0; }
-#txt2img_neg_prompt > label > textarea { font-size: 1.2rem; }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }
-#txt2img_prompt > label > textarea { font-size: 1.2rem; }
-#txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { background-color: black; }
 #txt2img_results, #img2img_results, #extras_results { background-color: black; padding: 0; }
 #txt2img_seed_row { padding: 0; margin-top: 8px; }
 #txt2img_settings { min-width: var(--left-column); max-width: var(--left-column); background-color: #111111; padding-top: 16px; }
@@ -101,13 +98,14 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 /* custom elements overrides */
 #steps-animation, #controlnet { border-width: 0; }
 
+/* gradio built-in theme */
 .dark {
   --body-background-fill: var(--background-fill-primary);
   --body-text-color: var(--neutral-100);
   --color-accent-soft: var(--neutral-700);
-  --background-fill-primary: var(--neutral-950);
-  --background-fill-secondary: var(--neutral-900);
-  --border-color-accent: var(--neutral-600);
+  --background-fill-primary: none;
+  --background-fill-secondary: none;
+  --border-color-accent: black;
   --border-color-primary: black;
   --link-text-color-active: var(--secondary-500);
   --link-text-color: var(--secondary-500);
@@ -166,8 +164,8 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
   --slider_color: None;
   --stat-background-fill: linear-gradient(to right, var(--primary-400), var(--primary-600));
   --table-border-color: var(--neutral-700);
-  --table-even-background-fill: var(--neutral-950);
-  --table-odd-background-fill: var(--neutral-900);
+  --table-even-background-fill: #222222;
+  --table-odd-background-fill: #333333;
   --table-row-focus: var(--color-accent-soft);
   --button-border-width: var(--input-border-width);
   --button-cancel-background-fill: linear-gradient(to bottom right, #dc2626, #b91c1c);
@@ -176,13 +174,13 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
   --button-cancel-border-color-hover: var(--button-cancel-border-color);
   --button-cancel-text-color: white;
   --button-cancel-text-color-hover: var(--button-cancel-text-color);
-  --button-primary-background-fill: linear-gradient(to bottom right, var(--primary-500), var(--primary-600));
+  --button-primary-background-fill: linear-gradient(to bottom right, var(--primary-500), var(--primary-800));
   --button-primary-background-fill-hover: linear-gradient(to bottom right, var(--primary-500), var(--primary-500));
   --button-primary-border-color: var(--primary-500);
   --button-primary-border-color-hover: var(--button-primary-border-color);
   --button-primary-text-color: white;
   --button-primary-text-color-hover: var(--button-primary-text-color);
-  --button-secondary-background-fill: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-700));
+  --button-secondary-background-fill: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-800));
   --button-secondary-background-fill-hover: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-600));
   --button-secondary-border-color: var(--neutral-600);
   --button-secondary-border-color-hover: var(--button-secondary-border-color);
@@ -248,7 +246,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
   --body-text-weight: 400;
   --embed-radius: var(--radius-lg);
   --color-accent: var(--primary-500);
-  --shadow-drop: rgba(0,0,0,0.05) 0px 1px 2px 0px;
+  --shadow-drop: 0;
   --shadow-drop-lg: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   --shadow-inset: rgba(0,0,0,0.05) 0px 2px 4px 0px inset;
   --block-border-width: 1px;
@@ -302,8 +300,8 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
   --button-large-padding: var(--spacing-lg) calc(2 * var(--spacing-lg));
   --button-large-radius: var(--radius-lg);
   --button-large-text-size: var(--text-lg);
-  --button-large-text-weight: 600;
-  --button-shadow: var(--shadow-drop);
+  --button-large-text-weight: 400;
+  --button-shadow: 4px 4px 4px 0px #333333;
   --button-shadow-active: var(--shadow-inset);
   --button-shadow-hover: var(--shadow-drop-lg);
   --button-small-padding: var(--spacing-sm) calc(2 * var(--spacing-sm));

@@ -18,8 +18,7 @@ from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 
-import rich
-from rich import print
+from rich import print, progress
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
@@ -239,19 +238,21 @@ def read_metadata_from_safetensors(filename):
 
 
 def read_state_dict(checkpoint_file):
-    if 'v1-5-pruned-emaonly.safetensors' in checkpoint_file:
-        pl_sd = safetensors.torch.load_file(checkpoint_file, device='cpu')
-    else:
+    with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
         _, extension = os.path.splitext(checkpoint_file)
-        with rich.progress.open(checkpoint_file, 'rb') as f:
+        if 'v1-5-pruned-emaonly.safetensors' or 'vae-ft-mse-840000-ema-pruned.ckpt' in checkpoint_file:
+            if extension.lower() == ".safetensors":
+                pl_sd = safetensors.torch.load_file(checkpoint_file, device='cpu')
+            else:
+                pl_sd = torch.load(checkpoint_file, map_location='cpu')
+        else:
             if extension.lower() == ".safetensors":
                 buffer = f.read()
                 pl_sd = safetensors.torch.load(buffer)
             else:
                 buffer = io.BytesIO(f.read())
                 pl_sd = torch.load(buffer, map_location='cpu')
-
-    sd = get_state_dict_from_checkpoint(pl_sd)
+        sd = get_state_dict_from_checkpoint(pl_sd)
     return sd
 
 
@@ -264,7 +265,6 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
         print(f"Loading weights from cache")
         return checkpoints_loaded[checkpoint_info]
 
-    print(f"Loading weights from {checkpoint_info.filename}")
     res = read_state_dict(checkpoint_info.filename)
     timer.record("load weights")
 

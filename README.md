@@ -42,15 +42,24 @@ Simplified start script: `automatic.sh`
 
 Start in default mode with optimizations enabled  
 
-    SD server: optimized
-    Version: 56f779a9 Sat Feb 25 14:04:19 2023 -0500
-    Repository: https://github.com/vladmandic/automatic
-    Last Merge: Sun Feb 19 10:11:25 2023 -0500 Merge pull request #37 from AUTOMATIC1111/master
-    System
-    - Platform: Ubuntu 22.04.1 LTS 5.15.90.1-microsoft-standard-WSL2 x86_64
-    - nVIDIA: NVIDIA GeForce RTX 3060, 528.49
-    - Python: 3.10.6 Torch: 2.0.0.dev20230224+cu118 CUDA: 11.8 cuDNN: 8700 GPU: NVIDIA GeForce RTX 3060 Arch: (8, 6)
-    Launching Web UI
+      Stable Diffusion server: optimized
+      Version: a4d00060 Sun Mar 26 10:28:05 2023 -0400
+      Repository: https://github.com/vladmandic/automatic
+      Platform: Ubuntu 22.04.2 LTS 5.15.90.1-microsoft-standard-WSL2 x86_64
+      Installing requirements for Web UI
+      Launching Web UI with arguments: --cors-allow-origins=http://127.0.0.1:7860 --ckpt models/v1-5-pruned-emaonly.safetensors
+      Torch 2.0.0+cu118 CUDA 11.8 cuDNN 8700
+      GPU NVIDIA GeForce RTX 3060 VRAM 12288 Arch (8, 6) Cores 28
+      Running on local URL:  http://127.0.0.1:7860
+      Loading weights: models/v1-5-pruned-emaonly.safetensors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0.0/4.3 GB -:--:--
+      Creating model from config: /home/vlado/dev/automatic/configs/v1-inference.yaml
+      DiffusionWrapper has 859.52 M params.
+      Loading weights: models/VAE/vae-ft-mse-840000-ema-pruned.ckpt ━━━━━━━━━━━━━━━━━━━━━━━ 0.0/334.7 MB -:--:--
+      Applying scaled dot product cross attention optimization.
+      Textual inversion embeddings loaded(2): ti-mia, ti-vlado
+      Model loaded in 1.6s (load weights: 0.1s, create model: 0.3s, apply weights: 0.4s, load vae: 0.3s, device move: 0.5s).
+      Startup time: 11.8s (import torch: 1.7s, import libraries: 1.0s, list models: 1.9s, load scripts: 1.0s, create ui: 4.4s, load checkpoint: 1.7s).
+      Progress 6.55it/s ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:04
 
 > ./automatic.sh clean  
 

@@ -139,7 +139,6 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
             _load_vae_dict(model, checkpoints_loaded[vae_file])
         else:
             assert os.path.isfile(vae_file), f"VAE {vae_source} doesn't exist: {vae_file}"
-            print(f"Loading VAE weights {vae_source}: {vae_file}")
             store_base_vae(model)
 
             vae_dict_1 = load_vae_dict(vae_file)

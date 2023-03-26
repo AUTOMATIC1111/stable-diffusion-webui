@@ -999,10 +999,7 @@ def create_ui():
         return interp_descriptions[value]
 
     with gr.Blocks(analytics_enabled=False) as train_interface:
-        with gr.Row().style(equal_height=False):
-            gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
-
-        with gr.Row(variant="compact").style(equal_height=False):
+        with gr.Column(elem_id='ti_train_container'):
             with gr.Tabs(elem_id="train_tabs"):
 
                 with gr.Tab(label="Merge models") as modelmerger_interface:

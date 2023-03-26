@@ -325,7 +325,6 @@ def create_override_settings_dict(text_pairs):
     """
 
     res = {}
-
     params = {}
     for pair in text_pairs:
         k, v = pair.split(":", maxsplit=1)
@@ -417,5 +416,3 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         inputs=[],
         outputs=[],
     )
-
-
