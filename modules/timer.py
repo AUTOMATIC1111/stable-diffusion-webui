@@ -33,3 +33,6 @@ class Timer:
         res += ")"
 
         return res
+
+    def reset(self):
+        self.__init__()
