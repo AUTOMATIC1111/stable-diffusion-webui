@@ -247,7 +247,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
 
         state.job = f"{index(ix, iy, iz) + 1} out of {list_size}"
 
-        processed: Processed = cell(x, y, z)
+        processed: Processed = cell(x, y, z, ix, iy, iz)
 
         if processed_result is None:
             # Use our first processed result object as a template container to hold our full results
@@ -515,6 +515,7 @@ class Script(scripts.Script):
         zs = process_axis(z_opt, z_values)
 
         # this could be moved to common code, but unlikely to be ever triggered anywhere else
+        Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
         grid_mp = round(len(xs) * len(ys) * len(zs) * p.width * p.height / 1000000)
         assert grid_mp < opts.img_max_size_mp, f'Error: Resulting grid would be too large ({grid_mp} MPixels) (max configured size is {opts.img_max_size_mp} MPixels)'
 
@@ -558,8 +559,6 @@ class Script(scripts.Script):
         print(f"X/Y/Z plot will create {len(xs) * len(ys) * len(zs) * image_cell_count} images on {len(zs)} {len(xs)}x{len(ys)} grid{plural_s}{cell_console_text}. (Total steps to process: {total_steps})")
         shared.total_tqdm.updateTotal(total_steps)
 
-        grid_infotext = [None]
-
         state.xyz_plot_x = AxisInfo(x_opt, xs)
         state.xyz_plot_y = AxisInfo(y_opt, ys)
         state.xyz_plot_z = AxisInfo(z_opt, zs)
@@ -588,7 +587,9 @@ class Script(scripts.Script):
             else:
                 second_axes_processed = 'y'
 
-        def cell(x, y, z):
+        grid_infotext = [None] * (1 + len(zs))
+
+        def cell(x, y, z, ix, iy, iz):
             if shared.state.interrupted:
                 return Processed(p, [], p.seed, "")
 
@@ -600,7 +601,9 @@ class Script(scripts.Script):
 
             res = process_images(pc)
 
-            if grid_infotext[0] is None:
+            # Sets subgrid infotexts
+            subgrid_index = 1 + iz
+            if grid_infotext[subgrid_index] is None and ix == 0 and iy == 0:
                 pc.extra_generation_params = copy(pc.extra_generation_params)
                 pc.extra_generation_params['Script'] = self.title()
 
@@ -615,6 +618,12 @@ class Script(scripts.Script):
                     pc.extra_generation_params["Y Values"] = y_values
                     if y_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
                         pc.extra_generation_params["Fixed Y Values"] = ", ".join([str(y) for y in ys])
+
+                grid_infotext[subgrid_index] = processing.create_infotext(pc, pc.all_prompts, pc.all_seeds, pc.all_subseeds)
+
+            # Sets main grid infotext
+            if grid_infotext[0] is None and ix == 0 and iy == 0 and iz == 0:
+                pc.extra_generation_params = copy(pc.extra_generation_params)
 
                 if z_opt.label != 'Nothing':
                     pc.extra_generation_params["Z Type"] = z_opt.label
@@ -649,6 +658,9 @@ class Script(scripts.Script):
             return processed
 
         z_count = len(zs)
+
+        # Set the grid infotexts to the real ones with extra_generation_params (1 main grid + z_count sub-grids)
+        processed.infotexts[:1+z_count] = grid_infotext[:1+z_count]
 
         if not include_lone_images:
             # Don't need sub-images anymore, drop from list:

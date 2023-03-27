@@ -3,13 +3,13 @@ transformers==4.25.1
 accelerate==0.12.0
 basicsr==1.4.2
 gfpgan==1.3.8
-gradio==3.16.2
+gradio==3.23
 numpy==1.23.3
 Pillow==9.4.0
 realesrgan==0.3.0
 torch
 omegaconf==2.2.3
-pytorch_lightning==1.7.6
+pytorch_lightning==1.9.4
 scikit-image==0.19.2
 fonts
 font-roboto
@@ -25,6 +25,6 @@ lark==1.1.2
 inflection==0.5.1
 GitPython==3.1.30
 torchsde==0.2.5
-safetensors==0.2.7
+safetensors==0.3.0
 httpcore<=0.15
 fastapi==0.94.0
