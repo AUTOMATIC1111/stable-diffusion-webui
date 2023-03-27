@@ -2,7 +2,7 @@
 module use the Optional/Union notation so that they work correctly with pydantic."""
 
 from __future__ import annotations
-import time
+
 import asyncio
 import inspect
 import json
@@ -10,19 +10,21 @@ import mimetypes
 import os
 import posixpath
 import secrets
+import tempfile
+import time
 import traceback
 from asyncio import TimeoutError as AsyncTimeOutError
 from collections import defaultdict
 from copy import deepcopy
-from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 from urllib.parse import urlparse
 
 import fastapi
+import httpx
 import markupsafe
 import orjson
 import pkg_resources
-from fastapi import Depends, FastAPI, HTTPException, WebSocket, status
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, WebSocket, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import (
     FileResponse,
@@ -33,15 +35,19 @@ from fastapi.responses import (
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from jinja2.exceptions import TemplateNotFound
-from starlette.responses import RedirectResponse
+from starlette.background import BackgroundTask
+from starlette.responses import RedirectResponse, StreamingResponse
 from starlette.websockets import WebSocketState
 
 import gradio
 import gradio.ranged_response as ranged_response
 from gradio import utils
+from gradio.context import Context
 from gradio.data_classes import PredictBody, ResetBody
 from gradio.documentation import document, set_documentation_group
 from gradio.exceptions import Error
+from gradio.helpers import EventData
+from gradio.processing_utils import TempFileManager
 from gradio.queueing import Estimation, Event
 from gradio.utils import cancel_tasks, run_coro_in_background, set_task_name
 
@@ -87,19 +93,11 @@ def toorjson(value):
 templates = Jinja2Templates(directory=STATIC_TEMPLATE_LIB)
 templates.env.filters["toorjson"] = toorjson
 
+client = httpx.AsyncClient()
 
 ###########
 # Auth
 ###########
-
-class SessionInfo:
-
-    def __init__(self, username, exp):
-        self.exp = exp + time.time()
-        self.username = username
-
-    def expired(self) -> bool:
-        return self.exp > time.time()
 
 
 class App(FastAPI):
@@ -116,8 +114,8 @@ class App(FastAPI):
         self.lock = asyncio.Lock()
         self.queue_token = secrets.token_urlsafe(32)
         self.startup_events_triggered = False
-        self.expired_users = {}
-        self.current_token = None
+        self.uploaded_file_dir = str(utils.abspath(tempfile.mkdtemp()))
+        self.reverse_proxy = kwargs.get("reverse_proxy")
         super().__init__(**kwargs)
 
     def configure_app(self, blocks: gradio.Blocks) -> None:
@@ -157,7 +155,9 @@ class App(FastAPI):
         @app.get("/user")
         @app.get("/user/")
         def get_current_user(request: fastapi.Request) -> Optional[str]:
-            token = request.cookies.get("access-token")
+            token = request.cookies.get("access-token") or request.cookies.get(
+                "access-token-unsecure"
+            )
             return app.tokens.get(token)
 
         @app.get("/login_check")
@@ -189,42 +189,47 @@ class App(FastAPI):
         def login(form_data: OAuth2PasswordRequestForm = Depends()):
             username, password = form_data.username, form_data.password
             if app.auth is None:
-                base_path = "/" + os.getenv("Endpoint", "")
-                return RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
-            # 清除过期
-            now = time.time()
-            expired_users = list(app.expired_users.keys())
-            for u in expired_users:
-                t = app.expired_users.get(u, now)
-                if now - t > 600:
-                    del app.expired_users[u]
-            #
-            # if username in app.expired_users:
-            #     raise HTTPException(status_code=403, detail="资源被占用，请稍后登录.")
-
-            expire_time_or_auth = app.auth(username, password)
-            auth = expire_time_or_auth >= 0 if isinstance(expire_time_or_auth, int) else expire_time_or_auth
+                if app.reverse_proxy:
+                    base_path = "/" + os.getenv("Endpoint", "")
+                    return RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
+                return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
+            if callable(app.auth):
+                expire_time_or_auth = app.auth(username, password)
+                auth = expire_time_or_auth >= 0 if isinstance(expire_time_or_auth, int) else expire_time_or_auth
+            else:
+                auth = None
             if (
-                    not callable(app.auth)
-                    and username in app.auth
-                    and app.auth[username] == password
+                not callable(app.auth)
+                and username in app.auth
+                and app.auth[username] == password
             ) or (callable(app.auth) and auth):
                 token = secrets.token_urlsafe(16)
-                for tk, u in app.tokens.items():
-                    app.expired_users[u] = now
-                # 如果限制单人只能同时一个设备登录，每次只保留一个token
-                # app.tokens = {token: username}
-                # 允许相同账号多点登录
                 app.tokens[token] = username
-                base_path = "/" + os.getenv("Endpoint", "")
-                response = RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
+                response = JSONResponse(content={"success": True})
+                response.set_cookie(
+                    key="access-token",
+                    value=token,
+                    httponly=True,
+                    samesite="none",
+                    secure=True,
+                )
+
+                # 有nginx的情况。
+                if app.reverse_proxy:
+                    base_path = "/" + os.getenv("Endpoint", "")
+                    response = RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
                 exp = expire_time_or_auth - int(time.time()) if isinstance(expire_time_or_auth,
                                                                            int) and expire_time_or_auth > 0 else 3600 * 24
-                if exp > 24 * 3600 * 2:
-                    exp = 24 * 3600 * 2
+                if exp > 24 * 3600 * 4:
+                    exp = 24 * 3600 * 4
 
-                response.set_cookie(key="access-token", value=token, httponly=True, expires=exp)
-                app.current_token = token
+                response.set_cookie(
+                    key="access-token", value=token, httponly=True, expires=exp
+                )
+                response.set_cookie(
+                    key="access-token-unsecure", value=token, httponly=True, expires=exp
+                )
+
                 return response
             else:
                 raise HTTPException(status_code=400, detail="Incorrect credentials.")
@@ -245,6 +250,8 @@ class App(FastAPI):
                 config = {
                     "auth_required": True,
                     "auth_message": blocks.auth_message,
+                    "is_space": app.get_blocks().is_space,
+                    "root": app.get_blocks().root,
                 }
 
             try:
@@ -252,7 +259,8 @@ class App(FastAPI):
                     "frontend/share.html" if blocks.share else "frontend/index.html"
                 )
                 return templates.TemplateResponse(
-                    template, {"request": request, "config": config}
+                    template,
+                    {"request": request, "config": config},
                 )
             except TemplateNotFound:
                 if blocks.share:
@@ -293,36 +301,46 @@ class App(FastAPI):
             else:
                 return FileResponse(blocks.favicon_path)
 
-        @app.get("/file={path:path}")
-        async def file(path: str, request: fastapi.Request):
-            _, ex = os.path.splitext(path)
-            ex = ex.lower()
-
-            def is_front_file():
-                front_files = {'.js', '.html', '.css', '.htm'}
-                return ex in front_files
-
-            def check_token():
-                token = request.cookies.get("access-token", "")
-                user = app.tokens.get(token)
-                if app.auth is None or not (user is None):
-                    return True
-                return False
-
-            if not is_front_file() and not check_token():
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-                )
-            abs_path = str(Path(path).resolve())
-            blocks = app.get_blocks()
-            if utils.validate_url(path):
-                return RedirectResponse(url=path, status_code=status.HTTP_302_FOUND)
-
-            in_app_dir = Path(app.cwd).resolve() in Path(path).resolve().parents
-            created_by_app = str(Path(path).resolve()) in set().union(
-                *blocks.temp_file_sets
+        @app.head("/proxy={url_path:path}", dependencies=[Depends(login_check)])
+        @app.get("/proxy={url_path:path}", dependencies=[Depends(login_check)])
+        async def reverse_proxy(url_path: str):
+            # Adapted from: https://github.com/tiangolo/fastapi/issues/1788
+            url = httpx.URL(url_path)
+            headers = {}
+            if Context.access_token is not None:
+                headers["Authorization"] = f"Bearer {Context.access_token}"
+            rp_req = client.build_request("GET", url, headers=headers)
+            rp_resp = await client.send(rp_req, stream=True)
+            return StreamingResponse(
+                rp_resp.aiter_raw(),
+                status_code=rp_resp.status_code,
+                headers=rp_resp.headers,  # type: ignore
+                background=BackgroundTask(rp_resp.aclose),
             )
-            if in_app_dir or created_by_app:
+
+        @app.head("/file={path_or_url:path}", dependencies=[Depends(login_check)])
+        @app.get("/file={path_or_url:path}", dependencies=[Depends(login_check)])
+        async def file(path_or_url: str, request: fastapi.Request):
+            blocks = app.get_blocks()
+            if utils.validate_url(path_or_url):
+                return RedirectResponse(
+                    url=path_or_url, status_code=status.HTTP_302_FOUND
+                )
+            abs_path = str(utils.abspath(path_or_url))
+            in_app_dir = utils.abspath(app.cwd) in utils.abspath(path_or_url).parents
+            created_by_app = abs_path in set().union(*blocks.temp_file_sets)
+            in_file_dir = any(
+                (
+                    utils.abspath(dir) in utils.abspath(path_or_url).parents
+                    for dir in blocks.file_directories
+                )
+            )
+            was_uploaded = (
+                utils.abspath(app.uploaded_file_dir)
+                in utils.abspath(path_or_url).parents
+            )
+
+            if in_app_dir or created_by_app or in_file_dir or was_uploaded:
                 range_val = request.headers.get("Range", "").strip()
                 if range_val.startswith("bytes=") and "-" in range_val:
                     range_val = range_val[6:]
@@ -341,12 +359,12 @@ class App(FastAPI):
 
             else:
                 raise ValueError(
-                    f"File cannot be fetched: {path}. All files must contained within the Gradio python app working directory, or be a temp file created by the Gradio python app."
+                    f"File cannot be fetched: {path_or_url}. All files must contained within the Gradio python app working directory, or be a temp file created by the Gradio python app."
                 )
 
         @app.get("/file/{path:path}", dependencies=[Depends(login_check)])
-        def file_deprecated(path: str, request: fastapi.Request):
-            return file(path, request)
+        async def file_deprecated(path: str, request: fastapi.Request):
+            return await file(path, request)
 
         @app.post("/reset/")
         @app.post("/reset")
@@ -359,10 +377,9 @@ class App(FastAPI):
             return {"success": True}
 
         async def run_predict(
-                body: PredictBody,
-                request: Request | List[Request],
-                fn_index_inferred: int,
-                username: str = Depends(get_current_user),
+            body: PredictBody,
+            request: Request | List[Request],
+            fn_index_inferred: int,
         ):
             if hasattr(body, "session_hash"):
                 if body.session_hash not in app.state_holder:
@@ -387,7 +404,14 @@ class App(FastAPI):
             event_id = getattr(body, "event_id", None)
             raw_input = body.data
             fn_index = body.fn_index
-            batch = app.get_blocks().dependencies[fn_index_inferred]["batch"]
+
+            dependency = app.get_blocks().dependencies[fn_index_inferred]
+            target = dependency["targets"][0] if len(dependency["targets"]) else None
+            event_data = EventData(
+                app.get_blocks().blocks[target] if target else None,
+                body.event_data,
+            )
+            batch = dependency["batch"]
             if not (body.batched) and batch:
                 raw_input = [raw_input]
             try:
@@ -398,6 +422,7 @@ class App(FastAPI):
                     state=session_state,
                     iterators=iterators,
                     event_id=event_id,
+                    event_data=event_data,
                 )
                 iterator = output.pop("iterator", None)
                 if hasattr(body, "session_hash"):
@@ -425,10 +450,10 @@ class App(FastAPI):
         @app.post("/api/{api_name}", dependencies=[Depends(login_check)])
         @app.post("/api/{api_name}/", dependencies=[Depends(login_check)])
         async def predict(
-                api_name: str,
-                body: PredictBody,
-                request: fastapi.Request,
-                username: str = Depends(get_current_user),
+            api_name: str,
+            body: PredictBody,
+            request: fastapi.Request,
+            username: str = Depends(get_current_user),
         ):
             fn_index_inferred = None
             if body.fn_index is None:
@@ -446,7 +471,7 @@ class App(FastAPI):
             else:
                 fn_index_inferred = body.fn_index
             if not app.get_blocks().api_open and app.get_blocks().queue_enabled_for_fn(
-                    fn_index_inferred
+                fn_index_inferred
             ):
                 if f"Bearer {app.queue_token}" != request.headers.get("Authorization"):
                     raise HTTPException(
@@ -460,24 +485,25 @@ class App(FastAPI):
                 body.data = [body.session_hash]
             if body.request:
                 if body.batched:
-                    gr_request = [Request(**req) for req in body.request]
+                    gr_request = [
+                        Request(username=username, **req) for req in body.request
+                    ]
                 else:
                     assert isinstance(body.request, dict)
-                    gr_request = Request(**body.request)
+                    gr_request = Request(username=username, **body.request)
             else:
-                gr_request = Request(request)
+                gr_request = Request(username=username, request=request)
             result = await run_predict(
                 body=body,
                 fn_index_inferred=fn_index_inferred,
-                username=username,
                 request=gr_request,
             )
             return result
 
         @app.websocket("/queue/join")
         async def join_queue(
-                websocket: WebSocket,
-                token: Optional[str] = Depends(ws_login_check),
+            websocket: WebSocket,
+            token: Optional[str] = Depends(ws_login_check),
         ):
             blocks = app.get_blocks()
             if app.auth is not None and token is None:
@@ -495,6 +521,7 @@ class App(FastAPI):
                 )
             except AsyncTimeOutError:
                 return
+
             try:
                 session_info = await asyncio.wait_for(
                     websocket.receive_json(), timeout=1
@@ -540,6 +567,21 @@ class App(FastAPI):
         async def get_queue_status():
             return app.get_blocks()._queue.get_estimation()
 
+        @app.post("/upload", dependencies=[Depends(login_check)])
+        async def upload_file(
+            files: List[UploadFile] = File(...),
+        ):
+            output_files = []
+            file_manager = TempFileManager()
+            for input_file in files:
+                output_files.append(
+                    await file_manager.save_uploaded_file(
+                        input_file, app.uploaded_file_dir
+                    )
+                )
+            return output_files
+
+        @app.on_event("startup")
         @app.get("/startup-events")
         async def startup_events():
             if not app.startup_events_triggered:
@@ -547,6 +589,10 @@ class App(FastAPI):
                 app.startup_events_triggered = True
                 return True
             return False
+
+        @app.get("/theme.css", response_class=PlainTextResponse)
+        def theme_css():
+            return PlainTextResponse(app.get_blocks().theme_css, media_type="text/css")
 
         @app.get("/robots.txt", response_class=PlainTextResponse)
         def robots_txt():
@@ -576,10 +622,10 @@ def safe_join(directory: str, path: str) -> str | None:
         return directory
 
     if (
-            any(sep in filename for sep in _os_alt_seps)
-            or os.path.isabs(filename)
-            or filename == ".."
-            or filename.startswith("../")
+        any(sep in filename for sep in _os_alt_seps)
+        or os.path.isabs(filename)
+        or filename == ".."
+        or filename.startswith("../")
     ):
         return None
     return posixpath.join(directory, filename)
@@ -614,8 +660,42 @@ class Obj:
     Credit: https://www.geeksforgeeks.org/convert-nested-python-dictionary-to-object/
     """
 
-    def __init__(self, dict1):
-        self.__dict__.update(dict1)
+    def __init__(self, dict_):
+        self.__dict__.update(dict_)
+        for key, value in dict_.items():
+            if isinstance(value, (dict, list)):
+                value = Obj(value)
+            setattr(self, key, value)
+
+    def __getitem__(self, item):
+        return self.__dict__[item]
+
+    def __setitem__(self, item, value):
+        self.__dict__[item] = value
+
+    def __iter__(self):
+        for key, value in self.__dict__.items():
+            if isinstance(value, Obj):
+                yield (key, dict(value))
+            else:
+                yield (key, value)
+
+    def __contains__(self, item) -> bool:
+        if item in self.__dict__:
+            return True
+        for value in self.__dict__.values():
+            if isinstance(value, Obj) and item in value:
+                return True
+        return False
+
+    def keys(self):
+        return self.__dict__.keys()
+
+    def values(self):
+        return self.__dict__.values()
+
+    def items(self):
+        return self.__dict__.items()
 
     def __str__(self) -> str:
         return str(self.__dict__)
@@ -630,7 +710,8 @@ class Request:
     A Gradio request object that can be used to access the request headers, cookies,
     query parameters and other information about the request from within the prediction
     function. The class is a thin wrapper around the fastapi.Request class. Attributes
-    of this class include: `headers`, `client`, `query_params`, and `path_params`,
+    of this class include: `headers`, `client`, `query_params`, and `path_params`. If
+    auth is enabled, the `username` attribute can be used to get the logged in user.
     Example:
         import gradio as gr
         def echo(name, request: gr.Request):
@@ -640,7 +721,12 @@ class Request:
         io = gr.Interface(echo, "textbox", "textbox").launch()
     """
 
-    def __init__(self, request: fastapi.Request | None = None, **kwargs):
+    def __init__(
+        self,
+        request: fastapi.Request | None = None,
+        username: str | None = None,
+        **kwargs,
+    ):
         """
         Can be instantiated with either a fastapi.Request or by manually passing in
         attributes (needed for websocket-based queueing).
@@ -648,6 +734,7 @@ class Request:
             request: A fastapi.Request
         """
         self.request = request
+        self.username = username
         self.kwargs: Dict = kwargs
 
     def dict_to_obj(self, d):
@@ -669,10 +756,10 @@ class Request:
 
 @document()
 def mount_gradio_app(
-        app: fastapi.FastAPI,
-        blocks: gradio.Blocks,
-        path: str,
-        gradio_api_url: str | None = None,
+    app: fastapi.FastAPI,
+    blocks: gradio.Blocks,
+    path: str,
+    gradio_api_url: str | None = None,
 ) -> fastapi.FastAPI:
     """Mount a gradio.Blocks to an existing FastAPI application.
 
@@ -693,6 +780,7 @@ def mount_gradio_app(
         # Then run `uvicorn run:app` from the terminal and navigate to http://localhost:8000/gradio.
     """
     blocks.dev_mode = False
+    blocks.root = path[:-1] if path.endswith("/") else path
     blocks.config = blocks.get_config_file()
     gradio_app = App.create_app(blocks)
 

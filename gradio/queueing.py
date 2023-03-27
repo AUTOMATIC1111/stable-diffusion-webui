@@ -4,10 +4,12 @@ import asyncio
 import copy
 import sys
 import time
+from asyncio import TimeoutError as AsyncTimeOutError
 from collections import deque
 from typing import Any, Deque, Dict, List, Tuple
 
 import fastapi
+import httpx
 
 from gradio.data_classes import Estimation, PredictBody, Progress, ProgressUnit
 from gradio.helpers import TrackedIterable
@@ -63,8 +65,12 @@ class Queue:
         self.max_size = max_size
         self.blocks_dependencies = blocks_dependencies
         self.access_token = ""
+        self.queue_client = None
 
     async def start(self, progress_tracking=False):
+        # So that the client is attached to the running event loop
+        self.queue_client = httpx.AsyncClient()
+
         run_coro_in_background(self.start_processing)
         if progress_tracking:
             run_coro_in_background(self.start_progress_tracking)
@@ -200,7 +206,7 @@ class Queue:
         if self.live_updates:
             await self.broadcast_estimations()
 
-    async def gather_event_data(self, event: Event) -> bool:
+    async def gather_event_data(self, event: Event, receive_timeout=60) -> bool:
         """
         Gather data for the event
 
@@ -211,7 +217,20 @@ class Queue:
             client_awake = await self.send_message(event, {"msg": "send_data"})
             if not client_awake:
                 return False
-            event.data = await self.get_message(event)
+            data, client_awake = await self.get_message(event, timeout=receive_timeout)
+            if not client_awake:
+                # In the event, we timeout due to large data size
+                # Let the client know, otherwise will hang
+                await self.send_message(
+                    event,
+                    {
+                        "msg": "process_completed",
+                        "output": {"error": "Time out uploading data to server"},
+                        "success": False,
+                    },
+                )
+                return False
+            event.data = data
         return True
 
     async def notify_clients(self) -> None:
@@ -311,13 +330,13 @@ class Queue:
                 if event.data
             ]
             data.batched = True
-
         response = await AsyncRequest(
             method=AsyncRequest.Method.POST,
             url=f"{self.server_path}api/predict",
             json=dict(data),
             headers={"Authorization": f"Bearer {self.access_token}"},
             cookies={"access-token": token} if token is not None else None,
+            client=self.queue_client,
         )
         return response
 
@@ -419,21 +438,25 @@ class Queue:
                 # to start "from scratch"
                 await self.reset_iterators(event.session_hash, event.fn_index)
 
-    async def send_message(self, event, data: Dict) -> bool:
+    async def send_message(self, event, data: Dict, timeout: float | int = 1) -> bool:
         try:
-            await event.websocket.send_json(data=data)
+            await asyncio.wait_for(
+                event.websocket.send_json(data=data), timeout=timeout
+            )
             return True
         except:
             await self.clean_event(event)
             return False
 
-    async def get_message(self, event) -> PredictBody | None:
+    async def get_message(self, event, timeout=5) -> Tuple[PredictBody | None, bool]:
         try:
-            data = await event.websocket.receive_json()
-            return PredictBody(**data)
-        except:
+            data = await asyncio.wait_for(
+                event.websocket.receive_json(), timeout=timeout
+            )
+            return PredictBody(**data), True
+        except AsyncTimeOutError:
             await self.clean_event(event)
-            return None
+            return None, False
 
     async def reset_iterators(self, session_hash: str, fn_index: int):
         await AsyncRequest(
@@ -443,4 +466,5 @@ class Queue:
                 "session_hash": session_hash,
                 "fn_index": fn_index,
             },
+            client=self.queue_client,
         )

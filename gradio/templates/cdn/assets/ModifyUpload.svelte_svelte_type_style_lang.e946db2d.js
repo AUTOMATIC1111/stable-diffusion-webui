@@ -1,0 +1,2 @@
+function t(e,a,n){if(e==null)return null;if(typeof e=="string")return{name:"file_data",data:e};if(Array.isArray(e))for(const s of e)t(s,a,n);else e.is_file&&(n==null?e.data=a+"/file="+e.name:e.data="/proxy="+n+"/file="+e.name);return e}const r=e=>{const a=new FileReader;return a.readAsDataURL(e),new Promise(n=>{a.onloadend=()=>{n(a.result)}})};export{r as b,t as n};
+//# sourceMappingURL=ModifyUpload.svelte_svelte_type_style_lang.e946db2d.js.map

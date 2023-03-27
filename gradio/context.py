@@ -12,3 +12,7 @@ class Context:
     root_block: Blocks | None = None  # The current root block that holds all blocks.
     block: BlockContext | None = None  # The current block that children are added to.
     id: int = 0  # Running id to uniquely refer to any block that gets defined
+    ip_address: str | None = None  # The IP address of the user.
+    access_token: str | None = (
+        None  # The HF token that is provided when loading private models or Spaces
+    )

@@ -10,6 +10,7 @@ class PredictBody(BaseModel):
     session_hash: Optional[str]
     event_id: Optional[str]
     data: List[Any]
+    event_data: Optional[Any]
     fn_index: Optional[int]
     batched: Optional[
         bool

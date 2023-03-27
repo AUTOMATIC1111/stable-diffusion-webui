@@ -12,6 +12,7 @@ import pkgutil
 import random
 import re
 import sys
+import threading
 import time
 import typing
 import warnings
@@ -40,6 +41,10 @@ import fsspec.asyn
 import httpx
 import matplotlib.pyplot as plt
 import requests
+from huggingface_hub.utils import send_telemetry
+from markdown_it import MarkdownIt
+from mdit_py_plugins.dollarmath.index import dollarmath_plugin
+from mdit_py_plugins.footnote.index import footnote_plugin
 from pydantic import BaseModel, Json, parse_obj_as
 
 import gradio
@@ -53,6 +58,9 @@ if TYPE_CHECKING:  # Only import for type checking (is False at runtime).
 analytics_url = "https://api.gradio.app/"
 PKG_VERSION_URL = "https://api.gradio.app/pkg-version"
 JSON_PATH = os.path.join(os.path.dirname(gradio.__file__), "launches.json")
+GRADIO_VERSION = (
+    (pkgutil.get_data(__name__, "version.txt") or b"").decode("ascii").strip()
+)
 
 T = TypeVar("T")
 
@@ -84,58 +92,180 @@ def version_check():
 
 
 def get_local_ip_address() -> str:
-    """Gets the public IP address or returns the string "No internet connection" if unable to obtain it."""
-    try:
-        ip_address = requests.get(
-            "https://checkip.amazonaws.com/", timeout=3
-        ).text.strip()
-    except (requests.ConnectionError, requests.exceptions.ReadTimeout):
-        ip_address = "No internet connection"
+    """Gets the public IP address or returns the string "No internet connection" if unable to obtain it. Does not make a new request if the IP address has already been obtained."""
+    if Context.ip_address is None:
+        try:
+            ip_address = requests.get(
+                "https://checkip.amazonaws.com/", timeout=3
+            ).text.strip()
+        except (requests.ConnectionError, requests.exceptions.ReadTimeout):
+            ip_address = "No internet connection"
+        Context.ip_address = ip_address
+    else:
+        ip_address = Context.ip_address
     return ip_address
 
 
 def initiated_analytics(data: Dict[str, Any]) -> None:
-    try:
-        requests.post(
-            analytics_url + "gradio-initiated-analytics/", data=data, timeout=3
-        )
-    except (requests.ConnectionError, requests.exceptions.ReadTimeout):
-        pass  # do not push analytics if no network
+    data.update({"ip_address": get_local_ip_address()})
+
+    def initiated_analytics_thread(data: Dict[str, Any]) -> None:
+        try:
+            requests.post(
+                analytics_url + "gradio-initiated-analytics/", data=data, timeout=3
+            )
+        except (requests.ConnectionError, requests.exceptions.ReadTimeout):
+            pass  # do not push analytics if no network
+
+    def initiated_telemetry_thread(data: Dict[str, Any]) -> None:
+        try:
+            send_telemetry(
+                topic="gradio/initiated",
+                library_name="gradio",
+                library_version=GRADIO_VERSION,
+                user_agent=data,
+            )
+        except Exception:
+            pass
+
+    threading.Thread(target=initiated_analytics_thread, args=(data,)).start()
+    threading.Thread(target=initiated_telemetry_thread, args=(data,)).start()
 
 
 def launch_analytics(data: Dict[str, Any]) -> None:
-    try:
-        requests.post(
-            analytics_url + "gradio-launched-analytics/", data=data, timeout=3
-        )
-    except (requests.ConnectionError, requests.exceptions.ReadTimeout):
-        pass  # do not push analytics if no network
+    data.update({"ip_address": get_local_ip_address()})
+
+    def launch_analytics_thread(data: Dict[str, Any]) -> None:
+        try:
+            requests.post(
+                analytics_url + "gradio-launched-analytics/", data=data, timeout=3
+            )
+        except (requests.ConnectionError, requests.exceptions.ReadTimeout):
+            pass  # do not push analytics if no network
+
+    threading.Thread(target=launch_analytics_thread, args=(data,)).start()
+
+
+def launched_telemetry(blocks: gradio.Blocks, data: Dict[str, Any]) -> None:
+    blocks_telemetry, inputs_telemetry, outputs_telemetry, targets_telemetry = (
+        [],
+        [],
+        [],
+        [],
+    )
+
+    from gradio.blocks import BlockContext
+
+    for x in list(blocks.blocks.values()):
+        blocks_telemetry.append(x.get_block_name()) if isinstance(
+            x, BlockContext
+        ) else blocks_telemetry.append(str(x))
+
+    for x in blocks.dependencies:
+        targets_telemetry = targets_telemetry + [
+            str(blocks.blocks[y]) for y in x["targets"]
+        ]
+        inputs_telemetry = inputs_telemetry + [
+            str(blocks.blocks[y]) for y in x["inputs"]
+        ]
+        outputs_telemetry = outputs_telemetry + [
+            str(blocks.blocks[y]) for y in x["outputs"]
+        ]
+    additional_data = {
+        "is_kaggle": blocks.is_kaggle,
+        "is_sagemaker": blocks.is_sagemaker,
+        "using_auth": blocks.auth is not None,
+        "dev_mode": blocks.dev_mode,
+        "show_api": blocks.show_api,
+        "show_error": blocks.show_error,
+        "theme": blocks.theme,
+        "title": blocks.title,
+        "inputs": blocks.input_components
+        if blocks.mode == "interface"
+        else inputs_telemetry,
+        "outputs": blocks.output_components
+        if blocks.mode == "interface"
+        else outputs_telemetry,
+        "targets": targets_telemetry,
+        "blocks": blocks_telemetry,
+        "events": [str(x["trigger"]) for x in blocks.dependencies],
+    }
+
+    data.update(additional_data)
+
+    def launched_telemtry_thread(data: Dict[str, Any]) -> None:
+        try:
+            send_telemetry(
+                topic="gradio/launched",
+                library_name="gradio",
+                library_version=GRADIO_VERSION,
+                user_agent=data,
+            )
+        except Exception as e:
+            print("Error while sending telemetry: {}".format(e))
+
+    threading.Thread(target=launched_telemtry_thread, args=(data,)).start()
 
 
 def integration_analytics(data: Dict[str, Any]) -> None:
-    try:
-        requests.post(
-            analytics_url + "gradio-integration-analytics/", data=data, timeout=3
-        )
-    except (requests.ConnectionError, requests.exceptions.ReadTimeout):
-        pass  # do not push analytics if no network
+    data.update({"ip_address": get_local_ip_address()})
+
+    def integration_analytics_thread(data: Dict[str, Any]) -> None:
+        try:
+            requests.post(
+                analytics_url + "gradio-integration-analytics/", data=data, timeout=3
+            )
+        except (requests.ConnectionError, requests.exceptions.ReadTimeout):
+            pass  # do not push analytics if no network
+
+    def integration_telemetry_thread(data: Dict[str, Any]) -> None:
+        try:
+            send_telemetry(
+                topic="gradio/integration",
+                library_name="gradio",
+                library_version=GRADIO_VERSION,
+                user_agent=data,
+            )
+        except Exception as e:
+            print("Error while sending telemetry: {}".format(e))
+
+    threading.Thread(target=integration_analytics_thread, args=(data,)).start()
+    threading.Thread(target=integration_telemetry_thread, args=(data,)).start()
 
 
-def error_analytics(ip_address: str, message: str) -> None:
+def error_analytics(message: str) -> None:
     """
     Send error analytics if there is network
     :param ip_address: IP address where error occurred
     :param message: Details about error
     """
-    data = {"ip_address": ip_address, "error": message}
-    try:
-        requests.post(analytics_url + "gradio-error-analytics/", data=data, timeout=3)
-    except (requests.ConnectionError, requests.exceptions.ReadTimeout):
-        pass  # do not push analytics if no network
+    data = {"ip_address": get_local_ip_address(), "error": message}
+
+    def error_analytics_thread(data: Dict[str, Any]) -> None:
+        try:
+            requests.post(
+                analytics_url + "gradio-error-analytics/", data=data, timeout=3
+            )
+        except (requests.ConnectionError, requests.exceptions.ReadTimeout):
+            pass  # do not push analytics if no network
+
+    def error_telemetry_thread(data: Dict[str, Any]) -> None:
+        try:
+            send_telemetry(
+                topic="gradio/error",
+                library_name="gradio",
+                library_version=GRADIO_VERSION,
+                user_agent=message,
+            )
+        except Exception as e:
+            print("Error while sending telemetry: {}".format(e))
+
+    threading.Thread(target=error_analytics_thread, args=(data,)).start()
+    threading.Thread(target=error_telemetry_thread, args=(data,)).start()
 
 
-async def log_feature_analytics(ip_address: str, feature: str) -> None:
-    data = {"ip_address": ip_address, "feature": feature}
+async def log_feature_analytics(feature: str) -> None:
+    data = {"ip_address": get_local_ip_address(), "feature": feature}
     async with aiohttp.ClientSession() as session:
         try:
             async with session.post(
@@ -161,6 +291,23 @@ def colab_check() -> bool:
     except (ImportError, NameError):
         pass
     return is_colab
+
+
+def kaggle_check() -> bool:
+    return bool(
+        os.environ.get("KAGGLE_KERNEL_RUN_TYPE") or os.environ.get("GFOOTBALL_DATA_DIR")
+    )
+
+
+def sagemaker_check() -> bool:
+    try:
+        import boto3  # type: ignore
+
+        client = boto3.client("sts")
+        response = client.get_caller_identity()
+        return "sagemaker" in response["Arn"].lower()
+    except:
+        return False
 
 
 def ipython_check() -> bool:
@@ -222,7 +369,7 @@ def get_default_args(func: Callable) -> List[Any]:
 
 
 def assert_configs_are_equivalent_besides_ids(
-    config1: Dict, config2: Dict, root_keys: Tuple = ("mode", "theme")
+    config1: Dict, config2: Dict, root_keys: Tuple = ("mode",)
 ):
     """Allows you to test if two different Blocks configs produce the same demo.
 
@@ -230,7 +377,7 @@ def assert_configs_are_equivalent_besides_ids(
     config1 (dict): nested dict with config from the first Blocks instance
     config2 (dict): nested dict with config from the second Blocks instance
     root_keys (Tuple): an interable consisting of which keys to test for equivalence at
-        the root level of the config. By default, only "mode" and "theme" are tested,
+        the root level of the config. By default, only "mode" is tested,
         so keys like "version" are ignored.
     """
     config1 = copy.deepcopy(config1)
@@ -293,23 +440,15 @@ def format_ner_list(input_string: str, ner_groups: List[Dict[str, str | int]]):
     return output
 
 
-def delete_none(_dict: T, skip_value: bool = False) -> T:
+def delete_none(_dict: Dict, skip_value: bool = False) -> Dict:
     """
-    Delete None values recursively from all of the dictionaries, tuples, lists, sets.
-    Credit: https://stackoverflow.com/a/66127889/5209347
+    Delete keys whose values are None from a dictionary
     """
-    if isinstance(_dict, dict):
-        for key, value in list(_dict.items()):
-            if skip_value and key == "value":
-                continue
-            if isinstance(value, (list, dict, tuple, set)):
-                _dict[key] = delete_none(value)
-            elif value is None or key is None:
-                del _dict[key]
-
-    elif isinstance(_dict, (list, set, tuple)):
-        _dict = type(_dict)(delete_none(item) for item in _dict if item is not None)
-
+    for key, value in list(_dict.items()):
+        if skip_value and key == "value":
+            continue
+        elif value is None:
+            del _dict[key]
     return _dict
 
 
@@ -416,12 +555,12 @@ def async_iteration(iterator):
 class AsyncRequest:
     """
     The AsyncRequest class is a low-level API that allow you to create asynchronous HTTP requests without a context manager.
-    Compared to making calls by using httpx directly, AsyncRequest offers more flexibility and control over:
+    Compared to making calls by using httpx directly, AsyncRequest offers several advantages:
         (1) Includes response validation functionality both using validation models and functions.
-        (2) Since we're still using httpx.Request class by wrapping it, we have all it's functionalities.
-        (3) Exceptions are handled silently during the request call, which gives us the ability to inspect each one
-        individually in the case of multiple asynchronous request calls and some of them failing.
-        (4) Provides HTTP request types with AsyncRequest.Method Enum class for ease of usage
+        (2) Exceptions are handled silently during the request call, which provides the ability to inspect each one
+        request call individually in the case where there are multiple asynchronous request calls and some of them fail.
+        (3) Provides HTTP request types with AsyncRequest.Method Enum class for ease of usage
+
     AsyncRequest also offers some util functions such as has_exception, is_valid and status to inspect get detailed
     information about executed request call.
 
@@ -460,6 +599,7 @@ class AsyncRequest:
         validation_function: Union[Callable, None] = None,
         exception_type: Type[Exception] = Exception,
         raise_for_status: bool = False,
+        client: httpx.AsyncClient | None = None,
         **kwargs,
     ):
         """
@@ -482,6 +622,7 @@ class AsyncRequest:
         self._validated_data = None
         # Create request
         self._request = self._create_request(method, url, **kwargs)
+        self.client_ = client or self.client
 
     def __await__(self) -> Generator[None, Any, "AsyncRequest"]:
         """
@@ -503,9 +644,7 @@ class AsyncRequest:
         """
         try:
             # Send the request and get the response.
-            self._response: httpx.Response = await AsyncRequest.client.send(
-                self._request
-            )
+            self._response: httpx.Response = await self.client_.send(self._request)
             # Raise for _status
             self._status = self._response.status_code
             if self._raise_for_status:
@@ -710,7 +849,10 @@ def append_unique_suffix(name: str, list_of_names: List[str]):
 def validate_url(possible_url: str) -> bool:
     headers = {"User-Agent": "gradio (https://gradio.app/; team@gradio.app)"}
     try:
-        return requests.get(possible_url, headers=headers).ok
+        head_request = requests.head(possible_url, headers=headers)
+        if head_request.status_code == 405:
+            return requests.get(possible_url, headers=headers).ok
+        return head_request.ok
     except Exception:
         return False
 
@@ -778,10 +920,14 @@ def check_function_inputs_match(fn: Callable, inputs: List, inputs_as_dict: bool
     """
 
     def is_special_typed_parameter(name):
+        from gradio.helpers import EventData
         from gradio.routes import Request
 
-        """Checks if parameter has a type hint designating it as a gr.Request"""
-        return parameter_types.get(name, "") == Request
+        """Checks if parameter has a type hint designating it as a gr.Request or gr.EventData"""
+        is_request = parameter_types.get(name, "") == Request
+        # use int in the fall-back as that will always be false
+        is_event_data = issubclass(parameter_types.get(name, int), EventData)
+        return is_request or is_event_data
 
     signature = inspect.signature(fn)
     parameter_types = typing.get_type_hints(fn) if inspect.isfunction(fn) else {}
@@ -791,7 +937,7 @@ def check_function_inputs_match(fn: Callable, inputs: List, inputs_as_dict: bool
     for name, param in signature.parameters.items():
         has_default = param.default != param.empty
         if param.kind in [param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD]:
-            if not (is_special_typed_parameter(name)):
+            if not is_special_typed_parameter(name):
                 if not has_default:
                     min_args += 1
                 max_args += 1
@@ -845,5 +991,45 @@ def tex2svg(formula, *args):
     svg_start = xml_code.index("<svg ")
     svg_code = xml_code[svg_start:]
     svg_code = re.sub(r"<metadata>.*<\/metadata>", "", svg_code, flags=re.DOTALL)
+    svg_code = re.sub(r' width="[^"]+"', "", svg_code)
+    height_match = re.search(r'height="([\d.]+)pt"', svg_code)
+    if height_match:
+        height = float(height_match.group(1))
+        new_height = height / FONTSIZE  # conversion from pt to em
+        svg_code = re.sub(r'height="[\d.]+pt"', f'height="{new_height}em"', svg_code)
     copy_code = f"<span style='font-size: 0px'>{formula}</span>"
     return f"{copy_code}{svg_code}"
+
+
+def abspath(path: str | Path) -> Path:
+    """Returns absolute path of a str or Path path, but does not resolve symlinks."""
+    if Path(path).is_symlink():
+        return Path.cwd() / path
+    else:
+        return Path(path).resolve()
+
+
+def get_markdown_parser() -> MarkdownIt:
+    md = (
+        MarkdownIt(
+            "js-default",
+            {
+                "linkify": True,
+                "typographer": True,
+                "html": True,
+                "breaks": True,
+            },
+        )
+        .use(dollarmath_plugin, renderer=tex2svg, allow_digits=False)
+        .use(footnote_plugin)
+        .enable("table")
+    )
+
+    # Add target="_blank" to all links. Taken from MarkdownIt docs: https://github.com/executablebooks/markdown-it-py/blob/master/docs/architecture.md
+    def render_blank_link(self, tokens, idx, options, env):
+        tokens[idx].attrSet("target", "_blank")
+        return self.renderToken(tokens, idx, options, env)
+
+    md.add_render_rule("link_open", render_blank_link)
+
+    return md

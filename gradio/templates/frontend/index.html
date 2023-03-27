@@ -1,5 +1,14 @@
 <!DOCTYPE html>
-<html lang="en" style="margin: 0; padding: 0; min-height: 100%">
+<html
+	lang="en"
+	style="
+		margin: 0;
+		padding: 0;
+		min-height: 100%;
+		display: flex;
+		flex-direction: column;
+	"
+>
 	<head>
 		<meta charset="utf-8" />
 		<meta
@@ -43,25 +52,27 @@
 			href="https://fonts.gstatic.com"
 			crossorigin="anonymous"
 		/>
-		<link
-			href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap"
-			rel="stylesheet"
-		/>
-		<link
-			href="https://fonts.googleapis.com/css?family=IBM Plex Mono"
-			rel="stylesheet"
-		/>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.3.1/iframeResizer.contentWindow.min.js"></script>
-		<script type="module" crossorigin src="./assets/index.4395ab38.js"></script>
+		<script type="module" crossorigin src="./assets/index.37b24c07.js"></script>
 		
 	</head>
 
-	<body style="width: 100%; margin: 0; padding: 0; height: 100%">
-		<gradio-app control_page_title="true">
-			<div
-				id="root"
-				style="display: flex; flex-direction: column; flex-grow: 1"
-			></div>
+	<body
+		style="
+			width: 100%;
+			margin: 0;
+			padding: 0;
+			display: flex;
+			flex-direction: column;
+			flex-grow: 1;
+		"
+	>
+		<gradio-app
+			control_page_title="true"
+			embed="false"
+			eager="true"
+			style="display: flex; flex-direction: column; flex-grow: 1"
+		>
 		</gradio-app>
 		<script>
 			const ce = document.getElementsByTagName("gradio-app");

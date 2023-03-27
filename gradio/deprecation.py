@@ -21,7 +21,7 @@ DEPRECATION_MESSAGE = {
     "capture_session": simple_deprecated_notice("capture_session"),
     "api_mode": simple_deprecated_notice("api_mode"),
     "show_tips": use_in_launch("show_tips"),
-    "encrypt": use_in_launch("encrypt"),
+    "encrypt": simple_deprecated_notice("encrypt"),
     "enable_queue": use_in_launch("enable_queue"),
     "server_name": use_in_launch("server_name"),
     "server_port": use_in_launch("server_port"),

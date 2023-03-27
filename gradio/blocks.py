@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import copy
-import getpass
 import inspect
 import json
 import os
-import pkgutil
 import random
+import secrets
 import sys
 import time
 import warnings
@@ -20,23 +19,17 @@ import requests
 from anyio import CapacityLimiter
 from typing_extensions import Literal
 
-from gradio import (
-    components,
-    encryptor,
-    external,
-    networking,
-    queueing,
-    routes,
-    strings,
-    utils,
-)
+from gradio import components, external, networking, queueing, routes, strings, utils
 from gradio.context import Context
 from gradio.deprecation import check_deprecated_parameters
 from gradio.documentation import document, set_documentation_group
 from gradio.exceptions import DuplicateBlockError, InvalidApiName
-from gradio.helpers import create_tracker, skip, special_args
+from gradio.helpers import EventData, create_tracker, skip, special_args
+from gradio.themes import Default as DefaultTheme
+from gradio.themes import ThemeClass as Theme
 from gradio.tunneling import CURRENT_TUNNELS
 from gradio.utils import (
+    GRADIO_VERSION,
     TupleNoPrint,
     check_function_inputs_match,
     component_or_layout_class,
@@ -46,7 +39,6 @@ from gradio.utils import (
 )
 
 set_documentation_group("blocks")
-
 
 if TYPE_CHECKING:  # Only import for type checking (is False at runtime).
     import comet_ml
@@ -61,6 +53,7 @@ class Block:
         *,
         render: bool = True,
         elem_id: str | None = None,
+        elem_classes: List[str] | str | None = None,
         visible: bool = True,
         root_url: str | None = None,  # URL that is prepended to all file paths
         _skip_init_processing: bool = False,  # Used for loading from Spaces
@@ -70,10 +63,15 @@ class Block:
         Context.id += 1
         self.visible = visible
         self.elem_id = elem_id
+        self.elem_classes = (
+            [elem_classes] if isinstance(elem_classes, str) else elem_classes
+        )
         self.root_url = root_url
+        self.share_token = secrets.token_urlsafe(32)
         self._skip_init_processing = _skip_init_processing
         self._style = {}
         self.parent: BlockContext | None = None
+        self.root = ""
 
         if render:
             self.render()
@@ -147,7 +145,10 @@ class Block:
         max_batch_size: int = 4,
         cancels: List[int] | None = None,
         every: float | None = None,
-    ) -> Dict[str, Any]:
+        collects_event_data: bool | None = None,
+        trigger_after: int | None = None,
+        trigger_only_on_success: bool = False,
+    ) -> Tuple[Dict[str, Any], int]:
         """
         Adds an event to the component's dependencies.
         Parameters:
@@ -165,7 +166,11 @@ class Block:
             batch: whether this function takes in a batch of inputs
             max_batch_size: the maximum batch size to send to the function
             cancels: a list of other events to cancel when this event is triggered. For example, setting cancels=[click_event] will cancel the click_event, where click_event is the return value of another components .click method.
-        Returns: None
+            every: Run this event 'every' number of seconds while the client connection is open. Interpreted in seconds. Queue must be enabled.
+            collects_event_data: whether to collect event data for this event
+            trigger_after: if set, this event will be triggered after 'trigger_after' function index
+            trigger_only_on_success: if True, this event will only be triggered if the previous event was successful (only applies if `trigger_after` is set)
+        Returns: dependency information, dependency index
         """
         # Support for singular parameter
         if isinstance(inputs, set):
@@ -206,8 +211,19 @@ class Block:
         elif every:
             raise ValueError("Cannot set a value for `every` without a `fn`.")
 
+        _, progress_index, event_data_index = (
+            special_args(fn) if fn else (None, None, None)
+        )
         Context.root_block.fns.append(
-            BlockFunction(fn, inputs, outputs, preprocess, postprocess, inputs_as_dict)
+            BlockFunction(
+                fn,
+                inputs,
+                outputs,
+                preprocess,
+                postprocess,
+                inputs_as_dict,
+                progress_index is not None,
+            )
         )
         if api_name is not None:
             api_name_ = utils.append_unique_suffix(
@@ -218,6 +234,9 @@ class Block:
                     "api_name {} already exists, using {}".format(api_name, api_name_)
                 )
                 api_name = api_name_
+
+        if collects_event_data is None:
+            collects_event_data = event_data_index is not None
 
         dependency = {
             "targets": [self._id] if not no_target else [],
@@ -234,14 +253,22 @@ class Block:
             "batch": batch,
             "max_batch_size": max_batch_size,
             "cancels": cancels or [],
+            "types": {
+                "continuous": bool(every),
+                "generator": inspect.isgeneratorfunction(fn) or bool(every),
+            },
+            "collects_event_data": collects_event_data,
+            "trigger_after": trigger_after,
+            "trigger_only_on_success": trigger_only_on_success,
         }
         Context.root_block.dependencies.append(dependency)
-        return dependency
+        return dependency, len(Context.root_block.dependencies) - 1
 
     def get_config(self):
         return {
             "visible": self.visible,
             "elem_id": self.elem_id,
+            "elem_classes": self.elem_classes,
             "style": self._style,
             "root_url": self.root_url,
         }
@@ -253,6 +280,7 @@ class Block:
 
     @classmethod
     def get_specific_update(cls, generic_update: Dict[str, Any]) -> Dict:
+        generic_update = generic_update.copy()
         del generic_update["__type__"]
         specific_update = cls.update(**generic_update)
         return specific_update
@@ -271,7 +299,7 @@ class BlockContext(Block):
             render: If False, this will not be included in the Blocks config file at all.
         """
         self.children: List[Block] = []
-        super().__init__(visible=visible, render=render, **kwargs)
+        Block.__init__(self, visible=visible, render=render, **kwargs)
 
     def __enter__(self):
         self.parent = Context.block
@@ -325,22 +353,23 @@ class BlockFunction:
         preprocess: bool,
         postprocess: bool,
         inputs_as_dict: bool,
+        tracks_progress: bool = False,
     ):
         self.fn = fn
         self.inputs = inputs
         self.outputs = outputs
         self.preprocess = preprocess
         self.postprocess = postprocess
+        self.tracks_progress = tracks_progress
         self.total_runtime = 0
         self.total_runs = 0
         self.inputs_as_dict = inputs_as_dict
+        self.name = getattr(fn, "__name__", "fn") if fn is not None else None
 
     def __str__(self):
         return str(
             {
-                "fn": getattr(self.fn, "__name__", "fn")
-                if self.fn is not None
-                else None,
+                "fn": self.name,
                 "preprocess": self.preprocess,
                 "postprocess": self.postprocess,
             }
@@ -371,6 +400,9 @@ def postprocess_update_dict(block: Block, update_dict: Dict, postprocess: bool =
         update_dict = block.get_specific_update(update_dict)
     if update_dict.get("value") is components._Keywords.NO_VALUE:
         update_dict.pop("value")
+    interactive = update_dict.pop("interactive", None)
+    if interactive is not None:
+        update_dict["mode"] = "dynamic" if interactive else "static"
     prediction_value = delete_none(update_dict, skip_value=True)
     if "value" in prediction_value and postprocess:
         assert isinstance(
@@ -407,7 +439,7 @@ def convert_component_dict_to_list(
     return predictions
 
 
-@document("load")
+@document("launch", "queue", "integrate", "load")
 class Blocks(BlockContext):
     """
     Blocks is Gradio's low-level API that allows you to create more custom web
@@ -445,7 +477,7 @@ class Blocks(BlockContext):
 
     def __init__(
         self,
-        theme: str = "default",
+        theme: Theme | str | None = None,
         analytics_enabled: bool | None = None,
         mode: str = "blocks",
         title: str = "Gradio",
@@ -454,7 +486,6 @@ class Blocks(BlockContext):
     ):
         """
         Parameters:
-            theme: which theme to use - right now, only "default" is supported.
             analytics_enabled: whether to allow basic telemetry. If None, will use GRADIO_ANALYTICS_ENABLED environment variable or default to True.
             mode: a human-friendly name for the kind of Blocks or Interface being created.
             title: The tab title to display when this is opened in a browser window.
@@ -463,7 +494,20 @@ class Blocks(BlockContext):
         # Cleanup shared parameters with Interface #TODO: is this part still necessary after Interface with Blocks?
         self.limiter = None
         self.save_to = None
+        if theme is None:
+            theme = DefaultTheme()
+        elif isinstance(theme, str):
+            try:
+                theme = Theme.from_hub(theme)
+            except Exception as e:
+                warnings.warn(f"Cannot load {theme}. Caught Exception: {str(e)}")
+                theme = DefaultTheme()
+        if not isinstance(theme, Theme):
+            warnings.warn("Theme should be a class loaded from gradio.themes")
+            theme = DefaultTheme()
         self.theme = theme
+        self.theme_css = theme._get_theme_css()
+        self.stylesheets = theme._stylesheets
         self.encrypt = False
         self.share = False
         self.enable_queue = None
@@ -482,7 +526,8 @@ class Blocks(BlockContext):
             if analytics_enabled is not None
             else os.getenv("GRADIO_ANALYTICS_ENABLED", "True") == "True"
         )
-
+        if not self.analytics_enabled:
+            os.environ["HF_HUB_DISABLE_TELEMETRY"] = "True"
         super().__init__(render=False, **kwargs)
         self.blocks: Dict[int, Block] = {}
         self.fns: List[BlockFunction] = []
@@ -496,7 +541,6 @@ class Blocks(BlockContext):
         self.height = None
         self.api_open = True
 
-        self.ip_address = ""
         self.is_space = True if os.getenv("SYSTEM") == "spaces" else False
         self.favicon_path = None
         self.auth = None
@@ -514,22 +558,23 @@ class Blocks(BlockContext):
         self.api_mode = None
         self.progress_tracking = None
 
+        self.file_directories = []
+
         if self.analytics_enabled:
-            self.ip_address = utils.get_local_ip_address()
             data = {
                 "mode": self.mode,
-                "ip_address": self.ip_address,
                 "custom_css": self.css is not None,
                 "theme": self.theme,
-                "version": (pkgutil.get_data(__name__, "version.txt") or b"")
-                .decode("ascii")
-                .strip(),
+                "version": GRADIO_VERSION,
             }
             utils.initiated_analytics(data)
 
     @classmethod
     def from_config(
-        cls, config: dict, fns: List[Callable], root_url: str | None = None
+        cls,
+        config: dict,
+        fns: List[Callable],
+        root_url: str | None = None,
     ) -> Blocks:
         """
         Factory method that creates a Blocks from a config and list of functions.
@@ -576,7 +621,9 @@ class Blocks(BlockContext):
                     with block:
                         iterate_over_children(children)
 
-        with Blocks(theme=config["theme"], css=config["theme"]) as blocks:
+        derived_fields = ["types"]
+
+        with Blocks() as blocks:
             # ID 0 should be the root Blocks component
             original_mapping[0] = Context.root_block or blocks
 
@@ -593,6 +640,8 @@ class Blocks(BlockContext):
                 # older demos
                 if dependency["trigger"] == "fake_event":
                     continue
+                for field in derived_fields:
+                    dependency.pop(field, None)
                 targets = dependency.pop("targets")
                 trigger = dependency.pop("trigger")
                 dependency.pop("backend_fn")
@@ -610,7 +659,7 @@ class Blocks(BlockContext):
                 for target in targets:
                     dependency = original_mapping[target].set_event_trigger(
                         event_name=trigger, fn=fn, **dependency
-                    )
+                    )[0]
                     if first_dependency is None:
                         first_dependency = dependency
 
@@ -679,6 +728,8 @@ class Blocks(BlockContext):
                 dependency["cancels"] = [
                     c + dependency_offset for c in dependency["cancels"]
                 ]
+                if dependency.get("trigger_after") is not None:
+                    dependency["trigger_after"] += dependency_offset
                 # Recreate the cancel function so that it has the latest
                 # dependency fn indices. This is necessary to properly cancel
                 # events in the backend
@@ -781,6 +832,7 @@ class Blocks(BlockContext):
         iterator: Iterator[Any] | None = None,
         requests: routes.Request | List[routes.Request] | None = None,
         event_id: str | None = None,
+        event_data: EventData | None = None,
     ):
         """
         Calls function with given index and preprocessed input, and measures process time.
@@ -790,6 +842,7 @@ class Blocks(BlockContext):
             iterator: iterator to use if function is a generator
             requests: requests to pass to function
             event_id: id of event in queue
+            event_data: data associated with event trigger
         """
         block_fn = self.fns[fn_index]
         assert block_fn.fn, f"function with index {fn_index} not defined."
@@ -807,10 +860,8 @@ class Blocks(BlockContext):
             request = requests[0]
         else:
             request = requests
-        processed_input, progress_index = special_args(
-            block_fn.fn,
-            processed_input,
-            request,
+        processed_input, progress_index, _ = special_args(
+            block_fn.fn, processed_input, request, event_data
         )
         progress_tracker = (
             processed_input[progress_index] if progress_index is not None else None
@@ -889,7 +940,7 @@ class Blocks(BlockContext):
             assert isinstance(
                 block, components.IOComponent
             ), f"{block.__class__} Component with id {output_id} not a valid output component."
-            deserialized = block.deserialize(outputs[o])
+            deserialized = block.deserialize(outputs[o], root_url=block.root_url)
             predictions.append(deserialized)
 
         return predictions
@@ -932,9 +983,14 @@ class Blocks(BlockContext):
 
         output = []
         for i, output_id in enumerate(dependency["outputs"]):
-            if predictions[i] is components._Keywords.FINISHED_ITERATING:
-                output.append(None)
-                continue
+            try:
+                if predictions[i] is components._Keywords.FINISHED_ITERATING:
+                    output.append(None)
+                    continue
+            except (IndexError, KeyError):
+                raise ValueError(
+                    f"Number of output components does not match number of values returned from from function {block_fn.name}"
+                )
             block = self.blocks[output_id]
             if getattr(block, "stateful", False):
                 if not utils.is_update(predictions[i]):
@@ -955,6 +1011,7 @@ class Blocks(BlockContext):
                     ), f"{block.__class__} Component with id {output_id} not a valid output component."
                     prediction_value = block.postprocess(prediction_value)
                 output.append(prediction_value)
+
         return output
 
     async def process_api(
@@ -965,6 +1022,7 @@ class Blocks(BlockContext):
         request: routes.Request | List[routes.Request] | None = None,
         iterators: Dict[int, Any] | None = None,
         event_id: str | None = None,
+        event_data: EventData | None = None,
     ) -> Dict[str, Any]:
         """
         Processes API calls from the frontend. First preprocesses the data,
@@ -975,6 +1033,8 @@ class Blocks(BlockContext):
             username: name of user if authentication is set up (not used)
             state: data stored from stateful components for session (key is input block id)
             iterators: the in-progress iterators for each generator function (key is function index)
+            event_id: id of event that triggered this API call
+            event_data: data associated with the event trigger itself
         Returns: None
         """
         block_fn = self.fns[fn_index]
@@ -1001,7 +1061,7 @@ class Blocks(BlockContext):
                 self.preprocess_data(fn_index, list(i), state) for i in zip(*inputs)
             ]
             result = await self.call_function(
-                fn_index, list(zip(*inputs)), None, request
+                fn_index, list(zip(*inputs)), None, request, event_id, event_data
             )
             preds = result["prediction"]
             data = [
@@ -1013,7 +1073,7 @@ class Blocks(BlockContext):
             inputs = self.preprocess_data(fn_index, inputs, state)
             iterator = iterators.get(fn_index, None) if iterators else None
             result = await self.call_function(
-                fn_index, inputs, iterator, request, event_id
+                fn_index, inputs, iterator, request, event_id, event_data
             )
             data = self.postprocess_data(fn_index, result["prediction"], state)
             is_generating, iterator = result["is_generating"], result["iterator"]
@@ -1044,8 +1104,8 @@ class Blocks(BlockContext):
             "version": routes.VERSION,
             "mode": self.mode,
             "dev_mode": self.dev_mode,
+            "analytics_enabled": self.analytics_enabled,
             "components": [],
-            "theme": self.theme,
             "css": self.css,
             "title": self.title or "Gradio",
             "is_space": self.is_space,
@@ -1053,6 +1113,8 @@ class Blocks(BlockContext):
             "show_error": getattr(self, "show_error", False),
             "show_api": self.show_api,
             "is_colab": utils.colab_check(),
+            "stylesheets": self.stylesheets,
+            "root": self.root,
         }
 
         def getLayout(block):
@@ -1096,10 +1158,7 @@ class Blocks(BlockContext):
             self.parent.children.extend(self.children)
         self.config = self.get_config_file()
         self.app = routes.App.create_app(self)
-        self.progress_tracking = any(
-            block_fn.fn is not None and special_args(block_fn.fn)[1] is not None
-            for block_fn in self.fns
-        )
+        self.progress_tracking = any(block_fn.tracks_progress for block_fn in self.fns)
 
     @class_or_instancemethod
     def load(
@@ -1184,7 +1243,7 @@ class Blocks(BlockContext):
                 max_batch_size=max_batch_size,
                 every=every,
                 no_target=True,
-            )
+            )[0]
 
     def clear(self):
         """Resets the layout of the Blocks object."""
@@ -1213,8 +1272,14 @@ class Blocks(BlockContext):
             default_enabled: Deprecated and has no effect.
             api_open: If True, the REST routes of the backend will be open, allowing requests made directly to those endpoints to skip the queue.
             max_size: The maximum number of events the queue will store at any given moment. If the queue is full, new events will not be added and a user will receive a message saying that the queue is full. If None, the queue size will be unlimited.
-        Example:
-            demo = gr.Interface(gr.Textbox(), gr.Image(), image_generator)
+        Example: (Blocks)
+            with gr.Blocks() as demo:
+                button = gr.Button(label="Generate Image")
+                button.click(fn=image_generator, inputs=gr.Textbox(), outputs=gr.Image())
+            demo.queue(concurrency_count=3)
+            demo.launch()
+        Example: (Interface)
+            demo = gr.Interface(image_generator, gr.Textbox(), gr.Image())
             demo.queue(concurrency_count=3)
             demo.launch()
         """
@@ -1235,6 +1300,7 @@ class Blocks(BlockContext):
             blocks_dependencies=self.dependencies,
         )
         self.config = self.get_config_file()
+        self.app = routes.App.create_app(self)
         return self
 
     def launch(
@@ -1254,13 +1320,14 @@ class Blocks(BlockContext):
         show_tips: bool = False,
         height: int = 500,
         width: int | str = "100%",
-        encrypt: bool = False,
+        encrypt: bool | None = None,
         favicon_path: str | None = None,
         ssl_keyfile: str | None = None,
         ssl_certfile: str | None = None,
         ssl_keyfile_password: str | None = None,
         quiet: bool = False,
         show_api: bool = True,
+        file_directories: List[str] | None = None,
         _frontend: bool = True,
     ) -> Tuple[FastAPI, str, str]:
         """
@@ -1283,18 +1350,27 @@ class Blocks(BlockContext):
             max_threads: the maximum number of total threads that the Gradio app can generate in parallel. The default is inherited from the starlette library (currently 40). Applies whether the queue is enabled or not. But if queuing is enabled, this parameter is increaseed to be at least the concurrency_count of the queue.
             width: The width in pixels of the iframe element containing the interface (used if inline=True)
             height: The height in pixels of the iframe element containing the interface (used if inline=True)
-            encrypt: If True, flagged data will be encrypted by key provided by creator at launch
+            encrypt: DEPRECATED. Has no effect.
             favicon_path: If a path to a file (.png, .gif, or .ico) is provided, it will be used as the favicon for the web page.
             ssl_keyfile: If a path to a file is provided, will use this as the private key file to create a local server running on https.
             ssl_certfile: If a path to a file is provided, will use this as the signed certificate for https. Needs to be provided if ssl_keyfile is provided.
             ssl_keyfile_password: If a password is provided, will use this with the ssl certificate for https.
             quiet: If True, suppresses most print statements.
             show_api: If True, shows the api docs in the footer of the app. Default True. If the queue is enabled, then api_open parameter of .queue() will determine if the api docs are shown, independent of the value of show_api.
+            file_directories: List of directories that gradio is allowed to serve files from (in addition to the directory containing the gradio python file). Must be absolute paths. Warning: any files in these directories or its children are potentially accessible to all users of your app.
         Returns:
             app: FastAPI app object that is running the demo
             local_url: Locally accessible link to the demo
             share_url: Publicly accessible link to the demo (if share=True, otherwise None)
-        Example:
+        Example: (Blocks)
+            import gradio as gr
+            def reverse(text):
+                return text[::-1]
+            with gr.Blocks() as demo:
+                button = gr.Button(value="Reverse")
+                button.click(reverse, gr.Textbox(), gr.Textbox())
+            demo.launch(share=True, auth=("username", "password"))
+        Example:  (Interface)
             import gradio as gr
             def reverse(text):
                 return text[::-1]
@@ -1324,6 +1400,11 @@ class Blocks(BlockContext):
                 "The `enable_queue` parameter has been deprecated. Please use the `.queue()` method instead.",
                 DeprecationWarning,
             )
+        if encrypt is not None:
+            warnings.warn(
+                "The `encrypt` parameter has been deprecated and has no effect.",
+                DeprecationWarning,
+            )
 
         if self.is_space:
             self.enable_queue = self.enable_queue is not False
@@ -1332,6 +1413,10 @@ class Blocks(BlockContext):
         if self.enable_queue and not hasattr(self, "_queue"):
             self.queue()
         self.show_api = self.api_open if self.enable_queue else show_api
+
+        self.file_directories = file_directories if file_directories is not None else []
+        if not isinstance(self.file_directories, list):
+            raise ValueError("file_directories must be a list of directories.")
 
         if not self.enable_queue and self.progress_tracking:
             raise ValueError("Progress tracking requires queuing to be enabled.")
@@ -1353,14 +1438,9 @@ class Blocks(BlockContext):
                 raise ValueError("In order to use batching, the queue must be enabled.")
 
         self.config = self.get_config_file()
-        self.encrypt = encrypt
         self.max_threads = max(
             self._queue.max_thread_count if self.enable_queue else 0, max_threads
         )
-        if self.encrypt:
-            self.encryption_key = encryptor.get_key(
-                getpass.getpass("Enter key for encryption: ")
-            )
 
         if self.is_running:
             assert isinstance(
@@ -1386,6 +1466,9 @@ class Blocks(BlockContext):
             self.server = server
             self.is_running = True
             self.is_colab = utils.colab_check()
+            self.is_kaggle = utils.kaggle_check()
+            self.is_sagemaker = utils.sagemaker_check()
+
             self.protocol = (
                 "https"
                 if self.local_url.startswith("https") or self.is_colab
@@ -1399,18 +1482,31 @@ class Blocks(BlockContext):
             # Workaround by triggering the app endpoint
             requests.get(f"{self.local_url}startup-events")
 
-            if self.enable_queue:
-                if self.encrypt:
-                    raise ValueError("Cannot queue with encryption enabled.")
         utils.launch_counter()
 
-        self.share = (
-            share
-            if share is not None
-            else True
-            if self.is_colab and self.enable_queue
-            else False
-        )
+        if share is None:
+            if self.is_colab and self.enable_queue:
+                if not quiet:
+                    print(
+                        "Setting queue=True in a Colab notebook requires sharing enabled. Setting `share=True` (you can turn this off by setting `share=False` in `launch()` explicitly).\n"
+                    )
+                self.share = True
+            elif self.is_kaggle:
+                if not quiet:
+                    print(
+                        "Kaggle notebooks require sharing enabled. Setting `share=True` (you can turn this off by setting `share=False` in `launch()` explicitly).\n"
+                    )
+                self.share = True
+            elif self.is_sagemaker:
+                if not quiet:
+                    print(
+                        "Sagemaker notebooks may require sharing enabled. Setting `share=True` (you can turn this off by setting `share=False` in `launch()` explicitly).\n"
+                    )
+                self.share = True
+            else:
+                self.share = False
+        else:
+            self.share = share
 
         # If running in a colab or not able to access localhost,
         # a shareable link must be created.
@@ -1444,14 +1540,14 @@ class Blocks(BlockContext):
             try:
                 if self.share_url is None:
                     self.share_url = networking.setup_tunnel(
-                        self.server_name, self.server_port
+                        self.server_name, self.server_port, self.share_token
                     )
                 print(strings.en["SHARE_LINK_DISPLAY"].format(self.share_url))
                 if not (quiet):
                     print(strings.en["SHARE_LINK_MESSAGE"])
-            except RuntimeError:
+            except (RuntimeError, requests.exceptions.ConnectionError):
                 if self.analytics_enabled:
-                    utils.error_analytics(self.ip_address, "Not able to set up tunnel")
+                    utils.error_analytics("Not able to set up tunnel")
                 self.share_url = None
                 self.share = False
                 print(strings.en["COULD_NOT_GET_SHARE_LINK"])
@@ -1534,7 +1630,6 @@ class Blocks(BlockContext):
                 "is_google_colab": self.is_colab,
                 "is_sharing_on": self.share,
                 "share_url": self.share_url,
-                "ip_address": self.ip_address,
                 "enable_queue": self.enable_queue,
                 "show_tips": self.show_tips,
                 "server_name": server_name,
@@ -1543,6 +1638,7 @@ class Blocks(BlockContext):
                 "mode": self.mode,
             }
             utils.launch_analytics(data)
+            utils.launched_telemetry(self, data)
 
         utils.show_tip(self)
 
@@ -1622,6 +1718,9 @@ class Blocks(BlockContext):
                 self._queue.close()
             self.server.close()
             self.is_running = False
+            # So that the startup events (starting the queue)
+            # happen the next time the app is launched
+            self.app.startup_events_triggered = False
             if verbose:
                 print("Closing server running on port: {}".format(self.server_port))
         except (AttributeError, OSError):  # can't close if not running
@@ -1650,21 +1749,28 @@ class Blocks(BlockContext):
                 ):
                     load_fn, every = component.load_event_to_attach
                     # Use set_event_trigger to avoid ambiguity between load class/instance method
-                    self.set_event_trigger(
+                    dep = self.set_event_trigger(
                         "load",
                         load_fn,
                         None,
                         component,
                         no_target=True,
-                        queue=False,
+                        # If every is None, for sure skip the queue
+                        # else, let the enable_queue parameter take precedence
+                        # this will raise a nice error message is every is used
+                        # without queue
+                        queue=False if every is None else None,
                         every=every,
-                    )
+                    )[0]
+                    component.load_event = dep
 
     def startup_events(self):
         """Events that should be run when the app containing this block starts up."""
 
         if self.enable_queue:
             utils.run_coro_in_background(self._queue.start, (self.progress_tracking,))
+            # So that processing can resume in case the queue was stopped
+            self._queue.stopped = False
         utils.run_coro_in_background(self.create_limiter)
 
     def queue_enabled_for_fn(self, fn_index: int):

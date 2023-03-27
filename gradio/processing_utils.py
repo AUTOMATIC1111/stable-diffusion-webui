@@ -5,7 +5,7 @@ import hashlib
 import json
 import mimetypes
 import os
-import pathlib
+import secrets
 import shutil
 import subprocess
 import tempfile
@@ -13,14 +13,16 @@ import urllib.request
 import warnings
 from io import BytesIO
 from pathlib import Path
-from typing import Dict, Tuple
+from typing import Dict, Set, Tuple
 
+import aiofiles
 import numpy as np
 import requests
+from fastapi import UploadFile
 from ffmpy import FFmpeg, FFprobe, FFRuntimeError
 from PIL import Image, ImageOps, PngImagePlugin
 
-from gradio import encryptor, utils
+from gradio import utils
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")  # Ignore pydub warning if ffmpeg is not installed
@@ -52,14 +54,20 @@ def to_binary(x: str | Dict) -> bytes:
 def decode_base64_to_image(encoding: str) -> Image.Image:
     content = encoding.split(";")[1]
     image_encoded = content.split(",")[1]
-    return Image.open(BytesIO(base64.b64decode(image_encoded)))
+    img = Image.open(BytesIO(base64.b64decode(image_encoded)))
+    exif = img.getexif()
+    # 274 is the code for image rotation and 1 means "correct orientation"
+    if exif.get(274, 1) != 1 and hasattr(ImageOps, "exif_transpose"):
+        img = ImageOps.exif_transpose(img)
+    return img
 
 
-def encode_url_or_file_to_base64(path: str | Path, encryption_key: bytes | None = None):
-    if utils.validate_url(str(path)):
-        return encode_url_to_base64(str(path), encryption_key=encryption_key)
+def encode_url_or_file_to_base64(path: str | Path):
+    path = str(path)
+    if utils.validate_url(path):
+        return encode_url_to_base64(path)
     else:
-        return encode_file_to_base64(str(path), encryption_key=encryption_key)
+        return encode_file_to_base64(path)
 
 
 def get_mimetype(filename: str) -> str | None:
@@ -82,11 +90,9 @@ def get_extension(encoding: str) -> str | None:
     return extension
 
 
-def encode_file_to_base64(f, encryption_key=None):
+def encode_file_to_base64(f):
     with open(f, "rb") as file:
         encoded_string = base64.b64encode(file.read())
-        if encryption_key:
-            encoded_string = encryptor.decrypt(encryption_key, encoded_string)
         base64_str = str(encoded_string, "utf-8")
         mimetype = get_mimetype(f)
         return (
@@ -97,10 +103,8 @@ def encode_file_to_base64(f, encryption_key=None):
         )
 
 
-def encode_url_to_base64(url, encryption_key=None):
+def encode_url_to_base64(url):
     encoded_string = base64.b64encode(requests.get(url).content)
-    if encryption_key:
-        encoded_string = encryptor.decrypt(encryption_key, encoded_string)
     base64_str = str(encoded_string, "utf-8")
     mimetype = get_mimetype(url)
     return (
@@ -123,26 +127,25 @@ def save_array_to_file(image_array, dir=None):
     return file_obj
 
 
+def get_pil_metadata(pil_image):
+    # Copy any text-only metadata
+    metadata = PngImagePlugin.PngInfo()
+    for key, value in pil_image.info.items():
+        if isinstance(key, str) and isinstance(value, str):
+            metadata.add_text(key, value)
+
+    return metadata
+
+
 def save_pil_to_file(pil_image, dir=None):
     file_obj = tempfile.NamedTemporaryFile(delete=False, suffix=".png", dir=dir)
-    pil_image.save(file_obj)
+    pil_image.save(file_obj, pnginfo=get_pil_metadata(pil_image))
     return file_obj
 
 
 def encode_pil_to_base64(pil_image):
     with BytesIO() as output_bytes:
-
-        # Copy any text-only metadata
-        use_metadata = False
-        metadata = PngImagePlugin.PngInfo()
-        for key, value in pil_image.info.items():
-            if isinstance(key, str) and isinstance(value, str):
-                metadata.add_text(key, value)
-                use_metadata = True
-
-        pil_image.save(
-            output_bytes, "PNG", pnginfo=(metadata if use_metadata else None)
-        )
+        pil_image.save(output_bytes, "PNG", pnginfo=get_pil_metadata(pil_image))
         bytes_data = output_bytes.getvalue()
     base64_str = str(base64.b64encode(bytes_data), "utf-8")
     return "data:image/png;base64," + base64_str
@@ -268,9 +271,7 @@ def decode_base64_to_binary(encoding) -> Tuple[bytes, str | None]:
     return base64.b64decode(data), extension
 
 
-def decode_base64_to_file(
-    encoding, encryption_key=None, file_path=None, dir=None, prefix=None
-):
+def decode_base64_to_file(encoding, file_path=None, dir=None, prefix=None):
     if dir is not None:
         os.makedirs(dir, exist_ok=True)
     data, extension = decode_base64_to_binary(encoding)
@@ -293,8 +294,6 @@ def decode_base64_to_file(
             suffix="." + extension,
             dir=dir,
         )
-    if encryption_key is not None:
-        data = encryptor.encrypt(encryption_key, data)
     file_obj.write(data)
     file_obj.flush()
     return file_obj
@@ -327,7 +326,8 @@ class TempFileManager:
 
     def __init__(self) -> None:
         # Set stores all the temporary files created by this component.
-        self.temp_files = set()
+        self.temp_files: Set[str] = set()
+        self.DEFAULT_TEMP_DIR = tempfile.gettempdir()
 
     def hash_file(self, file_path: str, chunk_num_blocks: int = 128) -> str:
         sha1 = hashlib.sha1()
@@ -349,36 +349,23 @@ class TempFileManager:
             sha1.update(data)
         return sha1.hexdigest()
 
-    def get_prefix_and_extension(self, file_path_or_url: str) -> Tuple[str, str]:
-        file_name = Path(file_path_or_url).name
-        prefix, extension = file_name, None
-        if "." in file_name:
-            prefix = file_name[0 : file_name.index(".")]
-            extension = "." + file_name[file_name.index(".") + 1 :]
-        else:
-            extension = ""
-        prefix = utils.strip_invalid_filename_characters(prefix)
-        return prefix, extension
-
-    def get_temp_file_path(self, file_path: str) -> str:
-        prefix, extension = self.get_prefix_and_extension(file_path)
-        file_hash = self.hash_file(file_path)
-        return prefix + file_hash + extension
-
-    def get_temp_url_path(self, url: str) -> str:
-        prefix, extension = self.get_prefix_and_extension(url)
-        file_hash = self.hash_url(url)
-        return prefix + file_hash + extension
+    def hash_base64(self, base64_encoding: str, chunk_num_blocks: int = 128) -> str:
+        sha1 = hashlib.sha1()
+        for i in range(0, len(base64_encoding), chunk_num_blocks * sha1.block_size):
+            data = base64_encoding[i : i + chunk_num_blocks * sha1.block_size]
+            sha1.update(data.encode("utf-8"))
+        return sha1.hexdigest()
 
     def make_temp_copy_if_needed(self, file_path: str) -> str:
         """Returns a temporary file path for a copy of the given file path if it does
         not already exist. Otherwise returns the path to the existing temp file."""
-        f = tempfile.NamedTemporaryFile()
-        temp_dir = Path(f.name).parent
+        temp_dir = self.hash_file(file_path)
+        temp_dir = Path(self.DEFAULT_TEMP_DIR) / temp_dir
+        temp_dir.mkdir(exist_ok=True, parents=True)
 
-        temp_file_path = self.get_temp_file_path(file_path)
-        f.name = str(temp_dir / temp_file_path)
-        full_temp_file_path = str(Path(f.name).resolve())
+        f = tempfile.NamedTemporaryFile(delete=False, dir=temp_dir)
+        f.name = utils.strip_invalid_filename_characters(Path(file_path).name)
+        full_temp_file_path = str(utils.abspath(temp_dir / f.name))
 
         if not Path(full_temp_file_path).exists():
             shutil.copy2(file_path, full_temp_file_path)
@@ -386,15 +373,39 @@ class TempFileManager:
         self.temp_files.add(full_temp_file_path)
         return full_temp_file_path
 
+    async def save_uploaded_file(self, file: UploadFile, upload_dir: str) -> str:
+        temp_dir = secrets.token_hex(
+            20
+        )  # Since the full file is being uploaded anyways, there is no benefit to hashing the file.
+        temp_dir = Path(upload_dir) / temp_dir
+        temp_dir.mkdir(exist_ok=True, parents=True)
+        output_file_obj = tempfile.NamedTemporaryFile(delete=False, dir=temp_dir)
+
+        if file.filename:
+            file_name = Path(file.filename).name
+            output_file_obj.name = utils.strip_invalid_filename_characters(file_name)
+
+        full_temp_file_path = str(utils.abspath(temp_dir / output_file_obj.name))
+
+        async with aiofiles.open(full_temp_file_path, "wb") as output_file:
+            while True:
+                content = await file.read(100 * 1024 * 1024)
+                if not content:
+                    break
+                await output_file.write(content)
+
+        return full_temp_file_path
+
     def download_temp_copy_if_needed(self, url: str) -> str:
         """Downloads a file and makes a temporary file path for a copy if does not already
         exist. Otherwise returns the path to the existing temp file."""
-        f = tempfile.NamedTemporaryFile()
-        temp_dir = Path(f.name).parent
+        temp_dir = self.hash_url(url)
+        temp_dir = Path(self.DEFAULT_TEMP_DIR) / temp_dir
+        temp_dir.mkdir(exist_ok=True, parents=True)
+        f = tempfile.NamedTemporaryFile(delete=False, dir=temp_dir)
 
-        temp_file_path = self.get_temp_url_path(url)
-        f.name = str(temp_dir / temp_file_path)
-        full_temp_file_path = str(Path(f.name).resolve())
+        f.name = utils.strip_invalid_filename_characters(Path(url).name)
+        full_temp_file_path = str(utils.abspath(temp_dir / f.name))
 
         if not Path(full_temp_file_path).exists():
             with requests.get(url, stream=True) as r:
@@ -404,25 +415,68 @@ class TempFileManager:
         self.temp_files.add(full_temp_file_path)
         return full_temp_file_path
 
+    def base64_to_temp_file_if_needed(
+        self, base64_encoding: str, file_name: str | None = None
+    ) -> str:
+        """Converts a base64 encoding to a file and returns the path to the file if
+        the file doesn't already exist. Otherwise returns the path to the existing file."""
+        temp_dir = self.hash_base64(base64_encoding)
+        temp_dir = Path(self.DEFAULT_TEMP_DIR) / temp_dir
+        temp_dir.mkdir(exist_ok=True, parents=True)
 
-def create_tmp_copy_of_file(file_path, dir=None):
+        guess_extension = get_extension(base64_encoding)
+        if file_name:
+            file_name = utils.strip_invalid_filename_characters(file_name)
+        elif guess_extension:
+            file_name = "file." + guess_extension
+        else:
+            file_name = "file"
+        f = tempfile.NamedTemporaryFile(delete=False, dir=temp_dir)
+        f.name = file_name
+        full_temp_file_path = str(utils.abspath(temp_dir / f.name))
+
+        if not Path(full_temp_file_path).exists():
+            data, _ = decode_base64_to_binary(base64_encoding)
+            with open(full_temp_file_path, "wb") as fb:
+                fb.write(data)
+
+        self.temp_files.add(full_temp_file_path)
+        return full_temp_file_path
+
+
+def download_tmp_copy_of_file(
+    url_path: str, access_token: str | None = None, dir: str | None = None
+) -> tempfile._TemporaryFileWrapper:
     if dir is not None:
         os.makedirs(dir, exist_ok=True)
-    file_name = Path(file_path).name
-    prefix, extension = file_name, None
-    if "." in file_name:
-        prefix = file_name[0 : file_name.index(".")]
-        extension = file_name[file_name.index(".") + 1 :]
-    prefix = utils.strip_invalid_filename_characters(prefix)
-    if extension is None:
-        file_obj = tempfile.NamedTemporaryFile(delete=False, prefix=prefix, dir=dir)
-    else:
-        file_obj = tempfile.NamedTemporaryFile(
-            delete=False,
-            prefix=prefix,
-            suffix="." + extension,
-            dir=dir,
-        )
+    headers = {"Authorization": "Bearer " + access_token} if access_token else {}
+    prefix = Path(url_path).stem
+    suffix = Path(url_path).suffix
+    file_obj = tempfile.NamedTemporaryFile(
+        delete=False,
+        prefix=prefix,
+        suffix=suffix,
+        dir=dir,
+    )
+    with requests.get(url_path, headers=headers, stream=True) as r:
+        with open(file_obj.name, "wb") as f:
+            shutil.copyfileobj(r.raw, f)
+    return file_obj
+
+
+def create_tmp_copy_of_file(
+    file_path: str, dir: str | None = None
+) -> tempfile._TemporaryFileWrapper:
+    if dir is not None:
+        os.makedirs(dir, exist_ok=True)
+    prefix = Path(file_path).stem
+    suffix = Path(file_path).suffix
+    file_obj = tempfile.NamedTemporaryFile(
+        delete=False,
+        prefix=prefix,
+        suffix=suffix,
+        dir=dir,
+    )
     shutil.copy2(file_path, file_obj.name)
     return file_obj
 
@@ -721,7 +775,7 @@ def video_is_playable(video_filepath: str) -> bool:
         .ogg -> theora
     """
     try:
-        container = pathlib.Path(video_filepath).suffix.lower()
+        container = Path(video_filepath).suffix.lower()
         probe = FFprobe(
             global_options="-show_format -show_streams -select_streams v -print_format json",
             inputs={video_filepath: None},
@@ -742,7 +796,7 @@ def video_is_playable(video_filepath: str) -> bool:
 def convert_video_to_playable_mp4(video_path: str) -> str:
     """Convert the video to mp4. If something goes wrong return the original video."""
     try:
-        output_path = pathlib.Path(video_path).with_suffix(".mp4")
+        output_path = Path(video_path).with_suffix(".mp4")
         with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
             shutil.copy2(video_path, tmp_file.name)
             # ffmpeg will automatically use h264 codec (playable in browser) when converting to mp4

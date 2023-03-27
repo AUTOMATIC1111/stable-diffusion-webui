@@ -6,18 +6,19 @@ import subprocess
 from pathlib import Path
 from typing import List
 
-VERSION = "0.1"
+VERSION = "0.2"
 CURRENT_TUNNELS: List["Tunnel"] = []
 
 
 class Tunnel:
-    def __init__(self, remote_host, remote_port, local_host, local_port):
+    def __init__(self, remote_host, remote_port, local_host, local_port, share_token):
         self.proc = None
         self.url = None
         self.remote_host = remote_host
         self.remote_port = remote_port
         self.local_host = local_host
         self.local_port = local_port
+        self.share_token = share_token
 
     @staticmethod
     def download_binary():
@@ -27,7 +28,7 @@ class Tunnel:
 
         # Check if the file exist
         binary_name = f"frpc_{platform.system().lower()}_{machine.lower()}"
-        binary_path = str(Path(__file__).parent / binary_name)
+        binary_path = str(Path(__file__).parent / binary_name) + f"_v{VERSION}"
 
         extension = ".exe" if os.name == "nt" else ""
 
@@ -72,7 +73,7 @@ class Tunnel:
             binary,
             "http",
             "-n",
-            "random",
+            self.share_token,
             "-l",
             str(self.local_port),
             "-i",
@@ -85,7 +86,6 @@ class Tunnel:
             f"{self.remote_host}:{self.remote_port}",
             "--disable_log_color",
         ]
-
         self.proc = subprocess.Popen(
             command, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )

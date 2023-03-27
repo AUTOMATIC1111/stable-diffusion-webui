@@ -2,6 +2,7 @@ XRAY_CONFIG = {
     "version": "3.4b3\n",
     "mode": "blocks",
     "dev_mode": True,
+    "analytics_enabled": False,
     "components": [
         {
             "id": 27,
@@ -68,6 +69,7 @@ XRAY_CONFIG = {
             "props": {
                 "value": "Run",
                 "variant": "secondary",
+                "interactive": True,
                 "name": "button",
                 "visible": True,
                 "style": {},
@@ -115,6 +117,7 @@ XRAY_CONFIG = {
                 "value": "Run",
                 "variant": "secondary",
                 "name": "button",
+                "interactive": True,
                 "visible": True,
                 "style": {},
             },
@@ -144,7 +147,6 @@ XRAY_CONFIG = {
             "props": {"type": "form", "visible": True, "style": {}},
         },
     ],
-    "theme": "default",
     "css": None,
     "title": "Gradio",
     "is_space": False,
@@ -194,6 +196,10 @@ XRAY_CONFIG = {
             "max_batch_size": 4,
             "cancels": [],
             "every": None,
+            "collects_event_data": False,
+            "types": {"continuous": False, "generator": False},
+            "trigger_after": None,
+            "trigger_only_on_success": False,
         },
         {
             "targets": [39],
@@ -210,6 +216,10 @@ XRAY_CONFIG = {
             "max_batch_size": 4,
             "cancels": [],
             "every": None,
+            "collects_event_data": False,
+            "types": {"continuous": False, "generator": False},
+            "trigger_after": None,
+            "trigger_only_on_success": False,
         },
         {
             "targets": [],
@@ -226,6 +236,10 @@ XRAY_CONFIG = {
             "max_batch_size": 4,
             "cancels": [],
             "every": None,
+            "collects_event_data": False,
+            "types": {"continuous": False, "generator": False},
+            "trigger_after": None,
+            "trigger_only_on_success": False,
         },
     ],
 }
@@ -234,6 +248,7 @@ XRAY_CONFIG = {
 XRAY_CONFIG_DIFF_IDS = {
     "version": "3.4b3\n",
     "mode": "blocks",
+    "analytics_enabled": False,
     "dev_mode": True,
     "components": [
         {
@@ -301,6 +316,7 @@ XRAY_CONFIG_DIFF_IDS = {
             "props": {
                 "value": "Run",
                 "variant": "secondary",
+                "interactive": True,
                 "name": "button",
                 "visible": True,
                 "style": {},
@@ -347,6 +363,7 @@ XRAY_CONFIG_DIFF_IDS = {
             "props": {
                 "value": "Run",
                 "variant": "secondary",
+                "interactive": True,
                 "name": "button",
                 "visible": True,
                 "style": {},
@@ -377,7 +394,6 @@ XRAY_CONFIG_DIFF_IDS = {
             "props": {"type": "form", "visible": True, "style": {}},
         },
     ],
-    "theme": "default",
     "css": None,
     "title": "Gradio",
     "is_space": False,
@@ -427,6 +443,10 @@ XRAY_CONFIG_DIFF_IDS = {
             "max_batch_size": 4,
             "cancels": [],
             "every": None,
+            "collects_event_data": False,
+            "types": {"continuous": False, "generator": False},
+            "trigger_after": None,
+            "trigger_only_on_success": False,
         },
         {
             "targets": [933],
@@ -443,6 +463,10 @@ XRAY_CONFIG_DIFF_IDS = {
             "max_batch_size": 4,
             "cancels": [],
             "every": None,
+            "collects_event_data": False,
+            "types": {"continuous": False, "generator": False},
+            "trigger_after": None,
+            "trigger_only_on_success": False,
         },
         {
             "targets": [],
@@ -459,6 +483,10 @@ XRAY_CONFIG_DIFF_IDS = {
             "max_batch_size": 4,
             "cancels": [],
             "every": None,
+            "collects_event_data": False,
+            "types": {"continuous": False, "generator": False},
+            "trigger_after": None,
+            "trigger_only_on_success": False,
         },
     ],
 }
@@ -467,6 +495,7 @@ XRAY_CONFIG_DIFF_IDS = {
 XRAY_CONFIG_WITH_MISTAKE = {
     "mode": "blocks",
     "dev_mode": True,
+    "analytics_enabled": False,
     "components": [
         {
             "id": 1,
@@ -538,6 +567,7 @@ XRAY_CONFIG_WITH_MISTAKE = {
             "props": {
                 "value": "Run",
                 "name": "button",
+                "interactive": True,
                 "css": {"background-color": "red", "--hover-color": "orange"},
                 "variant": "secondary",
             },
@@ -583,6 +613,7 @@ XRAY_CONFIG_WITH_MISTAKE = {
             "type": "button",
             "props": {
                 "value": "Run",
+                "interactive": True,
                 "name": "button",
                 "style": {},
                 "variant": "secondary",
@@ -600,7 +631,6 @@ XRAY_CONFIG_WITH_MISTAKE = {
             },
         },
     ],
-    "theme": "default",
     "layout": {
         "id": 0,
         "children": [
@@ -638,6 +668,8 @@ XRAY_CONFIG_WITH_MISTAKE = {
             "scroll_to_output": False,
             "show_progress": True,
             "cancels": [],
+            "trigger_after": None,
+            "trigger_only_on_success": False,
         },
         {
             "targets": [13],
@@ -648,6 +680,8 @@ XRAY_CONFIG_WITH_MISTAKE = {
             "scroll_to_output": False,
             "show_progress": True,
             "cancels": [],
+            "trigger_after": None,
+            "trigger_only_on_success": False,
         },
     ],
 }

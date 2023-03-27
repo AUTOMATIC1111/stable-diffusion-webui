@@ -5,17 +5,20 @@ import gradio.inputs as inputs
 import gradio.outputs as outputs
 import gradio.processing_utils
 import gradio.templates
+import gradio.themes as themes
 from gradio.blocks import Blocks
 from gradio.components import (
     HTML,
     JSON,
     Audio,
+    BarPlot,
     Button,
     Carousel,
     Chatbot,
     Checkbox,
     Checkboxgroup,
     CheckboxGroup,
+    Code,
     ColorPicker,
     DataFrame,
     Dataframe,
@@ -49,6 +52,7 @@ from gradio.components import (
     Video,
     component,
 )
+from gradio.events import SelectData
 from gradio.exceptions import Error
 from gradio.flagging import (
     CSVLogger,
@@ -57,7 +61,7 @@ from gradio.flagging import (
     HuggingFaceDatasetSaver,
     SimpleCSVLogger,
 )
-from gradio.helpers import Progress
+from gradio.helpers import EventData, Progress
 from gradio.helpers import create_examples as Examples
 from gradio.helpers import make_waveform, skip, update
 from gradio.interface import Interface, TabbedInterface, close_all
@@ -81,6 +85,7 @@ from gradio.templates import (
     TextArea,
     Webcam,
 )
+from gradio.themes import Base as Theme
 
 current_pkg_version = (
     (pkgutil.get_data(__name__, "version.txt") or b"").decode("ascii").strip()

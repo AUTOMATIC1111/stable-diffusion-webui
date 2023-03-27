@@ -20,12 +20,13 @@ import numpy as np
 import PIL
 import PIL.Image
 
-from gradio import components, processing_utils, routes, utils
+from gradio import processing_utils, routes, utils
 from gradio.context import Context
 from gradio.documentation import document, set_documentation_group
 from gradio.flagging import CSVLogger
 
 if TYPE_CHECKING:  # Only import for type checking (to avoid circular imports).
+    from gradio.blocks import Block
     from gradio.components import IOComponent
 
 CACHED_FOLDER = "gradio_cached_examples"
@@ -220,6 +221,8 @@ class Examples:
                     )
                     break
 
+        from gradio import components
+
         with utils.set_directory(working_directory):
             self.dataset = components.Dataset(
                 components=inputs_with_examples,
@@ -257,6 +260,7 @@ class Examples:
                 load_example,
                 inputs=[self.dataset],
                 outputs=targets,  # type: ignore
+                show_progress=False,
                 postprocess=False,
                 queue=False,
             )
@@ -278,17 +282,17 @@ class Examples:
         """
         if Path(self.cached_file).exists():
             print(
-                f"Using cache from '{Path(self.cached_folder).resolve()}' directory. If method or examples have changed since last caching, delete this folder to clear cache."
+                f"Using cache from '{utils.abspath(self.cached_folder)}' directory. If method or examples have changed since last caching, delete this folder to clear cache."
             )
         else:
             if Context.root_block is None:
                 raise ValueError("Cannot cache examples if not in a Blocks context")
 
-            print(f"Caching examples at: '{Path(self.cached_file).resolve()}'")
+            print(f"Caching examples at: '{utils.abspath(self.cached_folder)}'")
             cache_logger = CSVLogger()
 
             # create a fake dependency to process the examples and get the predictions
-            dependency = Context.root_block.set_event_trigger(
+            dependency, fn_index = Context.root_block.set_event_trigger(
                 event_name="fake_event",
                 fn=self.fn,
                 inputs=self.inputs_with_examples,  # type: ignore
@@ -298,7 +302,6 @@ class Examples:
                 batch=self.batch,
             )
 
-            fn_index = Context.root_block.dependencies.index(dependency)
             assert self.outputs is not None
             cache_logger.setup(self.outputs, self.cached_folder)
             for example_id, _ in enumerate(self.examples):
@@ -592,16 +595,17 @@ def special_args(
     fn: Callable,
     inputs: List[Any] | None = None,
     request: routes.Request | None = None,
+    event_data: EventData | None = None,
 ):
     """
-    Checks if function has special arguments Request (via annotation) or Progress (via default value).
+    Checks if function has special arguments Request or EventData (via annotation) or Progress (via default value).
     If inputs is provided, these values will be loaded into the inputs array.
     Parameters:
         block_fn: function to check.
         inputs: array to load special arguments into.
         request: request to load into inputs.
     Returns:
-        updated inputs, request index, progress index
+        updated inputs, progress index, event data index.
     """
     signature = inspect.signature(fn)
     positional_args = []
@@ -610,6 +614,7 @@ def special_args(
             break
         positional_args.append(param)
     progress_index = None
+    event_data_index = None
     for i, param in enumerate(positional_args):
         if isinstance(param.default, Progress):
             progress_index = i
@@ -618,6 +623,12 @@ def special_args(
         elif param.annotation == routes.Request:
             if inputs is not None:
                 inputs.insert(i, request)
+        elif isinstance(param.annotation, type) and issubclass(
+            param.annotation, EventData
+        ):
+            event_data_index = i
+            if inputs is not None and event_data is not None:
+                inputs.insert(i, param.annotation(event_data.target, event_data._data))
     if inputs is not None:
         while len(inputs) < len(positional_args):
             i = len(inputs)
@@ -627,7 +638,7 @@ def special_args(
                 inputs.append(None)
             else:
                 inputs.append(param.default)
-    return inputs or [], progress_index
+    return inputs or [], progress_index, event_data_index
 
 
 @document()
@@ -795,3 +806,34 @@ def make_waveform(
 
     subprocess.call(ffmpeg_cmd, shell=True)
     return output_mp4.name
+
+
+@document()
+class EventData:
+    """
+    When a subclass of EventData is added as a type hint to an argument of an event listener method, this object will be passed as that argument.
+    It contains information about the event that triggered the listener, such the target object, and other data related to the specific event that are attributes of the subclass.
+
+    Example:
+        table = gr.Dataframe([[1, 2, 3], [4, 5, 6]])
+        gallery = gr.Gallery([("cat.jpg", "Cat"), ("dog.jpg", "Dog")])
+        textbox = gr.Textbox("Hello World!")
+
+        statement = gr.Textbox()
+
+        def on_select(evt: gr.SelectData):  # SelectData is a subclass of EventData
+            return f"You selected {evt.value} at {evt.index} from {evt.target}"
+
+        table.select(on_select, None, statement)
+        gallery.select(on_select, None, statement)
+        textbox.select(on_select, None, statement)
+    Demos: gallery_selections, tictactoe
+    """
+
+    def __init__(self, target: Block | None, _data: Any):
+        """
+        Parameters:
+            target: The target object that triggered the event. Can be used to distinguish if multiple components are bound to the same listener.
+        """
+        self.target = target
+        self._data = _data

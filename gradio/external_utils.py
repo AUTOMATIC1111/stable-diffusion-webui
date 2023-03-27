@@ -179,7 +179,6 @@ def streamline_spaces_interface(config: Dict) -> Dict:
         "flagging_options",
         "inputs",
         "outputs",
-        "theme",
         "title",
     }
     config = {k: config[k] for k in parameters}

@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 import warnings
-from typing import TYPE_CHECKING, Callable, List, Type
+from typing import Type
 
 from gradio.blocks import BlockContext
 from gradio.documentation import document, set_documentation_group
+from gradio.events import Changeable, Selectable
 
 set_documentation_group("layout")
-
-if TYPE_CHECKING:  # Only import for type checking (is False at runtime).
-    from gradio.components import Component
 
 
 @document()
@@ -139,7 +137,7 @@ class Column(BlockContext):
         }
 
 
-class Tabs(BlockContext):
+class Tabs(BlockContext, Changeable, Selectable):
     """
     Tabs is a layout element within Blocks that can contain multiple "Tab" Components.
     """
@@ -158,11 +156,13 @@ class Tabs(BlockContext):
             visible: If False, Tabs will be hidden.
             elem_id: An optional string that is assigned as the id of this component in the HTML DOM. Can be used for targeting CSS styles.
         """
-        super().__init__(visible=visible, elem_id=elem_id, **kwargs)
+        BlockContext.__init__(self, visible=visible, elem_id=elem_id, **kwargs)
+        Changeable.__init__(self)
+        Selectable.__init__(self)
         self.selected = selected
 
     def get_config(self):
-        return {"selected": self.selected, **super().get_config()}
+        return {"selected": self.selected, **super(BlockContext, self).get_config()}
 
     @staticmethod
     def update(
@@ -173,19 +173,9 @@ class Tabs(BlockContext):
             "__type__": "update",
         }
 
-    def change(self, fn: Callable, inputs: List[Component], outputs: List[Component]):
-        """
-        Parameters:
-            fn: Callable function
-            inputs: List of inputs
-            outputs: List of outputs
-        Returns: None
-        """
-        self.set_event_trigger("change", fn, inputs, outputs)
-
 
 @document()
-class Tab(BlockContext):
+class Tab(BlockContext, Selectable):
     """
     Tab (or its alias TabItem) is a layout element. Components defined within the Tab will be visible when this tab is selected tab.
     Example:
@@ -213,7 +203,8 @@ class Tab(BlockContext):
             id: An optional identifier for the tab, required if you wish to control the selected tab from a predict function.
             elem_id: An optional string that is assigned as the id of this component in the HTML DOM. Can be used for targeting CSS styles.
         """
-        super().__init__(elem_id=elem_id, **kwargs)
+        BlockContext.__init__(self, elem_id=elem_id, **kwargs)
+        Selectable.__init__(self)
         self.label = label
         self.id = id
 
@@ -221,18 +212,8 @@ class Tab(BlockContext):
         return {
             "label": self.label,
             "id": self.id,
-            **super().get_config(),
+            **super(BlockContext, self).get_config(),
         }
-
-    def select(self, fn: Callable, inputs: List[Component], outputs: List[Component]):
-        """
-        Parameters:
-            fn: Callable function
-            inputs: List of inputs
-            outputs: List of outputs
-        Returns: None
-        """
-        self.set_event_trigger("select", fn, inputs, outputs)
 
     def get_expected_parent(self) -> Type[Tabs]:
         return Tabs

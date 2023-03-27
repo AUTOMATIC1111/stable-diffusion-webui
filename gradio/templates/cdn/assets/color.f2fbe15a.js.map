@@ -1,0 +1,1 @@
+{"version":3,"file":"color.f2fbe15a.js","sources":["../../../../ui/packages/utils/src/color.ts"],"sourcesContent":["import { colors, ordered_colors } from \"@gradio/theme\";\n\nexport const get_next_color = (index: number): keyof typeof colors => {\n\treturn ordered_colors[index % ordered_colors.length];\n};\n"],"names":[],"mappings":"8CAEa,GAAiB,AAAC,GACvB,EAAe,EAAQ,EAAe"}
