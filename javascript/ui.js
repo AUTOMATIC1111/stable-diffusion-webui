@@ -69,13 +69,13 @@ function switch_to_inpaint_sketch(){
     return args_to_array(arguments);
 }
 
-function switch_to_inpaint(){
+/* function switch_to_inpaint(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[2].click();
 
     return args_to_array(arguments);
 }
-
+ */
 function switch_to_extras(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
 
@@ -977,7 +977,9 @@ onUiUpdate(function(){
 				ui_input_release_component(elem);				
 			}else if(elem.type == "range"){
 				elem = e.target.parentElement.querySelector("input[type='number']");
-				ui_input_release_component(elem);				
+				if(elem){
+					ui_input_release_component(elem);
+				}				
 			}
 		}
 	}
@@ -1158,8 +1160,12 @@ onUiUpdate(function(){
 
 	const pnginfo = gradioApp().querySelector("#tab_pnginfo"); 
 	function forwardFromPngInfo(){
+		
 		if(selectedTabItemId == "tab_txt2img"){
 			pnginfo.querySelector('#txt2img_tab').click();
+			//close generation info
+			gradioApp().querySelector('#txt2img_results > div:last-child > div:last-child > div:last-child').classList.add("!hidden");
+
 			const img_src = pnginfo.querySelector('img');
 			const gallery_parent = gradioApp().querySelector('#txt2img_gallery_container');
 			const live_preview = gallery_parent.querySelector('.livePreview');
@@ -1171,8 +1177,10 @@ onUiUpdate(function(){
 				div.innerHTML = '<img width="'+img_src.width+'" height="'+img_src.height+'" src="'+ img_src.src +'">';
 				gallery_parent.prepend(div);
 			}			
-		}else if(selectedTabItemId == "tab_img2img"){
-			pnginfo.querySelector('#img2img_tab').click();		
+		}else if(selectedTabItemId == "tab_img2img"){			
+			pnginfo.querySelector('#img2img_tab').click();
+			//close generation info
+			gradioApp().querySelector('#img2img_results > div:last-child > div:last-child > div:last-child').classList.add("!hidden");				
 		}
 		
 	}

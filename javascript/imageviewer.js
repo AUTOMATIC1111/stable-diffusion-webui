@@ -291,18 +291,14 @@ function showGalleryImage() {
 	//need to clean up the old code 
 }
 
-let isDomLoaded;
-
 let like;
 let tile;
-let undo;
-let clear;
-let pan;
 
 let slide = 0;
 let gallery = [];
 let fullImg_src;
-let control = ["pan","undo","clear","like","tile","page","fullscreen","autofit","zoom-in","zoom-out","close","download","prev","next"];
+//let control = ["pan","undo","like","tile","page","fullscreen","autofit","zoom-in","zoom-out","clear","close","download","prev","next"];
+let control = ["like","tile","page","fullscreen","autofit","zoom-in","zoom-out","clear","close","download","prev","next"];
 
 let img_browser;
 let img_file_name;
@@ -310,6 +306,8 @@ let img_file_name;
 let spl_pane;
 let spl_zoom_out;
 let spl_zoom_in;
+let spotlight_gallery;
+
 
 function tile_zoom_update(val){
 	let current_tile_state_size = gallery[slide].tile_size;
@@ -332,15 +330,13 @@ function tile_zoom_out(event){
 }
 
 function removeTile(){
-
 	spl_pane.removeEventListener("wheel", tile_wheel);
 	spl_zoom_out.removeEventListener("click", tile_zoom_out);
 	spl_zoom_in.removeEventListener("click", tile_zoom_in);
 	
 	spl_pane.classList.remove("hide");
 	spl_pane.style.setProperty('background-image', 'none');
-	Spotlight.zoom(0.0);
-	
+	spotlight_gallery.zoom(0.0);
 }
 
 function addTile(spl_img){
@@ -355,7 +351,6 @@ function addTile(spl_img){
 	if(spl_img){
 		spl_pane.style.setProperty('background-image', `url(${spl_img.src})`);
 	}
-	
 }
 
 function tile_handler(event) {
@@ -366,7 +361,7 @@ function tile_handler(event) {
     this.classList.toggle("on");
 
     if(current_tile_state){	
-		const spl_img = gradioApp().querySelector("#spotlight .spl-pane img");
+		const spl_img = gradioApp().querySelector("#spotlight-gal .spl-pane img");
 		addTile(spl_img);
     } else {			
 		removeTile();	
@@ -389,17 +384,19 @@ function like_handler(event){
 }
 
 
-function createGallerySpotlight(src) {
-	
+function createGallerySpotlight() {
+
+	//console.log("clicked");
 	slide = 0;
 	gallery = [];
 	
-	
 	gradioApp().querySelectorAll("#"+selectedTabItemId+' .grid img.w-full.object-contain').forEach(function (elem, i){
 		elem.setAttribute("gal-id", i);
-		if(src == elem.src) slide = (i+1);
+		if(fullImg_src == elem.src) slide = (i+1);
 		gallery[i] = {
 			src: elem.src,
+			title: "Seed:" + elem.src,
+			//description: "This is a description.",
 			like: false,
 			tile:false,
 			tile_size: 50,	
@@ -413,9 +410,9 @@ function createGallerySpotlight(src) {
 		//control: ["like","page","theme","fullscreen","autofit","zoom-in","zoom-out","close","download","play","prev","next"],
 		control: control,	
 		//animation: animation,
-		//onshow: function(index){
-			//like = Spotlight.addControl("like", handler);
-		//},		
+		onshow: function(index){
+			
+		},		
 		onchange: function(index, options){
 			slide = index - 1;
 			tile.classList.toggle("on", gallery[slide].tile);
@@ -424,11 +421,11 @@ function createGallerySpotlight(src) {
 				
 			//}
 			
-			const current_tile_state = gallery[slide].tile;
-			spl_pane = gradioApp().querySelector("#spotlight .spl-pane:nth-child("+index+")");
-			spl_zoom_out = gradioApp().querySelector("#spotlight .spl-zoom-out");
-			spl_zoom_in = gradioApp().querySelector("#spotlight .spl-zoom-in");
+			spl_pane = gradioApp().querySelector("#spotlight-gal .spl-pane:nth-child("+index+")");
+			spl_zoom_out = gradioApp().querySelector("#spotlight-gal .spl-zoom-out");
+			spl_zoom_in = gradioApp().querySelector("#spotlight-gal .spl-zoom-in");
 			
+			const current_tile_state = gallery[slide].tile;
 			if(current_tile_state){
 				addTile();
 			}else{
@@ -437,47 +434,44 @@ function createGallerySpotlight(src) {
 
 		},		
 		onclose: function(index){
-			//Spotlight.removeControl("like");
-			gradioApp().querySelector('.grid .gallery-item:nth-child('+(slide+1)+')').click();		
+			gradioApp().querySelector("#"+selectedTabItemId+' .grid .gallery-item:nth-child('+(slide+1)+')').click();			
 		}
 	};
-	
+
 	//assign(options, modifier);
-	Spotlight.show(gallery, options);	
-	
-	Spotlight.removeControl("undo");
-	Spotlight.removeControl("clear");
-	Spotlight.removeControl("pan");
-	
-	const spl_track = gradioApp().querySelector("#spotlight .spl-track");
-	Spotlight.panzoom(spl_track, true);
 	
 
+	spotlight_gallery.show(gallery, options);		
+	spotlight_gallery.panzoom(true);
 	
 }
 
 function fullImg_click_handler(e){					
 	e.stopPropagation();
 	e.preventDefault();
-	createGallerySpotlight(fullImg_src);
+	createGallerySpotlight();
 }
 
+
 let intervalUiUpdateIViewer;
+function onUiHeaderTabUpdate(){
+	if(intervalUiUpdateIViewer != null) clearInterval(intervalUiUpdateIViewer);
+	intervalUiUpdateIViewer = setInterval(onUiUpdateIViewer, 500);
+}
+
+let fullImg_preview;
 function onUiUpdateIViewer(){
 	clearInterval(intervalUiUpdateIViewer);
 	//update_performant_inputs(selectedTabItemId);
-	const fullImg_preview = gradioApp().querySelector("#"+selectedTabItemId+' .modify-upload + img.w-full.object-contain');	
+	
+	//fullImg_preview = gradioApp().querySelector('#'+selectedTabItemId+' [id$="2img_results"] .modify-upload + img.w-full.object-contain');
+	fullImg_preview = gradioApp().querySelector('#'+selectedTabItemId+' .modify-upload + img.w-full.object-contain');	
 	if(opts.js_modal_lightbox && fullImg_preview ) {
-		//console.log("GALLERY UPDATED");
+
 		fullImg_src = fullImg_preview.src;
 		fullImg_preview.removeEventListener('click', fullImg_click_handler );
 		fullImg_preview.addEventListener('click', fullImg_click_handler, true );//bubbling phase
-		if(!isDomLoaded){
-			isDomLoaded = true;
-			tile = Spotlight.addControl("tile", tile_handler);
-			like = Spotlight.addControl("like", like_handler);
-			
-		}
+		
 		/*
 		// this is an idea to integrate image browser extension seamlesly, 
 		// without the need to change to the image browser tab extension users will be able to review images after generation
@@ -506,21 +500,13 @@ onUiUpdate(function() {
 	intervalUiUpdateIViewer = setInterval(onUiUpdateIViewer, 500);
 })
 
-document.addEventListener("DOMContentLoaded", function() {
-	//const head = gradioApp();		
+onUiLoaded(function(){
+	spotlight_gallery = new Spotlight();
+	spotlight_gallery.init(gradioApp().querySelector('.gradio-container'), "-gal");
+	tile = spotlight_gallery.addControl("tile", tile_handler);
+	like = spotlight_gallery.addControl("like", like_handler);
+})
 
-	/*
-	const head = document.head;
-	const link = document.createElement("link");
-	link.type = "text/css";
-	link.rel = "stylesheet";
-	link.href = "file=html/spotlight.css";
-	head.appendChild(link);
-	*/
-	Spotlight.init(); 
-	
-	
-	
-	
+document.addEventListener("DOMContentLoaded", function() {
 	
 });

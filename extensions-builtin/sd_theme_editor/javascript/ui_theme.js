@@ -284,7 +284,7 @@ function initTheme() {
 
 	gradioApp().querySelectorAll('#ui_theme_settings input').forEach((elem) => {
 		
-		elem.addEventListener("change", function(e) {
+		elem.addEventListener("input", function(e) {
 
 			let celem = e.currentTarget;			
 			let val = e.currentTarget.value;
@@ -379,7 +379,7 @@ function initTheme() {
 	let hsloffset = [0,0,0];
 	
 	const hue = gradioApp().querySelectorAll('#theme_hue input').forEach((elem) => {		
-		elem.addEventListener("change", function(e) {
+		elem.addEventListener("input", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
 			hsloffset[0] = e.currentTarget.value;
@@ -388,7 +388,7 @@ function initTheme() {
 	})
 	
 	const sat = gradioApp().querySelectorAll('#theme_sat input').forEach((elem) => {		
-		elem.addEventListener("change", function(e) {
+		elem.addEventListener("input", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
 			hsloffset[1] = e.currentTarget.value;
@@ -397,7 +397,7 @@ function initTheme() {
 	})
 	
 	const brt = gradioApp().querySelectorAll('#theme_brt input').forEach((elem) => {		
-		elem.addEventListener("change", function(e) {
+		elem.addEventListener("input", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
 			hsloffset[2] = e.currentTarget.value;
