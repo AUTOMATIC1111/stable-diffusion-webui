@@ -97,6 +97,10 @@ def list_extensions():
     if not os.path.isdir(extensions_dir):
         return
 
+    if shared.opts.disable_all_extensions:
+        print("*** \"Disable all extensions\" option was set, will not load any extensions ***")
+        return
+
     extension_paths = []
     for dirname in [extensions_dir, extensions_builtin_dir]:
         if not os.path.isdir(dirname):

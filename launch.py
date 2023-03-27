@@ -206,6 +206,10 @@ def list_extensions(settings_file):
         print(e, file=sys.stderr)
 
     disabled_extensions = set(settings.get('disabled_extensions', []))
+    disable_all_extensions = settings.get('disable_all_extensions', False)
+
+    if disable_all_extensions:
+        return []
 
     return [x for x in os.listdir(extensions_dir) if x not in disabled_extensions]
 
