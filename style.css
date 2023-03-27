@@ -69,7 +69,7 @@ div.compact{
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-.gradio-dropdown .wrap-inner.wrap-inner.wrap-inner{
+.gradio-dropdown:not(.multiselect) .wrap-inner.wrap-inner.wrap-inner{
     flex-wrap: unset;
 }
 
