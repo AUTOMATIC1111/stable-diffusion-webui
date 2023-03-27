@@ -265,9 +265,6 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
-        for dep in shared.demo.dependencies:
-            dep['show_progress'] = False  # disable gradio css animation on component update
-
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
 

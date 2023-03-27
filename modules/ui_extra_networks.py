@@ -2,8 +2,10 @@ import glob
 import os.path
 import urllib.parse
 from pathlib import Path
+from PIL import PngImagePlugin
 
 from modules import shared
+from modules.images import read_info_from_image
 import gradio as gr
 import json
 import html
@@ -291,10 +293,10 @@ def create_ui(container, button, tabname):
                         html = pg.create_html(ui.tabname)
                     new_pages.append(html)
                 pages = new_pages
-            return [is_visible, gr.update(visible=is_visible)] + list(pages)
+            return [is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary")] + list(pages)
         # TODO: Use .then() so the extra networks drawer/loading spinner appears
         # instead of nothing happening for X seconds
-        button.click(fn=toggle_visibility_defer_load, inputs=[state_visible] + ui.pages, outputs=[state_visible, container] + ui.pages)
+        button.click(fn=toggle_visibility_defer_load, inputs=[state_visible] + ui.pages, outputs=[state_visible, container, button] + ui.pages)
 
         # Gradio has to send the rendered HTML for the extra networks UI to the
         # frontend every time the toggle_visibility event handler is called, even if
@@ -308,9 +310,9 @@ def create_ui(container, button, tabname):
     else:
         def toggle_visibility(is_visible):
             is_visible = not is_visible
-            return is_visible, gr.update(visible=is_visible)
+            return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
 
-        button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
+        button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
 
     return ui
 
@@ -334,6 +336,7 @@ def setup_ui(ui, gallery):
 
         img_info = images[index if index >= 0 else 0]
         image = image_from_url_text(img_info)
+        geninfo, items = read_info_from_image(image)
 
         is_allowed = False
         for extra_page in ui.stored_extra_pages:
@@ -343,7 +346,12 @@ def setup_ui(ui, gallery):
 
         assert is_allowed, f'writing to {filename} is not allowed'
 
-        image.save(filename)
+        if geninfo:
+            pnginfo_data = PngImagePlugin.PngInfo()
+            pnginfo_data.add_text('parameters', geninfo)
+            image.save(filename, pnginfo=pnginfo_data)
+        else:
+            image.save(filename)
 
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
