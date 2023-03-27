@@ -318,6 +318,13 @@ div.dimensions-tools{
     min-height: 480px !important;
 }
 
+#img2img_sketch, #img2maskimg, #inpaint_sketch {
+    overflow: overlay !important;
+    resize: auto;
+    background: var(--panel-background-fill);
+    z-index: 5;
+}
+
 .image-buttons button{
     min-width: auto;
 }
