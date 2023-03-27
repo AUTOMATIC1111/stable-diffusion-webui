@@ -2,14 +2,53 @@
 
 *Heavily opinionated custom fork of* <https://github.com/AUTOMATIC1111/stable-diffusion-webui>  
 
+Fork is as close as up-to-date with origin as time allows  
+All code changes are merged upstream whenever possible  
+
 ![screenshot](ui-screenshot.jpg)
 
 <br>
 
 ## Notes
 
-Fork is as close as up-to-date with origin as time allows  
-All code changes are merged upstream whenever possible  
+### Fork does differ in few things
+
+- New error and exception handlers  
+- Updated **Python** libraries to latest known compatible versions  
+  e.g. `accelerate`, `transformers`, `numpy`, etc.  
+- Includes opinionated **System** and **Options** configuration  
+  e.g. `samplers`, `upscalers`, etc.  
+- Does not rely on `Accelerate` as it only affects distributed systems  
+- Optimized startup  
+  Gradio web server will be initialized much earlier which model load is done in the background  
+  Faster model loading plus ability to fallback on corrupt models  
+- Includes **SD2** configuration files  
+- Uses simplified folder structure  
+  e.g. `/train`, `/outputs/*`, `/models/*`, etc.  
+- Enhanced training templates  
+- Built-in `LoRA`, `LyCORIS`, `Custom Diffusion`, `Dreambooth` training  
+
+### User Interface
+
+- Includes updated **UI**: reskinned and reorganized  
+  Black and orange dark theme with fixed width options panels and larger previews  
+
+### Optimizations
+
+- Optimized for `Torch` 2.0  
+- Runs with `SDP` memory attention enabled by default if supported by system  
+  Fallback to `XFormers` if SDP is not supported  
+  If either `SDP` or `XFormers` are not supported, falls back to usual cmd line arguments  
+
+### Removed
+
+- Drops compatibility with `python` **3.7** and requires **3.9**  
+  Recommended is **Python 3.10**  
+  Note that **Python 3.11** or **3.12** are NOT supported  
+- Drops localizations  
+- Drops automated tests  
+
+### Integrated CLI/API tools
 
 Fork adds extra functionality:
 
@@ -32,6 +71,8 @@ Fork adds extra functionality:
 - [Seed Travel](https://github.com/yownas/seed_travel)
 
 *Note*: Extensions are automatically updated to latest version on `install`
+
+<br>
 
 ### Start Script
 
@@ -123,46 +164,12 @@ Start with listen on public IP with authentication enabled
 
 <br>
 
-## Differences
+## Other
 
-Fork does differ in few things:
-
-- Drops compatibility with `python` **3.7** and requires **3.9**  
-  Recommended is **Python 3.10**  
-  Note that **Python 3.11** or **3.12** are NOT supported  
-- New global exception handler
-- Drops localizations  
-- Updated **Python** libraries to latest known compatible versions  
-  e.g. `accelerate`, `transformers`, `numpy`, etc.  
-- Includes opinionated **System** and **Options** configuration  
-  e.g. `samplers`, `upscalers`, etc.  
-- Does not rely on `Accelerate` as it only affects distributed systems  
-- Optimized startup order  
-  Gradio web server will be initialized much earlier which model load is done in the background  
-- Includes **SD2** configuration files  
-- Uses simplified folder structure  
-  e.g. `/train`, `/outputs/*`  
-- Modified training templates  
-- Built-in `LoRA`, `LyCORIS`, `Custom Diffusion`, `Dreambooth` training  
-
-User Interface:
-
-- Includes updated **UI**: reskinned and reorganized  
-  Black and orange dark theme with fixed width options panels and larger previews  
-
-Optimizations:
-
-- Optimized for `Torch` 2.0  
-- Runs with `SDP` memory attention enabled by default if supported by system  
-- Fallback to `XFormers` if SDP is not supported  
-- If either `SDP` or `XFormers` are not supported, falls back to usual cmd line arguments  
-
-## Torch
+### Torch
 
 Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
-
 Fork is compatible with regular **PyTorch 1.13**, **PyTorch 2.0** as well as pre-releases of **PyTorch** **2.1**  
-
 TL;DR: Install **PyTorch 2.0.0** compiled with **CUDA 11.8**:
 
 > pip install torch torchaudio torchvision triton --force --extra-index-url https://download.pytorch.org/whl/cu118  
@@ -171,18 +178,18 @@ See [Wiki](https://github.com/vladmandic/automatic/wiki/Torch-Optimizations) for
 
 <br>
 
-## Scripts
+### Scripts
 
 This repository comes with a large collection of scripts that can be used to process inputs, train, generate, and benchmark models  
-
 As well as number of auxiliary scripts that do not rely on **WebUI**, but can be used for end-to-end solutions such as extract frames from videos, etc.  
-
 For full details see [Docs](cli/README.md)
 
 <br>
 
-## Docs
+### Docs
 
 - Scripts are in [Scripts](cli/README.md)  
 - Everything else is in [Wiki](https://github.com/vladmandic/automatic/wiki)  
 - Except my current [TODO](TODO.md)  
+
+<br>
