@@ -139,3 +139,41 @@ function extraNetworksShowMetadata(text){
 
     popup(elem);
 }
+
+function requestGet(url, data, handler, errorHandler){
+    var xhr = new XMLHttpRequest();
+    var args = Object.keys(data).map(function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]) }).join('&')
+    xhr.open("GET", url + "?" + args, true);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var js = JSON.parse(xhr.responseText);
+                    handler(js)
+                } catch (error) {
+                    console.error(error);
+                    errorHandler()
+                }
+            } else{
+                errorHandler()
+            }
+        }
+    };
+    var js = JSON.stringify(data);
+    xhr.send(js);
+}
+
+function extraNetworksRequestMetadata(event, extraPage, cardName){
+    showError = function(){ extraNetworksShowMetadata("there was an error getting metadata"); }
+
+    requestGet("./sd_extra_networks/metadata", {"page": extraPage, "item": cardName}, function(data){
+        if(data && data.metadata){
+            extraNetworksShowMetadata(data.metadata)
+        } else{
+            showError()
+        }
+    }, showError)
+
+    event.stopPropagation()
+}
