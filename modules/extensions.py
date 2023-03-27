@@ -1,6 +1,5 @@
 import os
 import sys
-import traceback
 
 import time
 import git
@@ -42,7 +41,7 @@ class Extension:
                 repo = git.Repo(self.path)
         except Exception:
             print(f"Error reading github repository info from {self.path}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            shared.exception()
 
         if repo is None or repo.bare:
             self.remote = None
