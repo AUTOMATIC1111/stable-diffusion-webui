@@ -296,7 +296,7 @@ def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.Mu
         setattr(self, "lora_current_names", wanted_names)
 
 
-def lora_reset_cached_weight(self: torch.nn.Conv2d | torch.nn.Linear):
+def lora_reset_cached_weight(self: Union[torch.nn.Conv2d, torch.nn.Linear]):
     setattr(self, "lora_current_names", ())
     setattr(self, "lora_weights_backup", None)
 
