@@ -10,6 +10,7 @@ I will not upgrade to any unstable release from the master until major issues ar
 I will create a public dev branch so people can test out new features before any upgrade to master
 i will do my best to keep it up to date
 
+Default theme
 ![anapnoe_uiux](https://user-images.githubusercontent.com/124302297/227973574-6003142d-0c7c-41c6-9966-0792a94549e9.png)
 
 ## Features and to do list of ui-ux
@@ -40,11 +41,21 @@ i will do my best to keep it up to date
 - [ ] and auto load the current generation settings 
 - [x] better lightbox with zoom in-out mobile gestures support etc.. 
 - [ ] credits/about page display all 300+ contributors so far inside the UI 
+- [ ] 
 
+Quick Settings aside off-canvas view - drag and drop to custom sort your settings
 ![anapnoe_uiux_quicksettings](https://user-images.githubusercontent.com/124302297/227967695-f8bb01b5-5cc9-4238-80dd-06e261378d6e.png)
+
+Extra Networks aside off-canvas view
 ![anapnoe_uiux_extra_networks](https://user-images.githubusercontent.com/124302297/227968001-20eab8f5-da91-4a11-9fe0-230fec4ba720.png)
+
+Detail img2img sketch view  
 ![anapnoe_uiux_sketch](https://user-images.githubusercontent.com/124302297/227973727-084da8e0-931a-4c62-ab73-39e988fd4523.png)
+
+Theme Configurator - aside off-canvas view 
 ![anapnoe_uiux_theme_config](https://user-images.githubusercontent.com/124302297/227967844-45063edb-eb40-4224-9666-f506d21d7780.png)
+
+Mobile 395px width
 ![anapnoe_uiux_mobile](https://user-images.githubusercontent.com/124302297/227978891-35496e10-e033-43aa-9457-17ca9fcc46b5.png)
 
 
