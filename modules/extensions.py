@@ -6,6 +6,7 @@ import time
 import git
 
 from modules import paths, shared
+from modules.paths_internal import extensions_dir, extensions_builtin_dir
 
 extensions = []
 
@@ -102,4 +103,3 @@ def list_extensions():
     for dirname, path, is_builtin in extension_paths:
         extension = Extension(name=dirname, path=path, enabled=dirname not in shared.opts.disabled_extensions, is_builtin=is_builtin)
         extensions.append(extension)
-
