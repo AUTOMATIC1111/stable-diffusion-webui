@@ -520,6 +520,17 @@ div.dimensions-tools{
   background-color: rgba(0, 0, 0, 0.8);
 }
 
+#imageARPreview {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    border: 2px solid red;
+    background: rgba(255, 0, 0, 0.3);
+    z-index: 900;
+    pointer-events: none;
+    display: none;
+}
+
 /* context menu (ie for the generate button) */
 
 #context-menu{
