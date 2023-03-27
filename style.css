@@ -7,7 +7,7 @@
     --block-background-fill: transparent;
 }
 
-.block.padded{
+.block.padded:not(.gradio-accordion) {
     padding: 0 !important;
 }
 
@@ -63,6 +63,19 @@ div.compact{
 .gradio-number label span:not(.has-info)
 {
     margin-bottom: 0;
+}
+
+.gradio-dropdown ul.options {
+  max-height: 35em;
+  z-index: 3000;
+}
+
+.gradio-dropdown ul.options li.item {
+  padding: 0.05em 0;
+}
+
+.gradio-dropdown ul.options li.item.selected {
+  background-color: var(--secondary-500);
 }
 
 .gradio-dropdown div.wrap.wrap.wrap.wrap{
