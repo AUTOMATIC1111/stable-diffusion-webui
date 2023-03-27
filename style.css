@@ -596,7 +596,7 @@ footer {
 
 /* extra networks UI */
 
-.extra-network-cards{
+#txt2img_extra_tabs > .tabitem, #img2img_extra_tabs > .tabitem{
     height: 400px;
     overflow: scroll;
     resize: vertical;
