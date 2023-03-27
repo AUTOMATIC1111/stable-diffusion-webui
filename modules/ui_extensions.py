@@ -62,6 +62,9 @@ def check_updates(id_task, disable_list):
 
         try:
             ext.check_updates()
+        except FileNotFoundError as e:
+            if 'FETCH_HEAD' not in str(e):
+                raise
         except Exception:
             print(f"Error checking updates for {ext.name}:", file=sys.stderr)
             shared.exception()
@@ -86,6 +89,8 @@ def extension_table():
     """
 
     for ext in extensions.extensions:
+        ext.read_info_from_repo()
+
         remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
 
         if ext.can_update:

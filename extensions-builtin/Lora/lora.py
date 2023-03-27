@@ -2,6 +2,7 @@ import glob
 import os
 import re
 import torch
+from typing import Union
 
 from modules import shared, devices, sd_models, errors
 
@@ -235,7 +236,7 @@ def lora_calc_updown(lora, module, target):
         return updown
 
 
-def lora_apply_weights(self: torch.nn.Conv2d | torch.nn.Linear | torch.nn.MultiheadAttention):
+def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.MultiheadAttention]):
     """
     Applies the currently selected set of Loras to the weights of torch layer self.
     If weights already have this particular set of loras applied, does nothing.
@@ -295,7 +296,7 @@ def lora_apply_weights(self: torch.nn.Conv2d | torch.nn.Linear | torch.nn.Multih
         setattr(self, "lora_current_names", wanted_names)
 
 
-def lora_reset_cached_weight(self: torch.nn.Conv2d | torch.nn.Linear):
+def lora_reset_cached_weight(self: Union[torch.nn.Conv2d, torch.nn.Linear]):
     setattr(self, "lora_current_names", ())
     setattr(self, "lora_weights_backup", None)
 
@@ -346,7 +347,7 @@ def list_available_loras():
         glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.safetensors'), recursive=True) + \
         glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.ckpt'), recursive=True)
 
-    for filename in sorted(candidates):
+    for filename in sorted(candidates, key=str.lower):
         if os.path.isdir(filename):
             continue
 
