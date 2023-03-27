@@ -63,6 +63,8 @@ def is_using_v_parameterization_for_sd2(state_dict):
 
 
 def guess_model_config_from_state_dict(sd, filename):
+    if sd is None:
+        return None
     sd2_cond_proj_weight = sd.get('cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight', None)
     diffusion_model_input = sd.get('model.diffusion_model.input_blocks.0.0.weight', None)
 

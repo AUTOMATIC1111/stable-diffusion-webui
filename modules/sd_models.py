@@ -238,28 +238,31 @@ def read_metadata_from_safetensors(filename):
 
 
 def read_state_dict(checkpoint_file):
-    with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
-        _, extension = os.path.splitext(checkpoint_file)
-        if 'v1-5-pruned-emaonly.safetensors' or 'vae-ft-mse-840000-ema-pruned.ckpt' in checkpoint_file:
-            if extension.lower() == ".safetensors":
-                pl_sd = safetensors.torch.load_file(checkpoint_file, device='cpu')
+    try:
+        with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
+            _, extension = os.path.splitext(checkpoint_file)
+            if 'v1-5-pruned-emaonly.safetensors' or 'vae-ft-mse-840000-ema-pruned.ckpt' in checkpoint_file:
+                if extension.lower() == ".safetensors":
+                    pl_sd = safetensors.torch.load_file(checkpoint_file, device='cpu')
+                else:
+                    pl_sd = torch.load(checkpoint_file, map_location='cpu')
             else:
-                pl_sd = torch.load(checkpoint_file, map_location='cpu')
-        else:
-            if extension.lower() == ".safetensors":
-                buffer = f.read()
-                pl_sd = safetensors.torch.load(buffer)
-            else:
-                buffer = io.BytesIO(f.read())
-                pl_sd = torch.load(buffer, map_location='cpu')
-        sd = get_state_dict_from_checkpoint(pl_sd)
+                if extension.lower() == ".safetensors":
+                    buffer = f.read()
+                    pl_sd = safetensors.torch.load(buffer)
+                else:
+                    buffer = io.BytesIO(f.read())
+                    pl_sd = torch.load(buffer, map_location='cpu')
+            sd = get_state_dict_from_checkpoint(pl_sd)
+    except Exception as e:
+        from rich.console import Console
+        console = Console()
+        console.print_exception(show_locals=False, max_frames=2, extra_lines=1, suppress=[], word_wrap=False, width=min([console.width, 200]))
+        sd = None
     return sd
 
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
-    sd_model_hash = checkpoint_info.calculate_shorthash()
-    timer.record("calculate hash")
-
     if checkpoint_info in checkpoints_loaded:
         # use checkpoint cache
         print(f"Loading weights from cache")
@@ -394,15 +397,17 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
 
+    do_inpainting_hijack()
+
+    timer = Timer()
+
+    current_checkpoint_info = None
     if shared.sd_model:
+        current_checkpoint_info = shared.sd_model.sd_checkpoint_info
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
         shared.sd_model = None
         gc.collect()
         devices.torch_gc()
-
-    do_inpainting_hijack()
-
-    timer = Timer()
 
     if already_loaded_state_dict is not None:
         state_dict = already_loaded_state_dict
@@ -410,6 +415,13 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
 
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
+    if state_dict is None or checkpoint_config is None:
+        print(f"Failed to load checkpooint: {checkpoint_info.filename}")
+        if current_checkpoint_info is not None:
+            print(f"Restoring previous checkpoint: {current_checkpoint_info.filename}")
+            load_model(current_checkpoint_info, None)
+        return
+
     clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
 
     timer.record("find config")
@@ -426,10 +438,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
             sd_model = instantiate_from_config(sd_config.model)
     except Exception as e:
-        pass
-
-    if sd_model is None:
-        print('Failed to create model quickly; will retry using slow method.', file=sys.stderr)
         sd_model = instantiate_from_config(sd_config.model)
 
     sd_model.used_config = checkpoint_config

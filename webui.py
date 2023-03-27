@@ -157,8 +157,10 @@ def load_model():
         modules.sd_models.load_model()
     except Exception as e:
         errors.display(e, "loading stable diffusion model")
-        print("", file=sys.stderr)
         print("Stable diffusion model failed to load, exiting", file=sys.stderr)
+        exit(1)
+    if shared.sd_model is None:
+        print("No stable diffusion model loaded, exiting", file=sys.stderr)
         exit(1)
     shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))

@@ -209,7 +209,7 @@ def run_extensions_installers(settings_file):
 def prepare_environment():
     global skip_install
 
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch torchaudio torchvision triton --force --extra-index-url https://download.pytorch.org/whl/cu118")
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch torchaudio torchvision --force --extra-index-url https://download.pytorch.org/whl/cu118")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16')
@@ -289,37 +289,6 @@ def prepare_environment():
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
-
-    if args.tests and not args.no_tests:
-        exitcode = tests(args.tests)
-        exit(exitcode)
-
-
-def tests(test_dir):
-    if "--api" not in sys.argv:
-        sys.argv.append("--api")
-    if "--ckpt" not in sys.argv:
-        sys.argv.append("--ckpt")
-        sys.argv.append(os.path.join(script_path, "test/test_files/empty.pt"))
-    if "--skip-torch-cuda-test" not in sys.argv:
-        sys.argv.append("--skip-torch-cuda-test")
-    if "--disable-nan-check" not in sys.argv:
-        sys.argv.append("--disable-nan-check")
-    if "--no-tests" not in sys.argv:
-        sys.argv.append("--no-tests")
-
-    print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
-
-    os.environ['COMMANDLINE_ARGS'] = ""
-    with open(os.path.join(script_path, 'test/stdout.txt'), "w", encoding="utf8") as stdout, open(os.path.join(script_path, 'test/stderr.txt'), "w", encoding="utf8") as stderr:
-        proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
-
-    import test.server_poll
-    exitcode = test.server_poll.run_tests(proc, test_dir)
-
-    print(f"Stopping Web UI process with id {proc.pid}")
-    proc.kill()
-    return exitcode
 
 
 def start():

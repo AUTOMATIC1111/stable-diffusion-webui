@@ -23,8 +23,8 @@ Fork adds extra functionality:
 - [System Info](https://github.com/vladmandic/sd-extension-system-info)
 - [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
 - [Image Browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser)
-- [LORA](https://github.com/kohya-ss/sd-scripts) (both training and inference)
-- [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS) (both training and inference)
+- [LORA](https://github.com/kohya-ss/sd-scripts) *(both training and inference)*
+- [LyCORIS](https://github.com/KohakuBlueleaf/LyCORIS) *(both training and inference)*
 - [Model Converter](https://github.com/Akegarasu/sd-webui-model-converter)
 - [CLiP Interrogator](https://github.com/pharmapsychotic/clip-interrogator-ext)
 - [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding)
@@ -95,7 +95,7 @@ Start with listen on public IP with authentication enabled
 ## Install
 
 1. Install `Python`, `Git`  
-2. Install `PyTorch` and `Xformers`  
+2. Install `PyTorch`
    See [Wiki](wiki/Torch%20Optimizations.md) for details or TL;DR below  
 3. Clone and initialize repository  
 
@@ -115,6 +115,11 @@ Start with listen on public IP with authentication enabled
       Updating wiki
       Detached repos
       Local changes
+
+*Note*: If you're not using `automatic.sh` launcher, install dependencies manually:
+
+> pip -r requirements.txt
+> pip -r requirements_versions.txt
 
 <br>
 
@@ -142,11 +147,12 @@ Fork does differ in few things:
 
 User Interface:
 
-- Includes reskinned **UI**  
+- Includes updated **UI**: reskinned and reorganized  
   Black and orange dark theme with fixed width options panels and larger previews  
 
 Optimizations:
 
+- Optimized for `Torch` 2.0  
 - Runs with `SDP` memory attention enabled by default if supported by system  
 - Fallback to `XFormers` if SDP is not supported  
 - If either `SDP` or `XFormers` are not supported, falls back to usual cmd line arguments  
