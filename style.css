@@ -138,6 +138,18 @@ div.gradio-html.min{
     border-radius: 0.5em;
 }
 
+.gradio-button.secondary-down{
+    background: var(--button-secondary-background-fill);
+    color: var(--button-secondary-text-color);
+}
+.gradio-button.secondary-down, .gradio-button.secondary-down:hover{
+    box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset;
+}
+.gradio-button.secondary-down:hover{
+    background: var(--button-secondary-background-fill-hover);
+    color: var(--button-secondary-text-color-hover);
+}
+
 .checkboxes-row{
     margin-bottom: 0.5em;
     margin-left: 0em;
@@ -809,11 +821,4 @@ footer {
 
 .extra-network-cards .card ul a:hover{
     color: red;
-}
-
-button[id$='_extra_networks'] {
-    max-width: 2.2em;
-    min-width: 2.2em !important;
-    height: 2.4em;
-    line-height: 1em !important;
 }
