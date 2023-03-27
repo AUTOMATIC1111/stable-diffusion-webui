@@ -42,7 +42,6 @@ Default theme
 - [ ] and auto load the current generation settings 
 - [x] better lightbox with zoom in-out mobile gestures support etc.. 
 - [ ] credits/about page display all 300+ contributors so far inside the UI 
-- [ ] 
 
 Quick Settings aside off-canvas view - drag and drop to custom sort your settings
 
