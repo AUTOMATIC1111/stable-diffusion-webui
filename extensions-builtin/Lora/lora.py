@@ -2,6 +2,7 @@ import glob
 import os
 import re
 import torch
+from typing import Union
 
 from modules import shared, devices, sd_models, errors
 
@@ -235,7 +236,7 @@ def lora_calc_updown(lora, module, target):
         return updown
 
 
-def lora_apply_weights(self: torch.nn.Conv2d | torch.nn.Linear | torch.nn.MultiheadAttention):
+def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.MultiheadAttention]):
     """
     Applies the currently selected set of Loras to the weights of torch layer self.
     If weights already have this particular set of loras applied, does nothing.
