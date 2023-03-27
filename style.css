@@ -54,13 +54,6 @@ div.compact{
     gap: 1em;
 }
 
-.gradio-dropdown ul.options{
-    z-index: 3000;
-    min-width: fit-content;
-    max-width: inherit;
-    white-space: nowrap;
-}
-
 .gradio-dropdown label span:not(.has-info),
 .gradio-textbox label span:not(.has-info),
 .gradio-number label span:not(.has-info)
@@ -68,17 +61,23 @@ div.compact{
     margin-bottom: 0;
 }
 
-.gradio-dropdown ul.options {
-  max-height: 35em;
-  z-index: 3000;
+.gradio-dropdown ul.options{
+    z-index: 3000;
+    min-width: fit-content;
+    max-width: inherit;
+    white-space: nowrap;
 }
 
 .gradio-dropdown ul.options li.item {
-  padding: 0.05em 0;
+    padding: 0.05em 0;
 }
 
 .gradio-dropdown ul.options li.item.selected {
-  background-color: var(--secondary-500);
+    background-color: var(--neutral-100);
+}
+
+.dark .gradio-dropdown ul.options li.item.selected {
+    background-color: var(--neutral-900);
 }
 
 .gradio-dropdown div.wrap.wrap.wrap.wrap{
