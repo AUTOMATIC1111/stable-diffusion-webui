@@ -810,3 +810,10 @@ footer {
 .extra-network-cards .card ul a:hover{
     color: red;
 }
+
+button[id$='_extra_networks'] {
+    max-width: 2.2em;
+    min-width: 2.2em !important;
+    height: 2.4em;
+    line-height: 1em !important;
+}
