@@ -583,6 +583,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         if state.job_count == -1:
             state.job_count = p.n_iter
 
+        extra_network_data = None
         for n in range(p.n_iter):
             p.iteration = n
 
@@ -688,6 +689,22 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     image.info["parameters"] = text
                 output_images.append(image)
 
+                if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay:
+                    image_mask = p.mask_for_overlay.convert('RGB')
+                    image_mask_composite = Image.composite(image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), p.mask_for_overlay.convert('L')).convert('RGBA')
+
+                    if opts.save_mask:
+                        images.save_image(image_mask, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-mask")
+
+                    if opts.save_mask_composite:
+                        images.save_image(image_mask_composite, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-mask-composite")
+
+                    if opts.return_mask:
+                        output_images.append(image_mask)
+                    
+                    if opts.return_mask_composite:
+                        output_images.append(image_mask_composite)
+
             del x_samples_ddim
 
             devices.torch_gc()
@@ -712,7 +729,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if opts.grid_save:
                 images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
-    if not p.disable_extra_networks:
+    if not p.disable_extra_networks and extra_network_data:
         extra_networks.deactivate(p, extra_network_data)
 
     devices.torch_gc()

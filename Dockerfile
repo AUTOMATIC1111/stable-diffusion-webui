@@ -89,7 +89,7 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffus
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-two-shot.git  ~/stable-diffusion-webui/extensions/two-shot
 
 RUN mkdir -p  ~/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
-RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3}" >  ~/stable-diffusion-webui/config.json
+RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3, \"sd_vae\": \"vae-ft-mse-840000-ema-pruned.ckpt\"}" >  ~/stable-diffusion-webui/config.json
 
 # 下载模型(默认不下载)
 #RUN cd  ~/stable-diffusion-webui/models/Stable-diffusion \

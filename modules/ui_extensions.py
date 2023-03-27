@@ -1,6 +1,5 @@
 import json
 import os.path
-import shutil
 import sys
 import time
 import traceback
@@ -141,22 +140,20 @@ def install_extension_from_url(dirname, url):
 
     try:
         shutil.rmtree(tmpdir, True)
-
-        repo = git.Repo.clone_from(url, tmpdir)
-        repo.remote().fetch()
-
+        with git.Repo.clone_from(url, tmpdir) as repo:
+            repo.remote().fetch()
+            for submodule in repo.submodules:
+                submodule.update()
         try:
             os.rename(tmpdir, target_dir)
         except OSError as err:
-            # TODO what does this do on windows? I think it'll be a different error code but I don't have a system to check it
-            # Shouldn't cause any new issues at least but we probably want to handle it there too.
             if err.errno == errno.EXDEV:
                 # Cross device link, typical in docker or when tmp/ and extensions/ are on different file systems
                 # Since we can't use a rename, do the slower but more versitile shutil.move()
                 shutil.move(tmpdir, target_dir)
             else:
                 # Something else, not enough free space, permissions, etc.  rethrow it so that it gets handled.
-                raise(err)
+                raise err
 
         import launch
         launch.run_extension_installer(target_dir)
@@ -167,12 +164,12 @@ def install_extension_from_url(dirname, url):
         shutil.rmtree(tmpdir, True)
 
 
-def install_extension_from_index(url, hide_tags, sort_column):
+def install_extension_from_index(url, hide_tags, sort_column, filter_text):
     ext_table, message = install_extension_from_url(None, url)
 
-    code, _ = refresh_available_extensions_from_data(hide_tags, sort_column)
+    code, _ = refresh_available_extensions_from_data(hide_tags, sort_column, filter_text)
 
-    return code, ext_table, message
+    return code, ext_table, message, ''
 
 
 def refresh_available_extensions(url, hide_tags, sort_column):
@@ -186,11 +183,17 @@ def refresh_available_extensions(url, hide_tags, sort_column):
 
     code, tags = refresh_available_extensions_from_data(hide_tags, sort_column)
 
-    return url, code, gr.CheckboxGroup.update(choices=tags), ''
+    return url, code, gr.CheckboxGroup.update(choices=tags), '', ''
 
 
-def refresh_available_extensions_for_tags(hide_tags, sort_column):
-    code, _ = refresh_available_extensions_from_data(hide_tags, sort_column)
+def refresh_available_extensions_for_tags(hide_tags, sort_column, filter_text):
+    code, _ = refresh_available_extensions_from_data(hide_tags, sort_column, filter_text)
+
+    return code, ''
+
+
+def search_extensions(filter_text, hide_tags, sort_column):
+    code, _ = refresh_available_extensions_from_data(hide_tags, sort_column, filter_text)
 
     return code, ''
 
@@ -205,7 +208,7 @@ sort_ordering = [
 ]
 
 
-def refresh_available_extensions_from_data(hide_tags, sort_column):
+def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text=""):
     extlist = available_extensions["extensions"]
     installed_extension_urls = {normalize_git_url(extension.remote): extension.name for extension in extensions.extensions}
 
@@ -244,7 +247,12 @@ def refresh_available_extensions_from_data(hide_tags, sort_column):
             hidden += 1
             continue
 
-        install_code = f"""<input onclick="install_extension_from_index(this, '{html.escape(url)}')" type="button" value="{"Install" if not existing else "Installed"}" {"disabled=disabled" if existing else ""} class="gr-button gr-button-lg gr-button-secondary">"""
+        if filter_text and filter_text.strip():
+            if filter_text.lower() not in html.escape(name).lower() and filter_text.lower() not in html.escape(description).lower():
+                hidden += 1
+                continue
+
+        install_code = f"""<button onclick="install_extension_from_index(this, '{html.escape(url)}')" {"disabled=disabled" if existing else ""} class="lg secondary gradio-button custom-button">{"Install" if not existing else "Installed"}</button>"""
 
         tags_text = ", ".join([f"<span class='extension-tag' title='{tags.get(x, '')}'>{x}</span>" for x in extension_tags])
 
@@ -312,30 +320,39 @@ def create_ui():
                     hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
                     sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", ], type="index")
 
+                with gr.Row(): 
+                    search_extensions_text = gr.Text(label="Search").style(container=False)
+                   
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
 
                 refresh_available_extensions_button.click(
                     fn=modules.ui.wrap_gradio_call(refresh_available_extensions, extra_outputs=[gr.update(), gr.update(), gr.update()]),
                     inputs=[available_extensions_index, hide_tags, sort_column],
-                    outputs=[available_extensions_index, available_extensions_table, hide_tags, install_result],
+                    outputs=[available_extensions_index, available_extensions_table, hide_tags, install_result, search_extensions_text],
                 )
 
                 install_extension_button.click(
                     fn=modules.ui.wrap_gradio_call(install_extension_from_index, extra_outputs=[gr.update(), gr.update()]),
-                    inputs=[extension_to_install, hide_tags, sort_column],
+                    inputs=[extension_to_install, hide_tags, sort_column, search_extensions_text],
                     outputs=[available_extensions_table, extensions_table, install_result],
+                )
+
+                search_extensions_text.change(
+                    fn=modules.ui.wrap_gradio_call(search_extensions, extra_outputs=[gr.update()]),
+                    inputs=[search_extensions_text, hide_tags, sort_column],
+                    outputs=[available_extensions_table, install_result],
                 )
 
                 hide_tags.change(
                     fn=modules.ui.wrap_gradio_call(refresh_available_extensions_for_tags, extra_outputs=[gr.update()]),
-                    inputs=[hide_tags, sort_column],
+                    inputs=[hide_tags, sort_column, search_extensions_text],
                     outputs=[available_extensions_table, install_result]
                 )
 
                 sort_column.change(
                     fn=modules.ui.wrap_gradio_call(refresh_available_extensions_for_tags, extra_outputs=[gr.update()]),
-                    inputs=[hide_tags, sort_column],
+                    inputs=[hide_tags, sort_column, search_extensions_text],
                     outputs=[available_extensions_table, install_result]
                 )
 
