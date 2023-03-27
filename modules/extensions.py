@@ -1,11 +1,11 @@
 import os
 import sys
+import traceback
 
 import time
 import git
 
 from modules import paths, shared
-from modules.paths_internal import extensions_dir, extensions_builtin_dir
 
 extensions = []
 
@@ -32,7 +32,7 @@ class Extension:
                 repo = git.Repo(path)
         except Exception:
             print(f"Error reading github repository info from {path}:", file=sys.stderr)
-            shared.exception()
+            print(traceback.format_exc(), file=sys.stderr)
 
         if repo is None or repo.bare:
             self.remote = None
