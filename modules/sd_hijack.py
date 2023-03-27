@@ -38,7 +38,7 @@ def apply_optimizations():
     
     optimization_method = None
 
-    can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention")) # not everyone has torch 2.x to use sdp
+    can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention")) and not cmd_opts.disable_sdp_attention # not everyone has torch 2.x to use sdp
 
     if cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
         print("Applying scaled dot product cross attention optimization (without memory efficient attention).")
