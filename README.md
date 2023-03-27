@@ -21,7 +21,7 @@ Default theme
 - [x] top header tabs (option setting)
 - [x] hidden tabs (option setting) no need to restart this is a different implementation
 - [x] drag and drop reordable quick settings offcanvas aside view
-- [x] drag and drop images to txt2img and img2img and import metadata parameteres along with a preview image
+- [x] drag and drop images to txt2img and img2img and import generation info parameters along with a preview image
 - [x] ignore - remove overrides when import [multiselect] (option setting)
 - [x] resizable cards for extra networks and number of rows (option setting)
 - [x] alternative offcanvas aside view for extra networks (option setting)
