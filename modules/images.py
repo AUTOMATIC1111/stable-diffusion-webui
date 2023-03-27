@@ -261,9 +261,12 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
 
         if scale > 1.0:
             upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
-            assert len(upscalers) > 0, f"could not find upscaler named {upscaler_name}"
+            if len(upscalers) == 0:
+                upscaler = shared.sd_upscalers[0]
+                print(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
+            else:
+                upscaler = upscalers[0]
 
-            upscaler = upscalers[0]
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
 
         if im.width != w or im.height != h:
@@ -573,6 +576,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         os.replace(temp_file_path, filename_without_extension + extension)
 
     fullfn_without_extension, extension = os.path.splitext(params.filename)
+    if hasattr(os, 'statvfs'):
+        max_name_len = os.statvfs(path).f_namemax
+        fullfn_without_extension = fullfn_without_extension[:max_name_len - max(4, len(extension))]
+        params.filename = fullfn_without_extension + extension
+        fullfn = params.filename
     _atomically_save_image(image, fullfn_without_extension, extension)
 
     image.already_saved_as = fullfn
@@ -640,6 +648,8 @@ Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}
 
 
 def image_data(data):
+    import gradio as gr
+
     try:
         image = Image.open(io.BytesIO(data))
         textinfo, _ = read_info_from_image(image)
@@ -655,7 +665,7 @@ def image_data(data):
     except Exception:
         pass
 
-    return '', None
+    return gr.update(), None
 
 
 def flatten(img, bgcolor):
