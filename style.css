@@ -336,6 +336,7 @@ div.dimensions-tools{
 /* settings */
 #quicksettings {
     width: fit-content;
+    align-items: end;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
