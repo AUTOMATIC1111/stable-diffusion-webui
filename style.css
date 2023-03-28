@@ -1,18 +1,30 @@
 /* general gradio fixes */
 
-::-webkit-scrollbar {
-    width: 10px; 
+@media (prefers-color-scheme: light) {
+    ::-webkit-scrollbar {
+        width: 10px;
+   }
+    ::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 10px;
+   }
+    ::-webkit-scrollbar-track {
+        background-color: #f5f5f5;
+   }
 }
-
-::-webkit-scrollbar-thumb {
-    background-color: #ccc; 
-    border-radius: 10px; 
+@media (prefers-color-scheme: dark) {
+    ::-webkit-scrollbar {
+        width: 10px;
+   }
+    ::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 10px;
+   }
+    ::-webkit-scrollbar-track {
+        background-color: var(--neutral-900);
+   }
 }
-
-::-webkit-scrollbar-track {
-    background-color: var(--neutral-900); 
-}
-
+  
 :root, .dark{
     --checkbox-label-gap: 0.25em 0.1em;
     --section-header-text-size: 12pt;
