@@ -48,6 +48,7 @@ titles = {
     "Interrupt": "Stop processing images and return any results accumulated so far.",
     "Save": "Write image to a directory (default - log/images) and generation parameters into csv file.",
 	"Zip": "Save as Zip",
+	"Send to txt2img": "Send to txt2img",
 	"Send to img2img": "Send to img2img",
 	"Send to inpaint": "Send to inpaint",
 	"Send to extras": "Send to extras",
