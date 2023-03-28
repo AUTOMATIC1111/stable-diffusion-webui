@@ -49,8 +49,8 @@ def set_last_task_result(id_job, result):
   last_task_result = result
 
 
-def restore_progress_call(task_tag):
-    if current_task is None or not current_task[5:-1].startswith(task_tag):
+def restore_progress_call():
+    if current_task is None:
 
       # image, generation_info, html_info, html_log
       return tuple(list([None, None, None, None]))

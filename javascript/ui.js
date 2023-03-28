@@ -163,7 +163,7 @@ function submit(){
     rememberGallerySelection('txt2img_gallery')
     showSubmitButtons('txt2img', false)
 
-    var id = randomId("txt2img")
+    var id = randomId()
     requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
         showSubmitButtons('txt2img', true)
 
@@ -180,7 +180,7 @@ function submit_img2img(){
     rememberGallerySelection('img2img_gallery')
     showSubmitButtons('img2img', false)
 
-    var id = randomId("img2img")
+    var id = randomId()
     requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
         showSubmitButtons('img2img', true)
     })
@@ -367,12 +367,6 @@ function restoreProgress (task_tag) {
   if (task_tag) {
     let successHandler = ({ current_task }) => {
       if (current_task) {
-        let _task_tag = ["txt2img", "img2img"].find(t => current_task.startsWith(`task(${t}_`) && current_task.endsWith(")"))
-        if (!_task_tag) {
-          console.warn(`task tag ${current_task} not implemented yet`)
-          return
-        }
-        if (task_tag != _task_tag) return
         showSubmitButtons(task_tag, false)
         requestProgress(current_task, gradioApp().getElementById(`${task_tag}_gallery_container`), gradioApp().getElementById(`${task_tag}_gallery`), function(){
           showSubmitButtons(task_tag, true)
