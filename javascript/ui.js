@@ -910,7 +910,7 @@ onUiUpdate(function(){
 
 	// input release component dispatcher
 	let active_clone_input = [];
-	let focus_input;
+	let focus_input, last_focus_input;
 
 	function ui_input_release_component(elem){
 
@@ -932,18 +932,18 @@ onUiUpdate(function(){
 		parent.append(clone_num);		
 		elem.classList.add("hidden");
 		
-		clone_num.addEventListener('change', function (e) {			
+		clone_num.addEventListener('change', function (e) {		
 			elem.value = clone_num.value;
 			updateInput(elem);
 		})
 		
-		clone_num.addEventListener('focus', function (e) {			
-			focus_input = true;				
+		clone_num.addEventListener('focus', function (e) {				
+			focus_input = clone_num;					
 		})
 		
-		clone_num.addEventListener('blur', function (e) {			
-			focus_input = false;				
-		})
+/* 		clone_num.addEventListener('blur', function (e) {			
+			focus_input = false;			
+		}) */
 
 		if(label){				
 			let comp_range = comp_parent.querySelector("input[type='range']");
@@ -967,14 +967,19 @@ onUiUpdate(function(){
 			})								
 		}				
 	}
+	function ui_input_focus_handler(e){
+		if(e.target != focus_input){
+			focus_input = false;
+			ui_input_release_handler(e);
+		}
+	}
+	
 	function ui_input_release_handler(e){
 		const len = active_clone_input.length;
 		
-		if(focus_input){
-			return;
-		}
-		
-		if(len > 0){
+		if(focus_input){return;}
+
+		if(len > 0){		
 			if(e.target.id.indexOf("_clone") == -1){
 				for(var i=len-1; i>=0; i--){
 					let relem = active_clone_input[i];
@@ -984,6 +989,7 @@ onUiUpdate(function(){
 				}
 			}
 		}
+			
 	
 		let elem_type = e.target.tagName;
 		if(elem_type == "INPUT"){
@@ -1001,8 +1007,10 @@ onUiUpdate(function(){
 	function ui_dispatch_input_release(value){	
 		if(value){
 			gradioApp().querySelector(".gradio-container").addEventListener('mouseover',  ui_input_release_handler);
+			gradioApp().querySelector(".gradio-container").addEventListener('mousedown',  ui_input_focus_handler);
 		}else{
 			gradioApp().querySelector(".gradio-container").removeEventListener('mouseover',  ui_input_release_handler);
+			gradioApp().querySelector(".gradio-container").removeEventListener('mousedown',  ui_input_focus_handler);
 		}
 	}
 	gradioApp().querySelector("#setting_ui_dispatch_input_release input").addEventListener('click', function (e) {		
