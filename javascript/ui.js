@@ -910,6 +910,8 @@ onUiUpdate(function(){
 
 	// input release component dispatcher
 	let active_clone_input = [];
+	let focus_input;
+
 	function ui_input_release_component(elem){
 
 		if(active_clone_input.length > 0) return;
@@ -933,6 +935,14 @@ onUiUpdate(function(){
 		clone_num.addEventListener('change', function (e) {			
 			elem.value = clone_num.value;
 			updateInput(elem);
+		})
+		
+		clone_num.addEventListener('focus', function (e) {			
+			focus_input = true;				
+		})
+		
+		clone_num.addEventListener('blur', function (e) {			
+			focus_input = false;				
 		})
 
 		if(label){				
@@ -959,6 +969,11 @@ onUiUpdate(function(){
 	}
 	function ui_input_release_handler(e){
 		const len = active_clone_input.length;
+		
+		if(focus_input){
+			return;
+		}
+		
 		if(len > 0){
 			if(e.target.id.indexOf("_clone") == -1){
 				for(var i=len-1; i>=0; i--){

@@ -4547,7 +4547,7 @@ input[type=range]::-ms-fill-upper {
 }
 @media (max-width: 500px) {
   .spl-header div {
-    width: 44px;
+    width: 32px;
   }
   .spl-footer .spl-title {
     font-size: 20px;
@@ -4565,6 +4565,13 @@ input[type=range]::-ms-fill-upper {
   .spl-spinner {
     background-size: 30px 30px;
   }
+	.spl-brush{
+		width: 60px !important;
+		padding-left: 10px;	
+	}
+	.spl-fullscreen{
+		display:inline-block !important;
+	}
 }
 .hide-scrollbars {
   overflow: hidden !important;

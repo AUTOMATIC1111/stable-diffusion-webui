@@ -47,6 +47,10 @@ titles = {
     "Skip": "Stop processing current image and continue processing.",
     "Interrupt": "Stop processing images and return any results accumulated so far.",
     "Save": "Write image to a directory (default - log/images) and generation parameters into csv file.",
+	"Zip": "Save as Zip",
+	"Send to img2img": "Send to img2img",
+	"Send to inpaint": "Send to inpaint",
+	"Send to extras": "Send to extras",
 
     "X values": "Separate values for X axis using commas.",
     "Y values": "Separate values for Y axis using commas.",
