@@ -287,13 +287,13 @@ button.custom-button{
     border-radius: 0 0.5rem 0.5rem 0;
 }
 
-#txtimg_hr_finalres{
+#txtimg_hr_finalres, #img2img_finalres {
     min-height: 0 !important;
     padding: .625rem .75rem;
     margin-left: -0.75em
 }
 
-#txtimg_hr_finalres .resolution{
+#txtimg_hr_finalres .resolution, #img2img_finalres .resolution{
     font-weight: bold;
 }
 

@@ -282,6 +282,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         res["Hires resize-1"] = 0
         res["Hires resize-2"] = 0
 
+    if "Img2Img upscale" not in res:
+        res["Img2Img upscale"] = 1
+
     restore_old_hires_fix_params(res)
 
     return res

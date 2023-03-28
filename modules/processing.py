@@ -946,7 +946,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.75, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, **kwargs):
+    def __init__(self, init_images: Optional[list] = None, resize_mode: int = 0, denoising_strength: float = 0.75, image_cfg_scale: Optional[float] = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: Optional[float] = None, scale: float = 0, upscaler: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
@@ -966,10 +966,36 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask = None
         self.nmask = None
         self.image_conditioning = None
+        self.scale = scale
+        self.upscaler = upscaler
+
+    def get_final_size(self):
+        if self.scale > 1:
+            img = self.init_images[0]
+            width = int(img.width * self.scale)
+            height = int(img.height * self.scale)
+            return width, height
+        else:
+            return self.width, self.height
+
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         crop_region = None
+
+        if self.scale > 1:
+            self.extra_generation_params["Img2Img upscale"] = self.scale
+
+        # Non-latent upscalers are run before sampling
+        # Latent upscalers are run during sampling
+        init_upscaler = None
+        if self.upscaler is not None:
+            self.extra_generation_params["Img2Img upscaler"] = self.upscaler
+            if self.upscaler not in shared.latent_upscale_modes:
+                assert len([x for x in shared.sd_upscalers if x.name == self.upscaler]) > 0, f"could not find upscaler named {self.upscaler}"
+                init_upscaler = self.upscaler
+
+        self.width, self.height = self.get_final_size()
 
         image_mask = self.image_mask
 
@@ -993,7 +1019,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image_mask = images.resize_image(2, mask, self.width, self.height)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
             else:
-                image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
+                image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height, init_upscaler)
                 np_mask = np.array(image_mask)
                 np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
@@ -1010,7 +1036,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image = images.flatten(img, opts.img2img_background_color)
 
             if crop_region is None and self.resize_mode != 3:
-                image = images.resize_image(self.resize_mode, image, self.width, self.height)
+                image = images.resize_image(self.resize_mode, image, self.width, self.height, init_upscaler)
 
             if image_mask is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
@@ -1055,8 +1081,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
 
-        if self.resize_mode == 3:
-            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+        latent_scale_mode = shared.latent_upscale_modes.get(self.upscaler, None) if self.upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
+        if latent_scale_mode is not None:
+            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
 
         if image_mask is not None:
             init_mask = latent_mask
