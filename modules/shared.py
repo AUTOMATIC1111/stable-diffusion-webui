@@ -422,7 +422,8 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
 }))
 
 options_templates.update(options_section((None, "Hidden options"), {
-    "disabled_extensions": OptionInfo([], "Disable those extensions"),
+    "disabled_extensions": OptionInfo([], "Disable these extensions"),
+    "disable_all_extensions": OptionInfo("none", "Disable all extensions (preserves the list of disabled extensions)", gr.Radio, {"choices": ["none", "extra", "all"]}),
     "sd_checkpoint_hash": OptionInfo("", "SHA256 hash of the current checkpoint"),
 }))
 
