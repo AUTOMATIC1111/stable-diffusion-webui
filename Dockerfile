@@ -48,53 +48,56 @@ RUN pip3 install --upgrade pip -i https://pypi.douban.com/simple/
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Jackstrawcd/stable-diffusion-webui.git ~/stable-diffusion-webui
 
 # 安装requirements
-RUN cd ~/stable-diffusion-webui  \
+RUN cd /root/stable-diffusion-webui  \
     && pip3 install xformers -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple \
     && pip3 install -r requirements.txt -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple \
     && pip3 install -r requirements_versions.txt -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
 # repositories
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/CompVis/taming-transformers.git ~/stable-diffusion-webui/repositories/taming-transformers
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Stability-AI/stablediffusion.git ~/stable-diffusion-webui/repositories/stable-diffusion-stability-ai
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/crowsonkb/k-diffusion.git ~/stable-diffusion-webui/repositories/k-diffusion
-RUN https_proxy=${HTTP_PROXY} git clone -b v0.1.0 https://github.com/sczhou/CodeFormer.git ~/stable-diffusion-webui/repositories/CodeFormer
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/salesforce/BLIP.git ~/stable-diffusion-webui/repositories/BLIP
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/CompVis/taming-transformers.git /root/stable-diffusion-webui/repositories/taming-transformers
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Stability-AI/stablediffusion.git /root/stable-diffusion-webui/repositories/stable-diffusion-stability-ai
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/crowsonkb/k-diffusion.git /root/stable-diffusion-webui/repositories/k-diffusion
+RUN https_proxy=${HTTP_PROXY} git clone -b v0.1.0 https://github.com/sczhou/CodeFormer.git /root/stable-diffusion-webui/repositories/CodeFormer
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/salesforce/BLIP.git /root/stable-diffusion-webui/repositories/BLIP
 
 RUN pip3 install setuptools_rust -i https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip3 install -r  ~/stable-diffusion-webui/repositories/CodeFormer/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip3 install -r  ~/stable-diffusion-webui/repositories/k-diffusion/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install -r  /root/stable-diffusion-webui/repositories/CodeFormer/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install -r  /root/stable-diffusion-webui/repositories/k-diffusion/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
-RUN cd  ~/stable-diffusion-webui/repositories/stable-diffusion-stability-ai \
+RUN cd  /root/stable-diffusion-webui/repositories/stable-diffusion-stability-ai \
     && python3 setup.py install
-#RUN ~/stable-diffusion-webui/repositories/taming-transformers  \
+#RUN /root/stable-diffusion-webui/repositories/taming-transformers  \
 #    && python3 setup.py install
 #RUN cd  ~/stable-diffusion-webui/repositories/BLIP/ && \
 #    python3 setup.py install
 
 # ControlNet && extensions
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git ~/stable-diffusion-webui/extensions/sd-webui-controlnet
-RUN https_proxy=${HTTP_PROXY} git clone https://huggingface.co/webui/ControlNet-modules-safetensors ~/stable-diffusion-webui/models/ControlNet
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN ~/stable-diffusion-webui/extensions/stable-diffusion-webui-localization-zh_CN
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/toriato/stable-diffusion-webui-wd14-tagger.git ~/stable-diffusion-webui/extensions/tagger
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/yfszzx/stable-diffusion-webui-images-browser ~/stable-diffusion-webui/extensions/images-browser
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/fkunn1326/openpose-editor.git ~/stable-diffusion-webui/extensions/openpose-editor
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/hnmr293/posex ~/stable-diffusion-webui/extensions/posex
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/hnmr293/sd-webui-llul ~/stable-diffusion-webui/extensions/sd-webui-llul
-RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/sd-webui-additional-networks ~/stable-diffusion-webui/extensions/additional-networks
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111 ~/stable-diffusion-webui/extensions/multidiffusion-upscaler
-RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/stable-diffusion-webui-tokenizer ~/stable-diffusion-webui/extensions/stable-diffusion-webui-tokenizer
-# RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients ~/stable-diffusion-webui/extensions/aesthetic-gradients
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen ~/stable-diffusion-webui/extensions/stable-diffusion-webui-promptgen
-RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/a1111-sd-webui-tagcomplete  ~/stable-diffusion-webui/extensions/tagcomplete
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-composable-lora.git  ~/stable-diffusion-webui/extensions/composable-lora
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-two-shot.git  ~/stable-diffusion-webui/extensions/two-shot
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git /root/stable-diffusion-webui/extensions/sd-webui-controlnet
+RUN https_proxy=${HTTP_PROXY} git clone https://huggingface.co/webui/ControlNet-modules-safetensors /root/stable-diffusion-webui/models/ControlNet
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN /root/stable-diffusion-webui/extensions/stable-diffusion-webui-localization-zh_CN
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/toriato/stable-diffusion-webui-wd14-tagger.git /root/stable-diffusion-webui/extensions/tagger
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/yfszzx/stable-diffusion-webui-images-browser /root/stable-diffusion-webui/extensions/images-browser
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/fkunn1326/openpose-editor.git /root/stable-diffusion-webui/extensions/openpose-editor
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/hnmr293/posex /root/stable-diffusion-webui/extensions/posex
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/hnmr293/sd-webui-llul /root/stable-diffusion-webui/extensions/sd-webui-llul
+RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/sd-webui-additional-networks /root/stable-diffusion-webui/extensions/additional-networks
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111 /root/stable-diffusion-webui/extensions/multidiffusion-upscaler
+RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/stable-diffusion-webui-tokenizer /root/stable-diffusion-webui/extensions/stable-diffusion-webui-tokenizer
+# RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients /root/stable-diffusion-webui/extensions/aesthetic-gradients
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen /root/stable-diffusion-webui/extensions/stable-diffusion-webui-promptgen
+RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/a1111-sd-webui-tagcomplete  /root/stable-diffusion-webui/extensions/tagcomplete
+RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/zh_cn.csv -O zh_cn.csv
+RUN mv zh_cn.csv /root/stable-diffusion-webui/extensions/tagcomplete/tags/
 
-RUN mkdir -p  ~/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
-RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3, \"sd_vae\": \"vae-ft-mse-840000-ema-pruned.ckpt\"}" >  ~/stable-diffusion-webui/config.json
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-composable-lora.git  /root/stable-diffusion-webui/extensions/composable-lora
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-two-shot.git  /root/stable-diffusion-webui/extensions/two-shot
+
+RUN mkdir -p  /root/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
+RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3, \"tac_translation.translationFile\": \"zh_cn.csv\", \"sd_vae\": \"vae-ft-mse-840000-ema-pruned.ckpt\"}" > /root/stable-diffusion-webui/config.json
 
 # 下载模型(默认不下载)
-#RUN cd  ~/stable-diffusion-webui/models/Stable-diffusion \
+#RUN cd  /root/stable-diffusion-webui/models/Stable-diffusion \
 #    &&wget -nd -np -r  -c http://apksamba.ops.ilongyuan.cn:8000/ai/7/AI%E7%BE%8E%E6%9C%AF/%E6%89%93%E5%8C%85/models/Stable-diffusion/
-#RUN cd ~/stable-diffusion-webui/  \
+#RUN cd /root/stable-diffusion-webui/  \
 #    &&  python3 extensions/sd-webui-controlnet/install.py
 # 确定OPEN_CLIP 和arkupsafe版本
 RUN pip3 install basicsr Werkzeug==2.1.0 open_clip_torch==2.16.0 markupsafe==2.0.1 -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple

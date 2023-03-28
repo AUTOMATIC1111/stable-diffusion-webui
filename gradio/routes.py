@@ -115,7 +115,7 @@ class App(FastAPI):
         self.queue_token = secrets.token_urlsafe(32)
         self.startup_events_triggered = False
         self.uploaded_file_dir = str(utils.abspath(tempfile.mkdtemp()))
-        self.reverse_proxy = kwargs.get("reverse_proxy")
+        self.reverse_proxy = os.getenv("Endpoint", "") != ""
         super().__init__(**kwargs)
 
     def configure_app(self, blocks: gradio.Blocks) -> None:

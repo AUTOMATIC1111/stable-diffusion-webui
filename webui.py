@@ -200,6 +200,7 @@ def setup_middleware(app):
 
 def create_api(app):
     from modules.api.api import Api
+    print("api server starting...")
     api = Api(app, queue_lock)
     return api
 
