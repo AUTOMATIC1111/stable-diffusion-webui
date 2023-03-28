@@ -640,7 +640,7 @@ mem_mon.start()
 
 
 def listfiles(dirname):
-    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname)) if not x.startswith(".")]
+    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=str.lower) if not x.startswith(".")]
     return [file for file in filenames if os.path.isfile(file)]
 
 

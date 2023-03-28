@@ -7,7 +7,7 @@
     --block-background-fill: transparent;
 }
 
-.block.padded{
+.block.padded:not(.gradio-accordion) {
     padding: 0 !important;
 }
 
@@ -54,10 +54,6 @@ div.compact{
     gap: 1em;
 }
 
-.gradio-dropdown ul.options{
-    z-index: 3000;
-}
-
 .gradio-dropdown label span:not(.has-info),
 .gradio-textbox label span:not(.has-info),
 .gradio-number label span:not(.has-info)
@@ -65,11 +61,30 @@ div.compact{
     margin-bottom: 0;
 }
 
+.gradio-dropdown ul.options{
+    z-index: 3000;
+    min-width: fit-content;
+    max-width: inherit;
+    white-space: nowrap;
+}
+
+.gradio-dropdown ul.options li.item {
+    padding: 0.05em 0;
+}
+
+.gradio-dropdown ul.options li.item.selected {
+    background-color: var(--neutral-100);
+}
+
+.dark .gradio-dropdown ul.options li.item.selected {
+    background-color: var(--neutral-900);
+}
+
 .gradio-dropdown div.wrap.wrap.wrap.wrap{
     box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
-.gradio-dropdown .wrap-inner.wrap-inner.wrap-inner{
+.gradio-dropdown:not(.multiselect) .wrap-inner.wrap-inner.wrap-inner{
     flex-wrap: unset;
 }
 
@@ -121,6 +136,18 @@ div.gradio-html.min{
     align-self: end;
     line-height: 1em;
     border-radius: 0.5em;
+}
+
+.gradio-button.secondary-down{
+    background: var(--button-secondary-background-fill);
+    color: var(--button-secondary-text-color);
+}
+.gradio-button.secondary-down, .gradio-button.secondary-down:hover{
+    box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset;
+}
+.gradio-button.secondary-down:hover{
+    background: var(--button-secondary-background-fill-hover);
+    color: var(--button-secondary-text-color-hover);
 }
 
 .checkboxes-row{
@@ -505,6 +532,17 @@ div.dimensions-tools{
 .modalPrev:hover,
 .modalNext:hover {
   background-color: rgba(0, 0, 0, 0.8);
+}
+
+#imageARPreview {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    border: 2px solid red;
+    background: rgba(255, 0, 0, 0.3);
+    z-index: 900;
+    pointer-events: none;
+    display: none;
 }
 
 /* context menu (ie for the generate button) */
