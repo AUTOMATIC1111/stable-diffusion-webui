@@ -17,8 +17,8 @@
     --checkbox-label-gap: 0.25em 0.1em;
     --section-header-text-size: 12pt;
     --block-background-fill: transparent;
-}
-
+} 
+ 
 .block.padded:not(.gradio-accordion) {
     padding: 0 !important;
 }
