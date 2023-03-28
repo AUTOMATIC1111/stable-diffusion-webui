@@ -22,7 +22,7 @@ titles = {
     "\u{1f4cb}": "Apply selected styles to current prompt",
     "\u{1f4d2}": "Paste available values into the field",
     "\u{1f3b4}": "Show/hide extra networks",
-
+		"\u{1F300}": "Restore progress",
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",
 
