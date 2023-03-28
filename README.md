@@ -1,16 +1,72 @@
-# Stable Diffusion web UI/UX
+# Stable Diffusion web UI-UX
 Not just a browser interface based on Gradio library for Stable Diffusion.
 A pixel perfect design, mobile friendly, customizable interface that adds accessibility, ease of use and extended functionallity to the stable diffusion web ui.
 This project is hoping to merge with the main branch at some point in the future.
-Unfortunately this is going to take some time as the main author of the project askes for small PRs in order to aprove the changes. 
-Until then you can use this repo to enjoy it, i will do my best to keep it up to date 
+Unfortunately this is going to take some time as the main author of the project askes for small PRs in order to aprove the changes.
+It is unsure how many of these changes will make it to the main branch  
+Until then you can use this repo enjoy!
+
+I will not upgrade to any unstable release from the master until major issues are resolved 
+I will create a public dev branch so people can test out new features before any upgrade to master
+i will do my best to keep it up to date
+
+Default theme
+
+![anapnoe_uiux](https://user-images.githubusercontent.com/124302297/227973574-6003142d-0c7c-41c6-9966-0792a94549e9.png)
+
+## Features and to do list of ui-ux
+- [x] resizable viewport
+- [x] switchable viewports (DoubleClick on the split handler to swap views) option in settings for default position
+- [x] mobile navigation
+- [x] top header tabs (option setting)
+- [x] hidden tabs (option setting) no need to restart this is a different implementation
+- [x] drag and drop reordable quick settings offcanvas aside view
+- [x] drag and drop images to txt2img and img2img and import generation info parameters along with a preview image
+- [x] ignore - remove overrides when import [multiselect] (option setting)
+- [x] resizable cards for extra networks and number of rows (option setting)
+- [x] alternative offcanvas aside view for extra networks (option setting)
+- [x] live preview image fit method (option setting)
+- [x] generated image fit method (option setting)
+- [x] max resolution output for txt2img and img2img (option setting)
+- [x] performant dispatch for gradio's range slider and input number field issue: https://github.com/gradio-app/gradio/issues/3204 (option setting) latest update uses only one instance clone to mediate for the release event
+- [x] ticks input range sliders (option setting)
+- [x] pacman preloader unified colors on reload ui
+- [x] frame border animation when generating images
+- [x] progress bar on top of the page always visible (when scroll for mobile)
+- [x] remix icons 
+- [ ] small arrows next to icons sent to inpaint, extras, img2img etc  
+- [x] style theme configurator extension to customize every aspect of theme in real time with cool global functions to change the hue / saturation / brightness or invert the theme colors
+- [x] pan and zoom in out functionality for sketch, inpaint, inpaint sketch
+- [x] fullscreen support for sketch, inpaint, inpaint sketch  
+- [ ] component gallery navigate to previous generations inside the txt2img, img2img interface
+- [ ] and auto load the current generation settings 
+- [x] better lightbox with zoom in-out mobile gestures support etc.. 
+- [ ] credits/about page display all 300+ contributors so far inside the UI 
+
+Quick Settings aside off-canvas view - drag and drop to custom sort your settings
+
+![anapnoe_uiux_quicksettings](https://user-images.githubusercontent.com/124302297/227967695-f8bb01b5-5cc9-4238-80dd-06e261378d6e.png)
 
 
-![](screenshot.png)
-![GXTheme](https://user-images.githubusercontent.com/124302297/219995245-13d0d366-3825-4c73-8ce1-b6585e000510.png)
-![InpaintSketchFlip](https://user-images.githubusercontent.com/124302297/219995271-96253056-1a2d-48b4-b00c-38ae5260271d.png)
-![quickSettings](https://user-images.githubusercontent.com/124302297/219995294-20d9042c-4992-496d-bdb8-ab550611f003.png)
-![mobile-375px](https://user-images.githubusercontent.com/124302297/219995310-a9fa1060-a6fa-45f8-8c0f-8013220f35be.png)
+Extra Networks aside off-canvas view
+
+![anapnoe_uiux_extra_networks](https://user-images.githubusercontent.com/124302297/227968001-20eab8f5-da91-4a11-9fe0-230fec4ba720.png)
+
+
+Detail img2img sketch view 
+
+![anapnoe_uiux_sketch](https://user-images.githubusercontent.com/124302297/227973727-084da8e0-931a-4c62-ab73-39e988fd4523.png)
+
+
+Theme Configurator - aside off-canvas view 
+
+![anapnoe_uiux_theme_config](https://user-images.githubusercontent.com/124302297/227967844-45063edb-eb40-4224-9666-f506d21d7780.png)
+
+
+Mobile 395px width
+
+![anapnoe_uiux_mobile](https://user-images.githubusercontent.com/124302297/227987709-36231d30-e6da-424a-8930-cc0c55a0b979.png)
+
 
 
 ## Features
