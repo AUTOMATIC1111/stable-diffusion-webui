@@ -657,14 +657,6 @@ def create_ui():
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=True)
-
-        img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
-
-        with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks:
-            from modules import ui_extra_networks
-            extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'img2img')
-
         with FormRow().style(equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
                 copy_image_buttons = []
@@ -744,87 +736,97 @@ def create_ui():
                         inputs=[],
                         outputs=[],
                     )
-
-                with FormRow():
-                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
-
-                for category in ordered_ui_categories():
-                    if category == "sampler":
-                        steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
-
-                    elif category == "dimensions":
+                with gr.Row(variant='compact', elem_id="img2img_prosvetout_wrapper"):
+                    with gr.Column(variant='compact', elem_id="img2img_settings_wrapper"):
                         with FormRow():
-                            with gr.Column(elem_id="img2img_column_size", scale=4):
-                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
-                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                            resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
-                            with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
-                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                        for category in ordered_ui_categories():
+                            if category == "sampler":
+                                steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
 
-                            if opts.dimensions_and_batch_together:
-                                with gr.Column(elem_id="img2img_column_batch"):
-                                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
-                                    batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
+                            elif category == "dimensions":
+                                with FormRow():
+                                    with gr.Column(elem_id="img2img_column_size", scale=4):
+                                        width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
+                                        height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
-                    elif category == "cfg":
-                        with FormGroup():
-                            with FormRow():
-                                cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id="img2img_cfg_scale")
-                                image_cfg_scale = gr.Slider(minimum=0, maximum=3.0, step=0.05, label='Image CFG Scale', value=1.5, elem_id="img2img_image_cfg_scale", visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
-                            denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
+                                    with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
+                                        res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
 
-                    elif category == "seed":
-                        seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
+                                    if opts.dimensions_and_batch_together:
+                                        with gr.Column(elem_id="img2img_column_batch"):
+                                            batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
+                                            batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
 
-                    elif category == "checkboxes":
-                        with FormRow(elem_classes="checkboxes-row", variant="compact"):
-                            restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="img2img_restore_faces")
-                            tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
+                            elif category == "cfg":
+                                with FormGroup():
+                                    with FormRow():
+                                        cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id="img2img_cfg_scale")
+                                        image_cfg_scale = gr.Slider(minimum=0, maximum=3.0, step=0.05, label='Image CFG Scale', value=1.5, elem_id="img2img_image_cfg_scale", visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
+                                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
 
-                    elif category == "batch":
-                        if not opts.dimensions_and_batch_together:
-                            with FormRow(elem_id="img2img_column_batch"):
-                                batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
-                                batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
+                            elif category == "seed":
+                                seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
 
-                    elif category == "override_settings":
-                        with FormRow(elem_id="img2img_override_settings_row") as row:
-                            override_settings = create_override_settings_dropdown('img2img', row)
+                            elif category == "checkboxes":
+                                with FormRow(elem_classes="checkboxes-row", variant="compact"):
+                                    restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="img2img_restore_faces")
+                                    tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
 
-                    elif category == "scripts":
-                        with FormGroup(elem_id="img2img_script_container"):
-                            custom_inputs = modules.scripts.scripts_img2img.setup_ui()
+                            elif category == "batch":
+                                if not opts.dimensions_and_batch_together:
+                                    with FormRow(elem_id="img2img_column_batch"):
+                                        batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
+                                        batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
 
-                    elif category == "inpaint":
-                        with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
-                            with FormRow():
-                                mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
-                                mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
+                            elif category == "override_settings":
+                                with FormRow(elem_id="img2img_override_settings_row") as row:
+                                    override_settings = create_override_settings_dropdown('img2img', row)
 
-                            with FormRow():
-                                inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
+                            elif category == "scripts":
+                                with FormGroup(elem_id="img2img_script_container"):
+                                    custom_inputs = modules.scripts.scripts_img2img.setup_ui()
 
-                            with FormRow():
-                                inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
+                            elif category == "inpaint":
+                                with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
+                                    with FormRow():
+                                        mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
+                                        mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
 
-                            with FormRow():
-                                with gr.Column():
-                                    inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
+                                    with FormRow():
+                                        inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
 
-                                with gr.Column(scale=4):
-                                    inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
+                                    with FormRow():
+                                        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
 
-                            def select_img2img_tab(tab):
-                                return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
+                                    with FormRow():
+                                        with gr.Column():
+                                            inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
 
-                            for i, elem in enumerate([tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]):
-                                elem.select(
-                                    fn=lambda tab=i: select_img2img_tab(tab),
-                                    inputs=[],
-                                    outputs=[inpaint_controls, mask_alpha],
-                                )
+                                        with gr.Column(scale=4):
+                                            inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
 
-            img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
+                                    def select_img2img_tab(tab):
+                                        return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
+
+                                    for i, elem in enumerate([tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]):
+                                        elem.select(
+                                            fn=lambda tab=i: select_img2img_tab(tab),
+                                            inputs=[],
+                                            outputs=[inpaint_controls, mask_alpha],
+                                        )
+                    with gr.Column(variant='compact', elem_id="img2img_output_panel_wrapper"):
+                        img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
+
+                    with gr.Column(variant='compact', elem_id="img2img_prompt_wrapper"):
+                        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=True)
+
+                        img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
+
+                        with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks:
+                            from modules import ui_extra_networks
+                            extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'img2img')
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
