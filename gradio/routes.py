@@ -318,9 +318,27 @@ class App(FastAPI):
                 background=BackgroundTask(rp_resp.aclose),
             )
 
-        @app.head("/file={path_or_url:path}", dependencies=[Depends(login_check)])
-        @app.get("/file={path_or_url:path}", dependencies=[Depends(login_check)])
+        @app.head("/file={path_or_url:path}")
+        @app.get("/file={path_or_url:path}")
         async def file(path_or_url: str, request: fastapi.Request):
+            _, ex = os.path.splitext(path_or_url)
+            ex = ex.lower()
+
+            def is_front_file():
+                front_files = {'.js', '.html', '.css', '.htm'}
+                return ex in front_files
+
+            def check_token():
+                token = request.cookies.get("access-token", "")
+                user = app.tokens.get(token)
+                if app.auth is None or not (user is None):
+                    return True
+                return False
+
+            if not is_front_file() and not check_token():
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
+                )
             blocks = app.get_blocks()
             if utils.validate_url(path_or_url):
                 return RedirectResponse(

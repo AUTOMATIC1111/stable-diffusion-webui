@@ -106,4 +106,4 @@ RUN pip3 uninstall gradio -y
 WORKDIR /root/stable-diffusion-webui
 
 # 启动时必须将models下面的一些必要文件挂载进去，例如：VAE-approx/models.pt
-CMD bash -c "cd /root/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --xformers --enable-insecure-extension-access --no-half-vae --cors-allow-origins=\"*\">>nohup.out"
+CMD bash -c "cd /root/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --api --xformers --enable-insecure-extension-access --no-half-vae --cors-allow-origins=\"*\">>nohup.out"
