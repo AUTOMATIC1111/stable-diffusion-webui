@@ -226,7 +226,7 @@ class KDiffusionSampler:
         try:
             return func()
         except sd_samplers_common.InterruptedException:
-            return self.last_latent
+            return state.current_latent
 
     def number_of_needed_noises(self, p):
         return p.steps
