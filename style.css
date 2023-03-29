@@ -2867,6 +2867,9 @@ ul.list-none {
     z-index: 0;
 	transform: translateX(-50%) translateY(-50%);
 }
+.card-container .description{
+	display:none !important;
+}
 
 /*
 .extra-network-cards::after {
