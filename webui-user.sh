@@ -1,16 +1,27 @@
-#!/bin/bash
+# #!/bin/bash
 #########################################################
 # Uncomment and change the variables below to your need:#
 #########################################################
 
+# install metrics tool
+sudo apt install nano
+pip install aioprometheus[starlette]
+
+# check the downloads, can take while on a fresh disk.
+# perhaps better to use rsync? but want to avoid credentials
+# do not run and subprocess because otherwsie several insttances may get launched due to restart attempts
+cd /workspace/stable-diffusion-webui/models/Stable-diffusion/
+python download.py
+cd /workspace/stable-diffusion-webui/
+
 # Install directory without trailing slash
-#install_dir="/home/$(whoami)"
+install_dir="/workspace"
 
 # Name of the subdirectory
 #clone_dir="stable-diffusion-webui"
 
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
-#export COMMANDLINE_ARGS=""
+export COMMANDLINE_ARGS="--port 3000 --xformers --api --api-auth bashable:g46tTaGtrU3hAfmMbgNq --api-log --nowebui --ckpt /workspace/stable-diffusion-webui/models/Stable-diffusion/deliberate_v2.safetensors --listen --enable-insecure-extension-access"
 
 # python3 executable
 #python_cmd="python3"
@@ -19,7 +30,7 @@
 #export GIT="git"
 
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
-#venv_dir="venv"
+# venv_dir="/workspace/venv"
 
 # script to launch to start the app
 #export LAUNCH_SCRIPT="launch.py"
@@ -44,3 +55,4 @@
 #export ACCELERATE="True"
 
 ###########################################
+
