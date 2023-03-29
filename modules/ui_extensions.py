@@ -17,6 +17,7 @@ from modules.paths_internal import config_states_dir
 from modules.call_queue import wrap_gradio_gpu_call
 
 available_extensions = {"extensions": []}
+STYLE_PRIMARY = ' style="color: var(--primary-400)"'
 
 
 def check_access():
@@ -67,7 +68,7 @@ def save_config_state(name):
     config_states.list_config_states()
     new_value = next(iter(config_states.all_config_states.keys()), "Current")
     new_choices = ["Current"] + list(config_states.all_config_states.keys())
-    return gr.Dropdown.update(value=new_value, choices=new_choices), f"<span>Saved current webui/extension state to '{filename}'</span>"
+    return gr.Dropdown.update(value=new_value, choices=new_choices), f"<span>Saved current webui/extension state to \"{filename}\"</span>"
 
 
 def restore_config_state(confirmed, config_state_name, restore_type):
@@ -78,14 +79,12 @@ def restore_config_state(confirmed, config_state_name, restore_type):
 
     check_access()
 
-    save_config_state("Backup (pre-restore)")
-
     config_state = config_states.all_config_states[config_state_name]
 
-    print(f"Restoring webui state from backup: {restore_type}")
+    print(f"*** Restoring webui state from backup: {restore_type} ***")
 
     if restore_type == "extensions" or restore_type == "both":
-        shared.opts.restore_config_state_file = config_state["filename"]
+        shared.opts.restore_config_state_file = config_state["filepath"]
         shared.opts.save(shared.config_filename)
 
     if restore_type == "webui" or restore_type == "both":
@@ -149,7 +148,7 @@ def extension_table():
 
         style = ""
         if shared.opts.disable_all_extensions == "extra" and not ext.is_builtin or shared.opts.disable_all_extensions == "all":
-            style = ' style="color: var(--primary-400)"'
+            style = STYLE_PRIMARY
 
         code += f"""
             <tr>
@@ -181,16 +180,24 @@ def update_config_states_table(state_name):
 
     webui_remote = config_state["webui"]["remote"] or ""
     webui_branch = config_state["webui"]["branch"]
-    webui_commit_hash = config_state["webui"]["commit_hash"]
-    if webui_commit_hash:
-        webui_commit_hash = webui_commit_hash[:8]
-    else:
-        webui_commit_hash = "<unknown>"
+    webui_commit_hash = config_state["webui"]["commit_hash"] or "<unknown>"
     webui_commit_date = config_state["webui"]["commit_date"]
     if webui_commit_date:
         webui_commit_date = time.asctime(time.gmtime(webui_commit_date))
     else:
         webui_commit_date = "<unknown>"
+
+    current_webui = config_states.get_webui_config()
+
+    style_remote = ""
+    style_branch = ""
+    style_commit = ""
+    if current_webui["remote"] != webui_remote:
+        style_remote = STYLE_PRIMARY
+    if current_webui["branch"] != webui_branch:
+        style_branch = STYLE_PRIMARY
+    if current_webui["commit_hash"] != webui_commit_hash:
+        style_commit = STYLE_PRIMARY
 
     code += f"""<h2>Config Backup: {config_name}</h2>
       <span>Created at: {created_date}</span>"""
@@ -207,10 +214,10 @@ def update_config_states_table(state_name):
         </thead>
         <tbody>
             <tr>
-                <td>{webui_remote}</td>
-                <td>{webui_branch}</td>
-                <td>{webui_commit_hash}</td>
-                <td>{webui_commit_date}</td>
+                <td><label{style_remote}>{webui_remote}</label></td>
+                <td><label{style_branch}>{webui_branch}</label></td>
+                <td><label{style_commit}>{webui_commit_hash[:8]}</label></td>
+                <td><label{style_commit}>{webui_commit_date}</label></td>
             </tr>
         </tbody>
       </table>
@@ -253,13 +260,13 @@ def update_config_states_table(state_name):
             current_ext = ext_map[ext_name]
             current_ext.read_info_from_repo()
             if current_ext.enabled != ext_enabled:
-                style_enabled = ' style="color: var(--primary-400)"'
+                style_enabled = STYLE_PRIMARY
             if current_ext.remote != ext_remote:
-                style_remote = ' style="color: var(--primary-400)"'
+                style_remote = STYLE_PRIMARY
             if current_ext.branch != ext_branch:
-                style_branch = ' style="color: var(--primary-400)"'
+                style_branch = STYLE_PRIMARY
             if current_ext.commit_hash != ext_commit_hash:
-                style_commit = ' style="color: var(--primary-400)"'
+                style_commit = STYLE_PRIMARY
 
         code += f"""
             <tr>

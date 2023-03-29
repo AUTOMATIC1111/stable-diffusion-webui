@@ -114,8 +114,10 @@ def initialize():
         print(f"*** About to restore extension state from file: {config_state_file}")
         with open(config_state_file, "r", encoding="utf-8") as f:
             config_state = json.load(f)
-            config_states.restore_extension_state(config_state)
+            config_states.restore_extension_config(config_state)
         startup_timer.record("restore extension config")
+    else:
+        print(f"!!! Config state backup not found: {config_state_file}")
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
@@ -321,8 +323,10 @@ def webui():
             print(f"*** About to restore extension state from file: {config_state_file}")
             with open(config_state_file, "r", encoding="utf-8") as f:
                 config_state = json.load(f)
-                config_states.restore_extension_state(config_state)
+                config_states.restore_extension_config(config_state)
             startup_timer.record("restore extension config")
+        else:
+            print(f"!!! Config state backup not found: {config_state_file}")
 
         localization.list_localizations(cmd_opts.localizations_dir)
 

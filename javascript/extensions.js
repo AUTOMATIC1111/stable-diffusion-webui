@@ -50,7 +50,7 @@ function install_extension_from_index(button, url){
 
 function config_state_confirm_restore(_, config_state_name, config_restore_type) {
     if (config_state_name == "Current") {
-        return [false, config_state_name];
+        return [false, config_state_name, config_restore_type];
     }
     let restored = "";
     if (config_restore_type == "extensions") {
@@ -60,6 +60,12 @@ function config_state_confirm_restore(_, config_state_name, config_restore_type)
     } else {
         restored = "the webui version and all saved extension versions";
     }
-    let confirmed = confirm("Are you sure you want to restore from this state?\nThis will reset " + restored + ".\n(A backup of the current state will be made.)");
+    let confirmed = confirm("Are you sure you want to restore from this state?\nThis will reset " + restored + ".");
+    if (confirmed) {
+        restart_reload();
+        gradioApp().querySelectorAll('#extensions .extension_status').forEach(function(x){
+            x.innerHTML = "Loading..."
+        })
+    }
     return [confirmed, config_state_name, config_restore_type];
 }
