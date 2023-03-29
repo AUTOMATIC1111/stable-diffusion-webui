@@ -49,8 +49,6 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
     for image, name in zip(image_data, image_names):
         shared.state.textinfo = name
 
-        existing_pnginfo = image.info or {}
-
         pp = scripts_postprocessing.PostprocessedImage(image.convert("RGB"))
 
         scripts.scripts_postproc.run(pp, args)
@@ -63,11 +61,14 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
         infotext = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in pp.info.items() if v is not None])
 
         if opts.enable_pnginfo:
-            pp.image.info = existing_pnginfo
+            _geninfo, items = images.read_info_from_image(image)
+            print("I", items)
+            for k, v in items.items():
+                pp.image.info[k] = v
             pp.image.info["postprocessing"] = infotext
 
         if save_output:
-            images.save_image(pp.image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=existing_pnginfo, forced_filename=None)
+            images.save_image(pp.image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=pp.image.info, forced_filename=None)
 
         if extras_mode != 2 or show_extras_results:
             outputs.append(pp.image)

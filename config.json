@@ -162,7 +162,7 @@
     "s_tmin": 0.0,
     "samplers_in_dropdown": true,
     "samples_filename_pattern": "",
-    "samples_format": "jpg",
+    "samples_format": "png",
     "samples_log_stdout": false,
     "samples_save": true,
     "save_images_add_number": true,
