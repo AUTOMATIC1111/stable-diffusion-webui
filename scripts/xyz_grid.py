@@ -441,8 +441,6 @@ class Script(scripts.Script):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
-        if not opts.return_grid:
-            p.batch_size = 1
 
         def process_axis(opt, vals):
             if opt.label == 'Nothing':
