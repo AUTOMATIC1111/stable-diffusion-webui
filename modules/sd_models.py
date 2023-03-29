@@ -279,6 +279,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     if state_dict is None:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
 
+    timer.record("ready apply weights to model")
     model.load_state_dict(state_dict, strict=False)
     del state_dict
     timer.record("apply weights to model")
