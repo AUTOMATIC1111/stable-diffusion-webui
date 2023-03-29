@@ -175,6 +175,9 @@ def str_permutations(x):
     """dummy function for specifying it in AxisOption's type when you want to get a list of permutations"""
     return x
 
+def glob_safetensors(x):
+    return x
+
 
 class AxisOption:
     def __init__(self, label, type, apply, format_value=format_value_add_label, confirm=None, cost=0.0, choices=None):
@@ -212,6 +215,7 @@ axis_options = [
     AxisOptionTxt2Img("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOptionImg2Img("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img]),
     AxisOption("Checkpoint name", str, apply_checkpoint, format_value=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: list(sd_models.checkpoints_list)),
+    AxisOption("Checkpoint Folder", glob_safetensors, apply_checkpoint, format_value=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda:  next(os.walk(modules.sd_models.model_path))[1]),
     AxisOption("Sigma Churn", float, apply_field("s_churn")),
     AxisOption("Sigma min", float, apply_field("s_tmin")),
     AxisOption("Sigma max", float, apply_field("s_tmax")),
@@ -496,6 +500,19 @@ class Script(scripts.Script):
                 valslist = valslist_ext
             elif opt.type == str_permutations:
                 valslist = list(permutations(valslist))
+
+            elif opt.type == glob_safetensors:
+                # Join "SD-basedir/models" with SD checkpoints dir
+                abs_modeldir_path = os.path.join(modules.paths.models_path, modules.sd_models.model_path)
+                if valslist:
+                    wildcard_list = [os.path.join(abs_modeldir_path, x, "**/*.safetensors") for x in valslist]
+                else:
+                    # If no folders are specified glob the entire checkpoints folder
+                    wildcard_list = [os.path.join(abs_modeldir_path, "**/*.safetensors")]
+
+                # concat all the list of lists into one list and only keep the basename with no extension
+                valslist = [os.path.splitext((os.path.basename(y)))[0] for y in
+                            chain.from_iterable([glob.glob(path, recursive=True) for path in wildcard_list]) if y]
 
             valslist = [opt.type(x) for x in valslist]
 
