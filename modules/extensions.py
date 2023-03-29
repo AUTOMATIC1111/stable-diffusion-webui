@@ -91,8 +91,19 @@ class Extension:
         for fetch in repo.remote().fetch(dry_run=True):
             if fetch.flags != fetch.HEAD_UPTODATE:
                 self.can_update = True
-                self.status = "behind"
+                self.status = "new commits"
                 return
+
+        try:
+            origin = repo.rev_parse('origin')
+            if repo.head.commit != origin:
+                self.can_update = True
+                self.status = "behind HEAD"
+                return
+        except Exception:
+            self.can_update = False
+            self.status = "unknown (remote error)"
+            return
 
         self.can_update = False
         self.status = "latest"
@@ -103,6 +114,7 @@ class Extension:
         # because WSL2 Docker set 755 file permissions instead of 644, this results to the error.
         repo.git.fetch(all=True)
         repo.git.reset(commit, hard=True)
+        self.have_info_from_repo = False
 
 
 def list_extensions():
