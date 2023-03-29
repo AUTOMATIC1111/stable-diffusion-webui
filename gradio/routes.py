@@ -206,14 +206,6 @@ class App(FastAPI):
                 token = secrets.token_urlsafe(16)
                 app.tokens[token] = username
                 response = JSONResponse(content={"success": True})
-                response.set_cookie(
-                    key="access-token",
-                    value=token,
-                    httponly=True,
-                    samesite="none",
-                    secure=True,
-                )
-
                 # 有nginx的情况。
                 if app.reverse_proxy:
                     base_path = "/" + os.getenv("Endpoint", "")

@@ -1656,7 +1656,7 @@ def create_ui():
                         <a href="https://www.painthua.com/" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
                             <img src="https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/icon/huggingface_logo-noborder.svg" width="22" height="22" style="color:blue;margin-right:2px"/>
                             <div class="tooltip">扩展原图
-                                <span class="tooltiptext">painthua原图扩展</span>
+                                <span class="tooltiptext">painthua原图扩展,功能准备中...</span>
                             </div>
                         </a>
                         
