@@ -70,17 +70,6 @@ def gr_show(visible=True):
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
 sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
-css_hide_progressbar = """
-.wrap .m-12 svg { display:none!important; }
-.wrap .m-12::before { content:"Loading..." }
-.wrap .z-20 svg { display:none!important; }
-.wrap .z-20::before { content:"Loading..." }
-.wrap.cover-bg .z-20::before { content:"" }
-.progress-bar { display:none!important; }
-.meta-text { display:none!important; }
-.meta-text-center { display:none!important; }
-"""
-
 # Using constants for these since the variation selector isn't visible.
 # Important that they exactly match script.js for tooltip to work.
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
@@ -677,19 +666,19 @@ def create_ui():
 
                 with gr.Tabs(elem_id="mode_img2img"):
                     with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
-                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=480)
+                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=720)
                         add_copy_image_controls('img2img', init_img)
 
                     with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
-                        sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=480)
+                        sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=720)
                         add_copy_image_controls('sketch', sketch)
 
                     with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
-                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=480)
+                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=720)
                         add_copy_image_controls('inpaint', init_img_with_mask)
 
                     with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
-                        inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=480)
+                        inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=720)
                         inpaint_color_sketch_orig = gr.State(None)
                         add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
 
@@ -816,6 +805,7 @@ def create_ui():
                                             inputs=[],
                                             outputs=[inpaint_controls, mask_alpha],
                                         )
+                                
                     with gr.Column(variant='compact', elem_id="img2img_output_panel_wrapper"):
                         img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
 
@@ -827,6 +817,7 @@ def create_ui():
                         with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks:
                             from modules import ui_extra_networks
                             extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'img2img')
+
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -1568,22 +1559,6 @@ def create_ui():
         (train_interface, "Train", "ti"),
     ]
 
-    css = ""
-
-    for cssfile in modules.scripts.list_files_with_name("style.css"):
-        if not os.path.isfile(cssfile):
-            continue
-
-        with open(cssfile, "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if os.path.exists(os.path.join(data_path, "user.css")):
-        with open(os.path.join(data_path, "user.css"), "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if not cmd_opts.no_progressbar_hiding:
-        css += css_hide_progressbar
-
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
 
@@ -1594,7 +1569,7 @@ def create_ui():
     for _interface, label, _ifid in interfaces:
         shared.tab_names.append(label)
 
-    with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
+    with gr.Blocks(analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
@@ -1657,6 +1632,7 @@ def create_ui():
             fn=get_settings_values,
             inputs=[],
             outputs=[component_dict[k] for k in component_keys],
+            queue=False,
         )
 
         def modelmerger(*args):
@@ -1779,25 +1755,60 @@ def create_ui():
     return demo
 
 
-def reload_javascript():
+def webpath(fn):
+    if fn.startswith(script_path):
+        web_path = os.path.relpath(fn, script_path).replace('\\', '/')
+    else:
+        web_path = os.path.abspath(fn)
+
+    return f'file={web_path}?{os.path.getmtime(fn)}'
+
+
+def javascript_html():
     script_js = os.path.join(script_path, "script.js")
-    head = f'<script type="text/javascript" src="file={os.path.abspath(script_js)}?{os.path.getmtime(script_js)}"></script>\n'
+    head = f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
 
     inline = f"{localization.localization_js(shared.opts.localization)};"
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
-        head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
+        head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
 
     for script in modules.scripts.list_scripts("javascript", ".mjs"):
-        head += f'<script type="module" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
+        head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
 
     head += f'<script type="text/javascript">{inline}</script>\n'
 
+    return head
+
+
+def css_html():
+    head = ""
+
+    def stylesheet(fn):
+        return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
+
+    for cssfile in modules.scripts.list_files_with_name("style.css"):
+        if not os.path.isfile(cssfile):
+            continue
+
+        head += stylesheet(cssfile)
+
+    if os.path.exists(os.path.join(data_path, "user.css")):
+        head += stylesheet(os.path.join(data_path, "user.css"))
+
+    return head
+
+
+def reload_javascript():
+    js = javascript_html()
+    css = css_html()
+
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'{head}</head>'.encode("utf8"))
+        res.body = res.body.replace(b'</head>', f'{js}</head>'.encode("utf8"))
+        res.body = res.body.replace(b'</body>', f'{css}</body>'.encode("utf8"))
         res.init_headers()
         return res
 
