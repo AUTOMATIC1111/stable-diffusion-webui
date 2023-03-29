@@ -21,7 +21,7 @@ def check_access():
     assert not shared.cmd_opts.disable_extension_access, "extension access disabled because of command line flags"
 
 
-def apply_and_restart(disable_list, update_list):
+def apply_and_restart(disable_list, update_list, disable_all):
     check_access()
 
     disabled = json.loads(disable_list)
@@ -43,6 +43,7 @@ def apply_and_restart(disable_list, update_list):
             print(traceback.format_exc(), file=sys.stderr)
 
     shared.opts.disabled_extensions = disabled
+    shared.opts.disable_all_extensions = disable_all
     shared.opts.save(shared.config_filename)
 
     shared.state.interrupt()
@@ -63,6 +64,9 @@ def check_updates(id_task, disable_list):
 
         try:
             ext.check_updates()
+        except FileNotFoundError as e:
+            if 'FETCH_HEAD' not in str(e):
+                raise
         except Exception:
             print(f"Error checking updates for {ext.name}:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
@@ -87,6 +91,8 @@ def extension_table():
     """
 
     for ext in extensions.extensions:
+        ext.read_info_from_repo()
+
         remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
 
         if ext.can_update:
@@ -94,9 +100,13 @@ def extension_table():
         else:
             ext_status = ext.status
 
+        style = ""
+        if shared.opts.disable_all_extensions == "extra" and not ext.is_builtin or shared.opts.disable_all_extensions == "all":
+            style = ' style="color: var(--primary-400)"'
+
         code += f"""
             <tr>
-                <td><label><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
+                <td><label{style}><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
                 <td>{remote}</td>
                 <td>{ext.version}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
@@ -289,16 +299,24 @@ def create_ui():
                 with gr.Row(elem_id="extensions_installed_top"):
                     apply = gr.Button(value="Apply and restart UI", variant="primary")
                     check = gr.Button(value="Check for updates")
+                    extensions_disable_all = gr.Radio(label="Disable all extensions", choices=["none", "extra", "all"], value=shared.opts.disable_all_extensions, elem_id="extensions_disable_all")
                     extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
                     extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)
 
-                info = gr.HTML()
+                html = ""
+                if shared.opts.disable_all_extensions != "none":
+                    html = """
+<span style="color: var(--primary-400);">
+    "Disable all extensions" was set, change it to "none" to load all extensions again
+</span>
+                    """
+                info = gr.HTML(html)
                 extensions_table = gr.HTML(lambda: extension_table())
 
                 apply.click(
                     fn=apply_and_restart,
                     _js="extensions_apply",
-                    inputs=[extensions_disabled_list, extensions_update_list],
+                    inputs=[extensions_disabled_list, extensions_update_list, extensions_disable_all],
                     outputs=[],
                 )
 
