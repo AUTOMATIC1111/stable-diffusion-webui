@@ -158,8 +158,8 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
   --input-border-color-hover: var(--input-border-color);
   --input_border_width: None;
   --input-placeholder-color: var(--neutral-500);
-  --input_shadow: None;
-  --input-shadow-focus: 0 0 0 var(--shadow-spread) var(--neutral-700), var(--shadow-inset);
+  --input_shadow: 2px 2px 2px 2px #111111;
+  --input-shadow-focus: 2px 2px 2px 2px #111111;
   --loader_color: None;
   --slider_color: None;
   --stat-background-fill: linear-gradient(to right, var(--primary-400), var(--primary-600));
@@ -288,7 +288,6 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
   --input-border-width: 0;
   --input-padding: 6px;
   --input-radius: var(--radius-lg);
-  --input-shadow: 0 0 0 var(--shadow-spread) transparent, var(--shadow-inset);
   --input-text-size: var(--text-md);
   --input-text-weight: 400;
   --loader-color: var(--color-accent);

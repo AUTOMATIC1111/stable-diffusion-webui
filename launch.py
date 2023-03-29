@@ -35,26 +35,12 @@ def check_python_version():
     if is_windows:
         supported_minors = [10]
     else:
-        supported_minors = [7, 8, 9, 10, 11]
+        supported_minors = [9, 10, 11]
 
     if not (major == 3 and minor in supported_minors):
         import modules.errors
 
-        modules.errors.print_error_explanation(f"""
-INCOMPATIBLE PYTHON VERSION
-
-This program is tested with 3.10.6 Python, but you have {major}.{minor}.{micro}.
-If you encounter an error with "RuntimeError: Couldn't install torch." message,
-or any other error regarding unsuccessful package (library) installation,
-please downgrade (or upgrade) to the latest version of 3.10 Python
-and delete current Python and "venv" folder in WebUI's directory.
-
-You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3109/
-
-{"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases" if is_windows else ""}
-
-Use --skip-python-version-check to suppress this warning.
-""")
+        modules.errors.print_error_explanation(f"Incompatible Python version: {major}.{minor}.{micro} required 3.9-3.11")
 
 
 def commit_hash():
@@ -167,7 +153,7 @@ def git_pull_recursive(dir):
 def version_check(commit):
     try:
         import requests
-        commits = requests.get('https://api.github.com/repos/AUTOMATIC1111/stable-diffusion-webui/branches/master').json()
+        commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master').json()
         if commit != "<none>" and commits['commit']['sha'] != commit:
             print("--------------------------------------------------------")
             print("| You are not up to date with the most recent release. |")
@@ -190,7 +176,9 @@ def run_extension_installer(extension_dir):
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.abspath(".")
 
-        print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env))
+        stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env)
+        if stdout is not None:
+            print(stdout)
     except Exception as e:
         print(e, file=sys.stderr)
 
@@ -225,10 +213,10 @@ def run_extensions_installers(settings_file):
 def prepare_environment():
     global skip_install
 
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch torchaudio torchvision --force --extra-index-url https://download.pytorch.org/whl/cu118")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
-    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16rc425')
+    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16')
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
     openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
@@ -240,8 +228,8 @@ def prepare_environment():
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
 
     stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
-    taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
-    k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "5b3af030dd83e0297272d861c19477735d0317ec")
+    taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "3ba01b241669f5ade541ce990f7650a3b8f65318")
+    k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "b43db16749d51055f813255eea2fdf1def801919")
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
@@ -249,9 +237,6 @@ def prepare_environment():
         check_python_version()
 
     commit = commit_hash()
-
-    print(f"Python {sys.version}")
-    print(f"Commit hash: {commit}")
 
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
@@ -268,13 +253,12 @@ def prepare_environment():
     if not is_installed("open_clip"):
         run_pip(f"install {openclip_package}", "open_clip")
 
-    if (not is_installed("xformers") or args.reinstall_xformers) and args.xformers:
+    if not is_installed("xformers") and args.reinstall_xformers and args.xformers:
         if platform.system() == "Windows":
             if platform.python_version().startswith("3.10"):
                 run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
             else:
                 print("Installation of xformers is not supported in this version of Python.")
-                print("You can also check this and build manually: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers#building-xformers-on-windows-by-duckness")
                 if not is_installed("xformers"):
                     exit(0)
         elif platform.system() == "Linux":
@@ -309,37 +293,6 @@ def prepare_environment():
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
-
-    if args.tests and not args.no_tests:
-        exitcode = tests(args.tests)
-        exit(exitcode)
-
-
-def tests(test_dir):
-    if "--api" not in sys.argv:
-        sys.argv.append("--api")
-    if "--ckpt" not in sys.argv:
-        sys.argv.append("--ckpt")
-        sys.argv.append(os.path.join(script_path, "test/test_files/empty.pt"))
-    if "--skip-torch-cuda-test" not in sys.argv:
-        sys.argv.append("--skip-torch-cuda-test")
-    if "--disable-nan-check" not in sys.argv:
-        sys.argv.append("--disable-nan-check")
-    if "--no-tests" not in sys.argv:
-        sys.argv.append("--no-tests")
-
-    print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
-
-    os.environ['COMMANDLINE_ARGS'] = ""
-    with open(os.path.join(script_path, 'test/stdout.txt'), "w", encoding="utf8") as stdout, open(os.path.join(script_path, 'test/stderr.txt'), "w", encoding="utf8") as stderr:
-        proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
-
-    import test.server_poll
-    exitcode = test.server_poll.run_tests(proc, test_dir)
-
-    print(f"Stopping Web UI process with id {proc.pid}")
-    proc.kill()
-    return exitcode
 
 
 def start():
