@@ -2793,7 +2793,7 @@ ul.list-none {
     border: 0;
     flex-grow: 1;
     padding-bottom: 0px !important;
-    min-height: 32px;
+    min-height: 34px !important;
 }
 
 .extra-networks .search
@@ -2830,7 +2830,7 @@ ul.list-none {
 	overflow-x: hidden;
 	grid-template-rows: auto;
 	grid-auto-flow: row;
-    max-height: calc(100vh - 216px);
+    max-height: calc(100vh - 230px);
 }
 
 
