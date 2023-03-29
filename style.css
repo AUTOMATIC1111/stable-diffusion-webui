@@ -2706,6 +2706,7 @@ ul.list-none {
 }
 */
 
+
 [id$="2img_extra_networks_row"].aside
 {
 	position: fixed;
@@ -2747,9 +2748,9 @@ ul.list-none {
 	display:none;
 }
 
-[id$="2img_checkpoints_subdirs"] button{
+[id$="_subdirs"] button{
 	max-height:34px;
-	margin-bottom: var(--inside-padding-size);
+	margin-bottom: var(--inside-padding-size) !important;
 }
 
 
@@ -3168,6 +3169,39 @@ ul.list-none {
 }
 #settings_sd #row_setting_sd_model_checkpoint{
 	display:none;
+}
+
+
+
+.global-popup-inner{
+	top: 50px;
+    position: relative;
+    overflow-y: auto;
+    height: calc(100% - 50px);
+	width:100%;
+}
+.global-popup-close{
+	position: absolute;
+    right: 16px;
+    top: 16px;
+    width: 25px;
+    height: 25px;
+	background-color:var(--modal-icon-color);
+	-webkit-mask: url("./file=html/svg/close-line.svg") no-repeat 50% 50%;
+	mask: url("./file=html/svg/close-line.svg") no-repeat 50% 50%;
+}
+.global-popup
+{
+	position: fixed;
+    z-index: 99999;
+    top: 0px;
+    left: 0px;
+    background: var(--main-bg-color);
+    color: var(--primary-color);
+    line-break: anywhere;
+    height: 100%;
+	width: 100%;
+	opacity: 0.98;
 }
 
 

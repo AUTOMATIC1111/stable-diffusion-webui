@@ -307,7 +307,7 @@ onUiUpdate(function(){
 		});
 	}
 	
-	gradioApp().querySelectorAll('[id$="_prompt"] textarea, [id^="setting_"] textarea').forEach(function (elem) {
+	gradioApp().querySelectorAll('[id$="_prompt"] textarea, [id^="setting_"] textarea, textarea').forEach(function (elem) {
 		elem.style.boxSizing = 'border-box';
 		var offset = elem.offsetHeight - elem.clientHeight;
 		elem.addEventListener('input', function (e) {
