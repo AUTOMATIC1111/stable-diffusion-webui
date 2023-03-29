@@ -39,8 +39,8 @@ def validate_sampler_name(name):
 
 def setUpscalers(req: dict):
     reqDict = vars(req)
-    reqDict['extras_upscaler_1'] = upscaler_to_index(req.upscaler_1)
-    reqDict['extras_upscaler_2'] = upscaler_to_index(req.upscaler_2)
+    reqDict['extras_upscaler_1'] = upscaler_to_index(req.upscaler_1) # type: ignore
+    reqDict['extras_upscaler_2'] = upscaler_to_index(req.upscaler_2) # type: ignore
     reqDict.pop('upscaler_1')
     reqDict.pop('upscaler_2')
     return reqDict
@@ -119,7 +119,7 @@ class Api:
 
         raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
 
-    def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
+    def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI): # type: ignore
         populate = txt2imgreq.copy(update={ # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
             "do_not_save_samples": True,
@@ -139,9 +139,9 @@ class Api:
 
         b64images = list(map(encode_pil_to_base64, processed.images))
 
-        return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
+        return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js()) # type: ignore
 
-    def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
+    def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI): # type: ignore
         init_images = img2imgreq.init_images
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
@@ -177,24 +177,24 @@ class Api:
             img2imgreq.init_images = None
             img2imgreq.mask = None
 
-        return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
+        return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js()) # type: ignore
 
     def extras_single_image_api(self, req: ExtrasSingleImageRequest):
-        reqDict = setUpscalers(req)
+        reqDict = setUpscalers(req) # type: ignore
 
         reqDict['image'] = decode_base64_to_image(reqDict['image'])
 
         with self.queue_lock:
             result = run_extras(extras_mode=0, image_folder="", input_dir="", output_dir="", save_output=False, **reqDict)
 
-        return ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info=result[1])
+        return ExtrasSingleImageResponse(image=encode_pil_to_base64(result[0][0]), html_info=result[1]) # type: ignore
 
     def extras_batch_images_api(self, req: ExtrasBatchImagesRequest):
-        reqDict = setUpscalers(req)
+        reqDict = setUpscalers(req) # type: ignore
 
         def prepareFiles(file):
             file = decode_base64_to_file(file.data, file_path=file.name)
-            file.orig_name = file.name
+            file.orig_name = file.name # type: ignore
             return file
 
         reqDict['image_folder'] = list(map(prepareFiles, reqDict['imageList']))
@@ -203,7 +203,7 @@ class Api:
         with self.queue_lock:
             result = run_extras(extras_mode=1, image="", input_dir="", output_dir="", save_output=False, **reqDict)
 
-        return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
+        return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1]) # type: ignore
 
     def pnginfoapi(self, req: PNGInfoRequest):
         if(not req.image.strip()):
@@ -211,7 +211,7 @@ class Api:
 
         result = run_pnginfo(decode_base64_to_image(req.image.strip()))
 
-        return PNGInfoResponse(info=result[1])
+        return PNGInfoResponse(info=result[1]) # type: ignore
 
     def progressapi(self, req: ProgressRequest = Depends()):
         # copy from check_progress_call of ui.py
@@ -227,7 +227,7 @@ class Api:
         if shared.state.sampling_steps > 0:
             progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
-        time_since_start = time.time() - shared.state.time_start
+        time_since_start = time.time() - shared.state.time_start # type: ignore
         eta = (time_since_start/progress)
         eta_relative = eta-time_since_start
 
@@ -239,7 +239,7 @@ class Api:
         if shared.state.current_image and not req.skip_current_image:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
-        return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image)
+        return ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image) # type: ignore
 
     def interrogateapi(self, interrogatereq: InterrogateRequest):
         image_b64 = interrogatereq.image
