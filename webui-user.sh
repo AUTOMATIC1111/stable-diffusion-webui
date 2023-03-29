@@ -4,7 +4,7 @@
 #########################################################
 
 # Install directory without trailing slash
-#install_dir="$(pwd)"
+#install_dir="/home/$(whoami)"
 
 # Name of the subdirectory
 #clone_dir="stable-diffusion-webui"
