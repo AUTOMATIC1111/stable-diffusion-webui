@@ -55,7 +55,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .block.token-counter span { border-radius: 0; }
 .tab-nav { zoom: 130%; margin-bottom: 16px; border-bottom: 2px solid #CE6400 !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
-.gradio-slider input[type="number"] { width: 4em; }
+.gradio-slider input[type="number"] { width: 4.5em; font-size: 0.8rem; }
 
 /* automatic style classes */
 .progressDiv { border-radius: 0 !important; position: fixed; top: 308px; right: 30px; max-width: 248px; height: 36px; }
@@ -158,7 +158,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
   --input-border-color-hover: var(--input-border-color);
   --input_border_width: None;
   --input-placeholder-color: var(--neutral-500);
-  --input_shadow: 2px 2px 2px 2px #111111;
+  --input-shadow: 2px 2px 2px 2px #111111;
   --input-shadow-focus: 2px 2px 2px 2px #111111;
   --loader_color: None;
   --slider_color: None;
