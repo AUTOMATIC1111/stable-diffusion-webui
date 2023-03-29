@@ -204,8 +204,6 @@ onUiUpdate(function() {
 		}
 			
 		function getImgSync(image){
-			let c_src;
-			
 			if(curr_src[img2img_tab_index] != image.src){ 
 				//console.log("NEWIMAGE");
 				curr_src[img2img_tab_index] = image.src;		
@@ -218,14 +216,15 @@ onUiUpdate(function() {
 				spotlight.show([{						
 					media: "node",																		
 					src: spotlight_parent,
-					autohide: true,
-					control: ["pan","clear","undo","fullscreen","autofit","zoom-in","zoom-out","close"],
+					//autohide: true,
+					//control: ["pan","clear","undo","fullscreen","autofit","zoom-in","zoom-out","close"],
 					class: "relative",
 				}],					
 				);
 
 				parent_container_img.style.flexGrow = "0";
 			}
+			
 		}
 		
 		const getImage = async (image) => {
@@ -234,8 +233,7 @@ onUiUpdate(function() {
 					spotlight.close(false, true);
 					parent_container_img.style.flexGrow = "1";
 					curr_src[img2img_tab_index] = "";
-					spotlight_parent.style = "";
-					
+					spotlight_parent.style.transform = "none";					
 				}
 			}else if (image.complete) {							
 				return getImgSync(image);				

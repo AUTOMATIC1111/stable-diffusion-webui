@@ -153,8 +153,12 @@ class ExtraNetworksPage:
         preview_extensions = ["png", "jpg", "webp"]
         if shared.opts.samples_format not in preview_extensions:
             preview_extensions.append(shared.opts.samples_format)
+        
+        file_name = os.path.basename(path)
+        location = os.path.dirname(path)
+        preview_path = location + "/preview/" + file_name
 
-        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
+        potential_files = sum([[path + "." + ext, path + ".preview." + ext, preview_path + "." + ext, preview_path + ".preview." + ext] for ext in preview_extensions], [])
 
         for file in potential_files:
             if os.path.isfile(file):
