@@ -72,11 +72,11 @@ div.compact{
     padding: 0.05em 0;
 }
 
-.gradio-dropdown ul.options li.item.selected {
+.gradio-dropdown ul.options li.item:not(:has(.hide)) {
     background-color: var(--neutral-100);
 }
 
-.dark .gradio-dropdown ul.options li.item.selected {
+.dark .gradio-dropdown ul.options li.item:not(:has(.hide)) {
     background-color: var(--neutral-900);
 }
 
