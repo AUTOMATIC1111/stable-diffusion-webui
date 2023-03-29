@@ -271,6 +271,29 @@ class App(FastAPI):
         def get_config():
             return app.get_blocks().config
 
+        @app.get("/notice")
+        @app.get("/notice/")
+        def get_notice():
+            # html = '''
+            # <!DOCTYPE html>
+            #     <html lang="en">
+            #     <head>
+            #         <meta charset="UTF-8">
+            #         <title>SD美术</title>
+            #
+            #     </head>
+            #     <body>
+            #     <div> 用户协议</div>
+            #     </body>
+            #     </html>
+            #
+            # '''
+            html = ''
+            with open("html/notice.html", "w+") as f:
+                html += ''.join(f.readlines())
+
+            return HTMLResponse(html)
+
         @app.get("/static/{path:path}")
         def static_resource(path: str):
             static_file = safe_join(STATIC_PATH_LIB, path)

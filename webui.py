@@ -266,7 +266,7 @@ def webui():
             ssl_certfile=cmd_opts.tls_certfile,
             debug=cmd_opts.gradio_debug,
             auth=authorization,
-            auth_message="行者AI",
+            auth_message="美术SD-WEBUI",
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )

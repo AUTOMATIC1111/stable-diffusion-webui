@@ -15,6 +15,7 @@ import modules.styles
 import modules.devices as devices
 from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
+from tools.model_hist import ModelHistory
 
 demo = None
 
@@ -594,7 +595,7 @@ latent_upscale_modes = {
 sd_upscalers = []
 
 sd_model = None
-
+sd_model_history = ModelHistory()
 clip_model = None
 
 progress_print_out = sys.stdout

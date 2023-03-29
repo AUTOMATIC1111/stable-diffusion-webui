@@ -335,6 +335,8 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     sd_vae.load_vae(model, vae_file, vae_source)
     timer.record("load VAE")
 
+    shared.sd_model_history.switch_model(checkpoint_info.sha256)
+
 
 def enable_midas_autodownload():
     """
