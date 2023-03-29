@@ -274,23 +274,20 @@ class App(FastAPI):
         @app.get("/notice")
         @app.get("/notice/")
         def get_notice():
-            # html = '''
-            # <!DOCTYPE html>
-            #     <html lang="en">
-            #     <head>
-            #         <meta charset="UTF-8">
-            #         <title>SD美术</title>
-            #
-            #     </head>
-            #     <body>
-            #     <div> 用户协议</div>
-            #     </body>
-            #     </html>
-            #
-            # '''
-            html = ''
-            with open("html/notice.html", "w+") as f:
-                html += ''.join(f.readlines())
+            html = '''
+            <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>SD美术</title>
+
+                </head>
+                <body>
+                <div> 用户协议</div>
+                </body>
+                </html>
+
+            '''
 
             return HTMLResponse(html)
 
