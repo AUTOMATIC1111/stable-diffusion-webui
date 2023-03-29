@@ -313,9 +313,9 @@ div.dimensions-tools{
 }
 
 #mode_img2img .gradio-image > div.fixed-height, #mode_img2img .gradio-image > div.fixed-height img{
-    height: 480px !important;
-    max-height: 480px !important;
-    min-height: 480px !important;
+    height: 720px !important;
+    max-height: 720px !important;
+    min-height: 720px !important;
 }
 
 #img2img_sketch, #img2maskimg, #inpaint_sketch {
@@ -829,4 +829,28 @@ footer {
 
 .extra-network-cards .card ul a:hover{
     color: red;
+}
+
+#txt2img_neg_prompt textarea, #img2img_neg_prompt textarea{
+    color: var(--body-text-color-subdued) !important;
+}
+
+#img2img_prompt textarea, #img2img_neg_prompt textarea {
+    min-height: 100px !important;
+    max-height: 250px;
+    resize: auto;
+}
+
+#img2img_prompt_wrapper {
+    margin: 15px 0 0 0;
+}
+
+.interrogate-col {
+    min-width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+}
+
+#img2img_gallery_container, #img2img_gallery {
+    min-height: 480px;
 }
