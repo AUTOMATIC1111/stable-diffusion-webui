@@ -18,7 +18,7 @@ jobs:
           cache-dependency-path: |
             **/requirements*txt
       - name: Run tests
-        run: python launch.py --tests --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
+        run: python launch.py --tests test --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
       - name: Upload main app stdout-stderr
         uses: actions/upload-artifact@v3
         if: always()

@@ -7,9 +7,31 @@ function set_theme(theme){
     }
 }
 
+function all_gallery_buttons() {
+    var allGalleryButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnails > .thumbnail-item.thumbnail-small');
+    var visibleGalleryButtons = [];
+    allGalleryButtons.forEach(function(elem) {
+        if (elem.parentElement.offsetParent) {
+            visibleGalleryButtons.push(elem);
+        }
+    })
+    return visibleGalleryButtons;
+}
+
+function selected_gallery_button() {
+    var allCurrentButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnail-item.thumbnail-small.selected');
+    var visibleCurrentButton = null;
+    allCurrentButtons.forEach(function(elem) {
+        if (elem.parentElement.offsetParent) {
+            visibleCurrentButton = elem;
+        }
+    })
+    return visibleCurrentButton;
+}
+
 function selected_gallery_index(){
-    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item')
-    var button = gradioApp().querySelector('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item.\\!ring-2')
+    var buttons = all_gallery_buttons();
+    var button = selected_gallery_button();
 
     var result = -1
     buttons.forEach(function(v, i){ if(v==button) { result = i } })
@@ -18,14 +40,18 @@ function selected_gallery_index(){
 }
 
 function extract_image_from_gallery(gallery){
-    if(gallery.length == 1){
-        return [gallery[0]]
+    if (gallery.length == 0){
+        return [null];
+    }
+    if (gallery.length == 1){
+        return [gallery[0]];
     }
 
     index = selected_gallery_index()
 
     if (index < 0 || index >= gallery.length){
-        return [null]
+        // Use the first image in the gallery as the default
+        index = 0;
     }
 
     return [gallery[index]];
@@ -86,7 +112,7 @@ function get_tab_index(tabId){
     var res = 0
 
     gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
-        if(button.className.indexOf('bg-white') != -1)
+        if(button.className.indexOf('selected') != -1)
             res = i
     })
 
@@ -255,7 +281,6 @@ onUiUpdate(function(){
         }
 
         prompt.parentElement.insertBefore(counter, prompt)
-        counter.classList.add("token-counter")
         prompt.parentElement.style.position = "relative"
 
 		promptTokecountUpdateFuncs[id] = function(){ update_token_counter(id_button); }
