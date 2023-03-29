@@ -67,6 +67,7 @@ let inpaint_pan;
 let inpaint_sketch_pan;
 let curr_pan;
 
+
 function common_undo_handler(e) {
 	img2img_tab_tool_buttons[0].click();
 }
@@ -75,29 +76,9 @@ function common_clear_handler(e){
 }
 
 function common_color_handler(e){
-	let cb = parent_container_img.querySelector("input[type='color']");
-	if(!cb){
-		img2img_tab_tool_buttons[3].click();		
-		e.target.addEventListener("input", function(ev) {	
-			cb = parent_container_img.querySelector("input[type='color']");			
-			cb.value = ev.target.value;
-			updateInput(cb);
-			pan_toggle(false, curr_pan);			
-		})
-	}
 }
 
 function common_brush_handler(e){
-	let cb = parent_container_img.querySelector("input[type='range']");
-	if(!cb){
-		img2img_tab_tool_buttons[2].click();		
-		e.target.addEventListener("input", function(ev) {	
-			cb = parent_container_img.querySelector("input[type='range']");			
-			cb.value = ev.target.value;
-			updateInput(cb);
-			//pan_toggle(false, curr_pan);			
-		})
-	}
 }
 
 function preventDefault(e) {
@@ -130,6 +111,56 @@ function common_pan_handler(e){
 	pan_toggle(isPanning, this);
 }
 
+function update_color(listener){
+	let input_color = parent_container_img.querySelector("input[type='color']");
+	let spl = parent_container_img.parentElement.parentElement.parentElement.parentElement.parentElement;
+	let spl_color = spl.querySelector(".spl-color input[type='color']");
+	spl_color.value = input_color.value;
+	
+	if(listener){
+		spl_color.addEventListener("input", function(ev) {						
+			input_color.value = ev.target.value;
+			updateInput(input_color);
+			pan_toggle(false, curr_pan);					
+		})
+	}
+}
+
+function update_brush(listener){
+	let input_range = parent_container_img.querySelector("input[type='range']");
+	let spl = parent_container_img.parentElement.parentElement.parentElement.parentElement.parentElement;
+	let spl_brush = spl.querySelector(".spl-brush input[type='range']");
+	spl_brush.value = input_range.value;
+	
+	if(listener){
+		spl_brush.addEventListener("input", function(ev) {						
+			input_range.value = ev.target.value;
+			updateInput(input_range);				
+		})
+	}
+}
+
+function init_drawing_tools(){
+	
+	let input_color = parent_container_img.querySelector("input[type='color']");			
+	if(!input_color){
+		if(img2img_tab_tool_buttons[3]){
+			img2img_tab_tool_buttons[3].click();	
+			setTimeout(function() { update_color(true);	}, 100);
+		}
+	}else{
+		setTimeout(function() { update_color(false);}, 100);		
+	}	
+	
+	let input_range = parent_container_img.querySelector("input[type='range']");
+	if(!input_range){
+		img2img_tab_tool_buttons[2].click();	
+		setTimeout(function() { update_brush(true);	}, 100);
+	}else{
+		setTimeout(function() { update_brush(false);}, 100);		
+	}
+	
+}
 
 onUiLoaded(function(){
 	
@@ -206,8 +237,8 @@ onUiUpdate(function() {
 		function getImgSync(image){
 			if(curr_src[img2img_tab_index] != image.src){ 
 				//console.log("NEWIMAGE");
-				curr_src[img2img_tab_index] = image.src;		
-
+				curr_src[img2img_tab_index] = image.src;
+				
 				let w = image.naturalWidth; 
 				let h = image.naturalHeight; 
 				parent_container_img.style.width = `${w}px`;
@@ -223,6 +254,8 @@ onUiUpdate(function() {
 				);
 
 				parent_container_img.style.flexGrow = "0";
+				setTimeout(function() { init_drawing_tools(); }, 500);
+				
 			}
 			
 		}
