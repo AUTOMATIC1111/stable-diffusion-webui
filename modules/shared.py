@@ -26,7 +26,7 @@ try:
     from rich.console import Console
     console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
     pretty_install(console=console)
-    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, show_locals=True, max_frames=2)
+    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, show_locals=False, max_frames=2)
 except:
     console = None
     import traceback
@@ -669,6 +669,6 @@ def html(filename):
 
 def exception():
     if console is not None:
-        console.print_exception(show_locals=True, max_frames=10, extra_lines=1, suppress=[gr], word_wrap=False, width=min([console.width, 200]))
+        console.print_exception(show_locals=False, max_frames=10, extra_lines=2, suppress=[gr], word_wrap=False, width=min([console.width, 200]))
     else:
         print(traceback.format_exc(), file=sys.stderr)

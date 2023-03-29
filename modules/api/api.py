@@ -134,7 +134,7 @@ def api_middleware(app: FastAPI):
         print(f"API error: {request.method}: {request.url} {err}")
         if not isinstance(e, HTTPException): # do not print backtrace on known httpexceptions
             if rich_available:
-                console.print_exception(show_locals=True, max_frames=2, extra_lines=1, suppress=[anyio, starlette], word_wrap=False, width=min([console.width, 200]))
+                console.print_exception(show_locals=False, max_frames=2, extra_lines=1, suppress=[anyio, starlette], word_wrap=False, width=min([console.width, 200]))
             else:
                 traceback.print_exc()
         return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
