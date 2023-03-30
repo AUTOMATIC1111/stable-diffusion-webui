@@ -184,7 +184,7 @@ function extraNetworksHookPageToggleIfBuilt(tab_name) {
         return;
     }
 
-    let button = gradioApp().querySelector("#" + tab_name + "_extra_networks.gr-button");
+    let button = gradioApp().querySelector("#" + tab_name + "_extra_networks.gradio-button");
     let extra_networks_section = gradioApp().querySelector("div#" + tab_name + "_extra_networks");
     let extra_networks_html = extra_networks_section.getElementsByClassName("output-html");
     let loaded = new Array(extra_networks_html).some(html => html.innerHTML != "");
