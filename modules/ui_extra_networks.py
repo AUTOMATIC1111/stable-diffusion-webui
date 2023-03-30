@@ -293,7 +293,7 @@ def create_ui(container, button, tabname):
                         html = pg.create_html(ui.tabname)
                     new_pages.append(html)
                 pages = new_pages
-            return [is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary")] + list(pages)
+            return [is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))] + list(pages)
         # TODO: Use .then() so the extra networks drawer/loading spinner appears
         # instead of nothing happening for X seconds
         button.click(fn=toggle_visibility_defer_load, inputs=[state_visible] + ui.pages, outputs=[state_visible, container, button] + ui.pages)
