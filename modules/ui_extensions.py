@@ -201,8 +201,8 @@ def update_config_states_table(state_name):
         style_commit = STYLE_PRIMARY
 
     code += f"""<h2>Config Backup: {config_name}</h2>
-      <span>Filepath: {filepath}</span>
-      <span>Created at: {created_date}</span>"""
+      <div><b>Filepath:</b> {filepath}</div>
+      <div><b>Created at:</b> {created_date}</div>"""
 
     code += f"""<h2>WebUI State</h2>
       <table id="config_state_webui">
