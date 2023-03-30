@@ -122,6 +122,16 @@ def check_updates(id_task, disable_list):
     return extension_table(), ""
 
 
+def make_commit_link(commit_hash, remote, text=None):
+    if text is None:
+        text = commit_hash[:8]
+    if remote.startswith("https://github.com/"):
+        href = os.path.join(remote, "commit", commit_hash)
+        return f'<a href="{href}" target="_blank">{text}</a>'
+    else:
+        return text
+
+
 def extension_table():
     code = f"""<!-- {time.time()} -->
     <table id="extensions">
@@ -150,11 +160,15 @@ def extension_table():
         if shared.opts.disable_all_extensions == "extra" and not ext.is_builtin or shared.opts.disable_all_extensions == "all":
             style = STYLE_PRIMARY
 
+        version_link = ext.version
+        if ext.commit_hash and ext.remote:
+            version_link = make_commit_link(ext.commit_hash, ext.remote, ext.version)
+
         code += f"""
             <tr>
                 <td><label{style}><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
                 <td>{remote}</td>
-                <td>{ext.version}</td>
+                <td>{version_link}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
             </tr>
     """
@@ -200,6 +214,9 @@ def update_config_states_table(state_name):
     if current_webui["commit_hash"] != webui_commit_hash:
         style_commit = STYLE_PRIMARY
 
+    commit_link = make_commit_link(webui_commit_hash, webui_remote)
+    date_link = make_commit_link(webui_commit_hash, webui_remote, webui_commit_date)
+
     code += f"""<h2>Config Backup: {config_name}</h2>
       <div><b>Filepath:</b> {filepath}</div>
       <div><b>Created at:</b> {created_date}</div>"""
@@ -218,8 +235,8 @@ def update_config_states_table(state_name):
             <tr>
                 <td><label{style_remote}>{webui_remote}</label></td>
                 <td><label{style_branch}>{webui_branch}</label></td>
-                <td><label{style_commit}>{webui_commit_hash[:8]}</label></td>
-                <td><label{style_commit}>{webui_commit_date}</label></td>
+                <td><label{style_commit}>{commit_link}</label></td>
+                <td><label{style_commit}>{date_link}</label></td>
             </tr>
         </tbody>
       </table>
@@ -270,13 +287,16 @@ def update_config_states_table(state_name):
             if current_ext.commit_hash != ext_commit_hash:
                 style_commit = STYLE_PRIMARY
 
+            commit_link = make_commit_link(ext_commit_hash, ext_remote)
+            date_link = make_commit_link(ext_commit_hash, ext_remote, ext_commit_date)
+
         code += f"""
             <tr>
                 <td><label{style_enabled}><input class="gr-check-radio gr-checkbox" type="checkbox" disabled="true" {'checked="checked"' if ext_enabled else ''}>{html.escape(ext_name)}</label></td>
                 <td><label{style_remote}>{remote}</label></td>
                 <td><label{style_branch}>{ext_branch}</label></td>
-                <td><label{style_commit}>{ext_commit_hash[:8]}</label></td>
-                <td><label{style_commit}>{ext_commit_date}</label></td>
+                <td><label{style_commit}>{commit_link}</label></td>
+                <td><label{style_commit}>{date_link}</label></td>
             </tr>
     """
 
