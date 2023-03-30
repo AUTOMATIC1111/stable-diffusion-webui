@@ -202,6 +202,10 @@ def update_config_states_table(state_name):
     else:
         webui_commit_date = "<unknown>"
 
+    remote = f"""<a href="{html.escape(webui_remote)}" target="_blank">{html.escape(webui_remote or '')}</a>"""
+    commit_link = make_commit_link(webui_commit_hash, webui_remote)
+    date_link = make_commit_link(webui_commit_hash, webui_remote, webui_commit_date)
+
     current_webui = config_states.get_webui_config()
 
     style_remote = ""
@@ -213,9 +217,6 @@ def update_config_states_table(state_name):
         style_branch = STYLE_PRIMARY
     if current_webui["commit_hash"] != webui_commit_hash:
         style_commit = STYLE_PRIMARY
-
-    commit_link = make_commit_link(webui_commit_hash, webui_remote)
-    date_link = make_commit_link(webui_commit_hash, webui_remote, webui_commit_date)
 
     code += f"""<h2>Config Backup: {config_name}</h2>
       <div><b>Filepath:</b> {filepath}</div>
@@ -233,7 +234,7 @@ def update_config_states_table(state_name):
         </thead>
         <tbody>
             <tr>
-                <td><label{style_remote}>{webui_remote}</label></td>
+                <td><label{style_remote}>{remote}</label></td>
                 <td><label{style_branch}>{webui_branch}</label></td>
                 <td><label{style_commit}>{commit_link}</label></td>
                 <td><label{style_commit}>{date_link}</label></td>
@@ -270,6 +271,8 @@ def update_config_states_table(state_name):
             ext_commit_date = "<unknown>"
 
         remote = f"""<a href="{html.escape(ext_remote)}" target="_blank">{html.escape(ext_remote or '')}</a>"""
+        commit_link = make_commit_link(ext_commit_hash, ext_remote)
+        date_link = make_commit_link(ext_commit_hash, ext_remote, ext_commit_date)
 
         style_enabled = ""
         style_remote = ""
@@ -286,9 +289,6 @@ def update_config_states_table(state_name):
                 style_branch = STYLE_PRIMARY
             if current_ext.commit_hash != ext_commit_hash:
                 style_commit = STYLE_PRIMARY
-
-            commit_link = make_commit_link(ext_commit_hash, ext_remote)
-            date_link = make_commit_link(ext_commit_hash, ext_remote, ext_commit_date)
 
         code += f"""
             <tr>
