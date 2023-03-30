@@ -3,7 +3,7 @@ html { font-size: 16px; }
 body, button, input, select, textarea { font-family: "Segoe UI"; font-variant: small-caps; overflow-x: hidden; }
 button { font-size: 1.2rem; }
 img { background-color: black; }
-input[type=range] { height: 16px; appearance: none; margin-top: 0; min-width: 160px }
+input[type=range] { height: 18px; appearance: none; margin-top: 0; min-width: 160px; background-color: black; }
 input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 18px; cursor: pointer; box-shadow: 2px 2px 3px #111111; background: #50555C; border-radius: 2px; border: 0px solid #222222; }
 input[type=range]::-webkit-slider-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: 18px; width: 40px; border-radius: 2px; background: var(--highlight-color); cursor: pointer; -webkit-appearance: none; margin-top: 0px; }
 ::-webkit-scrollbar { width: 12px; }
@@ -37,6 +37,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span { padding: 0; margin-top: -4px; }
 .dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span { border-radius: 0;}
 .eta-bar { display: none !important }
+.extra-networks .tab-nav .search { max-height: 2em; }
 .extra-network-cards .card .actions .name { font-weight: 400; font-size: 1.2rem; }
 .extra-network-cards .card { width: 18em; height: 12em; box-shadow: none; }
 .extra-network-cards .card:hover { transform: scale(1.5); transition: all 0.3s ease; z-index: 99; box-shadow: none; }
@@ -51,7 +52,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .py-6 { padding-bottom: 0; }
 .rounded-lg { border-radius: 0; }
 .tabs { background-color: black; }
-.gradio-button.tool { border-radius: 0; }
+.gradio-button.tool { border-radius: 0; height: 2em; }
 .block.token-counter span { border-radius: 0; }
 .tab-nav { zoom: 130%; margin-bottom: 16px; border-bottom: 2px solid #CE6400 !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
@@ -72,7 +73,9 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #img2img_settings { min-width: calc(2 * var(--left-column)); max-width: calc(2 * var(--left-column)); background-color: #111111; padding-top: 16px; }
 #interrogate, #deepbooru { margin: 16px 0px 16px 0px; max-width: 100px; max-height: 74px; font-weight: normal; font-size: 14px; }
 #lightboxModal { background-color: rgba(20, 20, 20, 0.8) }
-#quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; }
+#quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
+#quicksettings > div, #quicksettings > fieldset { min-width: 26em; max-width: 26em; line-height: 2em; }
+#refresh_sd_model_checkpoint { height: 40px; margin-left: -14px; background: #333333; box-shadow: none; }
 #refresh_txt2img_styles, #refresh_img2img_styles, #open_folder_txt2img, #open_folder_img2img, #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #save_zip_txt2img, #save_zip_img2img, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_res_switch_btn, #img2img_res_switch_btn, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h, #txt2img_subseed_show, #txt2img_reuse_seed, #txt2img_reuse_subseed, #txt2img_tiling, #img2img_subseed_show { display: none; }
 #save-animation { border-radius: 0 !important; margin-bottom: 16px; background-color: #111111; }
 #script_list { padding: 4px; margin-top: 20px; }
@@ -296,13 +299,13 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
   --prose-header-text-weight: 600;
   --slider-color: ;
   --table-radius: var(--radius-lg);
-  --button-large-padding: var(--spacing-lg) calc(2 * var(--spacing-lg));
+  --button-large-padding: 2px 10px;
   --button-large-radius: var(--radius-lg);
   --button-large-text-size: var(--text-lg);
   --button-large-text-weight: 400;
   --button-shadow: 4px 4px 4px 0px #333333;
-  --button-shadow-active: var(--shadow-inset);
-  --button-shadow-hover: var(--shadow-drop-lg);
+  --button-shadow-active: 1px 1px 4px 0px #555555;
+  --button-shadow-hover: 1px 1px 4px 0px #555555;
   --button-small-padding: var(--spacing-sm) calc(2 * var(--spacing-sm));
   --button-small-radius: var(--radius-lg);
   --button-small-text-size: var(--text-md);

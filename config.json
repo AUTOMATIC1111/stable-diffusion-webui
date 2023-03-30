@@ -230,5 +230,7 @@
     "extra_networks_card_height": 0.0,
     "return_mask": false,
     "return_mask_composite": false,
-    "control_net_sync_field_args": false
+    "control_net_sync_field_args": false,
+    "image_browser_use_thumbnail": false,
+    "image_browser_thumbnail_size": 200.0
 }

@@ -1546,5 +1546,9 @@
     "customscript/loopback.py/img2img/Denoising strength curve/visible": true,
     "customscript/loopback.py/img2img/Denoising strength curve/value": "Linear",
     "customscript/postprocessing_upscale.py/extras/Upscaler/visible": true,
-    "customscript/postprocessing_upscale.py/extras/Upscaler/value": "None"
+    "customscript/postprocessing_upscale.py/extras/Upscaler/value": "None",
+    "customscript/seed_travel.py/txt2img/Save extra status information/visible": true,
+    "customscript/seed_travel.py/txt2img/Save extra status information/value": true,
+    "customscript/seed_travel.py/img2img/Save extra status information/visible": true,
+    "customscript/seed_travel.py/img2img/Save extra status information/value": true
 }
