@@ -116,7 +116,7 @@ def initialize():
             config_state = json.load(f)
             config_states.restore_extension_config(config_state)
         startup_timer.record("restore extension config")
-    else:
+    elif config_state_file:
         print(f"!!! Config state backup not found: {config_state_file}")
 
     if cmd_opts.ui_debug_mode:
@@ -325,7 +325,7 @@ def webui():
                 config_state = json.load(f)
                 config_states.restore_extension_config(config_state)
             startup_timer.record("restore extension config")
-        else:
+        elif config_state_file:
             print(f"!!! Config state backup not found: {config_state_file}")
 
         localization.list_localizations(cmd_opts.localizations_dir)
