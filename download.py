@@ -72,6 +72,7 @@ MODEL_DIR = '/workspace/stable-diffusion-webui/models/Stable-diffusion'
 checksumfile = os.path.join(MODEL_DIR,"checksum.json")
 saved_checksums = {}
 if os.path.exists(checksumfile):
+    print("loading saved checksums")
     with open(checksumfile) as fp:
         saved_checksums = json.load(fp)
 
@@ -104,7 +105,7 @@ def verifychecksum(basename, correct_checksum, stored_checksums):
 
 GENERATE_REFERENCE_CHECKSUMS = False
 for url, checksum in models_urls:
-    basename = os.path.basename(url)
+    basename = os.path.join(MODEL_DIR,os.path.basename(url))
 
     # create list of urls and checksum    
     if GENERATE_REFERENCE_CHECKSUMS:
