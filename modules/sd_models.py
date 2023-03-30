@@ -395,7 +395,7 @@ def repair_config(sd_config):
 sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embedding.weight'
 sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight'
 
-def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_to_load_state_dict=None):
+def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_to_load_state_dict=None, lazy_load=False):
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
 
@@ -440,6 +440,14 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
     sd_model.used_config = checkpoint_config
 
     timer.record("create model")
+
+    if lazy_load and checkpoint_info.filename.endswith(".safetensors"):
+        sd_hijack.model_hijack.apply_lazyload(sd_model)
+        print(f"Model lazy loaded in {timer.summary()}.")
+        sd_model.sd_model_checkpoint = checkpoint_info.filename
+        sd_model.sd_checkpoint_info = checkpoint_info
+        shared.sd_model = sd_model
+        return sd_model
 
     load_model_weights(sd_model, checkpoint_info, state_dict, timer)
 

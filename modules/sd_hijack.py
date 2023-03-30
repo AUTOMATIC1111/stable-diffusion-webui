@@ -3,6 +3,7 @@ from torch.nn.functional import silu
 from types import MethodType
 
 import modules.textual_inversion.textual_inversion
+import modules.sd_models
 from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
 from modules.hypernetworks import hypernetwork
 from modules.shared import cmd_opts
@@ -149,8 +150,28 @@ class StableDiffusionModelHijack:
 
     def __init__(self):
         self.embedding_db.add_embedding_dir(cmd_opts.embeddings_dir)
+        self.weights_loaded = False
+
+    def apply_lazyload(self, m):
+        model_class = type(m)
+        def _undo_lazyload_hijack():
+            del model_class.cond_stage_model
+            del model_class.model
+        @property
+        def _lazyload_attr_cond_stage_model(self):
+            _undo_lazyload_hijack()
+            return modules.sd_models.load_model().cond_stage_model
+        @property
+        def _lazyload_attr_model(self):
+            _undo_lazyload_hijack()
+            return modules.sd_models.load_model().model
+        m.cond_stage_model = None
+        m.model = None
+        model_class.cond_stage_model = _lazyload_attr_cond_stage_model
+        model_class.model = _lazyload_attr_model
 
     def hijack(self, m):
+        self.weights_loaded = True
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             model_embeddings = m.cond_stage_model.roberta.embeddings
             model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.word_embeddings, self)
@@ -171,8 +192,6 @@ class StableDiffusionModelHijack:
 
         self.optimization_method = apply_optimizations()
 
-        self.clip = m.cond_stage_model
-
         def flatten(el):
             flattened = [flatten(children) for children in el.children()]
             res = [el]
@@ -183,6 +202,7 @@ class StableDiffusionModelHijack:
         self.layers = flatten(m)
 
     def undo_hijack(self, m):
+        self.weights_loaded = False
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             m.cond_stage_model = m.cond_stage_model.wrapped 
 
@@ -201,7 +221,6 @@ class StableDiffusionModelHijack:
 
         self.apply_circular(False)
         self.layers = None
-        self.clip = None
 
     def apply_circular(self, enable):
         if self.circular_enabled == enable:
@@ -216,9 +235,12 @@ class StableDiffusionModelHijack:
         self.comments = []
 
     def get_prompt_lengths(self, text):
-        _, token_count = self.clip.process_texts([text])
+        if self.weights_loaded:
+            _, token_count = shared.sd_model.cond_stage_model.process_texts([text])
 
-        return token_count, self.clip.get_target_prompt_token_count(token_count)
+            return token_count, shared.sd_model.cond_stage_model.get_target_prompt_token_count(token_count)
+        else:
+            return 0, 0
 
 
 class EmbeddingsWithFixes(torch.nn.Module):

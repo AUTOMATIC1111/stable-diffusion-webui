@@ -136,7 +136,7 @@ def initialize():
     startup_timer.record("refresh textual inversion templates")
 
     try:
-        modules.sd_models.load_model()
+        modules.sd_models.load_model(lazy_load=cmd_opts.lazy_load)
     except Exception as e:
         errors.display(e, "loading stable diffusion model")
         print("", file=sys.stderr)
