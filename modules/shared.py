@@ -29,7 +29,6 @@ try:
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, show_locals=False, max_frames=2)
 except:
     console = None
-    import traceback
 
 script_loading.preload_extensions(extensions_dir, parser)
 script_loading.preload_extensions(extensions_builtin_dir, parser)
@@ -671,4 +670,5 @@ def exception():
     if console is not None:
         console.print_exception(show_locals=False, max_frames=10, extra_lines=2, suppress=[gr], word_wrap=False, width=min([console.width, 200]))
     else:
+        import traceback
         print(traceback.format_exc(), file=sys.stderr)

@@ -12,7 +12,7 @@ import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
-from fonts.ttf import Roboto
+from fonts.ttf import Roboto # pylint: disable=no-name-in-module
 import string
 import json
 import hashlib
