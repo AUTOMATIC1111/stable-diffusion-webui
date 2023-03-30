@@ -10,9 +10,8 @@ pip install aioprometheus[starlette]
 # check the downloads, can take while on a fresh disk.
 # perhaps better to use rsync? but want to avoid credentials
 # do not run and subprocess because otherwsie several insttances may get launched due to restart attempts
-cd /workspace/stable-diffusion-webui/models/Stable-diffusion/
+cd /workspace/stable-diffusion-webui
 python download.py
-cd /workspace/stable-diffusion-webui/
 
 # Install directory without trailing slash
 install_dir="/workspace"
