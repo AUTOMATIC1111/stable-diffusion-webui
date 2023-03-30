@@ -1,9 +1,14 @@
 accelerate
 aenum
+aiohttp
+anyio
+appdirs
+astunparse
 basicsr
 bitsandbytes
 blendmodes
 clean-fid
+clip-interrogator
 colormap
 diffusers
 easydev

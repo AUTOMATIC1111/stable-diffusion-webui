@@ -1,4 +1,4 @@
-accelerate==0.17.1
+accelerate==0.18.0
 clip_interrogator==0.6.0
 diffusers==0.14.0
 einops==0.4.1
@@ -14,4 +14,5 @@ protobuf==3.20.3
 pytorch_lightning==1.9.4
 realesrgan==0.3.0
 safetensors==0.3.0
-transformers==4.27.1
+tensorflow==2.12.0
+transformers==4.27.4
