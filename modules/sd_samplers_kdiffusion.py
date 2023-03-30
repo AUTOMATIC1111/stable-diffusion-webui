@@ -116,11 +116,13 @@ class CFGDenoiser(torch.nn.Module):
         tensor = denoiser_params.text_cond
         uncond = denoiser_params.text_uncond
 
-        sigma_thresh = s_min_uncond
-        if(torch.dot(sigma,sigma) < sigma.shape[0] * (sigma_thresh*sigma_thresh) and not is_edit_model):
-            uncond = torch.zeros([0,0,uncond.shape[2]])
-            x_in=x_in[:x_in.shape[0]//2]
-            sigma_in=sigma_in[:sigma_in.shape[0]//2]
+        if self.step % 2 and s_min_uncond > 0 and not is_edit_model:
+            # alternating uncond allows for higher thresholds without the quality loss normally expected from raising it
+            sigma_threshold = s_min_uncond
+            if(torch.dot(sigma,sigma) < sigma.shape[0] * (sigma_threshold*sigma_threshold) ):
+                uncond = torch.zeros([0,0,uncond.shape[2]])
+                x_in=x_in[:x_in.shape[0]//2]
+                sigma_in=sigma_in[:sigma_in.shape[0]//2]
 
         if tensor.shape[1] == uncond.shape[1]:
             if not is_edit_model:
@@ -159,7 +161,7 @@ class CFGDenoiser(torch.nn.Module):
         devices.test_for_nans(x_out, "unet")
 
         if opts.live_preview_content == "Prompt":
-            sd_samplers_common.store_latent(x_out[0:uncond.shape[0]])
+            sd_samplers_common.store_latent(x_out[0:x_out.shape[0]-uncond.shape[0]])
         elif opts.live_preview_content == "Negative prompt":
             sd_samplers_common.store_latent(x_out[-uncond.shape[0]:])
 
