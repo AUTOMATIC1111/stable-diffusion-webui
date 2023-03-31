@@ -30,12 +30,16 @@ If Linux, you'll have to build xformers yourself or just avoid using xformers.
 
 # `--share` non-functional after gradio 3.22 update
 
-Windows defender/antiviruses sometimes block Gradio's ability to create a public URL.
+Windows defender/antiviruses sometimes blocks Gradio's ability to create a public URL.
 
 1. Go to your antivirus
-2. Check the protection history \
-![image](https://user-images.githubusercontent.com/98228077/229005046-30c1ffd9-bde7-4ad0-a39f-52172c3a0cf5.png)
+2. Check the protection history: \
+![image](https://user-images.githubusercontent.com/98228077/229028161-4ad3c837-ae3f-45f7-9a0a-fa165d70d943.png)
 3. Add it as an exclusion
+
+Related issues:
+<details>
 
 https://github.com/gradio-app/gradio/issues/3230 \
 https://github.com/gradio-app/gradio/issues/3677
+</details>
