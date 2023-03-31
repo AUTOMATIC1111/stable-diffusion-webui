@@ -1760,7 +1760,7 @@ canvas {
 }
 */
 
-canvas {
+div[data-testid="image"] canvas {
     width: 100% !important;
     height: 100% !important;
     position: absolute !important;
