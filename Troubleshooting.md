@@ -27,3 +27,15 @@ Your installed xformers is incompatible with your GPU. If you use Python 3.10, h
 If you use Windows, this means your Python is too old. Use 3.10
 
 If Linux, you'll have to build xformers yourself or just avoid using xformers.
+
+# `--share` non-functional after gradio 3.22 update
+
+Windows defender/antiviruses sometimes block Gradio's ability to create a public URL.
+
+1. Go to your antivirus
+2. Check the protection history \
+![image](https://user-images.githubusercontent.com/98228077/229005046-30c1ffd9-bde7-4ad0-a39f-52172c3a0cf5.png)
+3. Add it as an exclusion
+
+https://github.com/gradio-app/gradio/issues/3230 \
+https://github.com/gradio-app/gradio/issues/3677
