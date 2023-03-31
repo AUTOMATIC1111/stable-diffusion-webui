@@ -25,7 +25,7 @@ class ScriptPostprocessing:
     group = None
     """A gr.Group component that has all script's UI inside it"""
 
-    def ui(self):
+    def ui(self)->dict[str, gr.components.Component]:
         """
         This function should create gradio UI elements. See https://gradio.app/docs/#components
         The return value should be a dictionary that maps parameter names to components used in processing.

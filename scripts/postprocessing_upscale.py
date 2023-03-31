@@ -1,3 +1,4 @@
+from enum import Enum
 from PIL import Image
 import numpy as np
 
@@ -5,10 +6,22 @@ from modules import scripts_postprocessing, shared
 import gradio as gr
 
 from modules.ui_components import FormRow
-
+from typing import Union
 
 upscale_cache = {}
 
+class CropMode(Enum):
+    NONE = "Don't crop(Outer Fit)"
+    CROP_FIT = "Crop to fit"
+    INNER_FIT = "Inner Fit(Fill White)"
+
+def crop_mode_from_value(value: Union[str, int, CropMode]) -> CropMode:
+    if isinstance(value, str):
+        return CropMode(value)
+    elif isinstance(value, int):
+        return [e for e in CropMode][value]
+    else:
+        return value
 
 class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
     name = "Upscale"
@@ -25,7 +38,9 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                 with FormRow():
                     upscaling_resize_w = gr.Number(label="Width", value=512, precision=0, elem_id="extras_upscaling_resize_w")
                     upscaling_resize_h = gr.Number(label="Height", value=512, precision=0, elem_id="extras_upscaling_resize_h")
-                    upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
+
+                    crop_mode = gr.Radio(choices=[e.value for e in CropMode], value=CropMode.CROP_FIT.value, label="Crop Mode")
+                
 
         with FormRow():
             extras_upscaler_1 = gr.Dropdown(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
@@ -42,15 +57,20 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             "upscale_by": upscaling_resize,
             "upscale_to_width": upscaling_resize_w,
             "upscale_to_height": upscaling_resize_h,
-            "upscale_crop": upscaling_crop,
+            "upscale_crop": crop_mode,
             "upscaler_1_name": extras_upscaler_1,
             "upscaler_2_name": extras_upscaler_2,
             "upscaler_2_visibility": extras_upscaler_2_visibility,
         }
 
-    def upscale(self, image, info, upscaler, upscale_mode, upscale_by,  upscale_to_width, upscale_to_height, upscale_crop):
+    def upscale(self, image:Image.Image, info, upscaler, upscale_mode, upscale_by,  upscale_to_width, upscale_to_height, upscale_crop):
+        upscale_crop = crop_mode_from_value(upscale_crop)
         if upscale_mode == 1:
-            upscale_by = max(upscale_to_width/image.width, upscale_to_height/image.height)
+            if upscale_crop == CropMode.INNER_FIT:
+                upscale_by = min(upscale_to_width/image.width, upscale_to_height/image.height)
+            else:
+                upscale_by = max(upscale_to_width/image.width, upscale_to_height/image.height)
+
             info["Postprocess upscale to"] = f"{upscale_to_width}x{upscale_to_height}"
         else:
             info["Postprocess upscale by"] = upscale_by
@@ -67,11 +87,20 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         if len(upscale_cache) > shared.opts.upscaling_max_images_in_cache:
             upscale_cache.pop(next(iter(upscale_cache), None), None)
 
-        if upscale_mode == 1 and upscale_crop:
-            cropped = Image.new("RGB", (upscale_to_width, upscale_to_height))
-            cropped.paste(image, box=(upscale_to_width // 2 - image.width // 2, upscale_to_height // 2 - image.height // 2))
-            image = cropped
-            info["Postprocess crop to"] = f"{image.width}x{image.height}"
+        if upscale_mode == 1:
+            if upscale_crop == CropMode.CROP_FIT:
+                cropped = Image.new("RGB", (upscale_to_width, upscale_to_height))
+                cropped.paste(image, box=(upscale_to_width // 2 - image.width // 2, upscale_to_height // 2 - image.height // 2))
+                image = cropped
+                info["Postprocess crop to"] = f"{image.width}x{image.height}"
+            elif upscale_crop == CropMode.INNER_FIT:
+                if image.size[0]<upscale_to_width or image.size[1]<upscale_to_height:
+                    resized = Image.new("RGB", (upscale_to_width, upscale_to_height), "white")
+                    offset = (int(round(((upscale_to_width- image.size[0]) / 2), 0)),
+                        int(round(((upscale_to_height- image.size[1]) / 2), 0)))
+                    resized.paste(image, offset)
+                    image = resized
+
 
         return image
 
