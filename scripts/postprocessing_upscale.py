@@ -5,8 +5,7 @@ from modules import scripts_postprocessing, shared
 import gradio as gr
 
 from modules.ui_components import FormRow, ToolButton
-
-switch_values_symbol = '\U000021C5' # ⇅
+from modules.ui import switch_values_symbol
 
 upscale_cache = {}
 
