@@ -312,6 +312,10 @@ div.dimensions-tools{
     align-content: center;
 }
 
+div#extras_scale_to_tab div.form{
+    flex-direction: row;
+}
+
 #mode_img2img .gradio-image > div.fixed-height, #mode_img2img .gradio-image > div.fixed-height img{
     height: 480px !important;
     max-height: 480px !important;
