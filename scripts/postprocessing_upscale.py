@@ -49,7 +49,6 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
             "upscale_to_width": upscaling_resize_w,
             "upscale_to_height": upscaling_resize_h,
             "upscale_crop": upscaling_crop,
-            "upscaling_res_switch_btn": upscaling_res_switch_btn,
             "upscaler_1_name": extras_upscaler_1,
             "upscaler_2_name": extras_upscaler_2,
             "upscaler_2_visibility": extras_upscaler_2_visibility,
