@@ -43,3 +43,23 @@ Related issues:
 https://github.com/gradio-app/gradio/issues/3230 \
 https://github.com/gradio-app/gradio/issues/3677
 </details>
+
+# weird css loading
+
+![image](https://user-images.githubusercontent.com/98228077/229085355-0fbd56d6-fe1c-4858-8701-6c5697b9a6d6.png)
+
+This issue has been noted, 3 times. It is apparently something users in china may experience.
+[#8537](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/8537)
+
+<details><summary> Solution: </summary>
+
+This problem is caused by errors in the CSS file type information in my computer registry, which leads to errors in CSS parsing and application.
+Solution:
+
+![image](https://user-images.githubusercontent.com/98228077/229086022-f27858a3-c9d9-470c-87cc-aa1974b7c5d0.png)
+
+
+According to the above image to locate, and modify the last Content Type and PerceivedType.
+Finally, reboot the machine, delete the browser cache, and force refresh the web page (shift+f5).
+Thanks to https://www.bilibili.com/read/cv19519519
+</details>
