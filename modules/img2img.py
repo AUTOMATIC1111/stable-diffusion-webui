@@ -4,7 +4,7 @@ import sys
 import traceback
 
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
+from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
 
 from modules import devices, sd_samplers
 from modules.generation_parameters_copypaste import create_override_settings_dict
@@ -46,7 +46,10 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
         if state.interrupted:
             break
 
-        img = Image.open(image)
+        try:
+            img = Image.open(image)
+        except UnidentifiedImageError:
+            continue
         # Use the EXIF orientation of photos taken by smartphones.
         img = ImageOps.exif_transpose(img)
         p.init_images = [img] * p.batch_size
