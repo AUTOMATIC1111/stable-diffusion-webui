@@ -105,3 +105,4 @@ parser.add_argument("--no-download-sd-model", action='store_true', help="don't d
 # token merging / tomesd
 parser.add_argument("--token-merging", action='store_true', help="Provides generation speedup by merging redundant tokens. (compatible with --xformers)", default=False)
 parser.add_argument("--token-merging-ratio", type=float, help="Adjusts ratio of merged to untouched tokens. Range: (0.0-1.0], Defaults to 0.5", default=0.5)
+parser.add_argument("--reinstall-tomesd", action='store_true', help="Reinstalls tomesd", default=False)
