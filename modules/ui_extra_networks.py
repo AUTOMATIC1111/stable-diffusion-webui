@@ -215,7 +215,6 @@ class ExtraNetworksUi:
 
         self.button_save_description = None
         self.description_target_filename = None
-
         self.description_input = None
 
         self.tabname = None
@@ -320,18 +319,21 @@ def setup_ui(ui, gallery):
         outputs=[*ui.pages]
     )
 
-    def save_description(filenamex,images,filename,descrip):
+    def save_description(filename,descrip):
         filename = filename.split('.')[0]+".description.txt"
-        file1 = open(filename,'w')
-        print(file1)
-        file1.write(descrip)
-        file1.close()
+        try: 
+            f = open(filename,'w')
+        except OSError:
+            print ("Could not open file to write: " + filename)
+        with f:
+            f.write(descrip)
+            f.close()
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
     
     ui.button_save_description.click(
         fn=save_description,
-        _js="function(x,y,z){return selected_gallery_index(), y, z]}",
-        inputs=[ui.description_target_filename, gallery, ui.description_target_filename, ui.description_input],
+        _js="function(x,y){return [x,y]}",
+        inputs=[ui.description_target_filename, ui.description_input],
         outputs=[*ui.pages]
     )
 

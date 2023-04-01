@@ -95,7 +95,7 @@ function saveCardPreview(event, tabname, filename){
     event.preventDefault()
 }
 
-function saveCardDescription(event, tabname, filename,descript){
+function saveCardDescription(event, tabname, filename, descript){
     var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
     var button = gradioApp().getElementById(tabname + '_save_description')
     var description = gradioApp().getElementById(tabname+ '_description_input')
@@ -105,8 +105,6 @@ function saveCardDescription(event, tabname, filename,descript){
     updateInput(textarea)
 
     button.click()
-
-    //alert("add description here!")
 
     event.stopPropagation()
     event.preventDefault()
