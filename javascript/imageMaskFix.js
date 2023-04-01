@@ -46,246 +46,170 @@ function imageMaskResize() {
  onUiUpdate(() => imageMaskResize());
  */
  
-
-
-let img2img_tab_index = 0;
-let img2img_tab_tool_buttons;
-
-let isPanning;
-let parent_container_img;
-let spotlight_sketch;
-let spotlight_inpaint;
-let spotlight_inpaint_sketch;
-let spotlight;
-
-let curr_src = [];
-
-let intervalLastUIUpdate;
-
-let sketch_pan;
-let inpaint_pan;
-let inpaint_sketch_pan;
-let curr_pan;
-
-
-function common_undo_handler(e) {
-	img2img_tab_tool_buttons[0].click();
-}
-function common_clear_handler(e){
-	img2img_tab_tool_buttons[1].click();
-}
-
-function common_color_handler(e){
-}
-
-function common_brush_handler(e){
-}
-
-function preventDefault(e) {
-	e = e || window.event
-	if (e.preventDefault) {
-	  e.preventDefault()
-	}
-	e.returnValue = false
-}
-
-function pan_toggle(val, target){
-	isPanning = val;
-	target.classList.toggle("on", isPanning);
-	spotlight.panzoom(val);
-	
-	if(isPanning){
-		parent_container_img.classList.add("no-point-events");
-		parent_container_img.parentElement.classList.add("move");
-		document.addEventListener('wheel', preventDefault, {passive: false});
-	}else{
-		parent_container_img.classList.remove("no-point-events");
-		parent_container_img.parentElement.classList.remove("move");
-		document.removeEventListener('wheel', preventDefault, false);
-	}
-	
-}
-
-function common_pan_handler(e){
-	isPanning = !isPanning;
-	pan_toggle(isPanning, this);
-}
-
-function update_color(listener){
-	let input_color = parent_container_img.querySelector("input[type='color']");
-	let spl = parent_container_img.parentElement.parentElement.parentElement.parentElement.parentElement;
-	let spl_color = spl.querySelector(".spl-color input[type='color']");
-	spl_color.value = input_color.value;
-	
-	if(listener){
-		spl_color.addEventListener("input", function(ev) {						
-			input_color.value = ev.target.value;
-			updateInput(input_color);
-			pan_toggle(false, curr_pan);					
-		})
-	}
-}
-
-function update_brush(listener){
-	let input_range = parent_container_img.querySelector("input[type='range']");
-	let spl = parent_container_img.parentElement.parentElement.parentElement.parentElement.parentElement;
-	let spl_brush = spl.querySelector(".spl-brush input[type='range']");
-	spl_brush.value = input_range.value;
-	
-	if(listener){
-		spl_brush.addEventListener("input", function(ev) {						
-			input_range.value = ev.target.value;
-			updateInput(input_range);				
-		})
-	}
-}
-
-function init_drawing_tools(){
-	
-	let input_color = parent_container_img.querySelector("input[type='color']");			
-	if(!input_color){
-		if(img2img_tab_tool_buttons[3]){
-			img2img_tab_tool_buttons[3].click();	
-			setTimeout(function() { update_color(true);	}, 100);
-		}
-	}else{
-		setTimeout(function() { update_color(false);}, 100);		
-	}	
-	
-	let input_range = parent_container_img.querySelector("input[type='range']");
-	if(!input_range){
-		img2img_tab_tool_buttons[2].click();	
-		setTimeout(function() { update_brush(true);	}, 100);
-	}else{
-		setTimeout(function() { update_brush(false);}, 100);		
-	}
-	
-}
-
 onUiLoaded(function(){
 	
 	const color_box = '<input type="color">';
 	const brush_size = '<input type="range" min="0.75" max="110.0">';
-
-	spotlight_sketch = new Spotlight();
-	const spotlight_sketch_parent = gradioApp().querySelector("#img2img_sketch");
-	spotlight_sketch.init(spotlight_sketch_parent, "-sketch");			
-	spotlight_sketch.addControl("undo", common_undo_handler);
-	sketch_pan = spotlight_sketch.addControl("pan", common_pan_handler);	
-	spotlight_sketch.addControl("brush", common_brush_handler, brush_size);
-	spotlight_sketch.addControl("color", common_color_handler, color_box);
-	spotlight_sketch.addControl("clear",common_clear_handler);
 	
-	spotlight_inpaint = new Spotlight();
-	const spotlight_inpaint_parent = gradioApp().querySelector("#img2maskimg");
-	spotlight_inpaint.init(spotlight_inpaint_parent, "-inpaint");			
-	spotlight_inpaint.addControl("undo", common_undo_handler);
-	inpaint_pan = spotlight_inpaint.addControl("pan", common_pan_handler);
-	spotlight_inpaint.addControl("brush", common_brush_handler, brush_size);
-	spotlight_inpaint.addControl("clear",common_clear_handler);
-	
-	spotlight_inpaint_sketch = new Spotlight();
-	const spotlight_inpaint_sketch_parent = gradioApp().querySelector("#inpaint_sketch");
-	spotlight_inpaint_sketch.init(spotlight_inpaint_sketch_parent, "-inpaint-sketch");			
-	spotlight_inpaint_sketch.addControl("undo", common_undo_handler);
-	inpaint_sketch_pan = spotlight_inpaint_sketch.addControl("pan", common_pan_handler);
-	spotlight_inpaint_sketch.addControl("brush", common_brush_handler, brush_size);
-	spotlight_inpaint_sketch.addControl("color", common_color_handler, color_box);
-	spotlight_inpaint_sketch.addControl("clear",common_clear_handler);
-})
+	let img_src = [];
+	const container = gradioApp().querySelector(".gradio-container");
+    const observer  = new MutationObserver(() => 
+		gradioApp().querySelectorAll('div[data-testid="image"]').forEach(function (elem, i){			
+			let img_parent = elem.parentElement.querySelector('div[data-testid="image"] > div');
+			let img = img_parent.querySelector('img');
+			if(img){
+				if(img_src[i] != img.src){
+					let tool_buttons = img_parent.querySelectorAll('button');
+					if(tool_buttons.length > 2){
+						img_src[i] = img.src;						
+						//console.log("NEWIMAGE");
+						let spl_parent = elem.parentElement;
+						let spl = new Spotlight();	
+						spl.init(spl_parent, "-"+spl_parent.id);
+						
+						spl.addControl("undo", spl_undo_handler);
+						let spl_pan = spl.addControl("pan", spl_pan_handler);	
+						spl.addControl("brush", spl_brush_handler, brush_size);
+						if(tool_buttons.length == 4){
+							spl.addControl("color", spl_color_handler, color_box);
+						}
+						spl.addControl("clear",spl_clear_handler);
+						let isPanning;
 
+						function spl_undo_handler(e) {
+							tool_buttons[0].click();
+						}
+						
+						function spl_clear_handler(e){							
+							tool_buttons[1].click();
+							spl.panzoom(false);
+							img_parent.classList.remove("no-point-events");
+							img_parent.parentElement.classList.remove("move");
+							document.removeEventListener('wheel', preventDefault, false);							
+							setTimeout(function() { 
+								spl.close(false, true);
+								img_parent.style.flexGrow = "1";
+								img_src[i] = "";
+								elem.style.transform = "none";
+							}, 200);					
+							
+						}
+						
+						function spl_color_handler(e){}
+						function spl_brush_handler(e){}
 
-onUiUpdate(function() {
-	//clearInterval(intervalLastUIUpdate);
-	const img2img_tab = gradioApp().querySelector('#img2img_img2img_tab');
-	if(img2img_tab && selectedTabItemId == "tab_img2img"){
-		//console.log("UIMASKUPDATE");
-		const img2img_tab_index = get_img2img_tab_index()[0];
-		if(img2img_tab_index > 3 || img2img_tab_index == 0) return;
-		
-		let tabid;
-		let copytoId;
-		
-		if(img2img_tab_index == 1){
-			tabid = "#img2img_img2img_sketch_tab";// #img2img_sketch";
-			spotlight = spotlight_sketch;			
-			curr_pan = sketch_pan;
-		}else if(img2img_tab_index == 2){
-			tabid = "#img2img_inpaint_tab";// #img2maskimg";
-			spotlight = spotlight_inpaint;
-			curr_pan = inpaint_pan;
-		}else if(img2img_tab_index == 3){
-			tabid = "#img2img_inpaint_sketch_tab";// #inpaint_sketch";
-			spotlight = spotlight_inpaint_sketch;		
-			curr_pan = inpaint_sketch_pan;
-		}
+						function preventDefault(e) {
+							e = e || window.event
+							if (e.preventDefault) {
+							  e.preventDefault()
+							}
+							e.returnValue = false
+						}
 
-		
-		const parent_img2img_tab_img = gradioApp().querySelector(tabid);			
-		//const parent_img2img_tab_copy_to = parent_img2img_tab_img.querySelector(copytoId);
-		const spotlight_parent = parent_img2img_tab_img.querySelector('div[data-testid="image"]');			
-		parent_container_img = parent_img2img_tab_img.querySelector('div[data-testid="image"] > div');
-		const img2img_tab_img = parent_container_img.querySelector('img');
-		img2img_tab_tool_buttons = parent_container_img.querySelectorAll('button');
-		
-			
-		if(img2img_tab_img){		
-			pan_toggle(false, curr_pan);					
-			spotlight.panzoom(false);
-		}
-			
-		function getImgSync(image){
-			if(curr_src[img2img_tab_index] != image.src){ 
-				//console.log("NEWIMAGE");
-				curr_src[img2img_tab_index] = image.src;
-				
-				let w = image.naturalWidth; 
-				let h = image.naturalHeight; 
-				parent_container_img.style.width = `${w}px`;
-				parent_container_img.style.height = `${h}px`;
-				
-				spotlight.show([{						
-					media: "node",																		
-					src: spotlight_parent,
-					//autohide: true,
-					//control: ["pan","clear","undo","fullscreen","autofit","zoom-in","zoom-out","close"],
-					class: "relative",
-				}],					
-				);
+						function pan_toggle(val, target){
+							isPanning = val;
+							target.classList.toggle("on", isPanning);
+							spl.panzoom(val);
+							
+							if(isPanning){
+								img_parent.classList.add("no-point-events");
+								img_parent.parentElement.classList.add("move");
+								document.addEventListener('wheel', preventDefault, {passive: false});
+							}else{
+								img_parent.classList.remove("no-point-events");
+								img_parent.parentElement.classList.remove("move");
+								document.removeEventListener('wheel', preventDefault, false);
+							}
+							
+						}
 
-				parent_container_img.style.flexGrow = "0";
-				setTimeout(function() { init_drawing_tools(); }, 500);
-				
-			}
-			
-		}
-		
-		const getImage = async (image) => {
-			if(!image){ 						
-				if(spotlight.panel){
-					spotlight.close(false, true);
-					parent_container_img.style.flexGrow = "1";
-					curr_src[img2img_tab_index] = "";
-					spotlight_parent.style.transform = "none";					
+						function spl_pan_handler(e){
+							isPanning = !isPanning;
+							pan_toggle(isPanning, this);
+						}
+
+						function update_color(listener){
+							let input_color = img_parent.querySelector("input[type='color']");
+							let spl = img_parent.parentElement.parentElement.parentElement.parentElement.parentElement;
+							let spl_color = spl.querySelector(".spl-color input[type='color']");
+							spl_color.value = input_color.value;
+							
+							if(listener){
+								spl_color.addEventListener("input", function(ev) {						
+									input_color.value = ev.target.value;
+									updateInput(input_color);
+									pan_toggle(false, spl_pan);					
+								})
+							}
+						}
+
+						function update_brush(listener){
+							let input_range = img_parent.querySelector("input[type='range']");
+							let spl = img_parent.parentElement.parentElement.parentElement.parentElement.parentElement;
+							let spl_brush = spl.querySelector(".spl-brush input[type='range']");
+							spl_brush.value = input_range.value;
+							
+							if(listener){
+								spl_brush.addEventListener("input", function(ev) {						
+									input_range.value = ev.target.value;
+									updateInput(input_range);				
+								})
+							}
+						}
+
+						function init_drawing_tools(){							
+							let input_color = img_parent.querySelector("input[type='color']");			
+							if(!input_color){
+								if(tool_buttons[3]){
+									tool_buttons[3].click();	
+									setTimeout(function() { update_color(true);	}, 100);
+								}
+							}else{
+								setTimeout(function() { update_color(false);}, 100);		
+							}	
+							
+							let input_range = img_parent.querySelector("input[type='range']");
+							if(!input_range){
+								if(tool_buttons[2]){
+									tool_buttons[2].click();	
+									setTimeout(function() { update_brush(true);	}, 100);
+								}
+							}else{
+								setTimeout(function() { update_brush(false);}, 100);		
+							}
+							
+						}
+
+						let w = img.naturalWidth; 
+						let h = img.naturalHeight; 
+						img_parent.style.width = `${w}px`;
+						img_parent.style.height = `${h}px`;
+						
+						spl.show([{						
+							media: "node",																		
+							src: elem,
+							//autohide: true,
+							//control: ["pan","clear","undo","fullscreen","autofit","zoom-in","zoom-out","close"],
+							class: "relative",
+						}],					
+						);
+
+						img_parent.style.flexGrow = "0";						
+						pan_toggle(false, spl_pan);					
+						spl.panzoom(false);
+						setTimeout(function() { init_drawing_tools(); }, 500);
+						
+					}
 				}
-			}else if (image.complete) {							
-				return getImgSync(image);				
-			}else{
-				return new Promise(resolve => {
-					image.onload = () => {
-						resolve(getImgSync(image));
-					};
-				});
 			}
-		};
-		
-		getImage(img2img_tab_img);
-
-	}
+		}));
+    observer.observe(container, { childList: true, subtree: true });
 	
 })
+
 
 /* 
+let intervalLastUIUpdate;
 function onLastUIUpdate(){
 	clearInterval(intervalLastUIUpdate);
 	const img2img_tab = gradioApp().querySelector('#img2img_img2img_tab');

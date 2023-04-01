@@ -4374,6 +4374,7 @@ input[type=range]::-ms-fill-upper {
 .spl-progress {
   position: absolute;
   top: 0;
+  left: -1px;
   width: 100%;
   height: 3px;
   background-color: var(--modal-icon-color);
