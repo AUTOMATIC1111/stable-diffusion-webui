@@ -1550,5 +1550,15 @@
     "customscript/seed_travel.py/txt2img/Save extra status information/visible": true,
     "customscript/seed_travel.py/txt2img/Save extra status information/value": true,
     "customscript/seed_travel.py/img2img/Save extra status information/visible": true,
-    "customscript/seed_travel.py/img2img/Save extra status information/value": true
+    "customscript/seed_travel.py/img2img/Save extra status information/value": true,
+    "customscript/seed_travel.py/txt2img/Curve strength/visible": true,
+    "customscript/seed_travel.py/txt2img/Curve strength/value": 3,
+    "customscript/seed_travel.py/txt2img/Curve strength/minimum": 0.0,
+    "customscript/seed_travel.py/txt2img/Curve strength/maximum": 10.0,
+    "customscript/seed_travel.py/txt2img/Curve strength/step": 0.1,
+    "customscript/seed_travel.py/img2img/Curve strength/visible": true,
+    "customscript/seed_travel.py/img2img/Curve strength/value": 3,
+    "customscript/seed_travel.py/img2img/Curve strength/minimum": 0.0,
+    "customscript/seed_travel.py/img2img/Curve strength/maximum": 10.0,
+    "customscript/seed_travel.py/img2img/Curve strength/step": 0.1
 }
