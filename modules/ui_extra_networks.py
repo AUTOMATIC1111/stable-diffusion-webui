@@ -327,16 +327,18 @@ def setup_ui(ui, gallery):
         inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename],
         outputs=[*ui.pages]
     )
-
+    
+    # write description to a file
     def save_description(filename,descrip):
         filename = filename.split('.')[0]+".description.txt"
-        try: 
-            f = open(filename,'w')
-        except OSError:
-            print ("Could not open file to write: " + filename)
-        with f:
-            f.write(descrip)
-            f.close()
+        if descrip != "":
+            try: 
+                f = open(filename,'w')
+            except OSError:
+                print ("Could not open file to write: " + filename)
+            with f:
+                f.write(descrip)
+                f.close()
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
     
     ui.button_save_description.click(
