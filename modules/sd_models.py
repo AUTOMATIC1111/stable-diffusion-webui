@@ -9,7 +9,6 @@ from omegaconf import OmegaConf
 from os import mkdir
 from urllib import request
 import ldm.modules.midas as midas
-import tomesd
 
 from ldm.util import instantiate_from_config
 
@@ -433,6 +432,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
             sd_model = instantiate_from_config(sd_config.model)
 
             if shared.cmd_opts.token_merging:
+                import tomesd
                 ratio = shared.cmd_opts.token_merging_ratio
 
                 tomesd.apply_patch(sd_model, ratio=ratio)
