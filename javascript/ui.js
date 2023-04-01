@@ -919,7 +919,7 @@ onUiUpdate(function(){
 		//img2img_width
 		let parent = elem.parentElement;
 		let comp_parent = parent.parentElement.parentElement;		
-		if(comp_parent.id == ("img2img_width" || "img2img_height" )) return;
+		if(comp_parent.id == "img2img_width" || comp_parent.id == "img2img_height") return;
 		
 		let clone_num = elem.cloneNode();
 		active_clone_input.push(clone_num);
@@ -955,9 +955,10 @@ onUiUpdate(function(){
 			comp_range.parentElement.append(clone_range);				
 			comp_range.classList.add("hidden");
 			
-			clone_range.addEventListener('input', function (e) {								
-				clone_num.value = e.target.value;	
+			clone_range.addEventListener('input', function (e) {							
+				clone_num.value = e.target.value;
 			})
+			
 			clone_range.addEventListener('change', function (e) {
 				elem.value = clone_range.value;
 				updateInput(elem);	
@@ -1007,9 +1008,11 @@ onUiUpdate(function(){
 	function ui_dispatch_input_release(value){	
 		if(value){
 			gradioApp().querySelector(".gradio-container").addEventListener('mouseover',  ui_input_release_handler);
+			//gradioApp().querySelector(".gradio-container").addEventListener('touchmove',  ui_input_release_handler);
 			gradioApp().querySelector(".gradio-container").addEventListener('mousedown',  ui_input_focus_handler);
 		}else{
 			gradioApp().querySelector(".gradio-container").removeEventListener('mouseover',  ui_input_release_handler);
+			//gradioApp().querySelector(".gradio-container").removeEventListener('touchmove',  ui_input_release_handler);
 			gradioApp().querySelector(".gradio-container").removeEventListener('mousedown',  ui_input_focus_handler);
 		}
 	}
