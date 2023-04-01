@@ -51,3 +51,15 @@ This code goes into extension's script:
 path = os.path.join(modules.scripts.basedir(), "embeddings")
 modules.sd_hijack.model_hijack.embedding_db.add_embedding_dir(path)
 ```
+
+# Internals Diagram by [@hananbeer](https://github.com/hananbeer)
+https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/8601
+
+https://miro.com/app/board/uXjVMdgY-TY=/?share_link_id=547908852229
+
+![image](https://user-images.githubusercontent.com/98228077/229259967-15556a72-774c-44ba-bab5-687f854a0fc7.png)
+
+# Official Extension Index
+Add extensions here - https://github.com/AUTOMATIC1111/stable-diffusion-webui-extensions
+
+(additionally, you could add working commit versions of your extensions+webui here: https://github.com/camenduru/sd-webui-extension-records )
