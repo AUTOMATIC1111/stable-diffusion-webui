@@ -238,12 +238,14 @@ def prepare_environment():
     k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
+    tomesd_repo = os.environ.get('TOMESD_REPO', 'https://github.com/dbolya/tomesd.git')
 
     stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
     taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
     k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "5b3af030dd83e0297272d861c19477735d0317ec")
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
+    tomesd_commit_hash = os.environ.get('TOMESD_COMMIT_HASH', "4f936c257e10848e0399fc6d0484a1761812092a")
 
     if not args.skip_python_version_check:
         check_python_version()
@@ -279,6 +281,10 @@ def prepare_environment():
                     exit(0)
         elif platform.system() == "Linux":
             run_pip(f"install {xformers_package}", "xformers")
+
+    if (not is_installed("tomesd") or args.reinstall_tomesd) and args.token_merging:
+        git_clone(tomesd_repo, repo_dir('tomesd'), "tomesd", tomesd_commit_hash)
+        run_pip(f"install {repo_dir('tomesd')}")
 
     if not is_installed("pyngrok") and args.ngrok:
         run_pip("install pyngrok", "ngrok")
