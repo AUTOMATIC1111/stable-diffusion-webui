@@ -32,13 +32,7 @@ function negmod(n, m) {
 function updateOnBackgroundChange() {
     const modalImage = gradioApp().getElementById("modalImage")
     if (modalImage && modalImage.offsetParent) {
-        let allcurrentButtons = gradioApp().querySelectorAll(".gallery-item.transition-all.\\!ring-2")
-        let currentButton = null
-        allcurrentButtons.forEach(function(elem) {
-            if (elem.parentElement.offsetParent) {
-                currentButton = elem;
-            }
-        })
+        let currentButton = selected_gallery_button();
 
         if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
             modalImage.src = currentButton.children[0].src;
@@ -50,22 +44,10 @@ function updateOnBackgroundChange() {
 }
 
 function modalImageSwitch(offset) {
-    var allgalleryButtons = gradioApp().querySelectorAll(".gradio-gallery .thumbnail-item")
-    var galleryButtons = []
-    allgalleryButtons.forEach(function(elem) {
-        if (elem.parentElement.offsetParent) {
-            galleryButtons.push(elem);
-        }
-    })
+    var galleryButtons = all_gallery_buttons();
 
     if (galleryButtons.length > 1) {
-        var allcurrentButtons = gradioApp().querySelectorAll(".gradio-gallery .thumbnail-item.selected")
-        var currentButton = null
-        allcurrentButtons.forEach(function(elem) {
-            if (elem.parentElement.offsetParent) {
-                currentButton = elem;
-            }
-        })
+        var currentButton = selected_gallery_button();
 
         var result = -1
         galleryButtons.forEach(function(v, i) {

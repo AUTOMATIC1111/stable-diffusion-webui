@@ -122,7 +122,7 @@ def list_models():
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
         print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
 
-    for filename in model_list:
+    for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         checkpoint_info.register()
 
@@ -382,6 +382,14 @@ def repair_config(sd_config):
         sd_config.model.params.unet_config.params.use_fp16 = False
     elif shared.cmd_opts.upcast_sampling:
         sd_config.model.params.unet_config.params.use_fp16 = True
+
+    if getattr(sd_config.model.params.first_stage_config.params.ddconfig, "attn_type", None) == "vanilla-xformers" and not shared.xformers_available:
+        sd_config.model.params.first_stage_config.params.ddconfig.attn_type = "vanilla"
+
+    # For UnCLIP-L, override the hardcoded karlo directory
+    if hasattr(sd_config.model.params, "noise_aug_config") and hasattr(sd_config.model.params.noise_aug_config.params, "clip_stats_path"):
+        karlo_path = os.path.join(paths.models_path, 'karlo')
+        sd_config.model.params.noise_aug_config.params.clip_stats_path = sd_config.model.params.noise_aug_config.params.clip_stats_path.replace("checkpoints/karlo_models", karlo_path)
 
 
 sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embedding.weight'

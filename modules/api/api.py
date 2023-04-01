@@ -3,6 +3,7 @@ import io
 import time
 import datetime
 import uvicorn
+import gradio as gr
 from threading import Lock
 from io import BytesIO
 from gradio.processing_utils import decode_base64_to_file
@@ -197,6 +198,9 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=ScriptsList)
 
+        self.default_script_arg_txt2img = []
+        self.default_script_arg_img2img = []
+
     def add_api_route(self, path: str, endpoint, **kwargs):
         if shared.cmd_opts.api_auth:
             return self.app.add_api_route(path, endpoint, dependencies=[Depends(self.auth)], **kwargs)
@@ -230,7 +234,7 @@ class Api:
         script_idx = script_name_to_index(script_name, script_runner.scripts)
         return script_runner.scripts[script_idx]
 
-    def init_script_args(self, request, selectable_scripts, selectable_idx, script_runner):
+    def init_default_script_args(self, script_runner):
         #find max idx from the scripts in runner and generate a none array to init script_args
         last_arg_index = 1
         for script in script_runner.scripts:
@@ -238,13 +242,24 @@ class Api:
                 last_arg_index = script.args_to
         # None everywhere except position 0 to initialize script args
         script_args = [None]*last_arg_index
+        script_args[0] = 0
+
+        # get default values
+        with gr.Blocks(): # will throw errors calling ui function without this
+            for script in script_runner.scripts:
+                if script.ui(script.is_img2img):
+                    ui_default_values = []
+                    for elem in script.ui(script.is_img2img):
+                        ui_default_values.append(elem.value)
+                    script_args[script.args_from:script.args_to] = ui_default_values
+        return script_args
+
+    def init_script_args(self, request, default_script_args, selectable_scripts, selectable_idx, script_runner):
+        script_args = default_script_args.copy()
         # position 0 in script_arg is the idx+1 of the selectable script that is going to be run when using scripts.scripts_*2img.run()
         if selectable_scripts:
             script_args[selectable_scripts.args_from:selectable_scripts.args_to] = request.script_args
             script_args[0] = selectable_idx + 1
-        else:
-            # when [0] = 0 no selectable script to run
-            script_args[0] = 0
 
         # Now check for always on scripts
         if request.alwayson_scripts and (len(request.alwayson_scripts) > 0):
@@ -265,6 +280,8 @@ class Api:
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
             ui.create_ui()
+        if not self.default_script_arg_txt2img:
+            self.default_script_arg_txt2img = self.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
 
         populate = txt2imgreq.copy(update={  # Override __init__ params
@@ -280,7 +297,7 @@ class Api:
         args.pop('script_args', None) # will refeed them to the pipeline directly after initializing them
         args.pop('alwayson_scripts', None)
 
-        script_args = self.init_script_args(txt2imgreq, selectable_scripts, selectable_script_idx, script_runner)
+        script_args = self.init_script_args(txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner)
 
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)
@@ -317,6 +334,8 @@ class Api:
         if not script_runner.scripts:
             script_runner.initialize_scripts(True)
             ui.create_ui()
+        if not self.default_script_arg_img2img:
+            self.default_script_arg_img2img = self.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = self.get_selectable_script(img2imgreq.script_name, script_runner)
 
         populate = img2imgreq.copy(update={  # Override __init__ params
@@ -334,7 +353,7 @@ class Api:
         args.pop('script_args', None)  # will refeed them to the pipeline directly after initializing them
         args.pop('alwayson_scripts', None)
 
-        script_args = self.init_script_args(img2imgreq, selectable_scripts, selectable_script_idx, script_runner)
+        script_args = self.init_script_args(img2imgreq, self.default_script_arg_img2img, selectable_scripts, selectable_script_idx, script_runner)
 
         send_images = args.pop('send_images', True)
         args.pop('save_images', None)

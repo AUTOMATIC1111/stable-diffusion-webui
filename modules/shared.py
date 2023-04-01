@@ -422,7 +422,8 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
 }))
 
 options_templates.update(options_section((None, "Hidden options"), {
-    "disabled_extensions": OptionInfo([], "Disable those extensions"),
+    "disabled_extensions": OptionInfo([], "Disable these extensions"),
+    "disable_all_extensions": OptionInfo("none", "Disable all extensions (preserves the list of disabled extensions)", gr.Radio, {"choices": ["none", "extra", "all"]}),
     "sd_checkpoint_hash": OptionInfo("", "SHA256 hash of the current checkpoint"),
 }))
 
@@ -640,7 +641,7 @@ mem_mon.start()
 
 
 def listfiles(dirname):
-    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname)) if not x.startswith(".")]
+    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=str.lower) if not x.startswith(".")]
     return [file for file in filenames if os.path.isfile(file)]
 
 
