@@ -52,6 +52,8 @@ onUiLoaded(function(){
 	const brush_size = '<input type="range" min="0.75" max="110.0">';
 	
 	let img_src = [];
+	let spl_instances = [];
+	let spl_pan_instances = [];
 	const container = gradioApp().querySelector(".gradio-container");
     const observer  = new MutationObserver(() => 
 		gradioApp().querySelectorAll('div[data-testid="image"]').forEach(function (elem, i){			
@@ -61,20 +63,33 @@ onUiLoaded(function(){
 				if(img_src[i] != img.src){
 					let tool_buttons = img_parent.querySelectorAll('button');
 					if(tool_buttons.length > 2){
+						let spl_parent = elem.parentElement;
+						let spl;
+						let spl_pan;
+						let isPanning;
+						
+						if(spl_parent.className != "spl-pane"){							
+							spl = new Spotlight();	
+							spl.init(spl_parent, "-"+spl_parent.id);
+							
+							spl.addControl("undo", spl_undo_handler);
+							spl_pan = spl.addControl("pan", spl_pan_handler);	
+							spl.addControl("brush", spl_brush_handler, brush_size);
+							if(tool_buttons.length == 4){
+								spl.addControl("color", spl_color_handler, color_box);
+							}
+							spl.addControl("clear",spl_clear_handler);
+							
+							spl_instances[i] = spl;
+							spl_pan_instances[i] = spl_pan;
+							
+						}else{
+							spl = spl_instances[i];							
+							spl_pan = spl_pan_instances[i];							
+						}
+						
 						img_src[i] = img.src;						
 						//console.log("NEWIMAGE");
-						let spl_parent = elem.parentElement;
-						let spl = new Spotlight();	
-						spl.init(spl_parent, "-"+spl_parent.id);
-						
-						spl.addControl("undo", spl_undo_handler);
-						let spl_pan = spl.addControl("pan", spl_pan_handler);	
-						spl.addControl("brush", spl_brush_handler, brush_size);
-						if(tool_buttons.length == 4){
-							spl.addControl("color", spl_color_handler, color_box);
-						}
-						spl.addControl("clear",spl_clear_handler);
-						let isPanning;
 
 						function spl_undo_handler(e) {
 							tool_buttons[0].click();

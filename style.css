@@ -4221,9 +4221,14 @@ input[type=range]::-ms-fill-upper {
 [id^="spotlight"].relative {
 	position: relative !important;
 	width:auto;
-	height:50vh;
-	z-index:99;
-	margin-bottom: 1px;
+	height: calc(50vh + 40px);
+    z-index: 99;
+    margin-bottom: 1px;
+    padding-top: 40px;
+}
+
+[id^="spotlight"].relative .spl-pane {
+	top: -20px;
 }
 
 [id^="spotlight"].relative .spl-pane > * {
