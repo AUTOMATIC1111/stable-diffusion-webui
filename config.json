@@ -214,7 +214,7 @@
     "use_save_to_dirs_for_ui": false,
     "use_upscaler_name_as_suffix": true,
     "img_max_size_mp": 500.0,
-    "image_browser_active_tabs": "txt2img, img2img, txt2img-grids, img2img-grids, Extras, Favorites, Others, Maintenance",
+    "image_browser_active_tabs": "txt2img, img2img, txt2img-grids, img2img-grids, Extras, Favorites, Others",
     "image_browser_enable_maint": false,
     "image_browser_ranking_pnginfo": false,
     "uni_pc_order": 3,
