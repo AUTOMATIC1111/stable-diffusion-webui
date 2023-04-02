@@ -74,8 +74,14 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text){
     return false
 }
 
-function cardClicked(tabname, textToAdd, allowNegativePrompt){
+function cardClicked(tabname, textToAdd, allowNegativePrompt, descriptionText){
     var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea")
+
+    var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
+
+    description_textarea.value = descriptionText
+
+    updateInput(description_textarea)
 
     if(! tryToRemoveExtraNetworkFromPrompt(textarea, textToAdd)){
         textarea.value = textarea.value + opts.extra_networks_add_text_separator + textToAdd
