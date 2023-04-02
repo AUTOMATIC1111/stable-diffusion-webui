@@ -183,6 +183,8 @@ unspecified = object()
 def reload_vae_weights(sd_model=None, vae_file=unspecified):
     from modules import lowvram, devices, sd_hijack
 
+    if devices.dtype_vae == torch.bfloat16:
+        devices.dtype_vae = torch.float16
     if not sd_model:
         sd_model = shared.sd_model
 
