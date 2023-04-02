@@ -112,6 +112,22 @@ function saveCardDescription(event, tabname, filename, descript){
     event.preventDefault()
 }
 
+function readCardDescription(event, tabname, filename, descript){
+    var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+    var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
+    var button = gradioApp().getElementById(tabname + '_read_description')
+
+    textarea.value = filename
+    description_textarea.value = descript
+
+    updateInput(textarea)
+    updateInput(description_textarea)
+    button.click()
+
+    event.stopPropagation()
+    event.preventDefault()
+}
+
 function extraNetworksSearchButton(tabs_id, event){
     searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea')
     button = event.target

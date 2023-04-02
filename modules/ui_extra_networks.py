@@ -167,6 +167,7 @@ class ExtraNetworksPage:
             "card_clicked": onclick,
             "save_card_description": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
+            "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(item["description"])})""") + '"',
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
         }
@@ -216,6 +217,7 @@ class ExtraNetworksUi:
         self.preview_target_filename = None
 
         self.button_save_description = None
+        self.button_read_description = None
         self.description_target_filename = None
         self.description_input = None
 
@@ -259,6 +261,7 @@ def create_ui(container, button, tabname):
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
 
     ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
+    ui.button_read_description = gr.Button('Save description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
     
 
