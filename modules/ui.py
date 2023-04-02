@@ -1019,8 +1019,9 @@ def create_ui():
                 interp_method.change(fn=update_interp_description, inputs=[interp_method], outputs=[interp_description])
 
                 with FormRow():
-                    checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="ckpt", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
+                    checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
                     save_as_half = gr.Checkbox(value=False, label="Save as float16", elem_id="modelmerger_save_as_half")
+                    save_metadata = gr.Checkbox(value=True, label="Save metadata (.safetensors only)", elem_id="modelmerger_save_metadata")
 
                 with FormRow():
                     with gr.Column():
@@ -1658,6 +1659,7 @@ def create_ui():
                 config_source,
                 bake_in_vae,
                 discard_weights,
+                save_metadata,
             ],
             outputs=[
                 primary_model_name,
