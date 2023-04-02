@@ -427,6 +427,50 @@ options_templates.update(options_section((None, "Hidden options"), {
     "sd_checkpoint_hash": OptionInfo("", "SHA256 hash of the current checkpoint"),
 }))
 
+options_templates.update(options_section(('token_merging', 'Token Merging'), {
+    "token_merging": OptionInfo(
+        False, "Enable redundant token merging via tomesd. (currently incompatible with controlnet extension)",
+        gr.Checkbox
+    ),
+    "token_merging_ratio": OptionInfo(
+        0.5, "Merging Ratio",
+        gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}
+    ),
+    "token_merging_hr_only": OptionInfo(
+        True, "Apply only to high-res fix pass. Disabling can yield a ~20-35% speedup on contemporary resolutions.",
+        gr.Checkbox
+    ),
+    # More advanced/niche settings:
+    "token_merging_random": OptionInfo(
+        True, "Use random perturbations - Disabling might help with certain samplers",
+        gr.Checkbox
+    ),
+    "token_merging_merge_attention": OptionInfo(
+        True, "Merge attention",
+        gr.Checkbox
+    ),
+     "token_merging_merge_cross_attention": OptionInfo(
+        False, "Merge cross attention",
+        gr.Checkbox
+    ),
+    "token_merging_merge_mlp": OptionInfo(
+        False, "Merge mlp",
+        gr.Checkbox
+    ),
+    "token_merging_maximum_down_sampling": OptionInfo(
+        1, "Maximum down sampling",
+        gr.Dropdown, lambda: {"choices": ["1", "2", "4", "8"]}
+    ),
+    "token_merging_stride_x": OptionInfo(
+        2, "Stride - X",
+        gr.Slider, {"minimum": 2, "maximum": 8, "step": 2}
+    ),
+    "token_merging_stride_y": OptionInfo(
+        2, "Stride - Y",
+        gr.Slider, {"minimum": 2, "maximum": 8, "step": 2}
+    )
+}))
+
 options_templates.update()
 
 

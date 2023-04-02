@@ -280,9 +280,6 @@ def prepare_environment():
         elif platform.system() == "Linux":
             run_pip(f"install {xformers_package}", "xformers")
 
-    if not is_installed("tomesd") and args.token_merging:
-        run_pip(f"install tomesd")
-
     if not is_installed("pyngrok") and args.ngrok:
         run_pip("install pyngrok", "ngrok")
 

@@ -431,13 +431,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
         with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
             sd_model = instantiate_from_config(sd_config.model)
 
-            if shared.cmd_opts.token_merging:
-                import tomesd
-                ratio = shared.cmd_opts.token_merging_ratio
-
-                tomesd.apply_patch(sd_model, ratio=ratio)
-                print(f"Model accelerated using {(ratio * 100)}% token merging via tomesd.")
-                timer.record("token merging")
     except Exception as e:
         pass
 

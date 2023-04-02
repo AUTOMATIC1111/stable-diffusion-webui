@@ -29,6 +29,7 @@ from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
+import tomesd
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -500,9 +501,28 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()
 
+        if opts.token_merging:
+
+            if p.hr_second_pass_steps < 1 and not opts.token_merging_hr_only:
+                tomesd.apply_patch(
+                    p.sd_model,
+                    ratio=opts.token_merging_ratio,
+                    max_downsample=opts.token_merging_maximum_down_sampling,
+                    sx=opts.token_merging_stride_x,
+                    sy=opts.token_merging_stride_y,
+                    use_rand=opts.token_merging_random,
+                    merge_attn=opts.token_merging_merge_attention,
+                    merge_crossattn=opts.token_merging_merge_cross_attention,
+                    merge_mlp=opts.token_merging_merge_mlp
+                )
+
         res = process_images_inner(p)
 
     finally:
+        # undo model optimizations made by tomesd
+        if opts.token_merging:
+            tomesd.remove_patch(p.sd_model)
+
         # restore opts to original state
         if p.override_settings_restore_afterwards:
             for k, v in stored_opts.items():
@@ -937,6 +957,21 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         # GC now before running the next img2img to prevent running out of memory
         x = None
         devices.torch_gc()
+
+        # apply token merging optimizations from tomesd for high-res pass
+        # check if hr_only so we don't redundantly apply patch
+        if opts.token_merging and opts.token_merging_hr_only:
+            tomesd.apply_patch(
+                self.sd_model,
+                ratio=opts.token_merging_ratio,
+                max_downsample=opts.token_merging_maximum_down_sampling,
+                sx=opts.token_merging_stride_x,
+                sy=opts.token_merging_stride_y,
+                use_rand=opts.token_merging_random,
+                merge_attn=opts.token_merging_merge_attention,
+                merge_crossattn=opts.token_merging_merge_cross_attention,
+                merge_mlp=opts.token_merging_merge_mlp
+            )
 
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
 
