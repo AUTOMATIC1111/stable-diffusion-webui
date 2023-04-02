@@ -246,6 +246,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     if save_metadata:
         merge_recipe = {
+            "type": "webui", # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
             "secondary_model_hash": secondary_model_info.sha256 if secondary_model_info else None,
             "tertiary_model_hash": tertiary_model_info.sha256 if tertiary_model_info else None,
