@@ -955,17 +955,26 @@ onUiUpdate(function(){
 			comp_range.parentElement.append(clone_range);				
 			comp_range.classList.add("hidden");
 			
-			clone_range.addEventListener('input', function (e) {							
+ 			clone_range.addEventListener('input', function (e) {							
 				clone_num.value = e.target.value;
-			})
-			
+			})		
 			clone_range.addEventListener('change', function (e) {
 				elem.value = clone_range.value;
 				updateInput(elem);	
 			})				
 			clone_num.addEventListener('input', function (e) {								
 				clone_range.value = e.target.value;	
-			})								
+			}) 
+			
+			const rect = clone_range.getBoundingClientRect();
+			const xoffset = (rect.left + window.scrollX);
+			clone_range.addEventListener('touchmove', function(e) {
+				e.preventDefault();				
+				let percent = parseInt(((e.touches[0].pageX - xoffset) / this.offsetWidth) * 10000) / 10000;				
+				clone_range.value = ( percent * (this.max - this.min)) + parseFloat(this.min);				
+				clone_num.value = clone_range.value;
+			});
+
 		}				
 	}
 	function ui_input_focus_handler(e){
