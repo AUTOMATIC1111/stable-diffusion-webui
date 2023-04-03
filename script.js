@@ -7,7 +7,7 @@ function gradioApp() {
 }
 
 function get_uiCurrentTab() {
-    return gradioApp().querySelector('#tabs button:not(.border-transparent)')
+    return gradioApp().querySelector('#tabs button.selected')
 }
 
 function get_uiCurrentTabContent() {
