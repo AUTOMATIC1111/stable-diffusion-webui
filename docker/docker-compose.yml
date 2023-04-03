@@ -11,4 +11,6 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
     volumes:
       - ../models:/stable-diffusion-webui/models
+      - ../embeddings:/stable-diffusion-webui/embeddings
+      - ../extensions:/stable-diffusion-webui/extensions
     command: python3 launch.py --listen
