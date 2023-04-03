@@ -1,7 +1,9 @@
-import sys
-import traceback
+import inspect
+import sys
+import traceback
+
 from collections import namedtuple
-import inspect
+from operator import itemgetter
 from typing import Optional, Dict, Any
 
 from fastapi import FastAPI
@@ -126,7 +128,8 @@ def ui_tabs_callback():
         except Exception:
             report_exception(c, 'ui_tabs_callback')
 
-    return res
+    # Alpha-sort extension names in the UI.^M
+    return sorted(res, key=itemgetter(1))
 
 
 def ui_train_tabs_callback(params: UiTrainTabParams):
