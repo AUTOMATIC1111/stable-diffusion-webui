@@ -19,7 +19,6 @@ python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
-skip_install = False
 dir_repos = "repositories"
 
 if 'GRADIO_ANALYTICS_ENABLED' not in os.environ:
@@ -122,7 +121,7 @@ def run_python(code, desc=None, errdesc=None):
 
 
 def run_pip(args, desc=None):
-    if skip_install:
+    if "--skip-install" in sys.argv:
         return
 
     index_url_line = f' --index-url {index_url}' if index_url != '' else ''
@@ -223,8 +222,6 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_environment():
-    global skip_install
-
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
