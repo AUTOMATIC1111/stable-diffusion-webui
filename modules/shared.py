@@ -48,6 +48,7 @@ ui_reorder_categories = [
     "hires_fix",
     "dimensions",
     "cfg",
+    "clip_skip",
     "seed",
     "batch",
     "override_settings",
