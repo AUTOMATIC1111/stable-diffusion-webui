@@ -5,6 +5,7 @@ import importlib
 import signal
 import re
 import warnings
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -65,6 +66,46 @@ if cmd_opts.server_name:
     server_name = cmd_opts.server_name
 else:
     server_name = "0.0.0.0" if cmd_opts.listen else None
+
+if sys.platform == "win32" and hasattr(asyncio, "WindowsSelectorEventLoopPolicy"):
+    # "Any thread" and "selector" should be orthogonal, but there's not a clean
+    # interface for composing policies so pick the right base.
+    _BasePolicy = asyncio.WindowsSelectorEventLoopPolicy  # type: ignore
+else:
+    _BasePolicy = asyncio.DefaultEventLoopPolicy
+
+
+class AnyThreadEventLoopPolicy(_BasePolicy):  # type: ignore
+    """Event loop policy that allows loop creation on any thread.
+
+    The default `asyncio` event loop policy only automatically creates
+    event loops in the main threads. Other threads must create event
+    loops explicitly or `asyncio.get_event_loop` (and therefore
+    `.IOLoop.current`) will fail. Installing this policy allows event
+    loops to be created automatically on any thread, matching the
+    behavior of Tornado versions prior to 5.0 (or 5.0 on Python 2).
+
+    Usage::
+
+        asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+
+    .. versionadded:: 5.0
+
+    """
+
+    def get_event_loop(self) -> asyncio.AbstractEventLoop:
+        try:
+            return super().get_event_loop()
+        except (RuntimeError, AssertionError):
+            # This was an AssertionError in python 3.4.2 (which ships with debian jessie)
+            # and changed to a RuntimeError in 3.4.3.
+            # "There is no current event loop in thread %r"
+            loop = self.new_event_loop()
+            self.set_event_loop(loop)
+            return loop
+
+
+asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
 
 
 def check_versions():
