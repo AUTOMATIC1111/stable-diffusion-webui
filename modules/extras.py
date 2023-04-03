@@ -263,6 +263,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         metadata["merge_recipe"] = json.dumps(merge_recipe)
 
         def add_model_metadata(checkpoint_info):
+            checkpoint_info.calculate_shorthash()
             metadata["models"][checkpoint_info.sha256] = {
                 "name": checkpoint_info.name,
                 "legacy_hash": checkpoint_info.hash,
