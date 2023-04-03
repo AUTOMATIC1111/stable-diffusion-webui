@@ -16,9 +16,9 @@ onUiUpdate(function(){
 
 let modalObserver = new MutationObserver(function(mutations) {
 	mutations.forEach(function(mutationRecord) {
-		let selectedTab = gradioApp().querySelector('#tabs div button.bg-white')?.innerText
-		if (mutationRecord.target.style.display === 'none' && selectedTab === 'txt2img' || selectedTab === 'img2img')
-			gradioApp().getElementById(selectedTab+"_generation_info_button").click()
+		let selectedTab = gradioApp().querySelector('#tabs div button.selected')?.innerText
+		if (mutationRecord.target.style.display === 'none' && (selectedTab === 'txt2img' || selectedTab === 'img2img'))
+			gradioApp().getElementById(selectedTab+"_generation_info_button")?.click()
 	});
 });
 
