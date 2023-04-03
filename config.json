@@ -40,9 +40,6 @@
     "directories_max_prompt_words": 8,
     "disable_weights_auto_swap": false,
     "disabled_extensions": [
-        "openOutpaint-webUI-extension",
-        "openpose-editor",
-        "sd-webui-3d-open-pose-editor",
         "ScuNET"
     ],
     "do_not_add_watermark": true,
@@ -232,5 +229,6 @@
     "return_mask_composite": false,
     "control_net_sync_field_args": false,
     "image_browser_use_thumbnail": false,
-    "image_browser_thumbnail_size": 200.0
+    "image_browser_thumbnail_size": 200.0,
+    "disable_all_extensions": "none"
 }
