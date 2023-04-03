@@ -13,8 +13,18 @@ export CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT=0
 export GRADIO_ANALYTICS_ENABLED="False"
 export SAFETENSORS_FAST_GPU=1
 
+# Check for Python
 if [ "$PYTHON" == "" ]; then
   PYTHON=$(which python)
+else
+  echo "Python env variable set: $PYTHON"
+fi
+if [ "$PYTHON" == "" ]; then
+  PYTHON=$(which python3)
+fi
+if ! type -P "$PYTHON" >/dev/null; then
+  echo "Python not found"
+  exit 1
 fi
 
 # Note: Some defaults are changed in shared.py
