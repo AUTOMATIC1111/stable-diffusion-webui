@@ -18,7 +18,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
     if extras_mode == 1:
         for img in image_folder:
-            image = Image.open(img)
+            image = Image.open(img.name)
             image_data.append(image)
             image_names.append(os.path.splitext(img.orig_name)[0])
     elif extras_mode == 2:
