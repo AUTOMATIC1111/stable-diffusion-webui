@@ -9,4 +9,3 @@ dependencies:
   - pytorch=2.0
   - torchvision=0.15
   - numpy=1.23
-  
