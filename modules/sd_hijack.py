@@ -161,13 +161,13 @@ class StableDiffusionModelHijack:
         model_class = type(m)
         @property
         def _lazyload_attr_cond_stage_model(self):
-            self.undo_lazyload(m)
+            model_hijack.undo_lazyload(m)
             modules.sd_models.load_model()
             self.__dict__ = shared.sd_model.__dict__
             return shared.sd_model.cond_stage_model
         @property
         def _lazyload_attr_model(self):
-            self.undo_lazyload(m)
+            model_hijack.undo_lazyload(m)
             modules.sd_models.load_model()
             self.__dict__ = shared.sd_model.__dict__
             return shared.sd_model.model
