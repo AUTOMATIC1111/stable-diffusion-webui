@@ -429,7 +429,7 @@ options_templates.update(options_section((None, "Hidden options"), {
 
 options_templates.update(options_section(('token_merging', 'Token Merging'), {
     "token_merging": OptionInfo(
-        False, "Enable redundant token merging via tomesd. (currently incompatible with controlnet extension)",
+        0.5, "Enable redundant token merging via tomesd. This can provide significant speed and memory improvements.",
         gr.Checkbox
     ),
     "token_merging_ratio": OptionInfo(
@@ -439,6 +439,10 @@ options_templates.update(options_section(('token_merging', 'Token Merging'), {
     "token_merging_hr_only": OptionInfo(
         True, "Apply only to high-res fix pass. Disabling can yield a ~20-35% speedup on contemporary resolutions.",
         gr.Checkbox
+    ),
+    "token_merging_ratio_hr": OptionInfo(
+        0.5, "Merging Ratio (high-res pass) - If 'Apply only to high-res' is enabled, this will always be the ratio used.",
+        gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}
     ),
     # More advanced/niche settings:
     "token_merging_random": OptionInfo(

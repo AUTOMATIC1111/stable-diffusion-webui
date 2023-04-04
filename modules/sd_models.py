@@ -16,6 +16,7 @@ from modules import paths, shared, modelloader, devices, script_callbacks, sd_va
 from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
+import tomesd
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
@@ -546,3 +547,29 @@ def unload_model_weights(sd_model=None, info=None):
     print(f"Unloaded weights {timer.summary()}.")
 
     return sd_model
+
+
+def apply_token_merging(sd_model, hr: bool):
+    """
+    Applies speed and memory optimizations from tomesd.
+
+    Args:
+        hr (bool): True if called in the context of a high-res pass
+    """
+
+    ratio = shared.opts.token_merging_ratio
+    if hr:
+        ratio = shared.opts.token_merging_ratio_hr
+        print("effective hr pass merge ratio is "+str(ratio))
+
+    tomesd.apply_patch(
+        sd_model,
+        ratio=ratio,
+        max_downsample=shared.opts.token_merging_maximum_down_sampling,
+        sx=shared.opts.token_merging_stride_x,
+        sy=shared.opts.token_merging_stride_y,
+        use_rand=shared.opts.token_merging_random,
+        merge_attn=shared.opts.token_merging_merge_attention,
+        merge_crossattn=shared.opts.token_merging_merge_cross_attention,
+        merge_mlp=shared.opts.token_merging_merge_mlp
+    )
