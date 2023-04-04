@@ -5,7 +5,7 @@ def connect(token, port, region):
     existing = ngrok.get_tunnels()
     if existing:
         public_url = existing[0].public_url
-        print(f'ngrok connected to localhost:{port}! URL: {public_url}\n'
+        print(f'ngrok has already been connected to localhost:{port}! URL: {public_url}\n'
                'You can use this link after the launch is complete.')
         return
 
