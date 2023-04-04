@@ -230,5 +230,6 @@
     "control_net_sync_field_args": false,
     "image_browser_use_thumbnail": false,
     "image_browser_thumbnail_size": 200.0,
-    "disable_all_extensions": "none"
+    "disable_all_extensions": "none",
+    "openpose3d_use_online_version": false
 }

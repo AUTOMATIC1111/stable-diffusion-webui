@@ -62,7 +62,6 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
         if opts.enable_pnginfo:
             _geninfo, items = images.read_info_from_image(image)
-            print("I", items)
             for k, v in items.items():
                 pp.image.info[k] = v
             pp.image.info["postprocessing"] = infotext

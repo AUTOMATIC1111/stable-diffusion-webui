@@ -86,6 +86,11 @@ def reload_hypernetworks():
 
     hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 
+sd_upscalers = []
+
+sd_model = None
+
+clip_model = None
 
 class State:
     skipped = False
@@ -599,12 +604,6 @@ latent_upscale_modes = {
     "Latent (nearest)": {"mode": "nearest", "antialias": False},
     "Latent (nearest-exact)": {"mode": "nearest-exact", "antialias": False},
 }
-
-sd_upscalers = []
-
-sd_model = None
-
-clip_model = None
 
 progress_print_out = sys.stdout
 

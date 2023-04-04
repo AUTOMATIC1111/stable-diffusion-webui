@@ -53,7 +53,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .rounded-lg { border-radius: 0; }
 .tabs { background-color: black; }
 .gradio-button.tool { border-radius: 0; height: 2em; }
-.block.token-counter span { border-radius: 0; }
+.block.token-counter span { background-color: #222 !important; box-shadow: 2px 2px 2px #111; border: none !important; border-radius: 0; font-size: 0.8rem; }
 .tab-nav { zoom: 130%; margin-bottom: 16px; border-bottom: 2px solid #CE6400 !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
 .gradio-slider input[type="number"] { width: 4.5em; font-size: 0.8rem; }
@@ -76,7 +76,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
 #quicksettings > div, #quicksettings > fieldset { min-width: 26em; max-width: 26em; line-height: 2em; }
 #refresh_sd_model_checkpoint { height: 40px; margin-left: -14px; background: #333333; box-shadow: none; }
-#refresh_txt2img_styles, #refresh_img2img_styles, #open_folder_txt2img, #open_folder_img2img, #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #save_zip_txt2img, #save_zip_img2img, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_res_switch_btn, #img2img_res_switch_btn, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h, #txt2img_subseed_show, #txt2img_reuse_seed, #txt2img_reuse_subseed, #txt2img_tiling, #img2img_subseed_show { display: none; }
+#refresh_txt2img_styles, #refresh_img2img_styles, #open_folder_txt2img, #open_folder_img2img, #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #save_zip_txt2img, #save_zip_img2img, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_res_switch_btn, #img2img_res_switch_btn, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h, #txt2img_subseed_show, #txt2img_reuse_seed, #txt2img_reuse_subseed, #img2img_reuse_seed, #img2img_reuse_subseed, #txt2img_tiling, #img2img_subseed_show { display: none; }
 #save-animation { border-radius: 0 !important; margin-bottom: 16px; background-color: #111111; }
 #script_list { padding: 4px; margin-top: 20px; }
 #settings > div.flex-wrap { width: 15em; }
@@ -178,13 +178,13 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
   --button-cancel-text-color: white;
   --button-cancel-text-color-hover: var(--button-cancel-text-color);
   --button-primary-background-fill: linear-gradient(to bottom right, var(--primary-500), var(--primary-800));
-  --button-primary-background-fill-hover: linear-gradient(to bottom right, var(--primary-500), var(--primary-500));
+  --button-primary-background-fill-hover: linear-gradient(to bottom right, var(--primary-500), var(--primary-300));
   --button-primary-border-color: var(--primary-500);
   --button-primary-border-color-hover: var(--button-primary-border-color);
   --button-primary-text-color: white;
   --button-primary-text-color-hover: var(--button-primary-text-color);
   --button-secondary-background-fill: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-800));
-  --button-secondary-background-fill-hover: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-600));
+  --button-secondary-background-fill-hover: linear-gradient(to bottom right, var(--neutral-600), var(--neutral-400));
   --button-secondary-border-color: var(--neutral-600);
   --button-secondary-border-color-hover: var(--button-secondary-border-color);
   --button-secondary-text-color: white;
