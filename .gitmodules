@@ -39,3 +39,6 @@
 [submodule "modules/lycoris"]
 	path = modules/lycoris
 	url = https://github.com/KohakuBlueleaf/LyCORIS
+[submodule "extensions-builtin/stable-diffusion-webui-rembg"]
+	path = extensions-builtin/stable-diffusion-webui-rembg
+	url = https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg
