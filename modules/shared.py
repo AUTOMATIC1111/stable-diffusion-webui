@@ -429,7 +429,7 @@ options_templates.update(options_section((None, "Hidden options"), {
 
 options_templates.update(options_section(('token_merging', 'Token Merging'), {
     "token_merging": OptionInfo(
-        0.5, "Enable redundant token merging via tomesd. This can provide significant speed and memory improvements.",
+        False, "Enable redundant token merging via tomesd. This can provide significant speed and memory improvements.",
         gr.Checkbox
     ),
     "token_merging_ratio": OptionInfo(
