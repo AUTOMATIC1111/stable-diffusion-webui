@@ -487,6 +487,10 @@ def reload_model_weights(sd_model=None, info=None):
 
     if sd_model is None:  # previous model load failed
         current_checkpoint_info = None
+    elif not sd_hijack.model_hijack.weights_loaded:
+        current_checkpoint_info = sd_model.sd_checkpoint_info
+        sd_hijack.model_hijack.undo_lazyload(sd_model)
+        sd_model = None
     else:
         current_checkpoint_info = sd_model.sd_checkpoint_info
         if sd_model.sd_model_checkpoint == checkpoint_info.filename:

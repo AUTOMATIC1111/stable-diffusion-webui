@@ -152,19 +152,25 @@ class StableDiffusionModelHijack:
         self.embedding_db.add_embedding_dir(cmd_opts.embeddings_dir)
         self.weights_loaded = False
 
+    def undo_lazyload(self,m):
+        model_class = type(m)
+        del model_class.cond_stage_model
+        del model_class.model
+
     def apply_lazyload(self, m):
         model_class = type(m)
-        def _undo_lazyload_hijack():
-            del model_class.cond_stage_model
-            del model_class.model
         @property
         def _lazyload_attr_cond_stage_model(self):
-            _undo_lazyload_hijack()
-            return modules.sd_models.load_model().cond_stage_model
+            self.undo_lazyload(m)
+            modules.sd_models.load_model()
+            self.__dict__ = shared.sd_model.__dict__
+            return shared.sd_model.cond_stage_model
         @property
         def _lazyload_attr_model(self):
-            _undo_lazyload_hijack()
-            return modules.sd_models.load_model().model
+            self.undo_lazyload(m)
+            modules.sd_models.load_model()
+            self.__dict__ = shared.sd_model.__dict__
+            return shared.sd_model.model
         m.cond_stage_model = None
         m.model = None
         model_class.cond_stage_model = _lazyload_attr_cond_stage_model
@@ -202,6 +208,8 @@ class StableDiffusionModelHijack:
         self.layers = flatten(m)
 
     def undo_hijack(self, m):
+        if not self.weights_loaded:
+            return
         self.weights_loaded = False
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             m.cond_stage_model = m.cond_stage_model.wrapped 
