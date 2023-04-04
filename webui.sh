@@ -165,6 +165,7 @@ fi
 if [[ -f "${venv_dir}"/bin/activate ]]
 then
     source "${venv_dir}"/bin/activate
+    "${python_cmd}" -m pip install --upgrade pip
 else
     printf "\n%s\n" "${delimiter}"
     printf "\e[1m\e[31mERROR: Cannot activate python venv, aborting...\e[0m"
