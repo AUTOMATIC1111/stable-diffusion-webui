@@ -23,7 +23,7 @@ import torchvision
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
-startup_timer.record("import torch")
+startup_timer.record("torch")
 
 import gradio
 import ldm.modules.encoders.modules
@@ -58,7 +58,7 @@ from modules import modelloader
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
-startup_timer.record("import libraries")
+startup_timer.record("libraries")
 
 
 if cmd_opts.server_name:
@@ -79,7 +79,7 @@ def initialize():
         print(f'Torch {getattr(torch, "__long_version__", torch.__version__)} running on CPU')
 
     extensions.list_extensions()
-    startup_timer.record("list extensions")
+    startup_timer.record("extensions")
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
@@ -88,28 +88,28 @@ def initialize():
 
     modelloader.cleanup_models()
     modules.sd_models.setup_model()
-    startup_timer.record("list models")
+    startup_timer.record("models")
 
     codeformer.setup_model(cmd_opts.codeformer_models_path)
-    startup_timer.record("setup codeformer")
+    startup_timer.record("codeformer")
 
     gfpgan.setup_model(cmd_opts.gfpgan_models_path)
-    startup_timer.record("setup gfpgan")
+    startup_timer.record("gfpgan")
 
     modelloader.list_builtin_upscalers()
-    startup_timer.record("list builtin upscalers")
+    startup_timer.record("upscalers")
 
     modules.scripts.load_scripts()
-    startup_timer.record("load scripts")
+    startup_timer.record("scripts")
 
     modelloader.load_upscalers()
-    startup_timer.record("load upscalers")
+    startup_timer.record("upscalers")
 
     modules.sd_vae.refresh_vae_list()
-    startup_timer.record("refresh VAE")
+    startup_timer.record("vae")
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
-    startup_timer.record("refresh textual inversion templates")
+    startup_timer.record("embeddings")
 
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
@@ -117,7 +117,7 @@ def initialize():
     startup_timer.record("opts onchange")
 
     shared.reload_hypernetworks()
-    startup_timer.record("reload hypernets")
+    startup_timer.record("hypernets")
 
     ui_extra_networks.intialize()
     ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
@@ -165,7 +165,7 @@ def load_model():
     shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
     shared.state.end()
-    startup_timer.record("load checkpoint")
+    startup_timer.record("checkpoint")
 
 
 def setup_middleware(app):
@@ -196,7 +196,7 @@ def api_only():
 
     modules.script_callbacks.app_started_callback(None, app)
 
-    print(f"Startup time: {startup_timer.summary()}.")
+    print(f"Startup time: {startup_timer.summary()}")
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
@@ -206,13 +206,13 @@ def webui():
 
     if shared.opts.clean_temp_dir_at_start:
         ui_tempdir.cleanup_tmpdr()
-        startup_timer.record("cleanup temp dir")
+        startup_timer.record("cleanup")
 
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("scripts before_ui_callback")
 
     shared.demo = modules.ui.create_ui()
-    startup_timer.record("create ui")
+    startup_timer.record("ui")
 
     if not cmd_opts.no_gradio_queue:
         shared.demo.queue(16)
@@ -247,7 +247,7 @@ def webui():
 
     cmd_opts.autolaunch = False
 
-    startup_timer.record("gradio launch")
+    startup_timer.record("gradio")
 
     app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
 
@@ -265,7 +265,7 @@ def webui():
 
     load_model()
 
-    print(f"Startup time: {startup_timer.summary()}.")
+    print(f"Startup time: {startup_timer.summary()}")
 
     while True:
         time.sleep(0.1)

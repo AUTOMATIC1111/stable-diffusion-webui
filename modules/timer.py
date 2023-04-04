@@ -24,12 +24,12 @@ class Timer:
     def summary(self):
         res = f"{self.total:.1f}s"
 
-        additions = [x for x in self.records.items() if x[1] >= 0.1]
+        additions = [x for x in self.records.items() if x[1] >= 0.05]
         if not additions:
             return res
 
         res += " ("
-        res += ", ".join([f"{category}: {time_taken:.1f}s" for category, time_taken in additions])
+        res += " ".join([f"{category}={time_taken:.1f}s" for category, time_taken in additions])
         res += ")"
 
         return res

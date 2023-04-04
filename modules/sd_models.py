@@ -269,14 +269,14 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
         return checkpoints_loaded[checkpoint_info]
 
     res = read_state_dict(checkpoint_info.filename)
-    timer.record("load weights")
+    timer.record("load")
 
     return res
 
 
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
     sd_model_hash = checkpoint_info.calculate_shorthash()
-    timer.record("calculate hash")
+    timer.record("hash")
 
     shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
 
@@ -285,7 +285,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     model.load_state_dict(state_dict, strict=False)
     del state_dict
-    timer.record("apply weights")
+    timer.record("apply")
 
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
@@ -293,7 +293,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     if shared.cmd_opts.opt_channelslast:
         model.to(memory_format=torch.channels_last)
-        timer.record("apply channels_last")
+        timer.record("channels")
 
     if not shared.cmd_opts.no_half:
         vae = model.first_stage_model
@@ -333,7 +333,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     sd_vae.clear_loaded_vae()
     vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
     sd_vae.load_vae(model, vae_file, vae_source)
-    timer.record("load vae")
+    timer.record("vae")
 
 
 def enable_midas_autodownload():
@@ -432,12 +432,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
 
-    timer.record("find config")
-
     sd_config = OmegaConf.load(checkpoint_config)
     repair_config(sd_config)
 
-    timer.record("load config")
+    timer.record("config")
 
     print(f"Creating model from config: {checkpoint_config}")
 
@@ -450,7 +448,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     sd_model.used_config = checkpoint_config
 
-    timer.record("create model")
+    timer.record("create")
 
     load_model_weights(sd_model, checkpoint_info, state_dict, timer)
 
@@ -459,7 +457,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     else:
         sd_model.to(shared.device)
 
-    timer.record("device move")
+    timer.record("move")
 
     sd_hijack.model_hijack.hijack(sd_model)
 
@@ -470,13 +468,13 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
 
-    timer.record("load textual inversion embeddings")
+    timer.record("embeddings")
 
     script_callbacks.model_loaded_callback(sd_model)
 
-    timer.record("scripts callbacks")
+    timer.record("callbacks")
 
-    print(f"Model loaded in {timer.summary()}.")
+    print(f"Model loaded in {timer.summary()}")
 
     return sd_model
 
@@ -527,13 +525,13 @@ def reload_model_weights(sd_model=None, info=None):
         timer.record("hijack")
 
         script_callbacks.model_loaded_callback(sd_model)
-        timer.record("script callbacks")
+        timer.record("callbacks")
 
         if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
             sd_model.to(devices.device)
-            timer.record("device move")
+            timer.record("device")
 
-    print(f"Weights loaded in {timer.summary()}.")
+    print(f"Weights loaded in {timer.summary()}")
 
 def unload_model_weights(sd_model=None, info=None):
     from modules import lowvram, devices, sd_hijack
@@ -551,6 +549,6 @@ def unload_model_weights(sd_model=None, info=None):
         devices.torch_gc()
         torch.cuda.empty_cache()
 
-    print(f"Unloaded weights {timer.summary()}.")
+    print(f"Unloaded weights {timer.summary()}")
 
     return sd_model
