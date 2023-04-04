@@ -1,6 +1,14 @@
 from pyngrok import ngrok, conf, exception
 
 def connect(token, port, region):
+    # Guard for existing tunnels
+    existing = ngrok.get_tunnels()
+    if existing:
+        public_url = existing[0].public_url
+        print(f'ngrok connected to localhost:{port}! URL: {public_url}\n'
+               'You can use this link after the launch is complete.')
+        return
+
     account = None
     if token is None:
         token = 'None'
