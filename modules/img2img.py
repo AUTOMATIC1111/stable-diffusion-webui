@@ -157,7 +157,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     if shared.cmd_opts.enable_console_prompts:
         print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
-    p.extra_generation_params["Mask blur"] = mask_blur
+    if mask:
+        p.extra_generation_params["Mask blur"] = mask_blur
 
     if is_batch:
         assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"

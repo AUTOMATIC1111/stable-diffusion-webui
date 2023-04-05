@@ -129,8 +129,8 @@ Requested path was: {f}
 
         generation_info = None
         with gr.Column():
-            with gr.Row(elem_id=f"image_buttons_{tabname}"):
-                open_folder_button = gr.Button(folder_symbol, elem_id="hidden_element" if shared.cmd_opts.hide_ui_dir_config else f'open_folder_{tabname}')
+            with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
+                open_folder_button = gr.Button(folder_symbol, visible=not shared.cmd_opts.hide_ui_dir_config)
 
                 if tabname != "extras":
                     save = gr.Button('Save', elem_id=f'save_{tabname}')
@@ -145,11 +145,10 @@ Requested path was: {f}
             )
 
             if tabname != "extras":
-                with gr.Row():
-                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
+                download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
 
                 with gr.Group():
-                    html_info = gr.HTML(elem_id=f'html_info_{tabname}')
+                    html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
                     html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
                     generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
@@ -160,6 +159,7 @@ Requested path was: {f}
                             _js="function(x, y, z){ return [x, y, selected_gallery_index()] }",
                             inputs=[generation_info, html_info, html_info],
                             outputs=[html_info, html_info],
+                            show_progress=False,
                         )
 
                     save.click(
@@ -195,7 +195,7 @@ Requested path was: {f}
 
             else:
                 html_info_x = gr.HTML(elem_id=f'html_info_x_{tabname}')
-                html_info = gr.HTML(elem_id=f'html_info_{tabname}')
+                html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
                 html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
             paste_field_names = []
