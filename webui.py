@@ -307,8 +307,9 @@ def webui():
         modules.scripts.reload_scripts()
         startup_timer.record("load scripts")
 
-        modules.script_callbacks.model_loaded_callback(shared.sd_model)
-        startup_timer.record("model loaded callback")
+        if modules.sd_hijack.model_hijack.weights_loaded:
+            modules.script_callbacks.model_loaded_callback(shared.sd_model)
+            startup_timer.record("model loaded callback")
 
         modelloader.load_upscalers()
         startup_timer.record("load upscalers")
