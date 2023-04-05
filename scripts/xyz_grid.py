@@ -404,14 +404,14 @@ class Script(scripts.Script):
             swap_yz_axes_button = gr.Button(value="Swap Y/Z axes", elem_id="yz_grid_swap_axes_button")
             swap_xz_axes_button = gr.Button(value="Swap X/Z axes", elem_id="xz_grid_swap_axes_button")
 
-        def swap_axes(axis1_type, axis1_values, axis2_type, axis2_values):
-            return self.current_axis_options[axis2_type].label, axis2_values, self.current_axis_options[axis1_type].label, axis1_values
+        def swap_axes(axis1_type, axis1_values, axis1_values_dropdown, axis2_type, axis2_values, axis2_values_dropdown):
+            return self.current_axis_options[axis2_type].label, axis2_values, axis2_values_dropdown, self.current_axis_options[axis1_type].label, axis1_values, axis1_values_dropdown
 
-        xy_swap_args = [x_type, x_values, y_type, y_values]
+        xy_swap_args = [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown]
         swap_xy_axes_button.click(swap_axes, inputs=xy_swap_args, outputs=xy_swap_args)
-        yz_swap_args = [y_type, y_values, z_type, z_values]
+        yz_swap_args = [y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown]
         swap_yz_axes_button.click(swap_axes, inputs=yz_swap_args, outputs=yz_swap_args)
-        xz_swap_args = [x_type, x_values, z_type, z_values]
+        xz_swap_args = [x_type, x_values, x_values_dropdown, z_type, z_values, z_values_dropdown]
         swap_xz_axes_button.click(swap_axes, inputs=xz_swap_args, outputs=xz_swap_args)
 
         def fill(x_type):
@@ -422,22 +422,37 @@ class Script(scripts.Script):
         fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values_dropdown])
         fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values_dropdown])
 
-        def select_axis(x_type):
-            choices = self.current_axis_options[x_type].choices
+        def select_axis(axis_type,axis_values_dropdown):
+            choices = self.current_axis_options[axis_type].choices
             has_choices = choices is not None
-            return gr.Button.update(visible=has_choices),gr.Textbox.update(visible=not has_choices),gr.update(choices=choices() if has_choices else None,visible=has_choices,value=[])
+            current_values = axis_values_dropdown
+            if has_choices:
+                choices = choices()
+                if isinstance(current_values,str):
+                    current_values = current_values.split(",")
+                current_values = list(filter(lambda x: x in choices, current_values))
+            return gr.Button.update(visible=has_choices),gr.Textbox.update(visible=not has_choices),gr.update(choices=choices if has_choices else None,visible=has_choices,value=current_values)
 
-        x_type.change(fn=select_axis, inputs=[x_type], outputs=[fill_x_button,x_values,x_values_dropdown])
-        y_type.change(fn=select_axis, inputs=[y_type], outputs=[fill_y_button,y_values,y_values_dropdown])
-        z_type.change(fn=select_axis, inputs=[z_type], outputs=[fill_z_button,z_values,z_values_dropdown])
+        x_type.change(fn=select_axis, inputs=[x_type,x_values_dropdown], outputs=[fill_x_button,x_values,x_values_dropdown])
+        y_type.change(fn=select_axis, inputs=[y_type,y_values_dropdown], outputs=[fill_y_button,y_values,y_values_dropdown])
+        z_type.change(fn=select_axis, inputs=[z_type,z_values_dropdown], outputs=[fill_z_button,z_values,z_values_dropdown])
+
+        def get_dropdown_update_from_params(axis,params):
+            val_key = axis + " Values"
+            vals = params.get(val_key,"")
+            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+            return gr.update(value = valslist)
 
         self.infotext_fields = (
             (x_type, "X Type"),
             (x_values, "X Values"),
+            (x_values_dropdown, lambda params:get_dropdown_update_from_params("X",params)),
             (y_type, "Y Type"),
             (y_values, "Y Values"),
+            (y_values_dropdown, lambda params:get_dropdown_update_from_params("Y",params)),
             (z_type, "Z Type"),
             (z_values, "Z Values"),
+            (z_values_dropdown, lambda params:get_dropdown_update_from_params("Z",params)),
         )
 
         return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size]
@@ -514,12 +529,18 @@ class Script(scripts.Script):
             return valslist
 
         x_opt = self.current_axis_options[x_type]
+        if x_opt.choices is not None:
+            x_values = ",".join(x_values_dropdown)
         xs = process_axis(x_opt, x_values, x_values_dropdown)
 
         y_opt = self.current_axis_options[y_type]
+        if y_opt.choices is not None:
+            y_values = ",".join(y_values_dropdown)
         ys = process_axis(y_opt, y_values, y_values_dropdown)
 
         z_opt = self.current_axis_options[z_type]
+        if z_opt.choices is not None:
+            z_values = ",".join(z_values_dropdown)
         zs = process_axis(z_opt, z_values, z_values_dropdown)
 
         # this could be moved to common code, but unlikely to be ever triggered anywhere else
