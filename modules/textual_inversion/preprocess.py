@@ -162,23 +162,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         filename = os.path.join(src, imagefile)
         try:
             img = Image.open(filename)
-            # make sure to rotate the image according to EXIF data of the original image
-            # ImageOps.exif_transpose(img) # doesn't work for some reason
-            EXIF = img._getexif()
-            # rotate the image according to the EXIF data
-            try:
-                if EXIF[274] == 3:
-                    # print("Rotating image by 180 degrees")
-                    img = img.rotate(180, expand=True)
-                elif EXIF[274] == 6:
-                    # print("Rotating image by 270 degrees")
-                    img = img.rotate(270, expand=True)
-                elif EXIF[274] == 8:
-                    # print("Rotating image by 90 degrees")
-                    img = img.rotate(90, expand=True)
-            except:
-                pass
-                # print("No EXIF data found for image: " + filename)
+            img = ImageOps.exif_transpose(img)
             img = img.convert("RGB")
         except Exception:
             continue
