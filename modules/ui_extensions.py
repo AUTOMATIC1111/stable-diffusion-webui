@@ -10,9 +10,12 @@ import gradio as gr
 import html
 import shutil
 import errno
+import urllib.request
+import re
 
 from modules import extensions, shared, paths
 from modules.call_queue import wrap_gradio_gpu_call
+from multiprocessing.pool import ThreadPool
 
 available_extensions = {"extensions": []}
 
@@ -185,7 +188,6 @@ def install_extension_from_index(url, hide_tags, sort_column, filter_text):
 def refresh_available_extensions(url, hide_tags, sort_column):
     global available_extensions
 
-    import urllib.request
     with urllib.request.urlopen(url) as response:
         text = response.read()
 
@@ -208,6 +210,18 @@ def search_extensions(filter_text, hide_tags, sort_column):
     return code, ''
 
 
+def scrape_github_stars(url):
+    try:
+        with urllib.request.urlopen(url) as response:
+            text = response.read()
+        pattern = rb'"(\d+) users? starred this repository"'
+        match = re.search(pattern, text)
+
+        return int(match[1]) if match else None
+    except:
+        return None
+
+
 sort_ordering = [
     # (reverse, order_by_function)
     (True, lambda x: x.get('added', 'z')),
@@ -215,6 +229,7 @@ sort_ordering = [
     (False, lambda x: x.get('name', 'z')),
     (True, lambda x: x.get('name', 'z')),
     (False, lambda x: 'z'),
+    (True, lambda x: x.get('stars', 0)),
 ]
 
 
@@ -239,6 +254,14 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
     """
 
     sort_reverse, sort_function = sort_ordering[sort_column if 0 <= sort_column < len(sort_ordering) else 0]
+
+    if sort_column == 5 and extlist and "stars" not in extlist[0]:
+        urls = [x["url"] for x in extlist]
+        with ThreadPool(50) as pool:
+            stars = pool.map(scrape_github_stars, urls)
+
+        for i in range(len(stars)):
+            extlist[i]["stars"] = stars[i] if stars[i] else 0
 
     for ext in sorted(extlist, key=sort_function, reverse=sort_reverse):
         name = ext.get("name", "noname")
@@ -266,13 +289,23 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
 
         tags_text = ", ".join([f"<span class='extension-tag' title='{tags.get(x, '')}'>{x}</span>" for x in extension_tags])
 
+        if "stars" in ext:
+            stars_text = f"""<span class="stars">Stars: {ext["stars"]}</span>"""
+        else:
+            stars_text = ""
+
         code += f"""
             <tr>
                 <td><a href="{html.escape(url)}" target="_blank">{html.escape(name)}</a><br />{tags_text}</td>
-                <td>{html.escape(description)}<p class="info"><span class="date_added">Added: {html.escape(added)}</span></p></td>
+                <td>{html.escape(description)}
+                    <p class="info">
+                        <span class="date_added">Added: {html.escape(added)}</span>
+                        {stars_text}
+                    </p>
+                </td>
                 <td>{install_code}</td>
             </tr>
-        
+
         """
 
         for tag in [x for x in extension_tags if x not in tags]:
@@ -336,11 +369,11 @@ def create_ui():
 
                 with gr.Row():
                     hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
-                    sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", ], type="index")
+                    sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", "github stars"], type="index")
 
-                with gr.Row(): 
+                with gr.Row():
                     search_extensions_text = gr.Text(label="Search").style(container=False)
-                   
+
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
 

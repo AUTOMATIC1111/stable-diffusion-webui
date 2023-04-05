@@ -621,6 +621,11 @@ div.dimensions-tools{
     font-size: 90%;
 }
 
+#available_extensions .stars{
+    opacity: 0.85;
+    font-size: 90%;
+}
+
 /* replace original footer with ours */
 
 footer {
