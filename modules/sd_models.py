@@ -123,11 +123,13 @@ def list_models():
 
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
+        print("Checkpoint in --ckpt argument not found", file=sys.stderr)
 
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         checkpoint_info.register()
+
+    print('Available models:', len(checkpoints_list))
 
 
 def get_closet_checkpoint_match(search_string):

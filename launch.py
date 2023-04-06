@@ -9,6 +9,7 @@ import json
 
 from modules import cmd_args
 from modules.paths_internal import script_path, extensions_dir
+from rich import print
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
@@ -173,12 +174,13 @@ def run_extension_installer(extension_dir):
         return
 
     try:
+        print('Running extension installer:', path_installer)
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.abspath(".")
 
         stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env)
-        if stdout is not None:
-            print(stdout)
+        if stdout is not None and len(stdout) > 0:
+            print('A', stdout)
     except Exception as e:
         print(e, file=sys.stderr)
 
