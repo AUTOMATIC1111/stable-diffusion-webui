@@ -279,7 +279,7 @@ function initTheme() {
 	//})
 
 	const preview_styles = gradioApp().querySelector('#preview-styles');
-
+	let intervalChange;
 
 
 	gradioApp().querySelectorAll('#ui_theme_settings input').forEach((elem) => {
@@ -309,22 +309,26 @@ function initTheme() {
 			
 			//console.log(styleobj);
 			
-			let inner_styles = "";
-			
-			for (const key in styleobj) {
-				inner_styles += key + ':' + styleobj[key] + ';'; 			
-			}
-			
-			vars = inner_styles.split(";");			
-			preview_styles.innerHTML = ':host {'+ inner_styles +'}';
-			preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
 
-			vars_textarea.value = inner_styles;			
-			const vEvent = new Event("input");
-			Object.defineProperty(vEvent, "target", {value: vars_textarea})
-			vars_textarea.dispatchEvent(vEvent);
-			
-			offsetColorsHSV(hsloffset);
+			if(intervalChange != null) clearInterval(intervalChange);
+			intervalChange = setTimeout(() => {
+				let inner_styles = "";
+				
+				for (const key in styleobj) {
+					inner_styles += key + ':' + styleobj[key] + ';'; 			
+				}
+				
+				vars = inner_styles.split(";");			
+				preview_styles.innerHTML = ':host {'+ inner_styles +'}';
+				preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
+
+				vars_textarea.value = inner_styles;			
+				const vEvent = new Event("input");
+				Object.defineProperty(vEvent, "target", {value: vars_textarea})
+				vars_textarea.dispatchEvent(vEvent);
+				
+				offsetColorsHSV(hsloffset);
+			}, 500)
 			
 		})
 	})
