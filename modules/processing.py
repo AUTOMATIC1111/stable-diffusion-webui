@@ -657,7 +657,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 for x in x_samples_ddim:
                     devices.test_for_nans(x, "vae")
             except devices.NansException as e:
-                if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae and torch.cuda.get_device_capability()[0] >= 8:
+                if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae and shared.cmd_opts.rollback_vae:
                     print('\nA tensor with all NaNs was produced in VAE, try converting to bf16.')
                     devices.dtype_vae = torch.bfloat16
                     vae_file, vae_source = sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
