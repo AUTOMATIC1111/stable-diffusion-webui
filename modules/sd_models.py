@@ -489,8 +489,6 @@ def reload_model_weights(sd_model=None, info=None):
         current_checkpoint_info = None
     elif not sd_hijack.model_hijack.weights_loaded:
         current_checkpoint_info = sd_model.sd_checkpoint_info
-        sd_hijack.model_hijack.undo_lazyload(sd_model)
-        sd_model = None
     else:
         current_checkpoint_info = sd_model.sd_checkpoint_info
         if sd_model.sd_model_checkpoint == checkpoint_info.filename:
@@ -510,6 +508,19 @@ def reload_model_weights(sd_model=None, info=None):
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
 
     timer.record("find config")
+
+    if not sd_hijack.model_hijack.weights_loaded:
+        try:
+            if sd_model is not None:
+                sd_hijack.model_hijack.undo_lazyload(sd_model)
+            del sd_model
+            load_model(checkpoint_info, already_loaded_state_dict=state_dict)
+            return shared.sd_model
+        except Exception as e:
+            print("Failed to load checkpoint, reapplying lazyload, select another checkpoint and try again")
+            if shared.sd_model is not None:
+                sd_hijack.model_hijack.apply_lazyload(shared.sd_model)
+            raise RuntimeError("Failed to load checkpoint, select another checkpoint and try again")
 
     if sd_model is None or checkpoint_config != sd_model.used_config:
         del sd_model
