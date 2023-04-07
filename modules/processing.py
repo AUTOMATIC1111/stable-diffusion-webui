@@ -670,6 +670,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
             for i, x_sample in enumerate(x_samples_ddim):
+                p.batch_index = i
+
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                 x_sample = x_sample.astype(np.uint8)
 
@@ -718,7 +720,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                     if opts.return_mask:
                         output_images.append(image_mask)
-                    
+
                     if opts.return_mask_composite:
                         output_images.append(image_mask_composite)
 

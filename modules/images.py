@@ -352,6 +352,8 @@ class FilenameGenerator:
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
         'prompt_words': lambda self: self.prompt_words(),
+        'batch_number': lambda self: self.p.batch_index + 1,
+        'generation_number': lambda self: self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -403,6 +405,10 @@ class FilenameGenerator:
 
         for m in re_pattern.finditer(x):
             text, pattern = m.groups()
+
+            if pattern is not None and (pattern.lower() == 'batch_number' and self.p.batch_size == 1 or pattern.lower() == 'generation_number' and self.p.n_iter == 1 and self.p.batch_size == 1):
+                continue
+
             res += text
 
             if pattern is None:
