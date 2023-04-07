@@ -210,7 +210,6 @@ class StableDiffusionModelHijack:
     def undo_hijack(self, m):
         if not self.weights_loaded:
             return
-        self.weights_loaded = False
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             m.cond_stage_model = m.cond_stage_model.wrapped 
 
