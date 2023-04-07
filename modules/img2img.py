@@ -1,3 +1,5 @@
+import json
+
 import math
 import os
 import sys
@@ -39,7 +41,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
     state.job_count = len(images) * p.n_iter
 
     for i, image in enumerate(images):
-        state.job = f"{i+1} out of {len(images)}"
+        state.job = f"{i + 1} out of {len(images)}"
         if state.skipped:
             state.skipped = False
 
@@ -64,21 +66,16 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
         if proc is None:
             proc = process_images(p)
 
-        for n, processed_image in enumerate(proc.images):
-            filename = os.path.basename(image)
 
-            if n > 0:
-                left, right = os.path.splitext(filename)
-                filename = f"{left}-{n}{right}"
-
-            if not save_normally:
-                os.makedirs(output_dir, exist_ok=True)
-                if processed_image.mode == 'RGBA':
-                    processed_image = processed_image.convert("RGB")
-                processed_image.save(os.path.join(output_dir, filename))
-
-
-def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, *args):
+def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch,
+            init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint,
+            init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float,
+            inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int,
+            cfg_scale: float, image_cfg_scale: float, denoising_strength: float, seed: int, subseed: int,
+            subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool,
+            height: int, width: int, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int,
+            inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str,
+            img2img_batch_inpaint_mask_dir: str, override_settings_texts, *args):
     override_settings = create_override_settings_dict(override_settings_texts)
 
     is_batch = mode == 5
@@ -91,6 +88,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         mask = None
     elif mode == 2:  # inpaint
         image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
+        # image.save("model-2-image.png")
+        # mask.save("model-2-mask.png")
         alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
         mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
         image = image.convert("RGB")
@@ -98,11 +97,15 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         image = inpaint_color_sketch
         orig = inpaint_color_sketch_orig or inpaint_color_sketch
         pred = np.any(np.array(image) != np.array(orig), axis=-1)
+        if not pred or not pred.shape:
+            raise ValueError('mask err')
         mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
         mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
         blur = ImageFilter.GaussianBlur(mask_blur)
         image = Image.composite(image.filter(blur), orig, mask.filter(blur))
         image = image.convert("RGB")
+        # inpaint_color_sketch.save("model-3-inpaint_color_sketch.png")
+        # inpaint_color_sketch_orig.save("model-3-inpaint_color_sketch_orig.png")
     elif mode == 4:  # inpaint upload mask
         image = init_img_inpaint
         mask = init_mask_inpaint
@@ -115,6 +118,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         image = ImageOps.exif_transpose(image)
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
+    sampler_name = sd_samplers.samplers_for_img2img[sampler_index].name
 
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
@@ -129,7 +133,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         seed_resize_from_h=seed_resize_from_h,
         seed_resize_from_w=seed_resize_from_w,
         seed_enable_extras=seed_enable_extras,
-        sampler_name=sd_samplers.samplers_for_img2img[sampler_index].name,
+        sampler_name=sampler_name,
         batch_size=batch_size,
         n_iter=n_iter,
         steps=steps,
@@ -150,6 +154,24 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         inpainting_mask_invert=inpainting_mask_invert,
         override_settings=override_settings,
     )
+
+    pr = {}
+    for name in dir(p):
+        value = getattr(p, name)
+        try:
+            if not name.startswith('_') and not callable(value):
+                pr[name] = value
+                if isinstance(value, Image.Image):
+                    value.save(f'{name}.png')
+                    pr[name] = f'{name}.png'
+                if 'init_images' == name:
+                    pr[name] = []
+                    for i, img in enumerate(p.init_images):
+                        img.save(f'init_images_{i}.png')
+                        pr[name].append(f'init_images_{i}.png')
+        except:
+            pass
+    print(json.dumps(pr))
 
     p.scripts = modules.scripts.scripts_txt2img
     p.script_args = args
@@ -181,4 +203,5 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     if opts.do_not_show_images:
         processed.images = []
 
-    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments)
+    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(
+        processed.comments)

@@ -349,13 +349,34 @@ def check_resource():
     try_find_cache_json_file()
 
 
+def run_worker():
+    from consumer import run_executor
+    from worker.task_send import RedisSender, VipLevel
+    from handlers.img2img import Img2ImgTask
+    from handlers.controlnet import bind_debug_img_task_args
+
+    tasks = Img2ImgTask.debug_task()
+    sender = RedisSender()
+    sender.push_task(VipLevel.Level_1, *bind_debug_img_task_args(*tasks))
+    initialize()
+    modules.script_callbacks.before_ui_callback()
+    startup_timer.record("scripts before_ui_callback")
+
+    shared.demo = modules.ui.create_ui()
+
+    run_executor(shared.sd_model_recorder)
+
+
 if __name__ == "__main__":
     import sys
     from tools.mysql import dispose
     print(sys.argv)
     check_resource()
-    if cmd_opts.nowebui:
-        api_only()
+    if cmd_opts.worker:
+        run_worker()
     else:
-        webui()
+        if cmd_opts.nowebui:
+            api_only()
+        else:
+            webui()
     dispose()

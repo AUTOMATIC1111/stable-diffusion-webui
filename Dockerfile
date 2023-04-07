@@ -60,8 +60,8 @@ RUN https_proxy=${HTTP_PROXY} git clone -b v0.1.0 https://github.com/sczhou/Code
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/salesforce/BLIP.git /root/stable-diffusion-webui/repositories/BLIP
 
 RUN pip3 install setuptools_rust -i https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip3 install -r  /root/stable-diffusion-webui/repositories/CodeFormer/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-RUN pip3 install -r  /root/stable-diffusion-webui/repositories/k-diffusion/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip3 install -r  /root/stable-diffusion-webui/repositories/CodeFormer/requirements.txt  -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
+RUN pip3 install -r  /root/stable-diffusion-webui/repositories/k-diffusion/requirements.txt  -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
 
 RUN cd  /root/stable-diffusion-webui/repositories/stable-diffusion-stability-ai \
     && python3 setup.py install
@@ -82,17 +82,24 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/hnmr293/sd-webui-llul
 RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/sd-webui-additional-networks /root/stable-diffusion-webui/extensions/additional-networks
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111 /root/stable-diffusion-webui/extensions/multidiffusion-upscaler
 RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/stable-diffusion-webui-tokenizer /root/stable-diffusion-webui/extensions/stable-diffusion-webui-tokenizer
-# RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients /root/stable-diffusion-webui/extensions/aesthetic-gradients
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg.git /root/stable-diffusion-webui/extensions/rembg
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen /root/stable-diffusion-webui/extensions/stable-diffusion-webui-promptgen
 RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/a1111-sd-webui-tagcomplete  /root/stable-diffusion-webui/extensions/tagcomplete
-RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/zh_cn.csv -O zh_cn.csv
-RUN mv zh_cn.csv /root/stable-diffusion-webui/extensions/tagcomplete/tags/
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/KutsuyaYuki/ABG_extension /root/stable-diffusion-webui/extensions/ABG_extension
+
+RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/zh_cn.csv -O /root/stable-diffusion-webui/extensions/tagcomplete/tags/zh_cn.csv
 
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-composable-lora.git  /root/stable-diffusion-webui/extensions/composable-lora
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-two-shot.git  /root/stable-diffusion-webui/extensions/two-shot
 
 RUN mkdir -p  /root/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
 RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3, \"tac_translation.translationFile\": \"zh_cn.csv\", \"sd_vae\": \"vae-ft-mse-840000-ema-pruned.ckpt\"}" > /root/stable-diffusion-webui/config.json
+# CLIP 所需物料
+RUN mkdir -p  /root/stable-diffusion-webui/stable-diffusion-webui/interrogate
+RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/artists.txt -O /root/stable-diffusion-webui/stable-diffusion-webui/interrogate/artists.txt
+RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/flavors.txt -O /root/stable-diffusion-webui/stable-diffusion-webui/interrogate/flavors.txt
+RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/mediums.txt -O /root/stable-diffusion-webui/stable-diffusion-webui/interrogate/mediums.txt
+RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/movements.txt -O /root/stable-diffusion-webui/stable-diffusion-webui/interrogate/movements.txt
 
 # 下载模型(默认不下载)
 #RUN cd  /root/stable-diffusion-webui/models/Stable-diffusion \
@@ -100,10 +107,11 @@ RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3, \"tac
 #RUN cd /root/stable-diffusion-webui/  \
 #    &&  python3 extensions/sd-webui-controlnet/install.py
 # 确定OPEN_CLIP 和arkupsafe版本
-RUN pip3 install basicsr Werkzeug==2.1.0 open_clip_torch==2.16.0 markupsafe==2.0.1 -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
+RUN pip3 install basicsr Werkzeug==2.1.0 open_clip_torch==2.16.0 markupsafe==2.0.1 onnxruntime-gpu -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
 RUN pip3 uninstall gradio -y
+
 
 WORKDIR /root/stable-diffusion-webui
 
 # 启动时必须将models下面的一些必要文件挂载进去，例如：VAE-approx/models.pt
-CMD bash -c "cd /root/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --api --xformers --enable-insecure-extension-access --no-half-vae --cors-allow-origins=\"*\">>nohup.out"
+CMD bash -c "cd /root/stable-diffusion-webui; python3 -u webui.py --server-name 0.0.0.0 --api --clip-models-path=models/CLIP --xformers --enable-insecure-extension-access --no-half-vae --cors-allow-origins=\"*\">>nohup.out"

@@ -1,3 +1,4 @@
+import json
 import os
 import re
 import sys
@@ -37,6 +38,8 @@ class Script:
     """if set in ui(), this is a list of names of infotext fields; the fields will be sent through the
     various "Send to <X>" buttons when clicked
     """
+
+    default_values = None
 
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
@@ -198,7 +201,8 @@ def list_scripts(scriptdirname, extension):
     for ext in extensions.active():
         scripts_list += ext.list_files(scriptdirname, extension)
 
-    scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
+    scripts_list = [x for x in scripts_list if
+                    os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 
     return scripts_list
 
@@ -237,11 +241,12 @@ def load_scripts():
             if issubclass(script_class, Script):
                 scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
-                postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
+                postprocessing_scripts_data.append(
+                    ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
     def orderby(basedir):
         # 1st webui, 2nd extensions-builtin, 3rd extensions
-        priority = {os.path.join(paths.script_path, "extensions-builtin"):1, paths.script_path:0}
+        priority = {os.path.join(paths.script_path, "extensions-builtin"): 1, paths.script_path: 0}
         for key in priority:
             if basedir.startswith(key):
                 return priority[key]
@@ -284,6 +289,7 @@ class ScriptRunner:
         self.titles = []
         self.infotext_fields = []
         self.paste_field_names = []
+        self.clean_script_log()
 
     def initialize_scripts(self, is_img2img):
         from modules import scripts_auto_postprocessing
@@ -306,13 +312,35 @@ class ScriptRunner:
                 self.scripts.append(script)
                 self.alwayson_scripts.append(script)
                 script.alwayson = True
-
             elif visibility:
                 self.scripts.append(script)
                 self.selectable_scripts.append(script)
 
+    def write_script_info(self, script, index, inputs):
+        with open("scripts.log", "a+") as f:
+            category = 'other'
+            if script.is_txt2img:
+                category = 't2i'
+            elif script.is_img2img:
+                category = 'i2i'
+            if script.alwayson:
+                category += "(alwayson)"
+            else:
+                category += "(selectable)"
+
+            default_values = script.default_values or [x.value for x in inputs[script.args_from: script.args_to]]
+
+            info = f"[{category}] title: {script.title()}, index:{index}, args from:{script.args_from}~{script.args_to}" \
+                   f",args length:{script.args_to - script.args_from}, default:{default_values}\n"
+            f.write(info)
+
+    def clean_script_log(self):
+        if os.path.isfile('scripts.log'):
+            os.remove('scripts.log')
+
     def setup_ui(self):
-        self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
+        self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in
+                       self.selectable_scripts]
 
         inputs = [None]
         inputs_alwayson = [True]
@@ -338,24 +366,26 @@ class ScriptRunner:
             inputs += controls
             inputs_alwayson += [script.alwayson for _ in controls]
             script.args_to = len(inputs)
+            script.default_values = [x.value for x in controls]
 
-        for script in self.alwayson_scripts:
+        for i, script in enumerate(self.alwayson_scripts):
             with gr.Group() as group:
                 create_script_ui(script, inputs, inputs_alwayson)
-
+            self.write_script_info(script, i, inputs)
             script.group = group
 
-        dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
+        dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None",
+                               type="index")
         inputs[0] = dropdown
 
-        for script in self.selectable_scripts:
+        for i, script in enumerate(self.selectable_scripts):
             with gr.Group(visible=False) as group:
                 create_script_ui(script, inputs, inputs_alwayson)
-
+            self.write_script_info(script, i, inputs)
             script.group = group
 
         def select_script(script_index):
-            selected_script = self.selectable_scripts[script_index - 1] if script_index>0 else None
+            selected_script = self.selectable_scripts[script_index - 1] if script_index > 0 else None
 
             return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
 
@@ -377,6 +407,7 @@ class ScriptRunner:
         )
 
         self.script_load_ctr = 0
+
         def onload_script_visibility(params):
             title = params.get('Script', None)
             if title:
@@ -387,8 +418,8 @@ class ScriptRunner:
             else:
                 return gr.update(visible=False)
 
-        self.infotext_fields.append( (dropdown, lambda x: gr.update(value=x.get('Script', 'None'))) )
-        self.infotext_fields.extend( [(script.group, onload_script_visibility) for script in self.selectable_scripts] )
+        self.infotext_fields.append((dropdown, lambda x: gr.update(value=x.get('Script', 'None'))))
+        self.infotext_fields.extend([(script.group, onload_script_visibility) for script in self.selectable_scripts])
 
         return inputs
 
@@ -398,7 +429,7 @@ class ScriptRunner:
         if script_index == 0:
             return None
 
-        script = self.selectable_scripts[script_index-1]
+        script = self.selectable_scripts[script_index - 1]
 
         if script is None:
             return None
@@ -530,7 +561,6 @@ def add_classes_to_gradio_component(comp):
 
     if getattr(comp, 'multiselect', False):
         comp.elem_classes.append('multiselect')
-
 
 
 def IOComponent_init(self, *args, **kwargs):

@@ -1678,7 +1678,22 @@ def create_ui():
 
         footer = shared.html("footer.html")
         footer = footer.format(versions=versions_html())
-        gr.HTML(footer, elem_id="footer")
+        gr.HTML(
+            footer,
+            elem_id="footer",
+            _js= '''
+            
+                <script>
+                    function toPgae(name) {
+                        if (window !== void 0) {
+                            window.location.href = window.location.origin + window.location.pathname + "/" + name;
+                        }
+                
+                    }
+                
+                </script>
+            '''
+        )
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(

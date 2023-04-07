@@ -31,6 +31,8 @@ def download_default_clip_interrogate_categories(content_dir):
 
     tmpdir = content_dir + "_tmp"
     category_types = ["artists", "flavors", "mediums", "movements"]
+    if os.path.isdir(tmpdir):
+        shutil.rmtree(tmpdir)
 
     try:
         os.makedirs(tmpdir)

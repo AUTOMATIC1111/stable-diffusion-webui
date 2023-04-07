@@ -338,6 +338,7 @@ def lora_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 
 def list_available_loras():
+    # todo: 改成从公共和私有位置获取
     available_loras.clear()
 
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)

@@ -9,9 +9,9 @@ import threading
 from collections import OrderedDict
 
 
-class ModelHistory:
+class CkptLoadRecorder:
 
-    def __init__(self, capacity: int = 2):
+    def __init__(self, capacity: int = 3):
         self.capacity = capacity
         self._history = OrderedDict()
         self._locker = threading.RLock()
@@ -29,9 +29,14 @@ class ModelHistory:
         return keys
 
     def switch_model(self, model_hash: str):
-        if model_hash in self._history or not model_hash:
+        if not model_hash:
             return
-        self._push(model_hash)
+        if model_hash in self._history:
+            # 将当前模型置顶
+            with self._locker:
+                self._history.move_to_end(model_hash)
+        else:
+            self._push(model_hash)
 
     def _pop(self):
         if self.length >= self.capacity:

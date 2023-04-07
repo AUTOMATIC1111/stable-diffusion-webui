@@ -111,7 +111,6 @@ class ScriptPostprocessingRunner:
         for script in self.scripts_in_preferred_order():
             with gr.Row() as group:
                 self.create_script_ui(script, inputs)
-
             script.group = group
 
         self.ui_created = True

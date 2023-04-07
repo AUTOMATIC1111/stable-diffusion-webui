@@ -6,13 +6,19 @@
 # @File    : task_recv.py
 # @Software: Hifive
 import json
+import random
 import time
 import typing
-
-from task import Task
+import redis_lock
+from loguru import logger
+from .task import Task
 from tools.redis import RedisPool
-from collections import Iterable
-from tools.model_hist import ModelHistory
+from tools.model_hist import CkptLoadRecorder
+
+try:
+    from collections.abc import Iterable  # >=py3.10
+except:
+    from collections import Iterable  # <=py3.9
 
 TaskScoreRange = (0, 100)
 TaskQueuePrefix = "task_"
@@ -20,13 +26,13 @@ TaskQueuePrefix = "task_"
 
 class TaskReceiver:
 
-    def __init__(self, history: ModelHistory):
-        self.model_history = history
+    def __init__(self, recoder: CkptLoadRecorder):
+        self.model_recoder = recoder
         self.redis_pool = RedisPool()
 
     def _loaded_models(self):
-        if self.model_history:
-            return self.model_history.history()
+        if self.model_recoder:
+            return self.model_recoder.history()
 
     def _search_history_ckpt_task(self):
         model_hash_list = self._loaded_models()
@@ -40,26 +46,43 @@ class TaskReceiver:
             if task:
                 return task
 
-    def _extract_queue_task(self, queue_name: str):
+    def search_task_with_id(self, rds, task_id) -> typing.Any:
+        # redis > 6.2.0
+        # meta = rds.getdel(task_id)
+        meta = rds.get(task_id)
+        if meta:
+            rds.delete(task_id)
+            return Task.from_json_str(meta)
+
+    def _extract_queue_task(self, queue_name: str, retry: int = 1):
+        queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
-        values = rds.zrevrangebyscore(
-            queue_name, TaskScoreRange[-1], TaskScoreRange[0], num=1)
-        task = None
-        if values:
-            if isinstance(values, Iterable):
-                for v in values:
-                    task = Task.from_json_str(v)
-                    if task:
-                        break
-            else:
-                task = Task.from_json_str(values)
-        if task:
-            return task
+        with redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10) as locker:
+            for _ in range(retry):
+                values = rds.zrevrangebyscore(
+                    queue_name, TaskScoreRange[-1], TaskScoreRange[0], start=0, num=1)
+                task = None
+                if values:
+                    if isinstance(values, Iterable):
+                        for v in values:
+                            task = self.search_task_with_id(rds, v)
+                            if task:
+                                rds.zrem(queue_name, v)
+                                break
+                    else:
+                        task = self.search_task_with_id(rds, v)
+                        if task:
+                            rds.zrem(queue_name, values)
+                if task:
+                    return task
+                else:
+                    rand = random.randint(0, 5) * 0.1
+                    time.sleep(rand)
 
     def _get_queue_task(self, *model_hash: str):
         for sha256 in model_hash:
             queue_name = TaskQueuePrefix + sha256
-            task = self._extract_queue_task(queue_name)
+            task = self._extract_queue_task(queue_name, 3)
             if task:
                 return task
 
@@ -85,13 +108,17 @@ class TaskReceiver:
 
     def task_iter(self, sleep_time: float = 0.5) -> typing.Iterable[Task]:
         while 1:
-            st = time.time()
-            t = self._search_history_ckpt_task()
-            if t:
-                yield t
-            t = self._search_other_ckpt()
-            if t:
-                yield t
-            wait = sleep_time - time.time() + st
-            if wait > 0:
-                time.sleep(wait)
+            try:
+                st = time.time()
+                t = self._search_history_ckpt_task()
+                if t:
+                    yield t
+                t = self._search_other_ckpt()
+                if t:
+                    yield t
+                wait = sleep_time - time.time() + st
+                if wait > 0:
+                    time.sleep(wait)
+            except:
+                time.sleep(1)
+                logger.exception("get task err")

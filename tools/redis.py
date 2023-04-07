@@ -25,6 +25,9 @@ class RedisPool:
         self.db = db
         self.password = password
         self.max_connections = max_connections
+        if not host:
+            raise EnvironmentError('cannot found redis host')
+
         self.pool = redis.ConnectionPool(
             host=self.host, port=self.port, db=self.db, password=self.password, max_connections=self.max_connections)
 
