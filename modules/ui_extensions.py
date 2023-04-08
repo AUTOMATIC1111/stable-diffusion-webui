@@ -186,6 +186,17 @@ def refresh_available_extensions(url, hide_tags, sort_column):
     global available_extensions
 
     import urllib.request
+    proxy = {}
+    http_proxy = os.environ.get("SD_HTTP_PROXY")
+    https_proxy = os.environ.get("SD_HTTPS_PROXY")
+    if http_proxy:
+        proxy["http"] = http_proxy
+    if https_proxy:
+        proxy["https"] = https_proxy
+    if proxy:
+        proxy_handler = urllib.request.ProxyHandler(proxy)
+        opener = urllib.request.build_opener(proxy_handler)
+        urllib.request.install_opener(opener)
     with urllib.request.urlopen(url) as response:
         text = response.read()
 
