@@ -166,6 +166,10 @@ def load_lora(name, filename):
         elif type(sd_module) == torch.nn.MultiheadAttention:
             module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
         elif type(sd_module) == torch.nn.Conv2d:
+            if sd_module.weight.shape != weight.shape:
+                keys_failed_to_match[key_diffusers] = key
+                del lora.modules[key]
+                continue
             module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (1, 1), bias=False)
         else:
             print(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
