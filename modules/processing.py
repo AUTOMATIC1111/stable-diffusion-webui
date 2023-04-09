@@ -946,7 +946,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.75, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, **kwargs):
+    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.75, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, upscaler: str = None, **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
@@ -966,6 +966,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask = None
         self.nmask = None
         self.image_conditioning = None
+        self.upscaler = upscaler
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
@@ -990,10 +991,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 x1, y1, x2, y2 = crop_region
 
                 mask = mask.crop(crop_region)
-                image_mask = images.resize_image(2, mask, self.width, self.height)
+                image_mask = images.resize_image(2, mask, self.width, self.height, self.upscaler)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
             else:
-                image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height)
+                image_mask = images.resize_image(self.resize_mode, image_mask, self.width, self.height, self.upscaler)
                 np_mask = np.array(image_mask)
                 np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
@@ -1010,7 +1011,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image = images.flatten(img, opts.img2img_background_color)
 
             if crop_region is None and self.resize_mode != 3:
-                image = images.resize_image(self.resize_mode, image, self.width, self.height)
+                image = images.resize_image(self.resize_mode, image, self.width, self.height, self.upscaler)
 
             if image_mask is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
@@ -1021,7 +1022,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
-                image = images.resize_image(2, image, self.width, self.height)
+                image = images.resize_image(2, image, self.width, self.height, self.upscaler)
 
             if image_mask is not None:
                 if self.inpainting_fill != 1:

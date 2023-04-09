@@ -743,6 +743,9 @@ def create_ui():
 
                     elif category == "dimensions":
                         with FormRow():
+                            upscaler = gr.Dropdown(label='Upscaler', elem_id="img2img_upscaler", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name, interactive=True)
+
+                        with FormRow():
                             with gr.Column(elem_id="img2img_column_size", scale=4):
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
@@ -868,6 +871,7 @@ def create_ui():
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
                     img2img_batch_inpaint_mask_dir,
+                    upscaler,
                     override_settings,
                 ] + custom_inputs,
                 outputs=[

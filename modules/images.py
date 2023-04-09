@@ -251,8 +251,6 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
         upscaler_name: The name of the upscaler to use. If not provided, defaults to opts.upscaler_for_img2img.
     """
 
-    upscaler_name = upscaler_name or opts.upscaler_for_img2img
-
     def resize(im, w, h):
         if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
             return im.resize((w, h), resample=LANCZOS)
