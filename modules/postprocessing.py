@@ -1,4 +1,6 @@
 import os
+import tempfile
+from typing import List
 
 from PIL import Image
 
@@ -6,7 +8,7 @@ from modules import shared, images, devices, scripts, scripts_postprocessing, ui
 from modules.shared import opts
 
 
-def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, show_extras_results, *args, save_output: bool = True):
+def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemporaryFile], input_dir, output_dir, show_extras_results, *args, save_output: bool = True):
     devices.torch_gc()
 
     shared.state.begin()
@@ -18,7 +20,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
     if extras_mode == 1:
         for img in image_folder:
-            image = Image.open(img)
+            image = Image.open(os.path.abspath(img.name))
             image_data.append(image)
             image_names.append(os.path.splitext(img.orig_name)[0])
     elif extras_mode == 2:
