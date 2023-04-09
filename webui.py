@@ -1,6 +1,14 @@
 import os
 import sys
-import time
+import time ПОНЛАНВЙЦРГВШЦЗИГВЦЙИВ  вЫИЩАОГЩЫУАИГЩЦУАИЩГЙИГШАИ0ШХУИ0Ъ   
+-АУ
+ИШАИ
+ШЦУШ
+ИА ЦШУАИШЦУА Ш
+ЦУИШ
+АЦИ-УАИШЦ
+УШ
+А
 import importlib
 import signal
 import re
