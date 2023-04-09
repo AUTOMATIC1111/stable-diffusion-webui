@@ -6,20 +6,22 @@ titles = {
 	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
 	"Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps higher than 30-40 does not help",
 	"DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
+	"UniPC": "Unified Predictor-Corrector Framework for Fast Sampling of Diffusion Models",
 	"DPM adaptive": "Ignores step count - uses a number of steps determined by the CFG and resolution", 
 
-	"Batch count": "How many batches of images to create",
-	"Batch size": "How many image to create in a single batch",
+	"Batch count": "How many batches of images to create (has no impact on generation performance or VRAM usage)",
+	"Batch size": "How many image to create in a single batch (increases generation performance at cost of higher VRAM usage)",
     "CFG Scale": "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results",
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
     "\u267b\ufe0f": "Reuse seed from last generation, mostly useful if it was randomed",
-    "\u{1f3a8}": "Add a random artist to the prompt.",
     "\u2199\ufe0f": "Read generation parameters from prompt or last generation if prompt is empty into user interface.",
     "\u{1f4c2}": "Open images output directory",
     "\u{1f4be}": "Save style",
-    "\U0001F5D1": "Clear prompt",
+    "\u{1f5d1}\ufe0f": "Clear prompt",
     "\u{1f4cb}": "Apply selected styles to current prompt",
+    "\u{1f4d2}": "Paste available values into the field",
+    "\u{1f3b4}": "Show/hide extra networks",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",
@@ -37,8 +39,7 @@ titles = {
     "Inpaint at full resolution": "Upscale masked region to target resolution, do inpainting, downscale back and paste into original image",
 
     "Denoising strength": "Determines how little respect the algorithm should have for image's content. At 0, nothing will change, and at 1 you'll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps slider specifies.",
-    "Denoising strength change factor": "In loopback mode, on each loop the denoising strength is multiplied by this value. <1 means decreasing variety so your sequence will converge on a fixed picture. >1 means increasing variety so your sequence will become more and more chaotic.",
-
+    
     "Skip": "Stop processing current image and continue processing.",
     "Interrupt": "Stop processing images and return any results accumulated so far.",
     "Save": "Write image to a directory (default - log/images) and generation parameters into csv file.",
@@ -48,7 +49,7 @@ titles = {
 
     "None": "Do not do anything special",
     "Prompt matrix": "Separate prompts into parts using vertical pipe character (|) and the script will create a picture for every combination of them (except for the first part, which will be present in all combinations)",
-    "X/Y plot": "Create a grid where images will have different parameters. Use inputs below to specify which parameters will be shared by columns and rows",
+    "X/Y/Z plot": "Create grid(s) where images will have different parameters. Use inputs below to specify which parameters will be shared by columns and rows",
     "Custom code": "Run Python code. Advanced user only. Must run program with --allow-code for this to work",
 
     "Prompt S/R": "Separate a list of words with commas, and the first word will be used as a keyword: script will search for this word in the prompt, and replace it with others",
@@ -64,12 +65,14 @@ titles = {
 
     "Interrogate": "Reconstruct prompt from existing image and put it into the prompt field.",
 
-    "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default.",
-    "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default.",
+    "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt_hash], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default.",
+    "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg],[prompt_hash], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default.",
     "Max prompt words": "Set the maximum number of words to be used in the [prompt_words] option; ATTENTION: If the words are too long, they may exceed the maximum length of the file path that the system can handle",
 
-    "Loopback": "Process an image, use it as an input, repeat.",
-    "Loops": "How many times to repeat processing an image and using it as input for the next iteration",
+    "Loopback": "Performs img2img processing multiple times. Output images are used as input for the next loop.",
+    "Loops": "How many times to process an image. Each output is used as the input of the next loop. If set to 1, behavior will be as if this script were not used.",
+    "Final denoising strength": "The denoising strength for the final loop of each image in the batch.",
+    "Denoising strength curve": "The denoising curve controls the rate of denoising strength change each loop. Aggressive: Most of the change will happen towards the start of the loops. Linear: Change will be constant through all loops. Lazy: Most of the change will happen towards the end of the loops.",
 
     "Style 1": "Style to apply; styles have components for both positive and negative prompts and apply to both",
     "Style 2": "Style to apply; styles have components for both positive and negative prompts and apply to both",
@@ -91,6 +94,7 @@ titles = {
 
     "Weighted sum": "Result = A * (1 - M) + B * M",
     "Add difference": "Result = A + (B - C) * M",
+    "No interpolation": "Result = A",
 
 	"Initialization text": "If the number of tokens is more than the number of vectors, some may be skipped.\nLeave the textbox empty to start with zeroed out vectors",
     "Learning rate": "How fast should training go. Low values will take longer to train, high values may fail to converge (not generate accurate results) and/or may break the embedding (This has happened if you see Loss: nan in the training info textbox. If this happens, you need to manually restore your embedding from an older not-broken backup).\n\nYou can set a single numeric value, or multiple learning rates using the syntax:\n\n   rate_1:max_steps_1, rate_2:max_steps_2, ...\n\nEG:   0.005:100, 1e-3:1000, 1e-5\n\nWill train with rate of 0.005 for first 100 steps, then 1e-3 until 1000 steps, then 1e-5 for all remaining steps.",
@@ -104,7 +108,10 @@ titles = {
     "Hires steps": "Number of sampling steps for upscaled picture. If 0, uses same as for original.",
     "Upscale by": "Adjusts the size of the image by multiplying the original width and height by the selected value. Ignored if either Resize width to or Resize height to are non-zero.",
     "Resize width to": "Resizes image to this width. If 0, width is inferred from either of two nearby sliders.",
-    "Resize height to": "Resizes image to this height. If 0, height is inferred from either of two nearby sliders."
+    "Resize height to": "Resizes image to this height. If 0, height is inferred from either of two nearby sliders.",
+    "Multiplier for extra networks": "When adding extra network such as Hypernetwork or Lora to prompt, use this multiplier for it.",
+    "Discard weights with matching name": "Regular expression; if weights's name matches it, the weights is not written to the resulting checkpoint. Use ^model_ema to discard EMA weights.",
+    "Extra networks tab order": "Comma-separated list of tab names; tabs listed here will appear in the extra networks UI first and in order lsited."
 }
 
 

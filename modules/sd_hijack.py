@@ -1,5 +1,6 @@
 import torch
 from torch.nn.functional import silu
+from types import MethodType
 
 import modules.textual_inversion.textual_inversion
 from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
@@ -36,11 +37,23 @@ def apply_optimizations():
     
     optimization_method = None
 
+    can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention")) # not everyone has torch 2.x to use sdp
+
     if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
         print("Applying xformers cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
         optimization_method = 'xformers'
+    elif cmd_opts.opt_sdp_no_mem_attention and can_use_sdp:
+        print("Applying scaled dot product cross attention optimization (without memory efficient attention).")
+        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_no_mem_attention_forward
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_no_mem_attnblock_forward
+        optimization_method = 'sdp-no-mem'
+    elif cmd_opts.opt_sdp_attention and can_use_sdp:
+        print("Applying scaled dot product cross attention optimization.")
+        ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_attention_forward
+        ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_attnblock_forward
+        optimization_method = 'sdp'
     elif cmd_opts.opt_sub_quad_attention:
         print("Applying sub-quadratic cross attention optimization.")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.sub_quad_attention_forward
@@ -70,9 +83,58 @@ def undo_optimizations():
 
 
 def fix_checkpoint():
-    ldm.modules.attention.BasicTransformerBlock.forward = sd_hijack_checkpoint.BasicTransformerBlock_forward
-    ldm.modules.diffusionmodules.openaimodel.ResBlock.forward = sd_hijack_checkpoint.ResBlock_forward
-    ldm.modules.diffusionmodules.openaimodel.AttentionBlock.forward = sd_hijack_checkpoint.AttentionBlock_forward
+    """checkpoints are now added and removed in embedding/hypernet code, since torch doesn't want
+    checkpoints to be added when not training (there's a warning)"""
+
+    pass
+
+
+def weighted_loss(sd_model, pred, target, mean=True):
+    #Calculate the weight normally, but ignore the mean
+    loss = sd_model._old_get_loss(pred, target, mean=False)
+    
+    #Check if we have weights available
+    weight = getattr(sd_model, '_custom_loss_weight', None)
+    if weight is not None:
+        loss *= weight
+    
+    #Return the loss, as mean if specified
+    return loss.mean() if mean else loss
+
+def weighted_forward(sd_model, x, c, w, *args, **kwargs):
+    try:
+        #Temporarily append weights to a place accessible during loss calc
+        sd_model._custom_loss_weight = w
+        
+        #Replace 'get_loss' with a weight-aware one. Otherwise we need to reimplement 'forward' completely
+        #Keep 'get_loss', but don't overwrite the previous old_get_loss if it's already set
+        if not hasattr(sd_model, '_old_get_loss'):
+            sd_model._old_get_loss = sd_model.get_loss
+        sd_model.get_loss = MethodType(weighted_loss, sd_model)
+
+        #Run the standard forward function, but with the patched 'get_loss'
+        return sd_model.forward(x, c, *args, **kwargs)
+    finally:
+        try:
+            #Delete temporary weights if appended
+            del sd_model._custom_loss_weight
+        except AttributeError as e:
+            pass
+            
+        #If we have an old loss function, reset the loss function to the original one
+        if hasattr(sd_model, '_old_get_loss'):
+            sd_model.get_loss = sd_model._old_get_loss
+            del sd_model._old_get_loss
+
+def apply_weighted_forward(sd_model):
+    #Add new function 'weighted_forward' that can be called to calc weighted loss
+    sd_model.weighted_forward = MethodType(weighted_forward, sd_model)
+
+def undo_weighted_forward(sd_model):
+    try:
+        del sd_model.weighted_forward
+    except AttributeError as e:
+        pass
 
 
 class StableDiffusionModelHijack:
@@ -103,11 +165,13 @@ class StableDiffusionModelHijack:
             m.cond_stage_model.model.token_embedding = EmbeddingsWithFixes(m.cond_stage_model.model.token_embedding, self)
             m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(m.cond_stage_model, self)
 
+        apply_weighted_forward(m)
+        if m.cond_stage_key == "edit":
+            sd_hijack_unet.hijack_ddpm_edit()
+
         self.optimization_method = apply_optimizations()
 
         self.clip = m.cond_stage_model
-        
-        fix_checkpoint()
 
         def flatten(el):
             flattened = [flatten(children) for children in el.children()]
@@ -131,6 +195,9 @@ class StableDiffusionModelHijack:
         elif type(m.cond_stage_model) == sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords:
             m.cond_stage_model.wrapped.model.token_embedding = m.cond_stage_model.wrapped.model.token_embedding.wrapped
             m.cond_stage_model = m.cond_stage_model.wrapped
+
+        undo_optimizations()
+        undo_weighted_forward(m)
 
         self.apply_circular(False)
         self.layers = None
@@ -172,7 +239,7 @@ class EmbeddingsWithFixes(torch.nn.Module):
         vecs = []
         for fixes, tensor in zip(batch_fixes, inputs_embeds):
             for offset, embedding in fixes:
-                emb = embedding.vec
+                emb = devices.cond_cast_unet(embedding.vec)
                 emb_len = min(tensor.shape[0] - offset - 1, emb.shape[0])
                 tensor = torch.cat([tensor[0:offset + 1], emb[0:emb_len], tensor[offset + 1 + emb_len:]])
 

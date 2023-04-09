@@ -4,8 +4,11 @@ import os.path
 
 import filelock
 
+from modules import shared
+from modules.paths import data_path
 
-cache_filename = "cache.json"
+
+cache_filename = os.path.join(data_path, "cache.json")
 cache_data = None
 
 
@@ -65,6 +68,9 @@ def sha256(filename, title):
     sha256_value = sha256_from_cache(filename, title)
     if sha256_value is not None:
         return sha256_value
+
+    if shared.cmd_opts.no_hashing:
+        return None
 
     print(f"Calculating sha256 for {filename}: ", end='')
     sha256_value = calculate_sha256(filename)

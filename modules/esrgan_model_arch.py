@@ -1,5 +1,6 @@
 # this file is adapted from https://github.com/victorca25/iNNfer
 
+from collections import OrderedDict
 import math
 import functools
 import torch

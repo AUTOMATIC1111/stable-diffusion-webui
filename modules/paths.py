@@ -1,10 +1,11 @@
-import argparse
 import os
 import sys
+from modules.paths_internal import models_path, script_path, data_path, extensions_dir, extensions_builtin_dir
+
 import modules.safe
 
-script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-models_path = os.path.join(script_path, "models")
+
+# data_path = cmd_opts_pre.data
 sys.path.insert(0, script_path)
 
 # search for directory of stable diffusion in following places
@@ -38,3 +39,17 @@ for d, must_exist, what, options in path_dirs:
         else:
             sys.path.append(d)
         paths[what] = d
+
+
+class Prioritize:
+    def __init__(self, name):
+        self.name = name
+        self.path = None
+
+    def __enter__(self):
+        self.path = sys.path.copy()
+        sys.path = [paths[self.name]] + sys.path
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.path = self.path
+        self.path = None

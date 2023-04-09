@@ -116,7 +116,7 @@ class Script(scripts.Script):
         checkbox_iterate_batch = gr.Checkbox(label="Use same random seed for all lines", value=False, elem_id=self.elem_id("checkbox_iterate_batch"))
 
         prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1, elem_id=self.elem_id("prompt_txt"))
-        file = gr.File(label="Upload prompt inputs", type='bytes', elem_id=self.elem_id("file"))
+        file = gr.File(label="Upload prompt inputs", type='binary', elem_id=self.elem_id("file"))
 
         file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt])
 

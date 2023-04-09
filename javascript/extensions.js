@@ -1,7 +1,8 @@
 
-function extensions_apply(_, _){
-    disable = []
-    update = []
+function extensions_apply(_, _, disable_all){
+    var disable = []
+    var update = []
+
     gradioApp().querySelectorAll('#extensions input[type="checkbox"]').forEach(function(x){
         if(x.name.startsWith("enable_") && ! x.checked)
             disable.push(x.name.substr(7))
@@ -12,15 +13,28 @@ function extensions_apply(_, _){
 
     restart_reload()
 
-    return [JSON.stringify(disable), JSON.stringify(update)]
+    return [JSON.stringify(disable), JSON.stringify(update), disable_all]
 }
 
-function extensions_check(){
+function extensions_check(_, _){
+    var disable = []
+
+    gradioApp().querySelectorAll('#extensions input[type="checkbox"]').forEach(function(x){
+        if(x.name.startsWith("enable_") && ! x.checked)
+            disable.push(x.name.substr(7))
+    })
+
     gradioApp().querySelectorAll('#extensions .extension_status').forEach(function(x){
         x.innerHTML = "Loading..."
     })
 
-    return []
+
+    var id = randomId()
+    requestProgress(id, gradioApp().getElementById('extensions_installed_top'), null, function(){
+
+    })
+
+    return [id, JSON.stringify(disable)]
 }
 
 function install_extension_from_index(button, url){
@@ -29,7 +43,7 @@ function install_extension_from_index(button, url){
 
     textarea = gradioApp().querySelector('#extension_to_install textarea')
     textarea.value = url
-	textarea.dispatchEvent(new Event("input", { bubbles: true }))
+    updateInput(textarea)
 
     gradioApp().querySelector('#install_extension_button').click()
 }

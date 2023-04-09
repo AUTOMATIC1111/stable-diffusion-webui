@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
 
-from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers
+from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
@@ -50,6 +50,7 @@ class Embedding:
         self.sd_checkpoint = None
         self.sd_checkpoint_name = None
         self.optimizer_state_dict = None
+        self.filename = None
 
     def save(self, filename):
         embedding_data = {
@@ -111,6 +112,7 @@ class EmbeddingDatabase:
         self.skipped_embeddings = {}
         self.expected_shape = -1
         self.embedding_dirs = {}
+        self.previously_displayed_embeddings = ()
 
     def add_embedding_dir(self, path):
         self.embedding_dirs[path] = DirWithTextualInversionEmbeddings(path)
@@ -150,7 +152,11 @@ class EmbeddingDatabase:
                 name = data.get('name', name)
             else:
                 data = extract_image_data_embed(embed_image)
-                name = data.get('name', name)
+                if data:
+                    name = data.get('name', name)
+                else:
+                    # if data is None, means this is not an embeding, just a preview image
+                    return
         elif ext in ['.BIN', '.PT']:
             data = torch.load(path, map_location="cpu")
         elif ext in ['.SAFETENSORS']:
@@ -182,6 +188,7 @@ class EmbeddingDatabase:
         embedding.sd_checkpoint_name = data.get('sd_checkpoint_name', None)
         embedding.vectors = vec.shape[0]
         embedding.shape = vec.shape[-1]
+        embedding.filename = path
 
         if self.expected_shape == -1 or self.expected_shape == embedding.shape:
             self.register_embedding(embedding, shared.sd_model)
@@ -192,7 +199,7 @@ class EmbeddingDatabase:
         if not os.path.isdir(embdir.path):
             return
 
-        for root, dirs, fns in os.walk(embdir.path):
+        for root, dirs, fns in os.walk(embdir.path, followlinks=True):
             for fn in fns:
                 try:
                     fullfn = os.path.join(root, fn)
@@ -226,9 +233,12 @@ class EmbeddingDatabase:
             self.load_from_dir(embdir)
             embdir.update()
 
-        print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
-        if len(self.skipped_embeddings) > 0:
-            print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
+        displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
+        if self.previously_displayed_embeddings != displayed_embeddings:
+            self.previously_displayed_embeddings = displayed_embeddings
+            print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
+            if len(self.skipped_embeddings) > 0:
+                print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
@@ -345,7 +355,7 @@ def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, dat
         assert log_directory, "Log directory is empty"
 
 
-def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
+def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, use_weight, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
     save_embedding_every = save_embedding_every or 0
     create_image_every = create_image_every or 0
     template_file = textual_inversion_templates.get(template_filename, None)
@@ -404,7 +414,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
     pin_memory = shared.opts.pin_memory
 
-    ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize)
+    ds = modules.textual_inversion.dataset.PersonalizedBase(data_root=data_root, width=training_width, height=training_height, repeats=shared.opts.training_image_repeats_per_epoch, placeholder_token=embedding_name, model=shared.sd_model, cond_model=shared.sd_model.cond_stage_model, device=devices.device, template_file=template_file, batch_size=batch_size, gradient_step=gradient_step, shuffle_tags=shuffle_tags, tag_drop_out=tag_drop_out, latent_sampling_method=latent_sampling_method, varsize=varsize, use_weight=use_weight)
 
     if shared.opts.save_training_settings_to_txt:
         save_settings_to_file(log_directory, {**dict(model_name=checkpoint.model_name, model_hash=checkpoint.shorthash, num_of_dataset_images=len(ds), num_vectors_per_token=len(embedding.vec)), **locals()})
@@ -452,6 +462,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
     pbar = tqdm.tqdm(total=steps - initial_step)
     try:
+        sd_hijack_checkpoint.add()
+
         for i in range((steps-initial_step) * gradient_step):
             if scheduler.finished:
                 break
@@ -472,6 +484,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
             
                 with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
+                    if use_weight:
+                        w = batch.weight.to(devices.device, non_blocking=pin_memory)
                     c = shared.sd_model.cond_stage_model(batch.cond_text)
 
                     if is_training_inpainting_model:
@@ -482,7 +496,11 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     else:
                         cond = c
 
-                    loss = shared.sd_model(x, cond)[0] / gradient_step
+                    if use_weight:
+                        loss = shared.sd_model.weighted_forward(x, cond, w)[0] / gradient_step
+                        del w
+                    else:
+                        loss = shared.sd_model.forward(x, cond)[0] / gradient_step
                     del x
 
                     _loss_step += loss.item()
@@ -617,8 +635,10 @@ Last saved image: {html.escape(last_saved_image)}<br/>
         pbar.close()
         shared.sd_model.first_stage_model.to(devices.device)
         shared.parallel_processing_allowed = old_parallel_processing_allowed
+        sd_hijack_checkpoint.remove()
 
     return embedding, filename
+
 
 def save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, remove_cached_checksum=True):
     old_embedding_name = embedding.name

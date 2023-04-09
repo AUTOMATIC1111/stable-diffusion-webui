@@ -67,7 +67,7 @@ def _summarize_chunk(
     max_score, _ = torch.max(attn_weights, -1, keepdim=True)
     max_score = max_score.detach()
     exp_weights = torch.exp(attn_weights - max_score)
-    exp_values = torch.bmm(exp_weights, value)
+    exp_values = torch.bmm(exp_weights, value) if query.device.type == 'mps' else torch.bmm(exp_weights, value.to(exp_weights.dtype)).to(value.dtype)
     max_score = max_score.squeeze(-1)
     return AttnChunk(exp_values, exp_weights.sum(dim=-1), max_score)
 
@@ -129,7 +129,7 @@ def _get_attention_scores_no_kv_chunking(
     )
     attn_probs = attn_scores.softmax(dim=-1)
     del attn_scores
-    hidden_states_slice = torch.bmm(attn_probs, value)
+    hidden_states_slice = torch.bmm(attn_probs, value) if query.device.type == 'mps' else torch.bmm(attn_probs, value.to(attn_probs.dtype)).to(value.dtype)
     return hidden_states_slice
 
 

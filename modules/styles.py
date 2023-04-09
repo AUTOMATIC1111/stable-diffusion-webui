@@ -40,12 +40,18 @@ def apply_styles_to_prompt(prompt, styles):
 class StyleDatabase:
     def __init__(self, path: str):
         self.no_style = PromptStyle("None", "", "")
-        self.styles = {"None": self.no_style}
+        self.styles = {}
+        self.path = path
 
-        if not os.path.exists(path):
+        self.reload()
+
+    def reload(self):
+        self.styles.clear()
+
+        if not os.path.exists(self.path):
             return
 
-        with open(path, "r", encoding="utf-8-sig", newline='') as file:
+        with open(self.path, "r", encoding="utf-8-sig", newline='') as file:
             reader = csv.DictReader(file)
             for row in reader:
                 # Support loading old CSV format with "name, text"-columns
