@@ -2842,7 +2842,7 @@ ul.list-none {
 	z-index:1;
 	cursor: pointer;
 	border: 1px dashed var(--panel-bg-color);
-	display: block !important;
+	display: block;
 }
 
 .extra-network-cards .card::after {
