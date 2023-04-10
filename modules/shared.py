@@ -446,7 +446,7 @@ options_templates.update(options_section(('token_merging', 'Token Merging'), {
     ),
     # More advanced/niche settings:
     "token_merging_random": OptionInfo(
-        False, "Use random perturbations - Can improve outputs for certain samplers. For others, it may cause visaul artifacting.",
+        False, "Use random perturbations - Can improve outputs for certain samplers. For others, it may cause visual artifacting.",
         gr.Checkbox
     ),
     "token_merging_merge_attention": OptionInfo(
