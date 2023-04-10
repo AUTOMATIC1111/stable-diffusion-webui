@@ -150,10 +150,17 @@ def install_extension_from_url(dirname, branch_name, url):
 
     try:
         shutil.rmtree(tmpdir, True)
-        with git.Repo.clone_from(url, tmpdir, branch=branch_name if branch_name else '') as repo:
-            repo.remote().fetch()
-            for submodule in repo.submodules:
-                submodule.update()
+        if branch_name == '':
+            # if no branch is specified, use the default branch
+            with git.Repo.clone_from(url, tmpdir) as repo:
+                repo.remote().fetch()
+                for submodule in repo.submodules:
+                    submodule.update()
+        else:
+            with git.Repo.clone_from(url, tmpdir, branch=branch_name) as repo:
+                repo.remote().fetch()
+                for submodule in repo.submodules:
+                    submodule.update()
         try:
             os.rename(tmpdir, target_dir)
         except OSError as err:
@@ -376,7 +383,7 @@ def create_ui():
 
             with gr.TabItem("Install from URL"):
                 install_url = gr.Text(label="URL for extension's git repository")
-                install_branch = gr.Text(label="Branch name for extension's git repository", placeholder="Leave empty for default branch")
+                install_branch = gr.Text(label="Specific branch name", placeholder="Leave empty for default main branch")
                 install_dirname = gr.Text(label="Local directory name", placeholder="Leave empty for auto")
                 install_button = gr.Button(value="Install", variant="primary")
                 install_result = gr.HTML(elem_id="extension_install_result")
