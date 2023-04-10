@@ -560,7 +560,6 @@ def apply_token_merging(sd_model, hr: bool):
     ratio = shared.opts.token_merging_ratio
     if hr:
         ratio = shared.opts.token_merging_ratio_hr
-        print("effective hr pass merge ratio is "+str(ratio))
 
     tomesd.apply_patch(
         sd_model,
