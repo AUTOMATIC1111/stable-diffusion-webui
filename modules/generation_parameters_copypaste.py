@@ -282,6 +282,32 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         res["Hires resize-1"] = 0
         res["Hires resize-2"] = 0
 
+    # Infer additional override settings for token merging
+    print("inferring settings for tomesd")
+    token_merging_ratio = res.get("Token merging ratio", None)
+    token_merging_ratio_hr = res.get("Token merging ratio hr", None)
+
+    if token_merging_ratio is not None or token_merging_ratio_hr is not None:
+        res["Token merging"] = 'True'
+
+        if token_merging_ratio is None:
+            res["Token merging hr only"] = 'True'
+        else:
+            res["Token merging hr only"] = 'False'
+
+        if res.get("Token merging random", None) is None:
+            res["Token merging random"] = 'False'
+        if res.get("Token merging merge attention", None) is None:
+            res["Token merging merge attention"] = 'True'
+        if res.get("Token merging merge cross attention", None) is None:
+            res["Token merging merge cross attention"] = 'False'
+        if res.get("Token merging merge mlp", None) is None:
+            res["Token merging merge mlp"] = 'False'
+        if res.get("Token merging stride x", None) is None:
+            res["Token merging stride x"] = '2'
+        if res.get("Token merging stride y", None) is None:
+            res["Token merging stride y"] = '2'
+
     restore_old_hires_fix_params(res)
 
     return res
@@ -304,6 +330,17 @@ infotext_to_setting_name_mapping = [
     ('UniPC skip type', 'uni_pc_skip_type'),
     ('UniPC order', 'uni_pc_order'),
     ('UniPC lower order final', 'uni_pc_lower_order_final'),
+    ('Token merging', 'token_merging'),
+    ('Token merging ratio', 'token_merging_ratio'),
+    ('Token merging hr only', 'token_merging_hr_only'),
+    ('Token merging ratio hr', 'token_merging_ratio_hr'),
+    ('Token merging random', 'token_merging_random'),
+    ('Token merging merge attention', 'token_merging_merge_attention'),
+    ('Token merging merge cross attention', 'token_merging_merge_cross_attention'),
+    ('Token merging merge mlp', 'token_merging_merge_mlp'),
+    ('Token merging maximum downsampling', 'token_merging_maximum_downsampling'),
+    ('Token merging stride x', 'token_merging_stride_x'),
+    ('Token merging stride y', 'token_merging_stride_y')
 ]
 
 
