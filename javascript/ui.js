@@ -493,7 +493,7 @@ onUiUpdate(function(){
 		if(theme_menu != menu && theme_menu_open) theme_menu.click();
 	}
 	
-	// if we change to other view other than 2img and if aside mode is selected close extra networks aside and hide the net menu icon
+	// if we change to view other than 2img and if aside mode is selected close extra networks aside and hide the net menu icon
 	let net_container = gradioApp().querySelector('#txt2img_extra_networks_row');
 	let net_menu_open = false;
 	const net_menu = gradioApp().querySelector('#extra_networks_menu');
@@ -919,7 +919,7 @@ onUiUpdate(function(){
 		//img2img_width
 		let parent = elem.parentElement;
 		let comp_parent = parent.parentElement.parentElement;		
-		if(comp_parent.id == "img2img_width" || comp_parent.id == "img2img_height") return;
+		if(comp_parent.id == "img2img_width" || comp_parent.id == "img2img_height" || comp_parent.className.indexOf("posex") != -1) return;
 		
 		let clone_num = elem.cloneNode();
 		active_clone_input.push(clone_num);
