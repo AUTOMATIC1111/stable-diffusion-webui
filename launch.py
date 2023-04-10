@@ -76,7 +76,7 @@ def run(command, desc=None, errdesc=None, custom_env=None, live=False):
         print(desc)
 
     if live:
-        result = subprocess.run(command, shell=True, env=os.environ if custom_env is None else custom_env)
+        result = subprocess.run(command, shell=False, env=os.environ if custom_env is None else custom_env)
         if result.returncode != 0:
             raise RuntimeError(f"""{errdesc or 'Error running command'}.
 Command: {command}
@@ -84,7 +84,7 @@ Error code: {result.returncode}""")
 
         return ""
 
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ if custom_env is None else custom_env)
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False, env=os.environ if custom_env is None else custom_env)
 
     if result.returncode != 0:
 
@@ -100,7 +100,7 @@ stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.st
 
 
 def check_run(command):
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=False)
     return result.returncode == 0
 
 
