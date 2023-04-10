@@ -20,7 +20,7 @@ from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
 from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
-from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
+from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 
 from modules.shared import opts, cmd_opts, restricted_opts
@@ -70,17 +70,6 @@ def gr_show(visible=True):
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
 sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
-css_hide_progressbar = """
-.wrap .m-12 svg { display:none!important; }
-.wrap .m-12::before { content:"Loading..." }
-.wrap .z-20 svg { display:none!important; }
-.wrap .z-20::before { content:"Loading..." }
-.wrap.cover-bg .z-20::before { content:"" }
-.progress-bar { display:none!important; }
-.meta-text { display:none!important; }
-.meta-text-center { display:none!important; }
-"""
-
 # Using constants for these since the variation selector isn't visible.
 # Important that they exactly match script.js for tooltip to work.
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
@@ -89,7 +78,7 @@ paste_symbol = '\u2199\ufe0f'  # ↙
 refresh_symbol = '\U0001f504'  # 🔄
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
-clear_prompt_symbol = '\U0001F5D1'  # 🗑️
+clear_prompt_symbol = '\U0001f5d1\ufe0f'  # 🗑️
 extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 
@@ -179,14 +168,13 @@ def interrogate_deepbooru(image):
 
 
 def create_seed_inputs(target_interface):
-    with FormRow(elem_id=target_interface + '_seed_row'):
+    with FormRow(elem_id=target_interface + '_seed_row', variant="compact"):
         seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=target_interface + '_seed')
         seed.style(container=False)
-        random_seed = gr.Button(random_symbol, elem_id=target_interface + '_random_seed')
-        reuse_seed = gr.Button(reuse_symbol, elem_id=target_interface + '_reuse_seed')
+        random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed')
+        reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed')
 
-        with gr.Group(elem_id=target_interface + '_subseed_show_box'):
-            seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
+        seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
 
     # Components to show/hide based on the 'Extra' checkbox
     seed_extras = []
@@ -195,8 +183,8 @@ def create_seed_inputs(target_interface):
         seed_extras.append(seed_extra_row_1)
         subseed = gr.Number(label='Variation seed', value=-1, elem_id=target_interface + '_subseed')
         subseed.style(container=False)
-        random_subseed = gr.Button(random_symbol, elem_id=target_interface + '_random_subseed')
-        reuse_subseed = gr.Button(reuse_symbol, elem_id=target_interface + '_reuse_subseed')
+        random_subseed = ToolButton(random_symbol, elem_id=target_interface + '_random_subseed')
+        reuse_subseed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_subseed')
         subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=target_interface + '_subseed_strength')
 
     with FormRow(visible=False) as seed_extra_row_2:
@@ -291,19 +279,19 @@ def create_toprow(is_img2img):
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
-                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=2, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)")
+                        negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)")
 
         button_interrogate = None
         button_deepbooru = None
         if is_img2img:
-            with gr.Column(scale=1, elem_id="interrogate_col"):
+            with gr.Column(scale=1, elem_classes="interrogate-col"):
                 button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
                 button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
 
         with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
-            with gr.Row(elem_id=f"{id_part}_generate_box"):
-                interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
-                skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
+            with gr.Row(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
+                interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
+                skip = gr.Button('Skip', elem_id=f"{id_part}_skip", elem_classes="generate-box-skip")
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
 
                 skip.click(
@@ -325,9 +313,9 @@ def create_toprow(is_img2img):
                 prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
                 save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
 
-                token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_token_counter")
+                token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])
                 token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
-                negative_token_counter = gr.HTML(value="<span></span>", elem_id=f"{id_part}_negative_token_counter")
+                negative_token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_negative_token_counter", elem_classes=["token-counter"])
                 negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
 
                 clear_prompt_button.click(
@@ -479,7 +467,9 @@ def create_ui():
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
-                            res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                            with gr.Column(elem_id="txt2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
+                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="txt2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
@@ -492,7 +482,7 @@ def create_ui():
                         seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('txt2img')
 
                     elif category == "checkboxes":
-                        with FormRow(elem_id="txt2img_checkboxes", variant="compact"):
+                        with FormRow(elem_classes="checkboxes-row", variant="compact"):
                             restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
                             enable_hr = gr.Checkbox(label='Hires. fix', value=False, elem_id="txt2img_enable_hr")
@@ -586,7 +576,7 @@ def create_ui():
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
-            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
             txt_prompt_img.change(
                 fn=modules.images.image_data,
@@ -757,7 +747,9 @@ def create_ui():
                                 width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
 
-                            res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                            with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
+                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="img2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
@@ -774,7 +766,7 @@ def create_ui():
                         seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
 
                     elif category == "checkboxes":
-                        with FormRow(elem_id="img2img_checkboxes", variant="compact"):
+                        with FormRow(elem_classes="checkboxes-row", variant="compact"):
                             restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="img2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
 
@@ -904,7 +896,7 @@ def create_ui():
 
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
-            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height])
+            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
@@ -1491,11 +1483,33 @@ def create_ui():
                 request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
                 download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
                 reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
+                with gr.Row():
+                    unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
+                    reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
 
             with gr.TabItem("Licenses"):
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
             gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
+            
+
+        def unload_sd_weights():
+            modules.sd_models.unload_model_weights()
+
+        def reload_sd_weights():
+            modules.sd_models.reload_model_weights()
+
+        unload_sd_model.click(
+            fn=unload_sd_weights,
+            inputs=[],
+            outputs=[]
+        )
+
+        reload_sd_model.click(
+            fn=reload_sd_weights,
+            inputs=[],
+            outputs=[]
+        )
 
         request_notifications.click(
             fn=lambda: None,
@@ -1541,22 +1555,6 @@ def create_ui():
         (train_interface, "Train", "ti"),
     ]
 
-    css = ""
-
-    for cssfile in modules.scripts.list_files_with_name("style.css"):
-        if not os.path.isfile(cssfile):
-            continue
-
-        with open(cssfile, "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if os.path.exists(os.path.join(data_path, "user.css")):
-        with open(os.path.join(data_path, "user.css"), "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if not cmd_opts.no_progressbar_hiding:
-        css += css_hide_progressbar
-
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
 
@@ -1567,7 +1565,7 @@ def create_ui():
     for _interface, label, _ifid in interfaces:
         shared.tab_names.append(label)
 
-    with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
+    with gr.Blocks(analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
@@ -1598,11 +1596,13 @@ def create_ui():
 
         for i, k, item in quicksettings_list:
             component = component_dict[k]
+            info = opts.data_labels[k]
 
             component.change(
                 fn=lambda value, k=k: run_settings_single(value, key=k),
                 inputs=[component],
                 outputs=[component, text_settings],
+                show_progress=info.refresh is not None,
             )
 
         text_settings.change(
@@ -1628,6 +1628,7 @@ def create_ui():
             fn=get_settings_values,
             inputs=[],
             outputs=[component_dict[k] for k in component_keys],
+            queue=False,
         )
 
         def modelmerger(*args):
@@ -1750,25 +1751,60 @@ def create_ui():
     return demo
 
 
-def reload_javascript():
+def webpath(fn):
+    if fn.startswith(script_path):
+        web_path = os.path.relpath(fn, script_path).replace('\\', '/')
+    else:
+        web_path = os.path.abspath(fn)
+
+    return f'file={web_path}?{os.path.getmtime(fn)}'
+
+
+def javascript_html():
     script_js = os.path.join(script_path, "script.js")
-    head = f'<script type="text/javascript" src="file={os.path.abspath(script_js)}?{os.path.getmtime(script_js)}"></script>\n'
+    head = f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
 
     inline = f"{localization.localization_js(shared.opts.localization)};"
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
-        head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
+        head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
 
     for script in modules.scripts.list_scripts("javascript", ".mjs"):
-        head += f'<script type="module" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
+        head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
 
     head += f'<script type="text/javascript">{inline}</script>\n'
 
+    return head
+
+
+def css_html():
+    head = ""
+
+    def stylesheet(fn):
+        return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
+
+    for cssfile in modules.scripts.list_files_with_name("style.css"):
+        if not os.path.isfile(cssfile):
+            continue
+
+        head += stylesheet(cssfile)
+
+    if os.path.exists(os.path.join(data_path, "user.css")):
+        head += stylesheet(os.path.join(data_path, "user.css"))
+
+    return head
+
+
+def reload_javascript():
+    js = javascript_html()
+    css = css_html()
+
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'{head}</head>'.encode("utf8"))
+        res.body = res.body.replace(b'</head>', f'{js}</head>'.encode("utf8"))
+        res.body = res.body.replace(b'</body>', f'{css}</body>'.encode("utf8"))
         res.init_headers()
         return res
 
