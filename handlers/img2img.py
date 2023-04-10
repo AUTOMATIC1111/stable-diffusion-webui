@@ -93,7 +93,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  prompt_styles: typing.List[str] = None,  # 提示风格（模板风格也就是TAG模板）
                  img2img_batch_inpaint_mask_dir: str = None,
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
-                 override_settings_texts=None,
+                 override_settings_texts=None,   # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337']
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
         image = None
@@ -297,6 +297,7 @@ class Img2ImgTaskHandler(TaskHandler):
         self._default_script_args_load_t = time.time()
 
     def _build_img2img_arg(self, task: Task) -> Img2ImgTask:
+        # 可不使用定时刷新，直接初始化。
         self._refresh_default_script_args()
 
         return Img2ImgTask.from_task(task, self.default_script_args)
