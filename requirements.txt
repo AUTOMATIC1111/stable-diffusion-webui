@@ -61,7 +61,6 @@ uvicorn
 websockets>=10.0
 nvidia-ml-py==11.525.84
 loguru
-binascii
 pycryptodome
 python-redis-lock==4.0.0
 pymongo==4.3.3
