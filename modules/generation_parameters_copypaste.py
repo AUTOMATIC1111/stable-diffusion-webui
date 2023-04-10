@@ -283,7 +283,6 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         res["Hires resize-2"] = 0
 
     # Infer additional override settings for token merging
-    print("inferring settings for tomesd")
     token_merging_ratio = res.get("Token merging ratio", None)
     token_merging_ratio_hr = res.get("Token merging ratio hr", None)
 
