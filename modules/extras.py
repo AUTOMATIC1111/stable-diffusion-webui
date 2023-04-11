@@ -12,11 +12,11 @@ import gradio as gr
 import safetensors.torch
 
 
-def run_pnginfo(image):
+def run_pnginfo(image, imprint_override_password=None):
     if image is None:
         return '', '', ''
 
-    geninfo, items = images.read_info_from_image(image)
+    geninfo, items = images.read_info_from_image(image, imprint_override_password or '')
     items = {**{'parameters': geninfo}, **items}
 
     info = ''

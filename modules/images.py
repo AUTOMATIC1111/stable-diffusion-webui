@@ -18,7 +18,7 @@ import string
 import json
 import hashlib
 
-from modules import sd_samplers, shared, script_callbacks, errors
+from modules import sd_samplers, shared, script_callbacks, errors, image_imprint
 from modules.shared import opts, cmd_opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -434,7 +434,6 @@ class FilenameGenerator:
 
         return res
 
-
 def get_next_sequence_number(path, basename):
     """
     Determines and returns the next sequence number to use when saving an image in the specified directory.
@@ -444,8 +443,9 @@ def get_next_sequence_number(path, basename):
     result = -1
     if basename != '':
         basename = basename + "-"
-
+    
     prefix_length = len(basename)
+    
     for p in os.listdir(path):
         if p.startswith(basename):
             l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
@@ -453,11 +453,10 @@ def get_next_sequence_number(path, basename):
                 result = max(int(l[0]), result)
             except ValueError:
                 pass
-
+    
     return result + 1
 
-
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
+def save_image(image: Image.Image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None, enable_imprinting=False):
     """Save an image.
 
     Args:
@@ -483,6 +482,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             If specified, `basename` and filename pattern will be ignored.
         save_to_dirs (bool):
             If true, the image will be saved into a subdirectory of `path`.
+        enable_imprinting (bool):
+            If true, the image will be imprinted with the info chunks.
 
     Returns: (fullfn, txt_fullfn)
         fullfn (`str`):
@@ -550,7 +551,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             if opts.enable_pnginfo:
                 for k, v in params.pnginfo.items():
                     pnginfo_data.add_text(k, str(v))
-
+            
+            if enable_imprinting:
+                # Hopefully empty string
+                imprint_key = opts.imprinting_password or ''
+                imprinted_data = image_imprint.preprocess_imprint_data(str(info), True, pass_phrase=imprint_key)
+                image_to_save = image_imprint.encode_imprint_data(image_to_save, imprinted_data)
+            
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
 
         elif extension.lower() in (".jpg", ".jpeg", ".webp"):
@@ -611,10 +618,20 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     return fullfn, txt_fullfn
 
 
-def read_info_from_image(image):
+def read_info_from_image(image, imprint_password: str = ''):
     items = image.info or {}
 
     geninfo = items.pop('parameters', None)
+    
+    try:
+        imprint_info = image_imprint.decode_imprint_data(image, imprint_password or opts.imprinting_password or '')
+        # If there's imprinted info, display that as well, but only if it's different from the info in the PNG
+        if not geninfo and len(imprint_info) > 0:
+            geninfo = imprint_info
+        elif geninfo and imprint_info and geninfo.casefold() != imprint_info.casefold():
+            items['imprinted'] = imprint_info
+    except Exception as e:
+        errors.display(e, "reading imprint data")
 
     if "exif" in items:
         exif = piexif.load(items["exif"])

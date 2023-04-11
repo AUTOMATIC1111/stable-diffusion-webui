@@ -970,6 +970,7 @@ def create_ui():
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
                 image = gr.Image(elem_id="pnginfo_image", label="Source", source="upload", interactive=True, type="pil")
+                imprint_override_password = gr.Textbox(elem_id="pnginfo_imprint_password", label="Imprint password (override)", visible=opts.enable_imprinting)
 
             with gr.Column(variant='panel'):
                 html = gr.HTML()
@@ -985,7 +986,7 @@ def create_ui():
 
         image.change(
             fn=wrap_gradio_call(modules.extras.run_pnginfo),
-            inputs=[image],
+            inputs=[image, imprint_override_password],
             outputs=[html, generation_info, html2],
         )
 
