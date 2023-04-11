@@ -18,6 +18,7 @@ from util import Map
 from rich.pretty import install as pretty_install
 from rich.traceback import install as traceback_install
 from rich.console import Console
+
 console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
 pretty_install(console=console)
 traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False)

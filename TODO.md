@@ -5,6 +5,16 @@
 Stuff to be fixed...
 
 - Reconnect WebUI  
+- Skip Torch
+- Update requirements
+- Update README
+- Fix CSS
+- Fix Firefox
+- Implement installer in Python
+- piexif, rich, kornia
+- Move cross-optimization to settings
+
+- Fix mediapipe
 
 ## Integration
 

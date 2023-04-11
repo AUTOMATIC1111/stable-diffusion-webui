@@ -2,6 +2,7 @@
 __pycache__
 /params.txt
 /cache.json
+/setup.log
 
 # all models and temp files
 *.ckpt

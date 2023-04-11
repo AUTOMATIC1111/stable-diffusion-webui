@@ -44,7 +44,6 @@ All code changes are merged upstream whenever possible
 
 - Drops compatibility with `python` **3.7** and requires **3.9**  
   Recommended is **Python 3.10**  
-  Note that **Python 3.11** or **3.12** are NOT supported  
 - Drops localizations  
 - Drops automated tests  
 
@@ -74,109 +73,41 @@ Fork adds extra functionality:
 
 <br>
 
-### Start Script
 
-Simplified start script: `automatic.sh`  
-*Existing `webui.sh`/`webui.bat` scripts still exist for backward compatibility*  
-
-> ./automatic.sh  
-
-Start in default mode with optimizations enabled  
-
-      Stable Diffusion server: optimized
-      Version: a4d00060 Sun Mar 26 10:28:05 2023 -0400
-      Repository: https://github.com/vladmandic/automatic
-      Platform: Ubuntu 22.04.2 LTS 5.15.90.1-microsoft-standard-WSL2 x86_64
-      Installing requirements for Web UI
-      Launching Web UI with arguments: --cors-allow-origins=http://127.0.0.1:7860 --ckpt models/v1-5-pruned-emaonly.safetensors
-      Torch 2.0.0+cu118 CUDA 11.8 cuDNN 8700
-      GPU NVIDIA GeForce RTX 3060 VRAM 12288 Arch (8, 6) Cores 28
-      Running on local URL:  http://127.0.0.1:7860
-      Loading weights: models/v1-5-pruned-emaonly.safetensors ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 0.0/4.3 GB -:--:--
-      Creating model from config: /home/vlado/dev/automatic/configs/v1-inference.yaml
-      DiffusionWrapper has 859.52 M params.
-      Loading weights: models/VAE/vae-ft-mse-840000-ema-pruned.ckpt ━━━━━━━━━━━━━━━━━━━━━━━ 0.0/334.7 MB -:--:--
-      Applying scaled dot product cross attention optimization.
-      Textual inversion embeddings loaded(2): ti-mia, ti-vlado
-      Model loaded in 1.6s (load weights: 0.1s, create model: 0.3s, apply weights: 0.4s, load vae: 0.3s, device move: 0.5s).
-      Startup time: 11.8s (import torch: 1.7s, import libraries: 1.0s, list models: 1.9s, load scripts: 1.0s, create ui: 4.4s, load checkpoint: 1.7s).
-      Progress 6.55it/s ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:00 0:00:04
-
-> ./automatic.sh clean  
-
-Start with all optimizations disabled  
-Use this for troubleshooting  
-
-> ./automatic.sh install
-
-Installs and updates to latest supported version:
-
-- Dependencies
-- Fixed sub-repositories
-- Extensions
-- Sub-modules
-
-Does not update main repository
-
-> ./automatic.sh update
-
-Updates the main repository to the latest version  
-Recommended to run `install` after `update` to update dependencies as they may have changed  
-
-> ./automatic.sh help
-
-Print all available options
-
-> ./automatic.sh public  
-
-Start with listen on public IP with authentication enabled  
 
 <br>  
 
 ## Install
 
+
+### Install
+
 1. Install `Python`, `Git`  
-2. Install `PyTorch`
-   See [Wiki](wiki/Torch%20Optimizations.md) for details or TL;DR below  
-3. Clone and initialize repository  
+2. Clone repository  
 
 > git clone https://github.com/vladmandic/automatic  
-> cd automatic  
-> ./automatic.sh install  
 
-      SD server: install
-      Version: 56f779a9 Sat Feb 25 14:04:19 2023 -0500
-      Repository: https://github.com/vladmandic/automatic
-      Last Merge: Sun Feb 19 10:11:25 2023 -0500 Merge pull request #37 from AUTOMATIC1111/master
-      Installing general requirements
-      Installing versioned requirements
-      Installing requirements for Web UI
-      Updating submodules
-      Updating extensions
-      Updating wiki
-      Detached repos
-      Local changes
+### Run
 
-*Note*: If you're not using `automatic.sh` launcher, install dependencies manually:
+Run desired startup script to install dependencies and extensions and start server:
 
-> pip -r requirements.txt
-> pip -r requirements_versions.txt
+- `launch.py`:  
+  Main startup script  
+  Run `python launch.py --help` for available options  
+- `launch-venv.bat` and `launch.venv.sh`:  
+  Platform specific wrapper scripts that starts `launch.py` in Python virtual environment  
+  *Note*: Server can run without virtual environment, but it is recommended to use it  
+  **If you're unsure which launcher to use, this is the one you want**  
+- `setup.py`:  
+  Main installer, used by `launch.py`  
+  Can also be used directly to update repository or extensions  
+  Run `python setup.py --help` for available options  
+  Setup details are logged to `setup.log`  
+
 
 <br>
 
 ## Other
-
-### Torch
-
-Only Python library which is not auto-updated is `PyTorch` itself as that is very system specific  
-Fork is compatible with regular **PyTorch 1.13**, **PyTorch 2.0** as well as pre-releases of **PyTorch** **2.1**  
-TL;DR: Install **PyTorch 2.0.0** compiled with **CUDA 11.8**:
-
-> pip install torch torchaudio torchvision triton --force --extra-index-url https://download.pytorch.org/whl/cu118  
-
-See [Wiki](https://github.com/vladmandic/automatic/wiki/Torch-Optimizations) for **Torch** optimization notes
-
-<br>
 
 ### Scripts
 
