@@ -3,20 +3,21 @@
 # Please do not make any changes to this file,  #
 # change the variables in webui-user.sh instead #
 #################################################
-
+CURRENT_DIR=$(cd $(dirname $0); pwd)
 # If run from macOS, load defaults from webui-macos-env.sh
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -f webui-macos-env.sh ]]
+    if [[ -f "${CURRENT_DIR}"/webui-macos-env.sh ]]
         then
-        source ./webui-macos-env.sh
+        source "${CURRENT_DIR}"/webui-macos-env.sh
     fi
 fi
 
 # Read variables from webui-user.sh
 # shellcheck source=/dev/null
-if [[ -f webui-user.sh ]]
+
+if [[ -f "${CURRENT_DIR}"/webui-user.sh ]]
 then
-    source ./webui-user.sh
+    source "${CURRENT_DIR}"/webui-user.sh
 fi
 
 # Set defaults
@@ -47,12 +48,12 @@ fi
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
 if [[ -z "${venv_dir}" ]]
 then
-    venv_dir="venv"
+    venv_dir="${CURRENT_DIR}/venv"
 fi
 
 if [[ -z "${LAUNCH_SCRIPT}" ]]
 then
-    LAUNCH_SCRIPT="launch.py"
+    LAUNCH_SCRIPT="${CURRENT_DIR}/launch.py"
 fi
 
 # this script cannot be run as root by default
@@ -94,13 +95,13 @@ else
     printf "\n%s\n" "${delimiter}"
 fi
 
-if [[ -d .git ]]
+if [[ -d "${CURRENT_DIR}"/.git ]]
 then
     printf "\n%s\n" "${delimiter}"
     printf "Repo already cloned, using it as install directory"
     printf "\n%s\n" "${delimiter}"
-    install_dir="${PWD}/../"
-    clone_dir="${PWD##*/}"
+    install_dir="${CURRENT_DIR}/../"
+    clone_dir="${CURRENT_DIR##*/}"
 fi
 
 # Check prerequisites
