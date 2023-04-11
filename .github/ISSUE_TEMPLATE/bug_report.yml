@@ -4,13 +4,13 @@ title: "[Issue]: "
 labels: ["issue"]
 
 body:
-  - type: textbox
+  - type: textarea
     id: description
     attributes:
       label: Issue Description
       description: Tell us what happened in a very clear and simple way
       value: Please fill this form with as much information as possible
-  - type: textbox
+  - type: textarea
     id: platform
     attributes:
       label: Platform Description
