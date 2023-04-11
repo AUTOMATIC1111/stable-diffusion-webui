@@ -136,7 +136,10 @@ def load_lora(name, filename):
     is_sd2 = 'model_transformer_resblocks' in shared.sd_model.lora_layer_mapping
 
     for key_diffusers, weight in sd.items():
-        key_diffusers_without_lora_parts, lora_key = key_diffusers.split(".", 1)
+        lora_key_parts = key_diffusers.split(".", 1)
+        key_diffusers_without_lora_parts = lora_key_parts[0]
+        lora_key = lora_key_parts[1] if len(lora_key_parts) > 1 else ""
+        
         key = convert_diffusers_name_to_compvis(key_diffusers_without_lora_parts, is_sd2)
 
         sd_module = shared.sd_model.lora_layer_mapping.get(key, None)
