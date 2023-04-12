@@ -10,6 +10,10 @@ Stuff to be fixed...
 - Replace EXIF metadata handler
 - Pick & merge PRs from main repo
 - Create new GitHub hooks/actions for CI/CD  
+- Cleanup `ui-config.json`
+- Investigate integration with `Torch-DirectML`
+- Set defaults for Apple M1
+- Set defaults for CPU-only
 
 ## Integration
 
