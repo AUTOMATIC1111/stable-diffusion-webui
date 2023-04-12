@@ -171,7 +171,10 @@ def install_packages():
     install(gfpgan_package)
     install(clip_package)
     install(openclip_package)
-    install(f'--no-deps {xformers_package}')
+    try:
+        install(f'--no-deps {xformers_package}')
+    except Exception as e:
+        log.error('Cannot install xformers package: {e}')
 
 
 # clone required repositories
