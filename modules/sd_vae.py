@@ -8,7 +8,6 @@ import glob
 from copy import deepcopy
 from rich import print
 
-vae_path = shared.opts.vae_dir
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 vae_dict = {}
 
@@ -59,9 +58,9 @@ def refresh_vae_list():
         os.path.join(sd_models.model_path, '**/*.vae.ckpt'),
         os.path.join(sd_models.model_path, '**/*.vae.pt'),
         os.path.join(sd_models.model_path, '**/*.vae.safetensors'),
-        os.path.join(vae_path, '**/*.ckpt'),
-        os.path.join(vae_path, '**/*.pt'),
-        os.path.join(vae_path, '**/*.safetensors'),
+        os.path.join(shared.opts.vae_dir, '**/*.ckpt'),
+        os.path.join(shared.opts.vae_dir, '**/*.pt'),
+        os.path.join(shared.opts.vae_dir, '**/*.safetensors'),
     ]
 
     if shared.opts.ckpt_dir is not None and os.path.isdir(shared.opts.ckpt_dir):

@@ -1710,7 +1710,8 @@ def javascript_html():
     script_js = os.path.join(script_path, "script.js")
     head = f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
 
-    inline = f"{localization.localization_js(shared.opts.localization)};"
+    # inline = f"{localization.localization_js(shared.opts.localization)};"
+    inline = ''
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
 
