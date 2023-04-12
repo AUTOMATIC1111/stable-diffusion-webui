@@ -4,6 +4,7 @@ import time
 import importlib
 import signal
 import re
+import warnings
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -17,6 +18,8 @@ from modules import paths, timer, import_hook, errors
 startup_timer = timer.Timer()
 
 import torch
+import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
+warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 startup_timer.record("import torch")
 
 import gradio
@@ -240,7 +243,7 @@ def webui():
         shared.demo = modules.ui.create_ui()
         startup_timer.record("create ui")
 
-        if cmd_opts.gradio_queue:
+        if not cmd_opts.no_gradio_queue:
             shared.demo.queue(64)
 
         gradio_auth_creds = []
