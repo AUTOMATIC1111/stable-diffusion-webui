@@ -9,6 +9,7 @@ Stuff to be fixed...
 - Cleanup & integrate CSS into single file
 - Replace EXIF metadata handler
 - Pick & merge PRs from main repo
+- Create new GitHub hooks/actions for CI/CD  
 
 ## Integration
 
