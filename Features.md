@@ -2,6 +2,15 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 
 All examples are non-cherrypicked unless specified otherwise.
 
+# SD2 Variation Models
+[PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8958), ([more info.](https://github.com/Stability-AI/stablediffusion/blob/main/doc/UNCLIP.MD))
+
+support for [stable-diffusion-2-1-unclip](https://huggingface.co/stabilityai/stable-diffusion-2-1-unclip) checkpoints that are used for generating image variations. 
+
+It works in the same way as the current support for the SD2.0 depth model, in that you run it from the img2img tab, it extracts information from the input image (in this case, CLIP or OpenCLIP embeddings), and feeds those into the model in addition to the text prompt. Normally you would do this with denoising strength set to 1.0, since you don't actually want the normal img2img behaviour to have any influence on the generated image.
+
+![image](https://user-images.githubusercontent.com/98228077/231526001-adef8278-4670-4a78-bd95-04ec51c01b40.png)
+
 # InstructPix2Pix
 [Website](https://www.timothybrooks.com/instruct-pix2pix). [Checkpoint](http://instruct-pix2pix.eecs.berkeley.edu/instruct-pix2pix-00-22000.ckpt). The checkpoint is fully supported in img2img tab. No additional actions are required. Previously an [extension](https://github.com/Klace/stable-diffusion-webui-instruct-pix2pix) by a contributor was required to generate pictures: it's no longer required, but should still work. Most of img2img implementation is by the same person.
 
@@ -78,9 +87,9 @@ Clip skip is not supported, the setting is ignored.
 1. Download your checkpoint file from huggingface. Click the down arrow to download.
 2. Put the file into `models/Stable-Diffusion`
 
-- 768 (2.0) - ([model](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.ckpt), [yaml](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference-v.yaml)) 
-- 768 (2.1) - ([model+yaml](https://huggingface.co/webui/stable-diffusion-2-1/tree/main)) - `.safetensors`
-- 512 (2.0) - ([model](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.ckpt), [yaml](https://raw.githubusercontent.com/Stability-AI/stablediffusion/main/configs/stable-diffusion/v2-inference.yaml))
+- 768 (2.0) - ([model](https://huggingface.co/stabilityai/stable-diffusion-2/blob/main/768-v-ema.safetensors)) 
+- 768 (2.1) - ([model](https://huggingface.co/webui/stable-diffusion-2-1/tree/main))
+- 512 (2.0) - ([model](https://huggingface.co/stabilityai/stable-diffusion-2-base/blob/main/512-base-ema.safetensors))
 
 <details><summary>Notes: (Click to expand:)</summary>
 
