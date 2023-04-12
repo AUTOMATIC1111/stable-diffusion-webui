@@ -40,7 +40,7 @@ class LDSR:
             model = model.to(shared.device)
             if half_attention:
                 model = model.half()
-            if shared.cmd_opts.opt_channelslast:
+            if shared.opts.opt_channelslast:
                 model = model.to(memory_format=torch.channels_last)
 
             sd_hijack.model_hijack.hijack(model) # apply optimization

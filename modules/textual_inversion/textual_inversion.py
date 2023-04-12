@@ -29,7 +29,7 @@ textual_inversion_templates = {}
 def list_textual_inversion_templates():
     textual_inversion_templates.clear()
 
-    for root, dirs, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir):
+    for root, dirs, fns in os.walk(shared.opts.embeddings_templates_dir):
         for fn in fns:
             path = os.path.join(root, fn)
 
@@ -270,7 +270,7 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
 
     # Remove illegal characters from name.
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
-    fn = os.path.join(shared.cmd_opts.embeddings_dir, f"{name}.pt")
+    fn = os.path.join(shared.opts.embeddings_dir, f"{name}.pt")
     if not overwrite_old:
         assert not os.path.exists(fn), f"file {fn} already exists"
 
@@ -365,7 +365,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
 
-    filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
+    filename = os.path.join(shared.opts.embeddings_dir, f'{embedding_name}.pt')
 
     log_directory = os.path.join(log_directory, embedding_name)
     unload = shared.opts.unload_models_when_training
@@ -623,7 +623,7 @@ Last saved embedding: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
-        filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
+        filename = os.path.join(shared.opts.embeddings_dir, f'{embedding_name}.pt')
         save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, remove_cached_checksum=True)
     except Exception:
         shared.exception()

@@ -59,11 +59,7 @@ def check_run(command):
 
 
 def is_installed(package):
-    try:
-        spec = importlib.util.find_spec(package)
-    except ModuleNotFoundError:
-        return False
-    return spec is not None
+    return setup.installed(package)
 
 
 def repo_dir(name):
@@ -84,27 +80,17 @@ def check_run_python(code):
 
 
 def git_clone(url, dir, name, commithash=None):
-    if os.path.exists(dir):
-        if commithash is None:
-            return
-        current_hash = run(f'"{git}" -C "{dir}" rev-parse HEAD', None, f"Couldn't determine {name}'s hash: {commithash}").strip()
-        if current_hash == commithash:
-            return
-        run(f'"{git}" -C "{dir}" fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
-        run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}")
-        return
-    run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}")
-    if commithash is not None:
-        run(f'"{git}" -C "{dir}" checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
+    setup.clone(url, dir, commithash)
+
+
+def run_extension_installer(dir):
+    setup.run_extension_installer(dir)
 
 
 if __name__ == "__main__":
     setup.run_setup(False)
     setup.set_environment()
     # setup.check_torch()
-    print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
+    setup.log.info(f"Server Arguments: {sys.argv[1:]}")
     import webui
-    if '--nowebui' in sys.argv:
-        webui.api_only()
-    else:
-        webui.webui()
+    webui.webui()

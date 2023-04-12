@@ -609,7 +609,7 @@ class Api:
     def train_embedding(self, args: dict):
         try:
             shared.state.begin()
-            apply_optimizations = shared.opts.training_xattention_optimizations
+            apply_optimizations = False
             error = None
             filename = ''
             if not apply_optimizations:
@@ -631,7 +631,7 @@ class Api:
         try:
             shared.state.begin()
             shared.loaded_hypernetworks = []
-            apply_optimizations = shared.opts.training_xattention_optimizations
+            apply_optimizations = False
             error = None
             filename = ''
             if not apply_optimizations:

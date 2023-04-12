@@ -266,7 +266,6 @@ async def check(params):
 
     log.info({ 'checking server options' })
 
-    options['training_xattention_optimizations'] = False
     options['training_image_repeats_per_epoch'] = 1
 
     if params.skipmodel:

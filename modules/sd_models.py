@@ -33,8 +33,8 @@ class CheckpointInfo:
         self.filename = filename
         abspath = os.path.abspath(filename)
 
-        if shared.cmd_opts.ckpt_dir is not None and abspath.startswith(shared.cmd_opts.ckpt_dir):
-            name = abspath.replace(shared.cmd_opts.ckpt_dir, '')
+        if shared.opts.ckpt_dir is not None and abspath.startswith(shared.opts.ckpt_dir):
+            name = abspath.replace(shared.opts.ckpt_dir, '')
         elif abspath.startswith(model_path):
             name = abspath.replace(model_path, '')
         else:
@@ -115,7 +115,7 @@ def list_models():
     else:
         model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
 
-    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
 
     if os.path.exists(cmd_ckpt):
         checkpoint_info = CheckpointInfo(cmd_ckpt)
@@ -171,8 +171,8 @@ def select_checkpoint():
         if shared.cmd_opts.ckpt is not None:
             print(f" - file {os.path.abspath(shared.cmd_opts.ckpt)}", file=sys.stderr)
         print(f" - directory {model_path}", file=sys.stderr)
-        if shared.cmd_opts.ckpt_dir is not None:
-            print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
+        if shared.opts.ckpt_dir is not None:
+            print(f" - directory {os.path.abspath(shared.opts.ckpt_dir)}", file=sys.stderr)
         print("Can't run without a checkpoint. Find and place a .ckpt or .safetensors file into any of those locations. The program will exit.", file=sys.stderr)
         exit(1)
 
@@ -293,7 +293,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         # cache newly loaded model
         checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
 
-    if shared.cmd_opts.opt_channelslast:
+    if shared.opts.opt_channelslast:
         model.to(memory_format=torch.channels_last)
         timer.record("channels")
 
@@ -305,7 +305,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if shared.cmd_opts.no_half_vae:
             model.first_stage_model = None
         # with --upcast-sampling, don't convert the depth model weights to float16
-        if shared.cmd_opts.upcast_sampling and depth_model:
+        if shared.opts.upcast_sampling and depth_model:
             model.depth_model = None
 
         model.half()
@@ -316,7 +316,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
     devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
     devices.dtype_unet = model.model.diffusion_model.dtype
-    devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
+    devices.unet_needs_upcast = shared.opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
     model.first_stage_model.to(devices.dtype_vae)
 
@@ -388,7 +388,7 @@ def repair_config(sd_config):
 
     if shared.cmd_opts.no_half:
         sd_config.model.params.unet_config.params.use_fp16 = False
-    elif shared.cmd_opts.upcast_sampling:
+    elif shared.opts.upcast_sampling:
         sd_config.model.params.unet_config.params.use_fp16 = True
 
     if getattr(sd_config.model.params.first_stage_config.params.ddconfig, "attn_type", None) == "vanilla-xformers" and not shared.xformers_available:
@@ -416,8 +416,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         current_checkpoint_info = shared.sd_model.sd_checkpoint_info
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
         shared.sd_model = None
-        gc.collect()
-        devices.torch_gc()
+
+    devices.enable_cudnn_benchmark()
+    gc.collect()
+    devices.torch_gc()
 
     if already_loaded_state_dict is not None:
         state_dict = already_loaded_state_dict

@@ -13,7 +13,7 @@ import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args
+from modules import script_loading, errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
 
 demo = None
@@ -63,34 +63,22 @@ ui_reorder_categories = [
     "scripts",
 ]
 
-cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.enable_insecure_extension_access
+cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.enable_insecure
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = \
     (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
 
 device = devices.device
-
-batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
-parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
-xformers_available = False
-config_filename = cmd_opts.ui_settings_file
-
-os.makedirs(cmd_opts.hypernetwork_dir, exist_ok=True)
-hypernetworks = {}
-loaded_hypernetworks = []
+sd_upscalers = []
+sd_model = None
+clip_model = None
 
 
 def reload_hypernetworks():
     from modules.hypernetworks import hypernetwork
     global hypernetworks
+    hypernetworks = hypernetwork.list_hypernetworks(opts.hypernetwork_dir)
 
-    hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
-
-sd_upscalers = []
-
-sd_model = None
-
-clip_model = None
 
 class State:
     skipped = False
@@ -190,8 +178,7 @@ class State:
 state = State()
 state.server_start = time.time()
 
-styles_filename = cmd_opts.styles_file
-prompt_styles = modules.styles.StyleDatabase(styles_filename)
+prompt_styles = modules.styles.StyleDatabase('styles.csv')
 
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
@@ -235,98 +222,6 @@ tab_names = []
 
 options_templates = {}
 
-options_templates.update(options_section(('saving-images', "Saving images/grids"), {
-    "samples_save": OptionInfo(True, "Always save all generated images"),
-    "samples_format": OptionInfo('png', 'File format for images'),
-    "samples_filename_pattern": OptionInfo("", "Images filename pattern", component_args=hide_dirs),
-    "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
-
-    "grid_save": OptionInfo(True, "Always save all generated image grids"),
-    "grid_format": OptionInfo('png', 'File format for grids'),
-    "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
-    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
-    "grid_prevent_empty_spots": OptionInfo(False, "Prevent empty spots in grid (when set to autodetect)"),
-    "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
-
-    "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
-    "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
-    "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration."),
-    "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix."),
-    "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
-    "save_mask": OptionInfo(False, "For inpainting, save a copy of the greyscale mask"),
-    "save_mask_composite": OptionInfo(False, "For inpainting, save a masked composite"),
-    "jpeg_quality": OptionInfo(80, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
-    "webp_lossless": OptionInfo(False, "Use lossless compression for webp images"),
-    "export_for_4chan": OptionInfo(True, "If the saved image file size is above the limit, or its either width or height are above the limit, save a downscaled copy as JPG"),
-    "img_downscale_threshold": OptionInfo(4.0, "File size limit for the above option, MB", gr.Number),
-    "target_side_length": OptionInfo(4000, "Width/height limit for the above option, in pixels", gr.Number),
-    "img_max_size_mp": OptionInfo(200, "Maximum image size, in megapixels", gr.Number),
-
-    "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process in extras tab"),
-    "use_upscaler_name_as_suffix": OptionInfo(False, "Use upscaler name as filename suffix in the extras tab"),
-    "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
-    "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),
-
-    "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
-    "clean_temp_dir_at_start": OptionInfo(False, "Cleanup non-default temporary directory when starting webui"),
-
-}))
-
-options_templates.update(options_section(('saving-paths', "Paths for saving"), {
-    "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to three directories below", component_args=hide_dirs),
-    "outdir_txt2img_samples": OptionInfo("outputs/txt2img-images", 'Output directory for txt2img images', component_args=hide_dirs),
-    "outdir_img2img_samples": OptionInfo("outputs/img2img-images", 'Output directory for img2img images', component_args=hide_dirs),
-    "outdir_extras_samples": OptionInfo("outputs/extras-images", 'Output directory for images from extras tab', component_args=hide_dirs),
-    "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
-    "outdir_txt2img_grids": OptionInfo("outputs/txt2img-grids", 'Output directory for txt2img grids', component_args=hide_dirs),
-    "outdir_img2img_grids": OptionInfo("outputs/img2img-grids", 'Output directory for img2img grids', component_args=hide_dirs),
-    "outdir_save": OptionInfo("log/images", "Directory for saving images using the Save button", component_args=hide_dirs),
-}))
-
-options_templates.update(options_section(('saving-to-dirs', "Saving to a directory"), {
-    "save_to_dirs": OptionInfo(True, "Save images to a subdirectory"),
-    "grid_save_to_dirs": OptionInfo(True, "Save grids to a subdirectory"),
-    "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
-    "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
-}))
-
-options_templates.update(options_section(('upscaling', "Upscaling"), {
-    "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
-    "upscaler_for_img2img": OptionInfo(None, "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
-}))
-
-options_templates.update(options_section(('face-restoration', "Face restoration"), {
-    "face_restoration_model": OptionInfo("CodeFormer", "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
-    "code_former_weight": OptionInfo(0.5, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
-    "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
-}))
-
-options_templates.update(options_section(('system', "System"), {
-    "show_warnings": OptionInfo(False, "Show warnings in console."),
-    "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
-    "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
-    "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job."),
-    "print_hypernet_extra": OptionInfo(False, "Print extra hypernetwork information to console."),
-}))
-
-options_templates.update(options_section(('training', "Training"), {
-    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
-    "pin_memory": OptionInfo(False, "Turn on pin_memory for DataLoader. Makes training slightly faster but can increase memory usage."),
-    "save_optimizer_state": OptionInfo(False, "Saves Optimizer state as separate *.optim file. Training of embedding or HN can be resumed with the matching optim file."),
-    "save_training_settings_to_txt": OptionInfo(True, "Save textual inversion and hypernet settings to a text file whenever training starts."),
-    "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
-    "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
-    "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
-    "training_write_csv_every": OptionInfo(500, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
-    "training_xattention_optimizations": OptionInfo(False, "Use cross attention optimizations while training"),
-    "training_enable_tensorboard": OptionInfo(False, "Enable tensorboard logging."),
-    "training_tensorboard_save_images": OptionInfo(False, "Save generated images within tensorboard."),
-    "training_tensorboard_flush_every": OptionInfo(120, "How often, in seconds, to flush the pending tensorboard events and summaries to disk."),
-}))
-
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_model_checkpoint": OptionInfo(None, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_checkpoint_cache": OptionInfo(0, "Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
@@ -344,25 +239,121 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
+    "cross_attention_optimization": OptionInfo("Scaled-Dot-Product", "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
+    "cross_attention_options": OptionInfo([], "Cross-attention advanced options", gr.CheckboxGroup, lambda: {"choices": ['xFormers enable flash Attention', 'SDP disable memory attention']}),
+    "disable_nan_check": OptionInfo(False, "Do not check if produced images/latent spaces have NaN values"),
+    "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
+    "cudnn_benchmark": OptionInfo(False, "Enable CUDA cuDNN benchmark feature"),
+    "sub_quad_q_chunk_size": OptionInfo(512, "Sub-quadratic cross-attention query chunk size for the  layer optimization to use", gr.Slider, {"minimum": 16, "maximum": 8192, "step": 8}),
+    "sub_quad_kv_chunk_size": OptionInfo(512, "Sub-quadratic cross-attentionkv chunk size for the sub-quadratic cross-attention layer optimization to use", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
+    "sub_quad_chunk_threshold": OptionInfo(80, "Sub-quadratic cross-attention percentage of VRAM chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
+    "always_batch_cond_uncond": OptionInfo(False, "Disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram"),
+    "upcast_sampling": OptionInfo(False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
 }))
 
-options_templates.update(options_section(('compatibility', "Compatibility"), {
-    "use_old_emphasis_implementation": OptionInfo(False, "Use old emphasis implementation. Can be useful to reproduce old seeds."),
-    "use_old_karras_scheduler_sigmas": OptionInfo(False, "Use old karras scheduler sigmas (0.1 to 10)."),
-    "no_dpmpp_sde_batch_determinism": OptionInfo(False, "Do not make DPM++ SDE deterministic across different batch sizes."),
+options_templates.update(options_section(('system-paths', "System Paths"), {
+    "ckpt_dir": OptionInfo(os.path.join(models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
+    "vae_dir": OptionInfo(os.path.join(models_path, 'VAE'), "Path to directory with VAE files"),
+    "embeddings_dir": OptionInfo(os.path.join(models_path, 'embeddings'), "Embeddings directory for textual inversion"),
+    "embeddings_templates_dir": OptionInfo(os.path.join(script_path, 'train/templates'), "Embeddings train templates directory"),
+    "hypernetwork_dir": OptionInfo(os.path.join(models_path, 'hypernetworks'), "Hypernetwork directory"),
+    "codeformer_models_path": OptionInfo(os.path.join(models_path, 'Codeformer'), "Path to directory with codeformer model file(s)."),
+    "gfpgan_models_path": OptionInfo(os.path.join(models_path, 'GFPGAN'), "Path to directory with GFPGAN model file(s)"),
+    "esrgan_models_path": OptionInfo(os.path.join(models_path, 'ESRGAN'), "Path to directory with ESRGAN model file(s)"),
+    "bsrgan_models_path": OptionInfo(os.path.join(models_path, 'BSRGAN'), "Path to directory with BSRGAN model file(s)"),
+    "realesrgan_models_path": OptionInfo(os.path.join(models_path, 'RealESRGAN'), "Path to directory with RealESRGAN model file(s)"),
+    "clip_models_path": OptionInfo(os.path.join(models_path, 'CLIP'), "Path to directory with CLIP model file(s)"),
+    # "gfpgan_model": OptionInfo("", "GFPGAN model file name"),
+}))
+
+options_templates.update(options_section(('saving-images', "Image options"), {
+    "samples_save": OptionInfo(True, "Always save all generated images"),
+    "samples_format": OptionInfo('jpg', 'File format for images'),
+    "samples_filename_pattern": OptionInfo("", "Images filename pattern", component_args=hide_dirs),
+    "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
+    "grid_save": OptionInfo(True, "Always save all generated image grids"),
+    "grid_format": OptionInfo('jpg', 'File format for grids'),
+    "grid_extended_filename": OptionInfo(True, "Add extended info (seed, prompt) to filename when saving grid"),
+    "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
+    "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),
+    "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+    "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
+    "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
+    "save_images_before_face_restoration": OptionInfo(True, "Save a copy of image before doing face restoration."),
+    "save_images_before_highres_fix": OptionInfo(True, "Save a copy of image before applying highres fix."),
+    "save_images_before_color_correction": OptionInfo(True, "Save a copy of image before applying color correction to img2img results"),
+    "save_mask": OptionInfo(False, "For inpainting, save a copy of the greyscale mask"),
+    "save_mask_composite": OptionInfo(False, "For inpainting, save a masked composite"),
+    "jpeg_quality": OptionInfo(85, "Quality for saved jpeg images", gr.Slider, {"minimum": 1, "maximum": 100, "step": 1}),
+    "webp_lossless": OptionInfo(False, "Use lossless compression for webp images"),
+    "img_max_size_mp": OptionInfo(200, "Maximum image size, in megapixels", gr.Number),
+    "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process in extras tab"),
+    "use_upscaler_name_as_suffix": OptionInfo(True, "Use upscaler name as filename suffix in the extras tab"),
+    "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
+    "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
+    "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
+    "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
+    "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
+    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
+    "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
+    "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
+}))
+
+options_templates.update(options_section(('saving-paths', "Image Paths"), {
+    "outdir_samples": OptionInfo("", "Output directory for images; if empty, defaults to three directories below", component_args=hide_dirs),
+    "outdir_txt2img_samples": OptionInfo("outputs/text", 'Output directory for txt2img images', component_args=hide_dirs),
+    "outdir_img2img_samples": OptionInfo("outputs/image", 'Output directory for img2img images', component_args=hide_dirs),
+    "outdir_extras_samples": OptionInfo("outputs/extras", 'Output directory for images from extras tab', component_args=hide_dirs),
+    "outdir_grids": OptionInfo("", "Output directory for grids; if empty, defaults to two directories below", component_args=hide_dirs),
+    "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs),
+    "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs),
+    "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs),
+}))
+
+options_templates.update(options_section(('upscaling', "Upscaling"), {
+    "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
+    "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
+    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
+    "upscaler_for_img2img": OptionInfo("SwinIR_4x", "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
     "use_old_hires_fix_width_height": OptionInfo(False, "For hires fix, use width/height sliders to set final resolution rather than first pass (disables Upscale by, Resize width/height to)."),
+}))
+
+options_templates.update(options_section(('face-restoration', "Face restoration"), {
+    "face_restoration_model": OptionInfo("CodeFormer", "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),
+    "code_former_weight": OptionInfo(0.2, "CodeFormer weight parameter; 0 = maximum effect; 1 = minimum effect", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
+    "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
+}))
+
+options_templates.update(options_section(('system', "System"), {
+    "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
+    "multiple_tqdm": OptionInfo(False, "Add a second progress bar to the console that shows progress for an entire job."),
+    "print_hypernet_extra": OptionInfo(False, "Print extra hypernetwork information to console."),
+}))
+
+options_templates.update(options_section(('training', "Training"), {
+    "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
+    "pin_memory": OptionInfo(True, "Turn on pin_memory for DataLoader. Makes training slightly faster but can increase memory usage."),
+    "save_optimizer_state": OptionInfo(False, "Saves Optimizer state as separate *.optim file. Training of embedding or HN can be resumed with the matching optim file."),
+    "save_training_settings_to_txt": OptionInfo(True, "Save textual inversion and hypernet settings to a text file whenever training starts."),
+    "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
+    "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
+    "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
+    "training_write_csv_every": OptionInfo(0, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
+    "training_enable_tensorboard": OptionInfo(False, "Enable tensorboard logging."),
+    "training_tensorboard_save_images": OptionInfo(False, "Save generated images within tensorboard."),
+    "training_tensorboard_flush_every": OptionInfo(120, "How often, in seconds, to flush the pending tensorboard events and summaries to disk."),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {
     "interrogate_keep_models_in_memory": OptionInfo(False, "Interrogate: keep models in VRAM"),
-    "interrogate_return_ranks": OptionInfo(False, "Interrogate: include ranks of model tags matches in results (Has no effect on caption-based interrogators)."),
+    "interrogate_return_ranks": OptionInfo(True, "Interrogate: include ranks of model tags matches in results (Has no effect on caption-based interrogators)."),
     "interrogate_clip_num_beams": OptionInfo(1, "Interrogate: num_beams for BLIP", gr.Slider, {"minimum": 1, "maximum": 16, "step": 1}),
-    "interrogate_clip_min_length": OptionInfo(24, "Interrogate: minimum description length (excluding artists, etc..)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
-    "interrogate_clip_max_length": OptionInfo(48, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
-    "interrogate_clip_dict_limit": OptionInfo(1500, "CLIP: maximum number of lines in text file (0 = No limit)"),
-    "interrogate_clip_skip_categories": OptionInfo([], "CLIP: skip inquire categories", gr.CheckboxGroup, lambda: {"choices": modules.interrogate.category_types()}, refresh=modules.interrogate.category_types),
-    "interrogate_deepbooru_score_threshold": OptionInfo(0.5, "Interrogate: deepbooru score threshold", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
-    "deepbooru_sort_alpha": OptionInfo(True, "Interrogate: deepbooru sort alphabetically"),
+    "interrogate_clip_min_length": OptionInfo(32, "Interrogate: minimum description length (excluding artists, etc..)", gr.Slider, {"minimum": 1, "maximum": 128, "step": 1}),
+    "interrogate_clip_max_length": OptionInfo(192, "Interrogate: maximum description length", gr.Slider, {"minimum": 1, "maximum": 256, "step": 1}),
+    "interrogate_clip_dict_limit": OptionInfo(2048, "CLIP: maximum number of lines in text file (0 = No limit)"),
+    "interrogate_clip_skip_categories": OptionInfo(["artists", "movements", "flavors"], "CLIP: skip inquire categories", gr.CheckboxGroup, lambda: {"choices": modules.interrogate.category_types()}, refresh=modules.interrogate.category_types),
+    "interrogate_deepbooru_score_threshold": OptionInfo(0.65, "Interrogate: deepbooru score threshold", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}),
+    "deepbooru_sort_alpha": OptionInfo(False, "Interrogate: deepbooru sort alphabetically"),
     "deepbooru_use_spaces": OptionInfo(False, "use spaces for tags in deepbooru"),
     "deepbooru_escape": OptionInfo(True, "escape (\\) brackets in deepbooru (so they are used as literal brackets and not for emphasis)"),
     "deepbooru_filter_tags": OptionInfo("", "filter out those tags from deepbooru output (separated by comma)"),
@@ -390,30 +381,27 @@ options_templates.update(options_section(('ui', "User interface"), {
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
-    "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
-    "samplers_in_dropdown": OptionInfo(True, "Use dropdown for sampler selection instead of radio group"),
-    "dimensions_and_batch_together": OptionInfo(True, "Show Width/Height and Batch sliders in same row"),
+    "show_progress_in_title": OptionInfo(False, "Show generation progress in window title."),
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs (requires restart)", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
-    "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
-    "show_progress_every_n_steps": OptionInfo(10, "Show new live preview image every N sampling steps. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
-    "show_progress_type": OptionInfo("Approx NN", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}),
-    "live_preview_content": OptionInfo("Prompt", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
+    "show_progress_every_n_steps": OptionInfo(-1, "Show new live preview image every N sampling steps. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
+    "show_progress_type": OptionInfo("Full", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}),
+    "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
     "live_preview_refresh_period": OptionInfo(1000, "Progressbar/preview update period, in milliseconds")
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
-    "hide_samplers": OptionInfo([], "Hide samplers in user interface (requires restart)", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
+    "hide_samplers": OptionInfo(["Euler", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ 2M", "DPM fast", "DPM adaptive", "DPM++ 2S a Karras", "DPM++ 2S a", "DPM++ SDE Karras", "DPM2 a Karras", "LMS Karras"], "Hide samplers in user interface (requires restart)", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
     "eta_ddim": OptionInfo(0.0, "eta (noise multiplier) for DDIM", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "eta_ancestral": OptionInfo(1.0, "eta (noise multiplier) for ancestral samplers", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "ddim_discretize": OptionInfo('uniform', "img2img DDIM discretize", gr.Radio, {"choices": ['uniform', 'quad']}),
@@ -589,6 +577,16 @@ class Options:
 
 
 opts = Options()
+
+batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
+parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
+xformers_available = False
+config_filename = cmd_opts.ui_settings_file
+
+os.makedirs(opts.hypernetwork_dir, exist_ok=True)
+hypernetworks = {}
+loaded_hypernetworks = []
+
 if os.path.exists(config_filename):
     opts.load(config_filename)
 

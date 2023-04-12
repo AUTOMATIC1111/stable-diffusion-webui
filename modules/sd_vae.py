@@ -8,7 +8,7 @@ import glob
 from copy import deepcopy
 from rich import print
 
-vae_path = os.path.abspath(os.path.join(paths.models_path, "VAE"))
+vae_path = shared.opts.vae_dir
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 vae_dict = {}
 
@@ -64,18 +64,18 @@ def refresh_vae_list():
         os.path.join(vae_path, '**/*.safetensors'),
     ]
 
-    if shared.cmd_opts.ckpt_dir is not None and os.path.isdir(shared.cmd_opts.ckpt_dir):
+    if shared.opts.ckpt_dir is not None and os.path.isdir(shared.opts.ckpt_dir):
         paths += [
-            os.path.join(shared.cmd_opts.ckpt_dir, '**/*.vae.ckpt'),
-            os.path.join(shared.cmd_opts.ckpt_dir, '**/*.vae.pt'),
-            os.path.join(shared.cmd_opts.ckpt_dir, '**/*.vae.safetensors'),
+            os.path.join(shared.opts.ckpt_dir, '**/*.vae.ckpt'),
+            os.path.join(shared.opts.ckpt_dir, '**/*.vae.pt'),
+            os.path.join(shared.opts.ckpt_dir, '**/*.vae.safetensors'),
         ]
 
-    if shared.cmd_opts.vae_dir is not None and os.path.isdir(shared.cmd_opts.vae_dir):
+    if shared.opts.vae_dir is not None and os.path.isdir(shared.opts.vae_dir):
         paths += [
-            os.path.join(shared.cmd_opts.vae_dir, '**/*.ckpt'),
-            os.path.join(shared.cmd_opts.vae_dir, '**/*.pt'),
-            os.path.join(shared.cmd_opts.vae_dir, '**/*.safetensors'),
+            os.path.join(shared.opts.vae_dir, '**/*.ckpt'),
+            os.path.join(shared.opts.vae_dir, '**/*.pt'),
+            os.path.join(shared.opts.vae_dir, '**/*.safetensors'),
         ]
 
     candidates = []
@@ -97,8 +97,8 @@ def find_vae_near_checkpoint(checkpoint_file):
 
 
 def resolve_vae(checkpoint_file):
-    if shared.cmd_opts.vae_path is not None:
-        return shared.cmd_opts.vae_path, 'from commandline argument'
+    if shared.cmd_opts.vae is not None:
+        return shared.cmd_opts.vae, 'from commandline argument'
 
     is_automatic = shared.opts.sd_vae in {"Automatic", "auto"}  # "auto" for people with old config
 

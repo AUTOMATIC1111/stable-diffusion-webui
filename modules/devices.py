@@ -62,14 +62,17 @@ def torch_gc():
 
 def enable_tf32():
     if torch.cuda.is_available():
-
-        # enabling benchmark option seems to enable a range of cards to do fp16 when they otherwise can't
-        # see https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4407
-        if any([torch.cuda.get_device_capability(devid) == (7, 5) for devid in range(0, torch.cuda.device_count())]):
-            torch.backends.cudnn.benchmark = True
-
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+
+
+def enable_cudnn_benchmark():
+    from modules import shared
+
+    if shared.opts.cudnn_benchmark:
+        torch.backends.cudnn.benchmark = True
+    else:
+        torch.backends.cudnn.benchmark = False
 
 
 
@@ -106,13 +109,10 @@ def randn_without_seed(shape):
 
 def autocast(disable=False):
     from modules import shared
-
     if disable:
         return contextlib.nullcontext()
-
     if dtype == torch.float32 or shared.cmd_opts.precision == "full":
         return contextlib.nullcontext()
-
     return torch.autocast("cuda")
 
 
@@ -126,27 +126,19 @@ class NansException(Exception):
 
 def test_for_nans(x, where):
     from modules import shared
-
-    if shared.cmd_opts.disable_nan_check:
+    if shared.opts.disable_nan_check:
         return
-
     if not torch.all(torch.isnan(x)).item():
         return
-
     if where == "unet":
         message = "A tensor with all NaNs was produced in Unet."
-
         if not shared.cmd_opts.no_half:
             message += " This could be either because there's not enough precision to represent the picture, or because your video card does not support half type. Try setting the \"Upcast cross attention layer to float32\" option in Settings > Stable Diffusion or using the --no-half commandline argument to fix this."
-
     elif where == "vae":
         message = "A tensor with all NaNs was produced in VAE."
-
         if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae:
             message += " This could be because there's not enough precision to represent the picture. Try adding --no-half-vae commandline argument to fix this."
     else:
         message = "A tensor with all NaNs was produced."
-
     message += " Use --disable-nan-check commandline argument to disable this check."
-
     raise NansException(message)

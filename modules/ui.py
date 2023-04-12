@@ -42,7 +42,7 @@ import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.extras
 
-warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -52,15 +52,6 @@ if not cmd_opts.share and not cmd_opts.listen:
     # fix gradio phoning home
     gradio.utils.version_check = lambda: None
     gradio.utils.get_local_ip_address = lambda: '127.0.0.1'
-
-if cmd_opts.ngrok is not None:
-    import modules.ngrok as ngrok
-    print('ngrok authtoken detected, trying to connect...')
-    ngrok.connect(
-        cmd_opts.ngrok,
-        cmd_opts.port if cmd_opts.port is not None else 7860,
-        cmd_opts.ngrok_region
-        )
 
 
 def gr_show(visible=True):
@@ -108,7 +99,7 @@ def add_style(name: str, prompt: str, negative_prompt: str):
     shared.prompt_styles.styles[style.name] = style
     # Save all loaded prompt styles: this allows us to update the storage format in the future more easily, because we
     # reserialize all styles every time we save them
-    shared.prompt_styles.save_styles(shared.styles_filename)
+    shared.prompt_styles.save_styles('styles.csv')
 
     return [gr.Dropdown.update(visible=True, choices=list(shared.prompt_styles.styles)) for _ in range(2)]
 
@@ -383,14 +374,9 @@ def create_output_panel(tabname, outdir):
 
 
 def create_sampler_and_steps_selection(choices, tabname):
-    if opts.samplers_in_dropdown:
-        with FormRow(elem_id=f"sampler_selection_{tabname}"):
-            sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=choices[0].name, type="index")
-            steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
-    else:
-        with FormGroup(elem_id=f"sampler_selection_{tabname}"):
-            steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
-            sampler_index = gr.Radio(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=choices[0].name, type="index")
+    with FormRow(elem_id=f"sampler_selection_{tabname}"):
+        sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=choices[0].name, type="index")
+        steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
 
     return steps, sampler_index
 
@@ -461,11 +447,10 @@ def create_ui():
                             with gr.Column(elem_id="txt2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
 
-                            if opts.dimensions_and_batch_together:
-                                with gr.Column(elem_id="txt2img_column_batch"):
-                                    with FormRow(elem_id="txt2img_row_batch"):
-                                        batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
-                                        batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
+                            with gr.Column(elem_id="txt2img_column_batch"):
+                                with FormRow(elem_id="txt2img_row_batch"):
+                                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
+                                    batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
 
                     elif category == "cfg":
                         with FormRow():
@@ -494,12 +479,6 @@ def create_ui():
                                 hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
                                 hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
                                 hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
-
-                    elif category == "batch":
-                        if not opts.dimensions_and_batch_together:
-                            with FormRow(elem_id="txt2img_column_batch"):
-                                batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
-                                batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
 
                     elif category == "override_settings":
                         with FormRow(elem_id="txt2img_override_settings_row") as row:
@@ -765,12 +744,6 @@ def create_ui():
                         with FormRow(elem_classes="checkboxes-row", variant="compact"):
                             restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="img2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
-
-                    elif category == "batch":
-                        if not opts.dimensions_and_batch_together:
-                            with FormRow(elem_id="img2img_column_batch"):
-                                batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
-                                batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
 
                     elif category == "override_settings":
                         with FormRow(elem_id="img2img_override_settings_row") as row:
@@ -1426,8 +1399,6 @@ def create_ui():
         with gr.Row():
             with gr.Column(scale=6):
                 settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
-            with gr.Column():
-                restart_gradio = gr.Button(value='Reload UI', variant='primary', elem_id="settings_restart_gradio")
 
         result = gr.HTML(elem_id="settings_result")
 
@@ -1474,7 +1445,6 @@ def create_ui():
 
             with gr.TabItem("Actions"):
                 request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
-                download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
                 reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
                 with gr.Row():
                     unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
@@ -1511,13 +1481,6 @@ def create_ui():
             _js='function(){}'
         )
 
-        download_localization.click(
-            fn=lambda: None,
-            inputs=[],
-            outputs=[],
-            _js='download_localization'
-        )
-
         def reload_scripts():
             modules.scripts.reload_script_body_only()
             reload_javascript()  # need to refresh the html page
@@ -1528,16 +1491,6 @@ def create_ui():
             outputs=[]
         )
 
-        def request_restart():
-            shared.state.interrupt()
-            shared.state.need_restart = True
-
-        restart_gradio.click(
-            fn=request_restart,
-            _js='restart_reload',
-            inputs=[],
-            outputs=[],
-        )
 
     interfaces = [
         (txt2img_interface, "From Text", "txt2img"),

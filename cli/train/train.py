@@ -105,7 +105,6 @@ def prepare_server():
     server_options.options.save_optimizer_state = False
     server_options.options.training_image_repeats_per_epoch = args.repeats
     server_options.options.training_write_csv_every = 0
-    server_options.options.training_xattention_optimizations = False
     sdapi.postsync('/sdapi/v1/options', server_options.options)
     console.log(f'updated server options')
 

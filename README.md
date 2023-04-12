@@ -5,6 +5,12 @@
 Fork is as close as up-to-date with origin as time allows  
 All code changes are merged upstream whenever possible  
 
+The idea behind the fork is to enable latest technologies and advances in text-to-image generation  
+*Sometimes this is not the same as "as simple as possible to use"*  
+If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [InvokeAI](https://invoke-ai.github.io/InvokeAI/) specifically due to its automated installer and ease of use  
+
+<br>
+
 ![screenshot](ui-screenshot.jpg)
 
 <br>
@@ -13,7 +19,9 @@ All code changes are merged upstream whenever possible
 
 ### Fork does differ in few things
 
+- New logger
 - New error and exception handlers  
+- Built-in performance profiler
 - Updated **Python** libraries to latest known compatible versions  
   e.g. `accelerate`, `transformers`, `numpy`, etc.  
 - Includes opinionated **System** and **Options** configuration  
@@ -22,7 +30,6 @@ All code changes are merged upstream whenever possible
 - Optimized startup  
   Gradio web server will be initialized much earlier which model load is done in the background  
   Faster model loading plus ability to fallback on corrupt models  
-- Includes **SD2** configuration files  
 - Uses simplified folder structure  
   e.g. `/train`, `/outputs/*`, `/models/*`, etc.  
 - Enhanced training templates  
@@ -37,13 +44,10 @@ All code changes are merged upstream whenever possible
 
 - Optimized for `Torch` 2.0  
 - Runs with `SDP` memory attention enabled by default if supported by system  
-  Fallback to `XFormers` if SDP is not supported  
-  If either `SDP` or `XFormers` are not supported, falls back to usual cmd line arguments  
 
 ### Removed
 
-- Drops compatibility with `python` **3.7** and requires **3.9**  
-  Recommended is **Python 3.10**  
+- Drops compatibility with older versions of `python` and requires **3.9**  
 - Drops localizations  
 - Drops automated tests  
 
@@ -69,41 +73,36 @@ Fork adds extra functionality:
 - [Steps Animation](https://github.com/vladmandic/sd-extension-steps-animation)
 - [Seed Travel](https://github.com/yownas/seed_travel)
 
-*Note*: Extensions are automatically updated to latest version on `install`
-
 <br>
-
-
-
-<br>  
 
 ## Install
 
-
-### Install
-
-1. Install `Python`, `Git`  
+1. Install first:  
+`Python`, `Git`  
 2. Clone repository  
+`git clone https://github.com/vladmandic/automatic`
 
-> git clone https://github.com/vladmandic/automatic  
-
-### Run
+## Run
 
 Run desired startup script to install dependencies and extensions and start server:
 
-- `launch.py`:  
-  Main startup script  
-  Run `python launch.py --help` for available options  
-- `launch-venv.bat` and `launch.venv.sh`:  
+- `webui.bat` and `webui.sh`:  
   Platform specific wrapper scripts that starts `launch.py` in Python virtual environment  
   *Note*: Server can run without virtual environment, but it is recommended to use it  
   **If you're unsure which launcher to use, this is the one you want**  
+- `launch.py`:  
+  Main startup script  
+  Can be used directly to start server in manually activated `venv` or to run it without `venv`  
+  Run `python launch.py --help` for available options  
 - `setup.py`:  
   Main installer, used by `launch.py`  
   Can also be used directly to update repository or extensions  
+  If running manually, make sure to activate `venv` first (if used)  
   Run `python setup.py --help` for available options  
   Setup details are logged to `setup.log`  
-
+- `webui.py`:  
+  Main server script  
+  Run `python webui.py --help` for available options  
 
 <br>
 

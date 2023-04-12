@@ -4,37 +4,73 @@ import json
 import time
 import subprocess
 import argparse
+from modules.cmd_args import parser
 
 
-import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(message)s', filename='setup.log', filemode='w')
-log = logging.getLogger("sd-setup")
-try:
-    from rich.logging import RichHandler
-    from rich.console import Console
-    from rich.pretty import install as pretty_install
-    from rich.traceback import install as traceback_install
-    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=True, markup=True, rich_tracebacks=True, log_time_format='%H:%M:%S-%f')
-    rh.setLevel(logging.INFO)
-    log.addHandler(rh)
-    # logging.basicConfig(level=logging.INFO, format='%(message)s', handlers=[RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=True, markup=True, rich_tracebacks=True, log_time_format='%H:%M:%S-%f')])
-    console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
-    pretty_install(console=console)
-    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
-except:
-    pass
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.INFO)
-    log.addHandler(sh)
-
-parser = argparse.ArgumentParser(description = 'Setup for SD WebUI')
+# command line args
+# parser = argparse.ArgumentParser(description = 'Setup for SD WebUI')
+parser.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
 parser.add_argument('--quick', default = False, action='store_true', help = "Skip installing if setup.log is newer than repo timestamp, default: %(default)s")
 parser.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
-parser.add_argument('--update', default = False, action='store_true', help = "Update all extensions and submodules, default: %(default)s")
+parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update extensions and submodules, default: %(default)s")
 parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
 args = parser.parse_args()
 
 
+# setup console and file logging
+if os.path.isfile('setup.log'):
+    os.remove('setup.log')
+time.sleep(0.1) # prevent race condition
+import logging
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', filename='setup.log', filemode='a', encoding='utf-8', force=True)
+log = logging.getLogger("sd")
+print=print
+try: # we may not have rich on the first run
+    from rich import print
+    from rich.logging import RichHandler
+    from rich.console import Console
+    from rich.pretty import install as pretty_install
+    from rich.traceback import install as traceback_install
+    console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
+    pretty_install(console=console)
+    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
+    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
+    log.addHandler(rh)
+except:
+    pass
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG if args.debug else logging.INFO)
+    log.addHandler(sh)
+
+
+def installed(package):
+    import pkg_resources
+    ok = True
+    try:
+        pkgs = [p for p in package.split() if not p.startswith('-') and not p.startswith('git+') and not p.startswith('http') and not p.startswith('=')]
+        for pkg in pkgs:
+            p = pkg.split('==')
+            spec = pkg_resources.working_set.by_key.get(p[0], None) # more reliable than importlib
+            if spec is None:
+                spec = pkg_resources.working_set.by_key.get(p[0].lower(), None) # check name variations
+            if spec is None:
+                spec = pkg_resources.working_set.by_key.get(p[0].replace('_', '-'), None) # check name variations
+            ok = ok and spec is not None
+            version = pkg_resources.get_distribution(p[0]).version
+            if ok and len(p) > 1:
+                ok = ok and version == p[1]
+                if not ok:
+                    log.warning(f"Package wrong version found: {p[0]} {version} required {p[1]}")
+            # if ok:
+            #   log.debug(f"Package already installed: {p[0]} {version}")
+            # else:
+            #    log.debug(f"Package not installed: {p[0]} {version}")
+        return ok
+    except ModuleNotFoundError:
+        log.debug(f"Package not installed: {pkgs}")
+        return False
+
+# install package using pip if not already installed
 def install(package):
     def pip(args: str):
         log.debug(f"Running pip: {args}")
@@ -47,37 +83,11 @@ def install(package):
             log.debug(f'Pip output: {txt}')
         return txt
 
-    def installed():
-        import pkg_resources
-        ok = True
-        try:
-            pkgs = [p for p in package.split() if not p.startswith('-') and not p.startswith('git+') and not p.startswith('http') and not p.startswith('=')]
-            for pkg in pkgs:
-                p = pkg.split('==')
-                spec = pkg_resources.working_set.by_key.get(p[0], None)
-                if spec is None:
-                    spec = pkg_resources.working_set.by_key.get(p[0].lower(), None)
-                if spec is None:
-                    spec = pkg_resources.working_set.by_key.get(p[0].replace('_', '-'), None)
-                ok = ok and spec is not None
-                version = pkg_resources.get_distribution(p[0]).version
-                if ok and len(p) > 1:
-                    ok = ok and version == p[1]
-                    if not ok:
-                        log.warning(f"Package wrong version found: {p[0]} {version} required {p[1]}")
-                # if ok:
-                #   log.debug(f"Package already installed: {p[0]} {version}")
-                # else:
-                #    log.debug(f"Package not installed: {p[0]} {version}")
-            return ok
-        except ModuleNotFoundError:
-            log.debug(f"Package not installed: {pkgs}")
-            return False
-
-    if not installed():
+    if not installed(package):
         pip(f"install --upgrade {package}")
 
 
+# execute git command
 def git(args: str):
     # log.debug(f"Running git: {args}")
     git_cmd = os.environ.get('GIT', "git")
@@ -91,6 +101,7 @@ def git(args: str):
     return txt
 
 
+# update switch to main branch as head can get detached and update repository
 def update(dir):
         branch = git(f'-C "{dir}" branch')
         if 'main' in branch:
@@ -102,10 +113,11 @@ def update(dir):
         else:
             log.warning(f'Unknown branch for: {dir}')
         git(f'-C "{dir}" pull --rebase --autostash')
+        branch = git(f'-C "{dir}" branch')
 
 
+# clone git repository
 def clone(url, dir, commithash=None):
-
     if os.path.exists(dir):
         if commithash is None:
             return
@@ -120,12 +132,7 @@ def clone(url, dir, commithash=None):
             git(f'-C "{dir}" checkout {commithash}')
 
 
-def parse_env():
-    import shlex
-    args = os.environ.get('COMMANDLINE_ARGS', "")
-    sys.argv += shlex.split(args)
-
-
+# check python version
 def check_python():
     import platform
     supported_minors = [10] if platform.system() != "Windows" else [9, 10, 11]
@@ -134,6 +141,7 @@ def check_python():
         raise RuntimeError(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.9-3.11")
 
 
+# check torch version
 def check_torch():
     install(f'torch torchaudio torchvision --extra-index-url https://download.pytorch.org/whl/cu118')
     try:
@@ -153,6 +161,7 @@ def check_torch():
         pass
 
 
+# install required packages
 def install_packages():
     log.info('Installing packages')
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
@@ -165,6 +174,7 @@ def install_packages():
     install(f'--no-deps {xformers_package}')
 
 
+# clone required repositories
 def install_repositories():
     def dir(name):
         return os.path.join(os.path.dirname(__file__), 'repositories', name)
@@ -188,6 +198,26 @@ def install_repositories():
     clone(blip_repo, dir('BLIP'), blip_commit)
 
 
+# run extension installer
+def run_extension_installer(extension_dir):
+    path_installer = os.path.join(extension_dir, "install.py")
+    if not os.path.isfile(path_installer):
+        return
+    try:
+        log.debug(f"Running extension installer: {path_installer}")
+        env = os.environ.copy()
+        env['PYTHONPATH'] = os.path.abspath(".")
+        result = subprocess.run(f'"{sys.executable}" "{path_installer}"', shell=True, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode != 0:
+            txt = result.stdout.decode(encoding="utf8", errors="ignore")
+            if len(result.stderr) > 0:
+                txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
+            log.error(f'Error running extension installer: {txt}')
+    except Exception as e:
+        log.error(f'Exception running extension installer: {e}')
+
+
+# run installer for each installed and enabled extension and optionally update them
 def install_extensions():
     def list_extensions(dir):
         settings = {}
@@ -203,29 +233,11 @@ def install_extensions():
                 log.debug(f'Disabled extensions: {disabled_extensions}')
             return [x for x in os.listdir(dir) if x not in disabled_extensions and not x.startswith('.')]
 
-    def run_extension_installer(extension_dir):
-        path_installer = os.path.join(extension_dir, "install.py")
-        if not os.path.isfile(path_installer):
-            return
-        try:
-            log.debug(f"Running extension installer: {path_installer}")
-            env = os.environ.copy()
-            env['PYTHONPATH'] = os.path.abspath(".")
-            result = subprocess.run(f'"{sys.executable}" "{path_installer}"', shell=True, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if result.returncode != 0:
-                txt = result.stdout.decode(encoding="utf8", errors="ignore")
-                if len(result.stderr) > 0:
-                    txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
-                log.error(f'Error running extension installer: {txt}')
-        except Exception as e:
-            log.error(f'Exception running extension installer: {e}')
-
-
     extensions_builtin_dir = os.path.join(os.path.dirname(__file__), 'extensions-builtin')
     extensions = list_extensions(extensions_builtin_dir)
     log.info(f'Built-in extensions: {extensions}')
     for ext in extensions:
-        if args.update:
+        if not args.noupdate:
             update(os.path.join(extensions_builtin_dir, ext))
         if not args.skip_extensions:
             run_extension_installer(os.path.join(extensions_builtin_dir, ext))
@@ -234,16 +246,17 @@ def install_extensions():
     extensions = list_extensions(extensions_dir)
     log.info(f'Enabled extensions: {extensions}')
     for ext in extensions:
-        if args.update:
+        if not args.noupdate:
             update(os.path.join(extensions_dir, ext))
         if not args.skip_extensions:
             run_extension_installer(os.path.join(extensions_dir, ext))
 
 
+# initialize and optionally update submodules
 def install_submodules():
     log.info('Installing submodules')
     git(f'submodule --quiet update --init --recursive')
-    if args.update:
+    if not args.noupdate:
         log.info('Updating submodules')
         submodules = git('submodule').splitlines()
         for submodule in submodules:
@@ -251,6 +264,7 @@ def install_submodules():
             update(name)
 
 
+# install requirements
 def install_requirements():
     log.info('Installing requirements')
     f = open('requirements.txt', 'r')
@@ -259,6 +273,7 @@ def install_requirements():
         install(line)
 
 
+# set environment variables controling the behavior of various libraries
 def set_environment():
     log.info('Setting environment tuning')
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
@@ -273,8 +288,10 @@ def set_environment():
     os.environ.setdefault('CUDA_DEVICE_DEFAULT_PERSISTING_L2_CACHE_PERCENTAGE_LIMIT', '0')
     os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
     os.environ.setdefault('SAFETENSORS_FAST_GPU', '1')
+    os.environ.setdefault('NUMEXPR_MAX_THREADS', '16')
 
 
+# check version of the main repo and optionally upgrade it
 def check_version():
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
@@ -289,12 +306,13 @@ def check_version():
             log.info(f'Updated to version: {ver}')
         else:
             log.warning(f'Latest available version: {commits["commit"]["commit"]["author"]["date"]}')
-    if args.update:
+    if not args.noupdate:
         log.info('Updating Wiki')
         update(os.path.join(os.path.dirname(__file__), "wiki"))
         update(os.path.join(os.path.dirname(__file__), "wiki", "origin-wiki"))
 
 
+# check if we can run setup in quick mode
 def check_timestamp():
     if not os.path.isfile('setup.log'):
         return False
@@ -304,13 +322,15 @@ def check_timestamp():
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
     return setup_time >= version_time
 
+
+# entry method when used as module
 def run_setup(quick = False):
-    parse_env()
     check_python()
     if (quick or args.quick) and check_timestamp():
         log.info('Attempting quick setup')
         return
     log.info("Running setup")
+    log.debug(f"Args: {vars(args)}")
     install_requirements()
     check_version()
     install_packages()
@@ -318,6 +338,7 @@ def run_setup(quick = False):
     install_submodules()
     install_extensions()
     install_requirements()
+
 
 if __name__ == "__main__":
     run_setup()

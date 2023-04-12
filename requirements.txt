@@ -8,7 +8,6 @@ basicsr
 bitsandbytes
 blendmodes
 clean-fid
-colormap
 easydev
 extcolors
 facexlib
@@ -31,7 +30,6 @@ opencv-python
 piexif
 Pillow
 psutil
-pyngrok
 pyyaml
 requests
 resize-right

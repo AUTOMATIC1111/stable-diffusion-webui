@@ -5,16 +5,9 @@
 Stuff to be fixed...
 
 - Reconnect WebUI  
-- Skip Torch
-- Update requirements
-- Update README
-- Fix CSS
-- Fix Firefox
-- Implement installer in Python
-- piexif, rich, kornia
-- Move cross-optimization to settings
-
-- Fix mediapipe
+- Redo Extensions tab
+- Fix Firefox CSS issues
+- Integrate CSS into single file
 
 ## Integration
 
@@ -44,4 +37,4 @@ Tech that can be integrated as part of the core workflow...
 
 ## Random
 
-- Bunch of stuff:<https://pharmapsychotic.com/tools.html>
+- Bunch of stuff: <https://pharmapsychotic.com/tools.html>

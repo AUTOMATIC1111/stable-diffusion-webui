@@ -468,7 +468,7 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
     assert name, "Name cannot be empty!"
 
-    fn = os.path.join(shared.cmd_opts.hypernetwork_dir, f"{name}.pt")
+    fn = os.path.join(shared.opts.hypernetwork_dir, f"{name}.pt")
     if not overwrite_old:
         assert not os.path.exists(fn), f"file {fn} already exists"
 
@@ -515,7 +515,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     shared.state.job_count = steps
 
     hypernetwork_name = hypernetwork_name.rsplit('(', 1)[0]
-    filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
+    filename = os.path.join(shared.opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
 
     log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%m-%d"), hypernetwork_name)
     unload = shared.opts.unload_models_when_training
@@ -780,7 +780,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 
 
 
-    filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
+    filename = os.path.join(shared.opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
     hypernetwork.optimizer_name = optimizer_name
     if shared.opts.save_optimizer_state:
         hypernetwork.optimizer_state_dict = optimizer.state_dict()

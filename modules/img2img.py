@@ -153,9 +153,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     p.scripts = modules.scripts.scripts_txt2img
     p.script_args = args
 
-    if shared.cmd_opts.enable_console_prompts:
-        print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
-
     if mask:
         p.extra_generation_params["Mask blur"] = mask_blur
 
@@ -175,8 +172,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     shared.total_tqdm.clear()
 
     generation_info_js = processed.js()
-    if opts.samples_log_stdout:
-        print(generation_info_js)
 
     if opts.do_not_show_images:
         processed.images = []

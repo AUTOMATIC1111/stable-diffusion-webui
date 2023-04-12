@@ -271,7 +271,7 @@ class KDiffusionSampler:
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
         elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
-            sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
+            sigma_min, sigma_max = (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
 
             sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
         else:
@@ -283,10 +283,6 @@ class KDiffusionSampler:
         return sigmas
 
     def create_noise_sampler(self, x, sigmas, p):
-        """For DPM++ SDE: manually create noise sampler to enable deterministic results across different batch sizes"""
-        if shared.opts.no_dpmpp_sde_batch_determinism:
-            return None
-
         from k_diffusion.sampling import BrownianTreeNoiseSampler
         sigma_min, sigma_max = sigmas[sigmas > 0].min(), sigmas.max()
         current_iter_seeds = p.all_seeds[p.iteration * p.batch_size:(p.iteration + 1) * p.batch_size]

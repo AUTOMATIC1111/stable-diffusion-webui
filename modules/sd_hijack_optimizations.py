@@ -14,7 +14,7 @@ from modules.hypernetworks import hypernetwork
 from .sub_quadratic_attention import efficient_dot_product_attention
 
 
-if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
+if shared.opts.cross_attention_optimization == "xFormers":
     try:
         import xformers.ops
         shared.xformers_available = True
@@ -258,7 +258,7 @@ def sub_quad_attention_forward(self, x, context=None, mask=None):
     if shared.opts.upcast_attn:
         q, k = q.float(), k.float()
 
-    x = sub_quad_attention(q, k, v, q_chunk_size=shared.cmd_opts.sub_quad_q_chunk_size, kv_chunk_size=shared.cmd_opts.sub_quad_kv_chunk_size, chunk_threshold=shared.cmd_opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
+    x = sub_quad_attention(q, k, v, q_chunk_size=shared.opts.sub_quad_q_chunk_size, kv_chunk_size=shared.opts.sub_quad_kv_chunk_size, chunk_threshold=shared.opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
 
     x = x.to(dtype)
 
@@ -307,7 +307,7 @@ def sub_quad_attention(q, k, v, q_chunk_size=1024, kv_chunk_size=None, kv_chunk_
 
 
 def get_xformers_flash_attention_op(q, k, v):
-    if not shared.cmd_opts.xformers_flash_attention:
+    if 'xFormers enable flash Attention' not in shared.opts.cross_attention_options:
         return None
 
     try:
@@ -506,7 +506,7 @@ def sub_quad_attnblock_forward(self, x):
     q = q.contiguous()
     k = k.contiguous()
     v = v.contiguous()
-    out = sub_quad_attention(q, k, v, q_chunk_size=shared.cmd_opts.sub_quad_q_chunk_size, kv_chunk_size=shared.cmd_opts.sub_quad_kv_chunk_size, chunk_threshold=shared.cmd_opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
+    out = sub_quad_attention(q, k, v, q_chunk_size=shared.opts.sub_quad_q_chunk_size, kv_chunk_size=shared.opts.sub_quad_kv_chunk_size, chunk_threshold=shared.opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
     out = rearrange(out, 'b (h w) c -> b c h w', h=h)
     out = self.proj_out(out)
     return x + out
