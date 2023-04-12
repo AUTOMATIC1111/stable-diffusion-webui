@@ -143,7 +143,7 @@ def check_python():
 
 # check torch version
 def check_torch():
-    install(f'torch torchaudio torchvision --extra-index-url https://download.pytorch.org/whl/cu118')
+    install(f'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
     try:
         import torch;
         log.info(f'Torch {torch.__version__}')
