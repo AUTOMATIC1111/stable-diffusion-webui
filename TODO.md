@@ -4,11 +4,11 @@
 
 Stuff to be fixed...
 
-- Reconnect WebUI  
-- Redo Extensions tab
-- Fix Firefox CSS issues
+- Reconnect UI to ops in progress on browser restart  
+- Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Cleanup & integrate CSS into single file
 - Replace EXIF metadata handler
+- Pick & merge PRs from main repo
 
 ## Integration
 
