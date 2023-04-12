@@ -301,6 +301,7 @@ def lora_reset_cached_weight(self: Union[torch.nn.Conv2d, torch.nn.Linear]):
     setattr(self, "lora_weights_backup", None)
 
 
+
 def lora_Linear_forward(self, input):
     lora_apply_weights(self)
 
@@ -338,7 +339,7 @@ def lora_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 
 def list_available_loras():
-    # todo: 改成从公共和私有位置获取
+
     available_loras.clear()
 
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
@@ -366,4 +367,16 @@ def list_available_loras():
 available_loras = {}
 loaded_loras = []
 
-list_available_loras()
+
+def set_available_loras(files):
+    available_loras.clear()
+        
+    for filename in sorted(files, key=str.lower):
+        if os.path.isdir(filename):
+            continue
+
+        name = os.path.splitext(os.path.basename(filename))[0]
+
+        available_loras[name] = LoraOnDisk(name, filename)
+
+

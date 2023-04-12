@@ -9,6 +9,7 @@ import os
 import socket
 import typing
 from PIL import Image
+from loguru import logger
 from datetime import datetime
 from modules.scripts import Script
 from modules.sd_models import reload_model_weights, CheckpointInfo
@@ -91,12 +92,26 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
             if "args" in alwayson_scripts[alwayson_script_name]:
                 real_script_args = format_alwayson_script_args(alwayson_script_name,
                                                                alwayson_scripts[alwayson_script_name]["args"])
-                script_args[alwayson_script.args_from: alwayson_script.args_from + len(real_script_args)] = \
+                real_script_arg_len = len(real_script_args)
+                if real_script_arg_len != alwayson_script.args_to - alwayson_script.args_from:
+                    expect = alwayson_script.args_to - alwayson_script.args_from
+                    logger.warning(
+                        f'[WARN] extension: {alwayson_script_name}, arguments unmatched, expect: {expect}, '
+                        f'got:{real_script_arg_len}, front-end parameters may need to be updated.')
+
+                script_args[alwayson_script.args_from: alwayson_script.args_from + real_script_arg_len] = \
                     real_script_args
             elif isinstance(alwayson_scripts[alwayson_script_name], (list, tuple)):
                 real_script_args = format_alwayson_script_args(alwayson_script_name,
                                                                list(alwayson_scripts[alwayson_script_name]))
-                script_args[alwayson_script.args_from: alwayson_script.args_from + len(real_script_args)] = \
+                real_script_arg_len = len(real_script_args)
+                if real_script_arg_len != alwayson_script.args_to - alwayson_script.args_from:
+                    expect = alwayson_script.args_to - alwayson_script.args_from
+                    logger.warning(
+                        f'[WARN] extension: {alwayson_script_name}, arguments unmatched, expect: {expect}, '
+                        f'got:{real_script_arg_len}, front-end parameters may need to be updated.')
+
+                script_args[alwayson_script.args_from: alwayson_script.args_from + real_script_arg_len] = \
                     real_script_args
     return script_args
 

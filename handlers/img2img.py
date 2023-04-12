@@ -21,6 +21,7 @@ from .utils import init_script_args, get_selectable_script, init_default_script_
     load_sd_model_weights, save_processed_images
 from .controlnet import exec_control_net_annotator
 from .dumper import TaskDumper
+from modules import sd_models
 
 AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]
 
@@ -51,7 +52,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  user_id: str,
                  default_script_arg_img2img: typing.Sequence,  # 默认脚本参数，handler构造。
                  prompt: str,  # TAG
-                 negative_prompt: str,  # 方向TAG
+                 negative_prompt: str,  # 反向TAG
                  sampler_name: str = None,  # 采样器
                  init_img: str = None,  # 原图片（i2i，MODE=0）
                  sketch: str = None,  # 绘图图片（绘图，MODE=1）
@@ -59,8 +60,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  # 局部重绘图（手涂蒙版，MODE=2）,字典形式必须包含image,mask 2个KEY,蒙版为画笔白色其他地方为黑色
                  init_img_inpaint: str = None,  # 局部重绘图（上传蒙版，MODE=4）
                  init_mask_inpaint: str = None,  # 局部重绘蒙版图（上传蒙版，MODE=4）
-                 inpaint_color_sketch: str = None,  # 局部重新绘制图片手绘（上传蒙版，MODE=3）
-                 inpaint_color_sketch_orig: str = None,  # 局部重新绘制图片原图（上传蒙版，MODE=3）
+                 inpaint_color_sketch: str = None,  # 局部重新绘制图片手绘（局部重新绘制手涂，MODE=3）
+                 inpaint_color_sketch_orig: str = None,  # 局部重新绘制图片原图（局部重新绘制手涂，MODE=3）
                  batch_size: int = 1,  # 批次
                  mask_blur: int = 4,  # 蒙版模糊
                  n_iter: int = 1,  # 迭代数
@@ -93,7 +94,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  prompt_styles: typing.List[str] = None,  # 提示风格（模板风格也就是TAG模板）
                  img2img_batch_inpaint_mask_dir: str = None,
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
-                 override_settings_texts=None,   # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337']
+                 override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337']
+                 lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
         image = None
@@ -205,6 +207,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.extra_generation_params["Mask blur"] = mask_blur
         self.compress_pnginfo = compress_pnginfo
         self.kwargs = kwargs
+        self.loras = lora_models
+
         if selectable_scripts:
             self.script_args = script_args
         else:
@@ -269,7 +273,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             'create_at': -1,
             'negative_prompt': '',
             "init_img": "test-imgs/QQ20230324-104509.png",
-            'prompt': '',
+            'prompt': '<lora:Xiaorenshu_v20:0.6>',
+            'lora_models': ['/data/apksamba/sd/models/Lora/Xiaorenshu_v20.safetensors']
         }
 
         tasks = []
@@ -303,7 +308,7 @@ class Img2ImgTaskHandler(TaskHandler):
         return Img2ImgTask.from_task(task, self.default_script_args)
 
     def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
-        base_model_path = task['base_model_path']
+        base_model_path = task.sd_model_path
         progress = TaskProgress.new_ready(task, 'at the ready')
         load_sd_model_weights(base_model_path)
         progress.task_desc = f'model loaded:{os.path.basename(base_model_path)}, run i2i...'
@@ -311,6 +316,11 @@ class Img2ImgTaskHandler(TaskHandler):
         yield progress
         # 参数有使用到sd_model因此在切换模型后再构造参数。
         process_args = self._build_img2img_arg(task)
+        if process_args.loras:
+            # 设置LORA，具体实施在modules/exta_networks.py 中activate函数。
+            sd_models.user_loras = [f for f in process_args.loras if os.path.isfile(f)]
+        else:
+            sd_models.user_loras = []
         progress.status = TaskStatus.Running
         progress.task_desc = f'i2i task({task.id}) running'
         yield progress

@@ -24,6 +24,7 @@ model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 checkpoints_list = {}
 checkpoint_alisases = {}
 checkpoints_loaded = collections.OrderedDict()
+user_loras = []
 
 
 class CheckpointInfo:
@@ -534,6 +535,7 @@ def reload_model_weights(sd_model=None, info=None):
     print(f"Weights loaded in {timer.summary()}.")
 
     return sd_model
+
 
 def unload_model_weights(sd_model=None, info=None):
     from modules import lowvram, devices, sd_hijack

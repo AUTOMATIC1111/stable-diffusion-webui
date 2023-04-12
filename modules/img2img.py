@@ -155,24 +155,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         override_settings=override_settings,
     )
 
-    pr = {}
-    for name in dir(p):
-        value = getattr(p, name)
-        try:
-            if not name.startswith('_') and not callable(value):
-                pr[name] = value
-                if isinstance(value, Image.Image):
-                    value.save(f'{name}.png')
-                    pr[name] = f'{name}.png'
-                if 'init_images' == name:
-                    pr[name] = []
-                    for i, img in enumerate(p.init_images):
-                        img.save(f'init_images_{i}.png')
-                        pr[name].append(f'init_images_{i}.png')
-        except:
-            pass
-    print(json.dumps(pr))
-
     p.scripts = modules.scripts.scripts_txt2img
     p.script_args = args
 

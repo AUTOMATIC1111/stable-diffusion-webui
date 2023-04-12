@@ -7,7 +7,7 @@
 # @Software: Hifive
 import pkgutil
 from importlib import import_module
-from inspect import getmembers, isclass
+from inspect import getmembers, isclass, ismethod
 
 
 def dynamic_import(module_path, package=None):
@@ -63,5 +63,19 @@ def find_classes(module_path):
         module = import_module(f'{module_path}.{name}')
         for (_, c) in getmembers(module):
             if isclass(c):
+                yield c
+
+
+def find_methods(module_path):
+    '''
+     动态查找模块下的function。
+    :param module_path: 模块路径。
+    :return:
+    '''
+    path = module_path.replace('.', "/")
+    for importer, name, ispkg in pkgutil.walk_packages([f'./{path}', ]):
+        module = import_module(f'{module_path}.{name}')
+        for (_, c) in getmembers(module):
+            if ismethod(c):
                 yield c
 

@@ -50,6 +50,10 @@ class Task(UserDict):
     def model_hash(self):
         return self.get('model_hash')
 
+    @property
+    def lora_models(self):
+        return self.get('lora_models')
+
     @classmethod
     def from_json_str(cls, json_str: str):
         meta = try_deserialize_json(json_str)

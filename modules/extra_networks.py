@@ -1,7 +1,7 @@
 import re
 from collections import defaultdict
 
-from modules import errors
+from modules import errors, sd_models
 
 extra_network_registry = {}
 
@@ -72,6 +72,13 @@ def activate(p, extra_network_data):
             continue
 
         try:
+            # 加载用户LORA
+            if extra_network_name == 'lora' and hasattr(extra_network, 'set_loras'):
+                if sd_models.user_loras:
+                    set_loras = getattr(extra_network, 'set_loras')
+                    set_loras(sd_models.user_loras)
+                    sd_models.user_loras.clear()
+
             extra_network.activate(p, extra_network_args)
         except Exception as e:
             errors.display(e, f"activating extra network {extra_network_name} with arguments {extra_network_args}")

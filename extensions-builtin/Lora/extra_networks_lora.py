@@ -1,5 +1,8 @@
+import os.path
+
 from modules import extra_networks, shared
 import lora
+
 
 class ExtraNetworkLora(extra_networks.ExtraNetwork):
     def __init__(self):
@@ -24,3 +27,8 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
 
     def deactivate(self, p):
         pass
+
+    def set_loras(self, files):
+        print(f"set user loras")
+        lora.set_available_loras(files)
+

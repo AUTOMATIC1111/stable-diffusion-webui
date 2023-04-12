@@ -87,6 +87,7 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-
 RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/a1111-sd-webui-tagcomplete  /root/stable-diffusion-webui/extensions/tagcomplete
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/KutsuyaYuki/ABG_extension /root/stable-diffusion-webui/extensions/ABG_extension
 
+RUN pip3 install segment_anything -i https://nexus.ops.dragonest.com/repository/ly_pip_all/simple
 RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/zh_cn.csv -O /root/stable-diffusion-webui/extensions/tagcomplete/tags/zh_cn.csv
 
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-composable-lora.git  /root/stable-diffusion-webui/extensions/composable-lora
