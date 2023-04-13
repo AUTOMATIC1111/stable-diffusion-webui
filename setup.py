@@ -3,44 +3,45 @@ import sys
 import json
 import time
 import subprocess
-import argparse
+import logging
 from modules.cmd_args import parser
 
 
-# command line args
-# parser = argparse.ArgumentParser(description = 'Setup for SD WebUI')
-parser.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
-parser.add_argument('--quick', default = False, action='store_true', help = "Skip installing if setup.log is newer than repo timestamp, default: %(default)s")
-parser.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
-parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update extensions and submodules, default: %(default)s")
-parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
-args = parser.parse_args()
+class Dot(dict): # dot notation access to dictionary attributes
+    __getattr__ = dict.get
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+
+log = logging.getLogger("sd")
+args = Dot({ 'debug': False, 'quick': False, 'upgrade': False, 'noupdate': False, 'skip-extensions': False })
 
 
 # setup console and file logging
-if os.path.isfile('setup.log'):
-    os.remove('setup.log')
-time.sleep(0.1) # prevent race condition
-import logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', filename='setup.log', filemode='a', encoding='utf-8', force=True)
-log = logging.getLogger("sd")
-print=print
-try: # we may not have rich on the first run
-    from rich import print
-    from rich.logging import RichHandler
-    from rich.console import Console
-    from rich.pretty import install as pretty_install
-    from rich.traceback import install as traceback_install
-    console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
-    pretty_install(console=console)
-    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
-    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
-    log.addHandler(rh)
-except:
-    pass
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG if args.debug else logging.INFO)
-    log.addHandler(sh)
+def setup_logging():
+    try:
+        if os.path.isfile('setup.log'):
+            os.remove('setup.log')
+        time.sleep(0.1) # prevent race condition
+    except:
+        pass
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', filename='setup.log', filemode='a', encoding='utf-8', force=True)
+    try: # we may not have rich on the first run
+        from rich import print
+        from rich.logging import RichHandler
+        from rich.console import Console
+        from rich.pretty import install as pretty_install
+        from rich.traceback import install as traceback_install
+        console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
+        pretty_install(console=console)
+        traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
+        rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
+        log.addHandler(rh)
+    except:
+        pass
+        sh = logging.StreamHandler()
+        sh.setLevel(logging.DEBUG if args.debug else logging.INFO)
+        log.addHandler(sh)
 
 
 def installed(package):
@@ -56,8 +57,8 @@ def installed(package):
             if spec is None:
                 spec = pkg_resources.working_set.by_key.get(p[0].replace('_', '-'), None) # check name variations
             ok = ok and spec is not None
-            version = pkg_resources.get_distribution(p[0]).version
             if ok and len(p) > 1:
+                version = pkg_resources.get_distribution(p[0]).version
                 ok = ok and version == p[1]
                 if not ok:
                     log.warning(f"Package wrong version found: {p[0]} {version} required {p[1]}")
@@ -326,8 +327,22 @@ def check_timestamp():
     return setup_time >= version_time
 
 
+def parse_args():
+    # command line args
+    # parser = argparse.ArgumentParser(description = 'Setup for SD WebUI')
+    parser.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
+    parser.add_argument('--quick', default = False, action='store_true', help = "Skip installing if setup.log is newer than repo timestamp, default: %(default)s")
+    parser.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
+    parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update extensions and submodules, default: %(default)s")
+    parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
+    global args
+    args = parser.parse_args()
+
+
 # entry method when used as module
 def run_setup(quick = False):
+    setup_logging()
+    parse_args()
     check_python()
     if (quick or args.quick) and check_timestamp():
         log.info('Attempting quick setup')

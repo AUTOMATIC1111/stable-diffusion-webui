@@ -9,8 +9,7 @@ from setup import log
 
 import logging
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
-
-from modules import paths, timer, import_hook, errors
+from modules import paths, timer, errors
 
 startup_timer = timer.Timer()
 
@@ -21,6 +20,7 @@ warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="py
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 startup_timer.record("torch")
 
+from modules import import_hook
 import gradio
 import ldm.modules.encoders.modules
 

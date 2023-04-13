@@ -3,6 +3,7 @@ __pycache__
 /params.txt
 /cache.json
 /setup.log
+venv
 
 # all models and temp files
 *.ckpt
