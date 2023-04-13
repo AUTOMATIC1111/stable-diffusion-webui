@@ -29,6 +29,7 @@ venv
 /tmp
 /log
 /cert
+.vscode/
 
 # unexcluded so folders get created
 !/repositories/.placeholder
