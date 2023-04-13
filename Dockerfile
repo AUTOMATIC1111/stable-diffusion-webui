@@ -71,7 +71,9 @@ RUN cd  /root/stable-diffusion-webui/repositories/stable-diffusion-stability-ai 
 #    python3 setup.py install
 
 # ControlNet && extensions
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git /root/stable-diffusion-webui/extensions/sd-webui-controlnet
+# builtin
+# RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git /root/stable-diffusion-webui/extensions/sd-webui-controlnet
+# RUN https_proxy=${HTTP_PROXY} git clone https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111 /root/stable-diffusion-webui/extensions/multidiffusion-upscaler
 RUN https_proxy=${HTTP_PROXY} git clone https://huggingface.co/webui/ControlNet-modules-safetensors /root/stable-diffusion-webui/models/ControlNet
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN /root/stable-diffusion-webui/extensions/stable-diffusion-webui-localization-zh_CN
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/toriato/stable-diffusion-webui-wd14-tagger.git /root/stable-diffusion-webui/extensions/tagger
@@ -80,7 +82,6 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/fkunn1326/openpose-ed
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/hnmr293/posex /root/stable-diffusion-webui/extensions/posex
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/hnmr293/sd-webui-llul /root/stable-diffusion-webui/extensions/sd-webui-llul
 RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/sd-webui-additional-networks /root/stable-diffusion-webui/extensions/additional-networks
-RUN https_proxy=${HTTP_PROXY} git clone https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111 /root/stable-diffusion-webui/extensions/multidiffusion-upscaler
 RUN https_proxy=${HTTP_PROXY} git clone https://jihulab.com/hunter0725/stable-diffusion-webui-tokenizer /root/stable-diffusion-webui/extensions/stable-diffusion-webui-tokenizer
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg.git /root/stable-diffusion-webui/extensions/rembg
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui-promptgen /root/stable-diffusion-webui/extensions/stable-diffusion-webui-promptgen

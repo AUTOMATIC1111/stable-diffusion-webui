@@ -25,6 +25,7 @@ checkpoints_list = {}
 checkpoint_alisases = {}
 checkpoints_loaded = collections.OrderedDict()
 user_loras = []
+user_embending_dirs = []
 
 
 class CheckpointInfo:

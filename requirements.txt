@@ -25,6 +25,8 @@ resize-right
 torchdiffeq
 kornia
 lark
+svglib
+k_diffusion==0.0.14
 inflection
 GitPython
 torchsde

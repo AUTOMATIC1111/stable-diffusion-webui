@@ -14,6 +14,9 @@ LLuL = 'LLuL'
 
 class LLuLFormatter(AlwaysonScriptArgsFormatter):
 
+    def name(self):
+        return LLuL
+
     def format(self, args: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
             -> typing.Sequence[typing.Any]:
         def obj_to_array(obj: typing.Mapping) -> typing.Sequence:

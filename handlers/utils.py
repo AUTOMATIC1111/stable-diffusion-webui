@@ -13,7 +13,7 @@ from loguru import logger
 from datetime import datetime
 from modules.scripts import Script
 from modules.sd_models import reload_model_weights, CheckpointInfo
-from .formatter import format_alwayson_script_args
+from handlers.formatter import format_alwayson_script_args
 
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
 

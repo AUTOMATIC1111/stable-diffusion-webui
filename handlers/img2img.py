@@ -17,7 +17,7 @@ from modules.generation_parameters_copypaste import create_override_settings_dic
 from modules.img2img import process_batch
 from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed
-from .utils import init_script_args, get_selectable_script, init_default_script_args, \
+from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images
 from extension.controlnet import exec_control_net_annotator
 from handlers.dumper import TaskDumper
@@ -96,6 +96,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
                  override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337']
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
+                 embendings: typing.Sequence[str] = None,  # 使用embending，用户和系统全部mbending列表
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
         image = None
@@ -208,6 +209,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.compress_pnginfo = compress_pnginfo
         self.kwargs = kwargs
         self.loras = lora_models
+        self.embending = embendings
 
         if selectable_scripts:
             self.script_args = script_args
@@ -321,6 +323,14 @@ class Img2ImgTaskHandler(TaskHandler):
             sd_models.user_loras = [f for f in process_args.loras if os.path.isfile(f)]
         else:
             sd_models.user_loras = []
+        if process_args.embending:
+            embending_dirs = [
+                os.path.dirname(p) for p in process_args.embending if os.path.isfile(p)
+            ]
+            sd_models.user_embending_dirs = set(embending_dirs)
+        else:
+            sd_models.user_embending_dirs = []
+
         progress.status = TaskStatus.Running
         progress.task_desc = f'i2i task({task.id}) running'
         yield progress
