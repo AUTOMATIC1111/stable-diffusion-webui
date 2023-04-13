@@ -310,7 +310,10 @@ def check_version():
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
     hash = git('rev-parse HEAD')
-    import requests
+    try:
+        import requests
+    except ImportError:
+        return
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master').json()
     if commits['commit']['sha'] != hash:
