@@ -4,7 +4,6 @@ import sys
 import numpy as np
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
-from realesrgan import RealESRGANer
 
 from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import cmd_opts, opts
@@ -35,6 +34,12 @@ class UpscalerRealESRGAN(Upscaler):
 
     def do_upscale(self, img, path):
         if not self.enable:
+            return img
+
+        try:
+            from realesrgan import RealESRGANer
+        except:
+            print("Error importing Real-ESRGAN:", file=sys.stderr)
             return img
 
         info = self.load_model(path)
@@ -125,5 +130,5 @@ def get_realesrgan_models(scaler):
         ]
         return models
     except Exception as e:
-        print("Error making Real-ESRGAN models list:", file=sys.stderr)
-        shared.exception()
+        print("Error creating Real-ESRGAN models list", file=sys.stderr)
+        return []

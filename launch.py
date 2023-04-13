@@ -86,7 +86,7 @@ def run_extension_installer(dir):
 if __name__ == "__main__":
     setup.run_setup(False)
     setup.set_environment()
-    # setup.check_torch()
+    setup.check_torch()
     setup.log.info(f"Server arguments: {sys.argv[1:]}")
     import webui
     webui.webui()

@@ -2,8 +2,9 @@ import os
 import sys
 import json
 import time
-import subprocess
+import shutil
 import logging
+import subprocess
 from modules.cmd_args import parser
 
 
@@ -140,6 +141,9 @@ def check_python():
     log.info(f'Python {platform.python_version()} on {platform.system()}')
     if not (sys.version_info.major == 3 and sys.version_info.minor in supported_minors):
         raise RuntimeError(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.9-3.11")
+    git_cmd = os.environ.get('GIT', "git")
+    if shutil.which(git_cmd) is None:
+        raise RuntimeError('Git not found')
 
 
 # check torch version
@@ -150,14 +154,17 @@ def check_torch():
         log.info(f'Torch {torch.__version__}')
         if not torch.cuda.is_available():
             log.warning("Torch repoorts CUDA not available")
+            if '--no-half' not in sys.argv:
+                sys.argv.append('--no-half')
         else:
-            log.info(f'Torch detected GPU: {torch.cuda.get_device_name(torch.cuda.current_device())}')
             if torch.version.cuda:
                 log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version()}')
             elif torch.version.hip:
                 log.info(f'Torch backend: AMD ROCm HIP {torch.version.hip}')
             else:
                 log.warning(f'Unknown Torch backend')
+            for device in [torch.cuda.device(i) for i in range(torch.cuda.device_count())]:
+                log.info(f'Torch detected GPU: {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
     except:
         pass
 
@@ -168,11 +175,11 @@ def install_packages():
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
     openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
-    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.18')
     install(gfpgan_package)
     install(clip_package)
     install(openclip_package)
     try:
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers')
         install(f'--no-deps {xformers_package}')
     except Exception as e:
         log.error('Cannot install xformers package: {e}')
@@ -216,7 +223,8 @@ def run_extension_installer(extension_dir):
             txt = result.stdout.decode(encoding="utf8", errors="ignore")
             if len(result.stderr) > 0:
                 txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
-            log.error(f'Error running extension installer: {txt}')
+            log.error(f'Error running extension installer: {path_installer}')
+            log.debug(txt)
     except Exception as e:
         log.error(f'Exception running extension installer: {e}')
 

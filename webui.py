@@ -61,16 +61,6 @@ else:
 
 
 def initialize():
-    if torch.cuda.is_available():
-        if torch.version.cuda: cuda_version = f'CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version()}'
-        elif torch.version.hip: cuda_version = f'HIP {torch.version.hip}'
-        else: cuda_version = ''
-        log.info(f'Torch {getattr(torch, "__long_version__", torch.__version__)} {cuda_version}')
-        for device in [torch.cuda.device(i) for i in range(torch.cuda.device_count())]:
-            log.info(f'GPU {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
-    else:
-        log.info(f'Torch {getattr(torch, "__long_version__", torch.__version__)} running on CPU')
-
     extensions.list_extensions()
     startup_timer.record("extensions")
 

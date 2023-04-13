@@ -3,7 +3,6 @@ import json
 import numpy as np
 import zlib
 from PIL import Image, PngImagePlugin, ImageDraw, ImageFont
-from fonts.ttf import Roboto
 import torch
 from modules.shared import opts
 
@@ -137,10 +136,9 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
     fontsize = 32
     if textfont is None:
         try:
-            textfont = ImageFont.truetype(opts.font or Roboto, fontsize)
-            textfont = opts.font or Roboto
+            return ImageFont.truetype(opts.font or 'javascript/roboto.ttf', fontsize)
         except Exception:
-            textfont = Roboto
+            return ImageFont.truetype('javascript/roboto.ttf', fontsize)
 
     factor = 1.5
     gradient = Image.new('RGBA', (1, image.size[1]), color=(0, 0, 0, 0))

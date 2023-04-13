@@ -1,9 +1,6 @@
 import os
 import sys
 
-import facexlib
-import gfpgan
-
 import modules.face_restoration
 from modules import paths, shared, devices, modelloader
 
@@ -16,6 +13,8 @@ loaded_gfpgan_model = None
 
 
 def gfpgann():
+    import facexlib
+    import gfpgan
     global loaded_gfpgan_model
     global model_path
     if loaded_gfpgan_model is not None:
@@ -76,8 +75,9 @@ def setup_model(dirname):
         os.makedirs(model_path)
 
     try:
-        from gfpgan import GFPGANer
-        from facexlib import detection, parsing
+        import gfpgan
+        import facexlib
+
         global user_path
         global have_gfpgan
         global gfpgan_constructor
@@ -100,7 +100,7 @@ def setup_model(dirname):
         facexlib.parsing.load_file_from_url = facex_load_file_from_url2
         user_path = dirname
         have_gfpgan = True
-        gfpgan_constructor = GFPGANer
+        gfpgan_constructor = gfpgan.GFPGANer
 
         class FaceRestorerGFPGAN(modules.face_restoration.FaceRestoration):
             def name(self):
