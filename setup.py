@@ -317,7 +317,7 @@ def check_version():
             ver = git('log -1 --pretty=format:"%h %ad"')
             log.info(f'Updated to version: {ver}')
         else:
-            log.warning(f'Latest available version: {commits["commit"]["commit"]["author"]["date"]}')
+            log.info(f'Latest available version: {commits["commit"]["commit"]["author"]["date"]}')
     if not args.noupdate:
         log.info('Updating Wiki')
         update(os.path.join(os.path.dirname(__file__), "wiki"))
@@ -357,8 +357,8 @@ def run_setup(quick = False):
         return
     log.info("Running setup")
     log.debug(f"Args: {vars(args)}")
-    install_requirements()
     check_version()
+    install_requirements()
     install_packages()
     install_repositories()
     install_submodules()
