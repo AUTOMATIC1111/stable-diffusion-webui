@@ -25,10 +25,11 @@ class RedisSender:
                 name, _ = os.path.splitext(os.path.basename(task.sd_model_path))
             else:
                 name = task.model_hash[0:10]
+            #  task_ + shorthash(前10位的sha256)
             queue = TaskQueuePrefix + name
 
             meta = task.json()
-            redis.set(task.id, meta, 3600*24*7)
+            redis.set(task.id, meta, 3600*24*1)
             redis.zadd(queue, {
                 task.id: int(level)
             })

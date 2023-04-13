@@ -19,8 +19,8 @@ from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed
 from .utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images
-from .controlnet import exec_control_net_annotator
-from .dumper import TaskDumper
+from extension.controlnet import exec_control_net_annotator
+from handlers.dumper import TaskDumper
 from modules import sd_models
 
 AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]

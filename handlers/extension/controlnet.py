@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/4/1 10:34 AM
 # @Author  : wangdongming
-# @Site    : 
+# @Site    :
 # @File    : controlnet.py
 # @Software: Hifive
 
@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image
 from collections.abc import Iterable
 from modules.scripts import scripts_img2img
-from .formatter import AlwaysonScriptArgsFormatter
+from handlers.formatter import AlwaysonScriptArgsFormatter
 from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
 
 ControlNet = 'ControlNet'
@@ -116,9 +116,12 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
     def name(self):
         return ControlNet
 
-    def format(self, args: typing.Dict[str, typing.Any]) \
-            -> typing.Dict[str, typing.Any]:
-        control_net_script_args = args.copy()
+    def format(self, args: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
+            -> typing.Sequence[typing.Any]:
+        if isinstance(args, dict):
+            # 只传了一个ControlNetUnit对象，转换为LIST处理
+            args = [args]
+        control_net_script_args = [x for x in args]
         if control_net_script_args:
             new_args = []
 
@@ -159,8 +162,7 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
             if isinstance(control_net_script_args, Iterable):
                 for item in control_net_script_args:
                     set_default(item)
-            else:
-                set_default(control_net_script_args)
+
             control_net_script_args = new_args
 
         return control_net_script_args

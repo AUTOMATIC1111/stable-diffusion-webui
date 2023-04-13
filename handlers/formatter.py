@@ -14,8 +14,8 @@ class AlwaysonScriptArgsFormatter:
     def name(self):
         return 'base'
 
-    def format(self, alwayson_scripts: typing.Mapping[str, typing.Dict[str, typing.Any]]) \
-            -> typing.Mapping[str, typing.Dict[str, typing.Any]]:
+    def format(self, alwayson_scripts: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
+            -> typing.Sequence[typing.Any]:
         return alwayson_scripts
 
 

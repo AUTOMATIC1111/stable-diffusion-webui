@@ -6,6 +6,8 @@
 # @File    : encryptor.py
 # @Software: Hifive
 import base64
+import os.path
+
 from Crypto.Cipher import DES
 from Crypto.Util.Padding import pad
 
@@ -58,6 +60,15 @@ def des_decrypt(text, mode=None, key=None, iv=None):
 def string_to_hex(text: str) -> bytes:
     b = bytes.hex(text.encode('utf8'))
     return b.encode('utf8')
+
+
+def b64_image(image_path: str):
+    _, ext = os.path.splitext(image_path)
+    with open(image_path, "rb") as f:
+        img = f.read()
+
+    data = base64.b64encode(img).decode()
+    return f"data:image/{ext};base64,{data}"
 
 
 if __name__ == "__main__":

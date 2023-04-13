@@ -353,7 +353,7 @@ def run_worker():
     from consumer import run_executor
     from worker.task_send import RedisSender, VipLevel
     from handlers.img2img import Img2ImgTask
-    from handlers.controlnet import bind_debug_img_task_args
+    from handlers.extension.controlnet import bind_debug_img_task_args
 
     tasks = Img2ImgTask.debug_task()
     sender = RedisSender()
