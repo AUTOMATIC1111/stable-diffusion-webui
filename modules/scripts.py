@@ -262,7 +262,7 @@ def load_scripts():
             register_scripts_from_module(script_module)
 
         except Exception:
-            print(f"Error loading script: {scriptfile.filename}", file=sys.stderr)
+            print(f"Error loading script: {scriptfile.filename},system path:{sys.path}", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
 
         finally:

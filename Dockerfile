@@ -72,7 +72,7 @@ RUN cd  /root/stable-diffusion-webui/repositories/stable-diffusion-stability-ai 
 
 # ControlNet && extensions
 # builtin
-# RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git /root/stable-diffusion-webui/extensions/sd-webui-controlnet
+RUN https_proxy=${HTTP_PROXY} git clone https://github.com/Mikubill/sd-webui-controlnet.git /root/stable-diffusion-webui/extensions/sd-webui-controlnet
 # RUN https_proxy=${HTTP_PROXY} git clone https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111 /root/stable-diffusion-webui/extensions/multidiffusion-upscaler
 RUN https_proxy=${HTTP_PROXY} git clone https://huggingface.co/webui/ControlNet-modules-safetensors /root/stable-diffusion-webui/models/ControlNet
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/dtlnor/stable-diffusion-webui-localization-zh_CN /root/stable-diffusion-webui/extensions/stable-diffusion-webui-localization-zh_CN
