@@ -2,6 +2,7 @@
 __pycache__
 /params.txt
 /cache.json
+/config.json
 /setup.log
 venv
 
