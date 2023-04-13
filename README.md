@@ -21,11 +21,10 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 
 - New logger
 - New error and exception handlers  
-- Built-in performance profiler
-- Updated **Python** libraries to latest known compatible versions  
-  e.g. `accelerate`, `transformers`, `numpy`, etc.  
+- Built-in performance profiler  
+- Enhanced environment tuning  
+- Updated libraries to latest known compatible versions  
 - Includes opinionated **System** and **Options** configuration  
-  e.g. `samplers`, `upscalers`, etc.  
 - Does not rely on `Accelerate` as it only affects distributed systems  
 - Optimized startup  
   Gradio web server will be initialized much earlier which model load is done in the background  
@@ -34,6 +33,8 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
   e.g. `/train`, `/outputs/*`, `/models/*`, etc.  
 - Enhanced training templates  
 - Built-in `LoRA`, `LyCORIS`, `Custom Diffusion`, `Dreambooth` training  
+- Majority of settings configurable via UI without the need for command line flags  
+  e.g, cross-optimization methods, system folders, etc.  
 
 ### User Interface
 
@@ -44,10 +45,12 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 
 - Optimized for `Torch` 2.0  
 - Runs with `SDP` memory attention enabled by default if supported by system  
+- Auto-adjust parameters when running on **CPU** or **CUDA**  
+  *Note:* AMD and M1 platforms are supported, but without out-of-the-box optimizations  
 
 ### Removed
 
-- Drops compatibility with older versions of `python` and requires **3.9**  
+- Drops compatibility with older versions of `python` and requires **3.9** or **3.10**  
 - Drops localizations  
 - Drops automated tests  
 
@@ -78,8 +81,10 @@ Fork adds extra functionality:
 ## Install
 
 1. Install first:  
-`Python`, `Git`  
-2. Clone repository  
+**Python** & **Git**  
+2. If you have nVidia GPU, install nVidia CUDA toolkit:  
+<https://developer.nvidia.com/cuda-downloads>
+3. Clone repository  
 `git clone https://github.com/vladmandic/automatic`
 
 ## Run
@@ -87,22 +92,37 @@ Fork adds extra functionality:
 Run desired startup script to install dependencies and extensions and start server:
 
 - `webui.bat` and `webui.sh`:  
-  Platform specific wrapper scripts that starts `launch.py` in Python virtual environment  
-  *Note*: Server can run without virtual environment, but it is recommended to use it  
+  Platform specific wrapper scripts For Windows, Linux and OSX  
+  Starts `launch.py` in a Python virtual environment (venv)  
+  *Note*: Server can run without virtual environment, but it is recommended to use it to avoid library version conflicts with other applications  
   **If you're unsure which launcher to use, this is the one you want**  
 - `launch.py`:  
   Main startup script  
-  Can be used directly to start server in manually activated `venv` or to run it without `venv`  
-  Run `python launch.py --help` for available options  
+  Can be used directly to start server in a manually activated `venv` or to run server without `venv`  
 - `setup.py`:  
   Main installer, used by `launch.py`  
   Can also be used directly to update repository or extensions  
   If running manually, make sure to activate `venv` first (if used)  
-  Run `python setup.py --help` for available options  
-  Setup details are logged to `setup.log`  
 - `webui.py`:  
   Main server script  
-  Run `python webui.py --help` for available options  
+
+Any of the above scripts can be used with `--help` to display detailed usage information and available parameters  
+For example:
+> webui.bat --help
+
+Full startup sequence is logged in `setup.log`, so if you encounter any issues, please check it first  
+
+## Update
+
+The launcher can perform automatic update of main repository, requirements, extensions and submodules:
+
+- Main repository:  
+  Update is *not* performed by default, enable with `--upgrade` flag
+- Requirements:  
+  Check is performed on each startup and missing requirements are auto-installed, can be skipped with `--skip-requirements` flag
+- Extensions and submodules:  
+  Update is performed on each startup and installer for each extension is started, can be skipped with `--skip-extensions` flag
+- All checks can be skipped using `--quick` flag
 
 <br>
 

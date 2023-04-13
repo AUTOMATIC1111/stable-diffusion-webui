@@ -14,6 +14,7 @@ except ImportError:
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
+setup.parse_args()
 args, _ = cmd_args.parser.parse_known_args()
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")

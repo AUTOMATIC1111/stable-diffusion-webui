@@ -278,6 +278,8 @@ def install_submodules():
 
 # install requirements
 def install_requirements():
+    if args.skip_requirements:
+        return
     log.info('Installing requirements')
     f = open('requirements.txt', 'r')
     lines = [line.strip() for line in f.readlines() if line.strip() != '']
@@ -338,10 +340,13 @@ def check_timestamp():
 def parse_args():
     # command line args
     # parser = argparse.ArgumentParser(description = 'Setup for SD WebUI')
+    if vars(parser)['_option_string_actions'].get('--debug', None) is not None:
+        return
     parser.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     parser.add_argument('--quick', default = False, action='store_true', help = "Skip installing if setup.log is newer than repo timestamp, default: %(default)s")
     parser.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
     parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update extensions and submodules, default: %(default)s")
+    parser.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     global args
     args = parser.parse_args()
@@ -350,7 +355,6 @@ def parse_args():
 # entry method when used as module
 def run_setup(quick = False):
     setup_logging()
-    parse_args()
     check_python()
     if (quick or args.quick) and check_timestamp():
         log.info('Attempting quick setup')
@@ -367,6 +371,7 @@ def run_setup(quick = False):
 
 
 if __name__ == "__main__":
+    parse_args()
     run_setup()
     set_environment()
     check_torch()

@@ -13,7 +13,6 @@ Stuff to be fixed...
 - Cleanup `ui-config.json`
 - Investigate integration with `Torch-DirectML`
 - Set defaults for Apple M1
-- Set defaults for CPU-only
 - Support mupliple folders for models
 
 ## Integration
