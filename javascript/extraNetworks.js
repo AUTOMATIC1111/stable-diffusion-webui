@@ -198,7 +198,7 @@ function extraNetworksHookPageToggleIfBuilt(tab_name) {
 
         // Add our own event to toggle extra networks section with CSS instead of Gradio
         new_button.addEventListener("click", function() {
-            extra_networks_section.classList.toggle("hidden");
+            extra_networks_section.hidden = !extra_networks_section.hidden;
         }, false);
     }
 }
