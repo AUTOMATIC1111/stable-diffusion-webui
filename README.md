@@ -169,7 +169,7 @@ Alternatively, use online services (like Google Colab):
 ### Automatic Installation on Windows
 1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH"
 2. Install [git](https://git-scm.com/download/win).
-3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
+3. Download the stable-diffusion-webui-ux repository, for example by running `git clone https://github.com/anapnoe/stable-diffusion-webui-ux.git`.
 4. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
 
 ### Automatic Installation on Linux
@@ -184,15 +184,16 @@ sudo pacman -S wget git python3
 ```
 2. To install in `/home/$(whoami)/stable-diffusion-webui/`, run:
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
+bash <(wget -qO- https://raw.githubusercontent.com/anapnoe/stable-diffusion-webui-ux/master/webui.sh)
 ```
 3. Run `webui.sh`.
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
+and replace the path in step 3 with `git clone https://github.com/anapnoe/stable-diffusion-webui-ux`
 
 ## Contributing
-Here's how to add code to this repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)
+Here's how to add code to the original repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)
 
 ## Documentation
 The documentation was moved from this README over to the project's [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki).
