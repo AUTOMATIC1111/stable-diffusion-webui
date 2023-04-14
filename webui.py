@@ -5,7 +5,7 @@ import re
 import warnings
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from setup import log
+from setup import log # pylint: disable=E0611
 
 import logging
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
@@ -86,21 +86,17 @@ def initialize():
     modules.sd_vae.refresh_vae_list()
     startup_timer.record("vae")
 
-    modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
-    startup_timer.record("embeddings")
-
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
     startup_timer.record("opts onchange")
 
+    modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     shared.reload_hypernetworks()
-    startup_timer.record("hypernets")
-
     ui_extra_networks.intialize()
-    ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
     ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
     ui_extra_networks.register_page(ui_extra_networks_checkpoints.ExtraNetworksPageCheckpoints())
+    ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
     extra_networks.initialize()
     extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
     startup_timer.record("extra networks")
@@ -208,7 +204,6 @@ def webui():
 
     modules.progress.setup_progress_api(app)
     create_api(app)
-
     ui_extra_networks.add_pages_to_demo(app)
 
     modules.script_callbacks.app_started_callback(shared.demo, app)
