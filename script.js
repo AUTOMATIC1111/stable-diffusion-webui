@@ -68,15 +68,24 @@ document.addEventListener("DOMContentLoaded", function() {
  */
 document.addEventListener('keydown', function(e) {
     var handled = false;
+    var stop = false;
     if (e.key !== undefined) {
         if((e.key == "Enter" && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
+        if(e.key == "F2" ) stop = true;
     } else if (e.keyCode !== undefined) {
         if((e.keyCode == 13 && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
-    }
+    } 
     if (handled) {
         button = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
         if (button) {
             button.click();
+        }
+        e.preventDefault();
+    }
+    if (stop) {
+        button2 = get_uiCurrentTabContent().querySelector('button[id$=_interrupt]');
+        if (button2) {
+            button2.click();
         }
         e.preventDefault();
     }
