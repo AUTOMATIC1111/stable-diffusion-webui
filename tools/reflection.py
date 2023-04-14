@@ -5,7 +5,9 @@
 # @Site    :
 # @File    : reflection.py
 # @Software: Hifive
+import os
 import pkgutil
+import importlib.util
 from importlib import import_module
 from inspect import getmembers, isclass, ismethod
 
@@ -64,6 +66,14 @@ def find_classes(module_path):
         for (_, c) in getmembers(module):
             if isclass(c):
                 yield c
+
+
+def load_module(path):
+    module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
+    module = importlib.util.module_from_spec(module_spec)
+    module_spec.loader.exec_module(module)
+
+    return module
 
 
 def find_methods(module_path):

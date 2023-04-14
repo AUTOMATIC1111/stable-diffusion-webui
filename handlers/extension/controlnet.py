@@ -14,6 +14,7 @@ from PIL import Image
 from collections.abc import Iterable
 from modules.scripts import scripts_img2img
 from handlers.formatter import AlwaysonScriptArgsFormatter
+from handlers.utils import get_tmp_local_path
 from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
 
 ControlNet = 'ControlNet'
@@ -29,7 +30,7 @@ class RunAnnotatorArgs:
                  pthr_a: int = 64,  # 阈值A
                  pthr_b: int = 64,  # 阈值B
                  **kwargs):
-
+        image = get_tmp_local_path(image)
         self.image = np.array(Image.open(image))
         if not mask:
             shape = list(self.image.shape)
@@ -38,6 +39,7 @@ class RunAnnotatorArgs:
             self.mask = np.zeros(self.image.shape)
             self.mask[:, :, -1] = 255
         else:
+            mask = get_tmp_local_path(mask)
             self.mask = np.array(Image.open(mask))
         self.kwargs = kwargs
         self.module = module
@@ -128,7 +130,8 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
             def set_default(item):
                 image, mask = None, None
                 if item.get('enabled', False):
-                    image = np.array(Image.open(item['image']['image']))
+                    image = get_tmp_local_path(item['image']['image'])
+                    image = np.array(Image.open(image))
                     mask = item['image'].get('mask')
                     if not mask:
                         shape = list(image.shape)
@@ -137,7 +140,8 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                         mask = np.zeros(image.shape)
                         mask[:, :, -1] = 255
                     else:
-                        mask = np.array(Image.open(item['image']['mask']))
+                        mask = get_tmp_local_path(item['image']['mask'])
+                        mask = np.array(mask)
                 new_args.append({
                     'enabled': item.get('enabled', False),
                     'guess_mode': item.get('guess_mode', False),

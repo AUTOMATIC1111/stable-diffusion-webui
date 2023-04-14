@@ -591,12 +591,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     def infotext(iteration=0, position_in_batch=0):
         return create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments, iteration, position_in_batch)
 
-    # 加载自定义的embending
-    if sd_models.user_embending_dirs:
-        for p in sd_models.user_embending_dirs:
+    # 加载自定义的embedding
+    if sd_models.user_embedding_dirs:
+        for p in sd_models.user_embedding_dirs:
             model_hijack.embedding_db.add_embedding_dir(p)
 
-    if sd_models.user_embending_dirs or (os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings):
+    if sd_models.user_embedding_dirs or (os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings):
         model_hijack.embedding_db.load_textual_inversion_embeddings()
 
     if p.scripts is not None:

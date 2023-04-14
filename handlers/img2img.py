@@ -12,13 +12,15 @@ import modules.shared as shared
 import numpy as np
 from enum import IntEnum
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
+
+from handlers.typex import ModelType
 from modules.scripts import scripts_img2img
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.img2img import process_batch
 from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
-    load_sd_model_weights, save_processed_images
+    load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path
 from extension.controlnet import exec_control_net_annotator
 from handlers.dumper import TaskDumper
 from modules import sd_models
@@ -32,21 +34,6 @@ class Img2ImgMinorTaskType(IntEnum):
 
 
 class Img2ImgTask(StableDiffusionProcessingImg2Img):
-
-    # {"all_negative_prompts": null, "all_prompts": null, "all_seeds": null, "all_subseeds": null, "batch_size": 1,
-    # "cfg_scale": 7, "color_corrections": null, "compress_pnginfo": false, "ddim_discretize": "uniform",
-    # "denoising_strength": 0.75, "disable_extra_networks": false, "do_not_reload_embeddings": false,
-    # "do_not_save_grid": false, "do_not_save_samples": false, "eta": null, "extra_generation_params": {},
-    # "height": 512, "image_cfg_scale": null, "image_conditioning": null,
-    # "image_mask": "image_mask.png", "init_images": ["init_images_0.png"], "init_latent": null, "initial_noise_multiplier": 1.0, "inpaint_full_res": 0,
-    # "inpaint_full_res_padding": 32, "inpainting_fill": 1, "inpainting_mask_invert": 0,
-    # "is_using_inpainting_conditioning": false, "iteration": 0, "latent_mask": null,
-    # "mask": null, "mask_blur": 4, "mask_for_overlay": null, "n_iter": 1, "negative_prompt": "", "nmask": null, "outpath_grids": "outputs/img2img-grids",
-    # "outpath_samples": "outputs/img2img-images", "overlay_images": null, "override_settings": {},
-    # "override_settings_restore_afterwards": true, "paste_to": null, "prompt": "", "prompt_for_display": null, "resize_mode": 0, "restore_faces": false,
-    # "s_churn": 0.0, "s_noise": 1.0, "s_tmax": Infinity, "s_tmin": 0.0, "sampler": null, "sampler_name": "Euler a",
-    # "sampler_noise_scheduler_override": null, "script_args": null, "scripts": null, "seed": -1.0, "seed_resize_from_h": 0,
-    # "seed_resize_from_w": 0, "steps": 20, "styles": [], "subseed": -1, "subseed_strength": 0, "tiling": false, "width": 512}
 
     def __init__(self, base_model_path: str,
                  user_id: str,
@@ -96,7 +83,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
                  override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337']
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
-                 embendings: typing.Sequence[str] = None,  # 使用embending，用户和系统全部mbending列表
+                 embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部mbending列表
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
         image = None
@@ -108,17 +95,22 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                 raise ValueError('batch input or output directory is empty')
             self.is_batch = True
         elif mode == 4:
+            init_img_inpaint = get_tmp_local_path(init_img_inpaint)
+            init_mask_inpaint = get_tmp_local_path(init_mask_inpaint)
             if not init_img_inpaint or not init_mask_inpaint:
                 raise ValueError('img_inpaint or mask_inpaint not found')
+
             image = Image.open(init_img_inpaint)
             mask = Image.open(init_mask_inpaint)
         elif mode == 3:
+            inpaint_color_sketch = get_tmp_local_path(inpaint_color_sketch)
             if not inpaint_color_sketch:
                 raise Exception('inpaint_color_sketch not found')
             image = Image.open(inpaint_color_sketch)
 
             orig_path = inpaint_color_sketch_orig or inpaint_color_sketch
             if orig_path != inpaint_color_sketch:
+                orig_path = get_tmp_local_path(inpaint_color_sketch_orig)
                 orig = Image.open(orig_path)
             else:
                 orig = image
@@ -134,17 +126,21 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             if 'mask' not in init_img_with_mask or 'image' not in init_img_with_mask:
                 raise Exception('mask or image not found in init_img_with_mask')
             image_path, mask_path = init_img_with_mask["image"], init_img_with_mask["mask"]
+            image_path = get_tmp_local_path(image_path)
+            mask_path = get_tmp_local_path(mask_path)
             image = Image.open(image_path)
             mask = Image.open(mask_path)
             alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
             mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
             image = image.convert("RGB")
         elif mode == 1:
+            sketch = get_tmp_local_path(sketch)
             if not sketch:
                 raise Exception('sketch not found')
             image = Image.open(sketch).convert("RGB")
             mask = None
         elif mode == 0:
+            init_img = get_tmp_local_path(init_img)
             if not init_img:
                 raise Exception('init image not found')
             image = Image.open(init_img).convert("RGB")
@@ -209,7 +205,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.compress_pnginfo = compress_pnginfo
         self.kwargs = kwargs
         self.loras = lora_models
-        self.embending = embendings
+        self.embedding = embeddings
 
         if selectable_scripts:
             self.script_args = script_args
@@ -309,9 +305,25 @@ class Img2ImgTaskHandler(TaskHandler):
 
         return Img2ImgTask.from_task(task, self.default_script_args)
 
+    def _get_local_checkpoint(self, task: Task):
+        base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint)
+        if not os.path.isfile(base_model_path):
+            raise OSError(f'cannot found model:{task.sd_model_path}')
+
+    def _get_local_embedding_dirs(self, embeddings: typing.Sequence[str]) -> typing.Set[str]:
+        embeddings = [get_model_local_path(p, ModelType.Embedding) for p in embeddings]
+        return set((os.path.dirname(p) for p in embeddings if os.path.isfile(p)))
+
+    def _get_local_loras(self, loras: typing.Sequence[str]) -> typing.Sequence[str]:
+        embeddings = [get_model_local_path(p, ModelType.Lora) for p in loras]
+        return [p for p in embeddings if os.path.isfile(p)]
+
     def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
-        base_model_path = task.sd_model_path
-        progress = TaskProgress.new_ready(task, 'at the ready')
+        base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint)
+        progress = TaskProgress.new_prepare(task, 'model found')
+        progress.task_desc = f'model loaded:{os.path.basename(base_model_path)}, run i2i...'
+        progress.status = TaskStatus.Prepare
+        yield progress
         load_sd_model_weights(base_model_path)
         progress.task_desc = f'model loaded:{os.path.basename(base_model_path)}, run i2i...'
         progress.status = TaskStatus.Ready
@@ -320,16 +332,14 @@ class Img2ImgTaskHandler(TaskHandler):
         process_args = self._build_img2img_arg(task)
         if process_args.loras:
             # 设置LORA，具体实施在modules/exta_networks.py 中activate函数。
-            sd_models.user_loras = [f for f in process_args.loras if os.path.isfile(f)]
+            sd_models.user_loras = self._get_local_loras(process_args.loras)
         else:
             sd_models.user_loras = []
-        if process_args.embending:
-            embending_dirs = [
-                os.path.dirname(p) for p in process_args.embending if os.path.isfile(p)
-            ]
-            sd_models.user_embending_dirs = set(embending_dirs)
+        if process_args.embedding:
+            embedding_dirs = self._get_local_embedding_dirs(process_args.embedding)
+            sd_models.user_embendding_dirs = set(embedding_dirs)
         else:
-            sd_models.user_embending_dirs = []
+            sd_models.user_embendding_dirs = []
 
         progress.status = TaskStatus.Running
         progress.task_desc = f'i2i task({task.id}) running'
@@ -352,7 +362,7 @@ class Img2ImgTaskHandler(TaskHandler):
                 processed = process_images(process_args)
 
         process_args.close()
-        images = save_processed_images(processed, process_args.outpath_samples, task.id)
+        images = save_processed_images(processed, process_args.outpath_samples, task.id, task.user_id)
         progress.set_finish_result(images)
         yield progress
 

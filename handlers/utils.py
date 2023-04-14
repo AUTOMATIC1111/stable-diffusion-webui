@@ -6,6 +6,7 @@
 # @File    : utils.py
 # @Software: Hifive
 import os
+import shutil
 import socket
 import typing
 from PIL import Image
@@ -14,8 +15,36 @@ from datetime import datetime
 from modules.scripts import Script
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
+from handlers.typex import ModelLocation, ModelType, Tmp, S3ImageBucket, S3ImagePath
+from filestorage import find_storage_classes_with_env, push_local_path, get_local_path
 
+FileStorageCls = find_storage_classes_with_env()
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
+
+
+def get_model_local_path(remoting_path: str, model_type: ModelType):
+    if not remoting_path:
+        raise OSError(f'remoting path is empty')
+    if os.path.isfile(remoting_path):
+        return remoting_path
+    os.makedirs(ModelLocation[model_type], exist_ok=True)
+    dst = os.path.join(ModelLocation[model_type], os.path.basename(remoting_path))
+    return get_local_path(remoting_path, dst)
+
+
+def clean_tmp():
+    shutil.rmtree(Tmp)
+
+
+def get_tmp_local_path(remoting_path: str):
+    if not remoting_path:
+        raise OSError(f'remoting path is empty')
+    if os.path.isfile(remoting_path):
+        return remoting_path
+
+    os.makedirs(Tmp, exist_ok=True)
+    dst = os.path.join(Tmp, os.path.basename(remoting_path))
+    return get_local_path(remoting_path, dst)
 
 
 def get_host_ip():
@@ -121,11 +150,12 @@ def load_sd_model_weights(filename):
     return reload_model_weights(info=checkpoint)
 
 
-def save_processed_images(proc, output_dir, task_id):
+def save_processed_images(proc, output_dir, task_id, user_id):
     save_normally = output_dir == ''
     local_images = []
     date = datetime.today().strftime('%Y-%m-%d')
     output_dir = os.path.join(output_dir, date)
+    file_storage_system = FileStorageCls()
 
     for n, processed_image in enumerate(proc.images):
         ex = '.png'
@@ -144,5 +174,10 @@ def save_processed_images(proc, output_dir, task_id):
                 processed_image = processed_image.convert("RGB")
             full_path = os.path.join(output_dir, filename)
             processed_image.save(full_path)
+            # put s3
+            if file_storage_system.name() != 'default':
+                key = f'{S3ImageBucket}/' + S3ImagePath.format(uid=user_id, name=filename)
+                file_storage_system.upload(full_path, key)
+
             local_images.append(full_path)
     return local_images

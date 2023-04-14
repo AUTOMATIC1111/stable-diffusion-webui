@@ -31,6 +31,10 @@ class Task(UserDict):
         return task_id
 
     @property
+    def user_id(self):
+        return self.get("user_id")
+
+    @property
     def task_type(self):
         return TaskType(self['task_type'])
 
@@ -89,8 +93,9 @@ class TaskType(IntEnum):
 
 class TaskStatus(IntEnum):
     Waiting = 0
-    Ready = 1
-    Running = 2
+    Prepare = 1
+    Ready = 2
+    Running = 3
     Finsh = 10
     Failed = -1
 
@@ -149,6 +154,13 @@ class TaskProgress:
     def new_ready(cls, task: Task, desc: str):
         p = cls(task)
         p.status = TaskStatus.Ready
+        p.task_desc = desc
+        return p
+
+    @classmethod
+    def new_prepare(cls, task: Task, desc: str):
+        p = cls(task)
+        p.status = TaskStatus.Prepare
         p.task_desc = desc
         return p
 

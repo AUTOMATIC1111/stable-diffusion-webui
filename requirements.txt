@@ -66,3 +66,6 @@ loguru
 pycryptodome
 python-redis-lock==4.0.0
 pymongo==4.3.3
+s3fs
+esdk-obs-python
+oss2
