@@ -34,10 +34,11 @@ for d, must_exist, what, options in path_dirs:
         print(f"Warning: {what} not found at path {must_exist_path}", file=sys.stderr)
     else:
         d = os.path.abspath(d)
-        if "atstart" in options:
-            sys.path.insert(0, d)
-        else:
-            sys.path.append(d)
+        # if "atstart" in options:
+        #    sys.path.insert(0, d)
+        # else:
+        #    sys.path.append(d)
+        sys.path.append(d)
         paths[what] = d
 
 

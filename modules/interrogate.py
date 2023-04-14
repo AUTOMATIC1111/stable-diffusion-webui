@@ -215,9 +215,8 @@ class InterrogateModels:
                         else:
                             res += ", " + match
 
-        except Exception:
-            print("Error interrogating", file=sys.stderr)
-            shared.exception()
+        except Exception as e:
+            errors.display(e, 'interrogate')
             res += "<error>"
 
         self.unload()

@@ -419,10 +419,9 @@ class FilenameGenerator:
             if fun is not None:
                 try:
                     replacement = fun(self, *pattern_args)
-                except Exception:
+                except Exception as e:
                     replacement = None
-                    print(f"Error adding [{pattern}] to filename", file=sys.stderr)
-                    shared.exception()
+                    errors.display(e, 'filename pattern')
 
                 if replacement is not None:
                     res += str(replacement)
@@ -651,9 +650,8 @@ def read_info_from_image(image):
             geninfo = f"""{items["Description"]}
 Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
-        except Exception:
-            print("Error parsing NovelAI image generation parameters:", file=sys.stderr)
-            shared.exception()
+        except Exception as e:
+            errors.display(e, 'novelai image parser')
 
     return geninfo, items
 

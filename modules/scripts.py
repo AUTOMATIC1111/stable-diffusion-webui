@@ -5,7 +5,7 @@ from collections import namedtuple
 
 import gradio as gr
 
-from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing
+from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
 
 AlwaysVisible = object()
 
@@ -255,9 +255,8 @@ def load_scripts():
             script_module = script_loading.load_module(scriptfile.path)
             register_scripts_from_module(script_module)
 
-        except Exception:
-            print(f"Error loading script: {scriptfile.filename}", file=sys.stderr)
-            shared.exception()
+        except Exception as e:
+            errors.display(e, f'loading script: {scriptfile.filename}')
 
 
         finally:
@@ -269,9 +268,8 @@ def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     try:
         res = func(*args, **kwargs)
         return res
-    except Exception:
-        print(f"Error calling: {filename}/{funcname}", file=sys.stderr)
-        shared.exception()
+    except Exception as e:
+        errors.display(e, f'calling script: {filename}/{funcname}')
 
     return default
 
@@ -415,70 +413,62 @@ class ScriptRunner:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
-            except Exception:
-                print(f"Error running process: {script.filename}", file=sys.stderr)
-                shared.exception()
+            except Exception as e:
+                errors.display(e, f'running script process: {script.filename}')
 
     def before_process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.before_process_batch(p, *script_args, **kwargs)
-            except Exception:
-                print(f"Error running before_process_batch: {script.filename}", file=sys.stderr)
-                shared.exception()
+            except Exception as e:
+                errors.display(e, f'running script before process batch: {script.filename}')
 
     def process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process_batch(p, *script_args, **kwargs)
-            except Exception:
-                print(f"Error running process_batch: {script.filename}", file=sys.stderr)
-                shared.exception()
+            except Exception as e:
+                errors.display(e, f'running script process batch: {script.filename}')
 
     def postprocess(self, p, processed):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess(p, processed, *script_args)
-            except Exception:
-                print(f"Error running postprocess: {script.filename}", file=sys.stderr)
-                shared.exception()
+            except Exception as e:
+                errors.display(e, f'running script postprocess: {script.filename}')
 
     def postprocess_batch(self, p, images, **kwargs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_batch(p, *script_args, images=images, **kwargs)
-            except Exception:
-                print(f"Error running postprocess_batch: {script.filename}", file=sys.stderr)
-                shared.exception()
+            except Exception as e:
+                errors.display(e, f'running script before postprocess batch: {script.filename}')
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_image(p, pp, *script_args)
-            except Exception:
-                print(f"Error running postprocess_batch: {script.filename}", file=sys.stderr)
-                shared.exception()
+            except Exception as e:
+                errors.display(e, f'running script postprocess image: {script.filename}')
 
     def before_component(self, component, **kwargs):
         for script in self.scripts:
             try:
                 script.before_component(component, **kwargs)
-            except Exception:
-                print(f"Error running before_component: {script.filename}", file=sys.stderr)
-                shared.exception()
+            except Exception as e:
+                errors.display(e, f'running script before component: {script.filename}')
 
     def after_component(self, component, **kwargs):
         for script in self.scripts:
             try:
                 script.after_component(component, **kwargs)
-            except Exception:
-                print(f"Error running after_component: {script.filename}", file=sys.stderr)
-                shared.exception()
+            except Exception as e:
+                errors.display(e, f'running script after component: {script.filename}')
 
     def reload_sources(self, cache):
         for si, script in list(enumerate(self.scripts)):

@@ -9,7 +9,7 @@ import shlex
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import sd_samplers
+from modules import sd_samplers, errors
 from modules.processing import Processed, process_images
 from PIL import Image
 from modules.shared import opts, cmd_opts, state
@@ -139,9 +139,8 @@ class Script(scripts.Script):
             if "--" in line:
                 try:
                     args = cmdargs(line)
-                except Exception:
-                    print(f"Error parsing line {line} as commandline:", file=sys.stderr)
-                    shared.exception()
+                except Exception as e:
+                    errors.display(e, f'parsing prompts: {line}')
                     args = {"prompt": line}
             else:
                 args = {"prompt": line}

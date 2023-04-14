@@ -8,6 +8,7 @@ from basicsr.utils.download_util import load_file_from_url
 from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import cmd_opts, opts
 import modules.shared as shared
+import modules.errors as errors
 
 
 class UpscalerRealESRGAN(Upscaler):
@@ -26,9 +27,8 @@ class UpscalerRealESRGAN(Upscaler):
                 if scaler.name in opts.realesrgan_enabled_models:
                     self.scalers.append(scaler)
 
-        except Exception:
-            print("Error importing Real-ESRGAN:", file=sys.stderr)
-            shared.exception()
+        except Exception as e:
+            errors.display(e, 'real-esrgan')
             self.enable = False
             self.scalers = []
 
@@ -72,8 +72,7 @@ class UpscalerRealESRGAN(Upscaler):
             info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
             return info
         except Exception as e:
-            print(f"Error making Real-ESRGAN models list: {e}", file=sys.stderr)
-            shared.exception()
+            errors.display(e, 'real-esrgan model list')
         return None
 
     def load_models(self, _):

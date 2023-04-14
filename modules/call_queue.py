@@ -1,10 +1,9 @@
 import html
-import sys
 import threading
 import time
 import cProfile, pstats, io
 
-from modules import shared, progress
+from modules import shared, progress, errors
 
 queue_lock = threading.Lock()
 
@@ -65,22 +64,11 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
                 ps.print_stats(15)
                 print('Profile:', s.getvalue())
         except Exception as e:
-            # When printing out our debug argument list, do not print out more than a MB of text
-            max_debug_str_len = 131072 # (1024*1024)/8
-
-            print("Error completing request", file=sys.stderr)
-            argStr = f"Arguments: {str(args)} {str(kwargs)}"
-            print(argStr[:max_debug_str_len], file=sys.stderr)
-            if len(argStr) > max_debug_str_len:
-                print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
-
-            shared.exception()
+            errors.display(e, 'gradio call')
             shared.state.job = ""
             shared.state.job_count = 0
-
             if extra_outputs_array is None:
                 extra_outputs_array = [None, '']
-
             res = extra_outputs_array + [f"<div class='error'>{html.escape(type(e).__name__+': '+str(e))}</div>"]
 
         shared.state.skipped = False

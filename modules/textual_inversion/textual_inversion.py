@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
 
-from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint
+from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
@@ -207,9 +207,8 @@ class EmbeddingDatabase:
                         continue
 
                     self.load_from_file(fullfn, fn)
-                except Exception:
-                    print(f"Error loading embedding {fn}:", file=sys.stderr)
-                    shared.exception()
+                except Exception as e:
+                    errors.display(e, f'embedding load {fn}')
                     continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
@@ -625,8 +624,8 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 """
         filename = os.path.join(shared.opts.embeddings_dir, f'{embedding_name}.pt')
         save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, remove_cached_checksum=True)
-    except Exception:
-        shared.exception()
+    except Exception as e:
+        errors.display(e, 'embedding train')
         pass
     finally:
         pbar.leave = False

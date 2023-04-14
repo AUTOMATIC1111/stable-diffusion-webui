@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import modules.shared as shared
+import modules.errors as errors
 
 
 localizations = {}
@@ -31,8 +32,8 @@ def localization_js(current_localization_name):
         try:
             with open(fn, "r", encoding="utf8") as file:
                 data = json.load(file)
-        except Exception:
+        except Exception as e:
             print(f"Error loading localization from {fn}:", file=sys.stderr)
-            shared.exception()
+            errors.display(e, 'localization')
 
     return f"var localization = {json.dumps(data)}\n"

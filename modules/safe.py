@@ -11,7 +11,6 @@ import _codecs
 import zipfile
 import re
 
-
 # PyTorch 1.13 and later have _TypedStorage renamed to TypedStorage
 TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorage') else torch.storage._TypedStorage
 
@@ -127,20 +126,13 @@ def load_with_extra(filename, extra_handler=None, *args, **kwargs):
     definitely unsafe.
     """
 
-    from modules import shared
+    from modules import shared, errors
 
     try:
         if not shared.cmd_opts.disable_safe_unpickle:
             check_pt(filename, extra_handler)
-
-    except pickle.UnpicklingError:
-        print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
-        shared.exception()
-        return None
-
-    except Exception:
-        print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
-        shared.exception()
+    except Exception as e:
+        errors.display(e, f'verifying pickled file {filename}')
         return None
 
     return unsafe_torch_load(filename, *args, **kwargs)

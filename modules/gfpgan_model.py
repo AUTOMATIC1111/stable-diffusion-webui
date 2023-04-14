@@ -2,7 +2,7 @@ import os
 import sys
 
 import modules.face_restoration
-from modules import paths, shared, devices, modelloader
+from modules import paths, shared, devices, modelloader, errors
 
 model_dir = "GFPGAN"
 user_path = None
@@ -110,6 +110,5 @@ def setup_model(dirname):
                 return gfpgan_fix_faces(np_image)
 
         shared.face_restorers.append(FaceRestorerGFPGAN())
-    except Exception:
-        print("Error setting up GFPGAN:", file=sys.stderr)
-        shared.exception()
+    except Exception as e:
+        errors.exception(e, 'gfpgan')

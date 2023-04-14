@@ -1,6 +1,7 @@
 import os
 import sys
 import modules.shared as shared
+import modules.errors as errors
 import importlib.util
 from types import ModuleType
 
@@ -27,6 +28,5 @@ def preload_extensions(extensions_dir, parser):
             if hasattr(module, 'preload'):
                 module.preload(parser)
 
-        except Exception:
-            print(f"Error running preload() for {preload_script}", file=sys.stderr)
-            shared.exception()
+        except Exception as e:
+            errors.display(e, f'extension preload: {preload_script}')

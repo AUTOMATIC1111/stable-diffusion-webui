@@ -5,30 +5,22 @@ import os
 import sys
 import time
 
+from setup import log as setup_log
+
 import gradio as gr
 import tqdm
-from rich import print
 
 import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import script_loading, errors, ui_components, shared_items, cmd_args
+from modules import script_loading, errors, ui_components, shared_items, cmd_args, errors
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
 
 demo = None
+log = setup_log
 
 parser = cmd_args.parser
-
-try:
-    from rich.pretty import install as pretty_install
-    from rich.traceback import install as traceback_install
-    from rich.console import Console
-    console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
-    pretty_install(console=console)
-    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, show_locals=False, max_frames=2)
-except:
-    console = None
 
 script_loading.preload_extensions(extensions_dir, parser)
 script_loading.preload_extensions(extensions_builtin_dir, parser)
@@ -522,11 +514,11 @@ class Options:
         for k, v in self.data.items():
             info = self.data_labels.get(k, None)
             if info is not None and not self.same_type(info.default, v):
-                print(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
+                log.error(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
                 bad_settings += 1
 
         if bad_settings > 0:
-            print(f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.", file=sys.stderr)
+            log.error(f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.", file=sys.stderr)
 
     def onchange(self, key, func, call=True):
         item = self.data_labels.get(key)
@@ -663,10 +655,3 @@ def html(filename):
             return file.read()
 
     return ""
-
-def exception():
-    if console is not None:
-        console.print_exception(show_locals=False, max_frames=10, extra_lines=2, suppress=[gr], word_wrap=False, width=min([console.width, 200]))
-    else:
-        import traceback
-        print(traceback.format_exc(), file=sys.stderr)

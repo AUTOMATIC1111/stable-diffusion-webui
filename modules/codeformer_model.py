@@ -6,7 +6,7 @@ import torch
 
 import modules.face_restoration
 import modules.shared
-from modules import shared, devices, modelloader
+from modules import shared, devices, modelloader, errors
 from modules.paths import models_path
 
 # codeformer people made a choice to include modified basicsr library to their project which makes
@@ -135,8 +135,7 @@ def setup_model(dirname):
         codeformer = FaceRestorerCodeFormer(dirname)
         shared.face_restorers.append(codeformer)
 
-    except Exception:
-        print("Error setting up CodeFormer:", file=sys.stderr)
-        shared.exception()
+    except Exception as e:
+        errors.display(e, 'codeformer')
 
    # sys.path = stored_sys_path

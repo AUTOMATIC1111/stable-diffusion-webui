@@ -231,11 +231,12 @@ def run_extension_installer(extension_dir):
 
 # run installer for each installed and enabled extension and optionally update them
 def install_extensions():
+    settings = {}
+    if os.path.isfile('config.json'):
+        with open('config.json', "r", encoding="utf8") as file:
+            settings = json.load(file)
+
     def list_extensions(dir):
-        settings = {}
-        if os.path.isfile('config.json'):
-            with open('config.json', "r", encoding="utf8") as file:
-                settings = json.load(file)
         if settings.get('disable_all_extensions', 'none') != 'none':
             log.debug(f'Disabled extensions: all')
             return []
@@ -247,7 +248,8 @@ def install_extensions():
 
     extensions_builtin_dir = os.path.join(os.path.dirname(__file__), 'extensions-builtin')
     extensions = list_extensions(extensions_builtin_dir)
-    log.info(f'Built-in extensions: {extensions}')
+    log.info(f'Extensions disabled: {settings.get("disabled_extensions", [])}')
+    log.info(f'Extensions built-in: {extensions}')
     for ext in extensions:
         if not args.noupdate:
             update(os.path.join(extensions_builtin_dir, ext))
@@ -256,7 +258,7 @@ def install_extensions():
 
     extensions_dir = os.path.join(os.path.dirname(__file__), 'extensions')
     extensions = list_extensions(extensions_dir)
-    log.info(f'Enabled extensions: {extensions}')
+    log.info(f'Extensions enabled: {extensions}')
     for ext in extensions:
         if not args.noupdate:
             update(os.path.join(extensions_dir, ext))

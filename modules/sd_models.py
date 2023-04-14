@@ -120,7 +120,6 @@ def list_models():
     if os.path.exists(cmd_ckpt):
         checkpoint_info = CheckpointInfo(cmd_ckpt)
         checkpoint_info.register()
-
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
         print("Checkpoint in --ckpt argument not found", file=sys.stderr)
@@ -129,7 +128,7 @@ def list_models():
         checkpoint_info = CheckpointInfo(filename)
         checkpoint_info.register()
 
-    print('Available models:', len(checkpoints_list))
+    shared.log.info(f'Available models: {shared.opts.ckpt_dir} {len(checkpoints_list)}')
 
 
 def get_closet_checkpoint_match(search_string):
@@ -257,9 +256,7 @@ def read_state_dict(checkpoint_file):
                     pl_sd = torch.load(buffer, map_location='cpu')
             sd = get_state_dict_from_checkpoint(pl_sd)
     except Exception as e:
-        from rich.console import Console
-        console = Console()
-        console.print_exception(show_locals=False, max_frames=2, extra_lines=1, suppress=[], word_wrap=False, width=min([console.width, 200]))
+        errors.display(e, f'loading model: {checkpoint_file}')
         sd = None
     return sd
 

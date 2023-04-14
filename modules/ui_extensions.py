@@ -10,7 +10,7 @@ import html
 import shutil
 import errno
 
-from modules import extensions, shared, paths
+from modules import extensions, shared, paths, errors
 from modules.call_queue import wrap_gradio_gpu_call
 
 available_extensions = {"extensions": []}
@@ -37,9 +37,8 @@ def apply_and_restart(disable_list, update_list, disable_all):
 
         try:
             ext.fetch_and_reset_hard()
-        except Exception:
-            print(f"Error getting updates for {ext.name}:", file=sys.stderr)
-            shared.exception()
+        except Exception as e:
+            errors.display(e, f'extensions apply update: {ext.name}')
 
     shared.opts.disabled_extensions = disabled
     shared.opts.disable_all_extensions = disable_all
@@ -67,8 +66,7 @@ def check_updates(id_task, disable_list):
             if 'FETCH_HEAD' not in str(e):
                 raise
         except Exception:
-            print(f"Error checking updates for {ext.name}:", file=sys.stderr)
-            shared.exception()
+            errors.display(e, f'extensions check update: {ext.name}')
 
         shared.state.nextjob()
 

@@ -8,7 +8,6 @@ import random
 import sys
 import tempfile
 import time
-import traceback
 from functools import partial, reduce
 import warnings
 
@@ -31,6 +30,7 @@ import modules.gfpgan_model
 import modules.hypernetworks.ui
 import modules.scripts
 import modules.shared as shared
+import modules.errors as errors
 import modules.styles
 import modules.textual_inversion.ui
 from modules import prompt_parser
@@ -1581,8 +1581,7 @@ def create_ui():
             try:
                 results = modules.extras.run_modelmerger(*args)
             except Exception as e:
-                print("Error loading/saving model file:", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                errors.display(e, 'model merge')
                 modules.sd_models.list_models()  # to remove the potentially missing models from the list
                 return [*[gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(4)], f"Error merging checkpoints: {e}"]
             return results
@@ -1623,10 +1622,9 @@ def create_ui():
         if os.path.exists(ui_config_file):
             with open(ui_config_file, "r", encoding="utf8") as file:
                 ui_settings = json.load(file)
-    except Exception:
+    except Exception as e:
         error_loading = True
-        print("Error loading settings:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        errors.display(e, 'loading ui settings')
 
     def loadsave(path, x):
         def apply_field(obj, field, condition=None, init_field=None):
