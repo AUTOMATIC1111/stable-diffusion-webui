@@ -2,7 +2,7 @@ import os
 import sys
 import traceback
 import inspect
-from collections import namedtuple, OrderedDict
+from collections import namedtuple
 
 import torch
 import tqdm
@@ -108,7 +108,7 @@ class DirWithTextualInversionEmbeddings:
 class EmbeddingDatabase:
     def __init__(self):
         self.ids_lookup = {}
-        self.word_embeddings = OrderedDict()
+        self.word_embeddings = {}
         self.skipped_embeddings = {}
         self.expected_shape = -1
         self.embedding_dirs = {}
@@ -234,7 +234,10 @@ class EmbeddingDatabase:
             embdir.update()
 
         # re-sort word_embeddings because load_from_dir may not load in alphabetic order.
-        self.word_embeddings = {e.name: e for e in sorted(self.word_embeddings.values(), key=lambda e: e.name.lower())}
+        # using a temporary copy so we don't reinitialize self.word_embeddings in case other objects have a reference to it.
+        sorted_word_embeddings = {e.name: e for e in sorted(self.word_embeddings.values(), key=lambda e: e.name.lower())}
+        self.word_embeddings.clear()
+        self.word_embeddings.update(sorted_word_embeddings)
 
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
