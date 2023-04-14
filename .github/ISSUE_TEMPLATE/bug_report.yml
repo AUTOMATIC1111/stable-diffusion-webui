@@ -20,4 +20,10 @@ body:
     attributes:
       value: |
         Any issues without version information will be closed
+        Look at console log and copy the version string from there
+        For example: `Version: f256fb8b Fri Apr 14 17:41:30 2023 -0400`
+
         Additionally provide any relevant platorm information (OS, browser, versions)
+
+        If possible update to latest version before reporting the issue as older versions cannot be properly supported
+        And search existing **issues** and **discussions** before creating a new one
