@@ -708,7 +708,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay:
                     image_mask = p.mask_for_overlay.convert('RGB')
-                    image_mask_composite = Image.composite(image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), p.mask_for_overlay.convert('L')).convert('RGBA')
+                    image_mask_composite = Image.composite(image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, p.mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
 
                     if opts.save_mask:
                         images.save_image(image_mask, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-mask")
