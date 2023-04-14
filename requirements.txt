@@ -20,6 +20,7 @@ future
 gdown
 gfpgan
 GitPython
+gradio_client
 httpcore
 inflection
 jsonmerge
@@ -54,10 +55,9 @@ transformers
 voluptuous
 yapf
 
-diffusers==0.14.0
+diffusers==0.15.0
 einops==0.4.1
-fastapi==0.94.0
-gradio==3.23.0
+gradio==3.26.0
 numexpr==2.8.4
 pandas==1.5.3
 protobuf==3.20.3

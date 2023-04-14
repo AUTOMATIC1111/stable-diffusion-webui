@@ -11,6 +11,7 @@ import logging
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 from modules import paths, timer, errors
 
+errors.install()
 startup_timer = timer.Timer()
 
 import torch

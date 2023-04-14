@@ -6,7 +6,7 @@ import uvicorn
 import gradio as gr
 from threading import Lock
 from io import BytesIO
-from gradio.processing_utils import decode_base64_to_file
+from gradio_client.utils import decode_base64_to_file
 from fastapi import APIRouter, Depends, FastAPI, Request, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
@@ -570,7 +570,7 @@ class Api:
     def create_hypernetwork(self, args: dict):
         try:
             shared.state.begin()
-            filename = create_hypernetwork(**args) # create empty embedding
+            filename = create_hypernetwork(**args) # create empty embedding # pylint: disable=E1111
             shared.state.end()
             return CreateResponse(info = "create hypernetwork filename: {filename}".format(filename = filename))
         except AssertionError as e:
