@@ -13,9 +13,11 @@ body:
   - type: textarea
     id: platform
     attributes:
-      label: Platform Description
-      description: Describe your platform (OS, browser, versions)
-      value: Please fill this form with as much information as possible
+      label: Version Platform Description
+      description: Describe your platform (program version, OS, browser)
+      value: 
   - type: markdown
     attributes:
-      value: Any additional info
+      value: |
+        Any issues without version information will be closed
+        Additionally provide any relevant platorm information (OS, browser, versions)

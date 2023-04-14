@@ -12,15 +12,10 @@ Stuff to be fixed...
 - Create new GitHub hooks/actions for CI/CD  
 - Investigate integration with `Torch-DirectML`
 - Set defaults for Apple M1
-- Support mupliple folders for models
-- Add compatibility for extensions using removed `shared.cmd_opts`
 - Revisit `torch.compile`
 - Ask to download default model
 - Support UI restart on-the-fly
-- Re-add seed buttons
 - Stream-load as option
-- Verify env variables
-- Configurable LORA directory
 - Dont spawn extensions installer
 
 ## Integration
