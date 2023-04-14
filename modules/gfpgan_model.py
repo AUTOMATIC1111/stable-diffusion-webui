@@ -111,4 +111,4 @@ def setup_model(dirname):
 
         shared.face_restorers.append(FaceRestorerGFPGAN())
     except Exception as e:
-        errors.exception(e, 'gfpgan')
+        errors.display(e, 'gfpgan')

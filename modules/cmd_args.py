@@ -60,6 +60,7 @@ def compatibility_args(opts, args):
     parser.add_argument("--bsrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.bsrgan_models_path)
     parser.add_argument("--realesrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.realesrgan_models_path)
     parser.add_argument("--clip-models-path", type=str, help=argparse.SUPPRESS, default=opts.clip_models_path)
+    args = parser.parse_args()
     if vars(parser)['_option_string_actions'].get('--lora-dir', None) is not None:
         args.lora_dir = opts.lora_dir
     return args
