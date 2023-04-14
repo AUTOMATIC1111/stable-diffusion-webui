@@ -5,8 +5,6 @@ import os
 import sys
 import time
 
-from setup import log as setup_log
-
 import gradio as gr
 import tqdm
 
@@ -18,6 +16,7 @@ from modules import script_loading, errors, ui_components, shared_items, cmd_arg
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
 
 demo = None
+from setup import log as setup_log # pylint: disable=E0611
 log = setup_log
 
 parser = cmd_args.parser
@@ -256,6 +255,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "bsrgan_models_path": OptionInfo(os.path.join(models_path, 'BSRGAN'), "Path to directory with BSRGAN model file(s)"),
     "realesrgan_models_path": OptionInfo(os.path.join(models_path, 'RealESRGAN'), "Path to directory with RealESRGAN model file(s)"),
     "clip_models_path": OptionInfo(os.path.join(models_path, 'CLIP'), "Path to directory with CLIP model file(s)"),
+    "lora_dir": OptionInfo(os.path.join(models_path, 'Lora'), "Path to directory with Lora network(s)"),
     # "gfpgan_model": OptionInfo("", "GFPGAN model file name"),
 }))
 
@@ -582,6 +582,8 @@ loaded_hypernetworks = []
 
 if os.path.exists(config_filename):
     opts.load(config_filename)
+
+cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
 
 settings_components = None
 """assinged from ui.py, a mapping on setting anmes to gradio components repsponsible for those settings"""

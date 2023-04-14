@@ -1,6 +1,7 @@
 /* generic html tags */
+:root { --font: system-ui, "Segoe UI", "Roboto", "sans-serif"; }
 html { font-size: 16px; }
-body, button, input, select, textarea { font-family: "Segoe UI"; font-variant: small-caps; overflow-x: hidden; }
+body, button, input, select, textarea { font-family: var(--font); overflow-x: hidden; }
 button { font-size: 1.2rem; }
 img { background-color: black; }
 input[type=range] { height: 18px; appearance: none; margin-top: 0; min-width: 160px; background-color: black; width: 100%; background: transparent; }
@@ -17,7 +18,7 @@ div.form { border-width: 0; box-shadow: none; background: transparent; overflow:
 div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { background-color: black; }
 
 /* gradio shadowroot */
-.gradio-container { font-family: "Segoe UI"; font-variant: small-caps; --left-column: 490px; --highlight-color: #CE6400; --inactive-color: #4E1400; }
+.gradio-container { font-family: var(--font); --left-column: 490px; --highlight-color: #CE6400; --inactive-color: #4E1400; }
 
 /* gradio style classes */
 .border-2 { border-width: 0; }

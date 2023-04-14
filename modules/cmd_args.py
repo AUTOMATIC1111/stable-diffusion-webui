@@ -21,18 +21,6 @@ parser.add_argument("--lowram", action='store_true', help="Load checkpoint weigh
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="Path to checkpoint of stable diffusion model to load immediately",)
 parser.add_argument('--vae', type=str, help='Path to checkpoint of stable diffusion VAE model to load immediately', default=None)
 parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="Base path where all user data is stored")
-# parser.add_argument("--ckpt-dir", type=str, default=None, help="Path to directory with stable diffusion checkpoints")
-# parser.add_argument("--vae-dir", type=str, default=None, help="Path to directory with VAE files")
-# parser.add_argument("--gfpgan-model", type=str, help="GFPGAN model file name", default=None)
-# parser.add_argument("--embeddings-dir", type=str, default=os.path.join(data_path, 'models/embeddings'), help="embeddings directory for textual inversion (default: embeddings)")
-# parser.add_argument("--embeddings-templates-dir", type=str, default=os.path.join(script_path, 'train/templates'), help="directory with textual inversion templates")
-# parser.add_argument("--hypernetwork-dir", type=str, default=os.path.join(models_path, 'hypernetworks'), help="hypernetwork directory")
-# parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
-# parser.add_argument("--gfpgan-models-path", type=str, help="Path to directory with GFPGAN model file(s).", default=os.path.join(models_path, 'GFPGAN'))
-# parser.add_argument("--esrgan-models-path", type=str, help="Path to directory with ESRGAN model file(s).", default=os.path.join(models_path, 'ESRGAN'))
-# parser.add_argument("--bsrgan-models-path", type=str, help="Path to directory with BSRGAN model file(s).", default=os.path.join(models_path, 'BSRGAN'))
-# parser.add_argument("--realesrgan-models-path", type=str, help="Path to directory with RealESRGAN model file(s).", default=os.path.join(models_path, 'RealESRGAN'))
-# parser.add_argument("--clip-models-path", type=str, help="Path to directory with CLIP model file(s).", default=None)
 
 parser.add_argument("--allow-code", action='store_true', help="Allow custom script execution")
 parser.add_argument("--share", action='store_true', help="Enable to make the UI accessible through Gradio site")
@@ -58,3 +46,20 @@ parser.add_argument("--server-name", type=str, help="Sets hostname of server", d
 parser.add_argument("--no-hashing", action='store_true', help="Disable sha256 hashing of checkpoints", default=False)
 parser.add_argument("--no-download-sd-model", action='store_true', help="Disable download of default model even if no model is found", default=False)
 parser.add_argument("--profile", action='store_true', help="Run profiler, default: %(default)s")
+
+
+def compatibility_args(opts, args):
+    parser.add_argument("--ckpt-dir", type=str, help=argparse.SUPPRESS, default=opts.ckpt_dir)
+    parser.add_argument("--vae-dir", type=str, help=argparse.SUPPRESS, default=opts.vae_dir)
+    parser.add_argument("--embeddings-dir", type=str, help=argparse.SUPPRESS, default=opts.embeddings_dir)
+    parser.add_argument("--embeddings-templates-dir", type=str, help=argparse.SUPPRESS, default=opts.embeddings_templates_dir)
+    parser.add_argument("--hypernetwork-dir", type=str, help=argparse.SUPPRESS, default=opts.hypernetwork_dir)
+    parser.add_argument("--codeformer-models-path", type=str, help=argparse.SUPPRESS, default=opts.codeformer_models_path)
+    parser.add_argument("--gfpgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.gfpgan_models_path)
+    parser.add_argument("--esrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.esrgan_models_path)
+    parser.add_argument("--bsrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.bsrgan_models_path)
+    parser.add_argument("--realesrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.realesrgan_models_path)
+    parser.add_argument("--clip-models-path", type=str, help=argparse.SUPPRESS, default=opts.clip_models_path)
+    if vars(parser)['_option_string_actions'].get('--lora-dir', None) is not None:
+        args.lora_dir = opts.lora_dir
+    return args
