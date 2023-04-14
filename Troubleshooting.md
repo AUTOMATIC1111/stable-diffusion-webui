@@ -17,8 +17,8 @@ Various optimizations may be enabled through command line arguments, sacrificing
 
 # Green or Black screen
 Video cards
-When running on video cards which don't support half precision floating point numbers (a known issue with 16xx cards), a green or black screen may appear instead of the generated pictures.
-This may be fixed by using the command line arguments `--precision full --no-half` at a significant increase in VRAM usage, which may require `--medvram`.
+Certain GPU video cards don't support half precision: a green or black screen may appear instead of the generated pictures. Use `--upcast-sampling`. This should stack with `--xformers` if you are using.
+If still not fixed, use command line arguments `--precision full --no-half` at a significant increase in VRAM usage, which may require `--medvram`.
 
 # "CUDA error: no kernel image is available for execution on the device" after enabling xformers
 Your installed xformers is incompatible with your GPU. If you use Python 3.10, have a Pascal or higher card and run on Windows, add `--reinstall-xformers --xformers` to your `COMMANDLINE_ARGS` to upgrade to a working version. Remove `--reinstall-xformers` after upgrading.
