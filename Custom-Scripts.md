@@ -326,6 +326,12 @@ https://github.com/butaixianran/Stable-Diffusion-Webui-Post-Face-Restore-Again
 
 Run face restore twice in one go, from extras tab.
 
+## Infinite Zoom
+https://github.com/coolzilj/infinite-zoom
+
+Generate Zoom in/out videos, with outpainting, as a custom script for inpaint mode in img2img tab.
+
+
 ## Saving steps of the sampling process
 (Example Script) \
 This script will save steps of the sampling process to a directory.
