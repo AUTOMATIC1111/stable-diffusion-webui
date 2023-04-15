@@ -48,3 +48,6 @@
 [submodule "extensions-builtin/a1111-sd-webui-lycoris"]
 	path = extensions-builtin/a1111-sd-webui-lycoris
 	url = https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris
+[submodule "extensions-builtin/multidiffusion-upscaler-for-automatic1111"]
+	path = extensions-builtin/multidiffusion-upscaler-for-automatic1111
+	url = https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111
