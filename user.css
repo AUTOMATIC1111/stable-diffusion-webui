@@ -59,6 +59,9 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .tab-nav { zoom: 130%; margin-bottom: 16px; border-bottom: 2px solid #CE6400 !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
 .gradio-slider input[type="number"] { width: 4.5em; font-size: 0.8rem; }
+#tab_extensions table td, #tab_extensions table th { border: none; padding: 0.5em; }
+#tab_extensions table { width: 96vw }
+#tab_extensions table thead { background-color: var(--neutral-700); }
 
 /* automatic style classes */
 .progressDiv { border-radius: 0 !important; position: fixed; top: 318px; right: 26px; max-width: 262px; height: 48px; z-index: 99; }

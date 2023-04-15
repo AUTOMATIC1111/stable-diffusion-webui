@@ -17,6 +17,7 @@ Stuff to be fixed...
 - Support UI restart on-the-fly
 - Stream-load as option
 - Dont spawn extensions installer
+- Remove `models` from git repo
 
 ## Integration
 

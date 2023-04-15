@@ -78,6 +78,7 @@ def extension_table():
         <thead>
             <tr>
                 <th><abbr title="Use checkbox to enable the extension; it will be enabled or disabled when you click apply button">Extension</abbr></th>
+                <th>Type</th>
                 <th>URL</th>
                 <th><abbr title="Extension version">Version</abbr></th>
                 <th><abbr title="Use checkbox to mark the extension for update; it will be updated when you click apply button">Update</abbr></th>
@@ -89,7 +90,7 @@ def extension_table():
     for ext in extensions.extensions:
         ext.read_info_from_repo()
 
-        remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
+        remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape(ext.remote or '')}</a>"""
 
         if ext.can_update:
             ext_status = f"""<label><input class="gr-check-radio gr-checkbox" name="update_{html.escape(ext.name)}" checked="checked" type="checkbox">{html.escape(ext.status)}</label>"""
@@ -103,6 +104,7 @@ def extension_table():
         code += f"""
             <tr>
                 <td><label{style}><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
+                <td>{"system" if ext.is_builtin else 'user'}</td>
                 <td>{remote}</td>
                 <td>{ext.version}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
@@ -175,7 +177,7 @@ def install_extension_from_index(url, hide_tags, sort_column, filter_text):
 
 
 def refresh_available_extensions(url, hide_tags, sort_column):
-    global available_extensions
+    global available_extensions # pylint: disable=global-statement
 
     import urllib.request
     with urllib.request.urlopen(url) as response:
