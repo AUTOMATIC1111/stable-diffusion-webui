@@ -154,8 +154,8 @@ class State:
         if self.current_latent is None:
             return
 
+        import modules.sd_samplers # pylint: disable=W0621
         if opts.show_progress_grid:
-            import modules.sd_samplers # pylint: disable=W0621
             self.assign_current_image(modules.sd_samplers.samples_to_image_grid(self.current_latent))
         else:
             self.assign_current_image(modules.sd_samplers.sample_to_image(self.current_latent))
