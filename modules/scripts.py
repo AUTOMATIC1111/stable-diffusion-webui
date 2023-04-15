@@ -33,6 +33,11 @@ class Script:
     parsing infotext to set the value for the component; see ui.py's txt2img_paste_fields for an example
     """
 
+    paste_field_names = None
+    """if set in ui(), this is a list of names of infotext fields; the fields will be sent through the
+    various "Send to <X>" buttons when clicked
+    """
+
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
 
@@ -76,6 +81,20 @@ class Script:
         This function is called before processing begins for AlwaysVisible scripts.
         You can modify the processing object (p) here, inject hooks, etc.
         args contains all values returned by components from ui()
+        """
+
+        pass
+
+    def before_process_batch(self, p, *args, **kwargs):
+        """
+        Called before extra networks are parsed from the prompt, so you can add
+        new extra network keywords to the prompt with this callback.
+
+        **kwargs will have those items:
+          - batch_number - index of current batch, from 0 to number of batches-1
+          - prompts - list of prompts for current batch; you can change contents of this list but changing the number of entries will likely break things
+          - seeds - list of seeds for current batch
+          - subseeds - list of subseeds for current batch
         """
 
         pass
@@ -220,7 +239,15 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    for scriptfile in sorted(scripts_list):
+    def orderby(basedir):
+        # 1st webui, 2nd extensions-builtin, 3rd extensions
+        priority = {os.path.join(paths.script_path, "extensions-builtin"):1, paths.script_path:0}
+        for key in priority:
+            if basedir.startswith(key):
+                return priority[key]
+        return 9999
+
+    for scriptfile in sorted(scripts_list, key=lambda x: [orderby(x.basedir), x]):
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path
@@ -256,6 +283,7 @@ class ScriptRunner:
         self.alwayson_scripts = []
         self.titles = []
         self.infotext_fields = []
+        self.paste_field_names = []
 
     def initialize_scripts(self, is_img2img):
         from modules import scripts_auto_postprocessing
@@ -303,6 +331,9 @@ class ScriptRunner:
 
             if script.infotext_fields is not None:
                 self.infotext_fields += script.infotext_fields
+
+            if script.paste_field_names is not None:
+                self.paste_field_names += script.paste_field_names
 
             inputs += controls
             inputs_alwayson += [script.alwayson for _ in controls]
@@ -386,6 +417,15 @@ class ScriptRunner:
                 script.process(p, *script_args)
             except Exception:
                 print(f"Error running process: {script.filename}", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
+
+    def before_process_batch(self, p, **kwargs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.before_process_batch(p, *script_args, **kwargs)
+            except Exception:
+                print(f"Error running before_process_batch: {script.filename}", file=sys.stderr)
                 print(traceback.format_exc(), file=sys.stderr)
 
     def process_batch(self, p, **kwargs):
@@ -481,6 +521,18 @@ def reload_scripts():
     scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
 
 
+def add_classes_to_gradio_component(comp):
+    """
+    this adds gradio-* to the component for css styling (ie gradio-button to gr.Button), as well as some others
+    """
+
+    comp.elem_classes = ["gradio-" + comp.get_block_name(), *(comp.elem_classes or [])]
+
+    if getattr(comp, 'multiselect', False):
+        comp.elem_classes.append('multiselect')
+
+
+
 def IOComponent_init(self, *args, **kwargs):
     if scripts_current is not None:
         scripts_current.before_component(self, **kwargs)
@@ -488,6 +540,8 @@ def IOComponent_init(self, *args, **kwargs):
     script_callbacks.before_component_callback(self, **kwargs)
 
     res = original_IOComponent_init(self, *args, **kwargs)
+
+    add_classes_to_gradio_component(self)
 
     script_callbacks.after_component_callback(self, **kwargs)
 
@@ -499,3 +553,15 @@ def IOComponent_init(self, *args, **kwargs):
 
 original_IOComponent_init = gr.components.IOComponent.__init__
 gr.components.IOComponent.__init__ = IOComponent_init
+
+
+def BlockContext_init(self, *args, **kwargs):
+    res = original_BlockContext_init(self, *args, **kwargs)
+
+    add_classes_to_gradio_component(self)
+
+    return res
+
+
+original_BlockContext_init = gr.blocks.BlockContext.__init__
+gr.blocks.BlockContext.__init__ = BlockContext_init

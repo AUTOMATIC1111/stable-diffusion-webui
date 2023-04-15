@@ -29,7 +29,7 @@ class ImageSaveParams:
 
 
 class CFGDenoiserParams:
-    def __init__(self, x, image_cond, sigma, sampling_step, total_sampling_steps):
+    def __init__(self, x, image_cond, sigma, sampling_step, total_sampling_steps, text_cond, text_uncond):
         self.x = x
         """Latent image representation in the process of being denoised"""
         
@@ -44,6 +44,12 @@ class CFGDenoiserParams:
         
         self.total_sampling_steps = total_sampling_steps
         """Total number of sampling steps planned"""
+        
+        self.text_cond = text_cond
+        """ Encoder hidden states of text conditioning from prompt"""
+        
+        self.text_uncond = text_uncond
+        """ Encoder hidden states of text conditioning from negative prompt"""
 
 
 class CFGDenoisedParams:

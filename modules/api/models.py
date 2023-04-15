@@ -14,8 +14,8 @@ API_NOT_ALLOWED = [
     "outpath_samples",
     "outpath_grids",
     "sampler_index",
-    "do_not_save_samples",
-    "do_not_save_grid",
+    # "do_not_save_samples",
+    # "do_not_save_grid",
     "extra_generation_params",
     "overlay_images",
     "do_not_reload_embeddings",
@@ -100,13 +100,31 @@ class PydanticModelGenerator:
 StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
     "StableDiffusionProcessingTxt2Img",
     StableDiffusionProcessingTxt2Img,
-    [{"key": "sampler_index", "type": str, "default": "Euler"}, {"key": "script_name", "type": str, "default": None}, {"key": "script_args", "type": list, "default": []}]
+    [
+        {"key": "sampler_index", "type": str, "default": "Euler"},
+        {"key": "script_name", "type": str, "default": None},
+        {"key": "script_args", "type": list, "default": []},
+        {"key": "send_images", "type": bool, "default": True},
+        {"key": "save_images", "type": bool, "default": False},
+        {"key": "alwayson_scripts", "type": dict, "default": {}},
+    ]
 ).generate_model()
 
 StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
     "StableDiffusionProcessingImg2Img",
     StableDiffusionProcessingImg2Img,
-    [{"key": "sampler_index", "type": str, "default": "Euler"}, {"key": "init_images", "type": list, "default": None}, {"key": "denoising_strength", "type": float, "default": 0.75}, {"key": "mask", "type": str, "default": None}, {"key": "include_init_images", "type": bool, "default": False, "exclude" : True}, {"key": "script_name", "type": str, "default": None}, {"key": "script_args", "type": list, "default": []}]
+    [
+        {"key": "sampler_index", "type": str, "default": "Euler"},
+        {"key": "init_images", "type": list, "default": None},
+        {"key": "denoising_strength", "type": float, "default": 0.75},
+        {"key": "mask", "type": str, "default": None},
+        {"key": "include_init_images", "type": bool, "default": False, "exclude" : True},
+        {"key": "script_name", "type": str, "default": None},
+        {"key": "script_args", "type": list, "default": []},
+        {"key": "send_images", "type": bool, "default": True},
+        {"key": "save_images", "type": bool, "default": False},
+        {"key": "alwayson_scripts", "type": dict, "default": {}},
+    ]
 ).generate_model()
 
 class TextToImageResponse(BaseModel):
@@ -267,3 +285,7 @@ class EmbeddingsResponse(BaseModel):
 class MemoryResponse(BaseModel):
     ram: dict = Field(title="RAM", description="System memory stats")
     cuda: dict = Field(title="CUDA", description="nVidia CUDA memory stats")
+
+class ScriptsList(BaseModel):
+    txt2img: list = Field(default=None,title="Txt2img", description="Titles of scripts (txt2img)")
+    img2img: list = Field(default=None,title="Img2img", description="Titles of scripts (img2img)")
