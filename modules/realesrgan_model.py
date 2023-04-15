@@ -7,7 +7,6 @@ from basicsr.utils.download_util import load_file_from_url
 
 from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import cmd_opts, opts
-import modules.shared as shared
 import modules.errors as errors
 
 

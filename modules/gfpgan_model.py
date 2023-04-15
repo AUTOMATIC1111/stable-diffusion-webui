@@ -1,5 +1,4 @@
 import os
-import sys
 
 import modules.face_restoration
 from modules import paths, shared, devices, modelloader, errors

@@ -1,9 +1,6 @@
 import os
-import sys
-import modules.shared as shared
-import modules.errors as errors
 import importlib.util
-from types import ModuleType
+import modules.errors as errors
 
 
 def load_module(path):

@@ -2,7 +2,6 @@ import base64
 import io
 import time
 
-import gradio as gr
 from pydantic import BaseModel, Field
 
 from modules.shared import opts

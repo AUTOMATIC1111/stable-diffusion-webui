@@ -84,8 +84,3 @@ def sha256(filename, title):
     dump_cache()
 
     return sha256_value
-
-
-
-
-

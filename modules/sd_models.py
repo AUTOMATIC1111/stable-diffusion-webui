@@ -2,23 +2,21 @@ import collections
 import os.path
 import sys
 import gc
-import torch
 import re
-import safetensors.torch
-from omegaconf import OmegaConf
+import io
 from os import mkdir
 from urllib import request
+from rich import print, progress # pylint: disable=W0622
+import torch
+import safetensors.torch
+from omegaconf import OmegaConf
 import ldm.modules.midas as midas
-import io
-
 from ldm.util import instantiate_from_config
 
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
-from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 
-from rich import print, progress
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
@@ -57,8 +55,8 @@ class CheckpointInfo:
 
     def register(self):
         checkpoints_list[self.title] = self
-        for id in self.ids:
-            checkpoint_alisases[id] = self
+        for i in self.ids:
+            checkpoint_alisases[i] = self
 
     def calculate_shorthash(self):
         self.sha256 = hashes.sha256(self.filename, "checkpoint/" + self.name)
@@ -79,9 +77,7 @@ class CheckpointInfo:
 
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
-
-    from transformers import logging, CLIPModel
-
+    from transformers import logging
     logging.set_verbosity_error()
 except Exception:
     pass
@@ -160,7 +156,7 @@ def model_hash(filename):
 
 def select_checkpoint():
     model_checkpoint = shared.opts.sd_model_checkpoint
-        
+
     checkpoint_info = checkpoint_alisases.get(model_checkpoint, None)
     if checkpoint_info is not None:
         return checkpoint_info
@@ -232,7 +228,7 @@ def read_metadata_from_safetensors(filename):
             if isinstance(v, str) and v[0:1] == '{':
                 try:
                     res[k] = json.loads(v)
-                except Exception as e:
+                except Exception:
                     pass
 
         return res
@@ -264,7 +260,7 @@ def read_state_dict(checkpoint_file):
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
     if checkpoint_info in checkpoints_loaded:
         # use checkpoint cache
-        print(f"Loading weights from cache")
+        print("Loading weights from cache")
         return checkpoints_loaded[checkpoint_info]
 
     res = read_state_dict(checkpoint_info.filename)
@@ -368,7 +364,7 @@ def enable_midas_autodownload():
         if not os.path.exists(path):
             if not os.path.exists(midas_path):
                 mkdir(midas_path)
-    
+
             print(f"Downloading midas model weights for {model_type} to {path}")
             request.urlretrieve(midas_urls[model_type], path)
             print(f"{model_type} downloaded")
@@ -444,7 +440,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     try:
         with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
             sd_model = instantiate_from_config(sd_config.model)
-    except Exception as e:
+    except Exception:
         sd_model = instantiate_from_config(sd_config.model)
 
     sd_model.used_config = checkpoint_config
@@ -481,7 +477,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
 
 def reload_model_weights(sd_model=None, info=None):
-    from modules import lowvram, devices, sd_hijack
+    from modules import lowvram, sd_hijack
     checkpoint_info = info or select_checkpoint()
 
     if not sd_model:
@@ -517,7 +513,7 @@ def reload_model_weights(sd_model=None, info=None):
 
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
-    except Exception as e:
+    except Exception:
         print("Failed to load checkpoint, restoring previous")
         load_model_weights(sd_model, current_checkpoint_info, None, timer)
         raise
@@ -534,8 +530,8 @@ def reload_model_weights(sd_model=None, info=None):
 
     print(f"Weights loaded in {timer.summary()}")
 
-def unload_model_weights(sd_model=None, info=None):
-    from modules import lowvram, devices, sd_hijack
+def unload_model_weights(sd_model=None, _info=None):
+    from modules import sd_hijack
     timer = Timer()
 
     if shared.sd_model:

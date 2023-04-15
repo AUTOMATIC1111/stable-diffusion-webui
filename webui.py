@@ -4,12 +4,10 @@ import signal
 import re
 import logging
 import warnings
-
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from setup import log
-
-from modules import paths, timer, errors
+from modules import timer, errors
 
 errors.install()
 startup_timer = timer.Timer()
@@ -35,7 +33,10 @@ if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__long_version__ = torch.__version__
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 
-from modules import shared, devices, sd_samplers, upscaler, extensions, ui_tempdir, ui_extra_networks
+from modules import shared, extensions, ui_tempdir, ui_extra_networks
+import modules.devices
+import modules.sd_samplers
+import modules.upscaler
 import modules.codeformer_model as codeformer
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan

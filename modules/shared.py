@@ -1,4 +1,3 @@
-import argparse
 import datetime
 import json
 import os
@@ -12,18 +11,19 @@ import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import script_loading, errors, ui_components, shared_items, cmd_args, errors
-from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
+from modules import script_loading, errors, ui_components, shared_items, cmd_args
+from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
+import modules.paths_internal as paths
 
+from setup import log as setup_log # pylint: disable=E0611
 errors.install()
 demo = None
-from setup import log as setup_log # pylint: disable=E0611
 log = setup_log
 
 parser = cmd_args.parser
 
-script_loading.preload_extensions(extensions_dir, parser)
-script_loading.preload_extensions(extensions_builtin_dir, parser)
+script_loading.preload_extensions(paths.extensions_dir, parser)
+script_loading.preload_extensions(paths.extensions_builtin_dir, parser)
 
 if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
     cmd_opts = parser.parse_args()
@@ -68,7 +68,7 @@ clip_model = None
 
 def reload_hypernetworks():
     from modules.hypernetworks import hypernetwork
-    global hypernetworks
+    global hypernetworks # pylint: disable=W0603
     hypernetworks = hypernetwork.list_hypernetworks(opts.hypernetwork_dir)
 
 
@@ -154,8 +154,8 @@ class State:
         if self.current_latent is None:
             return
 
-        import modules.sd_samplers
         if opts.show_progress_grid:
+            import modules.sd_samplers # pylint: disable=W0621
             self.assign_current_image(modules.sd_samplers.samples_to_image_grid(self.current_latent))
         else:
             self.assign_current_image(modules.sd_samplers.sample_to_image(self.current_latent))
@@ -188,24 +188,24 @@ class OptionInfo:
 
 
 def options_section(section_identifier, options_dict):
-    for k, v in options_dict.items():
+    for _k, v in options_dict.items():
         v.section = section_identifier
 
     return options_dict
 
 
 def list_checkpoint_tiles():
-    import modules.sd_models
+    import modules.sd_models # pylint: disable=W0621
     return modules.sd_models.checkpoint_tiles()
 
 
 def refresh_checkpoints():
-    import modules.sd_models
+    import modules.sd_models # pylint: disable=W0621
     return modules.sd_models.list_models()
 
 
 def list_samplers():
-    import modules.sd_samplers
+    import modules.sd_samplers # pylint: disable=W0621
     return modules.sd_samplers.all_samplers
 
 
@@ -245,18 +245,18 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
-    "ckpt_dir": OptionInfo(os.path.join(models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
-    "vae_dir": OptionInfo(os.path.join(models_path, 'VAE'), "Path to directory with VAE files"),
-    "embeddings_dir": OptionInfo(os.path.join(models_path, 'embeddings'), "Embeddings directory for textual inversion"),
-    "embeddings_templates_dir": OptionInfo(os.path.join(script_path, 'train/templates'), "Embeddings train templates directory"),
-    "hypernetwork_dir": OptionInfo(os.path.join(models_path, 'hypernetworks'), "Hypernetwork directory"),
-    "codeformer_models_path": OptionInfo(os.path.join(models_path, 'Codeformer'), "Path to directory with codeformer model file(s)."),
-    "gfpgan_models_path": OptionInfo(os.path.join(models_path, 'GFPGAN'), "Path to directory with GFPGAN model file(s)"),
-    "esrgan_models_path": OptionInfo(os.path.join(models_path, 'ESRGAN'), "Path to directory with ESRGAN model file(s)"),
-    "bsrgan_models_path": OptionInfo(os.path.join(models_path, 'BSRGAN'), "Path to directory with BSRGAN model file(s)"),
-    "realesrgan_models_path": OptionInfo(os.path.join(models_path, 'RealESRGAN'), "Path to directory with RealESRGAN model file(s)"),
-    "clip_models_path": OptionInfo(os.path.join(models_path, 'CLIP'), "Path to directory with CLIP model file(s)"),
-    "lora_dir": OptionInfo(os.path.join(models_path, 'Lora'), "Path to directory with Lora network(s)"),
+    "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
+    "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
+    "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Embeddings directory for textual inversion"),
+    "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train/templates'), "Embeddings train templates directory"),
+    "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Hypernetwork directory"),
+    "codeformer_models_path": OptionInfo(os.path.join(paths.models_path, 'Codeformer'), "Path to directory with codeformer model file(s)."),
+    "gfpgan_models_path": OptionInfo(os.path.join(paths.models_path, 'GFPGAN'), "Path to directory with GFPGAN model file(s)"),
+    "esrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'ESRGAN'), "Path to directory with ESRGAN model file(s)"),
+    "bsrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'BSRGAN'), "Path to directory with BSRGAN model file(s)"),
+    "realesrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'RealESRGAN'), "Path to directory with RealESRGAN model file(s)"),
+    "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Path to directory with CLIP model file(s)"),
+    "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with Lora network(s)"),
     # "gfpgan_model": OptionInfo("", "GFPGAN model file name"),
 }))
 
@@ -647,7 +647,7 @@ def listfiles(dirname):
 
 
 def html_path(filename):
-    return os.path.join(script_path, "html", filename)
+    return os.path.join(paths.script_path, "html", filename)
 
 
 def html(filename):

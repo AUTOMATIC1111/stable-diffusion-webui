@@ -133,6 +133,7 @@ disable=raw-checker-failed,
         missing-class-docstring,
         logging-fstring-interpolation,
         import-outside-toplevel,
+        consider-iterating-dictionary,
 enable=c-extension-no-member
 
 [METHOD_ARGS]

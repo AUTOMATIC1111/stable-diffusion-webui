@@ -1,15 +1,13 @@
 # this code is adapted from the script contributed by anon from /h/
 
-import io
 import pickle
 import collections
-import sys
+import zipfile
+import re
 
 import torch
 import numpy
 import _codecs
-import zipfile
-import re
 
 # PyTorch 1.13 and later have _TypedStorage renamed to TypedStorage
 TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorage') else torch.storage._TypedStorage

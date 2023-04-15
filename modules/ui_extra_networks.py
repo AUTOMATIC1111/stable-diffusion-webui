@@ -1,15 +1,14 @@
+import json
+import html
 import glob
 import os.path
 import urllib.parse
 from pathlib import Path
 from PIL import PngImagePlugin
+import gradio as gr
 
 from modules import shared
 from modules.images import read_info_from_image
-import gradio as gr
-import json
-import html
-
 from modules.generation_parameters_copypaste import image_from_url_text
 
 extra_pages = []
@@ -317,4 +316,3 @@ def setup_ui(ui, gallery):
         inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename],
         outputs=[*ui.pages]
     )
-

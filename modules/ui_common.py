@@ -3,9 +3,9 @@ import html
 import os
 import platform
 import sys
+import subprocess as sp
 
 import gradio as gr
-import subprocess as sp
 
 from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
@@ -101,7 +101,6 @@ def initial_image():
     return [img]
 
 def create_output_panel(tabname, outdir):
-    from modules import shared
     import modules.generation_parameters_copypaste as parameters_copypaste
 
     def open_folder(f):

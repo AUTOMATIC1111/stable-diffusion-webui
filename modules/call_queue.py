@@ -1,7 +1,9 @@
 import html
 import threading
 import time
-import cProfile, pstats, io
+import cProfile
+import pstats
+import io
 
 from modules import shared, progress, errors
 
@@ -103,4 +105,3 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         return tuple(res)
 
     return f
-

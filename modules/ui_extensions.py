@@ -1,15 +1,14 @@
 import json
 import os.path
-import sys
 import time
-
-import git
-
-import gradio as gr
-import html
 import shutil
 import errno
+import html
 
+import git
+import gradio as gr
+
+from rich import print
 from modules import extensions, shared, paths, errors
 from modules.call_queue import wrap_gradio_gpu_call
 
@@ -48,7 +47,7 @@ def apply_and_restart(disable_list, update_list, disable_all):
     shared.state.need_restart = True
 
 
-def check_updates(id_task, disable_list):
+def check_updates(_id_task, disable_list):
     check_access()
 
     disabled = json.loads(disable_list)
@@ -134,10 +133,10 @@ def install_extension_from_url(dirname, url):
     if dirname is None or dirname == "":
         *parts, last_part = url.split('/')
         last_part = normalize_git_url(last_part)
-
         dirname = last_part
 
     target_dir = os.path.join(extensions.extensions_dir, dirname)
+    print(f'Installing extension: {url} into {target_dir}')
     assert not os.path.exists(target_dir), f'Extension directory already exists: {target_dir}'
 
     normalized_url = normalize_git_url(url)
@@ -155,18 +154,14 @@ def install_extension_from_url(dirname, url):
             os.rename(tmpdir, target_dir)
         except OSError as err:
             if err.errno == errno.EXDEV:
-                # Cross device link, typical in docker or when tmp/ and extensions/ are on different file systems
-                # Since we can't use a rename, do the slower but more versitile shutil.move()
                 shutil.move(tmpdir, target_dir)
             else:
-                # Something else, not enough free space, permissions, etc.  rethrow it so that it gets handled.
                 raise err
 
         from launch import run_extension_installer
         run_extension_installer(target_dir)
-
         extensions.list_extensions()
-        return [extension_table(), html.escape(f"Installed into {target_dir}. Use Installed tab to restart.")]
+        return [extension_table(), html.escape(f"Installed into {target_dir}")]
     finally:
         shutil.rmtree(tmpdir, True)
 
@@ -290,7 +285,7 @@ def create_ui():
     import modules.ui
 
     with gr.Blocks(analytics_enabled=False) as ui:
-        with gr.Tabs(elem_id="tabs_extensions") as tabs:
+        with gr.Tabs(elem_id="tabs_extensions"):
             with gr.TabItem("Installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):
@@ -300,14 +295,14 @@ def create_ui():
                     extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
                     extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)
 
-                html = ""
+                txt = ""
                 if shared.opts.disable_all_extensions != "none":
-                    html = """
+                    txt = """
 <span style="color: var(--primary-400);">
     "Disable all extensions" was set, change it to "none" to load all extensions again
 </span>
                     """
-                info = gr.HTML(html)
+                info = gr.HTML(txt)
                 extensions_table = gr.HTML(lambda: extension_table())
 
                 apply.click(
@@ -335,9 +330,9 @@ def create_ui():
                     hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
                     sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", ], type="index")
 
-                with gr.Row(): 
+                with gr.Row():
                     search_extensions_text = gr.Text(label="Search").style(container=False)
-                   
+
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
 

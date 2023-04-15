@@ -319,19 +319,22 @@ def check_version():
     except ImportError:
         return
     logging.getLogger("urllib3").setLevel(logging.WARNING)
-    commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master', timeout=10).json()
-    if commits['commit']['sha'] != commit:
-        if args.upgrade:
-            update('.')
-            ver = git('log -1 --pretty=format:"%h %ad"')
-            log.info(f'Updated to version: {ver}')
-        else:
-            log.info(f'Latest available version: {commits["commit"]["commit"]["author"]["date"]}')
-    if not args.noupdate:
-        log.info('Updating Wiki')
-        update(os.path.join(os.path.dirname(__file__), "wiki"))
-        update(os.path.join(os.path.dirname(__file__), "wiki", "origin-wiki"))
-
+    commits = None
+    try:
+        commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master', timeout=10).json()
+        if commits['commit']['sha'] != commit:
+            if args.upgrade:
+                update('.')
+                ver = git('log -1 --pretty=format:"%h %ad"')
+                log.info(f'Updated to version: {ver}')
+            else:
+                log.info(f'Latest available version: {commits["commit"]["commit"]["author"]["date"]}')
+        if not args.noupdate:
+            log.info('Updating Wiki')
+            update(os.path.join(os.path.dirname(__file__), "wiki"))
+            update(os.path.join(os.path.dirname(__file__), "wiki", "origin-wiki"))
+    except Exception as e:
+        log.error(f'Failed to check version: {e} {commits}')
 
 # check if we can run setup in quick mode
 def check_timestamp():

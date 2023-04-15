@@ -1,12 +1,9 @@
-import torch
-import safetensors.torch
 import os
 import collections
-from collections import namedtuple
-from modules import paths, shared, devices, script_callbacks, sd_models
 import glob
 from copy import deepcopy
 from rich import print
+from modules import paths, shared, devices, script_callbacks, sd_models
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 vae_dict = {}
