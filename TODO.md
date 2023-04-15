@@ -18,6 +18,7 @@ Stuff to be fixed...
 - Stream-load as option
 - Dont spawn extensions installer
 - Remove `models` from git repo
+- Merge `Image Info` into `Process`
 
 ## Integration
 

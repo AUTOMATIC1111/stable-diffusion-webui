@@ -331,10 +331,10 @@ def check_version():
         commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master', timeout=10).json()
         if commits['commit']['sha'] != commit:
             if args.upgrade:
-                global quick_allowed # pylint: disable=global-statement
-                quick_allowed = False
                 git('add .')
                 git('stash')
+                global quick_allowed # pylint: disable=global-statement
+                quick_allowed = False
                 update('.')
                 # git('git stash pop')
                 ver = git('log -1 --pretty=format:"%h %ad"')
