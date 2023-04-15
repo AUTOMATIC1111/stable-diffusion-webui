@@ -86,12 +86,12 @@ dtype_unet = torch.float16
 unet_needs_upcast = False
 
 
-def cond_cast_unet(input):
-    return input.to(dtype_unet) if unet_needs_upcast else input
+def cond_cast_unet(tensor):
+    return tensor.to(dtype_unet) if unet_needs_upcast else tensor
 
 
-def cond_cast_float(input):
-    return input.float() if unet_needs_upcast else input
+def cond_cast_float(tensor):
+    return tensor.float() if unet_needs_upcast else tensor
 
 
 def randn(seed, shape):

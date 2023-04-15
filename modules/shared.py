@@ -257,6 +257,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "realesrgan_models_path": OptionInfo(os.path.join(paths.models_path, 'RealESRGAN'), "Path to directory with RealESRGAN model file(s)"),
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Path to directory with CLIP model file(s)"),
     "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with Lora network(s)"),
+    "lyco-dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
     # "gfpgan_model": OptionInfo("", "GFPGAN model file name"),
 }))
 
