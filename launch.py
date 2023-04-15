@@ -7,7 +7,7 @@ from modules import cmd_args
 from modules.paths_internal import script_path
 
 try:
-    from rich import print
+    from rich import print # pylint: disable=redefined-builtin
 except ImportError:
     pass
 
@@ -23,7 +23,7 @@ dir_repos = "repositories"
 
 
 def commit_hash():
-    global stored_commit_hash
+    global stored_commit_hash # pylint: disable=global-statement
     if stored_commit_hash is not None:
         return stored_commit_hash
     try:
@@ -85,7 +85,7 @@ def run_extension_installer(ext_dir):
 
 
 if __name__ == "__main__":
-    setup.run_setup(False)
+    setup.run_setup()
     setup.set_environment()
     setup.check_torch()
     setup.log.info(f"Server arguments: {sys.argv[1:]}")

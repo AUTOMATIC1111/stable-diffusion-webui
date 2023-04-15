@@ -12,21 +12,22 @@ from modules import timer, errors
 errors.install()
 startup_timer = timer.Timer()
 
-import torch
-import torchvision
-import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
+import torch # pylint: disable=C0411
+import torchvision # pylint: disable=W0611,C0411
+import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them # pylint: disable=W0611,C0411
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 startup_timer.record("torch")
 
-from modules import import_hook
-import gradio
-import ldm.modules.encoders.modules
+from modules import import_hook # pylint: disable=W0611,C0411,C0412
+import gradio # pylint: disable=W0611,C0411
+startup_timer.record("gradio")
 
-from modules import extra_networks, ui_extra_networks_checkpoints
+import ldm.modules.encoders.modules # pylint: disable=W0611,C0411
+from modules import extra_networks, ui_extra_networks_checkpoints # pylint: disable=C0411,C0412
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
-from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
+from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call # pylint: disable=W0611,C0411
 
 # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
 if ".dev" in torch.__version__ or "+git" in torch.__version__:
@@ -199,7 +200,7 @@ def webui():
     # shared.demo.app is instance of ASGIApp
 
     cmd_opts.autolaunch = False
-    startup_timer.record("gradio")
+    startup_timer.record("start")
 
     app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
     setup_middleware(app)

@@ -1,5 +1,5 @@
 from types import MethodType
-from rich import print
+from rich import print # pylint: disable=redefined-builtin
 import torch
 from torch.nn.functional import silu
 import ldm.modules.attention

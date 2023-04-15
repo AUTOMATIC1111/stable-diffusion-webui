@@ -134,6 +134,8 @@ disable=raw-checker-failed,
         logging-fstring-interpolation,
         import-outside-toplevel,
         consider-iterating-dictionary,
+        wrong-import-position,
+        unnecessary-lambda,
 enable=c-extension-no-member
 
 [METHOD_ARGS]

@@ -8,7 +8,7 @@ import html
 import git
 import gradio as gr
 
-from rich import print
+from rich import print # pylint: disable=redefined-builtin
 from modules import extensions, shared, paths, errors
 from modules.call_queue import wrap_gradio_gpu_call
 

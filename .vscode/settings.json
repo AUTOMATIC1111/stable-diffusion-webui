@@ -1,5 +1,7 @@
 {
   "python.analysis.extraPaths": [
+    ".",
+    "./modules",
     "./modules/lora",
     "./repositories/BLIP",
     "./repositories/CodeFormer",

@@ -2,7 +2,7 @@ import os
 import collections
 import glob
 from copy import deepcopy
-from rich import print
+from rich import print # pylint: disable=redefined-builtin
 from modules import paths, shared, devices, script_callbacks, sd_models
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}

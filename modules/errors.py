@@ -2,7 +2,7 @@ import sys
 import anyio
 import starlette
 import gradio
-from rich import print
+from rich import print # pylint: disable=redefined-builtin
 from rich.console import Console
 from rich.theme import Theme
 from rich.pretty import install as pretty_install

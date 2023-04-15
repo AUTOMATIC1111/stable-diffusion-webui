@@ -15,7 +15,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-args = Dot({ 'debug': False, 'quick': False, 'upgrade': False, 'noupdate': False, 'skip-extensions': False })
+args = Dot({ 'debug': False, 'upgrade': False, 'noupdate': False, 'skip-extensions': False, 'skip-requirements': False })
 
 
 # setup console and file logging
@@ -77,14 +77,14 @@ def installed(package):
 
 # install package using pip if not already installed
 def install(package):
-    def pip(args: str):
-        log.debug(f"Running pip: {args}")
-        result = subprocess.run(f'"{sys.executable}" -m pip {args}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    def pip(arg: str):
+        log.debug(f"Running pip: {arg}")
+        result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         txt = result.stdout.decode(encoding="utf8", errors="ignore")
         if len(result.stderr) > 0:
             txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
         if result.returncode != 0:
-            log.error(f'Error running pip with args: {args}')
+            log.error(f'Error running pip with args: {arg}')
             log.debug(f'Pip output: {txt}')
         return txt
 
@@ -93,48 +93,45 @@ def install(package):
 
 
 # execute git command
-def git(args: str):
-    # log.debug(f"Running git: {args}")
+def git(arg: str):
     git_cmd = os.environ.get('GIT', "git")
-    result = subprocess.run(f'"{git_cmd}" {args}', check=False, shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(f'"{git_cmd}" {arg}', check=False, shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     txt = result.stdout.decode(encoding="utf8", errors="ignore")
     if len(result.stderr) > 0:
         txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
     if result.returncode != 0:
-        log.error(f'Error running git with args: {args}')
+        log.error(f'Error running git with args: {arg}')
         log.debug(f'Git output: {txt}')
     return txt
 
 
 # update switch to main branch as head can get detached and update repository
-def update(dir):
-    branch = git(f'-C "{dir}" branch')
+def update(folder):
+    branch = git(f'-C "{folder}" branch')
     if 'main' in branch:
-        # log.debug(f'Using main branch {dir}')
-        git(f'-C "{dir}" checkout main')
+        git(f'-C "{folder}" checkout main')
     elif 'master' in branch:
-        # log.debug(f'Using master branch {dir}')
-        git(f'-C "{dir}" checkout master')
+        git(f'-C "{folder}" checkout master')
     else:
-        log.warning(f'Unknown branch for: {dir}')
-    git(f'-C "{dir}" pull --rebase --autostash')
-    branch = git(f'-C "{dir}" branch')
+        log.warning(f'Unknown branch for: {folder}')
+    git(f'-C "{folder}" pull --rebase --autostash')
+    branch = git(f'-C "{folder}" branch')
 
 
 # clone git repository
-def clone(url, dir, commithash=None):
-    if os.path.exists(dir):
+def clone(url, folder, commithash=None):
+    if os.path.exists(folder):
         if commithash is None:
             return
-        current_hash = git(f'-C "{dir}" rev-parse HEAD').strip()
+        current_hash = git(f'-C "{folder}" rev-parse HEAD').strip()
         if current_hash != commithash:
-            git(f'-C "{dir}" fetch')
-            git(f'-C "{dir}" checkout {commithash}')
+            git(f'-C "{folder}" fetch')
+            git(f'-C "{folder}" checkout {commithash}')
             return
     else:
-        git(f'clone "{url}" "{dir}"')
+        git(f'clone "{url}" "{folder}"')
         if commithash is not None:
-            git(f'-C "{dir}" checkout {commithash}')
+            git(f'-C "{folder}" checkout {commithash}')
 
 
 # check python version
@@ -159,6 +156,8 @@ def check_torch():
             log.warning("Torch repoorts CUDA not available")
             if '--no-half' not in sys.argv:
                 sys.argv.append('--no-half')
+            if '--no-half-vae' not in sys.argv:
+                sys.argv.append('--no-half-vae')
         else:
             if torch.version.cuda:
                 log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version()}')
@@ -190,31 +189,31 @@ def install_packages():
 
 # clone required repositories
 def install_repositories():
-    def dir(name):
+    def d(name):
         return os.path.join(os.path.dirname(__file__), 'repositories', name)
 
     log.info('Installing repositories')
     os.makedirs(os.path.join(os.path.dirname(__file__), 'repositories'), exist_ok=True)
     stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
     stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
-    clone(stable_diffusion_repo, dir('stable-diffusion-stability-ai'), stable_diffusion_commit)
+    clone(stable_diffusion_repo, d('stable-diffusion-stability-ai'), stable_diffusion_commit)
     taming_transformers_repo = os.environ.get('TAMING_TRANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
     taming_transformers_commit = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "3ba01b241669f5ade541ce990f7650a3b8f65318")
-    clone(taming_transformers_repo, dir('taming-transformers'), taming_transformers_commit)
+    clone(taming_transformers_repo, d('taming-transformers'), taming_transformers_commit)
     k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
     k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', "b43db16749d51055f813255eea2fdf1def801919")
-    clone(k_diffusion_repo, dir('k-diffusion'), k_diffusion_commit)
+    clone(k_diffusion_repo, d('k-diffusion'), k_diffusion_commit)
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
     codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
-    clone(codeformer_repo, dir('CodeFormer'), codeformer_commit)
+    clone(codeformer_repo, d('CodeFormer'), codeformer_commit)
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
     blip_commit = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
-    clone(blip_repo, dir('BLIP'), blip_commit)
+    clone(blip_repo, d('BLIP'), blip_commit)
 
 
 # run extension installer
-def run_extension_installer(extension_dir):
-    path_installer = os.path.join(extension_dir, "install.py")
+def run_extension_installer(folder):
+    path_installer = os.path.join(folder, "install.py")
     if not os.path.isfile(path_installer):
         return
     try:
@@ -231,41 +230,31 @@ def run_extension_installer(extension_dir):
     except Exception as e:
         log.error(f'Exception running extension installer: {e}')
 
-
-# run installer for each installed and enabled extension and optionally update them
-def install_extensions():
-    settings = {}
+# get list of all enabled extensions
+def list_extensions(folder):
     if os.path.isfile('config.json'):
         with open('config.json', "r", encoding="utf8") as file:
             settings = json.load(file)
+    if settings.get('disable_all_extensions', 'none') != 'none':
+        log.debug('Disabled extensions: all')
+        return []
+    disabled_extensions = set(settings.get('disabled_extensions', []))
+    if len(disabled_extensions) > 0:
+        log.debug(f'Disabled extensions: {disabled_extensions}')
+    return [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
 
-    def list_extensions(folder):
-        if settings.get('disable_all_extensions', 'none') != 'none':
-            log.debug('Disabled extensions: all')
-            return []
-        disabled_extensions = set(settings.get('disabled_extensions', []))
-        if len(disabled_extensions) > 0:
-            log.debug(f'Disabled extensions: {disabled_extensions}')
-        return [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
 
-    extensions_builtin_dir = os.path.join(os.path.dirname(__file__), 'extensions-builtin')
-    extensions = list_extensions(extensions_builtin_dir)
-    log.info(f'Extensions disabled: {settings.get("disabled_extensions", [])}')
-    log.info(f'Extensions built-in: {extensions}')
-    for ext in extensions:
-        if not args.noupdate:
-            update(os.path.join(extensions_builtin_dir, ext))
-        if not args.skip_extensions:
-            run_extension_installer(os.path.join(extensions_builtin_dir, ext))
-
-    extensions_dir = os.path.join(os.path.dirname(__file__), 'extensions')
-    extensions = list_extensions(extensions_dir)
-    log.info(f'Extensions enabled: {extensions}')
-    for ext in extensions:
-        if not args.noupdate:
-            update(os.path.join(extensions_dir, ext))
-        if not args.skip_extensions:
-            run_extension_installer(os.path.join(extensions_dir, ext))
+# run installer for each installed and enabled extension and optionally update them
+def install_extensions():
+    for folder in ['extensions-builtin', 'extensions']:
+        extensions_dir = os.path.join(os.path.dirname(__file__), folder)
+        extensions = list_extensions(extensions_dir)
+        log.info(f'Extensions enabled: {extensions}')
+        for ext in extensions:
+            if not args.noupdate:
+                update(os.path.join(extensions_dir, ext))
+            if not args.skip_extensions:
+                run_extension_installer(os.path.join(extensions_dir, ext))
 
 
 # initialize and optionally update submodules
@@ -309,6 +298,22 @@ def set_environment():
     os.environ.setdefault('NUMEXPR_MAX_THREADS', '16')
 
 
+def check_extensions():
+    newest_all = 0
+    for folder in ['extensions-builtin', 'extensions']:
+        extensions_dir = os.path.join(os.path.dirname(__file__), folder)
+        extensions = list_extensions(extensions_dir)
+        for ext in extensions:
+            newest = 0
+            extension_dir = os.path.join(extensions_dir, ext)
+            for f in os.listdir(extension_dir):
+                ts = os.path.getmtime(os.path.join(extension_dir, f))
+                newest = max(newest, ts)
+            newest_all = max(newest_all, newest)
+            log.debug(f'Extension version: {time.ctime(newest)} {folder}{os.pathsep}{ext}')
+    return newest_all
+
+
 # check version of the main repo and optionally upgrade it
 def check_version():
     ver = git('log -1 --pretty=format:"%h %ad"')
@@ -336,6 +341,7 @@ def check_version():
     except Exception as e:
         log.error(f'Failed to check version: {e} {commits}')
 
+
 # check if we can run setup in quick mode
 def check_timestamp():
     if not os.path.isfile('setup.log'):
@@ -344,7 +350,12 @@ def check_timestamp():
     log.debug(f'Previous setup time: {time.ctime(setup_time)}')
     version_time = int(git('log -1 --pretty=format:"%at"'))
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
-    return setup_time >= version_time
+    if setup_time < version_time:
+        return False
+    extension_time = check_extensions()
+    if setup_time < extension_time:
+        return False
+    return True
 
 
 def parse_args():
@@ -353,21 +364,20 @@ def parse_args():
     if vars(parser)['_option_string_actions'].get('--debug', None) is not None:
         return
     parser.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
-    parser.add_argument('--quick', default = False, action='store_true', help = "Skip installing if setup.log is newer than repo timestamp, default: %(default)s")
     parser.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
-    parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update extensions and submodules, default: %(default)s")
+    parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
     parser.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
-    global args
+    global args # pylint: disable=global-statement
     args = parser.parse_args()
 
 
 # entry method when used as module
-def run_setup(quick = False):
+def run_setup():
     setup_logging()
     check_python()
-    if (quick or args.quick) and check_timestamp():
-        log.info('Attempting quick setup')
+    if check_timestamp() and not args.upgrade:
+        log.info('No changes detected: quick launch active')
         return
     log.info("Running setup")
     log.debug(f"Args: {vars(args)}")

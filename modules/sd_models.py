@@ -6,7 +6,7 @@ import re
 import io
 from os import mkdir
 from urllib import request
-from rich import print, progress # pylint: disable=W0622
+from rich import print, progress # pylint: disable=redefined-builtin
 import torch
 import safetensors.torch
 from omegaconf import OmegaConf
