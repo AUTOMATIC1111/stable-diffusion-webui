@@ -2,13 +2,13 @@ import os
 import time
 import signal
 import re
+import logging
 import warnings
+
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from setup import log # pylint: disable=E0611
+from setup import log
 
-import logging
-logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 from modules import paths, timer, errors
 
 errors.install()
@@ -17,6 +17,7 @@ startup_timer = timer.Timer()
 import torch
 import torchvision
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
+logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 startup_timer.record("torch")
@@ -52,7 +53,6 @@ import modules.ui
 from modules import modelloader
 from modules.shared import cmd_opts, opts
 import modules.hypernetworks.hypernetwork
-
 startup_timer.record("libraries")
 
 if cmd_opts.server_name:
@@ -130,7 +130,7 @@ def load_model():
         modules.sd_models.load_model()
     except Exception as e:
         errors.display(e, "loading stable diffusion model")
-        log.error(f"Stable diffusion model failed to load")
+        log.error("Stable diffusion model failed to load")
         exit(1)
     if shared.sd_model is None:
         log.error("No stable diffusion model loaded")

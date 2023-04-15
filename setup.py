@@ -28,7 +28,6 @@ def setup_logging():
         pass
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', filename='setup.log', filemode='a', encoding='utf-8', force=True)
     try: # we may not have rich on the first run
-        from rich import print
         from rich.theme import Theme
         from rich.logging import RichHandler
         from rich.console import Console
@@ -44,7 +43,6 @@ def setup_logging():
         rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
         log.addHandler(rh)
     except:
-        pass
         sh = logging.StreamHandler()
         sh.setLevel(logging.DEBUG if args.debug else logging.INFO)
         log.addHandler(sh)
@@ -81,7 +79,7 @@ def installed(package):
 def install(package):
     def pip(args: str):
         log.debug(f"Running pip: {args}")
-        result = subprocess.run(f'"{sys.executable}" -m pip {args}', shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(f'"{sys.executable}" -m pip {args}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         txt = result.stdout.decode(encoding="utf8", errors="ignore")
         if len(result.stderr) > 0:
             txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
@@ -98,7 +96,7 @@ def install(package):
 def git(args: str):
     # log.debug(f"Running git: {args}")
     git_cmd = os.environ.get('GIT', "git")
-    result = subprocess.run(f'"{git_cmd}" {args}', shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(f'"{git_cmd}" {args}', check=False, shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     txt = result.stdout.decode(encoding="utf8", errors="ignore")
     if len(result.stderr) > 0:
         txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
@@ -110,17 +108,17 @@ def git(args: str):
 
 # update switch to main branch as head can get detached and update repository
 def update(dir):
-        branch = git(f'-C "{dir}" branch')
-        if 'main' in branch:
-            # log.debug(f'Using main branch {dir}')
-            git(f'-C "{dir}" checkout main')
-        elif 'master' in branch:
-            # log.debug(f'Using master branch {dir}')
-            git(f'-C "{dir}" checkout master')
-        else:
-            log.warning(f'Unknown branch for: {dir}')
-        git(f'-C "{dir}" pull --rebase --autostash')
-        branch = git(f'-C "{dir}" branch')
+    branch = git(f'-C "{dir}" branch')
+    if 'main' in branch:
+        # log.debug(f'Using main branch {dir}')
+        git(f'-C "{dir}" checkout main')
+    elif 'master' in branch:
+        # log.debug(f'Using master branch {dir}')
+        git(f'-C "{dir}" checkout master')
+    else:
+        log.warning(f'Unknown branch for: {dir}')
+    git(f'-C "{dir}" pull --rebase --autostash')
+    branch = git(f'-C "{dir}" branch')
 
 
 # clone git repository
@@ -153,9 +151,9 @@ def check_python():
 
 # check torch version
 def check_torch():
-    install(f'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
+    install('torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
     try:
-        import torch;
+        import torch
         log.info(f'Torch {torch.__version__}')
         if not torch.cuda.is_available():
             log.warning("Torch repoorts CUDA not available")
@@ -167,7 +165,7 @@ def check_torch():
             elif torch.version.hip:
                 log.info(f'Torch backend: AMD ROCm HIP {torch.version.hip}')
             else:
-                log.warning(f'Unknown Torch backend')
+                log.warning('Unknown Torch backend')
             for device in [torch.cuda.device(i) for i in range(torch.cuda.device_count())]:
                 log.info(f'Torch detected GPU: {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
     except:
@@ -187,7 +185,7 @@ def install_packages():
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers')
         install(f'--no-deps {xformers_package}')
     except Exception as e:
-        log.error('Cannot install xformers package: {e}')
+        log.error(f'Cannot install xformers package: {e}')
 
 
 # clone required repositories
@@ -223,7 +221,7 @@ def run_extension_installer(extension_dir):
         log.debug(f"Running extension installer: {path_installer}")
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.abspath(".")
-        result = subprocess.run(f'"{sys.executable}" "{path_installer}"', shell=True, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(f'"{sys.executable}" "{path_installer}"', shell=True, env=env, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode != 0:
             txt = result.stdout.decode(encoding="utf8", errors="ignore")
             if len(result.stderr) > 0:
@@ -241,15 +239,14 @@ def install_extensions():
         with open('config.json', "r", encoding="utf8") as file:
             settings = json.load(file)
 
-    def list_extensions(dir):
+    def list_extensions(folder):
         if settings.get('disable_all_extensions', 'none') != 'none':
-            log.debug(f'Disabled extensions: all')
+            log.debug('Disabled extensions: all')
             return []
-        else:
-            disabled_extensions = set(settings.get('disabled_extensions', []))
-            if len(disabled_extensions) > 0:
-                log.debug(f'Disabled extensions: {disabled_extensions}')
-            return [x for x in os.listdir(dir) if x not in disabled_extensions and not x.startswith('.')]
+        disabled_extensions = set(settings.get('disabled_extensions', []))
+        if len(disabled_extensions) > 0:
+            log.debug(f'Disabled extensions: {disabled_extensions}')
+        return [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
 
     extensions_builtin_dir = os.path.join(os.path.dirname(__file__), 'extensions-builtin')
     extensions = list_extensions(extensions_builtin_dir)
@@ -274,7 +271,7 @@ def install_extensions():
 # initialize and optionally update submodules
 def install_submodules():
     log.info('Installing submodules')
-    git(f'submodule --quiet update --init --recursive')
+    git('submodule --quiet update --init --recursive')
     if not args.noupdate:
         log.info('Updating submodules')
         submodules = git('submodule').splitlines()
@@ -288,10 +285,10 @@ def install_requirements():
     if args.skip_requirements:
         return
     log.info('Installing requirements')
-    f = open('requirements.txt', 'r')
-    lines = [line.strip() for line in f.readlines() if line.strip() != '']
-    for line in lines:
-        install(line)
+    with open('requirements.txt', 'r', encoding='utf8') as f:
+        lines = [line.strip() for line in f.readlines() if line.strip() != '']
+        for line in lines:
+            install(line)
 
 
 # set environment variables controling the behavior of various libraries
@@ -316,14 +313,14 @@ def set_environment():
 def check_version():
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
-    hash = git('rev-parse HEAD')
+    commit = git('rev-parse HEAD')
     try:
         import requests
     except ImportError:
         return
     logging.getLogger("urllib3").setLevel(logging.WARNING)
-    commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master').json()
-    if commits['commit']['sha'] != hash:
+    commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master', timeout=10).json()
+    if commits['commit']['sha'] != commit:
         if args.upgrade:
             update('.')
             ver = git('log -1 --pretty=format:"%h %ad"')
