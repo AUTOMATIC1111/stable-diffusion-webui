@@ -3,6 +3,7 @@ __pycache__
 /params.txt
 /cache.json
 /config.json
+/ui-config.json
 /setup.log
 venv
 

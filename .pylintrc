@@ -136,6 +136,8 @@ disable=raw-checker-failed,
         consider-iterating-dictionary,
         wrong-import-position,
         unnecessary-lambda,
+        consider-using-dict-items,
+        dangerous-default-value,
 enable=c-extension-no-member
 
 [METHOD_ARGS]

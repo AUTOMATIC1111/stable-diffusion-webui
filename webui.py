@@ -1,21 +1,20 @@
 import os
+import re
 import time
 import signal
-import re
-import logging
 import warnings
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.gzip import GZipMiddleware
+import logging
 from setup import log
 from modules import timer, errors
 
-errors.install()
 startup_timer = timer.Timer()
 
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', force=True) # reset logging
 import torch # pylint: disable=C0411
 import torchvision # pylint: disable=W0611,C0411
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them # pylint: disable=W0611,C0411
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
+logging.getLogger("pytorch_lightning").disabled = True
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 startup_timer.record("torch")
@@ -23,6 +22,7 @@ startup_timer.record("torch")
 from modules import import_hook # pylint: disable=W0611,C0411,C0412
 import gradio # pylint: disable=W0611,C0411
 startup_timer.record("gradio")
+errors.install([gradio])
 
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411
 from modules import extra_networks, ui_extra_networks_checkpoints # pylint: disable=C0411,C0412
@@ -144,6 +144,8 @@ def load_model():
 
 
 def setup_middleware(app):
+    from fastapi.middleware.cors import CORSMiddleware
+    from fastapi.middleware.gzip import GZipMiddleware
     app.middleware_stack = None # reset current middleware to allow modifying user provided list
     app.add_middleware(GZipMiddleware, minimum_size=1024)
     if cmd_opts.cors_origins and cmd_opts.cors_regex:

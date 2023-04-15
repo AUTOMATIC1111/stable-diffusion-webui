@@ -1,34 +1,37 @@
-import base64
 import io
 import time
+import base64
 import datetime
-import uvicorn
-import gradio as gr
-from threading import Lock
 from io import BytesIO
-from gradio.processing_utils import decode_base64_to_file
-# from gradio_client.utils import decode_base64_to_file
+from typing import List
+from threading import Lock
+from secrets import compare_digest
+import anyio
+import starlette
+import fastapi
 from fastapi import APIRouter, Depends, FastAPI, Request, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
-from secrets import compare_digest
+from PIL import PngImagePlugin,Image
+import piexif
+import piexif.helper
+import uvicorn
+import gradio as gr
+from gradio.processing_utils import decode_base64_to_file
+# from gradio_client.utils import decode_base64_to_file
 
-from modules import shared, errors, sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing
+from modules import errors, shared, sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
-from PIL import PngImagePlugin,Image
 from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
-from typing import List
-import piexif
-import piexif.helper
 
 def upscaler_to_index(name: str):
     try:
@@ -61,7 +64,7 @@ def decode_base64_to_image(encoding):
     try:
         image = Image.open(BytesIO(base64.b64decode(encoding)))
         return image
-    except Exception as err:
+    except Exception:
         raise HTTPException(status_code=500, detail="Invalid encoded image")
 
 def encode_pil_to_base64(image):
@@ -124,7 +127,7 @@ def api_middleware(app: FastAPI):
         }
         print(f"API error: {request.method}: {request.url} {err}")
         if not isinstance(e, HTTPException): # do not print backtrace on known httpexceptions
-            errors.display(e, 'http api')
+            errors.display(e, 'http api', [anyio, fastapi, uvicorn, starlette])
         return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
 
     @app.middleware("http")
@@ -209,17 +212,17 @@ class Api:
         script_idx = script_name_to_index(script_name, script_runner.selectable_scripts)
         script = script_runner.selectable_scripts[script_idx]
         return script, script_idx
-    
+
     def get_scripts_list(self):
         t2ilist = [str(title.lower()) for title in scripts.scripts_txt2img.titles]
         i2ilist = [str(title.lower()) for title in scripts.scripts_img2img.titles]
 
-        return ScriptsList(txt2img = t2ilist, img2img = i2ilist)  
+        return ScriptsList(txt2img = t2ilist, img2img = i2ilist)
 
     def get_script(self, script_name, script_runner):
         if script_name is None or script_name == "":
             return None, None
-        
+
         script_idx = script_name_to_index(script_name, script_runner.scripts)
         return script_runner.scripts[script_idx]
 
@@ -254,10 +257,10 @@ class Api:
         if request.alwayson_scripts and (len(request.alwayson_scripts) > 0):
             for alwayson_script_name in request.alwayson_scripts.keys():
                 alwayson_script = self.get_script(alwayson_script_name, script_runner)
-                if alwayson_script == None:
+                if alwayson_script is None:
                     raise HTTPException(status_code=422, detail=f"always on script {alwayson_script_name} not found")
                 # Selectable script in always on script param check
-                if alwayson_script.alwayson == False:
+                if not alwayson_script.alwayson:
                     raise HTTPException(status_code=422, detail=f"Cannot have a selectable script in the always on scripts params")
                 # always on script with no arg should always run so you don't really need to add them to the requests
                 if "args" in request.alwayson_scripts[alwayson_script_name]:
@@ -298,7 +301,7 @@ class Api:
             p.outpath_samples = opts.outdir_txt2img_samples
 
             shared.state.begin()
-            if selectable_scripts != None:
+            if selectable_scripts is not None:
                 p.script_args = script_args
                 processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
             else:
@@ -355,7 +358,7 @@ class Api:
             p.outpath_samples = opts.outdir_img2img_samples
 
             shared.state.begin()
-            if selectable_scripts != None:
+            if selectable_scripts is not None:
                 p.script_args = script_args
                 processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
             else:
@@ -398,7 +401,7 @@ class Api:
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
     def pnginfoapi(self, req: PNGInfoRequest):
-        if(not req.image.strip()):
+        if not req.image.strip():
             return PNGInfoResponse(info="")
 
         image = decode_base64_to_image(req.image.strip())
@@ -428,7 +431,7 @@ class Api:
             progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
         time_since_start = time.time() - shared.state.time_start
-        eta = (time_since_start/progress)
+        eta = time_since_start / progress
         eta_relative = eta-time_since_start
 
         progress = min(progress, 1)
@@ -482,7 +485,7 @@ class Api:
         options = {}
         for key in shared.opts.data.keys():
             metadata = shared.opts.data_labels.get(key)
-            if(metadata is not None):
+            if metadata is not None:
                 options.update({key: shared.opts.data.get(key, shared.opts.data_labels.get(key).default)})
             else:
                 options.update({key: shared.opts.data.get(key, None)})

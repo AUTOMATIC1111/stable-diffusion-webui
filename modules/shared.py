@@ -16,7 +16,7 @@ from modules.paths_internal import models_path, script_path, data_path, sd_confi
 import modules.paths_internal as paths
 
 from setup import log as setup_log # pylint: disable=E0611
-errors.install()
+errors.install(gr)
 demo = None
 log = setup_log
 

@@ -17,12 +17,13 @@ class Dot(dict): # dot notation access to dictionary attributes
 log = logging.getLogger("sd")
 args = Dot({ 'debug': False, 'upgrade': False, 'noupdate': False, 'skip-extensions': False, 'skip-requirements': False, 'reset': False })
 quick_allowed = True
+errors = 0
 
 
 # setup console and file logging
-def setup_logging():
+def setup_logging(clean=False):
     try:
-        if os.path.isfile('setup.log'):
+        if clean and os.path.isfile('setup.log'):
             os.remove('setup.log')
         time.sleep(0.1) # prevent race condition
     except:
@@ -49,6 +50,7 @@ def setup_logging():
         log.addHandler(sh)
 
 
+# check if package is installed
 def installed(package):
     import pkg_resources
     ok = True
@@ -76,6 +78,7 @@ def installed(package):
         log.debug(f"Package not installed: {pkgs}")
         return False
 
+
 # install package using pip if not already installed
 def install(package):
     def pip(arg: str):
@@ -85,6 +88,8 @@ def install(package):
         if len(result.stderr) > 0:
             txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
         if result.returncode != 0:
+            global errors # pylint: disable=global-statement
+            errors += 1
             log.error(f'Error running pip with args: {arg}')
             log.debug(f'Pip output: {txt}')
         return txt
@@ -101,6 +106,8 @@ def git(arg: str):
     if len(result.stderr) > 0:
         txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
     if result.returncode != 0:
+        global errors # pylint: disable=global-statement
+        errors += 1
         log.error(f'Error running git with args: {arg}')
         log.debug(f'Git output: {txt}')
     return txt
@@ -223,6 +230,8 @@ def run_extension_installer(folder):
         env['PYTHONPATH'] = os.path.abspath(".")
         result = subprocess.run(f'"{sys.executable}" "{path_installer}"', shell=True, env=env, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if result.returncode != 0:
+            global errors # pylint: disable=global-statement
+            errors += 1
             txt = result.stdout.decode(encoding="utf8", errors="ignore")
             if len(result.stderr) > 0:
                 txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
@@ -355,10 +364,19 @@ def check_timestamp():
         return False
     if not os.path.isfile('setup.log'):
         return False
-    setup_time = os.path.getmtime('setup.log')
-    log.debug(f'Previous setup time: {time.ctime(setup_time)}')
+    setup_time = -1
+    with open('setup.log', 'r', encoding='utf8') as f:
+        lines = f.readlines()
+        for line in lines:
+            if 'Setup complete without errors' in line:
+                setup_time = line.split(' ')[0]
+                return True
+    # setup_time = os.path.getmtime('setup.log')
     version_time = int(git('log -1 --pretty=format:"%at"'))
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
+    if setup_time == -1:
+        return False
+    log.debug(f'Previous setup time: {time.ctime(setup_time)}')
     if setup_time < version_time:
         return False
     extension_time = check_extensions()
@@ -395,7 +413,7 @@ def git_reset():
 
 # entry method when used as module
 def run_setup():
-    setup_logging()
+    setup_logging(args.upgrade)
     check_python()
     if args.reset:
         git_reset()
@@ -410,6 +428,10 @@ def run_setup():
     install_repositories()
     install_submodules()
     install_extensions()
+    if errors == 0:
+        log.debug(f'Setup complete without errors: {round(time.time())}')
+    else:
+        log.warning(f'Setup complete with errors ({errors})')
 
 
 if __name__ == "__main__":

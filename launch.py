@@ -89,5 +89,6 @@ if __name__ == "__main__":
     setup.set_environment()
     setup.check_torch()
     setup.log.info(f"Server arguments: {sys.argv[1:]}")
+    setup.log.debug('Starting WebUI')
     import webui
     webui.webui()
