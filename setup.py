@@ -15,7 +15,8 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-args = Dot({ 'debug': False, 'upgrade': False, 'noupdate': False, 'skip-extensions': False, 'skip-requirements': False })
+args = Dot({ 'debug': False, 'upgrade': False, 'noupdate': False, 'skip-extensions': False, 'skip-requirements': False, 'reset': False })
+quick_allowed = True
 
 
 # setup console and file logging
@@ -232,6 +233,7 @@ def run_extension_installer(folder):
 
 # get list of all enabled extensions
 def list_extensions(folder):
+    settings = {}
     if os.path.isfile('config.json'):
         with open('config.json', "r", encoding="utf8") as file:
             settings = json.load(file)
@@ -329,11 +331,16 @@ def check_version():
         commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master', timeout=10).json()
         if commits['commit']['sha'] != commit:
             if args.upgrade:
+                global quick_allowed # pylint: disable=global-statement
+                quick_allowed = False
+                git('add .')
+                git('stash')
                 update('.')
+                # git('git stash pop')
                 ver = git('log -1 --pretty=format:"%h %ad"')
-                log.info(f'Updated to version: {ver}')
+                log.info(f'Upgraded to version: {ver}')
             else:
-                log.info(f'Latest available version: {commits["commit"]["commit"]["author"]["date"]}')
+                log.info(f'Latest available version: {commits["commit"]["sha"]} {commits["commit"]["commit"]["author"]["date"]}')
         if not args.noupdate:
             log.info('Updating Wiki')
             update(os.path.join(os.path.dirname(__file__), "wiki"))
@@ -344,6 +351,8 @@ def check_version():
 
 # check if we can run setup in quick mode
 def check_timestamp():
+    if not quick_allowed:
+        return False
     if not os.path.isfile('setup.log'):
         return False
     setup_time = os.path.getmtime('setup.log')
@@ -364,6 +373,7 @@ def parse_args():
     if vars(parser)['_option_string_actions'].get('--debug', None) is not None:
         return
     parser.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
+    parser.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     parser.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
     parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
     parser.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
@@ -372,11 +382,24 @@ def parse_args():
     args = parser.parse_args()
 
 
+def git_reset():
+    log.warning('Running GIT reset')
+    global quick_allowed # pylint: disable=global-statement
+    quick_allowed = False
+    git('merge --abort')
+    git('fetch --all')
+    git('reset --hard origin/master')
+    git('checkout master')
+    log.info('GIT reset complete')
+
+
 # entry method when used as module
 def run_setup():
     setup_logging()
     check_python()
-    if check_timestamp() and not args.upgrade:
+    if args.reset:
+        git_reset()
+    if check_timestamp():
         log.info('No changes detected: quick launch active')
         return
     log.info("Running setup")
