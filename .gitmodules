@@ -42,9 +42,6 @@
 [submodule "extensions-builtin/stable-diffusion-webui-rembg"]
 	path = extensions-builtin/stable-diffusion-webui-rembg
 	url = https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg
-[submodule "extensions-builtin/model-keyword"]
-	path = extensions-builtin/model-keyword
-	url = https://github.com/mix1009/model-keyword
 [submodule "extensions-builtin/a1111-sd-webui-lycoris"]
 	path = extensions-builtin/a1111-sd-webui-lycoris
 	url = https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris
