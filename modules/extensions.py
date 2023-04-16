@@ -1,20 +1,23 @@
 import os
-import sys
-import traceback
-
 import time
 import git
 
-from modules import paths, shared
+from modules import shared, errors
 from modules.paths_internal import extensions_dir, extensions_builtin_dir
 
 extensions = []
 
-if not os.path.exists(paths.extensions_dir):
-    os.makedirs(paths.extensions_dir)
+if not os.path.exists(extensions_dir):
+    os.makedirs(extensions_dir)
+
 
 def active():
-    return [x for x in extensions if x.enabled]
+    if shared.opts.disable_all_extensions == "all":
+        return []
+    elif shared.opts.disable_all_extensions == "extra":
+        return [x for x in extensions if x.enabled and x.is_builtin]
+    else:
+        return [x for x in extensions if x.enabled]
 
 
 class Extension:
@@ -26,21 +29,28 @@ class Extension:
         self.can_update = False
         self.is_builtin = is_builtin
         self.version = ''
+        self.remote = None
+        self.have_info_from_repo = False
+
+    def read_info_from_repo(self):
+        if self.have_info_from_repo:
+            return
+
+        self.have_info_from_repo = True
 
         repo = None
         try:
-            if os.path.exists(os.path.join(path, ".git")):
-                repo = git.Repo(path)
-        except Exception:
-            print(f"Error reading github repository info from {path}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            if os.path.exists(os.path.join(self.path, ".git")):
+                repo = git.Repo(self.path)
+        except Exception as e:
+            errors.display(e, f'github info from {self.path}')
 
         if repo is None or repo.bare:
             self.remote = None
         else:
             try:
-                self.remote = next(repo.remote().urls, None)
                 self.status = 'unknown'
+                self.remote = next(repo.remote().urls, None)
                 head = repo.head.commit
                 ts = time.asctime(time.gmtime(repo.head.commit.committed_date))
                 self.version = f'{head.hexsha[:8]} ({ts})'
@@ -85,11 +95,15 @@ class Extension:
 def list_extensions():
     extensions.clear()
 
-    if not os.path.isdir(paths.extensions_dir):
+    if not os.path.isdir(extensions_dir):
         return
 
+    if shared.opts.disable_all_extensions == "all" or shared.opts.disable_all_extensions == "extra":
+        shared.log.warning("Option set: Disable all extensions")
+
     extension_paths = []
-    for dirname in [paths.extensions_dir, paths.extensions_builtin_dir]:
+    extension_names = []
+    for dirname in [extensions_builtin_dir, extensions_dir]:
         if not os.path.isdir(dirname):
             return
 
@@ -97,10 +111,12 @@ def list_extensions():
             path = os.path.join(dirname, extension_dirname)
             if not os.path.isdir(path):
                 continue
-
-            extension_paths.append((extension_dirname, path, dirname == paths.extensions_builtin_dir))
+            if extension_dirname in extension_names:
+                shared.log.info(f'Skipping conflicting extension: {path}')
+                continue
+            extension_names.append(extension_dirname)
+            extension_paths.append((extension_dirname, path, dirname == extensions_builtin_dir))
 
     for dirname, path, is_builtin in extension_paths:
         extension = Extension(name=dirname, path=path, enabled=dirname not in shared.opts.disabled_extensions, is_builtin=is_builtin)
         extensions.append(extension)
-

@@ -1,15 +1,11 @@
 import base64
-import html
 import io
-import math
 import os
 import re
-from pathlib import Path
 
 import gradio as gr
 from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks
-import tempfile
 from PIL import Image
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
@@ -89,7 +85,14 @@ def add_paste_fields(tabname, init_img, fields, override_settings_component=None
 def create_buttons(tabs_list):
     buttons = {}
     for tab in tabs_list:
-        buttons[tab] = gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab")
+        name = tab
+        if name == 'txt2img':
+            name = 'text'
+        elif name == 'img2img':
+            name = 'image'
+        elif name == 'extras':
+            name = 'process'
+        buttons[tab] = gr.Button(f"➠ {name}", elem_id=f"{tab}_tab")
     return buttons
 
 
@@ -318,7 +321,6 @@ def create_override_settings_dict(text_pairs):
     """
 
     res = {}
-
     params = {}
     for pair in text_pairs:
         k, v = pair.split(":", maxsplit=1)
@@ -410,5 +412,3 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         inputs=[],
         outputs=[],
     )
-
-

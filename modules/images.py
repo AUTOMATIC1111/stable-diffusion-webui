@@ -1,6 +1,4 @@
 import datetime
-import sys
-import traceback
 
 import pytz
 import io
@@ -12,8 +10,7 @@ import re
 import numpy as np
 import piexif
 import piexif.helper
-from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
-from fonts.ttf import Roboto
+from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
 import string
 import json
 import hashlib
@@ -144,9 +141,9 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
     def get_font(fontsize):
         try:
-            return ImageFont.truetype(opts.font or Roboto, fontsize)
+            return ImageFont.truetype(opts.font or 'javascript/roboto.ttf', fontsize)
         except Exception:
-            return ImageFont.truetype(Roboto, fontsize)
+            return ImageFont.truetype('javascript/roboto.ttf', fontsize)
 
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for i, line in enumerate(lines):
@@ -261,9 +258,12 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
 
         if scale > 1.0:
             upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
-            assert len(upscalers) > 0, f"could not find upscaler named {upscaler_name}"
+            if len(upscalers) == 0:
+                upscaler = shared.sd_upscalers[0]
+                print(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
+            else:
+                upscaler = upscalers[0]
 
-            upscaler = upscalers[0]
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
 
         if im.width != w or im.height != h:
@@ -418,10 +418,9 @@ class FilenameGenerator:
             if fun is not None:
                 try:
                     replacement = fun(self, *pattern_args)
-                except Exception:
+                except Exception as e:
                     replacement = None
-                    print(f"Error adding [{pattern}] to filename", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
+                    errors.display(e, 'filename pattern')
 
                 if replacement is not None:
                     res += str(replacement)
@@ -488,6 +487,9 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             If a text file is saved for this image, this will be its full path. Otherwise None.
     """
     namegen = FilenameGenerator(p, seed, prompt, image)
+
+    if path is None: # set default path to avoid errors when functions are triggered manually or via api and param is not set
+        path = opts.outdir_save
 
     if save_to_dirs is None:
         save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
@@ -582,20 +584,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     image.already_saved_as = fullfn
 
-    oversize = image.width > opts.target_side_length or image.height > opts.target_side_length
-    if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > opts.img_downscale_threshold * 1024 * 1024):
-        ratio = image.width / image.height
-
-        if oversize and ratio > 1:
-            image = image.resize((round(opts.target_side_length), round(image.height * opts.target_side_length / image.width)), LANCZOS)
-        elif oversize:
-            image = image.resize((round(image.width * opts.target_side_length / image.height), round(opts.target_side_length)), LANCZOS)
-
-        try:
-            _atomically_save_image(image, fullfn_without_extension, ".jpg")
-        except Exception as e:
-            errors.display(e, "saving image as downscaled JPG")
-
     if opts.save_txt and info is not None:
         txt_fullfn = f"{fullfn_without_extension}.txt"
         with open(txt_fullfn, "w", encoding="utf8") as file:
@@ -607,39 +595,62 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     return fullfn, txt_fullfn
 
+def safe_decode_string(s: bytes):
+    remove_prefix = lambda text, prefix: text[len(prefix):] if text.startswith(prefix) else text
+    for encoding in ['utf-8', 'utf-16', 'ascii', 'latin_1', 'cp1252', 'cp437']: # try different encodings
+        try:
+            decoded = s.decode(encoding, errors="strict")
+            val = remove_prefix(decoded, 'UNICODE') # remove silly prefix added by old pnginfo/exif encoding
+            val = remove_prefix(val, 'ASCII')
+            val = re.sub(r'[\x00-\x09]', '', val).strip() # remove remaining special characters
+            if len(val) > 1024: # limit string length
+                val = val[:1024]
+            if len(val) == 0: # remove empty strings
+                val = None
+            # if not all(ord(c) < 128 for c in decoded): # only allow 7-bit ascii characters
+            #    val = None
+            return val 
+        except:
+            pass
+    return None
+
 
 def read_info_from_image(image):
     items = image.info or {}
-
     geninfo = items.pop('parameters', None)
 
     if "exif" in items:
         exif = piexif.load(items["exif"])
-        exif_comment = (exif or {}).get("Exif", {}).get(piexif.ExifIFD.UserComment, b'')
-        try:
-            exif_comment = piexif.helper.UserComment.load(exif_comment)
-        except ValueError:
-            exif_comment = exif_comment.decode('utf8', errors="ignore")
+        for _key, subkey in exif.items():
+            if isinstance(subkey, dict):
+                for key, val in subkey.items():
+                    if isinstance(val, bytes): # decode bytestring
+                        val = safe_decode_string(val)
+                    if isinstance(val, tuple) and isinstance(val[0], int) and isinstance(val[1], int): # convert camera ratios
+                        val = round(val[0] / val[1], 2)
+                    if val is not None and key in ExifTags.TAGS: # add known tags
+                        items[ExifTags.TAGS[key]] = val
+                        if ExifTags.TAGS[key] == 'UserComment': # add geninfo from UserComment
+                            geninfo = val
+                    elif val is not None and key in ExifTags.GPSTAGS:
+                        items[ExifTags.GPSTAGS[key]] = val
 
-        if exif_comment:
-            items['exif comment'] = exif_comment
-            geninfo = exif_comment
+    for key, val in items.items():
+        if isinstance(val, bytes): # decode bytestring
+            items[key] = safe_decode_string(val)
 
-        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
-                      'loop', 'background', 'timestamp', 'duration']:
-            items.pop(field, None)
+    for key in ['exif', 'ExifOffset', 'JpegIFOffset', 'JpegIFByteCount', 'ExifVersion', 'icc_profile', 'jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'adobe', 'photoshop', 'loop', 'duration']: # remove unwanted tags
+        items.pop(key, None)
 
     if items.get("Software", None) == "NovelAI":
         try:
             json_info = json.loads(items["Comment"])
             sampler = sd_samplers.samplers_map.get(json_info["sampler"], "Euler a")
-
             geninfo = f"""{items["Description"]}
 Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
-        except Exception:
-            print("Error parsing NovelAI image generation parameters:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+        except Exception as e:
+            errors.display(e, 'novelai image parser')
 
     return geninfo, items
 

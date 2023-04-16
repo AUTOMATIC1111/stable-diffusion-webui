@@ -1,8 +1,6 @@
 import os
-import sys
-import traceback
 import importlib.util
-from types import ModuleType
+import modules.errors as errors
 
 
 def load_module(path):
@@ -27,6 +25,5 @@ def preload_extensions(extensions_dir, parser):
             if hasattr(module, 'preload'):
                 module.preload(parser)
 
-        except Exception:
-            print(f"Error running preload() for {preload_script}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+        except Exception as e:
+            errors.display(e, f'extension preload: {preload_script}')

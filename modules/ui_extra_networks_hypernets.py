@@ -26,5 +26,4 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
             }
 
     def allowed_directories_for_previews(self):
-        return [shared.cmd_opts.hypernetwork_dir]
-
+        return [shared.opts.hypernetwork_dir]

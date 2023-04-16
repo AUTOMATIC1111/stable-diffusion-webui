@@ -1,6 +1,4 @@
 import math
-import sys
-import traceback
 import psutil
 
 import torch
@@ -15,13 +13,12 @@ from modules.hypernetworks import hypernetwork
 from .sub_quadratic_attention import efficient_dot_product_attention
 
 
-if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
+if shared.opts.cross_attention_optimization == "xFormers":
     try:
         import xformers.ops
         shared.xformers_available = True
     except Exception:
-        print("Cannot import xformers", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        pass
 
 
 def get_available_vram():
@@ -260,7 +257,7 @@ def sub_quad_attention_forward(self, x, context=None, mask=None):
     if shared.opts.upcast_attn:
         q, k = q.float(), k.float()
 
-    x = sub_quad_attention(q, k, v, q_chunk_size=shared.cmd_opts.sub_quad_q_chunk_size, kv_chunk_size=shared.cmd_opts.sub_quad_kv_chunk_size, chunk_threshold=shared.cmd_opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
+    x = sub_quad_attention(q, k, v, q_chunk_size=shared.opts.sub_quad_q_chunk_size, kv_chunk_size=shared.opts.sub_quad_kv_chunk_size, chunk_threshold=shared.opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
 
     x = x.to(dtype)
 
@@ -309,7 +306,7 @@ def sub_quad_attention(q, k, v, q_chunk_size=1024, kv_chunk_size=None, kv_chunk_
 
 
 def get_xformers_flash_attention_op(q, k, v):
-    if not shared.cmd_opts.xformers_flash_attention:
+    if 'xFormers enable flash Attention' not in shared.opts.cross_attention_options:
         return None
 
     try:
@@ -393,63 +390,63 @@ def scaled_dot_product_no_mem_attention_forward(self, x, context=None, mask=None
         return scaled_dot_product_attention_forward(self, x, context, mask)
 
 def cross_attention_attnblock_forward(self, x):
-        h_ = x
-        h_ = self.norm(h_)
-        q1 = self.q(h_)
-        k1 = self.k(h_)
-        v = self.v(h_)
+    h_ = x
+    h_ = self.norm(h_)
+    q1 = self.q(h_)
+    k1 = self.k(h_)
+    v = self.v(h_)
 
-        # compute attention
-        b, c, h, w = q1.shape
+    # compute attention
+    b, c, h, w = q1.shape
 
-        q2 = q1.reshape(b, c, h*w)
-        del q1
+    q2 = q1.reshape(b, c, h*w)
+    del q1
 
-        q = q2.permute(0, 2, 1)   # b,hw,c
-        del q2
+    q = q2.permute(0, 2, 1)   # b,hw,c
+    del q2
 
-        k = k1.reshape(b, c, h*w) # b,c,hw
-        del k1
+    k = k1.reshape(b, c, h*w) # b,c,hw
+    del k1
 
-        h_ = torch.zeros_like(k, device=q.device)
+    h_ = torch.zeros_like(k, device=q.device)
 
-        mem_free_total = get_available_vram()
+    mem_free_total = get_available_vram()
 
-        tensor_size = q.shape[0] * q.shape[1] * k.shape[2] * q.element_size()
-        mem_required = tensor_size * 2.5
-        steps = 1
+    tensor_size = q.shape[0] * q.shape[1] * k.shape[2] * q.element_size()
+    mem_required = tensor_size * 2.5
+    steps = 1
 
-        if mem_required > mem_free_total:
-            steps = 2**(math.ceil(math.log(mem_required / mem_free_total, 2)))
+    if mem_required > mem_free_total:
+        steps = 2**(math.ceil(math.log(mem_required / mem_free_total, 2)))
 
-        slice_size = q.shape[1] // steps if (q.shape[1] % steps) == 0 else q.shape[1]
-        for i in range(0, q.shape[1], slice_size):
-            end = i + slice_size
+    slice_size = q.shape[1] // steps if (q.shape[1] % steps) == 0 else q.shape[1]
+    for i in range(0, q.shape[1], slice_size):
+        end = i + slice_size
 
-            w1 = torch.bmm(q[:, i:end], k)     # b,hw,hw    w[b,i,j]=sum_c q[b,i,c]k[b,c,j]
-            w2 = w1 * (int(c)**(-0.5))
-            del w1
-            w3 = torch.nn.functional.softmax(w2, dim=2, dtype=q.dtype)
-            del w2
+        w1 = torch.bmm(q[:, i:end], k)     # b,hw,hw    w[b,i,j]=sum_c q[b,i,c]k[b,c,j]
+        w2 = w1 * (int(c)**(-0.5))
+        del w1
+        w3 = torch.nn.functional.softmax(w2, dim=2, dtype=q.dtype)
+        del w2
 
-            # attend to values
-            v1 = v.reshape(b, c, h*w)
-            w4 = w3.permute(0, 2, 1)   # b,hw,hw (first hw of k, second of q)
-            del w3
+        # attend to values
+        v1 = v.reshape(b, c, h*w)
+        w4 = w3.permute(0, 2, 1)   # b,hw,hw (first hw of k, second of q)
+        del w3
 
-            h_[:, :, i:end] = torch.bmm(v1, w4)     # b, c,hw (hw of q) h_[b,c,j] = sum_i v[b,c,i] w_[b,i,j]
-            del v1, w4
+        h_[:, :, i:end] = torch.bmm(v1, w4)     # b, c,hw (hw of q) h_[b,c,j] = sum_i v[b,c,i] w_[b,i,j]
+        del v1, w4
 
-        h2 = h_.reshape(b, c, h, w)
-        del h_
+    h2 = h_.reshape(b, c, h, w)
+    del h_
 
-        h3 = self.proj_out(h2)
-        del h2
+    h3 = self.proj_out(h2)
+    del h2
 
-        h3 += x
+    h3 += x
 
-        return h3
-    
+    return h3
+
 def xformers_attnblock_forward(self, x):
     try:
         h_ = x
@@ -508,7 +505,7 @@ def sub_quad_attnblock_forward(self, x):
     q = q.contiguous()
     k = k.contiguous()
     v = v.contiguous()
-    out = sub_quad_attention(q, k, v, q_chunk_size=shared.cmd_opts.sub_quad_q_chunk_size, kv_chunk_size=shared.cmd_opts.sub_quad_kv_chunk_size, chunk_threshold=shared.cmd_opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
+    out = sub_quad_attention(q, k, v, q_chunk_size=shared.opts.sub_quad_q_chunk_size, kv_chunk_size=shared.opts.sub_quad_kv_chunk_size, chunk_threshold=shared.opts.sub_quad_chunk_threshold, use_checkpoint=self.training)
     out = rearrange(out, 'b (h w) c -> b c h w', h=h)
     out = self.proj_out(out)
     return x + out

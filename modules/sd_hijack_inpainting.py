@@ -1,8 +1,4 @@
-import os
 import torch
-
-from einops import repeat
-from omegaconf import ListConfig
 
 import ldm.models.diffusion.ddpm
 import ldm.models.diffusion.ddim
@@ -67,6 +63,7 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
         if quantize_denoised:
             pred_x0, _, *_ = self.model.first_stage_model.quantize(pred_x0)
         if dynamic_threshold is not None:
+            from ldm.models.diffusion.sampling_util import norm_thresholding
             pred_x0 = norm_thresholding(pred_x0, dynamic_threshold)
         # direction pointing to x_t
         dir_xt = (1. - a_prev - sigma_t**2).sqrt() * e_t

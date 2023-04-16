@@ -1,6 +1,5 @@
 import os
 import sys
-import traceback
 from collections import namedtuple
 from pathlib import Path
 import re
@@ -11,7 +10,6 @@ import torch.hub
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
-import modules.shared as shared
 from modules import devices, paths, shared, lowvram, modelloader, errors
 
 blip_image_eval_size = 384
@@ -109,9 +107,9 @@ class InterrogateModels:
         import clip
 
         if self.running_on_cpu:
-            model, preprocess = clip.load(clip_model_name, device="cpu", download_root=shared.cmd_opts.clip_models_path)
+            model, preprocess = clip.load(clip_model_name, device="cpu", download_root=shared.opts.clip_models_path)
         else:
-            model, preprocess = clip.load(clip_model_name, download_root=shared.cmd_opts.clip_models_path)
+            model, preprocess = clip.load(clip_model_name, download_root=shared.opts.clip_models_path)
 
         model.eval()
         model = model.to(devices.device_interrogate)
@@ -216,9 +214,8 @@ class InterrogateModels:
                         else:
                             res += ", " + match
 
-        except Exception:
-            print("Error interrogating", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+        except Exception as e:
+            errors.display(e, 'interrogate')
             res += "<error>"
 
         self.unload()
