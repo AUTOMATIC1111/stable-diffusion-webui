@@ -1698,6 +1698,8 @@ def javascript_html():
     inline = ''
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
+    elif opts.gradio_theme == 'black-orange':
+        inline += f"set_theme('dark');"
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
         head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'

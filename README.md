@@ -37,6 +37,8 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 - Majority of settings configurable via UI without the need for command line flags  
   e.g, cross-optimization methods, system folders, etc.  
 
+### UI
+
 ### Optimizations
 
 - Optimized for `Torch` 2.0  
@@ -63,6 +65,8 @@ Hand-picked list of extensions that are deeply integrated into core workflows:
 
 ### User Interface
 
+- Includes support for **Gradio themes**  
+  *Settings* -> *User interface* -> *UI theme*
 - Includes updated **UI**: reskinned and reorganized  
   Black and orange dark theme with fixed width options panels and larger previews  
 

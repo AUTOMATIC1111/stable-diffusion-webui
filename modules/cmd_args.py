@@ -8,7 +8,7 @@ parser.add_argument("-f", action='store_true', help=argparse.SUPPRESS)  # allows
 parser.add_argument("--ui-settings-file", type=str, help=argparse.SUPPRESS, default=os.path.join(data_path, 'config.json'))
 parser.add_argument("--ui-config-file", type=str, help=argparse.SUPPRESS, default=os.path.join(data_path, 'ui-config.json'))
 parser.add_argument("--config", type=str, default=sd_default_config, help=argparse.SUPPRESS)
-parser.add_argument("--theme", type=str, help=argparse.SUPPRESS, default='dark')
+parser.add_argument("--theme", type=str, help=argparse.SUPPRESS, default=None)
 
 parser.add_argument("--no-half", action='store_true', help="Do not switch the model to 16-bit floats")
 parser.add_argument("--no-half-vae", action='store_true', help="Do not switch the VAE model to 16-bit floats")
