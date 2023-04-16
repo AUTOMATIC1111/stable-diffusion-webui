@@ -333,7 +333,8 @@ def setup_ui(ui, gallery):
     
     # write description to a file
     def save_description(filename,descrip):
-        filename = filename.split('.')[0]+".description.txt"
+        lastDotIndex = filename.rindex('.')
+        filename = filename[0:lastDotIndex]+".description.txt"
         if descrip != "":
             try: 
                 f = open(filename,'w')
