@@ -266,7 +266,10 @@ def install_extensions():
         log.info(f'Extensions enabled: {extensions}')
         for ext in extensions:
             if not args.noupdate:
-                update(os.path.join(extensions_dir, ext))
+                try:
+                    update(os.path.join(extensions_dir, ext))
+                except:
+                    log.error(f'Error updating extension: {os.path.join(extensions_dir, ext)}')
             if not args.skip_extensions:
                 run_extension_installer(os.path.join(extensions_dir, ext))
 
@@ -279,8 +282,11 @@ def install_submodules():
         log.info('Updating submodules')
         submodules = git('submodule').splitlines()
         for submodule in submodules:
-            name = submodule.split()[1].strip()
-            update(name)
+            try:
+                name = submodule.split()[1].strip()
+                update(name)
+            except:
+                log.error(f'Error updating submodule: {submodule}')
 
 
 # install requirements
@@ -343,20 +349,26 @@ def check_version():
         commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master', timeout=10).json()
         if commits['commit']['sha'] != commit:
             if args.upgrade:
-                git('add .')
-                git('stash')
                 global quick_allowed # pylint: disable=global-statement
                 quick_allowed = False
-                update('.')
-                # git('git stash pop')
-                ver = git('log -1 --pretty=format:"%h %ad"')
-                log.info(f'Upgraded to version: {ver}')
+                try:
+                    git('add .')
+                    git('stash')
+                    update('.')
+                    # git('git stash pop')
+                    ver = git('log -1 --pretty=format:"%h %ad"')
+                    log.info(f'Upgraded to version: {ver}')
+                except:
+                    log.error('Error upgrading repository')
             else:
                 log.info(f'Latest available version: {commits["commit"]["sha"]} {commits["commit"]["commit"]["author"]["date"]}')
         if not args.noupdate:
             log.info('Updating Wiki')
-            update(os.path.join(os.path.dirname(__file__), "wiki"))
-            update(os.path.join(os.path.dirname(__file__), "wiki", "origin-wiki"))
+            try:
+                update(os.path.join(os.path.dirname(__file__), "wiki"))
+                update(os.path.join(os.path.dirname(__file__), "wiki", "origin-wiki"))
+            except:
+                log.error('Error updating wiki')
     except Exception as e:
         log.error(f'Failed to check version: {e} {commits}')
 
