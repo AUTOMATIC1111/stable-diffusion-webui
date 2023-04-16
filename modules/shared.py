@@ -3,7 +3,6 @@ import json
 import os
 import sys
 import time
-import requests
 
 import gradio as gr
 import tqdm
@@ -18,7 +17,7 @@ import modules.paths_internal as paths
 
 from setup import log as setup_log # pylint: disable=E0611
 errors.install(gr)
-demo = None
+demo: gr.Blocks = None
 log = setup_log
 
 parser = cmd_args.parser
@@ -398,7 +397,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
-    "gradio_theme": OptionInfo("Default", "UI theme", gr.Dropdown, lambda: {"choices": ["black-orange", "gradio/default"] + gradio_hf_hub_themes}),
+    "gradio_theme": OptionInfo("black-orange", "UI theme", gr.Dropdown, lambda: {"choices": ["black-orange", "gradio/default"] + gradio_hf_hub_themes}),
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {
@@ -629,7 +628,7 @@ def reload_gradio_theme(theme_name=None):
     else:
         try:
             gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
-        except requests.exceptions.ConnectionError:
+        except:
             print("Theme download error accessing HuggingFace")
             gradio_theme = gr.themes.Default()
     print(f'Loading theme: {theme_name}')

@@ -1,9 +1,9 @@
 import os
 import re
-import time
 import signal
 import warnings
 import logging
+from rich import print # pylint: disable=W0622
 from setup import log
 from modules import timer, errors
 
@@ -164,7 +164,7 @@ def create_api(app):
     return api
 
 
-def webui():
+def start_ui():
     initialize()
     if shared.opts.clean_temp_dir_at_start:
         ui_tempdir.cleanup_tmpdr()
@@ -202,6 +202,7 @@ def webui():
     # shared.demo.config is instance of uvicorn.Config
     # shared.demo.app is instance of ASGIApp
 
+
     cmd_opts.autolaunch = False
     startup_timer.record("start")
 
@@ -215,10 +216,24 @@ def webui():
     modules.script_callbacks.app_started_callback(shared.demo, app)
     startup_timer.record("scripts app_started_callback")
 
-    load_model()
 
+def stop_ui():
+    try:
+        shared.demo.server.should_exit = True
+        shared.demo.server.force_exit = True
+        shared.demo.server.close()
+    except:
+        print('Uvicorn shutdown')
+    shared.demo.close(verbose=True)
+
+
+def webui():
+    start_ui()
+
+    load_model()
     log.info(f"Startup time: {startup_timer.summary()}")
 
+    import time
     while True:
         time.sleep(0.1)
 
