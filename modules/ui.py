@@ -582,7 +582,7 @@ def create_ui():
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
             restore_progress_button.click(
-              fn=lambda: restore_progress_call(),
+              fn=restore_progress_call,
               _js="() => restoreProgress('txt2img')",
               inputs=[],
               outputs=[
@@ -914,7 +914,7 @@ def create_ui():
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
             restore_progress_button.click(
-              fn=lambda: restore_progress_call(),
+              fn=restore_progress_call,
               _js="() => restoreProgress('img2img')",
               inputs=[],
               outputs=[

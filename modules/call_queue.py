@@ -4,6 +4,7 @@ import threading
 import traceback
 import time
 
+import gradio as gr
 from modules import shared, progress
 
 queue_lock = threading.Lock()
@@ -20,41 +21,45 @@ def wrap_queued_call(func):
 
 
 def wrap_gradio_gpu_call(func, extra_outputs=None):
-    def f(*args, **kwargs):
+    def f(request: gr.Request, *args, **kwargs):
+        user = request.username
 
         # if the first argument is a string that says "task(...)", it is treated as a job id
         if len(args) > 0 and type(args[0]) == str and args[0][0:5] == "task(" and args[0][-1] == ")":
             id_task = args[0]
-            progress.add_task_to_queue(id_task)
+            progress.add_task_to_queue(user, id_task)
         else:
             id_task = None
 
         with queue_lock:
             shared.state.begin()
-            progress.start_task(id_task)
+            progress.start_task(user, id_task)
 
             try:
                 res = func(*args, **kwargs)
             finally:
-                progress.finish_task(id_task)
-                progress.set_last_task_result(id_task, res)
+                progress.finish_task(user, id_task)
+                progress.set_last_task_result(user, id_task, res)
 
             shared.state.end()
 
         return res
 
-    return wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True)
+    return wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True, add_request=True)
 
 
-def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
-    def f(*args, extra_outputs_array=extra_outputs, **kwargs):
+def wrap_gradio_call(func, extra_outputs=None, add_stats=False, add_request=False):
+    def f(request: gr.Request, *args, extra_outputs_array=extra_outputs, **kwargs):
         run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
         if run_memmon:
             shared.mem_mon.monitor()
         t = time.perf_counter()
 
         try:
-            res = list(func(*args, **kwargs))
+            if add_request:
+              res = list(func(request, *args, **kwargs))
+            else: 
+              res = list(func(*args, **kwargs))
         except Exception as e:
             # When printing out our debug argument list, do not print out more than a MB of text
             max_debug_str_len = 131072 # (1024*1024)/8
