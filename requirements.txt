@@ -9,7 +9,6 @@ basicsr
 bitsandbytes
 blendmodes
 clean-fid
-clip
 easydev
 extcolors
 facexlib
@@ -29,6 +28,7 @@ lmdb
 lpips
 numpy
 omegaconf
+open-clip-torch
 opencv-contrib-python
 opencv-python
 piexif

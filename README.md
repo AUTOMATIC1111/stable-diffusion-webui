@@ -19,14 +19,15 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 
 ### Fork does differ in few things
 
-- New logger
+- New installer  
+- New logger  
 - New error and exception handlers  
-- Built-in performance profiler  
 - Enhanced environment tuning  
+- Optimized startup and models lazy-loading  
+- Built-in performance profiler  
 - Updated libraries to latest known compatible versions  
 - Includes opinionated **System** and **Options** configuration  
 - Does not rely on `Accelerate` as it only affects distributed systems  
-- Optimized startup  
   Gradio web server will be initialized much earlier which model load is done in the background  
   Faster model loading plus ability to fallback on corrupt models  
 - Uses simplified folder structure  
@@ -36,34 +37,17 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 - Majority of settings configurable via UI without the need for command line flags  
   e.g, cross-optimization methods, system folders, etc.  
 
-### User Interface
-
-- Includes updated **UI**: reskinned and reorganized  
-  Black and orange dark theme with fixed width options panels and larger previews  
-
 ### Optimizations
 
 - Optimized for `Torch` 2.0  
 - Runs with `SDP` memory attention enabled by default if supported by system  
+  *Note*: `xFormers` and other cross-optimization methods are still available  
 - Auto-adjust parameters when running on **CPU** or **CUDA**  
   *Note:* AMD and M1 platforms are supported, but without out-of-the-box optimizations  
 
-### Removed
-
-- Drops compatibility with older versions of `python` and requires **3.9** or **3.10**  
-- Drops localizations  
-- Drops automated tests  
-
-### Integrated CLI/API tools
-
-Fork adds extra functionality:
-
-- New skin and UI layout  
-- Ships with set of **CLI** tools that rely on *SD API* for execution:  
-  e.g. `generate`, `train`, `bench`, etc.  
-  [Full list](<cli/>)
-
 ### Integrated Extensions
+
+Hand-picked list of extensions that are deeply integrated into core workflows:
 
 - [System Info](https://github.com/vladmandic/sd-extension-system-info)
 - [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
@@ -76,6 +60,26 @@ Fork adds extra functionality:
 - [Steps Animation](https://github.com/vladmandic/sd-extension-steps-animation)
 - [Seed Travel](https://github.com/yownas/seed_travel)
 - [Model Keyword](https://github.com/mix1009/model-keyword)
+- [Multi-Diffusion Upscaler](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111)
+
+### User Interface
+
+- Includes updated **UI**: reskinned and reorganized  
+  Black and orange dark theme with fixed width options panels and larger previews  
+
+### Removed
+
+- Drops compatibility with older versions of `python` and requires **3.9** or **3.10**  
+- Drops localizations  
+
+### Integrated CLI/API tools
+
+Fork adds extra functionality:
+
+- New skin and UI layout  
+- Ships with set of **CLI** tools that rely on *SD API* for execution:  
+  e.g. `generate`, `train`, `bench`, etc.  
+  [Full list](<cli/>)
 
 <br>
 

@@ -51,11 +51,14 @@ def setup_logging(clean=False):
 
 
 # check if package is installed
-def installed(package):
+def installed(package, friendly: str = None):
     import pkg_resources
     ok = True
     try:
-        pkgs = [p for p in package.split() if not p.startswith('-') and not p.startswith('git+') and not p.startswith('http') and not p.startswith('=')]
+        if friendly:
+            pkgs = [friendly]
+        else:
+            pkgs = [p for p in package.split() if not p.startswith('-') and not p.startswith('git+') and not p.startswith('http') and not p.startswith('=')]
         for pkg in pkgs:
             p = pkg.split('==')
             spec = pkg_resources.working_set.by_key.get(p[0], None) # more reliable than importlib
@@ -64,15 +67,15 @@ def installed(package):
             if spec is None:
                 spec = pkg_resources.working_set.by_key.get(p[0].replace('_', '-'), None) # check name variations
             ok = ok and spec is not None
-            if ok and len(p) > 1:
+            if ok:
                 version = pkg_resources.get_distribution(p[0]).version
-                ok = ok and version == p[1]
-                if not ok:
-                    log.warning(f"Package wrong version found: {p[0]} {version} required {p[1]}")
-            # if ok:
-            #   log.debug(f"Package already installed: {p[0]} {version}")
-            # else:
-            #    log.debug(f"Package not installed: {p[0]} {version}")
+                log.debug(f"Package version found: {p[0]} {version}")
+                if len(p) > 1:
+                    ok = ok and version == p[1]
+                    if not ok:
+                        log.warning(f"Package wrong version: {p[0]} required {p[1]}")
+            else:
+                log.debug(f"Package version not found: {p[0]}")
         return ok
     except ModuleNotFoundError:
         log.debug(f"Package not installed: {pkgs}")
@@ -80,7 +83,7 @@ def installed(package):
 
 
 # install package using pip if not already installed
-def install(package):
+def install(package, friendly: str = None):
     def pip(arg: str):
         log.debug(f"Running pip: {arg}")
         result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -94,7 +97,7 @@ def install(package):
             log.debug(f'Pip output: {txt}')
         return txt
 
-    if not installed(package):
+    if not installed(package, friendly):
         pip(f"install --upgrade {package}")
 
 
@@ -182,12 +185,12 @@ def check_torch():
 # install required packages
 def install_packages():
     log.info('Installing packages')
-    gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
+    # gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
+    # openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
+    # install(gfpgan_package, 'gfpgan')
+    # install(openclip_package, 'open-clip-torch')
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
-    openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
-    install(gfpgan_package)
-    install(clip_package)
-    install(openclip_package)
+    install(clip_package, 'clip')
     try:
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers')
         install(f'--no-deps {xformers_package}')
@@ -310,7 +313,7 @@ def set_environment():
 
 
 def check_extensions():
-    newest_all = 0
+    newest_all = os.path.getmtime('requirements.txt')
     for folder in ['extensions-builtin', 'extensions']:
         extensions_dir = os.path.join(os.path.dirname(__file__), folder)
         extensions = list_extensions(extensions_dir)
@@ -369,9 +372,7 @@ def check_timestamp():
         lines = f.readlines()
         for line in lines:
             if 'Setup complete without errors' in line:
-                setup_time = line.split(' ')[0]
-                return True
-    # setup_time = os.path.getmtime('setup.log')
+                setup_time = int(line.split(' ')[-1])
     version_time = int(git('log -1 --pretty=format:"%at"'))
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
     if setup_time == -1:
@@ -380,6 +381,7 @@ def check_timestamp():
     if setup_time < version_time:
         return False
     extension_time = check_extensions()
+    log.debug(f'Latest extensions time: {time.ctime(extension_time)}')
     if setup_time < extension_time:
         return False
     return True

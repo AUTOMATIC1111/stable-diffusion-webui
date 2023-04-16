@@ -7,7 +7,8 @@ Stuff to be fixed...
 - Reconnect UI to ops in progress on browser restart  
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Cleanup & integrate CSS into single file
-- Replace EXIF metadata handler
+- Allow user themes
+- Replace PngInfo/EXIF metadata handler
 - Pick & merge PRs from main repo
 - Create new GitHub hooks/actions for CI/CD  
 - Investigate integration with `Torch-DirectML`
