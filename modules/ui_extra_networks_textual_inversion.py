@@ -18,11 +18,12 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         if len(embeddings) == 0: # maybe not loaded yet, so lets just look them up
             for root, _dirs, fns in os.walk(shared.opts.embeddings_dir):
                 for fn in fns:
-                    embedding = Embedding(0, fn)
-                    embedding.filename = os.path.join(root, fn)
-                    embeddings.append(embedding)
+                    if fn.lower().endswith(".pt"):
+                        embedding = Embedding(0, fn)
+                        embedding.filename = os.path.join(root, fn)
+                        embeddings.append(embedding)
         for embedding in embeddings:
-            path, ext = os.path.splitext(embedding.filename)
+            path, _ext = os.path.splitext(embedding.filename)
             yield {
                 "name": embedding.name,
                 "filename": embedding.filename,

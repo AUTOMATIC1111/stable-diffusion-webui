@@ -1,4 +1,3 @@
-accelerate
 addict
 aenum
 aiohttp
@@ -30,7 +29,6 @@ numpy
 omegaconf
 open-clip-torch
 opencv-contrib-python
-opencv-python
 piexif
 Pillow
 psutil
@@ -43,7 +41,6 @@ safetensors
 scikit-image
 scipy
 tb_nightly
-timm
 toml
 torch
 torchdiffeq
@@ -53,6 +50,9 @@ tqdm
 voluptuous
 yapf
 
+accelerate==0.18.0
+opencv-python==4.7.0.72
+timm==0.6.13
 diffusers==0.15.0
 einops==0.4.1
 gradio==3.23.0

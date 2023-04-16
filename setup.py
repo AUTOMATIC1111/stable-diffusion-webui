@@ -73,7 +73,7 @@ def installed(package, friendly: str = None):
                 if len(p) > 1:
                     ok = ok and version == p[1]
                     if not ok:
-                        log.warning(f"Package wrong version: {p[0]} required {p[1]}")
+                        log.warning(f"Package wrong version: {p[0]} {version} required {p[1]}")
             else:
                 log.debug(f"Package version not found: {p[0]}")
         return ok
@@ -192,7 +192,7 @@ def install_packages():
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
     install(clip_package, 'clip')
     try:
-        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers')
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
         install(f'--no-deps {xformers_package}')
     except Exception as e:
         log.error(f'Cannot install xformers package: {e}')

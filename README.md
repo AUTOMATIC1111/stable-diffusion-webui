@@ -59,7 +59,6 @@ Hand-picked list of extensions that are deeply integrated into core workflows:
 - [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding)
 - [Steps Animation](https://github.com/vladmandic/sd-extension-steps-animation)
 - [Seed Travel](https://github.com/yownas/seed_travel)
-- [Model Keyword](https://github.com/mix1009/model-keyword)
 - [Multi-Diffusion Upscaler](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111)
 
 ### User Interface
