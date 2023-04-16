@@ -241,7 +241,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "img2img_fix_steps": OptionInfo(False, "With img2img, do exactly the amount of steps the slider specifies (normally you'd do less with less denoising)."),
     "img2img_background_color": OptionInfo("#ffffff", "With img2img, fill image's transparent parts with this color.", ui_components.FormColorPicker, {}),
-    "enable_quantization": OptionInfo(True, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds. Requires restart to apply."),
+    "enable_quantization": OptionInfo(True, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds."),
     "enable_emphasis": OptionInfo(True, "Emphasis: use (text) to make model pay more attention to text and [text] to make it pay less attention"),
     "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),
     "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
@@ -323,7 +323,7 @@ options_templates.update(options_section(('saving-paths', "Image Paths"), {
 options_templates.update(options_section(('upscaling', "Upscaling"), {
     "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI. (Requires restart)", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
+    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI.", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
     "upscaler_for_img2img": OptionInfo("SwinIR_4x", "Upscaler for img2img", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
     "use_old_hires_fix_width_height": OptionInfo(False, "For hires fix, use width/height sliders to set final resolution rather than first pass (disables Upscale by, Resize width/height to)."),
 }))
@@ -395,10 +395,10 @@ options_templates.update(options_section(('ui', "User interface"), {
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
-    "hidden_tabs": OptionInfo([], "Hidden UI tabs (requires restart)", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
+    "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
-    "gradio_theme": OptionInfo("Default", "Gradio theme (requires restart)", gr.Dropdown, lambda: {"choices": ["Default"] + gradio_hf_hub_themes}),
+    "gradio_theme": OptionInfo("Default", "UI theme", gr.Dropdown, lambda: {"choices": ["black-orange", "gradio/default"] + gradio_hf_hub_themes}),
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {
@@ -412,7 +412,7 @@ options_templates.update(options_section(('ui', "Live previews"), {
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
-    "hide_samplers": OptionInfo(["Euler", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ 2M", "DPM fast", "DPM adaptive", "DPM++ 2S a Karras", "DPM++ 2S a", "DPM++ SDE Karras", "DPM2 a Karras", "LMS Karras"], "Hide samplers in user interface (requires restart)", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
+    "hide_samplers": OptionInfo(["Euler", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ 2M", "DPM fast", "DPM adaptive", "DPM++ 2S a Karras", "DPM++ 2S a", "DPM++ SDE Karras", "DPM2 a Karras", "LMS Karras"], "Hide samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
     "eta_ddim": OptionInfo(0.0, "eta (noise multiplier) for DDIM", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "eta_ancestral": OptionInfo(1.0, "eta (noise multiplier) for ancestral samplers", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "ddim_discretize": OptionInfo('uniform', "img2img DDIM discretize", gr.Radio, {"choices": ['uniform', 'quad']}),
@@ -620,21 +620,19 @@ progress_print_out = sys.stdout
 
 gradio_theme = gr.themes.Base()
 
-
 def reload_gradio_theme(theme_name=None):
-    global gradio_theme
+    global gradio_theme # pylint: disable=global-statement
     if not theme_name:
         theme_name = opts.gradio_theme
-
-    if theme_name == "Default":
+    if theme_name == "gradio/default" or theme_name == "black-orange":
         gradio_theme = gr.themes.Default()
     else:
         try:
             gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
         except requests.exceptions.ConnectionError:
-            print("Can't access HuggingFace Hub, falling back to default Gradio theme")
+            print("Theme download error accessing HuggingFace")
             gradio_theme = gr.themes.Default()
-
+    print(f'Loading theme: {theme_name}')
 
 
 class TotalTQDM:
