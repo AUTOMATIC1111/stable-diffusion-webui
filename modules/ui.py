@@ -32,8 +32,8 @@ from modules.textual_inversion import textual_inversion
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.extras
 
+errors.install()
 warnings.filterwarnings("ignore", category=UserWarning)
-
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
@@ -1387,8 +1387,9 @@ def create_ui():
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         with gr.Row():
-            with gr.Column(scale=6):
-                settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
+            settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
+            restart_submit = gr.Button(value="Restart UI", variant='primary', elem_id="restart_submit")
+
 
         result = gr.HTML(elem_id="settings_result")
 
@@ -1525,6 +1526,7 @@ def create_ui():
             inputs=components,
             outputs=[text_settings, result],
         )
+        restart_submit.click(fn=shared.restart_server, _js="restart_reload")
 
         for i, k, item in quicksettings_list:
             component = component_dict[k]

@@ -62,6 +62,7 @@ def compatibility_args(opts, args):
     parser.add_argument("--clip-models-path", type=str, help=argparse.SUPPRESS, default=opts.clip_models_path)
     parser.add_argument("--disable-nan-check", default = True, action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--disable-extension-access", default = False, action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument("--xformers", default = (opts.cross_attention_optimization == "xFormers"), action='store_true', help=argparse.SUPPRESS)
     args = parser.parse_args()
     if vars(parser)['_option_string_actions'].get('--lora-dir', None) is not None:
         args.lora_dir = opts.lora_dir

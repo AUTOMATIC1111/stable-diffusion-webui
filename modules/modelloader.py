@@ -103,6 +103,9 @@ def cleanup_models():
     src_path = os.path.join(root_path, "repositories/latent-diffusion/experiments/pretrained_models/")
     dest_path = os.path.join(models_path, "LDSR")
     move_files(src_path, dest_path)
+    src_path = os.path.join(root_path, "ScuNET")
+    dest_path = os.path.join(models_path, "ScuNET")
+    move_files(src_path, dest_path)
 
 
 def move_files(src_path: str, dest_path: str, ext_filter: str = None):
@@ -134,10 +137,8 @@ forbidden_upscaler_classes = set()
 
 def list_builtin_upscalers():
     load_upscalers()
-
     builtin_upscaler_classes.clear()
     builtin_upscaler_classes.extend(Upscaler.__subclasses__())
-
 
 def forbid_loaded_nonbuiltin_upscalers():
     for cls in Upscaler.__subclasses__():

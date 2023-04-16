@@ -1,10 +1,10 @@
 import os
 import re
+import time
 import signal
 import warnings
 import logging
 from rich import print # pylint: disable=W0622
-from setup import log
 from modules import timer, errors
 
 startup_timer = timer.Timer()
@@ -55,6 +55,7 @@ import modules.ui
 from modules import modelloader
 from modules.shared import cmd_opts, opts
 import modules.hypernetworks.hypernetwork
+from modules.middleware import setup_middleware
 startup_timer.record("libraries")
 
 if cmd_opts.server_name:
@@ -108,19 +109,19 @@ def initialize():
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
         try:
             if not os.path.exists(cmd_opts.tls_keyfile):
-                log.warning("Invalid path to TLS keyfile given")
+                print("Invalid path to TLS keyfile given")
             if not os.path.exists(cmd_opts.tls_certfile):
-                log.warning(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
+                print(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
         except TypeError:
             cmd_opts.tls_keyfile = cmd_opts.tls_certfile = None
-            log.warning("TLS setup invalid, running webui without TLS")
+            print("TLS setup invalid, running webui without TLS")
         else:
-            log.info("Running with TLS")
+            print("Running with TLS")
         startup_timer.record("TLS")
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(_sig, _frame):
-        log.info('Exiting')
+        print('Exiting')
         os._exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)
@@ -133,29 +134,15 @@ def load_model():
         modules.sd_models.load_model()
     except Exception as e:
         errors.display(e, "loading stable diffusion model")
-        log.error("Stable diffusion model failed to load")
+        print("Stable diffusion model failed to load")
         exit(1)
     if shared.sd_model is None:
-        log.error("No stable diffusion model loaded")
+        print("No stable diffusion model loaded")
         exit(1)
     shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
     shared.state.end()
     startup_timer.record("checkpoint")
-
-
-def setup_middleware(app):
-    from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.middleware.gzip import GZipMiddleware
-    app.middleware_stack = None # reset current middleware to allow modifying user provided list
-    app.add_middleware(GZipMiddleware, minimum_size=1024)
-    if cmd_opts.cors_origins and cmd_opts.cors_regex:
-        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_origins.split(','), allow_origin_regex=cmd_opts.cors_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
-    elif cmd_opts.cors_origins:
-        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_origins.split(','), allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
-    elif cmd_opts.cors_regex:
-        app.add_middleware(CORSMiddleware, allow_origin_regex=cmd_opts.cors_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
-    app.build_middleware_stack() # rebuild middleware stack on-the-fly
 
 
 def create_api(app):
@@ -195,19 +182,10 @@ def start_ui():
         prevent_thread_lock=True,
         favicon_path='automatic.ico',
     )
-    # for dep in shared.demo.dependencies:
-    #    dep['show_progress'] = False  # disable gradio css animation on component update
-    # app is instance of FastAPI server
-    # shared.demo.server is instance of gradio class which inherits from uvicorn.Server
-    # shared.demo.config is instance of uvicorn.Config
-    # shared.demo.app is instance of ASGIApp
-
+    setup_middleware(app, cmd_opts)
 
     cmd_opts.autolaunch = False
     startup_timer.record("start")
-
-    app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
-    setup_middleware(app)
 
     modules.progress.setup_progress_api(app)
     create_api(app)
@@ -217,25 +195,22 @@ def start_ui():
     startup_timer.record("scripts app_started_callback")
 
 
-def stop_ui():
-    try:
-        shared.demo.server.should_exit = True
-        shared.demo.server.force_exit = True
-        shared.demo.server.close()
-    except:
-        print('Uvicorn shutdown')
-    shared.demo.close(verbose=True)
-
-
 def webui():
     start_ui()
-
     load_model()
-    log.info(f"Startup time: {startup_timer.summary()}")
+    print(f"Startup time: {startup_timer.summary()}")
 
-    import time
     while True:
-        time.sleep(0.1)
+        try:
+            alive = shared.demo.server.thread.is_alive()
+        except:
+            alive = False
+        if not alive:
+            print('Server restart')
+            startup_timer.reset()
+            start_ui()
+            print(f"Startup time: {startup_timer.summary()}")
+        time.sleep(1)
 
 
 if __name__ == "__main__":

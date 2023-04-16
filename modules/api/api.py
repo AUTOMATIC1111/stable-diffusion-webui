@@ -1,19 +1,13 @@
 import io
 import time
 import base64
-import datetime
 from io import BytesIO
 from typing import List
 from threading import Lock
 from secrets import compare_digest
-import anyio
-import starlette
-import fastapi
-from fastapi import APIRouter, Depends, FastAPI, Request, Response
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
 from PIL import PngImagePlugin,Image
 import piexif
 import piexif.helper
@@ -33,15 +27,17 @@ from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
 
+errors.install()
+
 def upscaler_to_index(name: str):
     try:
         return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
     except:
         raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be one of these: {' , '.join([x.name for x in sd_upscalers])}")
 
-def script_name_to_index(name, scripts):
+def script_name_to_index(name, scripts_list):
     try:
-        return [script.title().lower() for script in scripts].index(name.lower())
+        return [script.title().lower() for script in scripts_list].index(name.lower())
     except:
         raise HTTPException(status_code=422, detail=f"Script '{name}' not found")
 
@@ -96,55 +92,6 @@ def encode_pil_to_base64(image):
 
     return base64.b64encode(bytes_data)
 
-def api_middleware(app: FastAPI):
-
-    @app.middleware("http")
-    async def log_and_time(req: Request, call_next):
-        ts = time.time()
-        res: Response = await call_next(req)
-        duration = str(round(time.time() - ts, 4))
-        res.headers["X-Process-Time"] = duration
-        endpoint = req.scope.get('path', 'err')
-        if shared.cmd_opts.api_log and endpoint.startswith('/sdapi'):
-            print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format(
-                t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                code = res.status_code,
-                ver = req.scope.get('http_version', '0.0'),
-                cli = req.scope.get('client', ('0:0.0.0', 0))[0],
-                prot = req.scope.get('scheme', 'err'),
-                method = req.scope.get('method', 'err'),
-                endpoint = endpoint,
-                duration = duration,
-            ))
-        return res
-
-    def handle_exception(request: Request, e: Exception):
-        err = {
-            "error": type(e).__name__,
-            "detail": vars(e).get('detail', ''),
-            "body": vars(e).get('body', ''),
-            "errors": str(e),
-        }
-        print(f"API error: {request.method}: {request.url} {err}")
-        if not isinstance(e, HTTPException): # do not print backtrace on known httpexceptions
-            errors.display(e, 'http api', [anyio, fastapi, uvicorn, starlette])
-        return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
-
-    @app.middleware("http")
-    async def exception_handling(request: Request, call_next):
-        try:
-            return await call_next(request)
-        except Exception as e:
-            return handle_exception(request, e)
-
-    @app.exception_handler(Exception)
-    async def fastapi_exception_handler(request: Request, e: Exception):
-        return handle_exception(request, e)
-
-    @app.exception_handler(HTTPException)
-    async def http_exception_handler(request: Request, e: HTTPException):
-        return handle_exception(request, e)
-
 
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
@@ -157,7 +104,6 @@ class Api:
         self.router = APIRouter()
         self.app = app
         self.queue_lock = queue_lock
-        api_middleware(self.app)
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
         self.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)

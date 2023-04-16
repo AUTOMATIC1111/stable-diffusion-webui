@@ -632,6 +632,8 @@ def reload_gradio_theme(theme_name=None):
             print("Theme download error accessing HuggingFace")
             gradio_theme = gr.themes.Default()
     print(f'Loading theme: {theme_name}')
+    if demo is not None:
+        demo.close()
 
 
 class TotalTQDM:
@@ -671,6 +673,19 @@ total_tqdm = TotalTQDM()
 
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
+
+
+def restart_server():
+    if demo is None:
+        return
+    try:
+        demo.server.should_exit = True
+        demo.server.force_exit = True
+        demo.close(verbose=False)
+        demo.server.close()
+    except:
+        pass
+    print('Server shutdown')
 
 
 def listfiles(dirname):

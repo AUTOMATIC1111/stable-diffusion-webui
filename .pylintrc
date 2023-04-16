@@ -138,6 +138,7 @@ disable=raw-checker-failed,
         unnecessary-lambda,
         consider-using-dict-items,
         dangerous-default-value,
+        unnecessary-dunder-call,
 enable=c-extension-no-member
 
 [METHOD_ARGS]
