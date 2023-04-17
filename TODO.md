@@ -8,6 +8,7 @@
 
 Stuff to be fixed...
 
+- Fix integration with <https://github.com/kohya-ss/sd-webui-additional-networks>
 - Reconnect UI to ops in progress on browser restart  
 - Create new GitHub hooks/actions for CI/CD  
 - Remove `models` from git repo
