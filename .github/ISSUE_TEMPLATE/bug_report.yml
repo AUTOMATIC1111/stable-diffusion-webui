@@ -24,6 +24,13 @@ body:
         For example: `Version: f256fb8b Fri Apr 14 17:41:30 2023 -0400`
 
         Additionally provide any relevant platorm information (OS, browser, versions)
-
+  - type: markdown
+    attributes:
+      value: |
+        If issue is setup, installation or startup related, please check `setup.log` before reporting  
+        And when posting console logs, please use code blocks (\`\`\`) to format them insead of uploading screenshots
+  - type: markdown
+    attributes:
+      value: |
         If possible update to latest version before reporting the issue as older versions cannot be properly supported
         And search existing **issues** and **discussions** before creating a new one
