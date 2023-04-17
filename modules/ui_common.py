@@ -130,7 +130,7 @@ Requested path was: {f}
         generation_info = None
         with gr.Column():
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
-                open_folder_button = gr.Button(folder_symbol, visible=not shared.cmd_opts.hide_ui_dir_config)
+                open_folder_button = gr.Button(folder_symbol, elem_id=f'open_folder_{tabname}', visible=not shared.cmd_opts.hide_ui_dir_config)
 
                 if tabname != "extras":
                     save = gr.Button('Save', elem_id=f'save_{tabname}')
@@ -145,9 +145,10 @@ Requested path was: {f}
             )
 
             if tabname != "extras":
-                download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
+                with gr.Row():
+                    download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
 
-                with gr.Group():
+                with gr.Accordion("Generation Info", open=False):
                     html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
                     html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 

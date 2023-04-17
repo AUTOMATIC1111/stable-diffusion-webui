@@ -9,11 +9,12 @@ from modules.images import read_info_from_image
 import gradio as gr
 import json
 import html
-
+from modules.ui_components import ToolButton
 from modules.generation_parameters_copypaste import image_from_url_text
 
 extra_pages = []
 allowed_dirs = set()
+refresh_symbol = '\U0001f504'  # 🔄                                     
 
 
 def register_page(page):
@@ -82,7 +83,7 @@ class ExtraNetworksPage:
         return ""
 
     def create_html(self, tabname):
-        view = shared.opts.extra_networks_default_view
+        view = "cards" #shared.opts.extra_networks_default_view
         items_html = ''
 
         self.metadata = {}
@@ -106,6 +107,7 @@ class ExtraNetworksPage:
         if subdirs:
             subdirs = {"": 1, **subdirs}
 
+#<option value='{html.escape(subdir if subdir!="" else "all")}'>{html.escape(subdir if subdir!="" else "all")}</option>
         subdirs_html = "".join([f"""
 <button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
 {html.escape(subdir if subdir!="" else "all")}
@@ -124,7 +126,10 @@ class ExtraNetworksPage:
             items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
 
         self_name_id = self.name.replace(" ", "_")
-
+ 
+# <select onchange='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
+# {subdirs_html}
+# </select>
         res = f"""
 <div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
 {subdirs_html}
@@ -158,7 +163,8 @@ class ExtraNetworksPage:
             metadata_button = f"<div class='metadata-button' title='Show metadata' onclick='extraNetworksRequestMetadata(event, {json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
 
         args = {
-            "style": f"'{height}{width}{background_image}'",
+            #"style": f"'{height}{width}{background_image}'",
+            "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
@@ -167,7 +173,7 @@ class ExtraNetworksPage:
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
-            "metadata_button": metadata_button,
+            "metadata_button": metadata_button,           
         }
 
         return self.card_page.format(**args)
@@ -181,7 +187,10 @@ class ExtraNetworksPage:
         if shared.opts.samples_format not in preview_extensions:
             preview_extensions.append(shared.opts.samples_format)
 
-        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
+        file_name = os.path.basename(path)
+        location = os.path.dirname(path)
+        preview_path = location + "/preview/" + file_name
+        potential_files = sum([[path + "." + ext, path + ".preview." + ext, preview_path + "." + ext, preview_path + ".preview." + ext] for ext in preview_extensions], [])
 
         for file in potential_files:
             if os.path.isfile(file):
@@ -238,19 +247,20 @@ def create_ui(container, button, tabname):
     ui.pages = []
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
+    with gr.Accordion("Extra Networks", open=True): 
+        
+        with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
+            for page in ui.stored_extra_pages:
+                with gr.Tab(page.title):
 
-    with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
-        for page in ui.stored_extra_pages:
-            with gr.Tab(page.title):
+                    page_elem = gr.HTML(page.create_html(ui.tabname))
+                    ui.pages.append(page_elem)
 
-                page_elem = gr.HTML(page.create_html(ui.tabname))
-                ui.pages.append(page_elem)
+        filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
+        button_refresh = ToolButton(value=refresh_symbol, elem_id=tabname+"_extra_refresh")
 
-    filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
-    button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
-
-    ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
-    ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
+        ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
+        ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible

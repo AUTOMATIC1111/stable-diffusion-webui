@@ -22,6 +22,8 @@ titles = {
     "\u{1f4cb}": "Apply selected styles to current prompt",
     "\u{1f4d2}": "Paste available values into the field",
     "\u{1f3b4}": "Show/hide extra networks",
+	"\u{1f5e8}": "Interogate Clip",
+	"\u{1f5ea}": "Interogate Deepbooru",							
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",
@@ -43,6 +45,11 @@ titles = {
     "Skip": "Stop processing current image and continue processing.",
     "Interrupt": "Stop processing images and return any results accumulated so far.",
     "Save": "Write image to a directory (default - log/images) and generation parameters into csv file.",
+	"Zip": "Save as Zip",
+	"Send to txt2img": "Send to txt2img",
+	"Send to img2img": "Send to img2img",
+	"Send to inpaint": "Send to inpaint",
+	"Send to extras": "Send to extras",				  
 
     "X values": "Separate values for X axis using commas.",
     "Y values": "Separate values for Y axis using commas.",

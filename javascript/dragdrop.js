@@ -11,7 +11,7 @@ function dropReplaceImage( imgWrap, files ) {
 
     const tmpFile = files[0];
 
-    imgWrap.querySelector('.modify-upload button + button, .touch-none + div button + button')?.click();
+    imgWrap.querySelector('[aria-label="Clear"]')?.click();
     const callback = () => {
         const fileInput = imgWrap.querySelector('input[type="file"]');
         if ( fileInput ) {

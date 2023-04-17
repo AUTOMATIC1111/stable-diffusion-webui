@@ -15,7 +15,7 @@ import modules.styles
 import modules.devices as devices
 from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
-
+from modules.generation_parameters_copypaste import infotext_to_setting_name_mapping
 demo = None
 
 parser = cmd_args.parser
@@ -331,6 +331,8 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}),
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
+    "sd_max_resolution": OptionInfo(2048, "Max resolution output for txt2img and img2img"),
+    "ignore_overrides": OptionInfo([], "Ignore Overrides", gr.CheckboxGroup, lambda: {"choices": [x[0] for x in infotext_to_setting_name_mapping]}),
 }))
 
 options_templates.update(options_section(('compatibility', "Compatibility"), {
@@ -356,12 +358,16 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 }))
 
 options_templates.update(options_section(('extra_networks', "Extra Networks"), {
-    "extra_networks_default_view": OptionInfo("cards", "Default view for Extra Networks", gr.Dropdown, {"choices": ["cards", "thumbs"]}),
+    #"extra_networks_default_view": OptionInfo("cards", "Default view for Extra Networks", gr.Dropdown, {"choices": ["cards", "thumbs"]}),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "extra_networks_card_width": OptionInfo(0, "Card width for Extra Networks (px)"),
-    "extra_networks_card_height": OptionInfo(0, "Card height for Extra Networks (px)"),
+    #"extra_networks_card_width": OptionInfo(0, "Card width for Extra Networks (px)"),
+    #"extra_networks_card_height": OptionInfo(0, "Card height for Extra Networks (px)"),
     "extra_networks_add_text_separator": OptionInfo(" ", "Extra text to add before <...> when adding extra network to prompt"),
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": [""] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
+    "extra_networks_default_visibility": OptionInfo(True, "Extra Networks default visibility"),
+    "extra_networks_cards_size": OptionInfo(1, "Card size for extra networks", gr.Slider, {"minimum": 0.8, "maximum": 2, "step": 0.1}),
+    "extra_networks_cards_visible_rows": OptionInfo(1, "Visible card rows for extra networks", gr.Slider, {"minimum": 1, "maximum": 3, "step": 1}),
+    "extra_networks_aside": OptionInfo(True, "Extra Networks aside view"),                                                                                           
 }))
 
 options_templates.update(options_section(('ui', "User interface"), {
@@ -386,6 +392,12 @@ options_templates.update(options_section(('ui', "User interface"), {
     "hidden_tabs": OptionInfo([], "Hidden UI tabs (requires restart)", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
+    "ui_hidden_tabs": OptionInfo("", "Hidden Tabs"),
+    "ui_header_tabs": OptionInfo("", "Header Tabs"),
+    "ui_views_order": OptionInfo("row-reverse", "Interface order input/parameters | output/preview", gr.Radio, {"choices": ["row", "row-reverse"]}),
+    "ui_output_image_fit": OptionInfo("Scale-down", "Generated image fit method", gr.Radio, {"choices": ["Scale-down", "Contain"]}),
+    "ui_show_range_ticks": OptionInfo(True, "Show ticks for range sliders"),
+    "ui_dispatch_input_release": OptionInfo(True, "Dispatch event change on release, for slider and input number components"), 
     "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
 }))
 
@@ -396,7 +408,8 @@ options_templates.update(options_section(('ui', "Live previews"), {
     "show_progress_every_n_steps": OptionInfo(10, "Show new live preview image every N sampling steps. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_type": OptionInfo("Approx NN", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}),
     "live_preview_content": OptionInfo("Prompt", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
-    "live_preview_refresh_period": OptionInfo(1000, "Progressbar/preview update period, in milliseconds")
+    "live_preview_refresh_period": OptionInfo(1000, "Progressbar/preview update period, in milliseconds"),
+    "live_preview_image_fit": OptionInfo("Scale-down", "Live preview image fit method", gr.Radio, {"choices": ["Scale-down", "Contain"]}),                                                                                                                                      
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {

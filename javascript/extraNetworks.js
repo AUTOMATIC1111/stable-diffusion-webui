@@ -15,7 +15,7 @@ function setupExtraNetworksForTab(tabname){
 
         gradioApp().querySelectorAll('#'+tabname+'_extra_tabs div.card').forEach(function(elem){
             text = elem.querySelector('.name').textContent.toLowerCase() + " " + elem.querySelector('.search_term').textContent.toLowerCase()
-            elem.style.display = text.indexOf(searchTerm) == -1 ? "none" : ""
+            elem.parentElement.style.display = text.indexOf(searchTerm) == -1 ? "none" : ""
         })
     });
 }
@@ -98,7 +98,8 @@ function saveCardPreview(event, tabname, filename){
 function extraNetworksSearchButton(tabs_id, event){
     searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea')
     button = event.target
-    text = button.classList.contains("search-all") ? "" : button.textContent.trim()
+    text = button.classList.contains("search-all") ? "" : button.textContent.trim()	
+	//text = event.target.selectedIndex == 0 ? "" : event.target.options[event.target.selectedIndex].text;
 
     searchTextarea.value = text
     updateInput(searchTextarea)
