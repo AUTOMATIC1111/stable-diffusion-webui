@@ -2714,7 +2714,8 @@ ul.list-none {
     width: 90%;
     right: 0;
     height: calc(100% - var(--top-header-height));
-    max-width: 480px;
+    max-width: 50%;
+    min-width: 320px;
     z-index: 9999;
 	transform: translateX(100%);
 	transition: all 0.25s ease 0s;
@@ -2722,6 +2723,7 @@ ul.list-none {
 	padding: calc(1rem - var(--outside-gap-size));
 	background-color: var(--main-bg-color) !important;
 }
+
 
 [id$="2img_extra_networks_row"].aside.open
 {
@@ -2743,6 +2745,7 @@ ul.list-none {
 [id$="2img_extra_networks_row"].aside > div:first-child > div:last-child
 {
 	display: block !important;
+	padding-top: 0;
 }
 [id$="2img_extra_close"]{
 	display:none;
@@ -2830,7 +2833,15 @@ ul.list-none {
 	overflow-x: hidden;
 	grid-template-rows: auto;
 	grid-auto-flow: row;
-    max-height: calc(100vh - 230px);
+    /*max-height: calc(100vh - 230px);*/
+	max-height: unset;
+}
+
+[id$="2img_extra_networks_row"].aside .tabitem {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 168px);
+    border-radius: 0;
 }
 
 
@@ -2870,6 +2881,8 @@ ul.list-none {
 .card-container .description{
 	display:none !important;
 }
+
+
 
 /*
 .extra-network-cards::after {
