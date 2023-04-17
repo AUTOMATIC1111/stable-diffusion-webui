@@ -5,16 +5,25 @@ import sys
 import importlib.util
 import shlex
 import platform
-import argparse
 import json
 
-dir_repos = "repositories"
-dir_extensions = "extensions"
+from modules import cmd_args
+from modules.paths_internal import script_path, extensions_dir
+
+commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
+sys.argv += shlex.split(commandline_args)
+
+args, _ = cmd_args.parser.parse_known_args()
+
 python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
 skip_install = False
+dir_repos = "repositories"
+
+if 'GRADIO_ANALYTICS_ENABLED' not in os.environ:
+    os.environ['GRADIO_ANALYTICS_ENABLED'] = 'False'
 
 
 def check_python_version():
@@ -62,23 +71,6 @@ def commit_hash():
     return stored_commit_hash
 
 
-def extract_arg(args, name):
-    return [x for x in args if x != name], name in args
-
-
-def extract_opt(args, name):
-    opt = None
-    is_present = False
-    if name in args:
-        is_present = True
-        idx = args.index(name)
-        del args[idx]
-        if idx < len(args) and args[idx][0] != "-":
-            opt = args[idx]
-            del args[idx]
-    return args, is_present, opt
-
-
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
     if desc is not None:
         print(desc)
@@ -122,7 +114,7 @@ def is_installed(package):
 
 
 def repo_dir(name):
-    return os.path.join(dir_repos, name)
+    return os.path.join(script_path, dir_repos, name)
 
 
 def run_python(code, desc=None, errdesc=None):
@@ -161,7 +153,17 @@ def git_clone(url, dir, name, commithash=None):
     if commithash is not None:
         run(f'"{git}" -C "{dir}" checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
 
-        
+
+def git_pull_recursive(dir):
+    for subdir, _, _ in os.walk(dir):
+        if os.path.exists(os.path.join(subdir, '.git')):
+            try:
+                output = subprocess.check_output([git, '-C', subdir, 'pull', '--autostash'])
+                print(f"Pulled changes for repository in '{subdir}':\n{output.decode('utf-8').strip()}\n")
+            except subprocess.CalledProcessError as e:
+                print(f"Couldn't perform 'git pull' on repository in '{subdir}':\n{e.output.decode('utf-8').strip()}\n")
+
+
 def version_check(commit):
     try:
         import requests
@@ -204,16 +206,20 @@ def list_extensions(settings_file):
         print(e, file=sys.stderr)
 
     disabled_extensions = set(settings.get('disabled_extensions', []))
+    disable_all_extensions = settings.get('disable_all_extensions', 'none')
 
-    return [x for x in os.listdir(dir_extensions) if x not in disabled_extensions]
+    if disable_all_extensions != 'none':
+        return []
+
+    return [x for x in os.listdir(extensions_dir) if x not in disabled_extensions]
 
 
 def run_extensions_installers(settings_file):
-    if not os.path.isdir(dir_extensions):
+    if not os.path.isdir(extensions_dir):
         return
 
     for dirname_extension in list_extensions(settings_file):
-        run_extension_installer(os.path.join(dir_extensions, dirname_extension))
+        run_extension_installer(os.path.join(extensions_dir, dirname_extension))
 
 
 def prepare_environment():
@@ -221,7 +227,6 @@ def prepare_environment():
 
     torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
-    commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16rc425')
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
@@ -234,30 +239,13 @@ def prepare_environment():
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
 
-    stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "47b6b607fdd31875c9279cd2f4f16b92e4ea958e")
+    stable_diffusion_commit_hash = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
     taming_transformers_commit_hash = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "24268930bf1dce879235a7fddd0b2355b84d7ea6")
     k_diffusion_commit_hash = os.environ.get('K_DIFFUSION_COMMIT_HASH', "5b3af030dd83e0297272d861c19477735d0317ec")
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
-    sys.argv += shlex.split(commandline_args)
-
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--ui-settings-file", type=str, help="filename to use for ui settings", default='config.json')
-    args, _ = parser.parse_known_args(sys.argv)
-
-    sys.argv, _ = extract_arg(sys.argv, '-f')
-    sys.argv, skip_torch_cuda_test = extract_arg(sys.argv, '--skip-torch-cuda-test')
-    sys.argv, skip_python_version_check = extract_arg(sys.argv, '--skip-python-version-check')
-    sys.argv, reinstall_xformers = extract_arg(sys.argv, '--reinstall-xformers')
-    sys.argv, reinstall_torch = extract_arg(sys.argv, '--reinstall-torch')
-    sys.argv, update_check = extract_arg(sys.argv, '--update-check')
-    sys.argv, run_tests, test_dir = extract_opt(sys.argv, '--tests')
-    sys.argv, skip_install = extract_arg(sys.argv, '--skip-install')
-    xformers = '--xformers' in sys.argv
-    ngrok = '--ngrok' in sys.argv
-
-    if not skip_python_version_check:
+    if not args.skip_python_version_check:
         check_python_version()
 
     commit = commit_hash()
@@ -265,10 +253,10 @@ def prepare_environment():
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
 
-    if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
+    if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
 
-    if not skip_torch_cuda_test:
+    if not args.skip_torch_cuda_test:
         run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
 
     if not is_installed("gfpgan"):
@@ -280,7 +268,7 @@ def prepare_environment():
     if not is_installed("open_clip"):
         run_pip(f"install {openclip_package}", "open_clip")
 
-    if (not is_installed("xformers") or reinstall_xformers) and xformers:
+    if (not is_installed("xformers") or args.reinstall_xformers) and args.xformers:
         if platform.system() == "Windows":
             if platform.python_version().startswith("3.10"):
                 run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
@@ -292,10 +280,10 @@ def prepare_environment():
         elif platform.system() == "Linux":
             run_pip(f"install {xformers_package}", "xformers")
 
-    if not is_installed("pyngrok") and ngrok:
+    if not is_installed("pyngrok") and args.ngrok:
         run_pip("install pyngrok", "ngrok")
 
-    os.makedirs(dir_repos, exist_ok=True)
+    os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 
     git_clone(stable_diffusion_repo, repo_dir('stable-diffusion-stability-ai'), "Stable Diffusion", stable_diffusion_commit_hash)
     git_clone(taming_transformers_repo, repo_dir('taming-transformers'), "Taming Transformers", taming_transformers_commit_hash)
@@ -304,21 +292,26 @@ def prepare_environment():
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
     if not is_installed("lpips"):
-        run_pip(f"install -r {os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}", "requirements for CodeFormer")
+        run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\"", "requirements for CodeFormer")
 
-    run_pip(f"install -r {requirements_file}", "requirements for Web UI")
+    if not os.path.isfile(requirements_file):
+        requirements_file = os.path.join(script_path, requirements_file)
+    run_pip(f"install -r \"{requirements_file}\"", "requirements for Web UI")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
 
-    if update_check:
+    if args.update_check:
         version_check(commit)
+
+    if args.update_all_extensions:
+        git_pull_recursive(extensions_dir)
     
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
 
-    if run_tests:
-        exitcode = tests(test_dir)
+    if args.tests and not args.no_tests:
+        exitcode = tests(args.tests)
         exit(exitcode)
 
 
@@ -327,16 +320,18 @@ def tests(test_dir):
         sys.argv.append("--api")
     if "--ckpt" not in sys.argv:
         sys.argv.append("--ckpt")
-        sys.argv.append("./test/test_files/empty.pt")
+        sys.argv.append(os.path.join(script_path, "test/test_files/empty.pt"))
     if "--skip-torch-cuda-test" not in sys.argv:
         sys.argv.append("--skip-torch-cuda-test")
     if "--disable-nan-check" not in sys.argv:
         sys.argv.append("--disable-nan-check")
+    if "--no-tests" not in sys.argv:
+        sys.argv.append("--no-tests")
 
     print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
 
     os.environ['COMMANDLINE_ARGS'] = ""
-    with open('test/stdout.txt', "w", encoding="utf8") as stdout, open('test/stderr.txt', "w", encoding="utf8") as stderr:
+    with open(os.path.join(script_path, 'test/stdout.txt'), "w", encoding="utf8") as stdout, open(os.path.join(script_path, 'test/stderr.txt'), "w", encoding="utf8") as stderr:
         proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
 
     import test.server_poll

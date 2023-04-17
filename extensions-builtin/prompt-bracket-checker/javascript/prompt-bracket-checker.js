@@ -89,22 +89,15 @@ function checkBrackets(evt, textArea, counterElt) {
 function setupBracketChecking(id_prompt, id_counter){
     var textarea = gradioApp().querySelector("#" + id_prompt + " > label > textarea");
     var counter = gradioApp().getElementById(id_counter)
+
     textarea.addEventListener("input", function(evt){
         checkBrackets(evt, textarea, counter)
     });
 }
 
-var shadowRootLoaded = setInterval(function() {
-    var shadowRoot = document.querySelector('gradio-app').shadowRoot;
-    if(! shadowRoot)  return false;
-
-    var shadowTextArea = shadowRoot.querySelectorAll('#txt2img_prompt > label > textarea');
-    if(shadowTextArea.length < 1)  return false;
-
-    clearInterval(shadowRootLoaded);
-
+onUiLoaded(function(){
     setupBracketChecking('txt2img_prompt', 'txt2img_token_counter')
     setupBracketChecking('txt2img_neg_prompt', 'txt2img_negative_token_counter')
-    setupBracketChecking('img2img_prompt', 'imgimg_token_counter')
+    setupBracketChecking('img2img_prompt', 'img2img_token_counter')
     setupBracketChecking('img2img_neg_prompt', 'img2img_negative_token_counter')
-}, 1000);
+})

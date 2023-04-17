@@ -32,7 +32,7 @@ def set_samplers():
     global samplers, samplers_for_img2img
 
     hidden = set(shared.opts.hide_samplers)
-    hidden_img2img = set(shared.opts.hide_samplers + ['PLMS'])
+    hidden_img2img = set(shared.opts.hide_samplers + ['PLMS', 'UniPC'])
 
     samplers = [x for x in all_samplers if x.name not in hidden]
     samplers_for_img2img = [x for x in all_samplers if x.name not in hidden_img2img]
