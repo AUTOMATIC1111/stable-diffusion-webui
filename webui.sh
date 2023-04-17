@@ -23,7 +23,7 @@ fi
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]
 then
-    install_dir="/home/$(whoami)"
+    install_dir="${HOME}"
 fi
 
 # Name of the subdirectory (defaults to stable-diffusion-webui)
