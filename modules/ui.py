@@ -203,7 +203,7 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
                 all_seeds = gen_info.get('all_seeds', [-1])
                 res = all_seeds[index if 0 <= index < len(all_seeds) else 0]
 
-        except json.decoder.JSONDecodeError as e:
+        except json.decoder.JSONDecodeError:
             if gen_info_string != '':
                 print("Error parsing JSON generation info:", file=sys.stderr)
                 print(gen_info_string, file=sys.stderr)
@@ -1389,37 +1389,33 @@ def create_ui():
         with gr.Row():
             settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
             restart_submit = gr.Button(value="Restart UI", variant='primary', elem_id="restart_submit")
-
+            preview_theme = gr.Button(value="Preview theme", variant='primary', elem_id="settings_preview_theme")
+            unload_sd_model = gr.Button(value='Unload checkpoint', variant='primary', elem_id="sett_unload_sd_model")
+            reload_sd_model = gr.Button(value='Reload checkpoint', variant='primary', elem_id="sett_reload_sd_model")
+            reload_script_bodies = gr.Button(value='Reload scripts', variant='primary', elem_id="settings_reload_script_bodies")
 
         result = gr.HTML(elem_id="settings_result")
 
         quicksettings_names = [x.strip() for x in opts.quicksettings.split(",")]
         quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
-
         quicksettings_list = []
-
         previous_section = None
         current_tab = None
         current_row = None
         with gr.Tabs(elem_id="settings"):
             for i, (k, item) in enumerate(opts.data_labels.items()):
                 section_must_be_skipped = item.section[0] is None
-
                 if previous_section != item.section and not section_must_be_skipped:
                     elem_id, text = item.section
-
                     if current_tab is not None:
                         current_row.__exit__()
                         current_tab.__exit__()
-
                     gr.Group()
-                    current_tab = gr.TabItem(elem_id="settings_{}".format(elem_id), label=text)
+                    current_tab = gr.TabItem(elem_id=f"settings_{elem_id}", label=text)
                     current_tab.__enter__()
                     current_row = gr.Column(variant='compact')
                     current_row.__enter__()
-
                     previous_section = item.section
-
                 if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
                     quicksettings_list.append((i, k, item))
                     components.append(dummy_component)
@@ -1429,22 +1425,14 @@ def create_ui():
                     component = create_setting_component(k)
                     component_dict[k] = component
                     components.append(component)
-
             if current_tab is not None:
                 current_row.__exit__()
                 current_tab.__exit__()
 
-            with gr.TabItem("Actions"):
-                request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
-                reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
-                with gr.Row():
-                    unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
-                    reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
-
+            request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications", visible=False)
+            show_all_pages = gr.Button(value="Show all pages", variant='primary', elem_id="settings_show_all_pages")
             with gr.TabItem("Licenses"):
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
-
-            gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
 
         def unload_sd_weights():
             modules.sd_models.unload_model_weights()
@@ -1479,6 +1467,13 @@ def create_ui():
             fn=reload_scripts,
             inputs=[],
             outputs=[]
+        )
+
+        preview_theme.click(
+            fn=None,
+            _js='preview_theme',
+            inputs=[dummy_component],
+            outputs=[dummy_component]
         )
 
 

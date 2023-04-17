@@ -118,7 +118,7 @@ case "$gpu_info" in
 esac
 if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
 then
-    export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
+    export TORCH_COMMAND="torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
 fi  
 
 for preq in "${GIT}" "${python_cmd}"

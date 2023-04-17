@@ -55,20 +55,6 @@ ui_reorder_categories = [
     "scripts",
 ]
 
-# https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json
-gradio_hf_hub_themes = [
-    "gradio/glass",
-    "gradio/monochrome",
-    "gradio/seafoam",
-    "gradio/soft",
-    "freddyaboulton/dracula_revamped",
-    "gradio/dracula_test",
-    "abidlabs/dracula_test",
-    "abidlabs/pakistan",
-    "dawood/microsoft_windows",
-    "ysharma/steampunk"
-]
-
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.enable_insecure
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = \
@@ -222,6 +208,26 @@ def list_samplers():
     import modules.sd_samplers # pylint: disable=W0621
     return modules.sd_samplers.all_samplers
 
+def list_themes():
+    if not os.path.exists(os.path.join('javascript', 'themes.json')):
+        refresh_themes()
+    with open(os.path.join('javascript', 'themes.json'), mode='r', encoding='utf=8') as f:
+        res = json.loads(f.read())
+    themes = [x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()]
+    return themes
+
+def refresh_themes():
+    import requests
+    try:
+        req = requests.get('https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json', timeout=5)
+        if req.status_code == 200:
+            res = req.json()
+            with open(os.path.join('javascript', 'themes.json'), mode='w', encoding='utf=8') as f:
+                f.write(json.dumps(res))
+        else:
+            print('Error refreshing UI themes')
+    except:
+        print('Exception refreshing UI themes')
 
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 tab_names = []
@@ -378,6 +384,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
 }))
 
 options_templates.update(options_section(('ui', "User interface"), {
+    "gradio_theme": OptionInfo("black-orange", "UI theme", gr.Dropdown, lambda: {"choices": ["black-orange", "gradio/default"] + list_themes()}, refresh=refresh_themes),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results for web"),
     "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results for web"),
@@ -397,7 +404,6 @@ options_templates.update(options_section(('ui', "User interface"), {
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
-    "gradio_theme": OptionInfo("black-orange", "UI theme", gr.Dropdown, lambda: {"choices": ["black-orange", "gradio/default"] + gradio_hf_hub_themes}),
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {
@@ -603,7 +609,7 @@ if os.path.exists(config_filename):
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
 
 settings_components = None
-"""assinged from ui.py, a mapping on setting anmes to gradio components repsponsible for those settings"""
+"""assinged from ui.py, a mapping on setting names to gradio components repsponsible for those settings"""
 
 latent_upscale_default_mode = "Latent"
 latent_upscale_modes = {

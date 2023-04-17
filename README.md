@@ -11,7 +11,7 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 
 <br>
 
-![screenshot](ui-screenshot.jpg)
+![screenshot](javscript/black-orange.jpg)
 
 <br>
 

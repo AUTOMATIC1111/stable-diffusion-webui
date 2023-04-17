@@ -367,3 +367,31 @@ function selectCheckpoint(name){
     desiredCheckpointName = name;
     gradioApp().getElementById('change_checkpoint').click()
 }
+
+function create_theme_element() {
+  el = document.createElement('img');
+  el.id = 'theme-preview';
+  el.className = 'theme-preview';
+  el.onclick = () => el.style.display = 'none';
+  document.body.appendChild(el);
+  return el;
+}
+
+function preview_theme() {
+  const name = gradioApp().getElementById('setting_gradio_theme').querySelectorAll('span')[1].innerText; // ugly but we want current value without the need to set apply
+  console.log('PREVIEW', name);
+  if (name === 'black-orange' || name === 'gradio/default') {
+    el = document.getElementById('theme-preview') || create_theme_element();
+    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    if (name === 'black-orange') el.src = '/file=javascript/black-orange.jpg';
+    else el.src = '/file=javascript/gradio-default.jpg';
+  } else {
+    fetch('/file=javascript/themes.json')
+      .then((r) => r.json())
+        .then(themes => {
+          theme = themes.find((t)=> t.id === name);
+          console.log('FOUND', theme);         
+          window.open(theme.subdomain, '_blank');
+      });
+  }
+}

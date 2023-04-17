@@ -6,8 +6,10 @@ import modules.errors as errors
 def load_module(path):
     module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
     module = importlib.util.module_from_spec(module_spec)
-    module_spec.loader.exec_module(module)
-
+    try:
+        module_spec.loader.exec_module(module)
+    except Exception as e:
+        errors.display(e, f'Module load: {path}')
     return module
 
 
@@ -26,4 +28,4 @@ def preload_extensions(extensions_dir, parser):
                 module.preload(parser)
 
         except Exception as e:
-            errors.display(e, f'extension preload: {preload_script}')
+            errors.display(e, f'Extension preload: {preload_script}')
