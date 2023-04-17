@@ -1,3 +1,7 @@
+#### Languages
+[EN](/README.md)
+[PL](/README_PL.md)
+
 # Stable Diffusion web UI
 A browser interface based on Gradio library for Stable Diffusion.
 
