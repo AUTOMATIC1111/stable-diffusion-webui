@@ -338,6 +338,7 @@ options_templates.update(options_section(('compatibility', "Compatibility"), {
     "use_old_karras_scheduler_sigmas": OptionInfo(False, "Use old karras scheduler sigmas (0.1 to 10)."),
     "no_dpmpp_sde_batch_determinism": OptionInfo(False, "Do not make DPM++ SDE deterministic across different batch sizes."),
     "use_old_hires_fix_width_height": OptionInfo(False, "For hires fix, use width/height sliders to set final resolution rather than first pass (disables Upscale by, Resize width/height to)."),
+    "fix_second_order_samplers_schedule": OptionInfo(False, "Fix prompt schedule for second order samplers."),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {
