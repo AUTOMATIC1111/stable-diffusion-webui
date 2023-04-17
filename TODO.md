@@ -7,7 +7,6 @@ Stuff to be fixed...
 - Reconnect UI to ops in progress on browser restart  
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Cleanup & integrate CSS into single file
-- Allow user themes
 - Replace PngInfo/EXIF metadata handler
 - Pick & merge PRs from main repo
 - Create new GitHub hooks/actions for CI/CD  
@@ -15,11 +14,11 @@ Stuff to be fixed...
 - Set defaults for Apple M1
 - Revisit `torch.compile`
 - Ask to download default model
-- Support UI restart on-the-fly
 - Stream-load as option
 - Dont spawn extensions installer
 - Remove `models` from git repo
 - Merge `Image Info` into `Process`
+- Refresh theme list
 
 ## Integration
 

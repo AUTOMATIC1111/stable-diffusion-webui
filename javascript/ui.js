@@ -336,6 +336,10 @@ function update_img2img_tokens(...args) {
 	return args;
 }
 
+function getTranslation(...args) {
+  return null
+}
+
 function update_token_counter(button_id) {
 	if (token_timeouts[button_id])
 		clearTimeout(token_timeouts[button_id]);

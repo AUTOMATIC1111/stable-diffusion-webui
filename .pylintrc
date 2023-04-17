@@ -9,8 +9,10 @@ extension-pkg-whitelist=
 fail-on=
 fail-under=10
 ignore=CVS
-ignore-paths=
-ignore-patterns=^\.#
+ignore-paths=^repositories/.*$,
+             ^extensions/.*$,
+             /usr/lib/.*$,
+ignore-patterns=
 ignored-modules=
 jobs=0
 limit-inference-results=100

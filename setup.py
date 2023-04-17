@@ -5,7 +5,12 @@ import time
 import shutil
 import logging
 import subprocess
-from modules.cmd_args import parser
+
+try:
+    from modules.cmd_args import parser
+except:
+    import argparse
+    parser = argparse.ArgumentParser(description="Stable Diffusion", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=55,indent_increment=2,width=200))
 
 
 class Dot(dict): # dot notation access to dictionary attributes
@@ -89,7 +94,8 @@ def install(package, friendly: str = None):
         result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         txt = result.stdout.decode(encoding="utf8", errors="ignore")
         if len(result.stderr) > 0:
-            txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
+            txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
+        txt = txt.strip()
         if result.returncode != 0:
             global errors # pylint: disable=global-statement
             errors += 1
@@ -102,13 +108,14 @@ def install(package, friendly: str = None):
 
 
 # execute git command
-def git(arg: str):
+def git(arg: str, ignore: bool = False):
     git_cmd = os.environ.get('GIT', "git")
     result = subprocess.run(f'"{git_cmd}" {arg}', check=False, shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     txt = result.stdout.decode(encoding="utf8", errors="ignore")
     if len(result.stderr) > 0:
-        txt = txt + '\n' + result.stderr.decode(encoding="utf8", errors="ignore")
-    if result.returncode != 0:
+        txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
+    txt = txt.strip()
+    if result.returncode != 0 and not ignore:
         global errors # pylint: disable=global-statement
         errors += 1
         log.error(f'Error running git with args: {arg}')
@@ -150,7 +157,7 @@ def check_python():
     import platform
     supported_minors = [10] if platform.system() != "Windows" else [9, 10, 11]
     log.info(f'Python {platform.python_version()} on {platform.system()}')
-    if not (sys.version_info.major == 3 and sys.version_info.minor in supported_minors):
+    if not (int(sys.version_info.major) == 3 and int(sys.version_info.minor) in supported_minors):
         raise RuntimeError(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.9-3.11")
     git_cmd = os.environ.get('GIT', "git")
     if shutil.which(git_cmd) is None:
@@ -159,7 +166,8 @@ def check_python():
 
 # check torch version
 def check_torch():
-    install('torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
+    torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
+    install(torch_command)
     try:
         import torch
         log.info(f'Torch {torch.__version__}')
@@ -277,6 +285,16 @@ def install_extensions():
 # initialize and optionally update submodules
 def install_submodules():
     log.info('Installing submodules')
+    txt = git('submodule')
+    if 'no submodule mapping found' in txt:
+        log.warning('Attempting repository recover')
+        git('add .')
+        git('stash')
+        git('merge --abort', ignore=True)
+        git('fetch --all')
+        git('reset --hard origin/master')
+        git('checkout master')
+        log.info('Continuing setup')
     git('submodule --quiet update --init --recursive')
     if not args.noupdate:
         log.info('Updating submodules')
@@ -361,7 +379,7 @@ def check_version():
                 except:
                     log.error('Error upgrading repository')
             else:
-                log.info(f'Latest available version: {commits["commit"]["sha"]} {commits["commit"]["commit"]["author"]["date"]}')
+                log.info(f'Latest published version: {commits["commit"]["sha"]} {commits["commit"]["commit"]["author"]["date"]}')
         if not args.noupdate:
             log.info('Updating Wiki')
             try:
@@ -385,7 +403,11 @@ def check_timestamp():
         for line in lines:
             if 'Setup complete without errors' in line:
                 setup_time = int(line.split(' ')[-1])
-    version_time = int(git('log -1 --pretty=format:"%at"'))
+    try:
+        version_time = int(git('log -1 --pretty=format:"%at"'))
+    except Exception as e:
+        log.error(f'Error getting local repository version: {e}')
+        exit(1)
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
     if setup_time == -1:
         return False

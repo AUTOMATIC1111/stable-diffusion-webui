@@ -68,7 +68,7 @@ def setup_middleware(app: FastAPI, cmd_opts):
         try:
             return await call_next(req)
         except CancelledError:
-            print('WebSocket closed')
+            print('WebSocket closed (ignore asyncio.exceptions.CancelledError)')
         except BaseException as e:
             return handle_exception(req, e)
 
