@@ -6,9 +6,9 @@ Unfortunately this is going to take some time as the main author of the project 
 It is unsure how many of these changes will make it to the main branch  
 Until then you can use this repo enjoy!
 
-I will not upgrade to any unstable release from the master until major issues are resolved 
-You can find the latest version in the dev branch
-i will do my best to keep it up to date
+I will not upgrade to an unstable release from the master until major issues are resolved.
+You can find the latest experimental version in the dev branch.
+I will do my best to keep it up to date
 
 Default theme
 
