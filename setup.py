@@ -409,7 +409,7 @@ def check_timestamp():
         exit(1)
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
     if setup_time == -1:
-        ok = False
+        return False
     log.debug(f'Previous setup time: {time.ctime(setup_time)}')
     if setup_time < version_time:
         ok = False
