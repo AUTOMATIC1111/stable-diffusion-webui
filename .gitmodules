@@ -1,0 +1,3 @@
+[submodule "DiffusionDefender"]
+	path = extensions/DiffusionDefender
+	url = git@github.com:racinmat/DiffusionDefender.git
