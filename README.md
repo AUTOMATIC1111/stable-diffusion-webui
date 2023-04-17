@@ -7,7 +7,7 @@ It is unsure how many of these changes will make it to the main branch
 Until then you can use this repo enjoy!
 
 I will not upgrade to any unstable release from the master until major issues are resolved 
-I will create a public dev branch so people can test out new features before any upgrade to master
+You can find the latest version in the dev branch
 i will do my best to keep it up to date
 
 Default theme
