@@ -1,24 +1,29 @@
 # TODO
 
+## Always-on
+
+- Pick & merge PRs from main repo
+
 ## Fixes
 
 Stuff to be fixed...
 
 - Reconnect UI to ops in progress on browser restart  
-- Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
-- Cleanup & integrate CSS into single file
-- Replace PngInfo/EXIF metadata handler
-- Pick & merge PRs from main repo
 - Create new GitHub hooks/actions for CI/CD  
-- Investigate integration with `Torch-DirectML`
-- Set defaults for Apple M1
-- Revisit `torch.compile`
-- Ask to download default model
-- Stream-load as option
-- Dont spawn extensions installer
 - Remove `models` from git repo
-- Merge `Image Info` into `Process`
-- Refresh theme list
+
+## Features
+
+- Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
+- Stream-load models as option for slow storage
+- Replace **PngInfo** / **EXIF** metadata handler
+- Investigate integration with `Torch-DirectML`
+- Investigate best practices for **Apple M1**
+- Investigate best practices for **AMD GPUs**
+
+## Investigate
+
+- Revisit `torch.compile`
 
 ## Integration
 

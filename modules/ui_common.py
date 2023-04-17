@@ -119,7 +119,7 @@ Requested path was: {f}
         if not shared.cmd_opts.hide_ui_dir_config:
             path = os.path.normpath(f)
             if platform.system() == "Windows":
-                os.startfile(path)
+                os.startfile(path) # pylint: disable=no-member
             elif platform.system() == "Darwin":
                 sp.Popen(["open", path])
             elif "microsoft-standard-WSL2" in platform.uname().release:
@@ -134,7 +134,7 @@ Requested path was: {f}
         generation_info = None
         with gr.Column():
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
-                open_folder_button = gr.Button('Load', visible=not shared.cmd_opts.hide_ui_dir_config)
+                open_folder_button = gr.Button('show', visible=not shared.cmd_opts.hide_ui_dir_config)
 
                 if tabname != "extras":
                     save = gr.Button('Save', elem_id=f'save_{tabname}')

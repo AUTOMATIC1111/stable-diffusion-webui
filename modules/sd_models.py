@@ -22,7 +22,7 @@ model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 
 checkpoints_list = {}
-checkpoint_alisases = {}
+checkpoint_aliases = {}
 checkpoints_loaded = collections.OrderedDict()
 
 
@@ -56,7 +56,7 @@ class CheckpointInfo:
     def register(self):
         checkpoints_list[self.title] = self
         for i in self.ids:
-            checkpoint_alisases[i] = self
+            checkpoint_aliases[i] = self
 
     def calculate_shorthash(self):
         self.sha256 = hashes.sha256(self.filename, "checkpoint/" + self.name)
@@ -103,32 +103,31 @@ def checkpoint_tiles():
 
 def list_models():
     checkpoints_list.clear()
-    checkpoint_alisases.clear()
-
-    cmd_ckpt = shared.cmd_opts.ckpt
-    if shared.cmd_opts.no_download_sd_model or cmd_ckpt != shared.sd_model_file or os.path.exists(cmd_ckpt):
-        model_url = None
-    else:
-        model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
-
-    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
-
-    if os.path.exists(cmd_ckpt):
-        checkpoint_info = CheckpointInfo(cmd_ckpt)
+    checkpoint_aliases.clear()
+    model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    if shared.cmd_opts.ckpt is not None and os.path.exists(shared.cmd_opts.ckpt):
+        checkpoint_info = CheckpointInfo(shared.cmd_opts.ckpt)
         checkpoint_info.register()
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
-    elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-        print("Checkpoint in --ckpt argument not found", file=sys.stderr)
-
+    elif shared.cmd_opts.ckpt != shared.default_sd_model_file:
+        print(f"Checkpoint not found: {shared.cmd_opts.ckpt}", file=sys.stderr)
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         checkpoint_info.register()
-
-    shared.log.info(f'Available models: {shared.opts.ckpt_dir} {len(checkpoints_list)}')
+    print(f'Available models: {shared.opts.ckpt_dir} {len(checkpoints_list)}')
+    if len(checkpoints_list) == 0:
+        if not shared.cmd_opts.no_download_sd_model:
+            key = input('Download the default model? (y/N) ')
+            if key.lower().startswith == 'y':
+                model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+                model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+                for filename in sorted(model_list, key=str.lower):
+                    checkpoint_info = CheckpointInfo(filename)
+                    checkpoint_info.register()
 
 
 def get_closet_checkpoint_match(search_string):
-    checkpoint_info = checkpoint_alisases.get(search_string, None)
+    checkpoint_info = checkpoint_aliases.get(search_string, None)
     if checkpoint_info is not None:
         return checkpoint_info
 
@@ -157,18 +156,12 @@ def model_hash(filename):
 def select_checkpoint():
     model_checkpoint = shared.opts.sd_model_checkpoint
 
-    checkpoint_info = checkpoint_alisases.get(model_checkpoint, None)
+    checkpoint_info = checkpoint_aliases.get(model_checkpoint, None)
     if checkpoint_info is not None:
         return checkpoint_info
 
     if len(checkpoints_list) == 0:
-        print("No checkpoints found. When searching for checkpoints, looked at:", file=sys.stderr)
-        if shared.cmd_opts.ckpt is not None:
-            print(f" - file {os.path.abspath(shared.cmd_opts.ckpt)}", file=sys.stderr)
-        print(f" - directory {model_path}", file=sys.stderr)
-        if shared.opts.ckpt_dir is not None:
-            print(f" - directory {os.path.abspath(shared.opts.ckpt_dir)}", file=sys.stderr)
-        print("Can't run without a checkpoint. Find and place a .ckpt or .safetensors file into any of those locations. The program will exit.", file=sys.stderr)
+        print("Cannot run without a checkpoint", file=sys.stderr)
         exit(1)
 
     checkpoint_info = next(iter(checkpoints_list.values()))

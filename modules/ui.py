@@ -925,6 +925,7 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         ui_postprocessing.create_ui()
 
+    """
     with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='panel'):
@@ -947,6 +948,7 @@ def create_ui():
             inputs=[image],
             outputs=[html, generation_info, html2],
         )
+    """
 
     def update_interp_description(value):
         interp_description_css = "<p style='margin-bottom: 2.5em'>{}</p>"
@@ -1480,8 +1482,8 @@ def create_ui():
     interfaces = [
         (txt2img_interface, "From Text", "txt2img"),
         (img2img_interface, "From Image", "img2img"),
-        (extras_interface, "Process", "extras"),
-        (pnginfo_interface, "Image Info", "pnginfo"),
+        (extras_interface, "Process Image", "extras"),
+        # (pnginfo_interface, "Image Info", "pnginfo"),
         # (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "ti"),
     ]

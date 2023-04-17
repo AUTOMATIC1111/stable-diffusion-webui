@@ -349,7 +349,7 @@ def check_extensions():
                 newest = max(newest, ts)
             newest_all = max(newest_all, newest)
             log.debug(f'Extension version: {time.ctime(newest)} {folder}{os.pathsep}{ext}')
-    return newest_all
+    return round(newest_all)
 
 
 # check version of the main repo and optionally upgrade it
@@ -393,10 +393,9 @@ def check_version():
 
 # check if we can run setup in quick mode
 def check_timestamp():
-    if not quick_allowed:
+    if not quick_allowed or not os.path.isfile('setup.log'):
         return False
-    if not os.path.isfile('setup.log'):
-        return False
+    ok = True
     setup_time = -1
     with open('setup.log', 'r', encoding='utf8') as f:
         lines = f.readlines()
@@ -410,15 +409,16 @@ def check_timestamp():
         exit(1)
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
     if setup_time == -1:
-        return False
+        ok = False
     log.debug(f'Previous setup time: {time.ctime(setup_time)}')
     if setup_time < version_time:
-        return False
+        ok = False
     extension_time = check_extensions()
     log.debug(f'Latest extensions time: {time.ctime(extension_time)}')
     if setup_time < extension_time:
-        return False
-    return True
+        ok = False
+    log.debug(f'Timestamps: version:{version_time} setup:{setup_time} extension:{extension_time}')
+    return ok
 
 
 def parse_args():

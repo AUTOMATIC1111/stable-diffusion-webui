@@ -50,7 +50,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                     if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
                         continue
                     if len(ext_filter) != 0:
-                        model_name, extension = os.path.splitext(file)
+                        _model_name, extension = os.path.splitext(file)
                         if extension not in ext_filter:
                             continue
                     if file not in output:
@@ -75,7 +75,7 @@ def friendly_name(file: str):
         file = urlparse(file).path
 
     file = os.path.basename(file)
-    model_name, extension = os.path.splitext(file)
+    model_name, _extension = os.path.splitext(file)
     return model_name
 
 
