@@ -41,3 +41,5 @@ venv
 !/models/.placeholder
 !/models/embeddings/.placeholder
 !/models/hypernetworks/.placeholder
+!/models/VAE-approx
+!/models/VAE-approx/model.pt
