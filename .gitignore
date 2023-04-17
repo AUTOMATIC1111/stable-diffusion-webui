@@ -6,6 +6,7 @@ __pycache__
 /ui-config.json
 /setup.log
 /style.csv
+/user.css
 venv
 
 # all models and temp files

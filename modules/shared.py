@@ -632,8 +632,6 @@ def reload_gradio_theme(theme_name=None):
             print("Theme download error accessing HuggingFace")
             gradio_theme = gr.themes.Default()
     print(f'Loading theme: {theme_name}')
-    if demo is not None:
-        demo.close()
 
 
 class TotalTQDM:

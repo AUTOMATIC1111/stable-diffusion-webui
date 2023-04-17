@@ -1103,7 +1103,7 @@ def create_ui():
                     return sorted([x for x in textual_inversion.textual_inversion_templates])
 
                 with gr.Tab(label="Train"):
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images <a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\" style=\"font-weight:bold;\">[wiki]</a></p>")
+                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images</p>")
                     with FormRow():
                         train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                         create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
@@ -1701,7 +1701,7 @@ def javascript_html():
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
     elif opts.gradio_theme == 'black-orange':
-        inline += f"set_theme('dark');"
+        inline += "set_theme('dark');"
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
         head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
@@ -1723,7 +1723,6 @@ def css_html():
     for cssfile in modules.scripts.list_files_with_name("style.css"):
         if not os.path.isfile(cssfile):
             continue
-
         head += stylesheet(cssfile)
 
     if opts.gradio_theme == 'black-orange':
@@ -1775,7 +1774,7 @@ xformers: {xformers_version}
  • 
 gradio: {gr.__version__}
  • 
-commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{short_commit}</a>
+commit: <a href="https://github.com/vladmandic/automatic/commit/{commit}">{short_commit}</a>
  • 
 checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 """
