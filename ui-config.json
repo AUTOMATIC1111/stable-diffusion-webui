@@ -637,5 +637,10 @@
     "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = maximum effect, 1 = minimum effect)/value": 0,
     "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = maximum effect, 1 = minimum effect)/minimum": 0.0,
     "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = maximum effect, 1 = minimum effect)/maximum": 1.0,
-    "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = maximum effect, 1 = minimum effect)/step": 0.001
+    "customscript/postprocessing_codeformer.py/extras/CodeFormer weight (0 = maximum effect, 1 = minimum effect)/step": 0.001,
+    "txt2img/Random seed/visible": false,
+    "txt2img/Reuse seed/visible": false,
+    "img2img/Random seed/visible": false,
+    "img2img/Reuse seed/visible": false,
+    "txt2img/Switch dims/visible": false
 }

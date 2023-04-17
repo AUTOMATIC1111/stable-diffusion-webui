@@ -581,5 +581,20 @@
     "train/Drop out tags when creating prompts./maximum": 1,
     "train/Drop out tags when creating prompts./step": 0.1,
     "train/Choose latent sampling method/visible": true,
-    "train/Choose latent sampling method/value": "once"
+    "train/Choose latent sampling method/value": "once",
+    "txt2img/Random seed/visible": true,
+    "txt2img/Reuse seed/visible": true,
+    "img2img/Random seed/visible": true,
+    "img2img/Reuse seed/visible": true,
+    "customscript/loopback.py/img2img/Final denoising strength/visible": true,
+    "customscript/loopback.py/img2img/Final denoising strength/value": 0.5,
+    "customscript/loopback.py/img2img/Final denoising strength/minimum": 0,
+    "customscript/loopback.py/img2img/Final denoising strength/maximum": 1,
+    "customscript/loopback.py/img2img/Final denoising strength/step": 0.01,
+    "customscript/loopback.py/img2img/Denoising strength curve/visible": true,
+    "customscript/loopback.py/img2img/Denoising strength curve/value": "Linear",
+    "customscript/loopback.py/img2img/Append interrogated prompt at each iteration/visible": true,
+    "customscript/loopback.py/img2img/Append interrogated prompt at each iteration/value": "None",
+    "train/Use PNG alpha channel as loss weight/visible": true,
+    "train/Use PNG alpha channel as loss weight/value": false
 }
