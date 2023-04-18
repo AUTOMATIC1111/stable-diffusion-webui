@@ -970,7 +970,11 @@ onUiUpdate(function(){
 		//img2img_width
 		let parent = elem.parentElement;
 		let comp_parent = parent.parentElement.parentElement;		
-		if(comp_parent.id == "img2img_width" || comp_parent.id == "img2img_height" || comp_parent.id.indexOf("--ae-") != -1 || comp_parent.id.indexOf("theme") != -1 ) return;
+		if( comp_parent.id == "img2img_width" || 
+		comp_parent.id == "img2img_height" || 
+		comp_parent.id.indexOf("--ae-") != -1 || 
+		comp_parent.id.indexOf("theme") != -1 || 
+		comp_parent.className.indexOf("posex") != -1) return;
 		
 		let clone_num = elem.cloneNode();
 		active_clone_input.push(clone_num);
