@@ -179,7 +179,7 @@ def basedir():
     return current_basedir
 
 
-ScriptFile = namedtuple("ScriptFile", ["basedir", "filename", "path"])
+ScriptFile = namedtuple("ScriptFile", ["basedir", "filename", "path", "priority"])
 
 scripts_data = []
 postprocessing_scripts_data = []
@@ -189,10 +189,16 @@ ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedi
 def list_scripts(scriptdirname, extension):
     scripts_list = []
 
-    basedir = os.path.join(paths.script_path, scriptdirname)
-    if os.path.exists(basedir):
-        for filename in sorted(os.listdir(basedir)):
-            scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(basedir, filename)))
+    base = os.path.join(paths.script_path, scriptdirname)
+    if os.path.exists(base):
+        priority = '50'
+        if os.path.isfile(os.path.join(base, "..", ".priority")):
+            with open(os.path.join(base, "..", ".priority"), "r", encoding="utf-8") as f:
+                priority = str(f.read().strip())
+        for filename in sorted(os.listdir(base)):
+            _fn, ext = os.path.splitext(filename)
+            if ext == '.py':
+                scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(base, filename), priority))
 
     for ext in extensions.active():
         scripts_list += ext.list_files(scriptdirname, extension)
@@ -219,7 +225,7 @@ def list_files_with_name(filename):
 
 
 def load_scripts():
-    global current_basedir
+    global current_basedir # pylint: disable=global-statement
     scripts_data.clear()
     postprocessing_scripts_data.clear()
     script_callbacks.clear_callbacks()
@@ -229,7 +235,7 @@ def load_scripts():
     syspath = sys.path
 
     def register_scripts_from_module(module):
-        for key, script_class in module.__dict__.items():
+        for _key, script_class in module.__dict__.items():
             if type(script_class) != type:
                 continue
 
@@ -238,19 +244,16 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    alpha_sort = sorted(scripts_list, key=lambda item: item.path.lower())
-    for scriptfile in alpha_sort:
+    priority_sort = sorted(scripts_list, key=lambda item: item.priority + item.path.lower(), reverse=False)
+    for scriptfile in priority_sort:
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path
             current_basedir = scriptfile.basedir
             script_module = script_loading.load_module(scriptfile.path)
             register_scripts_from_module(script_module)
-
         except Exception as e:
-            errors.display(e, f'loading script: {scriptfile.filename}')
-
-
+            errors.display(e, f'Loading script: {scriptfile.filename}')
         finally:
             sys.path = syspath
             current_basedir = paths.script_path
@@ -261,7 +264,7 @@ def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
         res = func(*args, **kwargs)
         return res
     except Exception as e:
-        errors.display(e, f'calling script: {filename}/{funcname}')
+        errors.display(e, f'Calling script: {filename}/{funcname}')
 
     return default
 
@@ -406,7 +409,7 @@ class ScriptRunner:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
             except Exception as e:
-                errors.display(e, f'running script process: {script.filename}')
+                errors.display(e, f'Running script process: {script.filename}')
 
     def before_process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
@@ -414,7 +417,7 @@ class ScriptRunner:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.before_process_batch(p, *script_args, **kwargs)
             except Exception as e:
-                errors.display(e, f'running script before process batch: {script.filename}')
+                errors.display(e, f'Running script before process batch: {script.filename}')
 
     def process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
@@ -422,7 +425,7 @@ class ScriptRunner:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process_batch(p, *script_args, **kwargs)
             except Exception as e:
-                errors.display(e, f'running script process batch: {script.filename}')
+                errors.display(e, f'Running script process batch: {script.filename}')
 
     def postprocess(self, p, processed):
         for script in self.alwayson_scripts:
@@ -430,7 +433,7 @@ class ScriptRunner:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess(p, processed, *script_args)
             except Exception as e:
-                errors.display(e, f'running script postprocess: {script.filename}')
+                errors.display(e, f'Running script postprocess: {script.filename}')
 
     def postprocess_batch(self, p, images, **kwargs):
         for script in self.alwayson_scripts:
@@ -438,7 +441,7 @@ class ScriptRunner:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_batch(p, *script_args, images=images, **kwargs)
             except Exception as e:
-                errors.display(e, f'running script before postprocess batch: {script.filename}')
+                errors.display(e, f'Running script before postprocess batch: {script.filename}')
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         for script in self.alwayson_scripts:
@@ -446,21 +449,21 @@ class ScriptRunner:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_image(p, pp, *script_args)
             except Exception as e:
-                errors.display(e, f'running script postprocess image: {script.filename}')
+                errors.display(e, f'Running script postprocess image: {script.filename}')
 
     def before_component(self, component, **kwargs):
         for script in self.scripts:
             try:
                 script.before_component(component, **kwargs)
             except Exception as e:
-                errors.display(e, f'running script before component: {script.filename}')
+                errors.display(e, f'Running script before component: {script.filename}')
 
     def after_component(self, component, **kwargs):
         for script in self.scripts:
             try:
                 script.after_component(component, **kwargs)
             except Exception as e:
-                errors.display(e, f'running script after component: {script.filename}')
+                errors.display(e, f'Running script after component: {script.filename}')
 
     def reload_sources(self, cache):
         for si, script in list(enumerate(self.scripts)):

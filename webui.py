@@ -162,6 +162,7 @@ def start_ui():
     startup_timer.record("ui")
     if cmd_opts.disable_queue:
         print('Server queues disabled')
+    else:
         shared.demo.queue(16)
 
     gradio_auth_creds = []

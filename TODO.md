@@ -69,6 +69,13 @@ Complete:
 
 - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8945>
 
+## Models
+
+StabilityAI is working on new stuff...
+
+- SD XL
+- SD ReImagined
+
 ## Integration
 
 Tech that can be integrated as part of the core workflow...
@@ -87,3 +94,4 @@ Tech that can be integrated as part of the core workflow...
 
 - force unload `xformers` when not used, improves compatibility with AMD/M1
 - add `styles.csv` to UI settings to allow customizing path
+- add `--disable-queue` to cmd flags that disables Gradio queues and forces it to use HTTP instead of WebSockets
