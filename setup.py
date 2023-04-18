@@ -109,6 +109,8 @@ def install(package, friendly: str = None, ignore: bool = False):
 
 # execute git command
 def git(arg: str, ignore: bool = False):
+    if args.skip_git:
+        return ''
     git_cmd = os.environ.get('GIT', "git")
     result = subprocess.run(f'"{git_cmd}" {arg}', check=False, shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     txt = result.stdout.decode(encoding="utf8", errors="ignore")
@@ -347,6 +349,8 @@ def check_extensions():
             newest = 0
             extension_dir = os.path.join(extensions_dir, ext)
             for f in os.listdir(extension_dir):
+                if '.json' in f or '.csv' in f:
+                    continue
                 ts = os.path.getmtime(os.path.join(extension_dir, f))
                 newest = max(newest, ts)
             newest_all = max(newest_all, newest)
@@ -397,6 +401,8 @@ def check_version():
 def check_timestamp():
     if not quick_allowed or not os.path.isfile('setup.log'):
         return False
+    if args.skip_git:
+        return True
     ok = True
     setup_time = -1
     with open('setup.log', 'r', encoding='utf8') as f:
@@ -434,6 +440,7 @@ def parse_args():
     parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
     parser.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
+    parser.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
     global args # pylint: disable=global-statement
     args = parser.parse_args()
 
@@ -455,6 +462,8 @@ def run_setup():
     check_python()
     if args.reset:
         git_reset()
+    if args.skip_git:
+        log.info('Skipping GIT operations')
     if check_timestamp():
         log.info('No changes detected: quick launch active')
         return

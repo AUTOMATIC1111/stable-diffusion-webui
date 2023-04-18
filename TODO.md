@@ -93,10 +93,18 @@ Tech that can be integrated as part of the core workflow...
 ### Update
 
 - reconnect ui to active session on browser restart  
+  this is one of most frequently asked for items, finally figured it out  
   works for text and image generation, but not for process as there is no progress bar reported there to start with  
-- force unload `xformers` when not used, improves compatibility with AMD/M1
-- add `styles.csv` to UI settings to allow customizing path
+- force unload `xformers` when not used  
+  improves compatibility with AMD/M1 platforms  
+- add `styles.csv` to UI settings to allow customizing path  
+- add `--skip-git` to cmd flags for power users that want  
+  to skip all git checks and operations and perform manual updates
 - add `--disable-queue` to cmd flags that disables Gradio queues (experimental)
   this forces it to use HTTP instead of WebSockets and can help on unreliable network connections  
-- allow scripts & extensions to set loading priority, fixes `ScuNet`
+- set scripts & extensions loading priority and allow custom priorities  
+  fixes random extension issues:  
+  `ScuNet` upscaler dissapearing, `Additional Networks` not showing up on XYZ axis, etc.
 - improve html loading order
+- remove some `asserts` causing runtime errors and replace with user-friendly messages
+- update README.md

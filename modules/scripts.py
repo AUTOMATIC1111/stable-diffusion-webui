@@ -187,23 +187,38 @@ ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedi
 
 
 def list_scripts(scriptdirname, extension):
-    scripts_list = []
+    tmp_list = []
 
     base = os.path.join(paths.script_path, scriptdirname)
     if os.path.exists(base):
-        priority = '50'
-        if os.path.isfile(os.path.join(base, "..", ".priority")):
-            with open(os.path.join(base, "..", ".priority"), "r", encoding="utf-8") as f:
-                priority = str(f.read().strip())
         for filename in sorted(os.listdir(base)):
-            scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(base, filename), priority))
+            tmp_list.append(ScriptFile(paths.script_path, filename, os.path.join(base, filename), '50'))
 
     for ext in extensions.active():
-        scripts_list += ext.list_files(scriptdirname, extension)
+        tmp_list += ext.list_files(scriptdirname, extension)
 
-    scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
+    scripts_list = []
+    for script in tmp_list:
+        if os.path.splitext(script.path)[1].lower() == extension and os.path.isfile(script.path):
+            if script.basedir == paths.script_path:
+                priority = '0'
+            elif script.basedir.startswith(os.path.join(paths.script_path, 'scripts')):
+                priority = '1'
+            elif script.basedir.startswith(os.path.join(paths.script_path, 'extensions-builtin')):
+                priority = '2'
+            elif script.basedir.startswith(os.path.join(paths.script_path, 'extensions')):
+                priority = '3'
+            else:
+                priority = '9'
+            if os.path.isfile(os.path.join(base, "..", ".priority")):
+                with open(os.path.join(base, "..", ".priority"), "r", encoding="utf-8") as f:
+                    priority = priority + str(f.read().strip())
+            else:
+                priority = priority + script.priority
+            scripts_list.append(ScriptFile(script.basedir, script.filename, script.path, priority))
 
-    return scripts_list
+    priority_sort = sorted(scripts_list, key=lambda item: item.priority + item.path.lower(), reverse=False)
+    return priority_sort
 
 
 def list_files_with_name(filename):
@@ -242,8 +257,7 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    priority_sort = sorted(scripts_list, key=lambda item: item.priority + item.path.lower(), reverse=False)
-    for scriptfile in priority_sort:
+    for scriptfile in scripts_list:
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path

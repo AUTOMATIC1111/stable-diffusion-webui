@@ -11,7 +11,7 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 
 <br>
 
-![screenshot](javscript/black-orange.jpg)
+![screenshot](javascript/black-orange.jpg)
 
 <br>
 
@@ -36,8 +36,6 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 - Built-in `LoRA`, `LyCORIS`, `Custom Diffusion`, `Dreambooth` training  
 - Majority of settings configurable via UI without the need for command line flags  
   e.g, cross-optimization methods, system folders, etc.  
-
-### UI
 
 ### Optimizations
 
@@ -65,10 +63,11 @@ Hand-picked list of extensions that are deeply integrated into core workflows:
 
 ### User Interface
 
-- Includes support for **Gradio themes**  
-  *Settings* -> *User interface* -> *UI theme*
 - Includes updated **UI**: reskinned and reorganized  
   Black and orange dark theme with fixed width options panels and larger previews  
+- Includes support for **Gradio themes**  
+  *Settings* -> *User interface* -> *UI theme*  
+  Link to themes list & previews: <https://huggingface.co/spaces/gradio/theme-gallery>  
 
 ### Removed
 
@@ -124,13 +123,15 @@ Full startup sequence is logged in `setup.log`, so if you encounter any issues, 
 
 The launcher can perform automatic update of main repository, requirements, extensions and submodules:
 
-- Main repository:  
+- **Main repository**:  
   Update is *not* performed by default, enable with `--upgrade` flag
-- Requirements:  
-  Check is performed on each startup and missing requirements are auto-installed, can be skipped with `--skip-requirements` flag
-- Extensions and submodules:  
-  Update is performed on each startup and installer for each extension is started, can be skipped with `--skip-extensions` flag
-- If timestamp of last sucessful setup is newer than actual repository version or version of newest extension, launcher will run in *quick* mode
+- **Requirements**:  
+  Check is performed on each startup and missing requirements are auto-installed  
+  Can be skipped with `--skip-requirements` flag
+- **Extensions and submodules**:  
+  Update is performed on each startup and installer for each extension is started  
+  Can be skipped with `--skip-extensions` flag
+- **Quick mode**: Automatically enabled if timestamp of last sucessful setup is newer than actual repository version or version of newest extension
 
 <br>
 

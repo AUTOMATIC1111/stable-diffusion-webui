@@ -45,6 +45,8 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
     infotext = ''
 
     for image, name in zip(image_data, image_names):
+        if image is None:
+            continue
         shared.state.textinfo = name
 
         pp = scripts_postprocessing.PostprocessedImage(image.convert("RGB"))
