@@ -8,19 +8,22 @@
 import os
 import pymongo
 from bson import ObjectId
+from tools.environment import get_mongo_env, Env_MgoHost, \
+    Env_MgoPort, Env_MgoCollect, Env_MgoUser, Env_MgoPass, Env_MgoDB
 
 
 class MongoClient(object):
 
     def __init__(self, **db_settings):
-        host = db_settings.get('host') or os.getenv('MgoHost')
-        port = db_settings.get('port') or os.getenv('MgoPort') or 27017
-        username = db_settings.get('username') or os.getenv('MgoUser')
-        pwd = db_settings.get('password') or os.getenv('MgoPass')
+        env_vars = get_mongo_env()
+        host = db_settings.get('host') or env_vars.get(Env_MgoHost)
+        port = db_settings.get('port') or env_vars.get(Env_MgoPort) or 27017
+        username = db_settings.get('username') or env_vars.get(Env_MgoUser)
+        pwd = db_settings.get('password') or env_vars.get(Env_MgoPass)
         timeout = db_settings.get('timeout') or 3
 
-        database = db_settings.get('database') or os.getenv('MgoDB') or 'draw-ai'
-        collection = db_settings.get('collection') or os.getenv('MgoCollect') or 'tasks'
+        database = db_settings.get('database') or env_vars.get(Env_MgoDB) or 'draw-ai'
+        collection = db_settings.get('collection') or env_vars.get(Env_MgoCollect) or 'tasks'
         if not host:
             raise EnvironmentError('cannot found mongo host')
         if username and pwd:

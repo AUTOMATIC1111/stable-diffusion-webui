@@ -10,6 +10,8 @@ import threading
 import typing
 import time
 import pymysql
+from tools.environment import get_mysql_env, Env_MysqlHost, \
+    Env_MysqlPort, Env_MysqlPass, Env_MysqlUser, Env_MysqlDB
 
 
 class MySQLClient(object):
@@ -127,21 +129,22 @@ locker = threading.RLock()
 
 def get_mysql_cli(host: str = None, port: typing.Optional[int] = None, user: str = None,
                   pwd: str = None, db: str = None) -> typing.Optional[MySQLClient]:
+    env_vars = get_mysql_env()
     if not host:
-        host = os.getenv('MysqlHost')
+        host = env_vars.get(Env_MysqlHost)
     if not port:
-        port = os.getenv('MysqlPort', 3306)
+        port = env_vars.get(Env_MysqlPort) or 3306
     if not user:
-        user = os.getenv('MysqlUser', 'root')
+        user = env_vars.get(Env_MysqlUser) or 'root'
     if not pwd:
-        pwd = os.getenv('MysqlPass')
+        pwd = env_vars.get(Env_MysqlPass)
     if not db:
-        db = os.getenv('MysqlDB', 'draw-ai')
+        db = env_vars.get(Env_MysqlDB) or 'draw-ai'
 
     if not host:
         return None
 
-    return MySQLClient(host, db, user, pwd, port)
+    return MySQLClient(host, db, user, pwd, int(port))
 
 
 def dispose():

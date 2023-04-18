@@ -9,11 +9,15 @@ import abc
 import os
 import json
 import shutil
+import typing
+
 import s3fs
 import requests
 import random
 import importlib.util
-from tools.reflection import find_classes
+from loguru import logger
+from tools.processor import MultiThreadWorker
+from multiprocessing import cpu_count
 from urllib.parse import urlparse, urlsplit
 
 USER_AGENTS = [
@@ -35,9 +39,6 @@ USER_AGENTS = [
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.90 Safari/537.36",
     "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/57.0.2987.133 Safari/537.36"
 ]
-EndponitKey = 'StorageEndponit'
-AccessKey = 'StorageAK'
-SecretKey = 'StorageSK'
 
 
 def http_request(url, method='GET', headers=None, cookies=None, data=None, timeout=30, proxy=None, stream=False):
@@ -100,6 +101,10 @@ class FileStorage:
         self.tmp_dir = os.path.join('tmp')
         os.makedirs(self.tmp_dir, exist_ok=True)
 
+    @property
+    def logger(self):
+        return logger
+
     @abc.abstractmethod
     def download(self, remoting_path, local_path) -> str:
         raise NotImplementedError
@@ -111,6 +116,13 @@ class FileStorage:
     @abc.abstractmethod
     def upload(self, local_path, remoting_path) -> str:
         raise NotImplementedError
+
+    def multi_upload(self, local_remoting_pars: typing.Sequence[typing.Tuple[str, str]]):
+        if local_remoting_pars:
+            worker_count = cpu_count()
+            worker_count = worker_count if worker_count <= 4 else 4
+            w = MultiThreadWorker(local_remoting_pars, self.upload, worker_count)
+            w.run()
 
     def close(self):
         pass
@@ -152,9 +164,20 @@ class PrivatizationFileStorage(FileStorage):
     def name(self):
         return 'default'
 
-    def download(self, remoting_path, local_path) -> str:
+    def download(self, remoting_path: str, local_path: str) -> str:
         if os.path.isfile(local_path):
             return local_path
+
+        # 如果是本地路径
+        if os.path.isfile(remoting_path):
+            shutil.copy(remoting_path, local_path)
+            return local_path
+
+        # http
+        if 'http' not in remoting_path.lower():
+            raise OSError(f'unsupported file:{remoting_path}')
+
+        self.logger.info(f"download url: {remoting_path}...")
         resp = http_request(remoting_path)
         if resp:
             filename = os.path.basename(remoting_path)
@@ -166,7 +189,7 @@ class PrivatizationFileStorage(FileStorage):
 
             chunk_size = 512
             filepath = os.path.join(self.tmp_dir, filename)
-
+            self.logger.info(f"save to {filename} ...")
             with open(filepath, 'wb') as f:
                 for chunk in resp.iter_content(chunk_size=chunk_size):
                     if chunk:
@@ -181,3 +204,6 @@ class PrivatizationFileStorage(FileStorage):
         # local file system
         if remoting_path != local_path:
             shutil.copy(local_path, remoting_path)
+            return remoting_path
+
+

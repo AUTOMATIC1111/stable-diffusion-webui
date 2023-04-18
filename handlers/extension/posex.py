@@ -8,6 +8,7 @@
 import os.path
 import typing
 from tools.encryptor import b64_image
+from handlers.utils import get_tmp_local_path
 from handlers.formatter import AlwaysonScriptArgsFormatter
 
 PoseX = 'Posex'
@@ -35,8 +36,8 @@ class PosexFormatter(AlwaysonScriptArgsFormatter):
             posex_script_args = [obj_to_array(x) for x in args]
         if posex_script_args:
             if len(posex_script_args) > 2 and posex_script_args[0]:
-                image = posex_script_args[1]
-                if os.path.isfile(image):
+                image = get_tmp_local_path(posex_script_args[1])
+                if image and os.path.isfile(image):
                     # 必须是png
                     posex_script_args[1] = b64_image(image)
 

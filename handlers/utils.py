@@ -13,10 +13,12 @@ from PIL import Image
 from loguru import logger
 from datetime import datetime
 from modules.scripts import Script
+from tools.image import compress_image
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
 from handlers.typex import ModelLocation, ModelType, Tmp, S3ImageBucket, S3ImagePath
 from filestorage import find_storage_classes_with_env, push_local_path, get_local_path
+from tools.environment import get_file_storage_system_env, Env_BucketKey
 
 FileStorageCls = find_storage_classes_with_env()
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
@@ -173,11 +175,26 @@ def save_processed_images(proc, output_dir, task_id, user_id):
             if processed_image.mode == 'RGBA':
                 processed_image = processed_image.convert("RGB")
             full_path = os.path.join(output_dir, filename)
+            low_file = os.path.join(output_dir, 'low-' + filename)
             processed_image.save(full_path)
-            # put s3
-            if file_storage_system.name() != 'default':
-                key = f'{S3ImageBucket}/' + S3ImagePath.format(uid=user_id, name=filename)
-                file_storage_system.upload(full_path, key)
-
+            compress_image(full_path, low_file)
             local_images.append(full_path)
+
+    # put s3
+    if file_storage_system.name() != 'default':
+        upload_images = [x for x in local_images]
+        local_images.clear()
+        storage_env = get_file_storage_system_env()
+        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+
+        for file_path in upload_images:
+            filename = os.path.basename(file_path)
+            key = os.path.join(bucket, output_dir, filename)
+            file_storage_system.upload(file_path, key)
+
+            low_key = os.path.join(bucket, output_dir, 'low-' + filename)
+            low_file = os.path.join(output_dir, filename)
+            file_storage_system.upload(low_file, low_key)
+            local_images.append(key)
+
     return local_images

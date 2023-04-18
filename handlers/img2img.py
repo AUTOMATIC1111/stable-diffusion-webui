@@ -21,7 +21,7 @@ from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path
-from extension.controlnet import exec_control_net_annotator
+from handlers.extension.controlnet import exec_control_net_annotator
 from handlers.dumper import TaskDumper
 from modules import sd_models
 
@@ -81,7 +81,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  prompt_styles: typing.List[str] = None,  # 提示风格（模板风格也就是TAG模板）
                  img2img_batch_inpaint_mask_dir: str = None,
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
-                 override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337']
+                 override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337', 'sd_vae': 'None']
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部mbending列表
                  **kwargs):
@@ -99,7 +99,6 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             init_mask_inpaint = get_tmp_local_path(init_mask_inpaint)
             if not init_img_inpaint or not init_mask_inpaint:
                 raise ValueError('img_inpaint or mask_inpaint not found')
-
             image = Image.open(init_img_inpaint)
             mask = Image.open(init_mask_inpaint)
         elif mode == 3:
@@ -162,8 +161,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
 
         super(Img2ImgTask, self).__init__(
             sd_model=shared.sd_model,
-            outpath_samples=f"output/img2img/{user_id}/samples/",
-            outpath_grids=f"output/img2img/{user_id}/grids/",
+            outpath_samples=f"output/{user_id}/img2img/samples/",
+            outpath_grids=f"output/{user_id}/img2img/grids/",
             prompt=prompt,
             negative_prompt=negative_prompt,
             styles=prompt_styles,
@@ -274,6 +273,24 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             'prompt': '<lora:Xiaorenshu_v20:0.6>',
             'lora_models': ['/data/apksamba/sd/models/Lora/Xiaorenshu_v20.safetensors']
         }
+        # remoting task
+        rt = {
+            'task_id': 'test_i2i_remoting',
+            'base_model_path': f'{models_dir}/v1-5-pruned-emaonly.ckpt',
+            'model_hash': '',
+            'alwayson_scripts': {},
+            'user_id': 'test_user',
+            'select_script': None,
+            'task_type': TaskType.Image2Image,
+            'create_at': -1,
+            'negative_prompt': '',
+            "init_img": "gbdata-qa/sd-webui/Images/Moxin_10.png",
+            'prompt': '<lora:makimaChainsawMan_offset:0.6>, 1girl,',
+            'lora_models': [
+                '/data/apksamba/sd/models/Lora/Xiaorenshu_v20.safetensors',
+                'gbdata-qa/sd-webui/Lora/makimaChainsawMan_offset.safetensors'
+            ]
+        }
 
         tasks = []
         for m in models:
@@ -281,7 +298,13 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             t['base_model_path'] = os.path.join(models_dir, m)
             t['task_id'] = f'test_i2i_{basename}_{len(tasks)}'
             t['model_hash'] = model_hash_map[m]
+
+            rt['base_model_path'] = os.path.join(models_dir, m)
+            rt['task_id'] = f'test_i2i_remoting_{basename}_{len(tasks)}'
+            rt['model_hash'] = model_hash_map[m]
             tasks.append(Task(**t))
+            tasks.append(Task(**rt))
+
         return tasks
 
 

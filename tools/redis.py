@@ -7,22 +7,24 @@
 # @Software: Hifive
 import os
 import redis
+from tools.environment import get_redis_env, Env_RedisHost,\
+    Env_RedisPort, Env_RedisDB, Env_RedisPass
 
 
 class RedisPool:
     def __init__(self, host=None, port=None, db=0, password=None, max_connections=10):
-
+        env_vars = get_redis_env()
         if not host:
-            host = os.getenv('RedisHost')
+            host = env_vars.get(Env_RedisHost)
         if not port:
-            port = os.getenv('RedisPort', 6379)
+            port = env_vars.get(Env_RedisPort) or 6379
         if not password:
-            password = os.getenv('RedisPass')
+            password = env_vars.get(Env_RedisPass)
         if not db:
-            db = os.getenv('RedisDB', 1)
+            db = env_vars.get(Env_RedisDB) or 1
         self.host = host
-        self.port = port
-        self.db = db
+        self.port = int(port)
+        self.db = int(db)
         self.password = password
         self.max_connections = max_connections
         if not host:

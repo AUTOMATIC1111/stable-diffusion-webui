@@ -5,13 +5,16 @@
 # @Site    : 
 # @File    : wrapper.py
 # @Software: Hifive
-
+import json
 import time
+from loguru import logger
+from functools import wraps
 
 
 class FuncExecTimeWrapper(object):
 
     def __call__(self, func):
+
         def wrapper(*args, **kwargs):
             t1 = time.time()
             res = func(*args, **kwargs)
@@ -20,4 +23,17 @@ class FuncExecTimeWrapper(object):
             return res
         return wrapper
 
+
+class FuncResultLogWrapper:
+
+    def __init__(self, msg: str):
+        self.msg = msg
+
+    def __call__(self, f):
+
+        def wrapper(*args, **kwargs):
+            r = f(*args, **kwargs)
+            logger.info(self.msg + json.dumps(r))
+            return r
+        return wrapper
 

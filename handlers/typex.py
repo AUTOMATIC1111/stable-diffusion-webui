@@ -21,6 +21,6 @@ ModelLocation = {
 }
 
 Tmp = 'tmp'
-S3ImageBucket = "sd-webui-res"
-S3ImagePath = "{uid}/output/{name}"
+S3ImageBucket = "xingzhe-sdplus"
+S3ImagePath = "output/{uid}/{dir}/{name}"
 
