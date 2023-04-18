@@ -1689,55 +1689,52 @@ def webpath(fn):
     return f'file={web_path}?{os.path.getmtime(fn)}'
 
 
-def javascript_html():
+def html_head():
     script_js = os.path.join(script_path, "script.js")
     head = f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
+    for script in modules.scripts.list_scripts("javascript", ".js"):
+        head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
+    for script in modules.scripts.list_scripts("javascript", ".mjs"):
+        head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
+    return head
 
+
+def html_body():
+    body = ''
     # inline = f"{localization.localization_js(shared.opts.localization)};"
     inline = ''
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
     elif opts.gradio_theme == 'black-orange':
         inline += "set_theme('dark');"
-
-    for script in modules.scripts.list_scripts("javascript", ".js"):
-        head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
-
-    for script in modules.scripts.list_scripts("javascript", ".mjs"):
-        head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
-
-    head += f'<script type="text/javascript">{inline}</script>\n'
-
-    return head
+    body += f'<script type="text/javascript">{inline}</script>\n'
+    return body
 
 
-def css_html():
+def html_css():
     head = ""
-
     def stylesheet(fn):
         return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
-
     for cssfile in modules.scripts.list_files_with_name("style.css"):
         if not os.path.isfile(cssfile):
             continue
         head += stylesheet(cssfile)
-
     if opts.gradio_theme == 'black-orange':
         head += stylesheet(os.path.join(data_path, "javascript", "black-orange.css"))
     if os.path.exists(os.path.join(data_path, "user.css")):
         head += stylesheet(os.path.join(data_path, "user.css"))
-
     return head
 
 
 def reload_javascript():
-    js = javascript_html()
-    css = css_html()
+    head = html_head()
+    css = html_css()
+    body = html_body()
 
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'{js}</head>'.encode("utf8"))
-        res.body = res.body.replace(b'</body>', f'{css}</body>'.encode("utf8"))
+        res.body = res.body.replace(b'</head>', f'{head}</head>'.encode("utf8"))
+        res.body = res.body.replace(b'</body>', f'{css}{body}</body>'.encode("utf8"))
         res.init_headers()
         return res
 

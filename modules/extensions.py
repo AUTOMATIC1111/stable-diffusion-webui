@@ -71,9 +71,7 @@ class Extension:
             if os.path.isfile(os.path.join(dirpath, "..", ".priority")):
                 with open(os.path.join(dirpath, "..", ".priority"), "r", encoding="utf-8") as f:
                     priority = str(f.read().strip())
-            _fn, ext = os.path.splitext(filename)
-            if ext == '.py':
-                res.append(scripts.ScriptFile(self.path, filename, os.path.join(dirpath, filename), priority))
+            res.append(scripts.ScriptFile(self.path, filename, os.path.join(dirpath, filename), priority))
 
         res = [x for x in res if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 

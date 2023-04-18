@@ -196,9 +196,7 @@ def list_scripts(scriptdirname, extension):
             with open(os.path.join(base, "..", ".priority"), "r", encoding="utf-8") as f:
                 priority = str(f.read().strip())
         for filename in sorted(os.listdir(base)):
-            _fn, ext = os.path.splitext(filename)
-            if ext == '.py':
-                scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(base, filename), priority))
+            scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(base, filename), priority))
 
     for ext in extensions.active():
         scripts_list += ext.list_files(scriptdirname, extension)
