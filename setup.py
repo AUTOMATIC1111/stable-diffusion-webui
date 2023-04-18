@@ -88,7 +88,7 @@ def installed(package, friendly: str = None):
 
 
 # install package using pip if not already installed
-def install(package, friendly: str = None):
+def install(package, friendly: str = None, ignore: bool = False):
     def pip(arg: str):
         log.debug(f"Running pip: {arg}")
         result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -96,7 +96,7 @@ def install(package, friendly: str = None):
         if len(result.stderr) > 0:
             txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
         txt = txt.strip()
-        if result.returncode != 0:
+        if result.returncode != 0 and not ignore:
             global errors # pylint: disable=global-statement
             errors += 1
             log.error(f'Error running pip with args: {arg}')
@@ -201,9 +201,9 @@ def install_packages():
     install(clip_package, 'clip')
     try:
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
-        install(f'--no-deps {xformers_package}')
+        install(f'--no-deps {xformers_package}', ignore=True)
     except Exception as e:
-        log.error(f'Cannot install xformers package: {e}')
+        log.debug(f'Cannot install xformers package: {e}')
 
 
 # clone required repositories

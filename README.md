@@ -130,7 +130,7 @@ The launcher can perform automatic update of main repository, requirements, exte
   Check is performed on each startup and missing requirements are auto-installed, can be skipped with `--skip-requirements` flag
 - Extensions and submodules:  
   Update is performed on each startup and installer for each extension is started, can be skipped with `--skip-extensions` flag
-- All checks can be skipped using `--quick` flag
+- If timestamp of last sucessful setup is newer than actual repository version or version of newest extension, launcher will run in *quick* mode
 
 <br>
 
