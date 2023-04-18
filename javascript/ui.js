@@ -11,9 +11,7 @@ function all_gallery_buttons() {
     var allGalleryButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnails > .thumbnail-item.thumbnail-small');
     var visibleGalleryButtons = [];
     allGalleryButtons.forEach(function(elem) {
-        if (elem.parentElement.offsetParent) {
-            visibleGalleryButtons.push(elem);
-        }
+        if (elem.parentElement.offsetParent) visibleGalleryButtons.push(elem);
     })
     return visibleGalleryButtons;
 }
@@ -22,9 +20,7 @@ function selected_gallery_button() {
     var allCurrentButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnail-item.thumbnail-small.selected');
     var visibleCurrentButton = null;
     allCurrentButtons.forEach(function(elem) {
-        if (elem.parentElement.offsetParent) {
-            visibleCurrentButton = elem;
-        }
+        if (elem.parentElement.offsetParent) visibleCurrentButton = elem;
     })
     return visibleCurrentButton;
 }
@@ -32,42 +28,27 @@ function selected_gallery_button() {
 function selected_gallery_index(){
     var buttons = all_gallery_buttons();
     var button = selected_gallery_button();
-
     var result = -1
     buttons.forEach(function(v, i){ if(v==button) { result = i } })
-
     return result
 }
 
 function extract_image_from_gallery(gallery){
-    if (gallery.length == 0){
-        return [null];
-    }
-    if (gallery.length == 1){
-        return [gallery[0]];
-    }
-
+    if (gallery.length == 0) return [null];
+    if (gallery.length == 1) return [gallery[0]];
     index = selected_gallery_index()
-
-    if (index < 0 || index >= gallery.length){
-        // Use the first image in the gallery as the default
-        index = 0;
-    }
-
+    if (index < 0 || index >= gallery.length) index = 0;
     return [gallery[index]];
 }
 
 function args_to_array(args){
     res = []
-    for(var i=0;i<args.length;i++){
-        res.push(args[i])
-    }
+    for(var i=0;i<args.length;i++) res.push(args[i])
     return res
 }
 
 function switch_to_txt2img(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[0].click();
-
     return args_to_array(arguments);
 }
 
@@ -75,6 +56,7 @@ function switch_to_img2img_tab(no){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[no].click();
 }
+
 function switch_to_img2img(){
     switch_to_img2img_tab(0);
     return args_to_array(arguments);
@@ -98,35 +80,26 @@ function switch_to_inpaint_sketch(){
 function switch_to_inpaint(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[2].click();
-
     return args_to_array(arguments);
 }
 
 function switch_to_extras(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
-
     return args_to_array(arguments);
 }
 
 function get_tab_index(tabId){
     var res = 0
-
     gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
-        if(button.className.indexOf('selected') != -1)
-            res = i
+        if(button.className.indexOf('selected') != -1) res = i
     })
-
     return res
 }
 
 function create_tab_index_args(tabId, args){
     var res = []
-    for(var i=0; i<args.length; i++){
-        res.push(args[i])
-    }
-
+    for(var i=0; i<args.length; i++) res.push(args[i])
     res[0] = get_tab_index(tabId)
-
     return res
 }
 
@@ -139,18 +112,12 @@ function get_img2img_tab_index() {
 
 function create_submit_args(args){
     res = []
-    for(var i=0;i<args.length;i++){
-        res.push(args[i])
-    }
-
+    for(var i=0;i<args.length;i++) res.push(args[i])
     // As it is currently, txt2img and img2img send back the previous output args (txt2img_gallery, generation_info, html_info) whenever you generate a new image.
     // This can lead to uploading a huge gallery of previously generated images, which leads to an unnecessary delay between submitting and beginning to generate.
     // I don't know why gradio is sending outputs along with inputs, but we can prevent sending the image gallery here, which seems to be an issue for some.
     // If gradio at some point stops sending outputs, this may break something
-    if(Array.isArray(res[res.length - 3])){
-        res[res.length - 3] = null
-    }
-
+    if(Array.isArray(res[res.length - 3])) res[res.length - 3] = null
     return res
 }
 
@@ -161,49 +128,37 @@ function showSubmitButtons(tabname, show){
     // gradioApp().getElementById(tabname+'_skip').style.display = "block"
 }
 
-function submit(){
+function submit(id, once = false){
     rememberGallerySelection('txt2img_gallery')
     showSubmitButtons('txt2img', false)
-
-    var id = randomId()
-    requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
-        showSubmitButtons('txt2img', true)
-
-    })
-
+    if (!id) id = randomId()
+    const atEnd = () => showSubmitButtons('txt2img', true)
+    requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), atEnd, null, once)
     var res = create_submit_args(arguments)
-
     res[0] = id
-
     return res
 }
 
-function submit_img2img(){
+function submit_img2img(id){
     rememberGallerySelection('img2img_gallery')
     showSubmitButtons('img2img', false)
-
-    var id = randomId()
+    if (!id) id = randomId()
     requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
         showSubmitButtons('img2img', true)
     })
-
     var res = create_submit_args(arguments)
-
     res[0] = id
     res[1] = get_tab_index('mode_img2img')
-
     return res
 }
 
-function modelmerger(){
-    var id = randomId()
+function modelmerger(id){
+    if (!id) id = randomId()
     requestProgress(id, gradioApp().getElementById('modelmerger_results_panel'), null, function(){})
-
     var res = create_submit_args(arguments)
     res[0] = id
     return res
 }
-
 
 function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     name_ = prompt('Style name:')
@@ -215,7 +170,6 @@ function confirm_clear_prompt(prompt, negative_prompt) {
         prompt = ""
         negative_prompt = ""
     }
-
     return [prompt, negative_prompt]
 }
 
@@ -243,26 +197,19 @@ function recalculate_prompts_img2img(){
 
 opts = {}
 onUiUpdate(function(){
-	if(Object.keys(opts).length != 0) return;
-
-	json_elem = gradioApp().getElementById('settings_json')
-	if(json_elem == null) return;
-
+    if(Object.keys(opts).length != 0) return;
+    json_elem = gradioApp().getElementById('settings_json')
+    if(json_elem == null) return;
     var textarea = json_elem.querySelector('textarea')
     var jsdata = textarea.value
     opts = JSON.parse(jsdata)
     executeCallbacks(optionsChangedCallbacks);
-
     Object.defineProperty(textarea, 'value', {
         set: function(newValue) {
             var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
             var oldValue = valueProp.get.call(textarea);
             valueProp.set.call(textarea, newValue);
-
-            if (oldValue != newValue) {
-                opts = JSON.parse(textarea.value)
-            }
-
+            if (oldValue != newValue) opts = JSON.parse(textarea.value)
             executeCallbacks(optionsChangedCallbacks);
         },
         get: function() {
@@ -270,30 +217,21 @@ onUiUpdate(function(){
             return valueProp.get.call(textarea);
         }
     });
-
     json_elem.parentElement.style.display="none"
-
     function registerTextarea(id, id_counter, id_button){
         var prompt = gradioApp().getElementById(id)
         var counter = gradioApp().getElementById(id_counter)
         var textarea = gradioApp().querySelector("#" + id + " > label > textarea");
-
-        if(counter.parentElement == prompt.parentElement){
-            return
-        }
-
+        if(counter.parentElement == prompt.parentElement) return
         prompt.parentElement.insertBefore(counter, prompt)
         prompt.parentElement.style.position = "relative"
-
-		promptTokecountUpdateFuncs[id] = function(){ update_token_counter(id_button); }
-		textarea.addEventListener("input", promptTokecountUpdateFuncs[id]);
+      promptTokecountUpdateFuncs[id] = function(){ update_token_counter(id_button); }
+      textarea.addEventListener("input", promptTokecountUpdateFuncs[id]);
     }
-
     registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button')
     registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button')
     registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button')
     registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button')
-
     show_all_pages = gradioApp().getElementById('settings_show_all_pages')
     settings_tabs = gradioApp().querySelector('#settings div')
     if(show_all_pages && settings_tabs){
@@ -349,7 +287,6 @@ function update_token_counter(button_id) {
 function restart_reload(){
     document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
     setTimeout(function(){location.reload()},8000)
-
     return []
 }
 
@@ -360,7 +297,6 @@ function updateInput(target){
 	Object.defineProperty(e, "target", {value: target})
 	target.dispatchEvent(e);
 }
-
 
 var desiredCheckpointName = null;
 function selectCheckpoint(name){
@@ -379,7 +315,6 @@ function create_theme_element() {
 
 function preview_theme() {
   const name = gradioApp().getElementById('setting_gradio_theme').querySelectorAll('span')[1].innerText; // ugly but we want current value without the need to set apply
-  console.log('PREVIEW', name);
   if (name === 'black-orange' || name === 'gradio/default') {
     el = document.getElementById('theme-preview') || create_theme_element();
     el.style.display = el.style.display === 'block' ? 'none' : 'block';
@@ -390,8 +325,17 @@ function preview_theme() {
       .then((r) => r.json())
         .then(themes => {
           theme = themes.find((t)=> t.id === name);
-          console.log('FOUND', theme);         
           window.open(theme.subdomain, '_blank');
       });
   }
 }
+
+function reconnect_ui() {
+  const el = gradioApp().getElementById('txt2img_generate')
+  if (!el) return
+  else clearInterval(start_check)
+  const task_id = localStorage.getItem('task')
+  if (task_id) submit(task_id, true)
+}
+
+var start_check = setInterval(reconnect_ui, 50)

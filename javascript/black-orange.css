@@ -107,7 +107,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #steps-animation, #controlnet { border-width: 0; }
 
 /* based on gradio built-in dark theme */
-:root {
+.dark {
   --body-background-fill: black;
   --body-text-color: var(--neutral-100);
   --color-accent-soft: var(--neutral-700);

@@ -34,8 +34,6 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
             image_data.append(image)
             image_names.append(filename)
     else:
-        assert image, 'image not selected'
-
         image_data.append(image)
         image_names.append(None)
 
@@ -77,7 +75,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
     return outputs, ui_common.plaintext_to_html(infotext), ''
 
 
-def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, save_output: bool = True):
+def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, _upscale_first: bool, save_output: bool = True):
     """old handler for API"""
 
     args = scripts.scripts_postproc.create_args_for_run({

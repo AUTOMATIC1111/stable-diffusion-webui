@@ -412,7 +412,7 @@ options_templates.update(options_section(('ui', "Live previews"), {
     "show_progress_every_n_steps": OptionInfo(-1, "Show new live preview image every N sampling steps. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_type": OptionInfo("Full", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}),
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
-    "live_preview_refresh_period": OptionInfo(1000, "Progressbar/preview update period, in milliseconds")
+    "live_preview_refresh_period": OptionInfo(250, "Progressbar/preview update period, in milliseconds")
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {

@@ -119,6 +119,8 @@ def git(arg: str, ignore: bool = False):
         global errors # pylint: disable=global-statement
         errors += 1
         log.error(f'Error running git with args: {arg}')
+        if 'or stash them' in txt:
+            log.error('Local changes detected: check setup.log for details')
         log.debug(f'Git output: {txt}')
     return txt
 

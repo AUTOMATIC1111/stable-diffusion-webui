@@ -92,7 +92,11 @@ Tech that can be integrated as part of the core workflow...
 
 ### Update
 
+- reconnect ui to active session on browser restart  
+  works for text and image generation, but not for process as there is no progress bar reported there to start with  
 - force unload `xformers` when not used, improves compatibility with AMD/M1
 - add `styles.csv` to UI settings to allow customizing path
-- add `--disable-queue` to cmd flags that disables Gradio queues and forces it to use HTTP instead of WebSockets
+- add `--disable-queue` to cmd flags that disables Gradio queues (experimental)
+  this forces it to use HTTP instead of WebSockets and can help on unreliable network connections  
 - allow scripts & extensions to set loading priority, fixes `ScuNet`
+- improve html loading order
