@@ -11,6 +11,10 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 
 <br>
 
+### Follow [Development updates](https://github.com/vladmandic/automatic/discussions/99) for daily updates on new features/fixes
+
+<br>
+
 ![screenshot](javascript/black-orange.jpg)
 
 <br>

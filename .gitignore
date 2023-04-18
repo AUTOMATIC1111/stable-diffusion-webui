@@ -7,10 +7,12 @@ __pycache__
 /setup.log
 /styles.csv
 /user.css
+/webui-user.bat
 /javascript/themes.json
 venv
 
 # all models and temp files
+*.bak
 *.ckpt
 *.safetensors
 *.pth
