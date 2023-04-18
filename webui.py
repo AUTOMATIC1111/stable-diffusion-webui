@@ -160,7 +160,9 @@ def start_ui():
     startup_timer.record("scripts before_ui_callback")
     shared.demo = modules.ui.create_ui()
     startup_timer.record("ui")
-    shared.demo.queue(16)
+    if cmd_opts.disable_queue:
+        print('Server queues disabled')
+        shared.demo.queue(16)
 
     gradio_auth_creds = []
     if cmd_opts.gradio_auth:

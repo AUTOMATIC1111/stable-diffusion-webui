@@ -170,8 +170,6 @@ class State:
 state = State()
 state.server_start = time.time()
 
-prompt_styles = modules.styles.StyleDatabase('styles.csv')
-
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 
 face_restorers = []
@@ -278,6 +276,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Path to directory with CLIP model file(s)"),
     "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with Lora network(s)"),
     "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
+    "styles_dir": OptionInfo('styles.csv', "Path to user-defined styles file"),
     # "gfpgan_model": OptionInfo("", "GFPGAN model file name"),
 }))
 
@@ -607,6 +606,7 @@ if os.path.exists(config_filename):
     opts.load(config_filename)
 
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
+prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
 
 settings_components = None
 """assinged from ui.py, a mapping on setting names to gradio components repsponsible for those settings"""

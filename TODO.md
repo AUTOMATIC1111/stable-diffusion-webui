@@ -82,3 +82,8 @@ Tech that can be integrated as part of the core workflow...
 ## Random
 
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
+
+### Update
+
+- force unload `xformers` when not used, improves compatibility with AMD/M1
+- add `styles.csv` to UI settings to allow customizing path

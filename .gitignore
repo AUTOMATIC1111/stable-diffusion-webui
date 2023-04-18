@@ -5,7 +5,7 @@ __pycache__
 /config.json
 /ui-config.json
 /setup.log
-/style.csv
+/styles.csv
 /user.css
 /javascript/themes.json
 venv

@@ -46,6 +46,7 @@ parser.add_argument("--server-name", type=str, help="Sets hostname of server", d
 parser.add_argument("--no-hashing", action='store_true', help="Disable sha256 hashing of checkpoints", default=False)
 parser.add_argument("--no-download-sd-model", action='store_true', help="Disable download of default model even if no model is found", default=False)
 parser.add_argument("--profile", action='store_true', help="Run profiler, default: %(default)s")
+parser.add_argument("--disable-queue", action='store_true', help="Disable Gradio queues and force use of HTTP instead of WebSockets, default: %(default)s")
 
 
 def compatibility_args(opts, args):

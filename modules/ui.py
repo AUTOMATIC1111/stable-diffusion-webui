@@ -89,7 +89,7 @@ def add_style(name: str, prompt: str, negative_prompt: str):
     shared.prompt_styles.styles[style.name] = style
     # Save all loaded prompt styles: this allows us to update the storage format in the future more easily, because we
     # reserialize all styles every time we save them
-    shared.prompt_styles.save_styles('styles.csv')
+    shared.prompt_styles.save_styles(shared.opts.styles_dir)
 
     return [gr.Dropdown.update(visible=True, choices=list(shared.prompt_styles.styles)) for _ in range(2)]
 
