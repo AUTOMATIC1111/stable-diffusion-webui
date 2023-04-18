@@ -1474,24 +1474,24 @@ def create_ui():
 
         if info.refresh is not None:
             if is_quicksettings:
-                with FormRow(elem_id=f'row_{elem_id}'):
+                with gr.Row(elem_id=f'row_{elem_id}'):
                     with gr.Box():
                         with gr.Row(elem_id=f'{elem_id}_row-collapse-one'):
                             res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                             create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
                  
-                    with FormRow():
+                    with gr.Row():
                         gr.Checkbox(label='', elem_id=f'{section}_add2quick_{elem_id}', value=True, interactive=True)
             else:
-                with FormRow(elem_id=f'row_{elem_id}'):
+                with gr.Row(elem_id=f'row_{elem_id}'):
                     with gr.Box():
                         with gr.Row(elem_id=f'{elem_id}_row-collapse-one'):
                             res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                             create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
-                    with FormRow():           
+                    with gr.Row():           
                         gr.Checkbox(label='', elem_id=f'{section}_add2quick_{elem_id}', value=False, interactive=True)
         else:
-            with FormRow(elem_id=f'row_{elem_id}'):
+            with gr.Row(elem_id=f'row_{elem_id}'):
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                 gr.Checkbox(label='', elem_id=f'{section}_add2quick_{elem_id}', value=is_quicksettings, interactive=True)
                

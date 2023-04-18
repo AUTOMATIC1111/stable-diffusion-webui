@@ -1333,8 +1333,9 @@ input.svelte-56zyyb{
 }
 [id^="row_setting_"]
 {
-	gap:1px !important;
+	gap:0px !important;
 }
+
 [id^="row_setting_"] > div + div.form
 {
 	flex-grow:0;
@@ -2264,6 +2265,16 @@ button.secondary{
     top: calc(( var(--ae-outside-gap-size) / 2 ) - 1px);
 }
 
+#quicksettings_overflow_container > div > div:nth-child(2), 
+[id$="settings_2img_settings"] > div > div:nth-child(2) {
+    flex-shrink: 1 !important;
+    flex-grow: 0 !important;
+    flex-basis: 0% !important;
+    min-width: unset;
+    position: relative;
+    margin-left: -1px;
+}
+
 /*
 #quicksettings_overflow_container > div:first-child {
     margin-top: var(--ae-outside-gap-size);
@@ -3107,7 +3118,7 @@ input[type=range]::after:: {
 {
   scrollbar-color: var(--ae-panel-bg-color) var(--ae-main-bg-color) !important;
   scrollbar-width: thin !important;
-  padding: 0 1px;
+  /*padding: 0 1px;*/
 }
 
 
