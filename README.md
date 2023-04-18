@@ -1,7 +1,72 @@
-# Stable Diffusion web UI
-A browser interface based on Gradio library for Stable Diffusion.
+# Stable Diffusion web UI-UX 
+Not just a browser interface based on Gradio library for Stable Diffusion.
+A pixel perfect design, mobile friendly, customizable interface that adds accessibility, ease of use and extended functionallity to the stable diffusion web ui.
+This project is hoping to merge with the main branch at some point in the future.
+Unfortunately this is going to take some time as the main author of the project askes for small PRs in order to aprove the changes.
+It is unsure how many of these changes will make it to the main branch  
+Until then you can use this repo enjoy!
 
-![](screenshot.png)
+This is the latest and greatest experimental version please don't submit bugs for this release if it doesn't work for you use the stable release from master branch
+
+
+Default theme
+
+![anapnoe_uiux](https://user-images.githubusercontent.com/124302297/227973574-6003142d-0c7c-41c6-9966-0792a94549e9.png)
+
+## Features and to do list of ui-ux
+- [x] resizable viewport
+- [x] switchable viewports (DoubleClick on the split handler to swap views) option in settings for default position
+- [x] mobile navigation
+- [x] top header tabs (option setting)
+- [x] hidden tabs (option setting) no need to restart this is a different implementation
+- [x] drag and drop reordable quick settings offcanvas aside view
+- [x] drag and drop images to txt2img and img2img and import generation info parameters along with a preview image
+- [x] ignore - remove overrides when import [multiselect] (option setting)
+- [x] resizable cards for extra networks and number of rows (option setting)
+- [x] alternative offcanvas aside view for extra networks (option setting)
+- [x] live preview image fit method (option setting)
+- [x] generated image fit method (option setting)
+- [x] max resolution output for txt2img and img2img (option setting)
+- [x] performant dispatch for gradio's range slider and input number field issue: https://github.com/gradio-app/gradio/issues/3204 (option setting) latest update uses only one instance clone to mediate for the release event
+- [x] ticks input range sliders (option setting)
+- [x] pacman preloader unified colors on reload ui
+- [x] frame border animation when generating images
+- [x] progress bar on top of the page always visible (when scroll for mobile)
+- [x] remix icons 
+- [ ] small arrows next to icons sent to inpaint, extras, img2img etc  
+- [x] style theme configurator extension to customize every aspect of theme in real time with cool global functions to change the hue / saturation / brightness or invert the theme colors
+- [x] pan and zoom in out functionality for sketch, inpaint, inpaint sketch
+- [x] fullscreen support for sketch, inpaint, inpaint sketch  
+- [ ] component gallery navigate to previous generations inside the txt2img, img2img interface
+- [ ] and auto load the current generation settings 
+- [x] better lightbox with zoom in-out mobile gestures support etc.. 
+- [ ] credits/about page display all 300+ contributors so far inside the UI 
+
+Quick Settings aside off-canvas view - drag and drop to custom sort your settings
+
+![anapnoe_uiux_quicksettings](https://user-images.githubusercontent.com/124302297/227967695-f8bb01b5-5cc9-4238-80dd-06e261378d6e.png)
+
+
+Extra Networks aside off-canvas view
+
+![anapnoe_uiux_extra_networks](https://user-images.githubusercontent.com/124302297/227968001-20eab8f5-da91-4a11-9fe0-230fec4ba720.png)
+
+
+Detail img2img sketch view 
+
+![anapnoe_uiux_sketch](https://user-images.githubusercontent.com/124302297/227973727-084da8e0-931a-4c62-ab73-39e988fd4523.png)
+
+
+Theme Configurator - aside off-canvas view 
+
+![anapnoe_uiux_theme_config](https://user-images.githubusercontent.com/124302297/227967844-45063edb-eb40-4224-9666-f506d21d7780.png)
+
+
+Mobile 395px width
+
+![anapnoe_uiux_mobile](https://user-images.githubusercontent.com/124302297/227987709-36231d30-e6da-424a-8930-cc0c55a0b979.png)
+
+
 
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
@@ -13,9 +78,9 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Prompt Matrix
 - Stable Diffusion Upscale
 - Attention, specify parts of text that the model should pay more attention to
-    - a man in a `((tuxedo))` - will pay more attention to tuxedo
-    - a man in a `(tuxedo:1.21)` - alternative syntax
-    - select text and press `Ctrl+Up` or `Ctrl+Down` to automatically adjust attention to selected text (code contributed by anonymous user)
+    - a man in a ((tuxedo)) - will pay more attention to tuxedo
+    - a man in a (tuxedo:1.21) - alternative syntax
+    - select text and press ctrl+up or ctrl+down to automatically adjust attention to selected text (code contributed by anonymous user)
 - Loopback, run img2img processing multiple times
 - X/Y/Z plot, a way to draw a 3 dimensional plot of images with different parameters
 - Textual Inversion
@@ -28,7 +93,7 @@ A browser interface based on Gradio library for Stable Diffusion.
     - CodeFormer, face restoration tool as an alternative to GFPGAN
     - RealESRGAN, neural network upscaler
     - ESRGAN, neural network upscaler with a lot of third party models
-    - SwinIR and Swin2SR ([see here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/2092)), neural network upscalers
+    - SwinIR and Swin2SR([see here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/2092)), neural network upscalers
     - LDSR, Latent diffusion super resolution upscaling
 - Resizing aspect ratio options
 - Sampling method selection
@@ -46,7 +111,7 @@ A browser interface based on Gradio library for Stable Diffusion.
      - drag and drop an image/text-parameters to promptbox
 - Read Generation Parameters Button, loads parameters in promptbox to UI
 - Settings page
-- Running arbitrary python code from UI (must run with `--allow-code` to enable)
+- Running arbitrary python code from UI (must run with --allow-code to enable)
 - Mouseover hints for most UI elements
 - Possible to change defaults/mix/max/step values for UI elements via text config
 - Tiling support, a checkbox to create images that can be tiled like textures
@@ -69,7 +134,7 @@ A browser interface based on Gradio library for Stable Diffusion.
      - also supports weights for prompts: `a cat :1.2 AND a dog AND a penguin :2.2`
 - No token limit for prompts (original stable diffusion lets you use up to 75 tokens)
 - DeepDanbooru integration, creates danbooru style tags for anime prompts
-- [xformers](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers), major speed increase for select cards: (add `--xformers` to commandline args)
+- [xformers](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers), major speed increase for select cards: (add --xformers to commandline args)
 - via extension: [History tab](https://github.com/yfszzx/stable-diffusion-webui-images-browser): view, direct and delete images conveniently within the UI
 - Generate forever option
 - Training tab
@@ -78,11 +143,11 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Clip skip
 - Hypernetworks
 - Loras (same as Hypernetworks but more pretty)
-- A sparate UI where you can choose, with preview, which embeddings, hypernetworks or Loras to add to your prompt 
+- A sparate UI where you can choose, with preview, which embeddings, hypernetworks or Loras to add to your prompt. 
 - Can select to load a different VAE from settings screen
 - Estimated completion time in progress bar
 - API
-- Support for dedicated [inpainting model](https://github.com/runwayml/stable-diffusion#inpainting-with-stable-diffusion) by RunwayML
+- Support for dedicated [inpainting model](https://github.com/runwayml/stable-diffusion#inpainting-with-stable-diffusion) by RunwayML.
 - via extension: [Aesthetic Gradients](https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients), a way to generate images with a specific aesthetic by using clip images embeds (implementation of [https://github.com/vicgalle/stable-diffusion-aesthetic-gradients](https://github.com/vicgalle/stable-diffusion-aesthetic-gradients))
 - [Stable Diffusion 2.0](https://github.com/Stability-AI/stablediffusion) support - see [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#stable-diffusion-20) for instructions
 - [Alt-Diffusion](https://arxiv.org/abs/2211.06679) support - see [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#alt-diffusion) for instructions
@@ -91,6 +156,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Eased resolution restriction: generated image's domension must be a multiple of 8 rather than 64
 - Now with a license!
 - Reorder elements in the UI from settings screen
+- 
 
 ## Installation and Running
 Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
@@ -100,9 +166,9 @@ Alternatively, use online services (like Google Colab):
 - [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
 ### Automatic Installation on Windows
-1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH".
+1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH"
 2. Install [git](https://git-scm.com/download/win).
-3. Download the stable-diffusion-webui repository, for example by running `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
+3. Download the stable-diffusion-webui-ux repository, for example by running `git clone https://github.com/anapnoe/stable-diffusion-webui-ux.git`.
 4. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
 
 ### Automatic Installation on Linux
@@ -117,15 +183,16 @@ sudo pacman -S wget git python3
 ```
 2. To install in `/home/$(whoami)/stable-diffusion-webui/`, run:
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
+bash <(wget -qO- https://raw.githubusercontent.com/anapnoe/stable-diffusion-webui-ux/master/webui.sh)
 ```
 3. Run `webui.sh`.
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
+and replace the path in step 3 with `git clone https://github.com/anapnoe/stable-diffusion-webui-ux`
 
 ## Contributing
-Here's how to add code to this repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)
+Here's how to add code to the original repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)
 
 ## Documentation
 The documentation was moved from this README over to the project's [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki).
