@@ -254,7 +254,7 @@ function initTheme() {
 
 
 	const current_style = gradioApp().querySelector('.gradio-container > style');
-	console.log(current_style);
+	//console.log(current_style);
 	//const head = document.head;		
 	//head.appendChild(current_style);
 
