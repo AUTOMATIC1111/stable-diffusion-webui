@@ -171,7 +171,8 @@ def check_python():
 # check torch version
 def check_torch():
     torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
-    install(torch_command)
+    if 'torch' in torch_command:
+        install(torch_command)
     try:
         import torch
         log.info(f'Torch {torch.__version__}')
@@ -205,7 +206,8 @@ def install_packages():
     install(clip_package, 'clip')
     try:
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
-        install(f'--no-deps {xformers_package}', ignore=True)
+        if 'xformers' in xformers_package:
+            install(f'--no-deps {xformers_package}', ignore=True)
     except Exception as e:
         log.debug(f'Cannot install xformers package: {e}')
 
