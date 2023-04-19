@@ -32,6 +32,11 @@ body:
   - type: markdown
     attributes:
       value: |
+        Verify that issue persists after restarting server from command line  
+        Restarting from UI or reloading browser is insufficient to create reproducible environment
+  - type: markdown
+    attributes:
+      value: |
         If you have additional extensions installed, try to reproduce the issue with user extensions disabled  
         And if the issue is with compatibility with specific extension, mark it as such when creating the issue  
   - type: markdown

@@ -6,9 +6,8 @@ Stuff to be fixed...
 
 - Fix integration with <https://github.com/kohya-ss/sd-webui-additional-networks>
 - Fix integration with <https://github.com/deforum-art/deforum-for-automatic1111-webui>
-- Reconnect UI to ops in progress on browser restart  
 - Create new GitHub hooks/actions for CI/CD  
-- Remove `models` from git repo
+- Clean-up server state after on-the-fly restart (e.g., impacts read gen data)
 
 ## Features
 
