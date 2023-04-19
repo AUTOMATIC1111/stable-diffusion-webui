@@ -153,6 +153,7 @@ def create_api(app):
 
 def start_ui():
     initialize()
+    ui_tempdir.on_tmpdir_changed()
     if shared.opts.clean_temp_dir_at_start:
         ui_tempdir.cleanup_tmpdr()
         startup_timer.record("cleanup")

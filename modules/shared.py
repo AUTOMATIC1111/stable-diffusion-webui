@@ -263,6 +263,8 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
+    "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
+    "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
     "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Embeddings directory for textual inversion"),
@@ -309,8 +311,6 @@ options_templates.update(options_section(('saving-images', "Image options"), {
     "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
     "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
-    "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
-    "clean_temp_dir_at_start": OptionInfo(True, "Cleanup non-default temporary directory when starting webui"),
 }))
 
 options_templates.update(options_section(('saving-paths', "Image Paths"), {
