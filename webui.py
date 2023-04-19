@@ -9,7 +9,6 @@ from modules import timer, errors
 
 startup_timer = timer.Timer()
 
-logging.basicConfig(level=logging.WARNING, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', force=True) # reset logging
 import torch # pylint: disable=C0411
 import torchvision # pylint: disable=W0611,C0411
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them # pylint: disable=W0611,C0411
@@ -152,6 +151,7 @@ def create_api(app):
 
 
 def start_ui():
+    logging.disable(logging.INFO)
     initialize()
     ui_tempdir.on_tmpdir_changed()
     if shared.opts.clean_temp_dir_at_start:
@@ -201,6 +201,7 @@ def start_ui():
 
 def webui():
     start_ui()
+
     load_model()
     print(f"Startup time: {startup_timer.summary()}")
 
@@ -215,6 +216,14 @@ def webui():
             start_ui()
             print(f"Startup time: {startup_timer.summary()}")
         time.sleep(1)
+
+    """
+    import sys
+    import types
+    from modules.paths_internal import script_path
+    libs = [name for name, m in sys.modules.items() if isinstance(m, types.ModuleType) and (getattr(m, '__file__', '') or '').startswith(script_path)]
+    print(libs)
+    """
 
 
 if __name__ == "__main__":

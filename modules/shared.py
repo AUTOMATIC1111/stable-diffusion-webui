@@ -14,12 +14,11 @@ import modules.devices as devices
 from modules import script_loading, errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.paths_internal as paths
-
 from setup import log as setup_log # pylint: disable=E0611
+
 errors.install(gr)
 demo: gr.Blocks = None
 log = setup_log
-
 parser = cmd_args.parser
 
 script_loading.preload_extensions(paths.extensions_dir, parser)
@@ -683,6 +682,8 @@ def restart_server():
     if demo is None:
         return
     try:
+        import logging
+        logging.disable(logging.CRITICAL)
         demo.server.should_exit = True
         demo.server.force_exit = True
         demo.close(verbose=False)

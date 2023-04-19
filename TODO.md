@@ -4,15 +4,14 @@
 
 Stuff to be fixed...
 
-- Fix integration with <https://github.com/kohya-ss/sd-webui-additional-networks>
 - Fix integration with <https://github.com/deforum-art/deforum-for-automatic1111-webui>
-- Create new GitHub hooks/actions for CI/CD  
-- Clean-up server state after on-the-fly restart (e.g., impacts read gen data)
 
 ## Features
 
 Stuff to be added...
 
+- Create new GitHub hooks/actions for CI/CD  
+- Move Restart Server from WebUI to Launch and reload modules
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage
 - Replace **PngInfo** / **EXIF** metadata handler
@@ -30,43 +29,7 @@ Stuff to be investigated...
 
 Pick & merge PRs from main repo...
 
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/7595>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8608>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8611>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8665>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8741>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8742>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9128>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9134>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9155>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9177>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9211>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9212>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9219>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9227>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9249>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9256>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9258>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9295>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9312>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9314>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9315>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9319>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9392>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9407>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9451>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9491>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9504>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9513>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9542>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9592>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9628>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9669>
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9677>
-
-Complete:
-
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8945>
+- Merge backlog: <https://github.com/vladmandic/automatic/pulls>
 
 ## Models
 

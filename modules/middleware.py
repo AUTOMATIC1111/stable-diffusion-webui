@@ -12,13 +12,12 @@ from fastapi.exceptions import HTTPException
 from fastapi.encoders import jsonable_encoder
 import modules.errors as errors
 
-logging.disable(logging.CRITICAL)
 errors.install()
 
 def setup_middleware(app: FastAPI, cmd_opts):
     print('Initializing middleware')
-    # uvicorn_logger=logging.getLogger("uvicorn.error")
-    # uvicorn_logger.disabled = True
+    uvicorn_logger=logging.getLogger("uvicorn.error")
+    uvicorn_logger.disabled = True
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.gzip import GZipMiddleware
     app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']

@@ -48,6 +48,7 @@ def setup_logging(clean=False):
         pretty_install(console=console)
         traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
         rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
+        rh.set_name(logging.DEBUG if args.debug else logging.INFO)
         log.addHandler(rh)
     except:
         sh = logging.StreamHandler()
