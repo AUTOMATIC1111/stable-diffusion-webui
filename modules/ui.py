@@ -43,7 +43,9 @@ from modules.generation_parameters_copypaste import image_from_url_text
 import modules.extras
 
 warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
-
+# get OS name and version
+os_name, os_version = platform.system(), platform.release()
+print(f"Current OS version:{os_name} {os_version}")
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
@@ -490,15 +492,26 @@ def create_ui():
 
                     elif category == "hires_fix":
                         with FormGroup(visible=False, elem_id="txt2img_hires_fix") as hr_options:
-                            with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
-                                hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
-                                hr_second_pass_steps = gr.Slider(minimum=0, maximum=150, step=1, label='Hires steps', value=0, elem_id="txt2img_hires_steps")
-                                denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
+                            if os_name == "Linux":
+                                with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
+                                    hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler",choices=[*shared.latent_upscale_modes,*[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
+                                    hr_second_pass_steps = gr.Slider(minimum=0, maximum=150, step=1,label='Hires steps', value=0, elem_id="txt2img_hires_steps")
+                                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01,label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
+                                    hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
+                                    hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
+                                    hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
 
-                            with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
-                                hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
-                                hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
-                                hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
+                            else:
+                                with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
+                                    hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler",choices=[*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]], value=shared.latent_upscale_default_mode)
+                                    hr_second_pass_steps = gr.Slider(minimum=0, maximum=150, step=1,label='Hires steps', value=0, elem_id="txt2img_hires_steps")
+                                    denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
+
+                                with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
+                                    hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
+                                    hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
+                                    hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
+
 
                     elif category == "batch":
                         if not opts.dimensions_and_batch_together:
