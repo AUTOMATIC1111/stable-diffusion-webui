@@ -157,11 +157,21 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 		livePreview.classList.remove("dropPreview");
     }
 
-    var removeProgressBar = function(){		
+    var removeProgressBar = function(){
         setTitle("")
-        parentProgressbar.removeChild(divProgress)
-        if(parentGallery) parentGallery.removeChild(livePreview)
-        atEnd()
+		if(divProgress){
+			parentProgressbar.removeChild(divProgress)
+		}
+
+		if(progressbarContainer.id == "txt2img_gallery_container"){			
+			showSubmitButtons('txt2img', true);
+		}else if(progressbarContainer.id == "img2img_gallery_container"){
+			showSubmitButtons('img2img', true);
+		}
+		if(livePreview){
+			if(parentGallery) parentGallery.removeChild(livePreview)
+		}
+		atEnd()
     }
 
     var fun = function(id_task, id_live_preview){
