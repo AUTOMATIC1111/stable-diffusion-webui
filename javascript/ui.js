@@ -2,9 +2,7 @@
 
 function set_theme(theme){
     gradioURL = window.location.href
-    if (!gradioURL.includes('?__theme=')) {
-      window.location.replace(gradioURL + '?__theme=' + theme);
-    }
+    if (!gradioURL.includes('?__theme=')) window.location.replace(gradioURL + '?__theme=' + theme);
 }
 
 function all_gallery_buttons() {
@@ -128,33 +126,32 @@ function showSubmitButtons(tabname, show){
     // gradioApp().getElementById(tabname+'_skip').style.display = "block"
 }
 
-function submit(id, once = false){
+function submit(){
     rememberGallerySelection('txt2img_gallery')
     showSubmitButtons('txt2img', false)
-    if (!id) id = randomId()
+    const id = randomId()
     const atEnd = () => showSubmitButtons('txt2img', true)
-    requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), atEnd, null, once)
+    requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), atEnd)
     var res = create_submit_args(arguments)
     res[0] = id
     return res
 }
 
-function submit_img2img(id){
+function submit_img2img(){
     rememberGallerySelection('img2img_gallery')
     showSubmitButtons('img2img', false)
-    if (!id) id = randomId()
-    requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
-        showSubmitButtons('img2img', true)
-    })
+    const id = randomId()
+    const atEnd = () => showSubmitButtons('img2img', true)
+    requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), atEnd)
     var res = create_submit_args(arguments)
     res[0] = id
     res[1] = get_tab_index('mode_img2img')
     return res
 }
 
-function modelmerger(id){
-    if (!id) id = randomId()
-    requestProgress(id, gradioApp().getElementById('modelmerger_results_panel'), null, function(){})
+function modelmerger(){
+    const id = randomId()
+    requestProgress(id, gradioApp().getElementById('modelmerger_results_panel'), null)
     var res = create_submit_args(arguments)
     res[0] = id
     return res
@@ -172,7 +169,6 @@ function confirm_clear_prompt(prompt, negative_prompt) {
     }
     return [prompt, negative_prompt]
 }
-
 
 promptTokecountUpdateFuncs = {}
 
@@ -193,7 +189,6 @@ function recalculate_prompts_img2img(){
     recalculatePromptTokens('img2img_neg_prompt')
     return args_to_array(arguments);
 }
-
 
 opts = {}
 onUiUpdate(function(){
@@ -331,11 +326,18 @@ function preview_theme() {
 }
 
 function reconnect_ui() {
-  const el = gradioApp().getElementById('txt2img_generate')
-  if (!el) return
-  else clearInterval(start_check)
+  const el1 = gradioApp().getElementById('txt2img_gallery_container')
+  const el2 = gradioApp().getElementById('txt2img_gallery')
   const task_id = localStorage.getItem('task')
-  if (task_id) submit(task_id, true)
+  if (!el1 || !el2) return
+  else clearInterval(start_check)
+  if (task_id) {
+    console.debug('task check:', task_id)
+    rememberGallerySelection('txt2img_gallery')
+    showSubmitButtons('txt2img', false)
+    const atEnd = () => showSubmitButtons('txt2img', true)
+    requestProgress(task_id, el1, el2, atEnd, null, true)
+  }
 }
 
 var start_check = setInterval(reconnect_ui, 50)

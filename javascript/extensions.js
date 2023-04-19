@@ -19,8 +19,7 @@ function extensions_check(_, _){
         x.innerHTML = "Loading..."
     })
     var id = randomId()
-    requestProgress(id, gradioApp().getElementById('extensions_installed_top'), null, function(){
-    })
+    requestProgress(id, gradioApp().getElementById('extensions_installed_top'), null, null, null, false)
     return [id, JSON.stringify(disable)]
 }
 
