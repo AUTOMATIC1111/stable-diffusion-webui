@@ -50,10 +50,6 @@ class SDcustom(Dialect):
 register_dialect("sd-custom", SDcustom)
 
 class StyleDatabase:
-
-
-
-
     def __init__(self, path: str):
         self.no_style = PromptStyle("None", "", "")
         self.styles = {}
@@ -70,7 +66,6 @@ class StyleDatabase:
         with open(self.path, "r", encoding="utf-8", newline='') as file:
             reader = csv.DictReader(file,dialect="sd-custom")
             for row in reader:
-                #print(row)
                 # Support loading old CSV format with "name, text"-columns
                 prompt = row["prompt"] if "prompt" in row else row["text"]
                 negative_prompt = row.get("negative_prompt", "")
