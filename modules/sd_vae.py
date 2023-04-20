@@ -4,6 +4,7 @@ import glob
 from copy import deepcopy
 from rich import print # pylint: disable=redefined-builtin
 from modules import paths, shared, devices, script_callbacks, sd_models
+from modules import paths_internal
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 vae_dict = {}
@@ -12,6 +13,7 @@ vae_dict = {}
 base_vae = None
 loaded_vae_file = None
 checkpoint_info = None
+vae_path = shared.opts.vae_dir
 
 checkpoints_loaded = collections.OrderedDict()
 

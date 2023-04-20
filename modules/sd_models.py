@@ -162,6 +162,7 @@ def select_checkpoint():
 
     if len(checkpoints_list) == 0:
         print("Cannot run without a checkpoint", file=sys.stderr)
+        print("Use --ckpt <path-to-checkpoint> to force using existing checkpoint", file=sys.stderr)
         exit(1)
 
     checkpoint_info = next(iter(checkpoints_list.values()))

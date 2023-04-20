@@ -91,6 +91,7 @@ def installed(package, friendly: str = None):
 # install package using pip if not already installed
 def install(package, friendly: str = None, ignore: bool = False):
     def pip(arg: str):
+        log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("  ", " ").strip()}')
         log.debug(f"Running pip: {arg}")
         result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         txt = result.stdout.decode(encoding="utf8", errors="ignore")
@@ -179,10 +180,6 @@ def check_torch():
         log.info(f'Torch {torch.__version__}')
         if not torch.cuda.is_available():
             log.warning("Torch repoorts CUDA not available")
-            if '--no-half' not in sys.argv:
-                sys.argv.append('--no-half')
-            if '--no-half-vae' not in sys.argv:
-                sys.argv.append('--no-half-vae')
         else:
             if torch.version.cuda:
                 log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version()}')
@@ -473,6 +470,7 @@ def run_setup():
     log.info("Running setup")
     log.debug(f"Args: {vars(args)}")
     check_version()
+    check_torch()
     install_requirements()
     install_packages()
     install_repositories()
@@ -488,4 +486,3 @@ if __name__ == "__main__":
     parse_args()
     run_setup()
     set_environment()
-    check_torch()

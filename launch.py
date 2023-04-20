@@ -2,6 +2,7 @@ import subprocess
 import os
 import sys
 import shlex
+import logging
 import setup
 import modules.paths_internal
 from modules import cmd_args
@@ -92,8 +93,8 @@ def run_extension_installer(ext_dir):
 if __name__ == "__main__":
     setup.run_setup()
     setup.set_environment()
-    setup.check_torch()
     setup.log.info(f"Server arguments: {sys.argv[1:]}")
     setup.log.debug('Starting WebUI')
+    logging.disable(logging.INFO)
     import webui
     webui.webui()

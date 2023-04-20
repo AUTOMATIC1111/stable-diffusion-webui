@@ -5,6 +5,7 @@
 Stuff to be fixed...
 
 - Fix integration with <https://github.com/deforum-art/deforum-for-automatic1111-webui>
+- ClipSkip not updated on read gen info
 
 ## Features
 
