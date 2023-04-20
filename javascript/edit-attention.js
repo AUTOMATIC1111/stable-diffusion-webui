@@ -17,7 +17,7 @@ function keyupEditAttention(event){
 		// Find opening parenthesis around current cursor
 		const before = text.substring(0, selectionStart);
 		let beforeParen = before.lastIndexOf(OPEN);
-		if (beforeParen == -1) return  false;
+		if (beforeParen == -1) return false;
 		let beforeParenClose = before.lastIndexOf(CLOSE);
 		while (beforeParenClose !== -1 && beforeParenClose > beforeParen) {
 			beforeParen = before.lastIndexOf(OPEN, beforeParen - 1);
@@ -27,7 +27,7 @@ function keyupEditAttention(event){
 		// Find closing parenthesis around current cursor
 		const after = text.substring(selectionStart);
 		let afterParen = after.indexOf(CLOSE);
-		if (afterParen == -1) return  false;
+		if (afterParen == -1) return false;
 		let afterParenOpen = after.indexOf(OPEN);
 		while (afterParenOpen !== -1 && afterParen > afterParenOpen) {
 			afterParen = after.indexOf(CLOSE, afterParen + 1);
@@ -43,10 +43,35 @@ function keyupEditAttention(event){
 		target.setSelectionRange(selectionStart, selectionEnd);
 		return true;
     }
+    
+    function selectCurrentWord(){
+        if (selectionStart !== selectionEnd) return false;
+        
+        // Select the current word, find the start and end of the word (first space before and after)
+        const wordStart = text.substring(0, selectionStart).lastIndexOf(" ") + 1;
+        const wordEnd = text.substring(selectionEnd).indexOf(" ");
+        // If there is no space after the word, select to the end of the string
+        if (wordEnd === -1) {
+            selectionEnd = text.length;
+        } else {
+            selectionEnd += wordEnd;
+        }
+        selectionStart = wordStart;
 
-	// If the user hasn't selected anything, let's select their current parenthesis block
-    if(! selectCurrentParenthesisBlock('<', '>')){
-        selectCurrentParenthesisBlock('(', ')')
+        // Remove all punctuation at the end and beginning of the word
+        while (text[selectionStart].match(/[.,\/#!$%\^&\*;:{}=\-_`~()]/)) {
+            selectionStart++;
+        }
+        while (text[selectionEnd - 1].match(/[.,\/#!$%\^&\*;:{}=\-_`~()]/)) {
+            selectionEnd--;
+        }
+        target.setSelectionRange(selectionStart, selectionEnd);
+        return true;
+    }
+
+	// If the user hasn't selected anything, let's select their current parenthesis block or word
+    if (!selectCurrentParenthesisBlock('<', '>') && !selectCurrentParenthesisBlock('(', ')')) {
+        selectCurrentWord();
     }
 
 	event.preventDefault();
