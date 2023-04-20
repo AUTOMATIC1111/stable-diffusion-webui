@@ -29,7 +29,7 @@ if ["%SKIP_VENV%"] == ["1"] goto :skip_venv
 dir "%VENV_DIR%\Scripts\Python.exe" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :activate_venv
 
-for /f "delims=" %%i in ('CALL %PYTHON% -c "import sys; print(sys.executable)"') do set PYTHON_FULLNAME="%%i"
+for /f "delims=" %%i in ('CALL %PYTHON% -c "import sys; print(sys.executable)"') do set PYTHON_FULLNAME=%%i
 echo Creating venv in directory %VENV_DIR% using python %PYTHON_FULLNAME%
 %PYTHON_FULLNAME% -m venv "%VENV_DIR%" >tmp/stdout.txt 2>tmp/stderr.txt
 if %ERRORLEVEL% == 0 goto :activate_venv
