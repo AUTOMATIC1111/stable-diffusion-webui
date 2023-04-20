@@ -10,22 +10,21 @@ Stuff to be fixed...
 
 Stuff to be added...
 
-- Add README headers
 - Add Gradio base themes: <https://gradio.app/theming-guide/#using-the-theme-builder>
 - Create new GitHub hooks/actions for CI/CD  
 - Move Restart Server from WebUI to Launch and reload modules
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage
-- Replace **PngInfo** / **EXIF** metadata handler
-- Investigate integration with `Torch-DirectML`
-- Investigate best practices for **Apple M1**
-- Investigate best practices for **AMD GPUs**
 
 ## Investigate
 
 Stuff to be investigated...
 
-- Revisit `torch.compile`
+- Best practices for **Apple M1**
+- Best practices for **AMD GPUs**
+- Torch Compile
+- `Torch-DirectML`
+- `TensorRT`
 
 ## Merge PRs
 
@@ -56,6 +55,3 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- full CUDA tuning section in UI Settings
-- improve compatibility with some 3rd party extensions
-- improve exif/pnginfo metadata parsing

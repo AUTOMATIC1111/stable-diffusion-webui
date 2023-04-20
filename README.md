@@ -1,3 +1,8 @@
+[![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/vladmandic)
+![Last Commit](https://img.shields.io/github/last-commit/vladmandic/human?style=flat-square&svg=true)
+![License](https://img.shields.io/github/license/vladmandic/human?style=flat-square&svg=true)
+![GitHub Status Checks](https://img.shields.io/github/checks-status/vladmandic/human/main?style=flat-square&svg=true)
+
 # Stable Diffusion - Automatic
 
 *Heavily opinionated custom fork of* <https://github.com/AUTOMATIC1111/stable-diffusion-webui>  
