@@ -5,12 +5,24 @@ function setupExtraNetworksForTab(tabname){
     var tabs = gradioApp().querySelector('#'+tabname+'_extra_tabs > div')
     var search = gradioApp().querySelector('#'+tabname+'_extra_search textarea')
     var refresh = gradioApp().getElementById(tabname+'_extra_refresh')
-
+	
+	let clear = document.createElement("div");
+	clear.id = 	tabname+'_extra_clear';
+	clear.classList.add("token-remove", "remove-all", "svelte-a6vu2r", "hide");
+	clear.title = "Clear search";
+	clear.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>'
+    
     search.classList.add('search')
-    tabs.appendChild(search)
-    tabs.appendChild(refresh)
-
-    search.addEventListener("input", function(evt){
+    tabs.appendChild(search)    
+	tabs.appendChild(clear)
+	tabs.appendChild(refresh)
+	
+	clear.addEventListener("click", function(evt){
+		search.value = "";
+		updateInput(search);
+	})
+	
+	search.addEventListener("input", function(evt){
         searchTerm = search.value.toLowerCase()
 
         gradioApp().querySelectorAll('#'+tabname+'_extra_tabs div.card').forEach(function(elem){

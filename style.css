@@ -1933,11 +1933,20 @@ button.secondary{
     padding-bottom: 0px !important;
     min-height: 34px !important;
 }
-
 .extra-networks .search
 {
 	width:60%;
 }
+
+.extra-networks [id$="2img_extra_clear"]
+{
+	position: relative;
+    border-radius: 50%!important;
+    margin-left: -25px !important;
+    margin-top: 7px;
+    right: 7px;
+}
+
 .extra-networks + *
 {
 	display:none !important;

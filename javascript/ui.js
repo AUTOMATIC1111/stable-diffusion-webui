@@ -925,7 +925,7 @@ onUiUpdate(function(){
 	tabsHiddenChange();
 	
 	gradioApp().querySelectorAll('[id^="image_buttons_"] button, #png_2img_results button').forEach(function (elem){
-
+		//console.log(opts.send_seed);
 		if(elem.id == "txt2img_tab"){
 			elem.setAttribute("tab-id", 0);
 			elem.addEventListener('click', navTabClicked);
@@ -936,6 +936,24 @@ onUiUpdate(function(){
 			elem.setAttribute("tab-id", 2);
 			elem.addEventListener('click', navTabClicked);
 		}		
+	})
+	
+	gradioApp().querySelectorAll('[id$="2img_extra_tabs"] .search').forEach(function (elem){
+		elem.addEventListener('keyup', function (e) {
+			if (e.defaultPrevented) {
+				return; // Do nothing if event already handled
+			}
+			switch (e.code) {
+				case "Escape":
+				if(e.target.value == ""){
+					net_menu.click();
+				}else{
+					e.target.value = "";
+					updateInput(e.target);
+				}
+				break;
+			}
+		})
 	})
 	
 
