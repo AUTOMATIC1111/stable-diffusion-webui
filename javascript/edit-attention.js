@@ -46,26 +46,18 @@ function keyupEditAttention(event){
     
     function selectCurrentWord(){
         if (selectionStart !== selectionEnd) return false;
-        const delimiters = ".,\/#!$%\^&\*;:{}=\-_`~()";
+        const delimiters = ".,\/#!$%\^&\*;:{}=\-_`~() ";
         
-        // Select the current word, find the start and end of the word (first space before and after)
-        const wordStart = text.substring(0, selectionStart).lastIndexOf(" ") + 1;
-        const wordEnd = text.substring(selectionEnd).indexOf(" ");
-        // If there is no space after the word, select to the end of the string
-        if (wordEnd === -1) {
-            selectionEnd = text.length;
-        } else {
-            selectionEnd += wordEnd;
+        // seek backward until to find beggining
+        while (!delimiters.includes(text[selectionStart - 1]) && selectionStart > 0) {
+            selectionStart--;
         }
-        selectionStart = wordStart;
+        
+        // seek forward to find end
+        while (!delimiters.includes(text[selectionEnd]) && selectionEnd < text.length) {
+            selectionEnd++;
+        }
 
-        // Remove all punctuation at the end and beginning of the word
-        while (delimiters.includes(text[selectionStart])) {
-            selectionStart++;
-        }
-        while (delimiters.includes(text[selectionEnd - 1])) {
-            selectionEnd--;
-        }
         target.setSelectionRange(selectionStart, selectionEnd);
         return true;
     }
