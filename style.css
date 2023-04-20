@@ -1882,7 +1882,7 @@ canvas[key=mask] {
 }
 
 [id$="png_2img_settings_scroll"] div[data-testid="image"] img {
-    max-height: unset;;
+    max-height: calc(var(--container-height) - var(--inside-padding-size) * 2 - var(--outside-gap-size) * 2 );
 }
 
 #pnginfo_image div[data-testid="image"] > div{
@@ -3780,6 +3780,19 @@ footer {
     text-align: center;
 }
 
+.extra-networks [id$="2img_extra_clear"]
+{
+	position: relative;
+    border-radius: 50%!important;
+    margin-left: -25px !important;
+    margin-top: 7px !important;
+    right: 7px;
+    width: 20px;
+    height: 20px;
+    padding: 2px;
+    background-color: var(--panel-border-color) !important;
+    fill: var(--input-color);
+}
 
 a[data-tooltip].top:before, a[data-tooltip].top:after {
   transform: translateY(10px);

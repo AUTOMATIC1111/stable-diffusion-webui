@@ -865,6 +865,24 @@ onUiUpdate(function(){
 		}		
 	})
 	
+	gradioApp().querySelectorAll('[id$="2img_extra_tabs"] .search').forEach(function (elem){
+		elem.addEventListener('keyup', function (e) {
+			if (e.defaultPrevented) {
+				return; // Do nothing if event already handled
+			}
+			switch (e.code) {
+				case "Escape":
+				if(e.target.value == ""){
+					net_menu.click();
+				}else{
+					e.target.value = "";
+					updateInput(e.target);
+				}
+				break;
+			}
+		})
+	})
+	
 	// add - remove quicksettings
 	const settings_submit = gradioApp().querySelector('#settings_submit');
 	const quick_parent = gradioApp().querySelector("#quicksettings_overflow_container");
