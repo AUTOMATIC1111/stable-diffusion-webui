@@ -157,6 +157,8 @@ def create_seed_inputs(target_interface):
         random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed')
         reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed')
 
+        seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False, visible=False)  # Ghost checkbox, so it still gets sent. For compatibility with extensions that call txt2img or img2img manually
+
     with FormRow(visible=True, elem_id=target_interface + '_subseed_row'):
         subseed = gr.Number(label='Variation seed', value=-1, elem_id=target_interface + '_subseed')
         subseed.style(container=False)
@@ -171,7 +173,7 @@ def create_seed_inputs(target_interface):
     random_seed.click(fn=lambda: [-1, -1], show_progress=False, inputs=[], outputs=[seed, subseed])
     random_subseed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[subseed])
 
-    return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w
+    return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox
 
 
 
@@ -449,7 +451,7 @@ def create_ui():
                             clip_skip.change(fn=change_clip_skip, show_progress=False, inputs=clip_skip)
 
                     elif category == "seed":
-                        seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs('txt2img')
+                        seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('txt2img')
 
                     elif category == "checkboxes":
                         with FormRow(elem_classes="checkboxes-row", variant="compact"):
@@ -516,6 +518,7 @@ def create_ui():
                     cfg_scale,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
+                    seed_checkbox,  # seed_enable_extras
                     height,
                     width,
                     enable_hr,
@@ -728,7 +731,7 @@ def create_ui():
                                 clip_skip.change(fn=change_clip_skip, show_progress=False, inputs=clip_skip)
 
                     elif category == "seed":
-                        seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w = create_seed_inputs('img2img')
+                        seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
 
                     elif category == "checkboxes":
                         with FormRow(elem_classes="checkboxes-row", variant="compact"):
@@ -818,6 +821,7 @@ def create_ui():
                     denoising_strength,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
+                    seed_checkbox,  # seed_enable_extras
                     height,
                     width,
                     resize_mode,
