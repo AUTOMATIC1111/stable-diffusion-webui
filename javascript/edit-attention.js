@@ -46,6 +46,7 @@ function keyupEditAttention(event){
     
     function selectCurrentWord(){
         if (selectionStart !== selectionEnd) return false;
+        const delimiters = ".,\/#!$%\^&\*;:{}=\-_`~()";
         
         // Select the current word, find the start and end of the word (first space before and after)
         const wordStart = text.substring(0, selectionStart).lastIndexOf(" ") + 1;
@@ -59,10 +60,10 @@ function keyupEditAttention(event){
         selectionStart = wordStart;
 
         // Remove all punctuation at the end and beginning of the word
-        while (text[selectionStart].match(/[.,\/#!$%\^&\*;:{}=\-_`~()]/)) {
+        while (delimiters.includes(text[selectionStart])) {
             selectionStart++;
         }
-        while (text[selectionEnd - 1].match(/[.,\/#!$%\^&\*;:{}=\-_`~()]/)) {
+        while (delimiters.includes(text[selectionEnd - 1])) {
             selectionEnd--;
         }
         target.setSelectionRange(selectionStart, selectionEnd);
