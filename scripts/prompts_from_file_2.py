@@ -162,7 +162,7 @@ class Script(scripts.Script):
         stop_button.click(fn=on_stop_button_click)
         
 
-        return [checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt, separator_txt, repetitions_slider, checkbox_same_repeat_seed, start_button]
+        return [checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt, separator_txt, repetitions_slider, checkbox_same_repeat_seed]
 
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt: str, separator_txt: str, repetitions_slider, checkbox_same_repeat_seed, start_button):
         #seperator determine
