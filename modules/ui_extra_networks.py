@@ -15,7 +15,7 @@ from modules.generation_parameters_copypaste import image_from_url_text
 extra_pages = []
 allowed_dirs = set()
 refresh_symbol = '\U0001f504'  # 🔄                                     
-
+#clear_symbol = '\U0001F5D9'  # 🗙
 
 def register_page(page):
     """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
@@ -154,8 +154,8 @@ class ExtraNetworksPage:
         if onclick is None:
             onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
 
-        height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
-        width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
+        #height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
+        #width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
         background_image = f"background-image: url(\"{html.escape(preview)}\");" if preview else ''
         metadata_button = ""
         metadata = item.get("metadata")
@@ -256,7 +256,7 @@ def create_ui(container, button, tabname):
                     page_elem = gr.HTML(page.create_html(ui.tabname))
                     ui.pages.append(page_elem)
 
-        filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
+        filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)       
         button_refresh = ToolButton(value=refresh_symbol, elem_id=tabname+"_extra_refresh")
 
         ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
@@ -278,7 +278,7 @@ def create_ui(container, button, tabname):
 
         return res
 
-    button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
+    button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)   
 
     return ui
 
