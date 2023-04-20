@@ -9,7 +9,7 @@ git reset --hard origin/master
 
 # install metrics tool
 sudo apt update
-sudo apt install nano screen
+sudo apt install nano screen --force-yes
 pip install aioprometheus[starlette]
 
 
