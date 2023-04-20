@@ -137,7 +137,7 @@ class Script(scripts.Script):
                 repetitions_slider = gr.Slider(label="Job repeats", step=1, minimum=1, maximum=200, value=1, elem_id=self.elem_id("repetitions_slider"),
                                                info='This will repeat your jobs n times. By default, each repeat will always start with a random seed.')
                 stop_button = gr.Button(label="Stop Loop", value ='Force Interrupt and Abort Jobs', elem_id=self.elem_id("force_stop_button"))
-                
+                start_button = gr.Button(label="start Loop", value ='start Jobs', elem_id=self.elem_id("force_stop_button2"))
             with gr.Column(scale=1, min_width=100):
                 
                 checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))
@@ -161,12 +161,12 @@ class Script(scripts.Script):
         prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=3), inputs=[prompt_txt], outputs=[prompt_txt])
         file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt])
         stop_button.click(fn=on_stop_button_click)
+        
 
-        return [checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt, separator_txt, repetitions_slider, checkbox_same_repeat_seed]
+        return [checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt, separator_txt, repetitions_slider, checkbox_same_repeat_seed, start_button]
 
-    def run(self, p, checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt: str, separator_txt: str, repetitions_slider, checkbox_same_repeat_seed):
+    def run(self, p, checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt: str, separator_txt: str, repetitions_slider, checkbox_same_repeat_seed, start_button):
         #seperator determine
-
         separator = separator_txt.strip() if separator_txt.strip() else "\n"
         lines = [x.strip() for x in prompt_txt.split(separator) if x.strip()]
         lines = [x for x in lines if len(x) > 0]
@@ -209,6 +209,10 @@ class Script(scripts.Script):
 
         initial_seed = p.seed
         generated_random_seed = -1
+
+        
+        # start_button.click(proc = process_images(copy_p))
+
 
         if (checkbox_iterate or checkbox_iterate_batch) and p.seed == -1:
             p.seed = generated_random_seed = int(random.randrange(4294967294))
