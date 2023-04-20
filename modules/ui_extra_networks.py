@@ -10,6 +10,7 @@ import gradio as gr
 from modules import shared
 from modules.images import read_info_from_image
 from modules.generation_parameters_copypaste import image_from_url_text
+from modules.ui_components import ToolButton
 
 extra_pages = []
 allowed_dirs = set()
@@ -248,8 +249,8 @@ def create_ui(container, button, tabname):
                 ui.pages.append(page_elem)
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
-    button_refresh = gr.Button(refresh_symbol, elem_id=tabname+"_extra_refresh")
-    button_close = gr.Button(close_symbol, elem_id=tabname+"_extra_close")
+    button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
+    button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
