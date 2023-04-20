@@ -13,7 +13,7 @@ vae_dict = {}
 base_vae = None
 loaded_vae_file = None
 checkpoint_info = None
-vae_path = shared.opts.vae_dir
+vae_path = os.path.abspath(os.path.join(paths.models_path, 'VAE'))
 
 checkpoints_loaded = collections.OrderedDict()
 
@@ -51,6 +51,8 @@ def get_filename(filepath):
 
 
 def refresh_vae_list():
+    global vae_path
+    vae_path = shared.opts.vae_dir
     vae_dict.clear()
 
     paths = [

@@ -16,6 +16,7 @@ Stuff to be added...
 - Move Restart Server from WebUI to Launch and reload modules
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage
+- Autodetect nVidia and AMD: `nvidia-smi` vs `rocm-smi`
 
 ## Investigate
 
