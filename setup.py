@@ -109,11 +109,11 @@ def install(package, friendly: str = None, ignore: bool = False):
 
 
 # execute git command
-def git(arg: str, ignore: bool = False):
+def git(arg: str, folder: str = None, ignore: bool = False):
     if args.skip_git:
         return ''
     git_cmd = os.environ.get('GIT', "git")
-    result = subprocess.run(f'"{git_cmd}" {arg}', check=False, shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    result = subprocess.run(f'"{git_cmd}" {arg}', check=False, shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder or '.')
     txt = result.stdout.decode(encoding="utf8", errors="ignore")
     if len(result.stderr) > 0:
         txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
@@ -130,15 +130,15 @@ def git(arg: str, ignore: bool = False):
 
 # update switch to main branch as head can get detached and update repository
 def update(folder):
-    branch = git(f'-C "{folder}" branch')
+    branch = git('branch', folder)
     if 'main' in branch:
-        git(f'-C "{folder}" checkout main')
+        git('checkout main', folder)
     elif 'master' in branch:
-        git(f'-C "{folder}" checkout master')
+        git('checkout master', folder)
     else:
         log.warning(f'Unknown branch for: {folder}')
-    git(f'-C "{folder}" pull --rebase --autostash')
-    branch = git(f'-C "{folder}" branch')
+    git('pull --rebase --autostash', folder)
+    branch = git('branch', folder)
 
 
 # clone git repository
@@ -146,10 +146,10 @@ def clone(url, folder, commithash=None):
     if os.path.exists(folder):
         if commithash is None:
             return
-        current_hash = git(f'-C "{folder}" rev-parse HEAD').strip()
+        current_hash = git('rev-parse HEAD', folder).strip()
         if current_hash != commithash:
-            git(f'-C "{folder}" fetch')
-            git(f'-C "{folder}" checkout {commithash}')
+            git('fetch', folder)
+            git(f'checkout {commithash}', folder)
             return
     else:
         git(f'clone "{url}" "{folder}"')
@@ -297,7 +297,7 @@ def install_submodules():
         log.warning('Attempting repository recover')
         git('add .')
         git('stash')
-        git('merge --abort', ignore=True)
+        git('merge --abort', folder=None, ignore=True)
         git('fetch --all')
         git('reset --hard origin/master')
         git('checkout master')
