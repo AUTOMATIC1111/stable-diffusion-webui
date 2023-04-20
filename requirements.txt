@@ -48,8 +48,8 @@ torchvision
 tqdm
 voluptuous
 yapf
+scikit-image
 
-scikit-image==0.19.3
 accelerate==0.18.0
 opencv-python==4.7.0.72
 diffusers==0.15.0
