@@ -49,6 +49,29 @@ for d, must_exist, what, options in path_dirs:
         paths[what] = d
 
 
+def create_paths(opts):
+    def create_path(folder):
+        if folder is None or folder == '':
+            return
+        if not os.path.exists(folder):
+            print('Creating folder:', folder)
+            os.makedirs(opts.temp_dir, exist_ok=True)
+    create_path(opts.temp_dir)
+    create_path(extensions_dir)
+    create_path(extensions_builtin_dir)
+    create_path(opts.ckpt_dir)
+    create_path(opts.vae_dir)
+    create_path(opts.embeddings_dir)
+    create_path(opts.outdir_samples)
+    create_path(opts.outdir_txt2img_samples)
+    create_path(opts.outdir_img2img_samples)
+    create_path(opts.outdir_extras_samples)
+    create_path(opts.outdir_grids)
+    create_path(opts.outdir_txt2img_grids)
+    create_path(opts.outdir_img2img_grids)
+    create_path(opts.outdir_save)
+
+
 class Prioritize:
     def __init__(self, name):
         self.name = name

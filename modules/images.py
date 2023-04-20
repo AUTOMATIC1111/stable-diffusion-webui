@@ -1,22 +1,20 @@
 import datetime
-
-import pytz
 import io
-import math
-import os
-from collections import namedtuple
 import re
-
+import os
+import math
+import json
+import string
+import hashlib
+from collections import namedtuple
+import pytz
 import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
-import string
-import json
-import hashlib
 
 from modules import sd_samplers, shared, script_callbacks, errors
-from modules.shared import opts, cmd_opts
+from modules.shared import opts, cmd_opts # pylint: disable=unused-import
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -146,7 +144,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
             return ImageFont.truetype('javascript/roboto.ttf', fontsize)
 
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
-        for i, line in enumerate(lines):
+        for _i, line in enumerate(lines):
             fnt = initial_fnt
             fontsize = initial_fontsize
             while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
@@ -599,17 +597,14 @@ def safe_decode_string(s: bytes):
     remove_prefix = lambda text, prefix: text[len(prefix):] if text.startswith(prefix) else text
     for encoding in ['utf-8', 'utf-16', 'ascii', 'latin_1', 'cp1252', 'cp437']: # try different encodings
         try:
-            decoded = s.decode(encoding, errors="strict")
-            val = remove_prefix(decoded, 'UNICODE') # remove silly prefix added by old pnginfo/exif encoding
-            val = remove_prefix(val, 'ASCII')
+            s = remove_prefix(s, b'UNICODE')
+            s = remove_prefix(s, b'ASCII')
+            s = remove_prefix(s, b'\x00')
+            val = s.decode(encoding, errors="strict")
             val = re.sub(r'[\x00-\x09]', '', val).strip() # remove remaining special characters
-            if len(val) > 1024: # limit string length
-                val = val[:1024]
             if len(val) == 0: # remove empty strings
                 val = None
-            # if not all(ord(c) < 128 for c in decoded): # only allow 7-bit ascii characters
-            #    val = None
-            return val 
+            return val
         except:
             pass
     return None
@@ -651,7 +646,7 @@ Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
         except Exception as e:
             errors.display(e, 'novelai image parser')
-
+    print('GENINFO', geninfo)
     return geninfo, items
 
 

@@ -3,23 +3,28 @@ import os
 import sys
 import shlex
 import setup
+import modules.paths_internal
 from modules import cmd_args
-from modules.paths_internal import script_path
 
 try:
     from rich import print # pylint: disable=redefined-builtin
 except ImportError:
     pass
 
+### majority of this file is superflous, but used by some extensions as helpers during extension installation
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
 setup.parse_args()
 args, _ = cmd_args.parser.parse_known_args()
+script_path = modules.paths_internal.script_path
+extensions_dir = modules.paths_internal.extensions_dir
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
 dir_repos = "repositories"
+python = sys.executable # used by some extensions to run python
+skip_install = False # parsed by some extensions
 
 
 def commit_hash():

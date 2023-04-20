@@ -299,11 +299,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if depth_model:
             model.depth_model = depth_model
 
-    devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
-    devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
     devices.dtype_unet = model.model.diffusion_model.dtype
-    devices.unet_needs_upcast = shared.opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
-
     model.first_stage_model.to(devices.dtype_vae)
 
     # clean up cache if limit is reached
@@ -403,7 +399,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
         shared.sd_model = None
 
-    devices.enable_cudnn_benchmark()
+    devices.set_cuda_params()
     gc.collect()
     devices.torch_gc()
 

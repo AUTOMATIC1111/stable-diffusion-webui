@@ -51,9 +51,6 @@ gr.processing_utils.save_pil_to_file = save_pil_to_file
 def on_tmpdir_changed():
     if shared.opts.temp_dir == "":
         return
-    if not os.path.isdir(shared.opts.temp_dir):
-        print('Creating temporary folder:', shared.opts.temp_dir)
-        os.makedirs(shared.opts.temp_dir, exist_ok=True)
     register_tmp_file(shared.demo, os.path.join(shared.opts.temp_dir, "x"))
 
 

@@ -10,10 +10,6 @@ parser.add_argument("--ui-config-file", type=str, help=argparse.SUPPRESS, defaul
 parser.add_argument("--config", type=str, default=sd_default_config, help=argparse.SUPPRESS)
 parser.add_argument("--theme", type=str, help=argparse.SUPPRESS, default=None)
 
-parser.add_argument("--no-half", action='store_true', help="Do not switch the model to 16-bit floats")
-parser.add_argument("--no-half-vae", action='store_true', help="Do not switch the VAE model to 16-bit floats")
-parser.add_argument("--precision", type=str, help="Evaluate at this precision", choices=["full", "autocast"], default="autocast")
-
 parser.add_argument("--medvram", action='store_true', help="Enable model optimizations for sacrificing a little speed for low memory usage")
 parser.add_argument("--lowvram", action='store_true', help="Enable model optimizations for sacrificing a lot of speed for lowest memory usage")
 parser.add_argument("--lowram", action='store_true', help="Load checkpoint weights to VRAM instead of RAM")
@@ -61,10 +57,15 @@ def compatibility_args(opts, args):
     parser.add_argument("--bsrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.bsrgan_models_path)
     parser.add_argument("--realesrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.realesrgan_models_path)
     parser.add_argument("--clip-models-path", type=str, help=argparse.SUPPRESS, default=opts.clip_models_path)
-    parser.add_argument("--disable-nan-check", default = True, action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--disable-extension-access", default = False, action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--opt-channelslast", help=argparse.SUPPRESS, default=opts.opt_channelslast)
     parser.add_argument("--xformers", default = (opts.cross_attention_optimization == "xFormers"), action='store_true', help=argparse.SUPPRESS)
+    parser.add_argument("--disable-nan-check", help=argparse.SUPPRESS, default=opts.disable_nan_check)
+    parser.add_argument("--no-half", help=argparse.SUPPRESS, default=opts.no_half)
+    parser.add_argument("--no-half-vae", help=argparse.SUPPRESS, default=opts.no_half_vae)
+    parser.add_argument("--precision", help=argparse.SUPPRESS, default=opts.precision)
+    parser.add_argument("--api", help=argparse.SUPPRESS, default=True)
+
     args = parser.parse_args()
     if vars(parser)['_option_string_actions'].get('--lora-dir', None) is not None:
         args.lora_dir = opts.lora_dir

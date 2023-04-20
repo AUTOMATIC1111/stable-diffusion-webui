@@ -30,10 +30,11 @@ def create_ui():
             script_inputs = scripts.scripts_postproc.setup_ui()
 
         with gr.Column():
-            result_images, html_info_x, html_info, html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
-            html_info = gr.HTML()
-            generation_info = gr.Textbox(visible=False, elem_id="pnginfo_generation_info")
-            html2_info = gr.HTML()
+            result_images, html_info_x, html_info, _html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
+            html_info = gr.HTML(elem_id="pnginfo_html_info")
+            generation_info = gr.Textbox(elem_id="pnginfo_generation_info", label="Parameters")
+            gr.HTML('Full metadata')
+            html2_info = gr.HTML(elem_id="pnginfo_html2_info")
 
         for tabname, button in buttons.items():
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=extras_image))

@@ -1,4 +1,3 @@
-import sys
 from types import MethodType
 from rich import print # pylint: disable=redefined-builtin
 import torch
@@ -89,7 +88,6 @@ def undo_optimizations():
 def fix_checkpoint():
     """checkpoints are now added and removed in embedding/hypernet code, since torch doesn't want
     checkpoints to be added when not training (there's a warning)"""
-
     pass
 
 
@@ -173,16 +171,15 @@ class StableDiffusionModelHijack:
         if m.cond_stage_key == "edit":
             sd_hijack_unet.hijack_ddpm_edit()
 
-        """
-        try:
-            import torch._dynamo as dynamo
-            torch._dynamo.config.verbose = True
-            torch.backends.cudnn.benchmark = True
-            m.model = torch.compile(m.model, mode="default", backend="inductor", fullgraph=False, dynamic=False)
-            print("Model compiled set")
-        except Exception as err:
-            print(f"Model compile not supported: {err}")
-        """
+        if opts.cuda_compile and opts.cuda_compile_mode != 'none':
+            try:
+                import torch._dynamo as dynamo # pylint: disable=unused-import
+                torch._dynamo.config.verbose = True # pylint: disable=protected-access
+                torch.backends.cudnn.benchmark = True
+                m.model = torch.compile(m.model, mode="default", backend=opts.cuda_compile_mode, fullgraph=False, dynamic=False)
+                print("Model compile enabled:", opts.cuda_compile_mode)
+            except Exception as err:
+                print(f"Model compile not supported: {err}")
 
         self.optimization_method = apply_optimizations()
 

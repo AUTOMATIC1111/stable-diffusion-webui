@@ -27,6 +27,7 @@ import ldm.modules.encoders.modules # pylint: disable=W0611,C0411
 from modules import extra_networks, ui_extra_networks_checkpoints # pylint: disable=C0411,C0412
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
 from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call # pylint: disable=W0611,C0411
+from modules.paths import create_paths
 
 # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
 if ".dev" in torch.__version__ or "+git" in torch.__version__:
@@ -152,8 +153,8 @@ def create_api(app):
 
 def start_ui():
     logging.disable(logging.INFO)
+    create_paths(opts)
     initialize()
-    ui_tempdir.on_tmpdir_changed()
     if shared.opts.clean_temp_dir_at_start:
         ui_tempdir.cleanup_tmpdr()
         startup_timer.record("cleanup")

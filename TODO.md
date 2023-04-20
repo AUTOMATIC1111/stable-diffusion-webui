@@ -10,6 +10,8 @@ Stuff to be fixed...
 
 Stuff to be added...
 
+- Add README headers
+- Add Gradio base themes: <https://gradio.app/theming-guide/#using-the-theme-builder>
 - Create new GitHub hooks/actions for CI/CD  
 - Move Restart Server from WebUI to Launch and reload modules
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
@@ -54,3 +56,6 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
+- full CUDA tuning section in UI Settings
+- improve compatibility with some 3rd party extensions
+- improve exif/pnginfo metadata parsing

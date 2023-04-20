@@ -233,9 +233,6 @@ button.custom-button{
     margin-right: 0;
 }
 
-.performance .vram {
-}
-
 #txt2img_generate, #img2img_generate {
     min-height: 4.5em;
 }

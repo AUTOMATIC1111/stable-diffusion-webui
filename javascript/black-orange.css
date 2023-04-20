@@ -102,6 +102,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_subseed_strength { margin-top: 0; }
 #txt2img_tools, #img2img_tools { margin-top: 54px; scale: 120%; margin-left: 26px; }
 #txtimg_hr_finalres { max-width: 200px; }
+#pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
 
 /* custom elements overrides */
 #steps-animation, #controlnet { border-width: 0; }
@@ -133,7 +134,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --block_title_background_fill: None;
   --block_title_border_color: None;
   --block_title_border_width: None;
-  --block-title-text-color: var(--neutral-200);
+  --block-title-text-color: white;
   --panel-background-fill: var(--background-fill-secondary);
   --panel-border-color: var(--border-color-primary);
   --panel_border_width: None;

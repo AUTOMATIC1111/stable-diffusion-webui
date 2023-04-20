@@ -251,9 +251,6 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
     "cross_attention_optimization": OptionInfo("Scaled-Dot-Product", "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
     "cross_attention_options": OptionInfo([], "Cross-attention advanced options", gr.CheckboxGroup, lambda: {"choices": ['xFormers enable flash Attention', 'SDP disable memory attention']}),
-    "disable_nan_check": OptionInfo(False, "Do not check if produced images/latent spaces have NaN values"),
-    "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
-    "cudnn_benchmark": OptionInfo(False, "Enable CUDA cuDNN benchmark feature"),
     "sub_quad_q_chunk_size": OptionInfo(512, "Sub-quadratic cross-attention query chunk size for the  layer optimization to use", gr.Slider, {"minimum": 16, "maximum": 8192, "step": 8}),
     "sub_quad_kv_chunk_size": OptionInfo(512, "Sub-quadratic cross-attentionkv chunk size for the sub-quadratic cross-attention layer optimization to use", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
     "sub_quad_chunk_threshold": OptionInfo(80, "Sub-quadratic cross-attention percentage of VRAM chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
@@ -321,6 +318,20 @@ options_templates.update(options_section(('saving-paths', "Image Paths"), {
     "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs),
     "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs),
     "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs),
+}))
+
+options_templates.update(options_section(('cuda', "CUDA Settings"), {
+    "precision": OptionInfo("Autocast", "Precision type", gr.Radio, lambda: {"choices": ["Autocast", "Full"]}),
+    "cuda_dtype": OptionInfo("FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
+    "no_half": OptionInfo(False, "Use full precision for model (--no-half)"),
+    "no_half_vae": OptionInfo(False, "Use full precision for VAE (--no-half-vae)"),
+    "disable_nan_check": OptionInfo(True, "Do not check if produced images/latent spaces have NaN values"),
+    "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
+    "cudnn_benchmark": OptionInfo(False, "Enable cuDNN benchmark feature"),
+    "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
+    "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
+    "cuda_compile": OptionInfo(False, "Enable model compile (experimental)"),
+    "cuda_compile_mode": OptionInfo("none", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser']}),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {

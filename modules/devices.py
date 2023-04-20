@@ -1,7 +1,6 @@
 import sys
 import contextlib
 import torch
-from modules import errors
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -60,23 +59,26 @@ def torch_gc():
             torch.cuda.ipc_collect()
 
 
-def enable_tf32():
-    if torch.cuda.is_available():
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
-
-
-def enable_cudnn_benchmark():
+def set_cuda_params():
+    if not torch.cuda.is_available():
+        return
     from modules import shared
+    if torch.backends.cudnn.is_available():
+        torch.backends.cudnn.benchmark = shared.opts.cudnn_benchmark
+        torch.backends.cudnn.benchmark_limit = 0
+        torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
+    torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
+    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+    torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+    global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
+    if shared.opts.cuda_dtype == 'FP16':
+        dtype = dtype_vae = dtype_unet = torch.float16
+    if shared.opts.cuda_dtype == 'BP16':
+        dtype = dtype_vae = dtype_unet = torch.bfloat16
+    if shared.opts.cuda_dtype == 'FP32':
+        dtype = dtype_vae = dtype_unet = torch.float32
+    unet_needs_upcast = shared.opts.upcast_sampling
 
-    if shared.opts.cudnn_benchmark:
-        torch.backends.cudnn.benchmark = True
-    else:
-        torch.backends.cudnn.benchmark = False
-
-
-
-errors.run(enable_tf32, "Enabling TF32")
 
 cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
@@ -111,7 +113,7 @@ def autocast(disable=False):
     from modules import shared
     if disable:
         return contextlib.nullcontext()
-    if dtype == torch.float32 or shared.cmd_opts.precision == "full":
+    if dtype == torch.float32 or shared.cmd_opts.precision == "Full":
         return contextlib.nullcontext()
     return torch.autocast("cuda")
 
