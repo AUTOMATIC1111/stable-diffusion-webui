@@ -295,7 +295,7 @@ class Api:
         return script_args
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
-        start_ts = time.time()
+        start_ts = time.time() # added for metrics reporting
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
@@ -323,7 +323,7 @@ class Api:
         args.pop('save_images', None)
 
         with self.queue_lock:
-            genstart_ts = time.time()
+            genstart_ts = time.time() # added for metrics reporting
             p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
             p.scripts = script_runner
             p.outpath_grids = opts.outdir_txt2img_grids
@@ -339,6 +339,7 @@ class Api:
             shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
+
         # metrics reporting
         stop_ts = time.time()
         
@@ -361,6 +362,7 @@ class Api:
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=info)
 
     def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
+        start_ts = time.time() # added for metrics reporting
         init_images = img2imgreq.init_images
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
@@ -398,6 +400,8 @@ class Api:
         args.pop('save_images', None)
 
         with self.queue_lock:
+            genstart_ts = time.time() # added for metrics reporting
+
             p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
             p.init_images = [decode_base64_to_image(x) for x in init_images]
             p.scripts = script_runner
@@ -419,7 +423,26 @@ class Api:
             img2imgreq.init_images = None
             img2imgreq.mask = None
 
-        return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=processed.js())
+        # metrics reporting
+        stop_ts = time.time()
+        
+        gen_dt = stop_ts-genstart_ts
+        avg_smoothing = 0.9
+        if self.gen_duration_avg == 0:
+            self.gen_duration_avg = gen_dt
+        else:
+            self.gen_duration_avg = self.gen_duration_avg*avg_smoothing + (1-avg_smoothing)*gen_dt
+        self.last_generation_ts.set({'type': "virtual"},stop_ts)
+        self.wait_duration_seconds.set({'type': "virtual"},genstart_ts-start_ts)
+        self.generation_duration_avg_seconds.set({'type': "virtual"},self.gen_duration_avg)
+        self.generation_duration_total_seconds.add({'type': "virtual"},gen_dt)
+        # add compute time to the returned response
+        info = json.loads(processed.js())
+        info['process_duration_seconds'] = gen_dt
+        info['wait_duration_seconds'] = genstart_ts-start_ts
+        info = json.dumps(info)
+
+        return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=info)
 
     def extras_single_image_api(self, req: ExtrasSingleImageRequest):
         reqDict = setUpscalers(req)
