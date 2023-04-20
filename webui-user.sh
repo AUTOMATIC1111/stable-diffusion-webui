@@ -3,9 +3,15 @@
 # Uncomment and change the variables below to your need:#
 #########################################################
 
+# pull changes
+git fetch
+git reset --hard origin/master
+
 # install metrics tool
-sudo apt install nano
+sudo apt update
+sudo apt install nano screen
 pip install aioprometheus[starlette]
+
 
 # check the downloads, can take while on a fresh disk.
 # perhaps better to use rsync? but want to avoid credentials
