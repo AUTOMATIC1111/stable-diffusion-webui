@@ -54,8 +54,11 @@ def create_paths(opts):
         if folder is None or folder == '':
             return
         if not os.path.exists(folder):
-            print('Creating folder:', folder)
-            os.makedirs(opts.temp_dir, exist_ok=True)
+            try:
+                os.makedirs(folder, exist_ok=True)
+                print('Creating folder:', folder)
+            except:
+                pass
     create_path(opts.temp_dir)
     create_path(extensions_dir)
     create_path(extensions_builtin_dir)
