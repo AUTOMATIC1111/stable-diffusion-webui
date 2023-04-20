@@ -8,6 +8,8 @@ import typing
 import collections.abc as abc
 import tempfile
 import shutil
+from _csv import register_dialect, QUOTE_MINIMAL
+from csv import Dialect
 
 if typing.TYPE_CHECKING:
     # Only import this when code is being type-checked, it doesn't have any effect at runtime
@@ -36,8 +38,22 @@ def apply_styles_to_prompt(prompt, styles):
 
     return prompt
 
+class SDcustom(Dialect):
+        """Describe the usual properties of Excel-generated CSV files."""
+        delimiter = ','
+        quotechar = '"'
+        doublequote = True
+        skipinitialspace = True
+        lineterminator = '\r\n'
+        escapechar = '\''
+        quoting = QUOTE_MINIMAL
+register_dialect("sd-custom", SDcustom)
 
 class StyleDatabase:
+
+
+
+
     def __init__(self, path: str):
         self.no_style = PromptStyle("None", "", "")
         self.styles = {}
@@ -51,9 +67,10 @@ class StyleDatabase:
         if not os.path.exists(self.path):
             return
 
-        with open(self.path, "r", encoding="utf-8-sig", newline='') as file:
-            reader = csv.DictReader(file)
+        with open(self.path, "r", encoding="utf-8", newline='') as file:
+            reader = csv.DictReader(file,dialect="sd-custom")
             for row in reader:
+                #print(row)
                 # Support loading old CSV format with "name, text"-columns
                 prompt = row["prompt"] if "prompt" in row else row["text"]
                 negative_prompt = row.get("negative_prompt", "")
