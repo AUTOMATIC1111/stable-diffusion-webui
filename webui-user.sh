@@ -3,13 +3,16 @@
 # Uncomment and change the variables below to your need:#
 #########################################################
 
+#load env variable from .bashrc
+source ~/.bashrc
+
 # pull changes
 git fetch
 git reset --hard origin/master
 
 # install metrics tool
 sudo apt update
-sudo apt install nano screen --force-yes
+sudo apt install nano screen -y
 pip install aioprometheus[starlette]
 
 
