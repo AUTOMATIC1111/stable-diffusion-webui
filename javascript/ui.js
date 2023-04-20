@@ -166,7 +166,6 @@ function submit(){
     var id = randomId()
     requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
         showSubmitButtons('txt2img', true)
-
     })
 
     var res = create_submit_args(arguments)
@@ -450,6 +449,31 @@ onUiUpdate(function(){
 			
 		})
 		
+/* 		gradioApp().querySelectorAll('[id^="image_buttons_"] button').forEach(function (elem){
+			
+			if(elem.id == "txt2img_tab"){
+				elem.setAttribute("tab-id", 0);
+				elem.removeEventListener('click', navTabClicked);
+				elem.addEventListener('click', navTabClicked);
+			}else if(elem.id == "img2img_tab" || elem.id == "inpaint_tab"){
+				elem.setAttribute("tab-id", 1);
+				elem.removeEventListener('click', navTabClicked);
+				elem.addEventListener('click', navTabClicked);
+			}if(elem.id == "extras_tab"){
+				elem.setAttribute("tab-id", 2);
+				elem.removeEventListener('click', navTabClicked);
+				elem.addEventListener('click', navTabClicked);
+			}		
+		}) */
+		
+/* 		const pdiv = gradioApp().querySelector("#"+selectedTabItemId+" .progressDiv");
+		if(!pdiv && selectedTabItemId == "tab_txt2img"){			
+			showSubmitButtons('txt2img', true);
+		}else if(!pdiv && selectedTabItemId == "tab_img2img"){
+			showSubmitButtons('img2img', true);
+		} */
+
+
 		//window.onUiHeaderTabUpdate();
 		// also here the same issue
 		/*
@@ -470,6 +494,7 @@ onUiUpdate(function(){
 
 		netMenuVisibility();
 	}
+	
 	
 	// menu 
 	function disableScroll() {         
@@ -824,11 +849,9 @@ onUiUpdate(function(){
 	function navigate2TabItem(idx){		
 		gradioApp().querySelectorAll('#tabs > div.tabitem').forEach(function (tabitem, index){			
 			if(idx == index){
-				tabitem.style.display = "block";
-				//tabitem.classList.add("wtf");
+				tabitem.style.display = "block";				
 			}else{
-				tabitem.style.display = "none";
-				//tabitem.classList.remove("wtf");
+				tabitem.style.display = "none";				
 			}			
 		})
 	}
@@ -866,7 +889,6 @@ onUiUpdate(function(){
 		parent_header_tabs.append(clonetab);		
  		clonetab.addEventListener('click', navTabClicked);
 
-		
 	})
 	
 	let div = document.createElement("div");
@@ -899,9 +921,24 @@ onUiUpdate(function(){
 			updateOpStyles();
 		}
 	})
-	
+
 	tabsHiddenChange();
 	
+	gradioApp().querySelectorAll('[id^="image_buttons_"] button, #png_2img_results button').forEach(function (elem){
+
+		if(elem.id == "txt2img_tab"){
+			elem.setAttribute("tab-id", 0);
+			elem.addEventListener('click', navTabClicked);
+		}else if(elem.id == "img2img_tab" || elem.id == "inpaint_tab"){
+			elem.setAttribute("tab-id", 1);
+			elem.addEventListener('click', navTabClicked);
+		}if(elem.id == "extras_tab"){
+			elem.setAttribute("tab-id", 2);
+			elem.addEventListener('click', navTabClicked);
+		}		
+	})
+	
+
 	// add - remove quicksettings
 	const settings_submit = gradioApp().querySelector('#settings_submit');
 	const quick_parent = gradioApp().querySelector("#quicksettings_overflow_container");

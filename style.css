@@ -19,7 +19,7 @@ License: GNU General Public License
 	--ae-top-header-inner-height:38px;
 	--ae-top-header-height: calc( var(--ae-top-header-padding-top) + var(--ae-top-header-inner-height) + var(--ae-top-header-padding-bottom) );
 	--ae-container-padding:16px;
-	--ae-footer-height: calc( 38px + (var(--ae-container-padding) * 2) );
+	--ae-footer-height: calc( 30px + (var(--ae-container-padding) * 2) );
 	--ae-gallery-bottom-height: calc(24px + (var(--ae-max-padding) * 2) + 16px + (var(--ae-inside-padding-size) * 2) + (var(--ae-outside-gap-size)* 3 ));
 	
 	--ae-subtract-total: calc( var(--ae-top-header-height) + var(--ae-footer-height));
@@ -1263,6 +1263,7 @@ input.svelte-56zyyb{
 }
 [id$="2img_styles"] label > span{
     padding-right: 5px;
+	margin-bottom:0!important;
 }
 
 [id$="2img_token_counter"].block,
@@ -2758,7 +2759,15 @@ pre {
 /************/
 /* Footer */
 /************/
-
+.app.svelte-ac4rv4.svelte-ac4rv4 {
+    min-height: 100vh !important;
+}
+.main > .wrap > .contain{
+	flex-grow: 1;
+	display: flex;
+	flex-direction: column;
+}
+	
 footer {
     display: none !important;
 }
@@ -2794,6 +2803,7 @@ footer {
     border-radius: 100%;
     position: relative;
 	display: flex;
+	margin: 0 !important;
 }
 
 .footer-links > li > div,
