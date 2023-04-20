@@ -14,7 +14,7 @@ class AlwaysonScriptArgsFormatter:
     def name(self):
         return 'base'
 
-    def format(self, alwayson_scripts: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
+    def format(self, is_img2img: bool, alwayson_scripts: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
             -> typing.Sequence[typing.Any]:
         return alwayson_scripts
 
@@ -32,10 +32,10 @@ def init_formatters():
             formatters[ins.name()] = ins.format
 
 
-def format_alwayson_script_args(name, args):
+def format_alwayson_script_args(name, is_img2img, args):
     if not formatters:
         init_formatters()
     formatter = formatters.get(name)
     if not formatter:
         return args
-    return formatter(args)
+    return formatter(is_img2img, args)

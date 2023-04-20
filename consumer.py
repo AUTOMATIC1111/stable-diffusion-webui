@@ -7,11 +7,11 @@
 # @Software: Hifive
 from tools.model_hist import CkptLoadRecorder
 from worker.executor import TaskExecutor, TaskHandler
-from handlers import task_handlers
+from handlers import get_task_handlers
 
 
 def run_executor(ckpt_recorder: CkptLoadRecorder, *handlers: TaskHandler):
-    handlers = handlers or task_handlers
+    handlers = handlers or get_task_handlers()
     executor = TaskExecutor(ckpt_recorder)
     executor.add_handler(*handlers)
     executor.start()

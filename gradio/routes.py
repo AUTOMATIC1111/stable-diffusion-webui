@@ -95,6 +95,7 @@ templates.env.filters["toorjson"] = toorjson
 
 client = httpx.AsyncClient()
 
+
 ###########
 # Auth
 ###########
@@ -116,6 +117,8 @@ class App(FastAPI):
         self.startup_events_triggered = False
         self.uploaded_file_dir = str(utils.abspath(tempfile.mkdtemp()))
         self.reverse_proxy = os.getenv("Endpoint", "") != ""
+        self.last_event_ts = time.time()
+        self.startup_ts = self.last_event_ts
         super().__init__(**kwargs)
 
     def configure_app(self, blocks: gradio.Blocks) -> None:
@@ -199,9 +202,9 @@ class App(FastAPI):
             else:
                 auth = None
             if (
-                not callable(app.auth)
-                and username in app.auth
-                and app.auth[username] == password
+                    not callable(app.auth)
+                    and username in app.auth
+                    and app.auth[username] == password
             ) or (callable(app.auth) and auth):
                 token = secrets.token_urlsafe(16)
                 app.tokens[token] = username
@@ -366,8 +369,8 @@ class App(FastAPI):
                 )
             )
             was_uploaded = (
-                utils.abspath(app.uploaded_file_dir)
-                in utils.abspath(path_or_url).parents
+                    utils.abspath(app.uploaded_file_dir)
+                    in utils.abspath(path_or_url).parents
             )
 
             if in_app_dir or created_by_app or in_file_dir or was_uploaded:
@@ -407,9 +410,9 @@ class App(FastAPI):
             return {"success": True}
 
         async def run_predict(
-            body: PredictBody,
-            request: Request | List[Request],
-            fn_index_inferred: int,
+                body: PredictBody,
+                request: Request | List[Request],
+                fn_index_inferred: int,
         ):
             if hasattr(body, "session_hash"):
                 if body.session_hash not in app.state_holder:
@@ -480,10 +483,10 @@ class App(FastAPI):
         @app.post("/api/{api_name}", dependencies=[Depends(login_check)])
         @app.post("/api/{api_name}/", dependencies=[Depends(login_check)])
         async def predict(
-            api_name: str,
-            body: PredictBody,
-            request: fastapi.Request,
-            username: str = Depends(get_current_user),
+                api_name: str,
+                body: PredictBody,
+                request: fastapi.Request,
+                username: str = Depends(get_current_user),
         ):
             fn_index_inferred = None
             if body.fn_index is None:
@@ -501,7 +504,7 @@ class App(FastAPI):
             else:
                 fn_index_inferred = body.fn_index
             if not app.get_blocks().api_open and app.get_blocks().queue_enabled_for_fn(
-                fn_index_inferred
+                    fn_index_inferred
             ):
                 if f"Bearer {app.queue_token}" != request.headers.get("Authorization"):
                     raise HTTPException(
@@ -532,8 +535,8 @@ class App(FastAPI):
 
         @app.websocket("/queue/join")
         async def join_queue(
-            websocket: WebSocket,
-            token: Optional[str] = Depends(ws_login_check),
+                websocket: WebSocket,
+                token: Optional[str] = Depends(ws_login_check),
         ):
             blocks = app.get_blocks()
             if app.auth is not None and token is None:
@@ -565,6 +568,8 @@ class App(FastAPI):
             # set the token into Event to allow using the same token for call_prediction
             event.token = token
             event.session_hash = session_info["session_hash"]
+            # set last opt time
+            app.last_event_ts = time.time()
 
             # Continuous events are not put in the queue  so that they do not
             # occupy the queue's resource as they are expected to run forever
@@ -589,6 +594,20 @@ class App(FastAPI):
                 if websocket.application_state == WebSocketState.DISCONNECTED:
                     return
 
+        @app.get('/system/time', response_class=JSONResponse)
+        async def last_opt_ts():
+            now = time.time()
+            return JSONResponse(content={
+                'data': {
+                    "last_time": int(app.last_event_ts),
+                    "idle_time": int(now - app.last_event_ts),
+                    "run_time": int(now - app.startup_ts)
+                },
+                'msg': 'ok',
+                'status': 200
+            }
+            )
+
         @app.get(
             "/queue/status",
             dependencies=[Depends(login_check)],
@@ -599,7 +618,7 @@ class App(FastAPI):
 
         @app.post("/upload", dependencies=[Depends(login_check)])
         async def upload_file(
-            files: List[UploadFile] = File(...),
+                files: List[UploadFile] = File(...),
         ):
             output_files = []
             file_manager = TempFileManager()
@@ -652,10 +671,10 @@ def safe_join(directory: str, path: str) -> str | None:
         return directory
 
     if (
-        any(sep in filename for sep in _os_alt_seps)
-        or os.path.isabs(filename)
-        or filename == ".."
-        or filename.startswith("../")
+            any(sep in filename for sep in _os_alt_seps)
+            or os.path.isabs(filename)
+            or filename == ".."
+            or filename.startswith("../")
     ):
         return None
     return posixpath.join(directory, filename)
@@ -752,10 +771,10 @@ class Request:
     """
 
     def __init__(
-        self,
-        request: fastapi.Request | None = None,
-        username: str | None = None,
-        **kwargs,
+            self,
+            request: fastapi.Request | None = None,
+            username: str | None = None,
+            **kwargs,
     ):
         """
         Can be instantiated with either a fastapi.Request or by manually passing in
@@ -786,10 +805,10 @@ class Request:
 
 @document()
 def mount_gradio_app(
-    app: fastapi.FastAPI,
-    blocks: gradio.Blocks,
-    path: str,
-    gradio_api_url: str | None = None,
+        app: fastapi.FastAPI,
+        blocks: gradio.Blocks,
+        path: str,
+        gradio_api_url: str | None = None,
 ) -> fastapi.FastAPI:
     """Mount a gradio.Blocks to an existing FastAPI application.
 

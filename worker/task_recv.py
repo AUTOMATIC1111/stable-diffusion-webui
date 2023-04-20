@@ -20,8 +20,10 @@ try:
 except:
     from collections import Iterable  # <=py3.9
 
-TaskScoreRange = (0, 100)
 TaskQueuePrefix = "task_"
+UpscaleCoeff = 100 * 1000
+TaskScoreRange = (0, 100*UpscaleCoeff)
+TaskTimeout = 24 * 3600
 
 
 class TaskReceiver:
@@ -57,10 +59,15 @@ class TaskReceiver:
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
-        with redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10) as locker:
+
+        with redis_lock.Lock(rds, "task-lock-" + queue_name, expire=60) as locker:
             for _ in range(retry):
-                values = rds.zrevrangebyscore(
-                    queue_name, TaskScoreRange[-1], TaskScoreRange[0], start=0, num=1)
+                now = int(time.time() * 1000)
+                # min 最小为当前时间（ms）- VIP最大等级*放大系数（VIP提前执行权重）- 任务过期时间（1天）
+                # max 为当前时间（ms） + 偏移量1秒
+                min, max = now - TaskScoreRange[-1] - TaskTimeout*1000, now + 1000
+                values = rds.zrangebyscore(
+                    queue_name, min, max, start=0, num=1)
                 task = None
                 if values:
                     if isinstance(values, Iterable):

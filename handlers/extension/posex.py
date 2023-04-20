@@ -19,7 +19,7 @@ class PosexFormatter(AlwaysonScriptArgsFormatter):
     def name(self):
         return PoseX
 
-    def format(self, args: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
+    def format(self, is_img2img: bool, args: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
             -> typing.Sequence[typing.Any]:
 
         def obj_to_array(obj: typing.Mapping) -> typing.Sequence:
@@ -30,15 +30,17 @@ class PosexFormatter(AlwaysonScriptArgsFormatter):
                         args['cn_num']]
             return obj
 
-        if isinstance(args, dict):
-            posex_script_args = obj_to_array(args)
-        else:
-            posex_script_args = [obj_to_array(x) for x in args]
-        if posex_script_args:
-            if len(posex_script_args) > 2 and posex_script_args[0]:
-                image = get_tmp_local_path(posex_script_args[1])
-                if image and os.path.isfile(image):
-                    # 必须是png
-                    posex_script_args[1] = b64_image(image)
+        posex_script_args = args
+        if is_img2img:
+            if isinstance(args, dict):
+                posex_script_args = obj_to_array(args)
+            else:
+                posex_script_args = [obj_to_array(x) for x in args]
+            if posex_script_args:
+                if len(posex_script_args) > 2 and posex_script_args[0]:
+                    image = get_tmp_local_path(posex_script_args[1])
+                    if image and os.path.isfile(image):
+                        # 必须是png
+                        posex_script_args[1] = b64_image(image)
 
         return posex_script_args

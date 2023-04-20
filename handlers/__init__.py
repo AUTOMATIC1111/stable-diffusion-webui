@@ -6,10 +6,19 @@
 # @File    : __init__.py.py
 # @Software: Hifive
 
-from .img2img import Img2ImgTaskHandler
+from worker.task import TaskHandler
+from tools.reflection import find_classes
+from handlers.img2img import Img2ImgTaskHandler
+from handlers.txt2img import Txt2ImgTaskHandler
 
-task_handlers = [
+
+def get_task_handlers():
+    for cls in find_classes("handlers"):
+        if issubclass(cls, TaskHandler) and cls != TaskHandler:
+            yield cls()
+
+
+def_task_handlers = [
     Img2ImgTaskHandler(),
-
+    Txt2ImgTaskHandler()
 ]
-

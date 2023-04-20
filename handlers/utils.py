@@ -12,8 +12,8 @@ import typing
 from PIL import Image
 from loguru import logger
 from datetime import datetime
-from modules.scripts import Script
 from tools.image import compress_image
+from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
 from handlers.typex import ModelLocation, ModelType, Tmp, S3ImageBucket, S3ImagePath
@@ -103,7 +103,7 @@ def script_name_to_index(name, scripts):
 
 
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
-                     selectable_idx, request_script_args, script_runner):
+                     selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner):
     script_args = [x for x in default_script_args]
 
     if selectable_scripts:
@@ -122,6 +122,7 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
             # always on script with no arg should always run so you don't really need to add them to the requests
             if "args" in alwayson_scripts[alwayson_script_name]:
                 real_script_args = format_alwayson_script_args(alwayson_script_name,
+                                                               script_runner.is_img2img,
                                                                alwayson_scripts[alwayson_script_name]["args"])
                 real_script_arg_len = len(real_script_args)
                 if real_script_arg_len != alwayson_script.args_to - alwayson_script.args_from:
@@ -134,6 +135,7 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
                     real_script_args
             elif isinstance(alwayson_scripts[alwayson_script_name], (list, tuple)):
                 real_script_args = format_alwayson_script_args(alwayson_script_name,
+                                                               script_runner.is_img2img,
                                                                list(alwayson_scripts[alwayson_script_name]))
                 real_script_arg_len = len(real_script_args)
                 if real_script_arg_len != alwayson_script.args_to - alwayson_script.args_from:
@@ -193,7 +195,7 @@ def save_processed_images(proc, output_dir, task_id, user_id):
             file_storage_system.upload(file_path, key)
 
             low_key = os.path.join(bucket, output_dir, 'low-' + filename)
-            low_file = os.path.join(output_dir, filename)
+            low_file = os.path.join(output_dir, 'low-' + filename)
             file_storage_system.upload(low_file, low_key)
             local_images.append(key)
 

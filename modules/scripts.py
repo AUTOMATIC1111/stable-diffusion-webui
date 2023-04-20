@@ -289,6 +289,7 @@ class ScriptRunner:
         self.titles = []
         self.infotext_fields = []
         self.paste_field_names = []
+        self.is_img2img = True
         self.clean_script_log()
 
     def initialize_scripts(self, is_img2img):
@@ -297,6 +298,7 @@ class ScriptRunner:
         self.scripts.clear()
         self.alwayson_scripts.clear()
         self.selectable_scripts.clear()
+        self.is_img2img = is_img2img
 
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 

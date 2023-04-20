@@ -118,7 +118,7 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
     def name(self):
         return ControlNet
 
-    def format(self, args: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
+    def format(self, is_img2img: bool, args: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
             -> typing.Sequence[typing.Any]:
         if isinstance(args, dict):
             # 只传了一个ControlNetUnit对象，转换为LIST处理

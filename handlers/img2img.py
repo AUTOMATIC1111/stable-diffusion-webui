@@ -12,7 +12,7 @@ import modules.shared as shared
 import numpy as np
 from enum import IntEnum
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
-
+from modules import deepbooru
 from handlers.typex import ModelType
 from modules.scripts import scripts_img2img
 from modules.generation_parameters_copypaste import create_override_settings_dict
@@ -30,6 +30,7 @@ AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]
 
 class Img2ImgMinorTaskType(IntEnum):
     Img2Img = 0
+    Interrogate = 10
     RunControlnetAnnotator = 100
 
 
@@ -200,11 +201,13 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.img2img_batch_input_dir = img2img_batch_input_dir
         self.img2img_batch_output_dir = img2img_batch_output_dir
         self.img2img_batch_inpaint_mask_dir = img2img_batch_inpaint_mask_dir
-        self.extra_generation_params["Mask blur"] = mask_blur
         self.compress_pnginfo = compress_pnginfo
         self.kwargs = kwargs
         self.loras = lora_models
         self.embedding = embeddings
+
+        if mask:
+            self.extra_generation_params["Mask blur"] = mask_blur
 
         if selectable_scripts:
             self.script_args = script_args
@@ -394,9 +397,31 @@ class Img2ImgTaskHandler(TaskHandler):
         dumper = TaskDumper()
         dumper.dump_task_progress(p)
 
+    def _exec_interrogate(self, task: Task):
+        model = task.get('interrogate_model')
+        img_key = task.get('image')
+        img = None
+        if model not in ["clip", "deepdanbooru"]:
+            progress = TaskProgress.new_failed(task, f'model not found, task id: {task.id}, model: {model}')
+            yield progress
+        elif img_key:
+            img = get_tmp_local_path(img_key)
+        if not img:
+            progress = TaskProgress.new_failed(task, f'download image failed:{img_key}')
+            yield progress
+        else:
+            if model == "clip":
+                processed = shared.interrogator.interrogate(img)
+            else:
+                processed = deepbooru.model.tag(img)
+            progress = TaskProgress.new_finish(task, processed)
+            yield progress
+
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
         minor_type = Img2ImgMinorTaskType(task.minor_type)
         if minor_type == Img2ImgMinorTaskType.Img2Img:
             yield from self._exec_img2img(task)
         elif minor_type == Img2ImgMinorTaskType.RunControlnetAnnotator:
             yield from exec_control_net_annotator(task)
+        elif minor_type == Img2ImgMinorTaskType.Interrogate:
+            yield from self._exec_interrogate(task)

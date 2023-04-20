@@ -6,6 +6,7 @@
 # @File    : task_send.py
 # @Software: Hifive
 import os.path
+import time
 
 from tools.redis import RedisPool
 from .task import Task
@@ -27,10 +28,10 @@ class RedisSender:
                 name = task.model_hash[0:10]
             #  task_ + shorthash(前10位的sha256)
             queue = TaskQueuePrefix + name
-
+            now = int(time.time() * 1000)
             meta = task.json()
             redis.set(task.id, meta, 3600*24*1)
             redis.zadd(queue, {
-                task.id: int(level)
+                task.id: int(level) * -100000 + now
             })
 
