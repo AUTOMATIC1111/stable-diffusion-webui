@@ -74,6 +74,8 @@ def run_python(code, desc=None, errdesc=None):
 
 
 def run_pip(pkg, desc=None):
+    if desc is None:
+        desc = pkg
     index_url_line = f' --index-url {index_url}' if index_url != '' else ''
     return run(f'"{sys.executable}" -m pip {pkg} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
 

@@ -38,7 +38,6 @@ requests
 resize-right
 rich
 safetensors
-scikit-image
 scipy
 tb_nightly
 toml
@@ -50,9 +49,9 @@ tqdm
 voluptuous
 yapf
 
+scikit-image==0.19.3
 accelerate==0.18.0
 opencv-python==4.7.0.72
-timm==0.6.13
 diffusers==0.15.0
 einops==0.4.1
 gradio==3.23.0
@@ -62,3 +61,4 @@ protobuf==3.20.3
 pytorch_lightning==1.9.4
 tensorflow==2.12.0
 transformers==4.26.1
+timm==0.6.13

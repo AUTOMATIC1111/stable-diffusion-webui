@@ -64,7 +64,8 @@ def installed(package, friendly: str = None):
         if friendly:
             pkgs = [friendly]
         else:
-            pkgs = [p for p in package.split() if not p.startswith('-') and not p.startswith('git+') and not p.startswith('http') and not p.startswith('=')]
+            pkgs = [p for p in package.split() if not p.startswith('-') and not p.startswith('=')]
+            pkgs = [p.split('/')[-1] for p in pkgs] # get only package name if installing from url
         for pkg in pkgs:
             p = pkg.split('==')
             spec = pkg_resources.working_set.by_key.get(p[0], None) # more reliable than importlib
@@ -243,7 +244,7 @@ def run_extension_installer(folder):
         log.debug(f"Running extension installer: {path_installer}")
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.abspath(".")
-        result = subprocess.run(f'"{sys.executable}" "{path_installer}"', shell=True, env=env, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        result = subprocess.run(f'"{sys.executable}" "{path_installer}"', shell=True, env=env, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder)
         if result.returncode != 0:
             global errors # pylint: disable=global-statement
             errors += 1
