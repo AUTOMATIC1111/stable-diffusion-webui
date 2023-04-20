@@ -106,6 +106,13 @@ def load_prompt_file(file):
 
     return None, "\n".join(lines), gr.update(lines=7)
 
+def on_stop_button_click():
+    state.interrupt()
+    if state.job_count == 0:
+        print("🤖 Beep boop! I'm your idling graphic card. 🚀 It's like a vacation! 😂")
+    else:
+        print(f'{state.job_no} / {state.job_count} jobs interrupted... Aborting now...')
+
 
 class Script(scripts.Script):
 
@@ -129,6 +136,8 @@ class Script(scripts.Script):
                                            info='If you want to use prompt(s) that has multiple lines with line break(s), you might want to set a custom line seperator instead of line break by default') 
                 repetitions_slider = gr.Slider(label="Job repeats", step=1, minimum=1, maximum=200, value=1, elem_id=self.elem_id("repetitions_slider"),
                                                info='This will repeat your jobs n times. By default, each repeat will always start with a random seed.')
+                stop_button = gr.Button(label="Stop Loop", value ='Force Interrupt and Abort Jobs', elem_id=self.elem_id("force_stop_button"))
+                
             with gr.Column(scale=1, min_width=100):
                 
                 checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))
@@ -151,11 +160,13 @@ class Script(scripts.Script):
         # be unclear to the user that shift-enter is needed.
         prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=3), inputs=[prompt_txt], outputs=[prompt_txt])
         file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt])
+        stop_button.click(fn=on_stop_button_click)
 
         return [checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt, separator_txt, repetitions_slider, checkbox_same_repeat_seed]
 
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt: str, separator_txt: str, repetitions_slider, checkbox_same_repeat_seed):
         #seperator determine
+
         separator = separator_txt.strip() if separator_txt.strip() else "\n"
         lines = [x.strip() for x in prompt_txt.split(separator) if x.strip()]
         lines = [x for x in lines if len(x) > 0]
@@ -171,7 +182,7 @@ class Script(scripts.Script):
 
         #extra repetitions 
         repetitions = repetitions_slider
-            
+
         for line in lines:
             if "--" in line:
                 try:
@@ -188,22 +199,30 @@ class Script(scripts.Script):
 
             jobs.append(args)
 
-        print(f"\nPrompt script is starting... will process \033[33m{len(lines)}\033[0m lines in", f" {job_count_each_repeat} jobs. Job repeat is set to {repetitions}, Total is \033[0m{job_count}\033[0m jobs." if repetitions >= 2 else " \033[33m{job_count_each_repeat}\033[0m jobs.\n")
-        
+        print(f"Starting... Will process {len(lines)} prompts in ", f"{job_count_each_repeat} jobs." if repetitions < 2 else f"{job_count_each_repeat} x {repetitions} = {job_count_each_repeat*repetitions} jobs.")
+
         state.job_count = job_count
         
         images = []
         all_prompts = []
         infotexts = []
+
         initial_seed = p.seed
         generated_random_seed = -1
+
         if (checkbox_iterate or checkbox_iterate_batch) and p.seed == -1:
             p.seed = generated_random_seed = int(random.randrange(4294967294))
 
         for r in range(0, int(repetitions)):
-            if repetitions > 1:
-                print(f'\nTotal repetition is {repetitions}. Now running repetition \033[33m{r+1}\033[0m\n')
+            if state.interrupted:
+                print(f"🖼️ We have generated a total of {len(images)} images, using the provided prompts. The process was stoped at {state.job_no} of {state.job_count} jobs.")
+                repetitions = 1
+                break
 
+            elif repetitions > 1:
+                print(f'Total [{len(images)}] images created in {state.job_no}/{state.job_count} jobs. Starting repetition [{r+1}/{repetitions}]...')
+
+                #keep seed for "use same seed" 
                 if r>0 and checkbox_same_repeat_seed and initial_seed == -1:
                     if generated_random_seed != -1:
                         p.seed = generated_random_seed
@@ -213,22 +232,26 @@ class Script(scripts.Script):
                     p.seed = int(random.randrange(4294967294))
                 elif r>0 and not checkbox_same_repeat_seed:
                     p.seed = -1
-                    
+
             for n, args in enumerate(jobs):
-                state.job = f"{state.job_no + 1} out of {state.job_count}"
+                if state.interrupted:
+                    print(f"[{r}/{repetitions}] repetitions" if state.job_no / state.job_count == r else f"{r - 1} / {repetitions} repetitions completed. Aborting jobs.")
+                    break
+                else:
+                    state.job = f"{state.job_no + 1} out of {state.job_count}"
 
-                copy_p = copy.copy(p)
-                for k, v in args.items():
-                    setattr(copy_p, k, v)
+                    copy_p = copy.copy(p)
 
-                proc = process_images(copy_p)
+                    for k, v in args.items():
+                        setattr(copy_p, k, v)
+                    proc = process_images(copy_p)
 
-                images += proc.images
-                
-                if checkbox_iterate and generated_random_seed != -1:
-                    p.seed = p.seed + (p.batch_size * p.n_iter) 
-                
-                all_prompts += proc.all_prompts
-                infotexts += proc.infotexts
+                    if checkbox_iterate and generated_random_seed != -1:
+                        p.seed = p.seed + (p.batch_size * p.n_iter)
+
+                    images += proc.images
+                    all_prompts += proc.all_prompts
+                    infotexts += proc.infotexts
+                    
 
         return Processed(p, images, p.seed, "", all_prompts=all_prompts, infotexts=infotexts)
