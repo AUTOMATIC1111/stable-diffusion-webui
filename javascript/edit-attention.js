@@ -99,7 +99,13 @@ function keyupEditAttention(event){
 	weight = parseFloat(weight.toPrecision(12));
 	if(String(weight).length == 1) weight += ".0"
 
-	text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + 1 + end - 1);
+    if (closeCharacter == ')' && weight == 1) {
+        text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + 5);
+        selectionStart--;
+        selectionEnd--;
+    } else {
+        text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + 1 + end - 1);
+    }
 
 	target.focus();
 	target.value = text;
