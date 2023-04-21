@@ -333,7 +333,7 @@ def install_requirements():
         return
     log.info('Installing requirements')
     with open('requirements.txt', 'r', encoding='utf8') as f:
-        lines = [line.strip() for line in f.readlines() if line.strip() != '']
+        lines = [line.strip() for line in f.readlines() if line.strip() != '' and not line.startswith('#')]
         for line in lines:
             install(line)
 
