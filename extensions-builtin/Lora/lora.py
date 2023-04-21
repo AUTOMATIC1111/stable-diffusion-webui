@@ -169,7 +169,7 @@ def load_lora(name, filename):
         elif type(sd_module) == torch.nn.MultiheadAttention:
             module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
         elif type(sd_module) == torch.nn.Conv2d:
-            module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (1, 1), bias=False)
+            module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (weight.shape[2], weight.shape[3]), bias=False)
         else:
             print(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
             continue
@@ -232,7 +232,24 @@ def lora_calc_updown(lora, module, target):
         if up.shape[2:] == (1, 1) and down.shape[2:] == (1, 1):
             updown = (up.squeeze(2).squeeze(2) @ down.squeeze(2).squeeze(2)).unsqueeze(2).unsqueeze(3)
         else:
+            permute, h, w = False, 1, 1
+            if len(up.shape) == 4 and len(down.shape) == 4:
+                if up.shape[2:] == (1, 1):
+                    up = up.squeeze(2).squeeze(2)
+                else:
+                    n, c, h, w = up.shape
+                    up = up.view(n, c, -1).permute(2, 0, 1)
+                    permute = True
+                if down.shape[2:] == (1, 1):
+                    down = down.squeeze(2).squeeze(2)
+                else:
+                    n, c, h, w = down.shape
+                    down = down.view(n, c, -1).permute(2, 0, 1)
+                    permute = True
             updown = up @ down
+            if permute:
+                nh, nw = updown.shape[1:]
+                updown = updown.permute(1, 2, 0).view(nh, nw, h, w)
 
         updown = updown * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
 
