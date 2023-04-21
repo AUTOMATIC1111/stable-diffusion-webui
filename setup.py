@@ -11,9 +11,6 @@ try:
 except:
     import argparse
     parser = argparse.ArgumentParser(description="Stable Diffusion", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=55,indent_increment=2,width=200))
-from modules.script_loading import preload_extensions
-preload_extensions('extensions', parser)
-preload_extensions('extensions-builtin', parser)
 
 
 class Dot(dict): # dot notation access to dictionary attributes
@@ -445,6 +442,11 @@ def parse_args():
     parser.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     parser.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
+    log.info('Running extension preloading')
+    from modules.script_loading import preload_extensions
+    preload_extensions('extensions', parser)
+    preload_extensions('extensions-builtin', parser)
+
     global args # pylint: disable=global-statement
     args = parser.parse_args()
 
