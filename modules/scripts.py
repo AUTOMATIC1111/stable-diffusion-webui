@@ -525,6 +525,8 @@ def add_classes_to_gradio_component(comp):
     elem_classes = []
     if hasattr(comp, "elem_classes"):
         elem_classes = comp.elem_classes
+    if elem_classes is None:
+        elem_classes = []
     comp.elem_classes = ["gradio-" + comp.get_block_name(), *(elem_classes)]
 
     if getattr(comp, 'multiselect', False):
