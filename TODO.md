@@ -57,4 +57,8 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- fix parse cmd line args from extensions
+- autodetect which system libs should be installed  
+  this is a first pass of autoconfig for nvidia vs amd environments  
+- fix parse cmd line args from extensions  
+- merge tomesd token merging  
+- merge 23 prs pending from a1111 backlog  
