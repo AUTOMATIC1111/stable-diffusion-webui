@@ -596,5 +596,6 @@
     "customscript/loopback.py/img2img/Append interrogated prompt at each iteration/visible": true,
     "customscript/loopback.py/img2img/Append interrogated prompt at each iteration/value": "None",
     "train/Use PNG alpha channel as loss weight/visible": true,
-    "train/Use PNG alpha channel as loss weight/value": false
+    "train/Use PNG alpha channel as loss weight/value": false,
+    "txt2img/Switch dims/visible": true
 }
