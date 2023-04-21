@@ -207,8 +207,10 @@ def list_themes():
         refresh_themes()
     with open(os.path.join('javascript', 'themes.json'), mode='r', encoding='utf=8') as f:
         res = json.loads(f.read())
-    themes = [x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()]
+    builtin = ["black-orange", "gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
+    themes = builtin + [x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()]
     return themes
+
 
 def refresh_themes():
     import requests
@@ -391,7 +393,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
 }))
 
 options_templates.update(options_section(('ui', "User interface"), {
-    "gradio_theme": OptionInfo("black-orange", "UI theme", gr.Dropdown, lambda: {"choices": ["black-orange", "gradio/default"] + list_themes()}, refresh=refresh_themes),
+    "gradio_theme": OptionInfo("black-orange", "UI theme", gr.Dropdown, lambda: {"choices": list_themes()}, refresh=refresh_themes),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results for web"),
     "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results for web"),
@@ -685,8 +687,19 @@ def reload_gradio_theme(theme_name=None):
     global gradio_theme # pylint: disable=global-statement
     if not theme_name:
         theme_name = opts.gradio_theme
-    if theme_name == "gradio/default" or theme_name == "black-orange":
+    if theme_name == "black-orange":
         gradio_theme = gr.themes.Default()
+    elif theme_name.startswith("gradio/"):
+        if theme_name == "gradio/default":
+            gradio_theme = gr.themes.Default()
+        if theme_name == "gradio/base":
+            gradio_theme = gr.themes.Base()
+        if theme_name == "gradio/glass":
+            gradio_theme = gr.themes.Glass()
+        if theme_name == "gradio/monochrome":
+            gradio_theme = gr.themes.Monochrome()
+        if theme_name == "gradio/soft":
+            gradio_theme = gr.themes.Soft()
     else:
         try:
             gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)

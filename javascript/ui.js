@@ -310,11 +310,11 @@ function create_theme_element() {
 
 function preview_theme() {
   const name = gradioApp().getElementById('setting_gradio_theme').querySelectorAll('span')[1].innerText; // ugly but we want current value without the need to set apply
-  if (name === 'black-orange' || name === 'gradio/default') {
+  if (name === 'black-orange' || name.startsWith('gradio/')) {
     el = document.getElementById('theme-preview') || create_theme_element();
     el.style.display = el.style.display === 'block' ? 'none' : 'block';
     if (name === 'black-orange') el.src = '/file=javascript/black-orange.jpg';
-    else el.src = '/file=javascript/gradio-default.jpg';
+    else el.src = `/file=javascript/${name.replace('/', '-')}.jpg`;
   } else {
     fetch('/file=javascript/themes.json')
       .then((r) => r.json())

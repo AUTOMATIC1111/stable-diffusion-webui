@@ -176,8 +176,9 @@ def check_torch():
         log.info('nVidia toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
-    elif shutil.which('rocm-smi') is not None:
+    elif shutil.which('rocminfo') is not None:
         log.info('AMD toolkit detected')
+        os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
@@ -333,7 +334,7 @@ def install_requirements():
         return
     log.info('Installing requirements')
     with open('requirements.txt', 'r', encoding='utf8') as f:
-        lines = [line.strip() for line in f.readlines() if line.strip() != '' and not line.startswith('#')]
+        lines = [line.strip() for line in f.readlines() if line.strip() != '' and not line.startswith('#') and line is not None]
         for line in lines:
             install(line)
 

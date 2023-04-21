@@ -14,8 +14,7 @@ Stuff to be fixed...
 
 Stuff to be added...
 
-- Add Gradio base themes: <https://gradio.app/theming-guide/#using-the-theme-builder>
-- Add gradio theme maker
+- Add Gradio theme maker
 - Create new GitHub hooks/actions for CI/CD  
 - Move Restart Server from WebUI to Launch and reload modules
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
