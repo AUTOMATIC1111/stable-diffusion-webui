@@ -151,7 +151,9 @@ class CFGDenoiser(torch.nn.Module):
         devices.test_for_nans(x_out, "unet")
 
         if opts.live_preview_content == "Prompt":
-            sd_samplers_common.store_latent(x_out[0:uncond.shape[0]])
+            p_step = len(x_out) // batch_size - 1
+            p_step = p_step if p_step > 1 else 1
+            sd_samplers_common.store_latent(x_out[0:-uncond.shape[0]:p_step])
         elif opts.live_preview_content == "Negative prompt":
             sd_samplers_common.store_latent(x_out[-uncond.shape[0]:])
 
