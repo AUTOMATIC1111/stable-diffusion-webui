@@ -1,4 +1,3 @@
-import sys
 import html
 import threading
 import time
@@ -52,8 +51,6 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         if run_memmon:
             shared.mem_mon.monitor()
         t = time.perf_counter()
-        if sys.modules['xformers'] is not None and shared.opts.cross_attention_optimization != "xFormers":
-            sys.modules["xformers"] = None
         try:
             if shared.cmd_opts.profile:
                 pr = cProfile.Profile()

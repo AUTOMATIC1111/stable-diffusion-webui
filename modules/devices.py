@@ -22,20 +22,16 @@ def extract_device_id(args, name):
 
 def get_cuda_device_string():
     from modules import shared
-
     if shared.cmd_opts.device_id is not None:
         return f"cuda:{shared.cmd_opts.device_id}"
-
     return "cuda"
 
 
 def get_optimal_device_name():
     if torch.cuda.is_available():
         return get_cuda_device_string()
-
     if has_mps():
         return "mps"
-
     return "cpu"
 
 
@@ -45,10 +41,8 @@ def get_optimal_device():
 
 def get_device_for(task):
     from modules import shared
-
     if task in shared.cmd_opts.use_cpu:
         return cpu
-
     return get_optimal_device()
 
 

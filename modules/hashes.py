@@ -72,7 +72,7 @@ def sha256(filename, title):
     if shared.cmd_opts.no_hashing:
         return None
 
-    print(f"Calculating sha256 for {filename}: ", end='')
+    print(f"Calculating sha256: {filename}", end='')
     sha256_value = calculate_sha256(filename)
     print(f"{sha256_value}")
 

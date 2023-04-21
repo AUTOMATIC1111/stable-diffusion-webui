@@ -23,6 +23,7 @@ log = logging.getLogger("sd")
 args = Dot({ 'debug': False, 'upgrade': False, 'noupdate': False, 'skip-extensions': False, 'skip-requirements': False, 'reset': False })
 quick_allowed = True
 errors = 0
+opts = {}
 
 
 # setup console and file logging
@@ -174,7 +175,7 @@ def check_torch():
     if shutil.which('nvidia-smi') is not None:
         log.info('nVidia toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
-        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
     elif shutil.which('rocm-smi') is not None:
         log.info('AMD toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
@@ -266,14 +267,10 @@ def run_extension_installer(folder):
 
 # get list of all enabled extensions
 def list_extensions(folder):
-    settings = {}
-    if os.path.isfile(args.ui_settings_file):
-        with open(args.ui_settings_file, "r", encoding="utf8") as file:
-            settings = json.load(file)
-    if settings.get('disable_all_extensions', 'none') != 'none':
+    if opts.get('disable_all_extensions', 'none') != 'none':
         log.debug('Disabled extensions: all')
         return []
-    disabled_extensions = set(settings.get('disabled_extensions', []))
+    disabled_extensions = set(opts.get('disabled_extensions', []))
     if len(disabled_extensions) > 0:
         log.debug(f'Disabled extensions: {disabled_extensions}')
     return [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
@@ -480,9 +477,17 @@ def git_reset():
     log.info('GIT reset complete')
 
 
+def read_options():
+    global opts # pylint: disable=global-statement
+    if os.path.isfile(args.ui_settings_file):
+        with open(args.ui_settings_file, "r", encoding="utf8") as file:
+            opts = json.load(file)
+
+
 # entry method when used as module
 def run_setup():
     setup_logging(args.upgrade)
+    read_options()
     check_python()
     if args.reset:
         git_reset()

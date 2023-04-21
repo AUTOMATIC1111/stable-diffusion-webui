@@ -31,13 +31,17 @@ ldm.modules.diffusionmodules.model.print = lambda *args: None
 
 def apply_optimizations():
     undo_optimizations()
-
     ldm.modules.diffusionmodules.model.nonlinearity = silu
     ldm.modules.diffusionmodules.openaimodel.th = sd_hijack_unet.th
-
     optimization_method = None
-
     can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention"))
+    if devices.device == torch.device("cpu"):
+        if opts.cross_attention_optimization == "Scaled-Dot-Product":
+            print("Scaled dot product cross attention is not available on CPU")
+            can_use_sdp = False
+        if opts.cross_attention_optimization == "xFormers":
+            print("xFormers cross attention is not available on CPU")
+            shared.xformers_available = False
 
     if opts.cross_attention_optimization == "Disable cross-attention layer optimization":
         print("Cross-attention optimization disabled")
