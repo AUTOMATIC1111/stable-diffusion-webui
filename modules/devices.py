@@ -54,17 +54,17 @@ def torch_gc():
 
 
 def set_cuda_params():
-    if not torch.cuda.is_available():
-        return
     from modules import shared
-    if torch.backends.cudnn.is_available():
-        torch.backends.cudnn.benchmark = shared.opts.cudnn_benchmark
-        torch.backends.cudnn.benchmark_limit = 0
-        torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
-    torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
-    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
-    torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+    if torch.cuda.is_available():
+        torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
+        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+        torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+        if torch.backends.cudnn.is_available():
+            torch.backends.cudnn.benchmark = shared.opts.cudnn_benchmark
+            torch.backends.cudnn.benchmark_limit = 0
+            torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
+    # set dtype
     if shared.opts.cuda_dtype == 'FP16':
         dtype = torch.float16
         dtype_vae = torch.float16
@@ -73,10 +73,12 @@ def set_cuda_params():
         dtype = torch.bfloat16
         dtype_vae = torch.bfloat16
         dtype_unet = torch.bfloat16
-    if shared.opts.cuda_dtype == 'FP32':
+    if shared.opts.cuda_dtype == 'FP32' or shared.opts.no_half:
         dtype = torch.float32
         dtype_vae = torch.float32
         dtype_unet = torch.float32
+    if shared.opts.no_half_vae: # set dtype again as no-half-vae options take priority
+        dtype_vae = torch.float32
     unet_needs_upcast = shared.opts.upcast_sampling
 
 

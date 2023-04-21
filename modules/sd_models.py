@@ -403,7 +403,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         current_checkpoint_info = shared.sd_model.sd_checkpoint_info
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
         shared.sd_model = None
-
     gc.collect()
     devices.torch_gc()
 
@@ -526,9 +525,7 @@ def reload_model_weights(sd_model=None, info=None):
 def unload_model_weights(sd_model=None, _info=None):
     from modules import sd_hijack
     timer = Timer()
-
     if shared.sd_model:
-
         # shared.sd_model.cond_stage_model.to(devices.cpu)
         # shared.sd_model.first_stage_model.to(devices.cpu)
         shared.sd_model.to(devices.cpu)
@@ -538,9 +535,7 @@ def unload_model_weights(sd_model=None, _info=None):
         gc.collect()
         devices.torch_gc()
         torch.cuda.empty_cache()
-
     print(f"Unloaded weights {timer.summary()}")
-
     return sd_model
 
 
