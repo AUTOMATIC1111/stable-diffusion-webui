@@ -179,6 +179,7 @@ class Api:
         
         self.gen_duration_avg = 0
         self.last_generation_ts = Gauge("last_generation_ts", "Last Generation Timestamp")
+        self.generation_duration_last_seconds = Gauge("generation_duration_last", "Generation Duration Last")
         self.generation_duration_avg_seconds = Gauge("generation_duration_avg", "Generation Duration Avg")
         self.generation_duration_total_seconds = Gauge("generation_duration_total", "Generation Duration Total")
         self.wait_duration_seconds = Gauge("wait_duration", "Wait Duration")
@@ -353,6 +354,8 @@ class Api:
         self.wait_duration_seconds.set({'type': "virtual"},genstart_ts-start_ts)
         self.generation_duration_avg_seconds.set({'type': "virtual"},self.gen_duration_avg)
         self.generation_duration_total_seconds.add({'type': "virtual"},gen_dt)
+        self.generation_duration_last_seconds.set({'type': "virtual"},gen_dt)
+
         # add compute time to the returned response
         info = json.loads(processed.js())
         info['process_duration_seconds'] = gen_dt
@@ -436,6 +439,8 @@ class Api:
         self.wait_duration_seconds.set({'type': "virtual"},genstart_ts-start_ts)
         self.generation_duration_avg_seconds.set({'type': "virtual"},self.gen_duration_avg)
         self.generation_duration_total_seconds.add({'type': "virtual"},gen_dt)
+        self.generation_duration_last_seconds.set({'type': "virtual"},gen_dt)
+
         # add compute time to the returned response
         info = json.loads(processed.js())
         info['process_duration_seconds'] = gen_dt
