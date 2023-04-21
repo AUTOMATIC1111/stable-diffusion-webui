@@ -46,7 +46,7 @@ function keyupEditAttention(event){
     
     function selectCurrentWord(){
         if (selectionStart !== selectionEnd) return false;
-        const delimiters = " .,\\/!?%^*;:{}=-_`~()\r\n\t";
+        const delimiters = " .,\\/!?%^*;:{}=`~()\r\n\t";
         
         // seek backward until to find beggining
         while (!delimiters.includes(text[selectionStart - 1]) && selectionStart > 0) {
