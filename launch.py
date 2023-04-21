@@ -8,7 +8,7 @@ import modules.paths_internal
 from modules import cmd_args
 
 setup.ensure_base_requirements()
-from rich import print # pylint: disable=redefined-builtin
+from rich import print # pylint: disable=redefined-builtin,wrong-import-order
 
 ### majority of this file is superflous, but used by some extensions as helpers during extension installation
 

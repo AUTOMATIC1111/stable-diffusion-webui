@@ -167,7 +167,18 @@ def check_python():
 
 # check torch version
 def check_torch():
-    torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
+    if shutil.which('nvidia-smi') is not None:
+        log.info('nVidia toolkit detected')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
+    elif shutil.which('rocm-smi') is not None:
+        log.info('AMD toolkit detected')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
+    else:
+        log.info('Using CPU-only Torch')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision')
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if 'torch' in torch_command:
         install(torch_command)
     try:
@@ -186,6 +197,11 @@ def check_torch():
                 log.info(f'Torch detected GPU: {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
     except:
         pass
+    try:
+        if 'xformers' in xformers_package:
+            install(f'--no-deps {xformers_package}', ignore=True)
+    except Exception as e:
+        log.debug(f'Cannot install xformers package: {e}')
 
 
 # install required packages
@@ -197,12 +213,6 @@ def install_packages():
     # install(openclip_package, 'open-clip-torch')
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
     install(clip_package, 'clip')
-    try:
-        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
-        if 'xformers' in xformers_package:
-            install(f'--no-deps {xformers_package}', ignore=True)
-    except Exception as e:
-        log.debug(f'Cannot install xformers package: {e}')
 
 
 # clone required repositories
@@ -253,8 +263,8 @@ def run_extension_installer(folder):
 # get list of all enabled extensions
 def list_extensions(folder):
     settings = {}
-    if os.path.isfile('config.json'):
-        with open('config.json', "r", encoding="utf8") as file:
+    if os.path.isfile(args.ui_settings_file):
+        with open(args.ui_settings_file, "r", encoding="utf8") as file:
             settings = json.load(file)
     if settings.get('disable_all_extensions', 'none') != 'none':
         log.debug('Disabled extensions: all')
@@ -306,11 +316,11 @@ def install_submodules():
                 log.error(f'Error updating submodule: {submodule}')
 
 
-def ensure_package(package):
+def ensure_package(pkg):
     try:
-        import package
+        import pkg
     except ImportError:
-        install(package)
+        install(pkg)
 
 
 def ensure_base_requirements():
