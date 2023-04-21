@@ -28,6 +28,12 @@ import modules.images as images
 import modules.styles
 import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
+import tomesd
+
+# add a logger for the processing module
+logger = logging.getLogger(__name__)
+# manually set output level here since there is no option to do so yet through launch options
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -475,6 +481,14 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "Token merging ratio": None if not (opts.token_merging or cmd_opts.token_merging) or opts.token_merging_hr_only else opts.token_merging_ratio,
+        "Token merging ratio hr": None if not (opts.token_merging or cmd_opts.token_merging) else opts.token_merging_ratio_hr,
+        "Token merging random": None if opts.token_merging_random is False else opts.token_merging_random,
+        "Token merging merge attention": None if opts.token_merging_merge_attention is True else opts.token_merging_merge_attention,
+        "Token merging merge cross attention": None if opts.token_merging_merge_cross_attention is False else opts.token_merging_merge_cross_attention,
+        "Token merging merge mlp": None if opts.token_merging_merge_mlp is False else opts.token_merging_merge_mlp,
+        "Token merging stride x": None if opts.token_merging_stride_x == 2 else opts.token_merging_stride_x,
+        "Token merging stride y": None if opts.token_merging_stride_y == 2 else opts.token_merging_stride_y
     }
 
     generation_params.update(p.extra_generation_params)
@@ -507,9 +521,18 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=15))
         """
 
+        if (opts.token_merging or cmd_opts.token_merging) and not opts.token_merging_hr_only:
+            sd_models.apply_token_merging(sd_model=p.sd_model, hr=False)
+            logger.debug('Token merging applied')
+
         res = process_images_inner(p)
 
     finally:
+        # undo model optimizations made by tomesd
+        if opts.token_merging or cmd_opts.token_merging:
+            tomesd.remove_patch(p.sd_model)
+            logger.debug('Token merging model optimizations removed')
+
         # restore opts to original state
         if p.override_settings_restore_afterwards:
             for k, v in stored_opts.items():
@@ -944,6 +967,18 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         # GC now before running the next img2img to prevent running out of memory
         x = None
         devices.torch_gc()
+
+        # apply token merging optimizations from tomesd for high-res pass
+        # check if hr_only so we are not redundantly patching
+        if (cmd_opts.token_merging or opts.token_merging) and (opts.token_merging_hr_only or opts.token_merging_ratio_hr != opts.token_merging_ratio):
+            # case where user wants to use separate merge ratios
+            if not opts.token_merging_hr_only:
+                # clean patch done by first pass. (clobbering the first patch might be fine? this might be excessive)
+                tomesd.remove_patch(self.sd_model)
+                logger.debug('Temporarily removed token merging optimizations in preparation for next pass')
+
+            sd_models.apply_token_merging(sd_model=self.sd_model, hr=True)
+            logger.debug('Applied token merging for high-res pass')
 
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
 

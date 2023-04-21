@@ -43,6 +43,7 @@ parser.add_argument("--no-hashing", action='store_true', help="Disable sha256 ha
 parser.add_argument("--no-download-sd-model", action='store_true', help="Disable download of default model even if no model is found", default=False)
 parser.add_argument("--profile", action='store_true', help="Run profiler, default: %(default)s")
 parser.add_argument("--disable-queue", action='store_true', help="Disable Gradio queues and force use of HTTP instead of WebSockets, default: %(default)s")
+parser.add_argument("--token-merging", action='store_true', help="Provides speed and memory improvements by merging redundant tokens. This has a more pronounced effect on higher resolutions.", default=False)
 
 
 def compatibility_args(opts, args):
