@@ -56,12 +56,15 @@ def installed(package, friendly: str = None):
     ok = True
     try:
         if friendly:
-            pkgs = [friendly]
+            pkgs = friendly.split()
         else:
             pkgs = [p for p in package.split() if not p.startswith('-') and not p.startswith('=')]
             pkgs = [p.split('/')[-1] for p in pkgs] # get only package name if installing from url
         for pkg in pkgs:
-            p = pkg.split('==')
+            if '>=' in pkg:
+                p = pkg.split('>=')
+            else:
+                p = pkg.split('==')
             spec = pkg_resources.working_set.by_key.get(p[0], None) # more reliable than importlib
             if spec is None:
                 spec = pkg_resources.working_set.by_key.get(p[0].lower(), None) # check name variations
@@ -86,6 +89,7 @@ def installed(package, friendly: str = None):
 # install package using pip if not already installed
 def install(package, friendly: str = None, ignore: bool = False):
     def pip(arg: str):
+        arg = arg.replace('>=', '==')
         log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("  ", " ").strip()}')
         log.debug(f"Running pip: {arg}")
         result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -180,7 +184,7 @@ def check_torch():
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if 'torch' in torch_command:
-        install(torch_command)
+        install(torch_command, 'torch torchvision torchaudio')
     try:
         import torch
         log.info(f'Torch {torch.__version__}')
