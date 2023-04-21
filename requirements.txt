@@ -62,3 +62,4 @@ pytorch_lightning==1.9.4
 tensorflow==2.12.0
 transformers==4.26.1
 timm==0.6.13
+tomesd>=0.1.2
