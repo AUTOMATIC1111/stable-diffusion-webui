@@ -10,7 +10,14 @@ services:
     environment:
       - NVIDIA_VISIBLE_DEVICES=all
     volumes:
-      - ../models:/stable-diffusion-webui/models
       - ../embeddings:/stable-diffusion-webui/embeddings
       - ../extensions:/stable-diffusion-webui/extensions
+      - ../interrogate:/stable-diffusion-webui/interrogate
+      - ../models:/stable-diffusion-webui/models
+      - ../outputs:/stable-diffusion-webui/outputs
+      - ../repositories:/stable-diffusion-webui/repositories
+      - home:/root
     command: python3 launch.py --listen
+
+volumes:
+  home:
