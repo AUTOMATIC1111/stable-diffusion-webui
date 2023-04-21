@@ -34,27 +34,21 @@ def setup_logging(clean=False):
     except:
         pass
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', filename='setup.log', filemode='a', encoding='utf-8', force=True)
-    try: # we may not have rich on the first run
-        from rich.theme import Theme
-        from rich.logging import RichHandler
-        from rich.console import Console
-        from rich.pretty import install as pretty_install
-        from rich.traceback import install as traceback_install
-        console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
-            "traceback.border": "black",
-            "traceback.border.syntax_error": "black",
-            "inspect.value.border": "black",
-        }))
-        pretty_install(console=console)
-        traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
-        rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
-        rh.set_name(logging.DEBUG if args.debug else logging.INFO)
-        log.addHandler(rh)
-    except:
-        sh = logging.StreamHandler()
-        sh.setLevel(logging.DEBUG if args.debug else logging.INFO)
-        log.addHandler(sh)
-
+    from rich.theme import Theme
+    from rich.logging import RichHandler
+    from rich.console import Console
+    from rich.pretty import install as pretty_install
+    from rich.traceback import install as traceback_install
+    console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
+        "traceback.border": "black",
+        "traceback.border.syntax_error": "black",
+        "inspect.value.border": "black",
+    }))
+    pretty_install(console=console)
+    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
+    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
+    rh.set_name(logging.DEBUG if args.debug else logging.INFO)
+    log.addHandler(rh)
 
 # check if package is installed
 def installed(package, friendly: str = None):
@@ -312,7 +306,17 @@ def install_submodules():
                 log.error(f'Error updating submodule: {submodule}')
 
 
-# install requirements
+def ensure_package(package):
+    try:
+        import package
+    except ImportError:
+        install(package)
+
+
+def ensure_base_requirements():
+    ensure_package('rich')
+
+
 def install_requirements():
     if args.skip_requirements:
         return

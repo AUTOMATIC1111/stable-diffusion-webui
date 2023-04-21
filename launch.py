@@ -7,10 +7,8 @@ import setup
 import modules.paths_internal
 from modules import cmd_args
 
-try:
-    from rich import print # pylint: disable=redefined-builtin
-except ImportError:
-    pass
+setup.ensure_base_requirements()
+from rich import print # pylint: disable=redefined-builtin
 
 ### majority of this file is superflous, but used by some extensions as helpers during extension installation
 
