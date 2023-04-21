@@ -164,7 +164,7 @@ class Script(scripts.Script):
 
         return [checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt, separator_txt, repetitions_slider, checkbox_same_repeat_seed]
 
-    def run(self, p, checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt: str, separator_txt: str, repetitions_slider, checkbox_same_repeat_seed, start_button):
+    def run(self, p, checkbox_iterate, checkbox_iterate_batch, checkbox_save_grid, prompt_txt: str, separator_txt: str, repetitions_slider, checkbox_same_repeat_seed):
         #seperator determine
         separator = separator_txt.strip() if separator_txt.strip() else "\n"
         lines = [x.strip() for x in prompt_txt.split(separator) if x.strip()]
