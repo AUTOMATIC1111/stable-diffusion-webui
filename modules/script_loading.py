@@ -21,11 +21,9 @@ def preload_extensions(extensions_dir, parser):
         preload_script = os.path.join(extensions_dir, dirname, "preload.py")
         if not os.path.isfile(preload_script):
             continue
-
         try:
             module = load_module(preload_script)
             if hasattr(module, 'preload'):
                 module.preload(parser)
-
         except Exception as e:
             errors.display(e, f'Extension preload: {preload_script}')

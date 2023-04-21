@@ -11,6 +11,9 @@ try:
 except:
     import argparse
     parser = argparse.ArgumentParser(description="Stable Diffusion", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=55,indent_increment=2,width=200))
+from modules.script_loading import preload_extensions
+preload_extensions('extensions', parser)
+preload_extensions('extensions-builtin', parser)
 
 
 class Dot(dict): # dot notation access to dictionary attributes

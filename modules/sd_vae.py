@@ -4,17 +4,14 @@ import glob
 from copy import deepcopy
 from rich import print # pylint: disable=redefined-builtin
 from modules import paths, shared, devices, script_callbacks, sd_models
-from modules import paths_internal
+
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 vae_dict = {}
-
-
 base_vae = None
 loaded_vae_file = None
 checkpoint_info = None
 vae_path = os.path.abspath(os.path.join(paths.models_path, 'VAE'))
-
 checkpoints_loaded = collections.OrderedDict()
 
 def get_base_vae(model):
@@ -24,7 +21,7 @@ def get_base_vae(model):
 
 
 def store_base_vae(model):
-    global base_vae, checkpoint_info
+    global base_vae, checkpoint_info # pylint: disable=global-statement
     if checkpoint_info != model.sd_checkpoint_info:
         assert not loaded_vae_file, "Trying to store non-base VAE!"
         base_vae = deepcopy(model.first_stage_model.state_dict())
@@ -32,13 +29,13 @@ def store_base_vae(model):
 
 
 def delete_base_vae():
-    global base_vae, checkpoint_info
+    global base_vae, checkpoint_info # pylint: disable=global-statement
     base_vae = None
     checkpoint_info = None
 
 
 def restore_base_vae(model):
-    global loaded_vae_file
+    global loaded_vae_file # pylint: disable=global-statement
     if base_vae is not None and checkpoint_info == model.sd_checkpoint_info:
         print("Restoring base VAE")
         _load_vae_dict(model, base_vae)
@@ -51,11 +48,11 @@ def get_filename(filepath):
 
 
 def refresh_vae_list():
-    global vae_path
+    global vae_path # pylint: disable=global-statement
     vae_path = shared.opts.vae_dir
     vae_dict.clear()
 
-    paths = [
+    vae_paths = [
         os.path.join(sd_models.model_path, '**/*.vae.ckpt'),
         os.path.join(sd_models.model_path, '**/*.vae.pt'),
         os.path.join(sd_models.model_path, '**/*.vae.safetensors'),
@@ -63,23 +60,20 @@ def refresh_vae_list():
         os.path.join(shared.opts.vae_dir, '**/*.pt'),
         os.path.join(shared.opts.vae_dir, '**/*.safetensors'),
     ]
-
     if shared.opts.ckpt_dir is not None and os.path.isdir(shared.opts.ckpt_dir):
-        paths += [
+        vae_paths += [
             os.path.join(shared.opts.ckpt_dir, '**/*.vae.ckpt'),
             os.path.join(shared.opts.ckpt_dir, '**/*.vae.pt'),
             os.path.join(shared.opts.ckpt_dir, '**/*.vae.safetensors'),
         ]
-
     if shared.opts.vae_dir is not None and os.path.isdir(shared.opts.vae_dir):
-        paths += [
+        vae_paths += [
             os.path.join(shared.opts.vae_dir, '**/*.ckpt'),
             os.path.join(shared.opts.vae_dir, '**/*.pt'),
             os.path.join(shared.opts.vae_dir, '**/*.safetensors'),
         ]
-
     candidates = []
-    for path in paths:
+    for path in vae_paths:
         candidates += glob.iglob(path, recursive=True)
 
     for filepath in candidates:
@@ -126,7 +120,7 @@ def load_vae_dict(filename):
 
 
 def load_vae(model, vae_file=None, vae_source="from unknown source"):
-    global vae_dict, loaded_vae_file
+    global loaded_vae_file # pylint: disable=global-statement
     # save_settings = False
 
     cache_enabled = shared.opts.sd_vae_checkpoint_cache > 0
@@ -172,7 +166,7 @@ def _load_vae_dict(model, vae_dict_1):
 
 
 def clear_loaded_vae():
-    global loaded_vae_file
+    global loaded_vae_file # pylint: disable=global-statement
     loaded_vae_file = None
 
 
@@ -180,11 +174,12 @@ unspecified = object()
 
 
 def reload_vae_weights(sd_model=None, vae_file=unspecified):
-    from modules import lowvram, devices, sd_hijack
+    from modules import lowvram, sd_hijack
 
     if not sd_model:
         sd_model = shared.sd_model
 
+    global checkpoint_info # pylint: disable=global-statement
     checkpoint_info = sd_model.sd_checkpoint_info
     checkpoint_file = checkpoint_info.filename
 

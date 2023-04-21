@@ -4,7 +4,7 @@
 
 Stuff to be fixed...
 
-- Fix integration with <https://github.com/deforum-art/deforum-for-automatic1111-webui>
+- Fix extensions imports
 - ClipSkip not updated on read gen info
 
 ## Features
@@ -57,3 +57,4 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
+- fix parse cmd line args from extensions

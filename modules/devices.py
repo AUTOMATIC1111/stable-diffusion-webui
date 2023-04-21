@@ -72,11 +72,17 @@ def set_cuda_params():
     torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
     if shared.opts.cuda_dtype == 'FP16':
-        dtype = dtype_vae = dtype_unet = torch.float16
+        dtype = torch.float16
+        dtype_vae = torch.float16
+        dtype_unet = torch.float16
     if shared.opts.cuda_dtype == 'BP16':
-        dtype = dtype_vae = dtype_unet = torch.bfloat16
+        dtype = torch.bfloat16
+        dtype_vae = torch.bfloat16
+        dtype_unet = torch.bfloat16
     if shared.opts.cuda_dtype == 'FP32':
-        dtype = dtype_vae = dtype_unet = torch.float32
+        dtype = torch.float32
+        dtype_vae = torch.float32
+        dtype_unet = torch.float32
     unet_needs_upcast = shared.opts.upcast_sampling
 
 

@@ -11,7 +11,7 @@ import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import script_loading, errors, ui_components, shared_items, cmd_args
+from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.paths_internal as paths
 from setup import log as setup_log # pylint: disable=E0611
@@ -20,9 +20,6 @@ errors.install(gr)
 demo: gr.Blocks = None
 log = setup_log
 parser = cmd_args.parser
-
-script_loading.preload_extensions(paths.extensions_dir, parser)
-script_loading.preload_extensions(paths.extensions_builtin_dir, parser)
 
 if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
     cmd_opts = parser.parse_args()

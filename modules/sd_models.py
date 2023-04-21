@@ -102,7 +102,7 @@ def checkpoint_tiles():
 
 
 def list_models():
-    global model_path
+    global model_path # pylint: disable=global-statement
     model_path = shared.opts.ckpt_dir
     checkpoints_list.clear()
     checkpoint_aliases.clear()
@@ -302,6 +302,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if depth_model:
             model.depth_model = depth_model
 
+    devices.set_cuda_params()
     devices.dtype_unet = model.model.diffusion_model.dtype
     model.first_stage_model.to(devices.dtype_vae)
 
@@ -402,7 +403,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
         shared.sd_model = None
 
-    devices.set_cuda_params()
     gc.collect()
     devices.torch_gc()
 
