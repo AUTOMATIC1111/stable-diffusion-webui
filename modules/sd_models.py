@@ -370,7 +370,7 @@ def enable_midas_autodownload():
 
 def repair_config(sd_config):
 
-    if not hasattr(sd_config.model.params, "use_ema"):
+    if not "use_ema" in sd_config.model.params:
         sd_config.model.params.use_ema = False
 
     if shared.cmd_opts.no_half:
@@ -382,7 +382,7 @@ def repair_config(sd_config):
         sd_config.model.params.first_stage_config.params.ddconfig.attn_type = "vanilla"
 
     # For UnCLIP-L, override the hardcoded karlo directory
-    if hasattr(sd_config.model.params, "noise_aug_config") and hasattr(sd_config.model.params.noise_aug_config.params, "clip_stats_path"):
+    if "noise_aug_config" in sd_config.model.params and "clip_stats_path" in sd_config.model.params.noise_aug_config.params:
         karlo_path = os.path.join(paths.models_path, 'karlo')
         sd_config.model.params.noise_aug_config.params.clip_stats_path = sd_config.model.params.noise_aug_config.params.clip_stats_path.replace("checkpoints/karlo_models", karlo_path)
 
