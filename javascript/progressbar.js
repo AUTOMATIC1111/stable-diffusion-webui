@@ -105,6 +105,9 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 		if(livePreview){
 			if(parentGallery) parentGallery.removeChild(livePreview)
 		}
+		gradioApp().querySelectorAll('#tabs + div, #tabs + div > *:not(ul)').forEach(function (elem){
+			elem.style.setProperty("display", "block", "important");
+		})
 		atEnd()
     }
 

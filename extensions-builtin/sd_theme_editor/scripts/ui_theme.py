@@ -62,7 +62,7 @@ def on_ui_tabs():
                             gr.Slider(elem_id="--ae-outside-gap-size", label='Gap size', minimum=1, maximum=16, step=1, interactive=True)
                             gr.Slider(elem_id="--ae-inside-padding-size", label='Padding size', minimum=1, maximum=16, step=1, interactive=True)   
                         
-                        with gr.Accordion(label="Spacing (Modile)", open=True):
+                        with gr.Accordion(label="Spacing (Mobile)", open=True):
                             gr.Slider(elem_id="--ae-mobile-outside-gap-size", label='Mobile Gap size', minimum=1, maximum=16, step=1, interactive=True)
                             gr.Slider(elem_id="--ae-mobile-inside-padding-size", label='Mobile Padding size', minimum=1, maximum=16, step=1, interactive=True)                            
                                         
@@ -77,7 +77,7 @@ def on_ui_tabs():
                             gr.ColorPicker(elem_id="--ae-input-bg-color", label="Input background color")
                             gr.ColorPicker(elem_id="--ae-input-border-color", label="Input border color")
                 with gr.Column(): 
-                    with gr.Row(elem_id="theme_sub-group-collapse"): 
+                    with gr.Row(elem_id="theme_sub-panel"): 
                          
                         with gr.Accordion(label="SubPanel", open=True):               
                             gr.ColorPicker(elem_id="--ae-subgroup-bg-color", label="Subgoup background color")                       
@@ -98,7 +98,7 @@ def on_ui_tabs():
                                 gr.ColorPicker(elem_id="--ae-nav-hover-color", label="Hover color")
                                 
                             with gr.Accordion(label="Icon", open=True):
-                                gr.ColorPicker(elem_id="--ae-icon-color", label="Text color")
+                                gr.ColorPicker(elem_id="--ae-icon-color", label="Color")
                                 gr.ColorPicker(elem_id="--ae-icon-hover-color", label="Hover color")  
                                 
                             with gr.Accordion(label="Other", open=True):    

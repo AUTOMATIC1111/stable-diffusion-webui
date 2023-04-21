@@ -30,15 +30,14 @@
     transform: translate(-50%, -50%) scale(1.0);
 }
 
-#theme_menu.fixed,
-#theme_menu:hover
-{
-	background-color: var(--ae-primary-color);
+#theme_menu.fixed, #theme_menu:hover {
+    background-color: var(--ae-icon-color);
 }
+
 #theme_menu.fixed::before,
 #theme_menu:hover::before
 {
-	background-color: var(--ae-main-bg-color);
+	background-color: var(--ae-icon-hover-color);
 }
 
 #theme_overflow_container{
@@ -110,3 +109,6 @@
 	padding-top:0!important;
 }
 
+#ui_theme_hsv + button{
+	min-width:unset;
+}
