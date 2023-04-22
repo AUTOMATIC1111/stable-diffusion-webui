@@ -334,7 +334,7 @@ def ensure_base_requirements():
 def install_requirements():
     if args.skip_requirements:
         return
-    log.info('Installing requirements')
+    log.info('Verifying requirements')
     with open('requirements.txt', 'r', encoding='utf8') as f:
         lines = [line.strip() for line in f.readlines() if line.strip() != '' and not line.startswith('#') and line is not None]
         for line in lines:
@@ -513,7 +513,7 @@ def run_setup():
     check_torch()
     install_requirements()
     if check_timestamp():
-        log.info('No changes detected: quick launch active')
+        log.info('No changes detected: Quick launch active')
         return
     log.info("Running setup")
     log.debug(f"Args: {vars(args)}")

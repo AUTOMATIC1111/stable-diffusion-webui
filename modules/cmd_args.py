@@ -66,6 +66,7 @@ def compatibility_args(opts, args):
     parser.add_argument("--no-half-vae", help=argparse.SUPPRESS, default=opts.no_half_vae)
     parser.add_argument("--precision", help=argparse.SUPPRESS, default=opts.precision)
     parser.add_argument("--api", help=argparse.SUPPRESS, default=True)
-
+    parser.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     args = parser.parse_args()
     return args
+
