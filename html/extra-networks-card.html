@@ -1,18 +1,20 @@
 <div class='card' style={style} onclick={card_clicked}>
-	<div class="card-image-preview"></div>
+	<div class="advanced-card-image-preview" style={image-bg}></div>
 	{metadata_button}
 
 	<div class='actions'>
 		<div class='additional'>
 			<ul>
 				<li><a href="#" title="replace preview image with currently selected in gallery" onclick={save_card_preview}>replace preview</a></li>
-				<li><a class="hide-when-thumb" href="#" title="replace preview description with currently selected in gallery" onclick={save_card_description}>replace description</a></li>
-				<li><a class="hide-when-thumb" href="#" title="read description" onclick={read_card_description}>read description</a></li>
 			</ul>
 			<span style="display:none" class='search_term'>{search_term}</span>
 		</div>
 		<span class='name'>{name}</span>
-		<span class='description hide-when-thumb'>{description}</span>
+		<ul class="descriptions-list" >
+			<li class='description'>{description}</li>
+			<li><a href="#" class='description-action' title="replace preview description with currently selected in gallery" onclick={save_card_description}>replace description</a></li>
+			<li><a href="#" class='description-action' title="read description" onclick={read_card_description}>read description</a></li>
+		</ul>
 	</div>
 </div>
 

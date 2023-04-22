@@ -665,21 +665,21 @@ footer {
     width: auto;
 }
 
-.extra-network-cards .nocards, .extra-network-thumbs .nocards{
+.extra-network-cards .nocards, .extra-network-thumbs .nocards, .extra-network-advanced .nocards{
     margin: 1.25em 0.5em 0.5em 0.5em;
 }
 
-.extra-network-cards .nocards h1, .extra-network-thumbs .nocards h1{
+.extra-network-cards .nocards h1, .extra-network-thumbs .nocards h1, .extra-network-advanced .nocards h1{
     font-size: 1.5em;
     margin-bottom: 1em;
 }
 
-.extra-network-cards .nocards li, .extra-network-thumbs .nocards li{
+.extra-network-cards .nocards li, .extra-network-thumbs .nocards li, .extra-network-advanced .nocards li{
     margin-left: 0.5em;
 }
 
 
-.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before{
+.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before, .extra-network-advanced .card .metadata-button:before{
     content: "🛈";
 }
 .extra-network-cards .card .metadata-button, .extra-network-thumbs .card .metadata-button{
@@ -687,7 +687,7 @@ footer {
     position: absolute;
     right: 0;
     color: white;
-    text-shadow: 2px 2px 3px black;
+    text-shadow: 1px 1px 3px black;
     padding: 0.25em;
     font-size: 22pt;
     width: 1.5em;
@@ -695,7 +695,7 @@ footer {
 .extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{
     display: inline-block;
 }
-.extra-network-cards .card .metadata-button:hover, .extra-network-thumbs .card .metadata-button:hover{
+.extra-network-cards .card .metadata-button:hover, .extra-network-thumbs .card .metadata-button:hover, .extra-network-advanced .card .metadata-button:hover{
     color: red;
 }
 
@@ -714,6 +714,7 @@ footer {
     background-size: cover;
     background-position: center center;
     position: relative;
+    overflow: hidden;
 }
 
 .extra-network-thumbs .card:hover .additional a {
@@ -751,6 +752,10 @@ footer {
 .extra-network-thumbs .card:hover .actions .name {
     white-space: normal;
     word-break: break-all;
+}
+
+.extra-network-thumbs .card .discriptions-list{
+    display: none;
 }
 
 .extra-network-cards .card{
@@ -803,14 +808,22 @@ footer {
     line-break: anywhere;
 }
 
-.extra-network-cards .card .actions .description {
+.extra-network-cards .card .actions ul.descriptions-list .description {
     display: block;
-    max-height: 3em;
+    list-style-type: none;
     white-space: pre-wrap;
     line-height: 1.1;
 }
 
-.extra-network-cards .card .actions .description:hover {
+.extra-network-cards .card .actions .descriptions-list li{
+    margin-bottom: 1px;
+}
+
+.extra-network-cards .card .actions .descriptions-list{
+    max-height: 3em;
+}
+
+.extra-network-cards .card .actions:hover .descriptions-list{
     max-height: none;
 }
 
@@ -830,3 +843,78 @@ footer {
 .extra-network-cards .card ul a:hover{
     color: red;
 }
+
+/* extra network advanced view the advanced card image will be hidden in other views 
+so will never break other veiws by this extra DOM element that been inserted*/
+.card .advanced-card-image-preview{
+    display: none;
+}
+
+.extra-network-advanced{
+    display: flex;
+    flex: 0 1 400px;
+    flex-flow: row wrap;
+    height: auto;
+    grid-gap: 10px;
+    align-content: start;
+    background-color: #0060df;
+}
+.extra-network-advanced .nocards{
+    width: 100%;
+    height: auto;
+}
+
+.extra-network-advanced .card{
+    background-image: none !important;
+    height: 300px;
+    width: 400px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    background-color: lightcoral;
+    /* position: relative; */
+    display: grid;
+}
+
+.extra-network-advanced .card .advanced-card-image-preview{
+    display: block;
+    grid-row: 1;
+    grid-column: 1;
+    background-image: url('./file=html/card-no-preview.png');
+    background-position: 50% 50%;
+    background-size: 100% auto;
+    background-color: lightblue;
+}
+/* .extra-network-advanced .card .actions{
+    
+} */
+
+.extra-network-advanced .card .metadata-button{
+    display: none;
+    grid-column: 1;
+    grid-row: 1;
+    color: white;
+    text-shadow: 1px 1px 3px black;
+    font-size: 22pt;
+    width: 1.5em;
+    text-align: right;
+    align-self: end;
+    justify-self: start;
+}
+
+.extra-network-advanced .card:hover .metadata-button{
+    display: block;
+}
+
+.extra-network-advanced .card .actions {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 8px;
+    overflow: scroll;
+    /* flex-direction: column;
+    justify-content: space-between; */
+  }
+
+/* .extra-network-advanced .card    .additional {
+    display: flex;
+    justify-content: flex-end;
+  } */

@@ -159,6 +159,8 @@ class ExtraNetworksPage:
 
         args = {
             "style": f"'{height}{width}{background_image}'",
+            "style_image_bg_only": f"'{background_image}'",
+            "style_handw_only": f"'{height}{width}'",
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
@@ -170,6 +172,7 @@ class ExtraNetworksPage:
             "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(item["description"])})""") + '"',
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
+
         }
 
         return self.card_page.format(**args)
