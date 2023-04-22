@@ -278,18 +278,20 @@ def list_extensions(folder):
 
 # run installer for each installed and enabled extension and optionally update them
 def install_extensions():
-    for folder in ['extensions-builtin', 'extensions']:
-        extensions_dir = os.path.join(os.path.dirname(__file__), folder)
-        extensions = list_extensions(extensions_dir)
+    from modules.paths_internal import extensions_builtin_dir, extensions_dir
+    for folder in [extensions_builtin_dir, extensions_dir]:
+        if not os.path.isdir(folder):
+            continue
+        extensions = list_extensions(folder)
         log.info(f'Extensions enabled: {extensions}')
         for ext in extensions:
             if not args.noupdate:
                 try:
-                    update(os.path.join(extensions_dir, ext))
+                    update(os.path.join(folder, ext))
                 except:
-                    log.error(f'Error updating extension: {os.path.join(extensions_dir, ext)}')
+                    log.error(f'Error updating extension: {os.path.join(folder, ext)}')
             if not args.skip_extensions:
-                run_extension_installer(os.path.join(extensions_dir, ext))
+                run_extension_installer(os.path.join(folder, ext))
 
 
 # initialize and optionally update submodules
@@ -358,12 +360,14 @@ def set_environment():
 
 def check_extensions():
     newest_all = os.path.getmtime('requirements.txt')
-    for folder in ['extensions-builtin', 'extensions']:
-        extensions_dir = os.path.join(os.path.dirname(__file__), folder)
-        extensions = list_extensions(extensions_dir)
+    from modules.paths_internal import extensions_builtin_dir, extensions_dir
+    for folder in [extensions_builtin_dir, extensions_dir]:
+        if not os.path.isdir(folder):
+            continue
+        extensions = list_extensions(folder)
         for ext in extensions:
             newest = 0
-            extension_dir = os.path.join(extensions_dir, ext)
+            extension_dir = os.path.join(folder, ext)
             for f in os.listdir(extension_dir):
                 if '.json' in f or '.csv' in f:
                     continue
@@ -459,8 +463,9 @@ def parse_args():
     parser.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
     log.info('Running extension preloading')
     from modules.script_loading import preload_extensions
-    preload_extensions('extensions', parser)
-    preload_extensions('extensions-builtin', parser)
+    from modules.paths_internal import extensions_builtin_dir, extensions_dir
+    preload_extensions(extensions_dir, parser)
+    preload_extensions(extensions_builtin_dir, parser)
 
     global args # pylint: disable=global-statement
     args = parser.parse_args()
