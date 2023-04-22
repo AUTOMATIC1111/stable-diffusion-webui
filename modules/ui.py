@@ -1724,7 +1724,7 @@ def html_css():
             continue
         head += stylesheet(cssfile)
     if opts.gradio_theme == 'black-orange':
-        head += stylesheet(os.path.join(data_path, "javascript", "black-orange.css"))
+        head += stylesheet(os.path.join(script_path, "javascript", "black-orange.css"))
     if os.path.exists(os.path.join(data_path, "user.css")):
         head += stylesheet(os.path.join(data_path, "user.css"))
     return head
