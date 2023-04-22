@@ -14,7 +14,7 @@ from rich import print # pylint: disable=redefined-builtin,wrong-import-order
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
-setup.extensions_preload()
+setup.extensions_preload(force=False)
 setup.parse_args()
 args, _ = modules.cmd_args.parser.parse_known_args()
 script_path = modules.paths_internal.script_path
@@ -93,7 +93,7 @@ def run_extension_installer(ext_dir):
 if __name__ == "__main__":
     setup.run_setup()
     setup.set_environment()
-    setup.extensions_preload()
+    setup.extensions_preload(force=True)
     setup.log.info(f"Server arguments: {sys.argv[1:]}")
     setup.log.debug('Starting WebUI')
     logging.disable(logging.INFO)

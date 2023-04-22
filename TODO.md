@@ -62,5 +62,7 @@ Tech that can be integrated as part of the core workflow...
 - fix VAE dtype  
   should fix most issues with NaN or black images  
 - add built-in Gradio themes  
+- fix setup race conditions
 - fix requirements  
 - more AMD specific work
+- additional PR merges

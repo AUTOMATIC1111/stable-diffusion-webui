@@ -471,7 +471,7 @@ def parse_args():
     args = parser.parse_args()
 
 
-def extensions_preload():
+def extensions_preload(force = False):
     setup_time = 0
     if os.path.isfile('setup.log'):
         with open('setup.log', 'r', encoding='utf8') as f:
@@ -479,7 +479,7 @@ def extensions_preload():
             for line in lines:
                 if 'Setup complete without errors' in line:
                     setup_time = int(line.split(' ')[-1])
-    if setup_time > 0:
+    if setup_time > 0 or force:
         log.info('Running extension preloading')
         from modules.script_loading import preload_extensions
         from modules.paths_internal import extensions_builtin_dir, extensions_dir
