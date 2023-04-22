@@ -4,7 +4,6 @@
 
 Stuff to be fixed...
 
-- Fix extensions imports
 - ClipSkip not updated on read gen info
 - Usage of `sd_vae` in quick settings
 - Run VAE with hires at 1280
@@ -59,3 +58,9 @@ Tech that can be integrated as part of the core workflow...
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
 
 ### Pending Code Updates
+
+- fix VAE dtype  
+  should fix most issues with NaN or black images  
+- add built-in Gradio themes  
+- fix requirements  
+- more AMD specific work

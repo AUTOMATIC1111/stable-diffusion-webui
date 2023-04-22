@@ -56,13 +56,19 @@ def torch_gc():
 def set_cuda_params():
     from modules import shared
     if torch.cuda.is_available():
-        torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
-        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
-        torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+        try:
+            torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
+            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+            torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+        except:
+            pass
         if torch.backends.cudnn.is_available():
-            torch.backends.cudnn.benchmark = shared.opts.cudnn_benchmark
-            torch.backends.cudnn.benchmark_limit = 0
-            torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
+            try:
+                torch.backends.cudnn.benchmark = shared.opts.cudnn_benchmark
+                torch.backends.cudnn.benchmark_limit = 0
+                torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
+            except:
+                pass
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
     # set dtype
     if shared.opts.cuda_dtype == 'FP16':
