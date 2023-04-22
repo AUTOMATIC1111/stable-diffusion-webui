@@ -5,7 +5,7 @@ import shlex
 import logging
 import setup
 import modules.paths_internal
-from modules import cmd_args
+import modules.cmd_args
 
 setup.ensure_base_requirements()
 from rich import print # pylint: disable=redefined-builtin,wrong-import-order
@@ -14,8 +14,9 @@ from rich import print # pylint: disable=redefined-builtin,wrong-import-order
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
+setup.extensions_preload()
 setup.parse_args()
-args, _ = cmd_args.parser.parse_known_args()
+args, _ = modules.cmd_args.parser.parse_known_args()
 script_path = modules.paths_internal.script_path
 extensions_dir = modules.paths_internal.extensions_dir
 git = os.environ.get('GIT', "git")
@@ -89,10 +90,10 @@ def git_clone(url, tgt, _name, commithash=None):
 def run_extension_installer(ext_dir):
     setup.run_extension_installer(ext_dir)
 
-
 if __name__ == "__main__":
     setup.run_setup()
     setup.set_environment()
+    setup.extensions_preload()
     setup.log.info(f"Server arguments: {sys.argv[1:]}")
     setup.log.debug('Starting WebUI')
     logging.disable(logging.INFO)

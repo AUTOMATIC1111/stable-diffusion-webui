@@ -3,7 +3,6 @@ import mimetypes
 import os
 import sys
 from functools import reduce
-import warnings
 
 import gradio as gr
 import gradio.routes
@@ -33,8 +32,6 @@ from modules.generation_parameters_copypaste import image_from_url_text
 import modules.extras
 
 errors.install()
-warnings.filterwarnings("ignore", category=UserWarning)
-# this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 

@@ -29,9 +29,9 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 ### Fork does differ in few things
 
 - New installer  
-- New logger  
-- New error and exception handlers  
-- Enhanced environment tuning  
+- Advanced CUDA tuning  
+  Available in UI Settings
+- Advanced environment tuning  
 - Optimized startup and models lazy-loading  
 - Built-in performance profiler  
 - Updated libraries to latest known compatible versions  
@@ -45,6 +45,8 @@ If you are looking an amazing simple-to-use Stable Diffusion tool, I'd suggest [
 - Built-in `LoRA`, `LyCORIS`, `Custom Diffusion`, `Dreambooth` training  
 - Majority of settings configurable via UI without the need for command line flags  
   e.g, cross-optimization methods, system folders, etc.  
+- New logger  
+- New error and exception handlers  
 
 ### Optimizations
 

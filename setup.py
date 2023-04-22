@@ -361,6 +361,7 @@ def set_environment():
 
 def check_extensions():
     newest_all = os.path.getmtime('requirements.txt')
+    print(newest_all)
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
     for folder in [extensions_builtin_dir, extensions_dir]:
         if not os.path.isdir(folder):
@@ -370,9 +371,11 @@ def check_extensions():
             newest = 0
             extension_dir = os.path.join(folder, ext)
             for f in os.listdir(extension_dir):
-                if '.json' in f or '.csv' in f:
+                if '.json' in f or '.csv' in f or '__pycache__' in f:
                     continue
                 ts = os.path.getmtime(os.path.join(extension_dir, f))
+                if ts > newest_all:
+                    print(folder, ext, f)
                 newest = max(newest, ts)
             newest_all = max(newest_all, newest)
             log.debug(f'Extension version: {time.ctime(newest)} {folder}{os.pathsep}{ext}')
@@ -462,14 +465,24 @@ def parse_args():
     parser.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     parser.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
-    log.info('Running extension preloading')
-    from modules.script_loading import preload_extensions
-    from modules.paths_internal import extensions_builtin_dir, extensions_dir
-    preload_extensions(extensions_dir, parser)
-    preload_extensions(extensions_builtin_dir, parser)
-
     global args # pylint: disable=global-statement
     args = parser.parse_args()
+
+
+def extensions_preload():
+    setup_time = 0
+    if os.path.isfile('setup.log'):
+        with open('setup.log', 'r', encoding='utf8') as f:
+            lines = f.readlines()
+            for line in lines:
+                if 'Setup complete without errors' in line:
+                    setup_time = int(line.split(' ')[-1])
+    if setup_time > 0:
+        log.info('Running extension preloading')
+        from modules.script_loading import preload_extensions
+        from modules.paths_internal import extensions_builtin_dir, extensions_dir
+        for ext_dir in [extensions_builtin_dir, extensions_dir]:
+            preload_extensions(ext_dir, parser)
 
 
 def git_reset():

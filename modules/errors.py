@@ -1,5 +1,6 @@
 import sys
 import logging
+import warnings
 from rich import print # pylint: disable=redefined-builtin
 from rich.console import Console
 from rich.theme import Theme
@@ -18,6 +19,7 @@ already_displayed = {}
 
 
 def install(suppress=[]):
+    warnings.filterwarnings("ignore", category=UserWarning)
     pretty_install(console=console)
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=suppress)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s')
