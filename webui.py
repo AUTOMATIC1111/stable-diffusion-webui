@@ -202,9 +202,10 @@ def start_ui():
 
 def webui():
     start_ui()
-
     load_model()
     print(f"Startup time: {startup_timer.summary()}")
+    logging.disable(logging.DEBUG)
+
 
     while True:
         try:

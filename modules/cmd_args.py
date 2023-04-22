@@ -68,8 +68,4 @@ def compatibility_args(opts, args):
     parser.add_argument("--api", help=argparse.SUPPRESS, default=True)
 
     args = parser.parse_args()
-    if vars(parser)['_option_string_actions'].get('--lora-dir', None) is not None:
-        args.lora_dir = opts.lora_dir
-    if vars(parser)['_option_string_actions'].get('--lyco-dir', None) is not None:
-        args.lyco_dir = opts.lyco_dir
     return args
