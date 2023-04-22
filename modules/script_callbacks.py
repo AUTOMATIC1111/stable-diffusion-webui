@@ -50,6 +50,21 @@ class CFGDenoiserParams:
 
 
 class CFGDenoisedParams:
+    def __init__(self, x, sampling_step, total_sampling_steps, inner_model):
+        self.x = x
+        """Latent image representation in the process of being denoised"""
+
+        self.sampling_step = sampling_step
+        """Current Sampling step number"""
+
+        self.total_sampling_steps = total_sampling_steps
+        """Total number of sampling steps planned"""
+
+        self.inner_model = inner_model
+        """Inner model reference used for denoising"""
+
+
+class AfterCFGCallbackParams:
     def __init__(self, x, sampling_step, total_sampling_steps):
         self.x = x
         """Latent image representation in the process of being denoised"""
@@ -59,6 +74,10 @@ class CFGDenoisedParams:
 
         self.total_sampling_steps = total_sampling_steps
         """Total number of sampling steps planned"""
+
+        self.output_altered = False
+        """A flag for CFGDenoiser indicating whether the output has been altered by the callback"""
+
 
 
 class UiTrainTabParams:
@@ -84,6 +103,7 @@ callback_map = dict(
     callbacks_image_saved=[],
     callbacks_cfg_denoiser=[],
     callbacks_cfg_denoised=[],
+    callbacks_cfg_after_cfg=[],
     callbacks_before_component=[],
     callbacks_after_component=[],
     callbacks_image_grid=[],
@@ -172,6 +192,14 @@ def cfg_denoised_callback(params: CFGDenoisedParams):
             c.callback(params)
         except Exception as e:
             report_exception(e, c, 'cfg_denoised_callback')
+
+
+def cfg_after_cfg_callback(params: AfterCFGCallbackParams):
+    for c in callback_map['callbacks_cfg_after_cfg']:
+        try:
+            c.callback(params)
+        except Exception as e:
+            report_exception(e, c, 'cfg_after_cfg_callback')
 
 
 def before_component_callback(component, **kwargs):
@@ -313,6 +341,14 @@ def on_cfg_denoised(callback):
         - params: CFGDenoisedParams - parameters to be passed to the inner model and sampling state details.
     """
     add_callback(callback_map['callbacks_cfg_denoised'], callback)
+
+
+def on_cfg_after_cfg(callback):
+    """register a function to be called in the kdiffussion cfg_denoiser method after cfg calculations are completed.
+    The callback is called with one argument:
+        - params: AfterCFGCallbackParams - parameters to be passed to the script for post-processing after cfg calculation.
+    """
+    add_callback(callback_map['callbacks_cfg_after_cfg'], callback)
 
 
 def on_before_component(callback):

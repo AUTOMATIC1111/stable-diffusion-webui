@@ -8,6 +8,7 @@ from modules.shared import opts, state
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
+from modules.script_callbacks import AfterCFGCallbackParams, cfg_after_cfg_callback
 
 samplers_k_diffusion = [
     ('Euler a', 'sample_euler_ancestral', ['k_euler_a', 'k_euler_ancestral'], {}),
@@ -145,7 +146,7 @@ class CFGDenoiser(torch.nn.Module):
 
             x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict([uncond], image_cond_in[-uncond.shape[0]:]))
 
-        denoised_params = CFGDenoisedParams(x_out, state.sampling_step, state.sampling_steps)
+        denoised_params = CFGDenoisedParams(x_out, state.sampling_step, state.sampling_steps, self.inner_model)
         cfg_denoised_callback(denoised_params)
 
         devices.test_for_nans(x_out, "unet")
@@ -164,6 +165,11 @@ class CFGDenoiser(torch.nn.Module):
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
+
+        after_cfg_callback_params = AfterCFGCallbackParams(denoised, state.sampling_step, state.sampling_steps)
+        cfg_after_cfg_callback(after_cfg_callback_params)
+        if after_cfg_callback_params.output_altered:
+            denoised = after_cfg_callback_params.x
 
         self.step += 1
 
