@@ -361,7 +361,6 @@ def set_environment():
 
 def check_extensions():
     newest_all = os.path.getmtime('requirements.txt')
-    print(newest_all)
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
     for folder in [extensions_builtin_dir, extensions_dir]:
         if not os.path.isdir(folder):
@@ -374,8 +373,6 @@ def check_extensions():
                 if '.json' in f or '.csv' in f or '__pycache__' in f:
                     continue
                 ts = os.path.getmtime(os.path.join(extension_dir, f))
-                if ts > newest_all:
-                    print(folder, ext, f)
                 newest = max(newest, ts)
             newest_all = max(newest_all, newest)
             log.debug(f'Extension version: {time.ctime(newest)} {folder}{os.pathsep}{ext}')
@@ -512,14 +509,14 @@ def run_setup():
         git_reset()
     if args.skip_git:
         log.info('Skipping GIT operations')
+    check_version()
+    check_torch()
+    install_requirements()
     if check_timestamp():
         log.info('No changes detected: quick launch active')
         return
     log.info("Running setup")
     log.debug(f"Args: {vars(args)}")
-    check_version()
-    check_torch()
-    install_requirements()
     install_packages()
     install_repositories()
     install_submodules()
