@@ -161,13 +161,17 @@ def clone(url, folder, commithash=None):
 # check python version
 def check_python():
     import platform
-    supported_minors = [9, 10] if platform.system() != "Windows" else [9, 10, 11]
+    supported_minors = [9, 10]
+    if args.experimental:
+        supported_minors.append(11)
     log.info(f'Python {platform.python_version()} on {platform.system()}')
     if not (int(sys.version_info.major) == 3 and int(sys.version_info.minor) in supported_minors):
-        raise RuntimeError(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.9-3.11")
+        log.error(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.{supported_minors}")
+        exit(1)
     git_cmd = os.environ.get('GIT', "git")
     if shutil.which(git_cmd) is None:
-        raise RuntimeError('Git not found')
+        log.error('Git not found')
+        exit(1)
 
 
 # check torch version
@@ -462,6 +466,7 @@ def parse_args():
     parser.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     parser.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
+    parser.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
     global args # pylint: disable=global-statement
     args = parser.parse_args()
 
