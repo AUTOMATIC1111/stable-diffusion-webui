@@ -133,7 +133,7 @@ class ExtraNetworksPage:
 {items_html}
 </div>
 """
-
+ 
         return res
 
     def list_items(self):
