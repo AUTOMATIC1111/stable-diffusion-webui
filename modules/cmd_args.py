@@ -57,6 +57,9 @@ def compatibility_args(opts, args):
     parser.add_argument("--esrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.esrgan_models_path)
     parser.add_argument("--bsrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.bsrgan_models_path)
     parser.add_argument("--realesrgan-models-path", type=str, help=argparse.SUPPRESS, default=opts.realesrgan_models_path)
+    parser.add_argument("--scunet-models-path", help=argparse.SUPPRESS, default=opts.scunet_models_path)
+    parser.add_argument("--swinir-models-path", help=argparse.SUPPRESS, default=opts.swinir_models_path)
+    parser.add_argument("--ldsr-models-path", help=argparse.SUPPRESS, default=opts.ldsr_models_path)
     parser.add_argument("--clip-models-path", type=str, help=argparse.SUPPRESS, default=opts.clip_models_path)
     parser.add_argument("--disable-extension-access", default = False, action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--opt-channelslast", help=argparse.SUPPRESS, default=opts.opt_channelslast)
@@ -66,7 +69,9 @@ def compatibility_args(opts, args):
     parser.add_argument("--no-half-vae", help=argparse.SUPPRESS, default=opts.no_half_vae)
     parser.add_argument("--precision", help=argparse.SUPPRESS, default=opts.precision)
     parser.add_argument("--api", help=argparse.SUPPRESS, default=True)
+
     parser.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     args = parser.parse_args()
+    if 'lyco_dir' in args:
+        args.lyco_dir = opts.lyco_dir
     return args
-
