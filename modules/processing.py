@@ -28,7 +28,8 @@ import modules.images as images
 import modules.styles
 import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
-import tomesd
+import tomesd # pylint: disable=wrong-import-order
+
 
 # add a logger for the processing module
 logger = logging.getLogger(__name__)

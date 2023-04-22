@@ -515,6 +515,7 @@ def run_setup():
         log.debug(f'Setup complete without errors: {round(time.time())}')
     else:
         log.warning(f'Setup complete with errors ({errors})')
+        log.warning('See log file for more details: setup.log')
 
 
 if __name__ == "__main__":
