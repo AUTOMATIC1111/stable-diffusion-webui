@@ -212,6 +212,6 @@ document.addEventListener("DOMContentLoaded", function() {
 
     modal.appendChild(modalNext)
 
-    try { gadioApp().appendChild(modal); }
+    try { gradioApp().appendChild(modal); }
     catch (e) { gradioApp().body.appendChild(modal); }
 });

@@ -101,7 +101,7 @@ def install(package, friendly: str = None, ignore: bool = False):
         if result.returncode != 0 and not ignore:
             global errors # pylint: disable=global-statement
             errors += 1
-            log.error(f'Error running pip with args: {arg}')
+            log.error(f'Error running pip: {arg}')
             log.debug(f'Pip output: {txt}')
         return txt
 
@@ -122,7 +122,7 @@ def git(arg: str, folder: str = None, ignore: bool = False):
     if result.returncode != 0 and not ignore:
         global errors # pylint: disable=global-statement
         errors += 1
-        log.error(f'Error running git with args: {arg}')
+        log.error(f'Error running git: {folder} / {arg}')
         if 'or stash them' in txt:
             log.error('Local changes detected: check setup.log for details')
         log.debug(f'Git output: {txt}')
