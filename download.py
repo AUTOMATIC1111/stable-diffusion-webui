@@ -54,6 +54,15 @@ EMBEDDINGS_DIR = "/workspace/stable-diffusion-webui/embeddings"
 embeddings_url = 'https://storage.googleapis.com/ag-diffusion/embeddings/embeddings_20230422.zip'
 filename = os.path.basename(embeddings_url)
 if not os.path.exists(os.path.join(EMBEDDINGS_DIR,filename)):
+
+    # delete old embeddings
+    for filename in os.listdir(EMBEDDINGS_DIR):
+        file_path = os.path.join(EMBEDDINGS_DIR, filename)
+        try:
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        except Exception as e:
+            print(f"Error deleting file '{file_path}': {e}")
     try:
         command = f"curl -Lo {os.path.join(EMBEDDINGS_DIR,filename)} {embeddings_url}"
         output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
