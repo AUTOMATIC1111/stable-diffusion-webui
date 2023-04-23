@@ -49,6 +49,19 @@ for model in models:
         output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
         print("Download Model:", output.stderr)
 
+#embeddings / textual inversions --------------------------------------------------
+EMBEDDINGS_DIR = "/workspace/stable-diffusion-webui/embeddings"
+embeddings_url = 'https://storage.googleapis.com/ag-diffusion/embeddings/embeddings.zip'
+if not os.path.exists(os.path.join(EMBEDDINGS_DIR,'embeddings.zip')):
+    command = f"curl -Lo {os.path.join(EMBEDDINGS_DIR,'embeddings.zip')} {embeddings_url}"
+    output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+    print("Download Embeddings:", output.stderr)
+    command = f"unzip embeddings/embeddings.zip -d embeddings/"
+    output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+    print("unzip Embeddings:", output.stderr)
+
+
+
 # diffusion checkpoints --------------------------------------------------
 
 models_urls  = [
