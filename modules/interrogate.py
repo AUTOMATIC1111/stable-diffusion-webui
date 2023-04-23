@@ -41,7 +41,7 @@ def download_default_clip_interrogate_categories(content_dir):
         errors.display(e, "downloading default CLIP interrogate categories")
     finally:
         if os.path.exists(tmpdir):
-            os.remove(tmpdir)
+            os.removedirs(tmpdir)
 
 
 class InterrogateModels:
