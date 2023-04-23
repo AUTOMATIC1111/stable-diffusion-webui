@@ -2486,7 +2486,11 @@ button.secondary{
 #modelmerger_models {
     gap: 1px !important;
 }
-
+#modelmerger_config_method{
+	margin: -1px;
+    width: auto;
+    margin-bottom: calc(var(--ae-outside-gap-size) * -1);
+}
 /******************/
 /* extensions tab */
 /******************/
