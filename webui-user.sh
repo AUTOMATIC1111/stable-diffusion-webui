@@ -14,10 +14,10 @@ apt install nano screen unzip -y
 pip install aioprometheus[starlette]
 
 
-# check the downloads, can take while on a fresh disk.
-# perhaps better to use rsync? but want to avoid credentials
-# do not run and subprocess because otherwsie several insttances may get launched due to restart attempts
-python3 /workspace/stable-diffusion-webui/download.py
+# download models from gcp if needed, it can take while on a fresh disk.
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/Stable-diffusion models/Stable-diffusion --progress --config rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/lora models/Lora --progress --config rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/embeddings embeddings --progress --config rclone.conf 
 
 # Install directory without trailing slash
 install_dir="/workspace"
