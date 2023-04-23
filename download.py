@@ -96,6 +96,7 @@ models_urls  = [
 ['https://storage.googleapis.com/ag-diffusion/ckpts/perfectWorld_v2Baked.safetensors','79e42fb7445bb08cb16e92cfd57f3ab09b57f18b1b8bcb27cb5d5d4e19ac1eec'],
 ['https://storage.googleapis.com/ag-diffusion/ckpts/chilloutmix_NiPrunedFp32Fix.safetensors','fc2511737a54c5e80b89ab03e0ab4b98d051ab187f92860f3cd664dc9d08b271'],
 ['https://storage.googleapis.com/ag-diffusion/ckpts/uberRealisticPornMerge_urpmv13.safetensors','f93e6a50acf7c1b1e6d5ccaf92bae207cb5d2222da3ddc5108df4c928d84255a'],
+['https://storage.googleapis.com/ag-diffusion/ckpts/revAnimated_v122.safetensors','f8bb2922e1dc877dc0d33ed9b9dbbdba612b8b37711cbe17d803dbc92dd65b78'],
 
 ]
 
@@ -117,7 +118,7 @@ def verifychecksum(basename, correct_checksum, stored_checksums):
             print(f"Stored checksum of {basename} was correct")
             return True
         else:
-            print(f"Stored checksum of {basename} was INCORRECT: {stored_checksums[basename]}")
+            print(f"Stored checksum of {basename} was DID NOT MATCH: stored: {stored_checksums[basename]} should be {correct_checksum}")
             return False
     else:
         hash_algorithm = hashlib.sha256()
@@ -131,9 +132,8 @@ def verifychecksum(basename, correct_checksum, stored_checksums):
                 json.dump(stored_checksums, fp, indent=4)
             return True
         else:
-            print(f"Checksum of {basename} was INCORRECT: {hash_algorithm.hexdigest()}")
+            print(f"Checksum of {basename} was DID NOT MATCH: computed {hash_algorithm.hexdigest()} should be {correct_checksum}")
     return False
-
 
 GENERATE_REFERENCE_CHECKSUMS = False
 for url, checksum in models_urls:
