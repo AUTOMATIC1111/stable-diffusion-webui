@@ -52,13 +52,13 @@ for model in models:
 #embeddings / textual inversions --------------------------------------------------
 EMBEDDINGS_DIR = "/workspace/stable-diffusion-webui/embeddings"
 embeddings_url = 'https://storage.googleapis.com/ag-diffusion/embeddings/embeddings_20230422.zip'
-filename = os.path.basename(url)
+filename = os.path.basename(embeddings_url)
 if not os.path.exists(os.path.join(EMBEDDINGS_DIR,filename)):
     try:
         command = f"curl -Lo {os.path.join(EMBEDDINGS_DIR,filename)} {embeddings_url}"
         output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
         print("Download Embeddings:", output.stderr)
-        command = f"unzip -o embeddings/embeddings.zip -d embeddings/"
+        command = f"unzip -o embeddings/{filename} -d embeddings/"
         output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
         print("unzip Embeddings:", output.stderr)
     except subprocess.CalledProcessError as e:
