@@ -2609,13 +2609,12 @@ pre {
 	display:none;
 }
 
-#settings,
-.extra-network-thumbs .card:hover .additional a {
+#settings{
     display: block;
 }
 
-#settings>div {
-    border: 0;
+#settings > div{
+    border: none;
     margin-left: 10em;
 }
 
@@ -2628,7 +2627,7 @@ pre {
 
 #settings > div.tab-nav button{
     display: block;
-    border: 0;
+    border: none;
     text-align: left;
     white-space: initial;
     height: 27px;
@@ -2681,22 +2680,6 @@ pre {
 	width: 100%;
 	opacity: 0.98;
 }
-@media only screen and (max-width: 860px) {
-  /* For tablets: */
-	[id$=_splitter]
-	{
-		display:none
-	}
-	
-  	[id$="2img_gallery"] .overflow-y-auto 
-	{
-		/*min-height: unset !important;	*/	
-	}
-	
-	[id$="2img_settings_scroll"]
-	{
-		height: auto !important;		
-	}
 
 @media only screen and (max-width: 860px) {
   /* For tablets: */
@@ -2984,7 +2967,6 @@ footer {
     font-size: 24px;
     fill: var(--ae-primary-color);
 }
-*/
 
 .footer-links > li:last-child {
   position: absolute;
