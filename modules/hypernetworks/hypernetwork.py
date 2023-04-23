@@ -4,7 +4,6 @@ import glob
 import html
 import os
 import sys
-import traceback
 import inspect
 
 import modules.textual_inversion.dataset
@@ -12,7 +11,7 @@ import torch
 import tqdm
 from einops import rearrange, repeat
 from ldm.util import default
-from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint
+from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint, errors
 from modules.textual_inversion import textual_inversion, logging
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
@@ -312,7 +311,7 @@ class Hypernetwork:
 
 def list_hypernetworks(path):
     res = {}
-    for filename in sorted(glob.iglob(os.path.join(path, '**/*.pt'), recursive=True)):
+    for filename in sorted(glob.iglob(os.path.join(path, '**/*.pt'), recursive=True), key=str.lower):
         name = os.path.splitext(os.path.basename(filename))[0]
         # Prevent a hypothetical "None.pt" from being listed.
         if name != "None":
@@ -330,9 +329,8 @@ def load_hypernetwork(name):
 
     try:
         hypernetwork.load(path)
-    except Exception:
-        print(f"Error loading hypernetwork {path}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+    except Exception as e:
+        errors.display(e, f'hypernetwork load: {path}')
         return None
 
     return hypernetwork
@@ -469,7 +467,7 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
     assert name, "Name cannot be empty!"
 
-    fn = os.path.join(shared.cmd_opts.hypernetwork_dir, f"{name}.pt")
+    fn = os.path.join(shared.opts.hypernetwork_dir, f"{name}.pt")
     if not overwrite_old:
         assert not os.path.exists(fn), f"file {fn} already exists"
 
@@ -516,7 +514,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     shared.state.job_count = steps
 
     hypernetwork_name = hypernetwork_name.rsplit('(', 1)[0]
-    filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
+    filename = os.path.join(shared.opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
 
     log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%m-%d"), hypernetwork_name)
     unload = shared.opts.unload_models_when_training
@@ -770,8 +768,8 @@ Last saved hypernetwork: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
-    except Exception:
-        print(traceback.format_exc(), file=sys.stderr)
+    except Exception as e:
+        errors.display(e, 'hypernetwork train')
     finally:
         pbar.leave = False
         pbar.close()
@@ -781,7 +779,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 
 
 
-    filename = os.path.join(shared.cmd_opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
+    filename = os.path.join(shared.opts.hypernetwork_dir, f'{hypernetwork_name}.pt')
     hypernetwork.optimizer_name = optimizer_name
     if shared.opts.save_optimizer_state:
         hypernetwork.optimizer_state_dict = optimizer.state_dict()

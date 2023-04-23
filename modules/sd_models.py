@@ -2,26 +2,28 @@ import collections
 import os.path
 import sys
 import gc
-import torch
 import re
-import safetensors.torch
-from omegaconf import OmegaConf
+import io
 from os import mkdir
 from urllib import request
+from rich import print, progress # pylint: disable=redefined-builtin
+import torch
+import safetensors.torch
+from omegaconf import OmegaConf
 import ldm.modules.midas as midas
-
 from ldm.util import instantiate_from_config
 
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
-from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
+import tomesd
+
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 
 checkpoints_list = {}
-checkpoint_alisases = {}
+checkpoint_aliases = {}
 checkpoints_loaded = collections.OrderedDict()
 
 
@@ -30,8 +32,8 @@ class CheckpointInfo:
         self.filename = filename
         abspath = os.path.abspath(filename)
 
-        if shared.cmd_opts.ckpt_dir is not None and abspath.startswith(shared.cmd_opts.ckpt_dir):
-            name = abspath.replace(shared.cmd_opts.ckpt_dir, '')
+        if shared.opts.ckpt_dir is not None and abspath.startswith(shared.opts.ckpt_dir):
+            name = abspath.replace(shared.opts.ckpt_dir, '')
         elif abspath.startswith(model_path):
             name = abspath.replace(model_path, '')
         else:
@@ -54,8 +56,8 @@ class CheckpointInfo:
 
     def register(self):
         checkpoints_list[self.title] = self
-        for id in self.ids:
-            checkpoint_alisases[id] = self
+        for i in self.ids:
+            checkpoint_aliases[i] = self
 
     def calculate_shorthash(self):
         self.sha256 = hashes.sha256(self.filename, "checkpoint/" + self.name)
@@ -76,9 +78,7 @@ class CheckpointInfo:
 
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
-
-    from transformers import logging, CLIPModel
-
+    from transformers import logging
     logging.set_verbosity_error()
 except Exception:
     pass
@@ -103,32 +103,34 @@ def checkpoint_tiles():
 
 
 def list_models():
+    global model_path # pylint: disable=global-statement
+    model_path = shared.opts.ckpt_dir
     checkpoints_list.clear()
-    checkpoint_alisases.clear()
-
-    cmd_ckpt = shared.cmd_opts.ckpt
-    if shared.cmd_opts.no_download_sd_model or cmd_ckpt != shared.sd_model_file or os.path.exists(cmd_ckpt):
-        model_url = None
-    else:
-        model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
-
-    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
-
-    if os.path.exists(cmd_ckpt):
-        checkpoint_info = CheckpointInfo(cmd_ckpt)
+    checkpoint_aliases.clear()
+    model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    if shared.cmd_opts.ckpt is not None and os.path.exists(shared.cmd_opts.ckpt):
+        checkpoint_info = CheckpointInfo(shared.cmd_opts.ckpt)
         checkpoint_info.register()
-
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
-    elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
-
-    for filename in model_list:
+    elif shared.cmd_opts.ckpt != shared.default_sd_model_file:
+        print(f"Checkpoint not found: {shared.cmd_opts.ckpt}", file=sys.stderr)
+    for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         checkpoint_info.register()
+    print(f'Available models: {shared.opts.ckpt_dir} {len(checkpoints_list)}')
+    if len(checkpoints_list) == 0:
+        if not shared.cmd_opts.no_download_sd_model:
+            key = input('Download the default model? (y/N) ')
+            if key.lower().startswith('y'):
+                model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+                model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+                for filename in sorted(model_list, key=str.lower):
+                    checkpoint_info = CheckpointInfo(filename)
+                    checkpoint_info.register()
 
 
 def get_closet_checkpoint_match(search_string):
-    checkpoint_info = checkpoint_alisases.get(search_string, None)
+    checkpoint_info = checkpoint_aliases.get(search_string, None)
     if checkpoint_info is not None:
         return checkpoint_info
 
@@ -156,19 +158,14 @@ def model_hash(filename):
 
 def select_checkpoint():
     model_checkpoint = shared.opts.sd_model_checkpoint
-        
-    checkpoint_info = checkpoint_alisases.get(model_checkpoint, None)
+
+    checkpoint_info = checkpoint_aliases.get(model_checkpoint, None)
     if checkpoint_info is not None:
         return checkpoint_info
 
     if len(checkpoints_list) == 0:
-        print("No checkpoints found. When searching for checkpoints, looked at:", file=sys.stderr)
-        if shared.cmd_opts.ckpt is not None:
-            print(f" - file {os.path.abspath(shared.cmd_opts.ckpt)}", file=sys.stderr)
-        print(f" - directory {model_path}", file=sys.stderr)
-        if shared.cmd_opts.ckpt_dir is not None:
-            print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
-        print("Can't run without a checkpoint. Find and place a .ckpt or .safetensors file into any of those locations. The program will exit.", file=sys.stderr)
+        print("Cannot run without a checkpoint", file=sys.stderr)
+        print("Use --ckpt <path-to-checkpoint> to force using existing checkpoint", file=sys.stderr)
         exit(1)
 
     checkpoint_info = next(iter(checkpoints_list.values()))
@@ -228,46 +225,50 @@ def read_metadata_from_safetensors(filename):
             if isinstance(v, str) and v[0:1] == '{':
                 try:
                     res[k] = json.loads(v)
-                except Exception as e:
+                except Exception:
                     pass
 
         return res
 
 
-def read_state_dict(checkpoint_file, print_global_state=False, map_location=None):
-    _, extension = os.path.splitext(checkpoint_file)
-    if extension.lower() == ".safetensors":
-        device = map_location or shared.weight_load_location or devices.get_optimal_device_name()
-        pl_sd = safetensors.torch.load_file(checkpoint_file, device=device)
-    else:
-        pl_sd = torch.load(checkpoint_file, map_location=map_location or shared.weight_load_location)
-
-    if print_global_state and "global_step" in pl_sd:
-        print(f"Global Step: {pl_sd['global_step']}")
-
-    sd = get_state_dict_from_checkpoint(pl_sd)
+def read_state_dict(checkpoint_file):
+    try:
+        with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
+            _, extension = os.path.splitext(checkpoint_file)
+            if 'v1-5-pruned-emaonly.safetensors' or 'vae-ft-mse-840000-ema-pruned.ckpt' in checkpoint_file:
+                if extension.lower() == ".safetensors":
+                    pl_sd = safetensors.torch.load_file(checkpoint_file, device='cpu')
+                else:
+                    pl_sd = torch.load(checkpoint_file, map_location='cpu')
+            else:
+                if extension.lower() == ".safetensors":
+                    buffer = f.read()
+                    pl_sd = safetensors.torch.load(buffer)
+                else:
+                    buffer = io.BytesIO(f.read())
+                    pl_sd = torch.load(buffer, map_location='cpu')
+            sd = get_state_dict_from_checkpoint(pl_sd)
+    except Exception as e:
+        errors.display(e, f'loading model: {checkpoint_file}')
+        sd = None
     return sd
 
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
-    sd_model_hash = checkpoint_info.calculate_shorthash()
-    timer.record("calculate hash")
-
     if checkpoint_info in checkpoints_loaded:
         # use checkpoint cache
-        print(f"Loading weights [{sd_model_hash}] from cache")
+        print("Loading weights from cache")
         return checkpoints_loaded[checkpoint_info]
 
-    print(f"Loading weights [{sd_model_hash}] from {checkpoint_info.filename}")
     res = read_state_dict(checkpoint_info.filename)
-    timer.record("load weights from disk")
+    timer.record("load")
 
     return res
 
 
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
     sd_model_hash = checkpoint_info.calculate_shorthash()
-    timer.record("calculate hash")
+    timer.record("hash")
 
     shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
 
@@ -276,15 +277,15 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     model.load_state_dict(state_dict, strict=False)
     del state_dict
-    timer.record("apply weights to model")
+    timer.record("apply")
 
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
         checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
 
-    if shared.cmd_opts.opt_channelslast:
+    if shared.opts.opt_channelslast:
         model.to(memory_format=torch.channels_last)
-        timer.record("apply channels_last")
+        timer.record("channels")
 
     if not shared.cmd_opts.no_half:
         vae = model.first_stage_model
@@ -294,7 +295,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if shared.cmd_opts.no_half_vae:
             model.first_stage_model = None
         # with --upcast-sampling, don't convert the depth model weights to float16
-        if shared.cmd_opts.upcast_sampling and depth_model:
+        if shared.opts.upcast_sampling and depth_model:
             model.depth_model = None
 
         model.half()
@@ -302,15 +303,9 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if depth_model:
             model.depth_model = depth_model
 
-        timer.record("apply half()")
-
-    devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
-    devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
+    devices.set_cuda_params()
     devices.dtype_unet = model.model.diffusion_model.dtype
-    devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
-
     model.first_stage_model.to(devices.dtype_vae)
-    timer.record("apply dtype to VAE")
 
     # clean up cache if limit is reached
     while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
@@ -327,7 +322,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     sd_vae.clear_loaded_vae()
     vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
     sd_vae.load_vae(model, vae_file, vae_source)
-    timer.record("load VAE")
+    timer.record("vae")
 
 
 def enable_midas_autodownload():
@@ -363,7 +358,7 @@ def enable_midas_autodownload():
         if not os.path.exists(path):
             if not os.path.exists(midas_path):
                 mkdir(midas_path)
-    
+
             print(f"Downloading midas model weights for {model_type} to {path}")
             request.urlretrieve(midas_urls[model_type], path)
             print(f"{model_type} downloaded")
@@ -375,31 +370,41 @@ def enable_midas_autodownload():
 
 def repair_config(sd_config):
 
-    if not hasattr(sd_config.model.params, "use_ema"):
+    if not "use_ema" in sd_config.model.params:
         sd_config.model.params.use_ema = False
 
     if shared.cmd_opts.no_half:
         sd_config.model.params.unet_config.params.use_fp16 = False
-    elif shared.cmd_opts.upcast_sampling:
+    elif shared.opts.upcast_sampling:
         sd_config.model.params.unet_config.params.use_fp16 = True
+
+    if getattr(sd_config.model.params.first_stage_config.params.ddconfig, "attn_type", None) == "vanilla-xformers" and not shared.xformers_available:
+        sd_config.model.params.first_stage_config.params.ddconfig.attn_type = "vanilla"
+
+    # For UnCLIP-L, override the hardcoded karlo directory
+    if "noise_aug_config" in sd_config.model.params and "clip_stats_path" in sd_config.model.params.noise_aug_config.params:
+        karlo_path = os.path.join(paths.models_path, 'karlo')
+        sd_config.model.params.noise_aug_config.params.clip_stats_path = sd_config.model.params.noise_aug_config.params.clip_stats_path.replace("checkpoints/karlo_models", karlo_path)
 
 
 sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embedding.weight'
 sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight'
 
-def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_to_load_state_dict=None):
+def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
-
-    if shared.sd_model:
-        sd_hijack.model_hijack.undo_hijack(shared.sd_model)
-        shared.sd_model = None
-        gc.collect()
-        devices.torch_gc()
 
     do_inpainting_hijack()
 
     timer = Timer()
+
+    current_checkpoint_info = None
+    if shared.sd_model:
+        current_checkpoint_info = shared.sd_model.sd_checkpoint_info
+        sd_hijack.model_hijack.undo_hijack(shared.sd_model)
+        shared.sd_model = None
+    gc.collect()
+    devices.torch_gc()
 
     if already_loaded_state_dict is not None:
         state_dict = already_loaded_state_dict
@@ -407,14 +412,19 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
 
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
-    clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
+    if state_dict is None or checkpoint_config is None:
+        print(f"Failed to load checkpooint: {checkpoint_info.filename}")
+        if current_checkpoint_info is not None:
+            print(f"Restoring previous checkpoint: {current_checkpoint_info.filename}")
+            load_model(current_checkpoint_info, None)
+        return
 
-    timer.record("find config")
+    clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
 
     sd_config = OmegaConf.load(checkpoint_config)
     repair_config(sd_config)
 
-    timer.record("load config")
+    timer.record("config")
 
     print(f"Creating model from config: {checkpoint_config}")
 
@@ -422,16 +432,12 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
     try:
         with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
             sd_model = instantiate_from_config(sd_config.model)
-    except Exception as e:
-        pass
-
-    if sd_model is None:
-        print('Failed to create model quickly; will retry using slow method.', file=sys.stderr)
+    except Exception:
         sd_model = instantiate_from_config(sd_config.model)
 
     sd_model.used_config = checkpoint_config
 
-    timer.record("create model")
+    timer.record("create")
 
     load_model_weights(sd_model, checkpoint_info, state_dict, timer)
 
@@ -440,7 +446,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
     else:
         sd_model.to(shared.device)
 
-    timer.record("move model to device")
+    timer.record("move")
 
     sd_hijack.model_hijack.hijack(sd_model)
 
@@ -451,19 +457,19 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, time_taken_
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
 
-    timer.record("load textual inversion embeddings")
+    timer.record("embeddings")
 
     script_callbacks.model_loaded_callback(sd_model)
 
-    timer.record("scripts callbacks")
+    timer.record("callbacks")
 
-    print(f"Model loaded in {timer.summary()}.")
+    print(f"Model loaded in {timer.summary()}")
 
     return sd_model
 
 
 def reload_model_weights(sd_model=None, info=None):
-    from modules import lowvram, devices, sd_hijack
+    from modules import lowvram, sd_hijack
     checkpoint_info = info or select_checkpoint()
 
     if not sd_model:
@@ -499,7 +505,7 @@ def reload_model_weights(sd_model=None, info=None):
 
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
-    except Exception as e:
+    except Exception:
         print("Failed to load checkpoint, restoring previous")
         load_model_weights(sd_model, current_checkpoint_info, None, timer)
         raise
@@ -508,22 +514,18 @@ def reload_model_weights(sd_model=None, info=None):
         timer.record("hijack")
 
         script_callbacks.model_loaded_callback(sd_model)
-        timer.record("script callbacks")
+        timer.record("callbacks")
 
         if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
             sd_model.to(devices.device)
-            timer.record("move model to device")
+            timer.record("device")
 
-    print(f"Weights loaded in {timer.summary()}.")
+    print(f"Weights loaded in {timer.summary()}")
 
-    return sd_model
-
-def unload_model_weights(sd_model=None, info=None):
-    from modules import lowvram, devices, sd_hijack
+def unload_model_weights(sd_model=None, _info=None):
+    from modules import sd_hijack
     timer = Timer()
-
     if shared.sd_model:
-
         # shared.sd_model.cond_stage_model.to(devices.cpu)
         # shared.sd_model.first_stage_model.to(devices.cpu)
         shared.sd_model.to(devices.cpu)
@@ -533,7 +535,30 @@ def unload_model_weights(sd_model=None, info=None):
         gc.collect()
         devices.torch_gc()
         torch.cuda.empty_cache()
-
-    print(f"Unloaded weights {timer.summary()}.")
-
+    print(f"Unloaded weights {timer.summary()}")
     return sd_model
+
+
+def apply_token_merging(sd_model, hr: bool):
+    """
+    Applies speed and memory optimizations from tomesd.
+
+    Args:
+        hr (bool): True if called in the context of a high-res pass
+    """
+
+    ratio = shared.opts.token_merging_ratio
+    if hr:
+        ratio = shared.opts.token_merging_ratio_hr
+
+    tomesd.apply_patch(
+        sd_model,
+        ratio=ratio,
+        max_downsample=shared.opts.token_merging_maximum_down_sampling,
+        sx=shared.opts.token_merging_stride_x,
+        sy=shared.opts.token_merging_stride_y,
+        use_rand=shared.opts.token_merging_random,
+        merge_attn=shared.opts.token_merging_merge_attention,
+        merge_crossattn=shared.opts.token_merging_merge_cross_attention,
+        merge_mlp=shared.opts.token_merging_merge_mlp
+    )

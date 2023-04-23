@@ -1,13 +1,9 @@
 import os
-import sys
-import traceback
-import inspect
 from collections import namedtuple
 
 import torch
 import tqdm
 import html
-import datetime
 import csv
 import safetensors.torch
 
@@ -15,13 +11,13 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
 
-from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint
+from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
 from modules.textual_inversion.logging import save_settings_to_file
-
+from rich import print # pylint: disable=redefined-builtin
 
 TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
 textual_inversion_templates = {}
@@ -30,7 +26,7 @@ textual_inversion_templates = {}
 def list_textual_inversion_templates():
     textual_inversion_templates.clear()
 
-    for root, dirs, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir):
+    for root, dirs, fns in os.walk(shared.opts.embeddings_templates_dir):
         for fn in fns:
             path = os.path.join(root, fn)
 
@@ -134,6 +130,9 @@ class EmbeddingDatabase:
         return embedding
 
     def get_expected_shape(self):
+        if shared.sd_model is None:
+            print('Model not loaded')
+            return 0
         vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
         return vec.shape[1]
 
@@ -208,9 +207,8 @@ class EmbeddingDatabase:
                         continue
 
                     self.load_from_file(fullfn, fn)
-                except Exception:
-                    print(f"Error loading embedding {fn}:", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
+                except Exception as e:
+                    errors.display(e, f'embedding load {fn}')
                     continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
@@ -236,7 +234,7 @@ class EmbeddingDatabase:
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
-            print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
+            print(f"Embeddings loaded: {', '.join(self.word_embeddings.keys())} ({len(self.word_embeddings)})")
             if len(self.skipped_embeddings) > 0:
                 print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
 
@@ -271,7 +269,7 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
 
     # Remove illegal characters from name.
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
-    fn = os.path.join(shared.cmd_opts.embeddings_dir, f"{name}.pt")
+    fn = os.path.join(shared.opts.embeddings_dir, f"{name}.pt")
     if not overwrite_old:
         assert not os.path.exists(fn), f"file {fn} already exists"
 
@@ -286,7 +284,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
     if shared.opts.training_write_csv_every == 0:
         return
 
-    if step % shared.opts.training_write_csv_every != 0:
+    if step % epoch_len != 0:
         return
     write_csv_header = False if os.path.exists(os.path.join(log_directory, filename)) else True
 
@@ -319,16 +317,14 @@ def tensorboard_add(tensorboard_writer, loss, global_step, step, learn_rate, epo
     tensorboard_add_scaler(tensorboard_writer, f"Learn rate/train/epoch-{epoch_num}", learn_rate, step)
 
 def tensorboard_add_scaler(tensorboard_writer, tag, value, step):
-    tensorboard_writer.add_scalar(tag=tag, 
-        scalar_value=value, global_step=step)
+    tensorboard_writer.add_scalar(tag=tag, scalar_value=value, global_step=step)
 
 def tensorboard_add_image(tensorboard_writer, tag, pil_image, step):
     # Convert a pil image to a torch tensor
     img_tensor = torch.as_tensor(np.array(pil_image, copy=True))
-    img_tensor = img_tensor.view(pil_image.size[1], pil_image.size[0], 
-        len(pil_image.getbands()))
+    img_tensor = img_tensor.view(pil_image.size[1], pil_image.size[0], len(pil_image.getbands()))
     img_tensor = img_tensor.permute((2, 0, 1))
-                
+
     tensorboard_writer.add_image(tag, img_tensor, global_step=step)
 
 def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_model_every, create_image_every, log_directory, name="embedding"):
@@ -366,9 +362,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     shared.state.textinfo = "Initializing textual inversion training..."
     shared.state.job_count = steps
 
-    filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
+    filename = os.path.join(shared.opts.embeddings_dir, f'{embedding_name}.pt')
 
-    log_directory = os.path.join(log_directory, datetime.datetime.now().strftime("%Y-%m-%d"), embedding_name)
+    log_directory = os.path.join(log_directory, embedding_name)
     unload = shared.opts.unload_models_when_training
 
     if save_embedding_every > 0:
@@ -398,7 +394,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     if initial_step >= steps:
         shared.state.textinfo = "Model has already been trained beyond specified max steps"
         return embedding, filename
-    
+
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
     clip_grad = torch.nn.utils.clip_grad_value_ if clip_grad_mode == "value" else \
         torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else \
@@ -408,7 +404,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     old_parallel_processing_allowed = shared.parallel_processing_allowed
-    
+
     if shared.opts.training_enable_tensorboard:
         tensorboard_writer = tensorboard_setup(log_directory)
 
@@ -435,7 +431,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
             optimizer_saved_dict = torch.load(filename + '.optim', map_location='cpu')
             if embedding.checksum() == optimizer_saved_dict.get('hash', None):
                 optimizer_state_dict = optimizer_saved_dict.get('optimizer_state_dict', None)
-    
+
         if optimizer_state_dict is not None:
             optimizer.load_state_dict(optimizer_state_dict)
             print("Loaded existing optimizer from checkpoint")
@@ -481,7 +477,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
                 if clip_grad:
                     clip_grad_sched.step(embedding.step)
-            
+
                 with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
                     if use_weight:
@@ -509,7 +505,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
-                
+
                 if clip_grad:
                     clip_grad(embedding.vec, clip_grad_sched.learn_rate)
 
@@ -524,9 +520,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 steps_done = embedding.step + 1
 
                 epoch_num = embedding.step // steps_per_epoch
-                epoch_step = embedding.step % steps_per_epoch
 
-                description = f"Training textual inversion [Epoch {epoch_num}: {epoch_step+1}/{steps_per_epoch}] loss: {loss_step:.7f}"
+                description = f"Training textual inversion step {embedding.step} loss: {loss_step:.5f} lr: {scheduler.learn_rate:.5f}"
                 pbar.set_description(description)
                 if embedding_dir is not None and steps_done % save_embedding_every == 0:
                     # Before saving, change name to match current checkpoint.
@@ -535,7 +530,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     save_embedding(embedding, optimizer, checkpoint, embedding_name_every, last_saved_file, remove_cached_checksum=True)
                     embedding_yet_to_be_embedded = True
 
-                write_loss(log_directory, "textual_inversion_loss.csv", embedding.step, steps_per_epoch, {
+                write_loss(log_directory, "train.csv", embedding.step, steps_per_epoch, {
                     "loss": f"{loss_step:.7f}",
                     "learn_rate": scheduler.learn_rate
                 })
@@ -625,10 +620,10 @@ Last saved embedding: {html.escape(last_saved_file)}<br/>
 Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
-        filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
+        filename = os.path.join(shared.opts.embeddings_dir, f'{embedding_name}.pt')
         save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, remove_cached_checksum=True)
-    except Exception:
-        print(traceback.format_exc(), file=sys.stderr)
+    except Exception as e:
+        errors.display(e, 'embedding train')
         pass
     finally:
         pbar.leave = False

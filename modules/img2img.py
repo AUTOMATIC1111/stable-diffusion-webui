@@ -1,10 +1,7 @@
-import math
 import os
-import sys
-import traceback
 
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
+from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
 
 from modules import devices, sd_samplers
 from modules.generation_parameters_copypaste import create_override_settings_dict
@@ -46,7 +43,10 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
         if state.interrupted:
             break
 
-        img = Image.open(image)
+        try:
+            img = Image.open(image)
+        except UnidentifiedImageError:
+            continue
         # Use the EXIF orientation of photos taken by smartphones.
         img = ImageOps.exif_transpose(img)
         p.init_images = [img] * p.batch_size
@@ -128,7 +128,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         subseed_strength=subseed_strength,
         seed_resize_from_h=seed_resize_from_h,
         seed_resize_from_w=seed_resize_from_w,
-        seed_enable_extras=seed_enable_extras,
+        seed_enable_extras=True,
         sampler_name=sd_samplers.samplers_for_img2img[sampler_index].name,
         batch_size=batch_size,
         n_iter=n_iter,
@@ -151,13 +151,11 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         override_settings=override_settings,
     )
 
-    p.scripts = modules.scripts.scripts_txt2img
+    p.scripts = modules.scripts.scripts_img2img
     p.script_args = args
 
-    if shared.cmd_opts.enable_console_prompts:
-        print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
-
-    p.extra_generation_params["Mask blur"] = mask_blur
+    if mask:
+        p.extra_generation_params["Mask blur"] = mask_blur
 
     if is_batch:
         assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
@@ -175,8 +173,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     shared.total_tqdm.clear()
 
     generation_info_js = processed.js()
-    if opts.samples_log_stdout:
-        print(generation_info_js)
 
     if opts.do_not_show_images:
         processed.images = []

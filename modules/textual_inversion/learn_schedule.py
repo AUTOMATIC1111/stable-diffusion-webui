@@ -53,8 +53,8 @@ class LearnRateScheduler:
         (self.learn_rate,  self.end_step) = next(self.schedules)
         self.verbose = verbose
 
-        if self.verbose:
-            print(f'Training at rate of {self.learn_rate} until step {self.end_step}')
+        # if self.verbose:
+        #    print(f'Training at rate of {self.learn_rate} until step {self.end_step}')
 
         self.finished = False
 
@@ -73,8 +73,8 @@ class LearnRateScheduler:
         if not self.step(step_number):
             return
 
-        if self.verbose:
-            tqdm.tqdm.write(f'Training at rate of {self.learn_rate} until step {self.end_step}')
+        # if self.verbose:
+        #    tqdm.tqdm.write(f'Training at rate of {self.learn_rate} until step {self.end_step}')
 
         for pg in optimizer.param_groups:
             pg['lr'] = self.learn_rate

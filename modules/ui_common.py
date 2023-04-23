@@ -3,9 +3,9 @@ import html
 import os
 import platform
 import sys
+import subprocess as sp
 
 import gradio as gr
-import subprocess as sp
 
 from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
@@ -95,8 +95,12 @@ def save_files(js_data, images, do_make_zip, index):
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
 
+def initial_image():
+    from PIL import Image
+    img = Image.open('automatic.png')
+    return [img]
+
 def create_output_panel(tabname, outdir):
-    from modules import shared
     import modules.generation_parameters_copypaste as parameters_copypaste
 
     def open_folder(f):
@@ -115,7 +119,7 @@ Requested path was: {f}
         if not shared.cmd_opts.hide_ui_dir_config:
             path = os.path.normpath(f)
             if platform.system() == "Windows":
-                os.startfile(path)
+                os.startfile(path) # pylint: disable=no-member
             elif platform.system() == "Darwin":
                 sp.Popen(["open", path])
             elif "microsoft-standard-WSL2" in platform.uname().release:
@@ -125,12 +129,12 @@ Requested path was: {f}
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
+            result_gallery = gr.Gallery(initial_image, label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
 
         generation_info = None
         with gr.Column():
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
-                open_folder_button = gr.Button(folder_symbol, visible=not shared.cmd_opts.hide_ui_dir_config)
+                open_folder_button = gr.Button('show', visible=not shared.cmd_opts.hide_ui_dir_config)
 
                 if tabname != "extras":
                     save = gr.Button('Save', elem_id=f'save_{tabname}')
