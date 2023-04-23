@@ -7,9 +7,31 @@ function set_theme(theme){
     }
 }
 
+function all_gallery_buttons() {
+    var allGalleryButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnails > .thumbnail-item.thumbnail-small');
+    var visibleGalleryButtons = [];
+    allGalleryButtons.forEach(function(elem) {
+        if (elem.parentElement.offsetParent) {
+            visibleGalleryButtons.push(elem);
+        }
+    })
+    return visibleGalleryButtons;
+}
+
+function selected_gallery_button() {
+    var allCurrentButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnail-item.thumbnail-small.selected');
+    var visibleCurrentButton = null;
+    allCurrentButtons.forEach(function(elem) {
+        if (elem.parentElement.offsetParent) {
+            visibleCurrentButton = elem;
+        }
+    })
+    return visibleCurrentButton;
+}
+
 function selected_gallery_index(){
-    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item')
-    var button = gradioApp().querySelector('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item.\\!ring-2')
+    var buttons = all_gallery_buttons();
+    var button = selected_gallery_button();
 
     var result = -1
     buttons.forEach(function(v, i){ if(v==button) { result = i } })
@@ -18,14 +40,18 @@ function selected_gallery_index(){
 }
 
 function extract_image_from_gallery(gallery){
-    if(gallery.length == 1){
-        return [gallery[0]]
+    if (gallery.length == 0){
+        return [null];
+    }
+    if (gallery.length == 1){
+        return [gallery[0]];
     }
 
     index = selected_gallery_index()
 
     if (index < 0 || index >= gallery.length){
-        return [null]
+        // Use the first image in the gallery as the default
+        index = 0;
     }
 
     return [gallery[index]];
@@ -68,14 +94,14 @@ function switch_to_inpaint_sketch(){
     switch_to_img2img_tab(3);
     return args_to_array(arguments);
 }
-
-/* function switch_to_inpaint(){
+/*
+function switch_to_inpaint(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[2].click();
 
     return args_to_array(arguments);
 }
- */
+*/
 function switch_to_extras(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
 
@@ -85,8 +111,8 @@ function switch_to_extras(){
 function get_tab_index(tabId){
     var res = 0
 
-    gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){		
-        if(button.className.indexOf('bg-white') != -1)
+    gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
+        if(button.className.indexOf('selected') != -1)
             res = i
     })
 
@@ -140,7 +166,6 @@ function submit(){
     var id = randomId()
     requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
         showSubmitButtons('txt2img', true)
-
     })
 
     var res = create_submit_args(arguments)
@@ -215,14 +240,12 @@ function recalculate_prompts_img2img(){
 }
 
 function recalculate_prompts_inpaint(){
-	//console.log("img2img_prompt");
     recalculatePromptTokens('img2img_prompt')
     recalculatePromptTokens('img2img_neg_prompt')
     return args_to_array(arguments);
 }
 
-let selectedTabItemId = "tab_txt2img";
-
+let selectedTabItemId = "tab_txt2img";									   
 opts = {}
 onUiUpdate(function(){
 	if(Object.keys(opts).length != 0) return;
@@ -265,7 +288,7 @@ onUiUpdate(function(){
         }
 
         prompt.parentElement.insertBefore(counter, prompt)
-        counter.classList.add("token-counter")
+		counter.classList.add("token-counter")									  
         prompt.parentElement.style.position = "relative"
 
 		promptTokecountUpdateFuncs[id] = function(){ update_token_counter(id_button); }
@@ -287,13 +310,10 @@ onUiUpdate(function(){
             })
 			gradioApp().querySelectorAll('#settings > div > div > div').forEach(function(elem){
                 elem.style.maxHeight  = "none";
-            })		
+            })	
         }
     }
-	
-	
-	
-	/* 	
+/* 	
 	^ matches the start
 	* matches any position
 	$ matches the end
@@ -312,12 +332,12 @@ onUiUpdate(function(){
 		var offset = elem.offsetHeight - elem.clientHeight;
 		elem.addEventListener('input', function (e) {
 			e.target.style.minHeight = 'auto';
-			e.target.style.minHeight = e.target.scrollHeight + offset + 'px';
+			e.target.style.minHeight = e.target.scrollHeight + offset + 2 + 'px';
 		});
 		
 		elem.addEventListener('focus', function (e) {
 			e.target.style.minHeight = 'auto';
-			e.target.style.minHeight = e.target.scrollHeight + offset + 'px';
+			e.target.style.minHeight = e.target.scrollHeight + offset + 2 + 'px';
 		});
 	});
 	
@@ -414,12 +434,12 @@ onUiUpdate(function(){
 	})	
 	
 	function tabItemChanged(idx){
-		gradioApp().querySelectorAll('#tabs > div > button.bg-white, #nav_menu_header_tabs > button.bg-white').forEach(function (tab){
-			tab.classList.remove("bg-white");
+		gradioApp().querySelectorAll('#tabs > div > button.selected, #nav_menu_header_tabs > button.selected').forEach(function (tab){
+			tab.classList.remove("selected");
 		})
 		
 		gradioApp().querySelectorAll('#tabs > div > button:nth-child('+(idx+1)+'), #nav_menu_header_tabs > button:nth-child('+(idx+1)+')').forEach(function (tab){
-			tab.classList.add("bg-white");
+			tab.classList.add("selected");
 			
 		})
 		//gardio removes listeners and attributes from tab buttons we add them again here 
@@ -431,7 +451,32 @@ onUiUpdate(function(){
 			
 		})
 		
-		window.onUiHeaderTabUpdate();
+/* 		gradioApp().querySelectorAll('[id^="image_buttons_"] button').forEach(function (elem){
+			
+			if(elem.id == "txt2img_tab"){
+				elem.setAttribute("tab-id", 0);
+				elem.removeEventListener('click', navTabClicked);
+				elem.addEventListener('click', navTabClicked);
+			}else if(elem.id == "img2img_tab" || elem.id == "inpaint_tab"){
+				elem.setAttribute("tab-id", 1);
+				elem.removeEventListener('click', navTabClicked);
+				elem.addEventListener('click', navTabClicked);
+			}if(elem.id == "extras_tab"){
+				elem.setAttribute("tab-id", 2);
+				elem.removeEventListener('click', navTabClicked);
+				elem.addEventListener('click', navTabClicked);
+			}		
+		}) */
+		
+/* 		const pdiv = gradioApp().querySelector("#"+selectedTabItemId+" .progressDiv");
+		if(!pdiv && selectedTabItemId == "tab_txt2img"){			
+			showSubmitButtons('txt2img', true);
+		}else if(!pdiv && selectedTabItemId == "tab_img2img"){
+			showSubmitButtons('img2img', true);
+		} */
+
+
+		//window.onUiHeaderTabUpdate();
 		// also here the same issue
 		/*
 		gradioApp().querySelectorAll('[id^="image_buttons"] [id$="_tab"]').forEach(function (button, index){
@@ -451,6 +496,7 @@ onUiUpdate(function(){
 
 		netMenuVisibility();
 	}
+	
 	
 	// menu 
 	function disableScroll() {         
@@ -493,7 +539,7 @@ onUiUpdate(function(){
 		if(theme_menu != menu && theme_menu_open) theme_menu.click();
 	}
 	
-	// if we change to view other than 2img and if aside mode is selected close extra networks aside and hide the net menu icon
+	// if we change to other view other than 2img and if aside mode is selected close extra networks aside and hide the net menu icon
 	let net_container = gradioApp().querySelector('#txt2img_extra_networks_row');
 	let net_menu_open = false;
 	const net_menu = gradioApp().querySelector('#extra_networks_menu');
@@ -598,6 +644,36 @@ onUiUpdate(function(){
 	
 	//
 	
+		// extra networks nav menu
+	function toggleAccordion(e) {		
+		
+		//e.stopImmediatePropagation();
+		let accordion_content = e.currentTarget.parentElement.querySelector(".gap.svelte-vt1mxs");
+		
+		if(accordion_content){
+			e.preventDefault();
+			e.stopPropagation();
+			let accordion_icon = e.currentTarget.parentElement.querySelector(".label-wrap > .icon");
+			if(accordion_content.className.indexOf("hidden") != -1){
+				accordion_content.classList.remove("hidden");
+				accordion_icon.style.setProperty('transform', 'rotate(0deg)');
+				e.currentTarget.classList.add("hide");					
+			}else{
+				accordion_content.classList.add("hidden");
+				accordion_icon.style.setProperty('transform', 'rotate(90deg)');
+				e.currentTarget.classList.remove("hide");				
+			}
+		}else{			
+			let accordion_btn = e.currentTarget.parentElement.querySelector(".label-wrap");
+			e.currentTarget.classList.add("hide");
+			accordion_btn.click();			
+		}
+	}	
+   
+	gradioApp().querySelectorAll('.gradio-accordion > div.wrap').forEach((elem) => {
+		elem.addEventListener('click', toggleAccordion);
+	})
+	
 	
 	// additional ui styles 
 	let styleobj = {};
@@ -618,7 +694,7 @@ onUiUpdate(function(){
 	
 	// generated image fit contain - scale
 	function imageGeneratedFitMethod(value) {
-       styleobj.ui_view_fit = "[id$='2img_gallery'] div>img {object-fit:" + value + ";}"; 
+       styleobj.ui_view_fit = "[id$='2img_gallery'] div>img {object-fit:" + value + "!important;}"; 
 	}	
 	gradioApp().querySelector("#setting_ui_output_image_fit").addEventListener('click', function (e) {
 		if (e.target && e.target.matches("input[type='radio']")) {
@@ -630,7 +706,7 @@ onUiUpdate(function(){
 	
 	// livePreview fit contain - scale
 	function imagePreviewFitMethod(value) {
-       styleobj.ui_fit = ".livePreview img {object-fit:" + value + ";}"; 
+       styleobj.ui_fit = ".livePreview img {object-fit:" + value + "!important;}"; 
 	}	
 	gradioApp().querySelector("#setting_live_preview_image_fit").addEventListener('click', function (e) {
 		if (e.target && e.target.matches("input[type='radio']")) {
@@ -680,7 +756,7 @@ onUiUpdate(function(){
 	extra_networks_visibility(opts.extra_networks_default_visibility);
 	
 	function extra_networks_card_size(value) {
-       styleobj.extra_networks_card_size = ":host{--extra-networks-card-size:" + value + ";}";  
+       styleobj.extra_networks_card_size = ":root{--ae-extra-networks-card-size:" + value + ";}";  
 	}
 	gradioApp().querySelectorAll("#setting_extra_networks_cards_size input").forEach(function (elem){
 		elem.addEventListener('input', function (e) {		
@@ -691,7 +767,7 @@ onUiUpdate(function(){
 	extra_networks_card_size(opts.extra_networks_cards_size);
 	
 	function extra_networks_cards_visible_rows(value) {		
-       styleobj.extra_networks_cards_visible_rows = ":host{--extra-networks-visible-rows:" + value + ";}";
+       styleobj.extra_networks_cards_visible_rows = ":root{--ae-extra-networks-visible-rows:" + value + ";}";
 	}
 	gradioApp().querySelectorAll("#setting_extra_networks_cards_visible_rows input").forEach(function (elem){
 		elem.addEventListener('input', function (e) {		
@@ -775,11 +851,9 @@ onUiUpdate(function(){
 	function navigate2TabItem(idx){		
 		gradioApp().querySelectorAll('#tabs > div.tabitem').forEach(function (tabitem, index){			
 			if(idx == index){
-				tabitem.style.display = "block";
-				//tabitem.classList.add("wtf");
+				tabitem.style.display = "block";				
 			}else{
-				tabitem.style.display = "none";
-				//tabitem.classList.remove("wtf");
+				tabitem.style.display = "none";				
 			}			
 		})
 	}
@@ -803,10 +877,12 @@ onUiUpdate(function(){
 		if(setting_ui_header_tabs.value.indexOf(tabvalue) != -1){
 			headertabs[tabvalue] = true;
 			checked_header = "checked";		
-		}			
-		radio_hidden_html += '<label class="'+tabvalue.toLowerCase()+' gr-input-label flex items-center text-gray-700 text-sm space-x-2 border py-1.5 px-3 rounded-lg cursor-pointer bg-white shadow-sm checked:shadow-inner"><input type="checkbox" name="uiha" class="gr-check-radio gr-radio" '+checked_hidden+' value="'+elem.innerText+'"><span class="ml-2" title="">'+elem.innerText+'</span></label>';
-		radio_header_html += '<label class="'+tabvalue.toLowerCase()+' gr-input-label flex items-center text-gray-700 text-sm space-x-2 border py-1.5 px-3 rounded-lg cursor-pointer bg-white shadow-sm checked:shadow-inner"><input type="checkbox" name="uihb" class="gr-check-radio gr-radio" '+checked_header+' value="'+elem.innerText+'"><span class="ml-2" title="">'+elem.innerText+'</span></label>';
+		}		
+		radio_hidden_html += '<label class="'+tabvalue.toLowerCase()+' svelte-1qxcj04"><input type="checkbox" name="uiha" class="svelte-1qxcj04" '+checked_hidden+' value="'+elem.innerText+'"><span class="ml-2 svelte-1qxcj04">'+elem.innerText+'</span></label>';
 		
+		radio_header_html += '<label class="'+tabvalue.toLowerCase()+' svelte-1qxcj04"><input type="checkbox" name="uiha" class="svelte-1qxcj04" '+checked_header+' value="'+elem.innerText+'"><span class="ml-2 svelte-1qxcj04">'+elem.innerText+'</span></label>';
+	
+
 		tabitems[index].setAttribute("tab-item", index);
 		elem.setAttribute("tab-id", index);
 		
@@ -815,18 +891,17 @@ onUiUpdate(function(){
 		parent_header_tabs.append(clonetab);		
  		clonetab.addEventListener('click', navTabClicked);
 
-		
 	})
 	
 	let div = document.createElement("div");
 	div.id = "hidden_radio_tabs_container";
-	div.classList.add("flex", "flex-wrap", "gap-2");
+	div.classList.add("flex", "flex-wrap", "gap-2", "wrap", "svelte-1qxcj04");
 	div.innerHTML = radio_hidden_html;	
 	setting_ui_hidden_tabs.parentElement.appendChild(div);
 	
 	div = document.createElement("div");
 	div.id = "header_radio_tabs_container";
-	div.classList.add("flex", "flex-wrap", "gap-2");
+	div.classList.add("flex", "flex-wrap", "gap-2", "wrap", "svelte-1qxcj04");
 	div.innerHTML = radio_header_html;
 	setting_ui_header_tabs.parentElement.appendChild(div);
 	
@@ -848,11 +923,11 @@ onUiUpdate(function(){
 			updateOpStyles();
 		}
 	})
-	
+
 	tabsHiddenChange();
 	
 	gradioApp().querySelectorAll('[id^="image_buttons_"] button, #png_2img_results button').forEach(function (elem){
-
+		//console.log(opts.send_seed);
 		if(elem.id == "txt2img_tab"){
 			elem.setAttribute("tab-id", 0);
 			elem.addEventListener('click', navTabClicked);
@@ -883,6 +958,7 @@ onUiUpdate(function(){
 		})
 	})
 	
+
 	// add - remove quicksettings
 	const settings_submit = gradioApp().querySelector('#settings_submit');
 	const quick_parent = gradioApp().querySelector("#quicksettings_overflow_container");
@@ -942,7 +1018,7 @@ onUiUpdate(function(){
 
 	// input release component dispatcher
 	let active_clone_input = [];
-	let focus_input, last_focus_input;
+	let focus_input;
 
 	function ui_input_release_component(elem){
 
@@ -951,7 +1027,11 @@ onUiUpdate(function(){
 		//img2img_width
 		let parent = elem.parentElement;
 		let comp_parent = parent.parentElement.parentElement;		
-		if(comp_parent.id == "img2img_width" || comp_parent.id == "img2img_height" || comp_parent.className.indexOf("posex") != -1) return;
+		if( comp_parent.id == "img2img_width" || 
+		comp_parent.id == "img2img_height" || 
+		comp_parent.id.indexOf("--ae-") != -1 || 
+		comp_parent.id.indexOf("theme") != -1 || 
+		comp_parent.className.indexOf("posex") != -1) return;
 		
 		let clone_num = elem.cloneNode();
 		active_clone_input.push(clone_num);
@@ -973,10 +1053,6 @@ onUiUpdate(function(){
 			focus_input = clone_num;					
 		})
 		
-/* 		clone_num.addEventListener('blur', function (e) {			
-			focus_input = false;			
-		}) */
-
 		if(label){				
 			let comp_range = comp_parent.querySelector("input[type='range']");
 			let clone_range = comp_range.cloneNode();
@@ -987,17 +1063,16 @@ onUiUpdate(function(){
 			comp_range.parentElement.append(clone_range);				
 			comp_range.classList.add("hidden");
 			
- 			clone_range.addEventListener('input', function (e) {							
-				clone_num.value = e.target.value;
-			})		
+			clone_range.addEventListener('input', function (e) {								
+				clone_num.value = e.target.value;	
+			})
 			clone_range.addEventListener('change', function (e) {
 				elem.value = clone_range.value;
 				updateInput(elem);	
 			})				
 			clone_num.addEventListener('input', function (e) {								
 				clone_range.value = e.target.value;	
-			}) 
-			
+			})
 			const rect = clone_range.getBoundingClientRect();
 			const xoffset = (rect.left + window.scrollX);
 			clone_range.addEventListener('touchmove', function(e) {
@@ -1005,8 +1080,7 @@ onUiUpdate(function(){
 				let percent = parseInt(((e.touches[0].pageX - xoffset) / this.offsetWidth) * 10000) / 10000;				
 				clone_range.value = ( percent * (this.max - this.min)) + parseFloat(this.min);				
 				clone_num.value = clone_range.value;
-			});
-
+			});			
 		}				
 	}
 	function ui_input_focus_handler(e){
@@ -1049,11 +1123,9 @@ onUiUpdate(function(){
 	function ui_dispatch_input_release(value){	
 		if(value){
 			gradioApp().querySelector(".gradio-container").addEventListener('mouseover',  ui_input_release_handler);
-			//gradioApp().querySelector(".gradio-container").addEventListener('touchmove',  ui_input_release_handler);
 			gradioApp().querySelector(".gradio-container").addEventListener('mousedown',  ui_input_focus_handler);
 		}else{
 			gradioApp().querySelector(".gradio-container").removeEventListener('mouseover',  ui_input_release_handler);
-			//gradioApp().querySelector(".gradio-container").removeEventListener('touchmove',  ui_input_release_handler);
 			gradioApp().querySelector(".gradio-container").removeEventListener('mousedown',  ui_input_focus_handler);
 		}
 	}
@@ -1061,61 +1133,6 @@ onUiUpdate(function(){
 		ui_dispatch_input_release(e.target.checked);
 	})
 	ui_dispatch_input_release(opts.ui_dispatch_input_release);
-	
-	
-	// performant dispatch for gradio's range slider and input number fields
-	/* 	
-	function ui_performant_gradio_input_components(sel){
-		let selectors = sel.split(",");
-		selectors.push("#quicksettings_overflow_container", "#tab_txt2img", "#tab_img2img", "#tab_extras", "#tab_modelmerger", "#tab_ti");
-		selectors = selectors.filter(e => e);
-		for (let i = 0; i < selectors.length; i++) {
-			selectors[i] = selectors[i]+" input[type='number']";
-		}
-		let input_selectors = selectors.join(",");
-		
-		gradioApp().querySelectorAll(input_selectors).forEach(function (elem, index){
-			let parent = elem.parentElement;
-			let label = parent.querySelector("label");
-			
-			//console.log(elem.value);
-			
-			let clone_num = elem.cloneNode(true);
-			clone_num.id = "num_clone_"+index;
-			clone_num.value = elem.value;	
-			parent.append(clone_num);			
-			//elem.classList.add("hidden");
-			
-			clone_num.addEventListener('change', function (e) {			
-				elem.value = clone_num.value;
-				updateInput(elem);
-			})
-			
-
-			if(label){				
-				let comp_range = parent.parentElement.parentElement.querySelector("input[type='range']");
-				let clone_range = comp_range.cloneNode(true);
-				clone_range.id = comp_range.id+"_clone";
-				clone_range.value = comp_range.value;					
-				comp_range.parentElement.append(clone_range);				
-				//comp_range.classList.add("hidden");
-
-				clone_range.addEventListener('input', function (e) {								
-					clone_num.value = e.target.value;	
-				})
-				clone_range.addEventListener('change', function (e) {
-					elem.value = clone_range.value;
-					updateInput(elem);	
-				})				
-				clone_num.addEventListener('input', function (e) {								
-					clone_range.value = e.target.value;	
-				})								
-			}
-					
-		})
-	}	 
-	*/
-	//ui_performant_gradio_input_components(opts.ui_performant_gradio_input_components);
 	
 	// step ticks for performant input range
 	function ui_show_range_ticks(value, interactive){
@@ -1127,12 +1144,12 @@ onUiUpdate(function(){
 				let tsp = 'max(3px, calc('+spacing+'% - 2px))';
 				let fsp = 'max(4px, calc('+spacing+'% + 0px))';
 				var style = elem.style;
-				style.setProperty('--slider-bg-overlay', 'repeating-linear-gradient( 90deg, transparent, transparent '+tsp+', var(--input-border-color) '+tsp+', var(--input-border-color) '+fsp+' )');
+				style.setProperty('--ae-slider-bg-overlay', 'repeating-linear-gradient( 90deg, transparent, transparent '+tsp+', var(--ae-input-border-color) '+tsp+', var(--ae-input-border-color) '+fsp+' )');
 			})
 		}else if(interactive){
 			gradioApp().querySelectorAll("input[type='range']").forEach(function (elem){				
 				var style = elem.style;
-				style.setProperty('--slider-bg-overlay', 'transparent');
+				style.setProperty('--ae-slider-bg-overlay', 'transparent');
 			})
 		}
 	}
@@ -1154,10 +1171,11 @@ onUiUpdate(function(){
 		return false;
 	}
 	let sdCheckpointModels = [];
-	function getSdCheckpointModels(){
-		gradioApp().querySelectorAll("#quicksettings #setting_sd_model_checkpoint option").forEach(function (elem, i){
-			sdCheckpointModels[i] = elem.value;
-		})
+	function getSdCheckpointModels(){	
+		gradioApp().querySelectorAll("#txt2img_checkpoints_cards .card").forEach(function (elem, i){
+			sdCheckpointModels[i] = elem.getAttribute("onclick").split('"')[1];			
+		}) 
+	
 	}
 	getSdCheckpointModels();
 	
@@ -1187,8 +1205,8 @@ onUiUpdate(function(){
 				}	
 			}
 			if(checked_overrides.indexOf(token_name) != -1){				
-				token.querySelector(".token-remove").click();
-				gradioApp().querySelector("[id$='2img_override_settings']").classList.add("show");				
+				token.querySelector(".token-remove").click();				
+				gradioApp().querySelector("#"+selectedTabItemId+" [id$='2img_override_settings']").parentElement.classList.add("show");									
 			}else{
 				// maybe we add them again, for now we can select and add the removed tokens manually from the drop down
 			}			
@@ -1230,9 +1248,9 @@ onUiUpdate(function(){
 		
 		if(selectedTabItemId == "tab_txt2img"){
 			pnginfo.querySelector('#txt2img_tab').click();
-			//close generation info
-			gradioApp().querySelector('#txt2img_results > div:last-child > div:last-child > div:last-child').classList.add("!hidden");
-
+			//close generation info			
+			gradioApp().querySelector('#txt2img_results > div:last-child > div.gradio-accordion > div.hide')?.click();
+			
 			const img_src = pnginfo.querySelector('img');
 			const gallery_parent = gradioApp().querySelector('#txt2img_gallery_container');
 			const live_preview = gallery_parent.querySelector('.livePreview');
@@ -1247,44 +1265,48 @@ onUiUpdate(function(){
 		}else if(selectedTabItemId == "tab_img2img"){			
 			pnginfo.querySelector('#img2img_tab').click();
 			//close generation info
-			gradioApp().querySelector('#img2img_results > div:last-child > div:last-child > div:last-child').classList.add("!hidden");				
+			gradioApp().querySelector('#img2img_results > div:last-child > div.gradio-accordion > div.hide')?.click();				
 		}
 		
 	}
 	
 	function fetchPngInfoData(files){
-		const oldFetch = window.fetch;
-		window.fetch = async (input, options) => {
+		/* const oldFetch = window.fetch;
+			
+		window.fetch = async (input, options) => {			
 			const response = await oldFetch(input, options);
-			if( 'run/predict/' === input ) {	
+			if( 'run/predict/' === input ) {			
 				if(response.ok){									
-					window.fetch = oldFetch;
-					setTimeout(function() { forwardFromPngInfo(); }, 500);
+					window.fetch = oldFetch;										
 				}
 			}
 			return response;
-		}; 
+		};  */
 		
 		const fileInput = gradioApp().querySelector('#pnginfo_image input[type="file"]');		 
 		if(fileInput.files != files){					
 			fileInput.files = files;
 			fileInput.dispatchEvent(new Event('change'));			
-		}		
+		}
+		
+		setTimeout(function() { forwardFromPngInfo(); }, 500);
+			
 	}
 
-	function drop2View(e){					
+	function drop2View(e){	
 		e.stopPropagation();
 		e.preventDefault();
 		const files = e.dataTransfer.files;
-		if ( ! isValidImageList( files ) ) {
+		
+		if (!isValidImageList(files)) {
 			return;
 		}
 		const data_image = gradioApp().querySelector('#pnginfo_image [data-testid="image"]');		
-		data_image.querySelector('.modify-upload button + button, .touch-none + div button + button')?.click();	
+		data_image.querySelector('[aria-label="Clear"]')?.click();			
 		setTimeout(function() { fetchPngInfoData(files); }, 1000);
 	}
 			
-	gradioApp().querySelectorAll('[id$="2img_results"]').forEach((elem) => {		
+	gradioApp().querySelectorAll('[id$="2img_results"]').forEach((elem) => {	
 		elem.addEventListener('drop', drop2View);
 	})
 
@@ -1444,7 +1466,6 @@ onUiUpdate(function(){
 	
 	
 	/* anapnoe ui end */	
-
 })
 
 onOptionsChanged(function(){
@@ -1486,10 +1507,9 @@ function update_token_counter(button_id) {
 }
 
 function restart_reload(){
-	
-	let bg_color = getComputedStyle(gradioApp().querySelector(".container")).getPropertyValue('--main-bg-color');
-	let primary_color = getComputedStyle(gradioApp().querySelector(".icon-info")).getPropertyValue('--primary-color');
-	let panel_color = getComputedStyle(gradioApp().querySelector(".gr-box")).getPropertyValue('--panel-bg-color');
+	let bg_color = window.getComputedStyle(gradioApp().querySelector("#header-top")).getPropertyValue('--ae-main-bg-color');
+	let primary_color = window.getComputedStyle(gradioApp().querySelector(".icon-info")).getPropertyValue('--ae-primary-color');
+	let panel_color = window.getComputedStyle(gradioApp().querySelector(".gradio-box")).getPropertyValue('--ae-panel-bg-color');
 	
 	localStorage.setItem("bg_color", bg_color);
 	localStorage.setItem("primary_color", primary_color);
@@ -1530,8 +1550,6 @@ function selectCheckpoint(name){
     desiredCheckpointName = name;
     gradioApp().getElementById('change_checkpoint').click()
 }
-
-
 document.addEventListener('readystatechange', function (e) {		
 	document.body.style.display = "none";
 	if(localStorage.hasOwnProperty('bg_color')){
@@ -1541,10 +1559,9 @@ document.addEventListener('readystatechange', function (e) {
 })
 
 window.onload = function() {
-	//document.getElementsByTagName("html")[0].style.backgroundColor = localStorage.getItem("bg_color");
-	//document.body.style.backgroundColor = localStorage.getItem("bg_color");
-
-	//document.body.style.display = "none";	
-	setTimeout(function(){document.body.style.display = "block";},100)
+	document.getElementsByTagName("html")[0].style.backgroundColor = localStorage.getItem("bg_color");
+	document.body.style.backgroundColor = localStorage.getItem("bg_color");
+	document.body.style.display = "none";	
+	setTimeout(function(){document.body.style.display = "block";},1000)
 
 }

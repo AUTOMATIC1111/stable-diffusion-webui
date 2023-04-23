@@ -33,8 +33,8 @@ def on_ui_tabs():
                        
         #with gr.Accordion(label="Debug View", open=True):
         with gr.Row(elem_id="theme_hidden"):
-            vars_text = gr.Textbox(label="Vars", elem_id="theme_vars", show_label=True, lines=7, interactive=False, visible=False)            
-            css_text = gr.Textbox(label="Css", elem_id="theme_css", show_label=True, lines=7, interactive=False, visible=False)               
+            vars_text = gr.Textbox(label="Vars", elem_id="theme_vars", show_label=True, lines=7, interactive=False, visible=True)            
+            css_text = gr.Textbox(label="Css", elem_id="theme_css", show_label=True, lines=7, interactive=False, visible=True)               
             #result_text = gr.Text(elem_id="theme_result", interactive=False, visible=False)
         with gr.Column(elem_id="theme_overflow_container"):   
             with gr.Accordion(label="Theme Color adjustments", open=True):   
@@ -51,69 +51,69 @@ def on_ui_tabs():
                 with gr.Column():
                     with gr.Column():
                         with gr.Accordion(label="Main", open=True):                   
-                            gr.ColorPicker(elem_id="--main-bg-color", interactive=True, label="Background color")
-                            gr.ColorPicker(elem_id="--primary-color", label="Primary color")
+                            gr.ColorPicker(elem_id="--ae-main-bg-color", interactive=True, label="Background color")
+                            gr.ColorPicker(elem_id="--ae-primary-color", label="Primary color")
                                                                       
                         with gr.Accordion(label="Focus", open=True):    
-                            gr.ColorPicker(elem_id="--textarea-focus-color", label="Textarea color")
-                            gr.ColorPicker(elem_id="--input-focus-color", label="Input color")
+                            gr.ColorPicker(elem_id="--ae-textarea-focus-color", label="Textarea color")
+                            gr.ColorPicker(elem_id="--ae-input-focus-color", label="Input color")
 
                         with gr.Accordion(label="Spacing", open=True):
-                            gr.Slider(elem_id="--outside-gap-size", label='Gap size', minimum=1, maximum=16, step=1, interactive=True)
-                            gr.Slider(elem_id="--inside-padding-size", label='Padding size', minimum=1, maximum=16, step=1, interactive=True)   
+                            gr.Slider(elem_id="--ae-outside-gap-size", label='Gap size', minimum=1, maximum=16, step=1, interactive=True)
+                            gr.Slider(elem_id="--ae-inside-padding-size", label='Padding size', minimum=1, maximum=16, step=1, interactive=True)   
                         
-                        with gr.Accordion(label="Spacing (Modile)", open=True):
-                            gr.Slider(elem_id="--mobile-outside-gap-size", label='Mobile Gap size', minimum=1, maximum=16, step=1, interactive=True)
-                            gr.Slider(elem_id="--mobile-inside-padding-size", label='Mobile Padding size', minimum=1, maximum=16, step=1, interactive=True)                            
+                        with gr.Accordion(label="Spacing (Mobile)", open=True):
+                            gr.Slider(elem_id="--ae-mobile-outside-gap-size", label='Mobile Gap size', minimum=1, maximum=16, step=1, interactive=True)
+                            gr.Slider(elem_id="--ae-mobile-inside-padding-size", label='Mobile Padding size', minimum=1, maximum=16, step=1, interactive=True)                            
                                         
                         with gr.Accordion(label="Panel", open=True):                   
-                            gr.ColorPicker(elem_id="--label-color", label="Label color")
-                            gr.ColorPicker(elem_id="--frame-bg-color", label="Frame Background color")
-                            gr.ColorPicker(elem_id="--panel-bg-color", label="Background color")
-                            gr.ColorPicker(elem_id="--panel-border-color", label="Border color")
-                            gr.Slider(elem_id="--panel-border-radius", label='Border radius', minimum=0, maximum=16, step=1)
+                            gr.ColorPicker(elem_id="--ae-label-color", label="Label color")
+                            gr.ColorPicker(elem_id="--ae-frame-bg-color", label="Frame Background color")
+                            gr.ColorPicker(elem_id="--ae-panel-bg-color", label="Background color")
+                            gr.ColorPicker(elem_id="--ae-panel-border-color", label="Border color")
+                            gr.Slider(elem_id="--ae-panel-border-radius", label='Border radius', minimum=0, maximum=16, step=1)
                             
-                            gr.ColorPicker(elem_id="--input-color", label="Input text color")
-                            gr.ColorPicker(elem_id="--input-bg-color", label="Input background color")
-                            gr.ColorPicker(elem_id="--input-border-color", label="Input border color")
+                            gr.ColorPicker(elem_id="--ae-input-color", label="Input text color")
+                            gr.ColorPicker(elem_id="--ae-input-bg-color", label="Input background color")
+                            gr.ColorPicker(elem_id="--ae-input-border-color", label="Input border color")
                 with gr.Column(): 
-                    with gr.Row(elem_id="theme_sub-group-collapse"): 
+                    with gr.Row(elem_id="theme_sub-panel"): 
                          
                         with gr.Accordion(label="SubPanel", open=True):               
-                            gr.ColorPicker(elem_id="--subgroup-bg-color", label="Subgoup background color")                       
-                            #gr.ColorPicker(elem_id="--subgroup-label-color", label="Label color", value="#000000")                   
-                            gr.ColorPicker(elem_id="--subpanel-bg-color", label="Background color")
-                            gr.ColorPicker(elem_id="--subpanel-border-color", label="Border color")
-                            gr.Slider(elem_id="--subpanel-border-radius", label='Border radius', minimum=0, maximum=16, step=1)
+                            gr.ColorPicker(elem_id="--ae-subgroup-bg-color", label="Subgoup background color")                       
+                            #gr.ColorPicker(elem_id="--ae-subgroup-label-color", label="Label color", value="#000000")                   
+                            gr.ColorPicker(elem_id="--ae-subpanel-bg-color", label="Background color")
+                            gr.ColorPicker(elem_id="--ae-subpanel-border-color", label="Border color")
+                            gr.Slider(elem_id="--ae-subpanel-border-radius", label='Border radius', minimum=0, maximum=16, step=1)
                             
-                            gr.ColorPicker(elem_id="--subgroup-input-color", label="Input text color")
-                            gr.ColorPicker(elem_id="--subgroup-input-bg-color", label="Input background color")
-                            gr.ColorPicker(elem_id="--subgroup-input-border-color", label="Input border color")
+                            gr.ColorPicker(elem_id="--ae-subgroup-input-color", label="Input text color")
+                            gr.ColorPicker(elem_id="--ae-subgroup-input-bg-color", label="Input background color")
+                            gr.ColorPicker(elem_id="--ae-subgroup-input-border-color", label="Input border color")
                             
                     with gr.Row(): 
                         with gr.Column():
                             with gr.Accordion(label="Navigation menu", open=True):
-                                gr.ColorPicker(elem_id="--nav-bg-color", label="Background color")
-                                gr.ColorPicker(elem_id="--nav-color", label="Text color")
-                                gr.ColorPicker(elem_id="--nav-hover-color", label="Hover color")
+                                gr.ColorPicker(elem_id="--ae-nav-bg-color", label="Background color")
+                                gr.ColorPicker(elem_id="--ae-nav-color", label="Text color")
+                                gr.ColorPicker(elem_id="--ae-nav-hover-color", label="Hover color")
                                 
                             with gr.Accordion(label="Icon", open=True):
-                                gr.ColorPicker(elem_id="--icon-color", label="Text color")
-                                gr.ColorPicker(elem_id="--icon-hover-color", label="Hover color")  
+                                gr.ColorPicker(elem_id="--ae-icon-color", label="Color")
+                                gr.ColorPicker(elem_id="--ae-icon-hover-color", label="Hover color")  
                                 
                             with gr.Accordion(label="Other", open=True):    
-                                gr.ColorPicker(elem_id="--text-color", label="Text color")
-                                gr.ColorPicker(elem_id="--placeholder-color", label="Placeholder color")
-                                gr.ColorPicker(elem_id="--cancel-color", label="Cancel/Interrupt color")
+                                gr.ColorPicker(elem_id="--ae-text-color", label="Text color")
+                                gr.ColorPicker(elem_id="--ae-placeholder-color", label="Placeholder color")
+                                gr.ColorPicker(elem_id="--ae-cancel-color", label="Cancel/Interrupt color")
                                 
                             with gr.Accordion(label="Modal", open=True):    
-                                gr.ColorPicker(elem_id="--modal-bg-color", label="Background color")
-                                gr.ColorPicker(elem_id="--modal-icon-color", label="Icon color")
+                                gr.ColorPicker(elem_id="--ae-modal-bg-color", label="Background color")
+                                gr.ColorPicker(elem_id="--ae-modal-icon-color", label="Icon color")
                           
 
 
         def save_theme( vars_text, css_text, filename):           
-            style_data= ":host{" + vars_text + "}" + css_text          
+            style_data= ":root{" + vars_text + "}" + css_text          
             with open(os.path.join(themes_folder, f"{filename}.css"), 'w', encoding="utf-8") as file:                
                 file.write(vars_text)
                 file.close()

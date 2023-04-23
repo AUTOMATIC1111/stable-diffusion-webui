@@ -1,7 +1,7 @@
 #theme_menu
 {
     z-index: 9999;
-    background-color: var(--input-bg-color);
+    background-color: var(--ae-input-bg-color);
     position: relative;
     width: 38px;
     height: 38px;
@@ -18,9 +18,9 @@
     display: inline-block;
     -webkit-mask-size: cover;
     mask-size: cover;
-    background-color: var(--icon-color);
-    width: var(--icon-size);
-    height: var(--icon-size);
+    background-color: var(--ae-icon-color);
+    width: var(--ae-icon-size);
+    height: var(--ae-icon-size);
 	-webkit-mask: url(./file=html/svg/contrast-drop-2-line.svg) no-repeat 50% 50%;
     mask: url(./file=html/svg/contrast-drop-2-line.svg) no-repeat 50% 50%;
     cursor: pointer;
@@ -30,20 +30,19 @@
     transform: translate(-50%, -50%) scale(1.0);
 }
 
-#theme_menu.fixed,
-#theme_menu:hover
-{
-	background-color: var(--primary-color);
+#theme_menu.fixed, #theme_menu:hover {
+    background-color: var(--ae-icon-color);
 }
+
 #theme_menu.fixed::before,
 #theme_menu:hover::before
 {
-	background-color: var(--main-bg-color);
+	background-color: var(--ae-icon-hover-color);
 }
 
 #theme_overflow_container{
 	overflow-y: auto;
-	height: calc(100vh - var(--top-header-height) - ( var(--outside-gap-size) * 2 ) - ( var(--inside-padding-size) * 4 ) - 96px );
+	height: calc(100vh - var(--ae-top-header-height) - ( var(--ae-outside-gap-size) * 2 ) - ( var(--ae-inside-padding-size) * 4 ) - 96px );
 }
 
 #tab_ui_theme.open
@@ -59,17 +58,18 @@
 #tab_ui_theme.aside
 {
 	position: fixed;
-    top: var(--top-header-height);
+    top: var(--ae-top-header-height);
     width: 90%;
     right: 0;
-    height: calc(100% - var(--top-header-height));
+    height: calc(100% - var(--ae-top-header-height));
     max-width: 480px;
     z-index: 9999;
 	transform: translateX(100%);
 	transition: all 0.25s ease 0s;
     box-shadow: rgba(0,0,0,0) -30px 0 30px -30px;
-	padding: calc(1rem - var(--outside-gap-size));
-	background-color: var(--main-bg-color) !important;
+	padding: calc(1rem - var(--ae-outside-gap-size));
+	background-color: var(--ae-main-bg-color) !important;
+	
 }
 #tab_ui_theme.aside.open
 {
@@ -106,5 +106,9 @@
 
 #tab_ui_theme > div{
 	padding:16px !important;
+	padding-top:0!important;
 }
 
+#ui_theme_hsv + button{
+	min-width:unset;
+}

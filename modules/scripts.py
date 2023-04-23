@@ -239,7 +239,15 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    for scriptfile in sorted(scripts_list):
+    def orderby(basedir):
+        # 1st webui, 2nd extensions-builtin, 3rd extensions
+        priority = {os.path.join(paths.script_path, "extensions-builtin"):1, paths.script_path:0}
+        for key in priority:
+            if basedir.startswith(key):
+                return priority[key]
+        return 9999
+
+    for scriptfile in sorted(scripts_list, key=lambda x: [orderby(x.basedir), x]):
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path
@@ -332,7 +340,7 @@ class ScriptRunner:
             script.args_to = len(inputs)
 
         for script in self.alwayson_scripts:
-            with gr.Group() as group:
+            with gr.Group(elem_classes="script-alwayson-group") as group:
                 create_script_ui(script, inputs, inputs_alwayson)
 
             script.group = group
@@ -341,7 +349,7 @@ class ScriptRunner:
         inputs[0] = dropdown
 
         for script in self.selectable_scripts:
-            with gr.Group(visible=False) as group:
+            with gr.Group(visible=False, elem_classes="script-group") as group:
                 create_script_ui(script, inputs, inputs_alwayson)
 
             script.group = group
@@ -513,6 +521,18 @@ def reload_scripts():
     scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
 
 
+def add_classes_to_gradio_component(comp):
+    """
+    this adds gradio-* to the component for css styling (ie gradio-button to gr.Button), as well as some others
+    """
+
+    comp.elem_classes = ["gradio-" + comp.get_block_name(), *(comp.elem_classes or [])]
+
+    if getattr(comp, 'multiselect', False):
+        comp.elem_classes.append('multiselect')
+
+
+
 def IOComponent_init(self, *args, **kwargs):
     if scripts_current is not None:
         scripts_current.before_component(self, **kwargs)
@@ -520,6 +540,8 @@ def IOComponent_init(self, *args, **kwargs):
     script_callbacks.before_component_callback(self, **kwargs)
 
     res = original_IOComponent_init(self, *args, **kwargs)
+
+    add_classes_to_gradio_component(self)
 
     script_callbacks.after_component_callback(self, **kwargs)
 
@@ -531,3 +553,15 @@ def IOComponent_init(self, *args, **kwargs):
 
 original_IOComponent_init = gr.components.IOComponent.__init__
 gr.components.IOComponent.__init__ = IOComponent_init
+
+
+def BlockContext_init(self, *args, **kwargs):
+    res = original_BlockContext_init(self, *args, **kwargs)
+
+    add_classes_to_gradio_component(self)
+
+    return res
+
+
+original_BlockContext_init = gr.blocks.BlockContext.__init__
+gr.blocks.BlockContext.__init__ = BlockContext_init

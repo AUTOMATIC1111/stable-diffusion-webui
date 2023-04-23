@@ -1,6 +1,6 @@
 function keyupEditAttention(event){
 	let target = event.originalTarget || event.composedPath()[0];
-	if (!target.matches("[id*='_toprow'] textarea.gr-text-input[placeholder]")) return;
+	if (! target.matches("[id*='_toprow'] [id*='_prompt'] textarea")) return;
 	if (! (event.metaKey || event.ctrlKey)) return;
 
 	let isPlus = event.key == "ArrowUp"

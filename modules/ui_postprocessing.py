@@ -2,7 +2,6 @@ import gradio as gr
 from modules import scripts_postprocessing, scripts, shared, gfpgan_model, codeformer_model, ui_common, postprocessing, call_queue
 import modules.generation_parameters_copypaste as parameters_copypaste
 
-
 def create_ui():
     tab_index = gr.State(value=0)
     gr.Row(elem_id="extras_2img_prompt_image", visible=False)
@@ -27,7 +26,6 @@ def create_ui():
                             show_extras_results = gr.Checkbox(label='Show result images', value=True, elem_id="extras_show_extras_results")
 
                 script_inputs = scripts.scripts_postproc.setup_ui()
-        
 
     tab_single.select(fn=lambda: 0, inputs=[], outputs=[tab_index])
     tab_batch.select(fn=lambda: 1, inputs=[], outputs=[tab_index])

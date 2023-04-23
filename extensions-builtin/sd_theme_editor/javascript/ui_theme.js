@@ -177,8 +177,8 @@ function offsetColorsHSV(ohsl){
 	isColorsInv = false;
 	
 	const preview_styles = gradioApp().querySelector('#preview-styles');
-	preview_styles.innerHTML = ':host {'+ inner_styles +'}';
-	preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
+	preview_styles.innerHTML = ':root {'+ inner_styles +'}';
+	preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:root{--ae-outside-gap-size: var(--ae-mobile-outside-gap-size);--ae-inside-padding-size: var(--ae-mobile-inside-padding-size);}}';
 
 	
 	const vars_textarea = gradioApp().querySelector('#theme_vars textarea');
@@ -216,15 +216,15 @@ function updateTheme(vars){
 	const preview_styles = gradioApp().querySelector('#preview-styles');
 	
 	if(preview_styles){
-		preview_styles.innerHTML = ':host {'+ inner_styles +'}';
-		preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
+		preview_styles.innerHTML = ':root {'+ inner_styles +'}';
+		preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:root{--ae-outside-gap-size: var(--ae-mobile-outside-gap-size);--ae-inside-padding-size: var(--ae-mobile-inside-padding-size);}}';
 	}else{
 		
 		const r = gradioApp();		
 		const style = document.createElement('style');
 		style.id="preview-styles";
-		style.innerHTML = ':host {'+ inner_styles +'}';
-		style.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
+		style.innerHTML = ':root {'+ inner_styles +'}';
+		style.innerHTML +='@media only screen and (max-width: 860px) {:root{--ae-outside-gap-size: var(--ae-mobile-outside-gap-size);--ae-inside-padding-size: var(--ae-mobile-inside-padding-size);}}';
 		r.appendChild(style);
 	}
 	
@@ -246,11 +246,17 @@ function updateTheme(vars){
 
 }
 
-
+function applyTheme(){
+	console.log("apply");
+}
 
 function initTheme() { 
 
-	const current_style = gradioApp().querySelector('style');
+
+	const current_style = gradioApp().querySelector('.gradio-container > style');
+	//console.log(current_style);
+	//const head = document.head;		
+	//head.appendChild(current_style);
 
 	const css_styles = current_style.innerHTML.split("/*BREAKPOINT_CSS_CONTENT*/");
 	let init_css_vars = css_styles[0].split("}")[0].split("{")[1];
@@ -282,6 +288,7 @@ function initTheme() {
 	let intervalChange;
 
 
+
 	gradioApp().querySelectorAll('#ui_theme_settings input').forEach((elem) => {
 		
 		elem.addEventListener("input", function(e) {
@@ -309,7 +316,7 @@ function initTheme() {
 			
 			//console.log(styleobj);
 			
-
+				
 			if(intervalChange != null) clearInterval(intervalChange);
 			intervalChange = setTimeout(() => {
 				let inner_styles = "";
@@ -319,8 +326,8 @@ function initTheme() {
 				}
 				
 				vars = inner_styles.split(";");			
-				preview_styles.innerHTML = ':host {'+ inner_styles +'}';
-				preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:host{--outside-gap-size: var(--mobile-outside-gap-size);--inside-padding-size: var(--mobile-inside-padding-size);}}';
+				preview_styles.innerHTML = ':root {'+ inner_styles +'}';
+				preview_styles.innerHTML +='@media only screen and (max-width: 860px) {:root{--ae-outside-gap-size: var(--ae-mobile-outside-gap-size);--ae-inside-padding-size: var(--ae-mobile-inside-padding-size);}}';
 
 				vars_textarea.value = inner_styles;			
 				const vEvent = new Event("input");
@@ -328,7 +335,7 @@ function initTheme() {
 				vars_textarea.dispatchEvent(vEvent);
 				
 				offsetColorsHSV(hsloffset);
-			}, 500)
+			}, 1000)
 			
 		})
 	})
@@ -373,17 +380,20 @@ function initTheme() {
 		}
 		
 	}
+
 	
-	const drop_down = gradioApp().getElementById('themes_drop_down');	
-	drop_down.addEventListener("change", function(e) {
+	
+	const drop_down = gradioApp().querySelector('#themes_drop_down');	
+	drop_down.addEventListener("click", function(e) {
 		if(intervalCheck != null) clearInterval(intervalCheck);
 		intervalCheck = setInterval(dropDownOnChange, 100);
+		console.log("ok");
 	})
 	
 	let hsloffset = [0,0,0];
 	
 	const hue = gradioApp().querySelectorAll('#theme_hue input').forEach((elem) => {		
-		elem.addEventListener("input", function(e) {
+		elem.addEventListener("change", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
 			hsloffset[0] = e.currentTarget.value;
@@ -392,7 +402,7 @@ function initTheme() {
 	})
 	
 	const sat = gradioApp().querySelectorAll('#theme_sat input').forEach((elem) => {		
-		elem.addEventListener("input", function(e) {
+		elem.addEventListener("change", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
 			hsloffset[1] = e.currentTarget.value;
@@ -401,7 +411,7 @@ function initTheme() {
 	})
 	
 	const brt = gradioApp().querySelectorAll('#theme_brt input').forEach((elem) => {		
-		elem.addEventListener("input", function(e) {
+		elem.addEventListener("change", function(e) {
 			e.preventDefault();
 			e.stopPropagation();
 			hsloffset[2] = e.currentTarget.value;

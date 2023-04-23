@@ -1,4 +1,4 @@
-# Stable Diffusion web UI-UX
+# Stable Diffusion web UI-UX 
 Not just a browser interface based on Gradio library for Stable Diffusion.
 A pixel perfect design, mobile friendly, customizable interface that adds accessibility, ease of use and extended functionallity to the stable diffusion web ui.
 This project is hoping to merge with the main branch at some point in the future.
@@ -6,9 +6,8 @@ Unfortunately this is going to take some time as the main author of the project 
 It is unsure how many of these changes will make it to the main branch  
 Until then you can use this repo enjoy!
 
-I will not upgrade to an unstable release from the master until major issues are resolved.
-You can find the latest experimental version in the dev branch.
-I will do my best to keep it up to date
+This is the latest and greatest experimental version please don't submit bugs for this release if it doesn't work for you use the stable release from master branch
+
 
 Default theme
 

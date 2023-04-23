@@ -17,22 +17,24 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
     def ui(self):
         selected_tab = gr.State(value=0)
 
-        with gr.Tabs(elem_id="extras_resize_mode"):
-            with gr.TabItem('Scale by', elem_id="extras_scale_by_tab") as tab_scale_by:
-                upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
+        with gr.Column():
+            with FormRow():
+                with gr.Tabs(elem_id="extras_resize_mode"):
+                    with gr.TabItem('Scale by', elem_id="extras_scale_by_tab") as tab_scale_by:
+                        upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
 
-            with gr.TabItem('Scale to', elem_id="extras_scale_to_tab") as tab_scale_to:
-                with FormRow():
-                    upscaling_resize_w = gr.Number(label="Width", value=512, precision=0, elem_id="extras_upscaling_resize_w")
-                    upscaling_resize_h = gr.Number(label="Height", value=512, precision=0, elem_id="extras_upscaling_resize_h")
-                    upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
+                    with gr.TabItem('Scale to', elem_id="extras_scale_to_tab") as tab_scale_to:
+                        with FormRow():
+                            upscaling_resize_w = gr.Number(label="Width", value=512, precision=0, elem_id="extras_upscaling_resize_w")
+                            upscaling_resize_h = gr.Number(label="Height", value=512, precision=0, elem_id="extras_upscaling_resize_h")
+                            upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
 
-        with FormRow():
-            extras_upscaler_1 = gr.Dropdown(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
+            with FormRow():
+                extras_upscaler_1 = gr.Dropdown(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
 
-        with FormRow():
-            extras_upscaler_2 = gr.Dropdown(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
-            extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=0.0, elem_id="extras_upscaler_2_visibility")
+            with FormRow():
+                extras_upscaler_2 = gr.Dropdown(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
+                extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=0.0, elem_id="extras_upscaler_2_visibility")
 
         tab_scale_by.select(fn=lambda: 0, inputs=[], outputs=[selected_tab])
         tab_scale_to.select(fn=lambda: 1, inputs=[], outputs=[selected_tab])

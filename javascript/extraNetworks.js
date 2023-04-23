@@ -21,13 +21,13 @@ function setupExtraNetworksForTab(tabname){
 		search.value = "";
 		updateInput(search);
 	})
-
-    search.addEventListener("input", function(evt){
+	
+	search.addEventListener("input", function(evt){
         searchTerm = search.value.toLowerCase()
 
         gradioApp().querySelectorAll('#'+tabname+'_extra_tabs div.card').forEach(function(elem){
-            text = elem.querySelector('.name').textContent.toLowerCase() + " " + elem.querySelector('.search_term').textContent.toLowerCase();
-            elem.parentElement.style.display = text.indexOf(searchTerm) == -1 ? "none" : "";
+            text = elem.querySelector('.name').textContent.toLowerCase() + " " + elem.querySelector('.search_term').textContent.toLowerCase()
+            elem.parentElement.style.display = text.indexOf(searchTerm) == -1 ? "none" : ""
         })
     });
 }
@@ -110,7 +110,9 @@ function saveCardPreview(event, tabname, filename){
 function extraNetworksSearchButton(tabs_id, event){
     searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea')
     button = event.target
-    text = button.classList.contains("search-all") ? "" : button.textContent.trim()
+    text = button.classList.contains("search-all") ? "" : button.textContent.trim()	
+	//text = event.target.selectedIndex == 0 ? "" : event.target.options[event.target.selectedIndex].text;
+
     searchTextarea.value = text
     updateInput(searchTextarea)
 }
@@ -149,4 +151,42 @@ function extraNetworksShowMetadata(text){
     elem.textContent = text;
 
     popup(elem);
+}
+
+function requestGet(url, data, handler, errorHandler){
+    var xhr = new XMLHttpRequest();
+    var args = Object.keys(data).map(function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]) }).join('&')
+    xhr.open("GET", url + "?" + args, true);
+
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var js = JSON.parse(xhr.responseText);
+                    handler(js)
+                } catch (error) {
+                    console.error(error);
+                    errorHandler()
+                }
+            } else{
+                errorHandler()
+            }
+        }
+    };
+    var js = JSON.stringify(data);
+    xhr.send(js);
+}
+
+function extraNetworksRequestMetadata(event, extraPage, cardName){
+    showError = function(){ extraNetworksShowMetadata("there was an error getting metadata"); }
+
+    requestGet("./sd_extra_networks/metadata", {"page": extraPage, "item": cardName}, function(data){
+        if(data && data.metadata){
+            extraNetworksShowMetadata(data.metadata)
+        } else{
+            showError()
+        }
+    }, showError)
+
+    event.stopPropagation()
 }
