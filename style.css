@@ -1613,11 +1613,14 @@ button.tool.secondary:hover,
 .gradio-tabs{
 	background-color: var(--ae-main-bg-color);
     padding: var(--ae-inside-padding-size);
+	border-radius: var(--ae-panel-border-radius);
 }
 .gradio-accordion .gradio-tabs{	
     padding: 0;
 }
-
+[id$="2img_res_switch_btn"]{
+	margin:-1px !important;
+}
 /***************************/
 /* Generate Interrupt Skip */
 /***************************/
