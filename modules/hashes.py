@@ -7,22 +7,24 @@ import filelock
 
 from modules import shared
 from modules.paths import data_path
-from datetime import datetime
 from tools.mysql import get_mysql_cli, MySQLClient
 
 cache_filename = os.path.join(data_path, "cache.json")
 cache_data = None
+is_worker = shared.cmd_opts.worker
 
 
 def dump_cache(title, sha256):
     with filelock.FileLock(cache_filename+".lock"):
         with open(cache_filename, "w", encoding="utf8") as file:
             json.dump(cache_data, file, indent=4)
-
+    # worker 模式不需要存
+    if is_worker:
+        return
     cli = get_mysql_cli()
 
     def write_model_hash(mysql_cli: MySQLClient):
-        name, _ = os.path.splitext(os.path.basename(title))
+        name, _ = os.path.basename(title)
         try:
             mysql_cli.execute_noquery_cmd('''
                 CREATE TABLE IF NOT EXISTS `model` (
@@ -95,8 +97,13 @@ def sha256_from_cache(filename, title):
             cli = get_mysql_cli()
             if cli:
                 try:
-                    name, _ = os.path.splitext(os.path.basename(title))
-                    r = cli.query("SELECT hash FROM model WHERE name=%s", name)
+                    if is_worker:
+                        # OSS key 文件名就是hash
+                        hash, _ = os.path.splitext(os.path.basename(title))
+                        return hash
+                    else:
+                        name, _ = os.path.splitext(os.path.basename(title))
+                        r = cli.query("SELECT hash FROM model WHERE name=%s LIMIT 1", name)
                     if r:
                         print(f"query cache from mysql:{r['hash']}")
                         return r.get('hash')

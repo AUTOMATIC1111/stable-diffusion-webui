@@ -19,23 +19,28 @@ class AlwaysonScriptArgsFormatter:
         return alwayson_scripts
 
 
-formatters = {}
+formatters = {
+
+}
 
 
 def init_formatters():
-    for cls in find_classes('handlers'):
+    for cls in find_classes('handlers.extension'):
         if issubclass(cls, AlwaysonScriptArgsFormatter):
             ins = cls()
-            if not ins.name():
+            name = ins.name()
+            print(f"load {name} formatter")
+            if not ins.name() or name in formatters:
                 continue
-
+            print(f"add {name} formatter")
             formatters[ins.name()] = ins.format
 
 
 def format_alwayson_script_args(name, is_img2img, args):
     if not formatters:
         init_formatters()
-    formatter = formatters.get(name)
-    if not formatter:
+
+    format = formatters.get(name)
+    if not format:
         return args
-    return formatter(is_img2img, args)
+    return format(is_img2img, args)

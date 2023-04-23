@@ -89,6 +89,7 @@ class Task(UserDict):
 class TaskType(IntEnum):
     Txt2Image = 1
     Image2Image = 2
+    Extra = 3
 
 
 class TaskStatus(IntEnum):

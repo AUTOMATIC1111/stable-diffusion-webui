@@ -20,7 +20,7 @@ from modules.img2img import process_batch
 from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
-    load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path
+    load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path, batch_model_local_paths
 from handlers.extension.controlnet import exec_control_net_annotator
 from handlers.dumper import TaskDumper
 from modules import sd_models
@@ -29,7 +29,8 @@ AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]
 
 
 class Img2ImgMinorTaskType(IntEnum):
-    Img2Img = 0
+    Default = 0
+    Img2Img = 1
     Interrogate = 10
     RunControlnetAnnotator = 100
 
@@ -42,14 +43,14 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  prompt: str,  # TAG
                  negative_prompt: str,  # 反向TAG
                  sampler_name: str = None,  # 采样器
-                 init_img: str = None,  # 原图片（i2i，MODE=0）
-                 sketch: str = None,  # 绘图图片（绘图，MODE=1）
+                 init_img: str = None,  # 原图片（i2i，实际MODE=0）
+                 sketch: str = None,  # 绘图图片（绘图，实际MODE=1）
                  init_img_with_mask: typing.Mapping[str, str] = None,
-                 # 局部重绘图（手涂蒙版，MODE=2）,字典形式必须包含image,mask 2个KEY,蒙版为画笔白色其他地方为黑色
-                 init_img_inpaint: str = None,  # 局部重绘图（上传蒙版，MODE=4）
-                 init_mask_inpaint: str = None,  # 局部重绘蒙版图（上传蒙版，MODE=4）
-                 inpaint_color_sketch: str = None,  # 局部重新绘制图片手绘（局部重新绘制手涂，MODE=3）
-                 inpaint_color_sketch_orig: str = None,  # 局部重新绘制图片原图（局部重新绘制手涂，MODE=3）
+                 # 局部重绘图（手涂蒙版，实际MODE=2）,字典形式必须包含image,mask 2个KEY,蒙版为画笔白色其他地方为黑色
+                 init_img_inpaint: str = None,  # 局部重绘图（上传蒙版，实际MODE=4）
+                 init_mask_inpaint: str = None,  # 局部重绘蒙版图（上传蒙版，实际MODE=4）
+                 inpaint_color_sketch: str = None,  # 局部重新绘制图片手绘（局部重新绘制手涂，实际MODE=3）
+                 inpaint_color_sketch_orig: str = None,  # 局部重新绘制图片原图（局部重新绘制手涂，实际MODE=3）
                  batch_size: int = 1,  # 批次
                  mask_blur: int = 4,  # 蒙版模糊
                  n_iter: int = 1,  # 迭代数
@@ -60,14 +61,14 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  height: int = 512,  # 图高
                  restore_faces: bool = False,  # 面部修复
                  tiling: bool = False,  # 可平铺
-                 mode: int = 0,  # i2i 模式
+                 mode: int = 1,  # i2i 模式
                  seed: int = -1,  # 随机种子
                  seed_enable_extras: bool = False,  # 是否启用随机种子扩展
                  subseed: int = -1,  # 差异随机种子
                  subseed_strength: float = 0,  # 差异强度
                  seed_resize_from_h: int = 0,  # 重置尺寸种子-高度
                  seed_resize_from_w: int = 0,  # 重置尺寸种子-宽度
-                 resize_mode: int = 0,  # 局部重绘（含手涂和上传）的缩放模式，0-拉伸，1-裁剪，2-填充
+                 resize_mode: int = 0,  # 缩放模式，0-拉伸，1-裁剪，2-填充
                  inpainting_mask_invert: int = 0,  # 局部重绘（含手涂和上传）的蒙版模式，0-重绘蒙版内容，1-重绘非蒙版内容
                  inpaint_full_res: bool = False,  # 局部重绘（含手涂和上传）的重绘区域，默认原图；True代表仅蒙版
                  inpaint_full_res_padding: int = 32,  # 局部重绘（含手涂和上传）的仅蒙版模式的边缘预留像素
@@ -90,6 +91,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         image = None
         mask = None
         self.is_batch = False
+        mode -= 1   # 适配GOLANG
         if mode == 5:
             if not img2img_batch_input_dir \
                     or not img2img_batch_output_dir:
@@ -235,7 +237,10 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         kwargs.pop('prompt')
         kwargs.pop('negative_prompt')
         kwargs.pop('user_id')
-        kwargs.pop('select_script')
+        if 'select_script' in kwargs:
+            kwargs.pop('select_script')
+        if 'select_script_name' in kwargs:
+            kwargs.pop('select_script_name')
 
         return cls(base_model_path,
                    user_id,
@@ -333,19 +338,22 @@ class Img2ImgTaskHandler(TaskHandler):
 
     def _get_local_checkpoint(self, task: Task):
         base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint)
-        if not os.path.isfile(base_model_path):
+        if not base_model_path or not os.path.isfile(base_model_path):
             raise OSError(f'cannot found model:{task.sd_model_path}')
+        return base_model_path
 
     def _get_local_embedding_dirs(self, embeddings: typing.Sequence[str]) -> typing.Set[str]:
-        embeddings = [get_model_local_path(p, ModelType.Embedding) for p in embeddings]
-        return set((os.path.dirname(p) for p in embeddings if os.path.isfile(p)))
+        # embeddings = [get_model_local_path(p, ModelType.Embedding) for p in embeddings]
+        embeddings = batch_model_local_paths(ModelType.Embedding, *embeddings)
+        return set((os.path.dirname(p) for p in embeddings if p and os.path.isfile(p)))
 
     def _get_local_loras(self, loras: typing.Sequence[str]) -> typing.Sequence[str]:
-        embeddings = [get_model_local_path(p, ModelType.Lora) for p in loras]
-        return [p for p in embeddings if os.path.isfile(p)]
+        # loras = [get_model_local_path(p, ModelType.Lora) for p in loras]
+        loras = batch_model_local_paths(ModelType.Lora, *loras)
+        return [p for p in loras if p and os.path.isfile(p)]
 
     def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
-        base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint)
+        base_model_path = self._get_local_checkpoint(task)
         progress = TaskProgress.new_prepare(task, 'model found')
         progress.task_desc = f'model loaded:{os.path.basename(base_model_path)}, run i2i...'
         progress.status = TaskStatus.Prepare
@@ -419,7 +427,7 @@ class Img2ImgTaskHandler(TaskHandler):
 
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
         minor_type = Img2ImgMinorTaskType(task.minor_type)
-        if minor_type == Img2ImgMinorTaskType.Img2Img:
+        if minor_type <= Img2ImgMinorTaskType.Img2Img:
             yield from self._exec_img2img(task)
         elif minor_type == Img2ImgMinorTaskType.RunControlnetAnnotator:
             yield from exec_control_net_annotator(task)

@@ -22,7 +22,8 @@ from handlers.img2img import Img2ImgTaskHandler, AlwaysonScriptsType
 
 
 class Txt2ImgMinorTaskType(IntEnum):
-    Txt2Img = 0
+    Default = 0
+    Txt2Img = 1
 
 
 class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
@@ -132,7 +133,10 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         kwargs.pop('prompt')
         kwargs.pop('negative_prompt')
         kwargs.pop('user_id')
-        kwargs.pop('select_script')
+        if 'select_script' in kwargs:
+            kwargs.pop('select_script')
+        if 'select_script_name' in kwargs:
+            kwargs.pop('select_script_name')
 
         return cls(base_model_path,
                    user_id,
@@ -159,7 +163,7 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         return Txt2ImgTask.from_task(task, self.default_script_args)
 
     def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
-        base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint)
+        base_model_path = self._get_local_checkpoint(task)
         progress = TaskProgress.new_prepare(task, 'model found')
         progress.task_desc = f'model loaded:{os.path.basename(base_model_path)}, run t2i...'
         progress.status = TaskStatus.Prepare
@@ -193,5 +197,5 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
 
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
         minor_type = Txt2ImgMinorTaskType(task.minor_type)
-        if minor_type == Txt2ImgMinorTaskType.Txt2Img:
+        if minor_type <= Txt2ImgMinorTaskType.Txt2Img:
             yield from self._exec_img2img(task)

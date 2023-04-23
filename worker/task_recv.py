@@ -5,7 +5,7 @@
 # @Site    : 
 # @File    : task_recv.py
 # @Software: Hifive
-import json
+import os
 import random
 import time
 import typing
@@ -24,6 +24,35 @@ TaskQueuePrefix = "task_"
 UpscaleCoeff = 100 * 1000
 TaskScoreRange = (0, 100*UpscaleCoeff)
 TaskTimeout = 24 * 3600
+Tmp = 'tmp'
+
+
+def find_files_from_dir(directory, *args):
+    extensions_ = [ex.lstrip('.').upper() for ex in args]
+    for fn in os.listdir(directory):
+        full_path = os.path.join(directory, fn)
+        if os.path.isfile(full_path):
+            if extensions_:
+                _, ex = os.path.splitext(full_path)
+                if ex.lstrip('.').upper() in extensions_:
+                    yield full_path
+            else:
+                yield full_path
+        elif os.path.isdir(full_path):
+            for f in find_files_from_dir(full_path, *extensions_):
+                yield f
+
+
+def clean_tmp(expired_days=1):
+    if os.path.isdir(Tmp):
+        now = time.time()
+        for file in find_files_from_dir(Tmp):
+            mtime = os.path.getmtime(file)
+            if now < mtime + expired_days * 24 * 3600:
+                try:
+                    os.remove(file)
+                except:
+                    pass
 
 
 class TaskReceiver:
@@ -31,6 +60,13 @@ class TaskReceiver:
     def __init__(self, recoder: CkptLoadRecorder):
         self.model_recoder = recoder
         self.redis_pool = RedisPool()
+        self.clean_tmp_time = 0
+
+    def _clean_tmp_files(self):
+        now = time.time()
+        if now - self.clean_tmp_time > 3600:
+            self.clean_tmp_time = now
+            clean_tmp()
 
     def _loaded_models(self):
         if self.model_recoder:
@@ -60,12 +96,12 @@ class TaskReceiver:
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
 
-        with redis_lock.Lock(rds, "task-lock-" + queue_name, expire=60) as locker:
+        with redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10) as locker:
             for _ in range(retry):
                 now = int(time.time() * 1000)
                 # min 最小为当前时间（ms）- VIP最大等级*放大系数（VIP提前执行权重）- 任务过期时间（1天）
                 # max 为当前时间（ms） + 偏移量1秒
-                min, max = now - TaskScoreRange[-1] - TaskTimeout*1000, now + 1000
+                min, max = -1, now + 1000
                 values = rds.zrangebyscore(
                     queue_name, min, max, start=0, num=1)
                 task = None
@@ -125,6 +161,7 @@ class TaskReceiver:
                     yield t
                 wait = sleep_time - time.time() + st
                 if wait > 0:
+                    self._clean_tmp_files()
                     time.sleep(wait)
             except:
                 time.sleep(1)

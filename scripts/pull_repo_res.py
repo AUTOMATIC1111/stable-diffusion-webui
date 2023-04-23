@@ -48,6 +48,7 @@ def pull_code_former_weights():
         if os.path.isfile(nfs):
             shutil.copyfile(nfs, filepath)
             continue
+        print(f'download repository weight from:{url}')
         resp = requests.get(url, timeout=10)
         if resp.ok:
             chunk_size = 512

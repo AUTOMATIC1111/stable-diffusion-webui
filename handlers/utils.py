@@ -6,19 +6,21 @@
 # @File    : utils.py
 # @Software: Hifive
 import os
-import shutil
+import time
 import socket
 import typing
 from PIL import Image
 from loguru import logger
 from datetime import datetime
+from worker.task_recv import Tmp
 from tools.image import compress_image
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
-from handlers.typex import ModelLocation, ModelType, Tmp, S3ImageBucket, S3ImagePath
-from filestorage import find_storage_classes_with_env, push_local_path, get_local_path
+from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3ImagePath
 from tools.environment import get_file_storage_system_env, Env_BucketKey
+from filestorage import find_storage_classes_with_env, push_local_path, get_local_path, batch_download
+
 
 FileStorageCls = find_storage_classes_with_env()
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
@@ -31,11 +33,27 @@ def get_model_local_path(remoting_path: str, model_type: ModelType):
         return remoting_path
     os.makedirs(ModelLocation[model_type], exist_ok=True)
     dst = os.path.join(ModelLocation[model_type], os.path.basename(remoting_path))
-    return get_local_path(remoting_path, dst)
+    if os.path.isfile(dst):
+        return dst
+    dst = get_local_path(remoting_path, dst)
+    if os.path.isfile(dst):
+        if model_type == ModelType.CheckPoint:
+            checkpoint = CheckpointInfo(dst)
+            checkpoint.register()
+        return dst
 
 
-def clean_tmp():
-    shutil.rmtree(Tmp)
+def batch_model_local_paths(model_type: ModelType, *remoting_paths: str) \
+        -> typing.Sequence[str]:
+    remoting_key_dst_pairs, loc = [], []
+    os.makedirs(ModelLocation[model_type], exist_ok=True)
+    for p in remoting_paths:
+        dst = os.path.join(ModelLocation[model_type], os.path.basename(p))
+        loc.append(dst)
+        if not os.path.isfile(dst):
+            remoting_key_dst_pairs.append((p, dst))
+    batch_download(remoting_key_dst_pairs)
+    return loc
 
 
 def get_tmp_local_path(remoting_path: str):
@@ -197,6 +215,7 @@ def save_processed_images(proc, output_dir, task_id, user_id):
             low_key = os.path.join(bucket, output_dir, 'low-' + filename)
             low_file = os.path.join(output_dir, 'low-' + filename)
             file_storage_system.upload(low_file, low_key)
+            local_images.append(low_key)
             local_images.append(key)
 
     return local_images

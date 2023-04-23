@@ -6,6 +6,8 @@
 # @File    : __init__.py.py
 # @Software: Hifive
 import os
+import typing
+
 from loguru import logger
 from filestorage.storage import FileStorage
 from tools.reflection import find_classes
@@ -46,6 +48,12 @@ def get_local_path(remoting, local, storage_cls=None):
     storage_cls = storage_cls or find_storage_classes_with_env()
     with storage_cls() as s:
         return s.download(remoting, local)
+
+
+def batch_download(remoting_loc_pairs: typing.Sequence[typing.Tuple[str, str]], storage_cls=None):
+    storage_cls = storage_cls or find_storage_classes_with_env()
+    with storage_cls() as s:
+        return s.multi_download(remoting_loc_pairs)
 
 
 def push_local_path(remoting, local, storage_cls=None):

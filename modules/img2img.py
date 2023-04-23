@@ -85,6 +85,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         mask = None
     elif mode == 1:  # img2img sketch
         image = sketch.convert("RGB")
+        # image.save("model-1-image.png")
         mask = None
     elif mode == 2:  # inpaint
         image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
@@ -97,7 +98,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         image = inpaint_color_sketch
         orig = inpaint_color_sketch_orig or inpaint_color_sketch
         pred = np.any(np.array(image) != np.array(orig), axis=-1)
-        if not pred or not pred.shape:
+        if pred is None or not pred.any() or not pred.shape:
             raise ValueError('mask err')
         mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
         mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)

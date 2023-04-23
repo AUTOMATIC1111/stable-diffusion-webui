@@ -124,6 +124,13 @@ class FileStorage:
             w = MultiThreadWorker(local_remoting_pars, self.upload, worker_count)
             w.run()
 
+    def multi_download(self, remoting_loc_pairs: typing.Sequence[typing.Tuple[str, str]]):
+        if remoting_loc_pairs:
+            worker_count = cpu_count()
+            worker_count = worker_count if worker_count <= 4 else 4
+            w = MultiThreadWorker(remoting_loc_pairs, self.download, worker_count)
+            w.run()
+
     def close(self):
         pass
 
@@ -205,5 +212,3 @@ class PrivatizationFileStorage(FileStorage):
         if remoting_path != local_path:
             shutil.copy(local_path, remoting_path)
             return remoting_path
-
-

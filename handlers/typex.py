@@ -20,7 +20,6 @@ ModelLocation = {
     ModelType.Lora: 'models/Lora'
 }
 
-Tmp = 'tmp'
 S3ImageBucket = "xingzhe-sdplus"
 S3ImagePath = "output/{uid}/{dir}/{name}"
 
