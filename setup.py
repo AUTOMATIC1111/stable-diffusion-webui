@@ -131,6 +131,8 @@ def git(arg: str, folder: str = None, ignore: bool = False):
 
 # update switch to main branch as head can get detached and update repository
 def update(folder):
+    if not os.path.exists(os.path.join(folder, '.git')):
+        return
     branch = git('branch', folder)
     if 'main' in branch:
         git('checkout main', folder)
