@@ -140,6 +140,14 @@ function extraNetworksShowMetadata(text){
     popup(elem);
 }
 
+function extraNetworksShowReadme(text) {
+    elem = document.createElement('div')
+    elem.classList.add('readme-popup');
+    elem.innerHTML = text;
+
+    popup(elem);
+}
+
 function requestGet(url, data, handler, errorHandler){
     var xhr = new XMLHttpRequest();
     var args = Object.keys(data).map(function(k){ return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]) }).join('&')
@@ -171,6 +179,20 @@ function extraNetworksRequestMetadata(event, extraPage, cardName){
         if(data && data.metadata){
             extraNetworksShowMetadata(data.metadata)
         } else{
+            showError()
+        }
+    }, showError)
+
+    event.stopPropagation()
+}
+
+function extraNetworksRequestReadme(event, readme_file) {
+    showError = function () { extraNetworksShowReadme("there was an error showing readme"); }
+
+    requestGet("./sd_extra_networks/readme", { "file": readme_file }, function (data) {
+        if (data && data.content) {
+            extraNetworksShowReadme(data.content)
+        } else {
             showError()
         }
     }, showError)

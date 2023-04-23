@@ -31,3 +31,4 @@ torchsde
 safetensors
 psutil
 rich
+markdown

@@ -433,6 +433,28 @@ div.dimensions-tools{
     white-space: pre-wrap;
 }
 
+.readme-link{
+    color: rgba(0, 0, 0,0.7) !important;
+    background: rgba(255,255,255,0.7) !important;
+    margin-right: 0.4rem;
+    font-weight: bold;
+    border-radius: 20%;
+    transition: 0.2s;
+}
+
+.readme-link:hover{
+    color: rgb(0, 0, 0) !important;
+    background: rgb(255,255,255) !important;
+}
+
+.readme-popup{
+    color: black;
+    background: white;
+    display: inline-block;
+    padding: 1em;
+    white-space: pre-wrap;
+}
+
 .global-popup{
     display: flex;
     position: fixed;

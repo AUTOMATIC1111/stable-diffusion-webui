@@ -51,10 +51,21 @@ def get_metadata(page: str = "", item: str = ""):
 
     return JSONResponse({"metadata": metadata})
 
+def get_readme(file: str = ""):
+    from starlette.responses import JSONResponse
+    import markdown
+    
+    if not os.path.isfile(file):
+        return JSONResponse({})
+
+    with open(file, "r") as _file:
+        return JSONResponse({"content": markdown.markdown(_file.read())})
+
 
 def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
     app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/readme", get_readme, methods=["GET"])
 
 
 class ExtraNetworksPage:
@@ -157,12 +168,18 @@ class ExtraNetworksPage:
         if metadata:
             metadata_button = f"<div class='metadata-button' title='Show metadata' onclick='extraNetworksRequestMetadata(event, {json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
 
+        readme_link = ""
+        filename = item.get("filename")
+        readme_file = filename + ".md"
+        if filename and os.path.isfile(readme_file):
+            readme_link=f"<span class='readme-link' title='Show readme' onclick='extraNetworksRequestReadme(event, {json.dumps(readme_file)})'>ℹ</span>"
+
         args = {
             "style": f"'{height}{width}{background_image}'",
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
-            "name": item["name"],
+            "name": readme_link + item["name"],
             "description": (item.get("description") or ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
