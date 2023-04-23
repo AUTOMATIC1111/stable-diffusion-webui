@@ -51,16 +51,24 @@ for model in models:
 
 #embeddings / textual inversions --------------------------------------------------
 EMBEDDINGS_DIR = "/workspace/stable-diffusion-webui/embeddings"
-embeddings_url = 'https://storage.googleapis.com/ag-diffusion/embeddings/embeddings.zip'
-if not os.path.exists(os.path.join(EMBEDDINGS_DIR,'embeddings.zip')):
-    command = f"curl -Lo {os.path.join(EMBEDDINGS_DIR,'embeddings.zip')} {embeddings_url}"
-    output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-    print("Download Embeddings:", output.stderr)
-    command = f"unzip embeddings/embeddings.zip -d embeddings/"
-    output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-    print("unzip Embeddings:", output.stderr)
+embeddings_url = 'https://storage.googleapis.com/ag-diffusion/embeddings/embeddings_20230422.zip'
+filename = os.path.basename(url)
+if not os.path.exists(os.path.join(EMBEDDINGS_DIR,filename)):
+    try:
+        command = f"curl -Lo {os.path.join(EMBEDDINGS_DIR,filename)} {embeddings_url}"
+        output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        print("Download Embeddings:", output.stderr)
+        command = f"unzip -o embeddings/embeddings.zip -d embeddings/"
+        output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        print("unzip Embeddings:", output.stderr)
+    except subprocess.CalledProcessError as e:
+        print("Error: ", e.returncode, e.stderr)
+        try:
+            os.remove(os.path.join(EMBEDDINGS_DIR,filename))
+        except FileNotFoundError:
+            print(f"File '{filename}' not found, skipping...")
 else:
-    print("Embeddings already downloaded")
+    print(f"Embeddings archive already found: {os.path.join(EMBEDDINGS_DIR,filename)}")
 
 
 
