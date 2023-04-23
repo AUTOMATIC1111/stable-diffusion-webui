@@ -25,8 +25,6 @@ Stuff to be added...
 
 Stuff to be investigated...
 
-- Best practices for **Apple M1**
-- Best practices for **AMD GPUs**
 - Torch Compile
 - `Torch-DirectML`
 - `TensorRT`
@@ -64,6 +62,7 @@ Tech that can be integrated as part of the core workflow...
   should fix most issues with NaN or black images  
 - add built-in Gradio themes  
 - fix setup race conditions
-- fix requirements  
+- reduce requirements  
 - more AMD specific work
+- initial work on Apple platform support
 - additional PR merges
