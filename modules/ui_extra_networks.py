@@ -62,6 +62,7 @@ class ExtraNetworksPage:
         self.title = title
         self.name = title.lower()
         self.card_page = shared.html("extra-networks-card.html")
+        self.card_page_advanced = shared.html("extra-networks-card-advanced.html")
         self.allow_negative_prompt = False
         self.metadata = {}
 
@@ -143,6 +144,7 @@ class ExtraNetworksPage:
         return []
 
     def create_html_for_item(self, item, tabname):
+        current_view = shared.opts.extra_networks_default_view   
         preview = item.get("preview", None)
 
         onclick = item.get("onclick", None)
@@ -151,6 +153,8 @@ class ExtraNetworksPage:
 
         height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
         width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
+        height_advanced_view = f"height: {shared.opts.extra_networks_advanced_card_width}px;" if shared.opts.extra_networks_card_height else ''
+        width_advanced_view = f"height: {shared.opts.extra_networks_advanced_card_height}px;" if shared.opts.extra_networks_card_height else ''
         background_image = f"background-image: url(\"{html.escape(preview)}\");" if preview else ''
         metadata_button = ""
         metadata = item.get("metadata")
@@ -159,8 +163,8 @@ class ExtraNetworksPage:
 
         args = {
             "style": f"'{height}{width}{background_image}'",
-            "style_image_bg_only": f"'{background_image}'",
-            "style_handw_only": f"'{height}{width}'",
+            "style_image_bg": f"'{background_image}'",
+            "style_advanced_size": f"'{height_advanced_view}{width_advanced_view}'",
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
@@ -175,7 +179,10 @@ class ExtraNetworksPage:
 
         }
 
-        return self.card_page.format(**args)
+        res = self.card_page.format(**args)
+        if current_view == "advanced":
+            res = self.card_page_advanced.format(**args)
+        return res
 
     def find_preview(self, path):
         """

@@ -1,0 +1,23 @@
+<div class='card' style={style_advanced_size}>
+	<div class="advanced-card-image-preview" style={style_image_bg} onclick={card_clicked}>
+        {metadata_button}
+    </div>
+	
+	<div class='actions'>
+		<div class='additional'>
+			<ul>
+				<li><a href="#" title="replace preview image with currently selected in gallery" onclick={save_card_preview}>replace preview</a></li>
+			</ul>
+			<span style="display:none" class='search_term'>{search_term}</span>
+		</div>
+	</div>
+	<article class='card-information'>
+		<h1 class='name'>{name}</h1>`
+		<div class='description'><p>{description}</p></div>
+		<div class="descriptions-actions" >
+			<a href="#" class='description-action' title="replace preview description with currently selected in gallery" onclick={save_card_description}>Update Notes</a>
+			<a href="#" class='description-action' title="read description" onclick={read_card_description}>Load Notes</a>
+		</div>
+	</article> 
+
+</div>
