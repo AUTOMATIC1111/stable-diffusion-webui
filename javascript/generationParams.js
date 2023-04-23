@@ -2,12 +2,8 @@
 
 let txt2img_gallery, img2img_gallery, modal = undefined;
 onUiUpdate(function(){
-	if (!txt2img_gallery) {
-		txt2img_gallery = attachGalleryListeners("txt2img")
-	}
-	if (!img2img_gallery) {
-		img2img_gallery = attachGalleryListeners("img2img")
-	}
+	if (!txt2img_gallery) txt2img_gallery = attachGalleryListeners("txt2img")
+	if (!img2img_gallery) img2img_gallery = attachGalleryListeners("img2img")
 	if (!modal) {
 		modal = gradioApp().getElementById('lightboxModal')
 		modalObserver.observe(modal,  { attributes : true, attributeFilter : ['style'] });
@@ -17,6 +13,7 @@ onUiUpdate(function(){
 let modalObserver = new MutationObserver(function(mutations) {
 	mutations.forEach(function(mutationRecord) {
 		let selectedTab = gradioApp().querySelector('#tabs div button.selected')?.innerText
+    if (!selectedTab) selectedTab = gradioApp().querySelector('#tabs div button')?.innerText
 		if (mutationRecord.target.style.display === 'none' && (selectedTab === 'txt2img' || selectedTab === 'img2img'))
 			gradioApp().getElementById(selectedTab+"_generation_info_button")?.click()
 	});
