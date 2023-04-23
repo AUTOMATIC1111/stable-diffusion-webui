@@ -1278,6 +1278,7 @@ input.svelte-56zyyb{
     flex-grow: 1;
 	border-top-right-radius: 0!important;
     border-bottom-right-radius: 0!important;
+	margin-right: -2px;
 }
 [id$="2img_styles"] label > span{
     padding-right: 5px;
