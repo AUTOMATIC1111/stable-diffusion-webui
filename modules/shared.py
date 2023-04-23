@@ -205,8 +205,11 @@ def list_samplers():
 def list_themes():
     if not os.path.exists(os.path.join('javascript', 'themes.json')):
         refresh_themes()
-    with open(os.path.join('javascript', 'themes.json'), mode='r', encoding='utf=8') as f:
-        res = json.loads(f.read())
+    if os.path.exists(os.path.join('javascript', 'themes.json')):
+        with open(os.path.join('javascript', 'themes.json'), mode='r', encoding='utf=8') as f:
+            res = json.loads(f.read())
+    else:
+        res = []
     builtin = ["black-orange", "gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
     themes = builtin + [x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()]
     return themes

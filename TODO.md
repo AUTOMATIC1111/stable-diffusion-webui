@@ -7,6 +7,7 @@ Stuff to be fixed...
 - ClipSkip not updated on read gen info
 - Usage of `sd_vae` in quick settings
 - Run VAE with hires at 1280
+- Make TensorFlow optional
 
 
 ## Features
