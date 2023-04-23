@@ -9,8 +9,8 @@
 git pull
 
 # install metrics tool
-sudo apt update
-sudo apt install nano screen unzip -y
+apt update
+apt install nano screen unzip -y
 pip install aioprometheus[starlette]
 
 
