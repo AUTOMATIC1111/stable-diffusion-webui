@@ -59,6 +59,8 @@ if not os.path.exists(os.path.join(EMBEDDINGS_DIR,'embeddings.zip')):
     command = f"unzip embeddings/embeddings.zip -d embeddings/"
     output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
     print("unzip Embeddings:", output.stderr)
+else:
+    print("Embeddings already downloaded")
 
 
 
