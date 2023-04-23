@@ -52,32 +52,32 @@ for model in models:
 #embeddings / textual inversions --------------------------------------------------
 EMBEDDINGS_DIR = "/workspace/stable-diffusion-webui/embeddings"
 embeddings_url = 'https://storage.googleapis.com/ag-diffusion/embeddings/embeddings_20230422.zip'
-filename = os.path.basename(embeddings_url)
-if not os.path.exists(os.path.join(EMBEDDINGS_DIR,filename)):
+zipfilename = os.path.basename(embeddings_url)
+if not os.path.exists(os.path.join(EMBEDDINGS_DIR,zipfilename)):
 
     # delete old embeddings
-    for filename in os.listdir(EMBEDDINGS_DIR):
-        file_path = os.path.join(EMBEDDINGS_DIR, filename)
+    for f in os.listdir(EMBEDDINGS_DIR):
+        file_path = os.path.join(EMBEDDINGS_DIR, f)
         try:
             if os.path.isfile(file_path):
                 os.remove(file_path)
         except Exception as e:
             print(f"Error deleting file '{file_path}': {e}")
     try:
-        command = f"curl -Lo {os.path.join(EMBEDDINGS_DIR,filename)} {embeddings_url}"
+        command = f"curl -Lo {os.path.join(EMBEDDINGS_DIR,zipfilename)} {embeddings_url}"
         output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
         print("Download Embeddings:", output.stderr)
-        command = f"unzip -o embeddings/{filename} -d embeddings/"
+        command = f"unzip -o embeddings/{zipfilename} -d embeddings/"
         output = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
         print("unzip Embeddings:", output.stderr)
     except subprocess.CalledProcessError as e:
         print("Error: ", e.returncode, e.stderr)
         try:
-            os.remove(os.path.join(EMBEDDINGS_DIR,filename))
+            os.remove(os.path.join(EMBEDDINGS_DIR,zipfilename))
         except FileNotFoundError:
-            print(f"File '{filename}' not found, skipping...")
+            print(f"File '{zipfilename}' not found, skipping...")
 else:
-    print(f"Embeddings archive already found: {os.path.join(EMBEDDINGS_DIR,filename)}")
+    print(f"Embeddings archive already found: {os.path.join(EMBEDDINGS_DIR,zipfilename)}")
 
 
 
