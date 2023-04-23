@@ -362,6 +362,7 @@ div.dimensions-tools{
     display: block;
     margin-left: 0;
     width: 10em;
+    counter-reset: setting-counter;
 }
 
 #settings > div.tab-nav button{
@@ -369,6 +370,23 @@ div.dimensions-tools{
     border: none;
     text-align: left;
     white-space: initial;
+    line-height: 1.2em;
+    margin-bottom: 0.4em;
+    position: relative;
+}
+
+#settings > div.tab-nav button:not(:last-child)::before{
+    content: counter(setting-counter);
+    counter-increment: setting-counter;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: xx-small;
+}
+
+#settings > div.tab-nav button:nth-child(-n+9)::before{
+    font-size: small;
 }
 
 #settings_result{
@@ -679,7 +697,7 @@ footer {
 }
 
 
-.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before{
+.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before, .extra-network-advanced .card .metadata-button:before{
     content: "🛈";
 }
 .extra-network-cards .card .metadata-button, .extra-network-thumbs .card .metadata-button{
@@ -692,7 +710,7 @@ footer {
     font-size: 22pt;
     width: 1.5em;
 }
-.extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{
+.extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button, .extra-network-advanced .card:hover .metadata-button{
     display: inline-block;
 }
 .extra-network-cards .card .metadata-button:hover, .extra-network-thumbs .card .metadata-button:hover{
@@ -841,119 +859,172 @@ footer {
     color: red;
 }
 
-/* extra network advanced view, card image will be hidden in other views 
-so will never break other veiws by this extra DOM element that been inserted */
-.card .advanced-card-image-preview{
-    display: none;
-    cursor: pointer;
-}
-
+/* extra network advanced view */
 .extra-network-advanced{
-    display: flex;
-    flex: 0 1 400px;
-    flex-flow: row wrap;
     height: auto;
-    grid-gap: 1.5em;
-    align-content: start;
     padding: 0.5em;
+    display: flex;
+    flex: 1 0 auto;
+    flex-flow: row wrap;
+    align-content: start;
+    gap: 1.5em;
 }
 .extra-network-advanced .nocards{
-    width: 100%;
+    flex: 1 1 auto;
     height: auto;
 }
 
 .extra-network-advanced .card{
-    background-image: none !important; /* hide the attached image bg from other view */
-    display: grid;
-    height: 300px;
-    width: 400px;
-    border-radius: 0.5em;
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.5);
-    overflow: hidden;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr;
-    background-color: rgba(30, 30, 30, 0.3); 
-    border: 1px solid rgba(255,255,255, 0.3);
+    display: flex;
+    flex-direction: row;
     position: relative;
+    height: 300px;
+    width: 320px;
+    /* width: 600px; */
+    background-color: rgba(151, 151, 151, 0.1);
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255,255,255, 0.1);
+    border-radius: 0.5em;
+    transition: 0.3s;
+    overflow: hidden;
+}
+.extra-network-advanced .card:hover{
+    background-color: rgba(30, 30, 30, 0.3); 
+    box-shadow: 0px 2px 16px rgba(0, 0, 0, 1);
 }
 
-.extra-network-advanced .card .advanced-card-image-preview{
-    display: block;
-    grid-row: 1;
-    grid-column: 1;
+.extra-network-advanced .card a.card-link-bold{
+    font-weight: 700;
+}
+
+.extra-network-advanced .card a:hover,
+.extra-network-advanced .card .metadata-button:hover{
+    color: deepskyblue;
+}
+
+.extra-network-advanced .card .card-link-color-warning:hover{
+    color: hotpink;
+}
+
+.extra-network-advanced .card ul.actions-btns-list{
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0;
+    gap: 0.5em;
+}
+
+.extra-network-advanced .card ul.actions-btns-list li{
+    display: flex;
+    flex: 1 1 0;
+    align-items: center;
+    margin: 0;
+    line-height: 1.05em;
+    list-style: none;
+    border-radius: 0.5em;
+    background-color: rgba(255, 255, 255, 0.1);
+}  
+.extra-network-advanced .card ul.actions-btns-list li a{
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 0.5em;
+}
+.extra-network-advanced .card ul.actions-btns-list li:hover{
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+
+
+
+/* img section */
+
+.extra-network-advanced .card .card-img-preview{
+    flex: 0 1 120px;
+    /* flex-basis: 250px; */
+    display: flex;
+    flex-flow: column;
+    position: relative;
     background-image: url('./file=html/card-no-preview.png');
     background-size: cover;
     background-position: center;
-    background-color: #000000;
+    background-color: #424242;
+    cursor: pointer;
 }
 
 .extra-network-advanced .card .metadata-button{
-    opacity: 0;
-    grid-column: 1;
-    grid-row: 1;
+    display: none;
     color: white;
-    text-shadow: 1px 1px 3px black;
-    font-size: 24pt;
-    width: 1.2em;
-    align-self: start;
-    justify-self: end;
+    font-size: 2em;
+    width: 1.5em;
+    border-radius: 0.2em;
+    text-align: center;
+    vertical-align: baseline;
+    background-color: rgba(0, 0, 0, 0.6);
 }
 
-.extra-network-advanced .card:hover{
-    background-color: rgba(151, 151, 151, 0.1);
-    box-shadow: 0px 2px 16px rgba(0, 0, 0, 1);
+.extra-network-advanced .card .card-img-preview .metadata-button{
+    position: relative;
+    margin-left: auto;
+    margin-bottom: auto;
 }
-.extra-network-advanced .card:hover .metadata-button{
+
+.extra-network-advanced .card .card-img-preview .actions {
+    margin-top: auto;
+    padding: 0.5em;
+    opacity: 0;
+    transition: opacity 0.2s ease;;
+}
+.extra-network-advanced .card .card-img-preview:hover .actions{
     opacity: 1;
-    cursor: help;
+}
+.extra-network-advanced .card .card-img-preview ul.actions-btns-list li{
+    background-color: rgba(0, 0, 0, 0.6);
+    flex-grow: 1;
+    flex-basis: auto;
+    max-width: 10em;
 }
 
-.extra-network-advanced .card .actions {
-    grid-column: 1;
-    grid-row: 1;
-    align-self: end;
-    justify-self: start;
-  }
+.extra-network-advanced .card .card-img-preview ul.actions-btns-list li:hover{
+    background-color: rgba(0, 0, 0, 0.8);
+}
 
-.extra-network-advanced .card .card-information {
-    padding: 8px;
+
+/* info section */
+.extra-network-advanced .card article.card-info{
+    flex: 1 0 10px;
+    width: 100%;
+    padding: 0.5em 1em;
     display: grid;
     grid-template-rows: auto 1fr auto;
-    height: 100%;
-    max-height: 100%;
-}
-
-.extra-network-advanced .card .card-information .name{
-    word-break: break-all;
-    text-overflow: ellipsis;
-    font-size: 1.2em;
-    font-weight: 700;
-}
-.extra-network-advanced .card .card-information .description{
-    overflow-y: auto;
     scrollbar-width: 4px;
-    color: #999;
-}
-.extra-network-advanced .card .card-information .description::-webkit-scrollbar {
-    width: 4px;
 }
 
-.extra-network-advanced .card .card-information .descriptions-actions{
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap-reverse;
-    justify-content: space-between;
-    
-}
-.extra-network-advanced .card .card-information .descriptions-actions a{
-    padding: 4px 6px;
-    border-radius: 4px;
-    background-color: rgba(255,255,255, 0.1);
+.extra-network-advanced .card .card-info .name{
+    word-break: break-word;
+    font-size: 1.3em;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    cursor: pointer;
 }
 
-/* quickdev hack for reload btm */
+.extra-network-advanced .card .card-info .description{
+    overflow-y: auto;
+    scrollbar-width: 0.2em;
+}
+
+.extra-network-advanced .card .card-info .description::-webkit-scrollbar {
+    width: 0.2em;
+}
+
+.extra-network-advanced .card .card-info .description p{
+    word-break: break-all;
+    white-space: pre-wrap;
+    line-height: 1.1em;
+    color: #b8b8b8;
+}
+
+/* quick frontend dev hack for reload btm on footer*/
 body #footer{ 
     position: fixed; 
     left: 0px; bottom: 0px; width: 100%; padding: 10px; 
-    font-size: 16px; background-color: #0060df;
+    font-size: 16px; background-color: #360625;
 }

@@ -153,8 +153,10 @@ class ExtraNetworksPage:
 
         height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
         width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
-        height_advanced_view = f"height: {shared.opts.extra_networks_advanced_card_width}px;" if shared.opts.extra_networks_card_height else ''
+        height_advanced_view = f"height: {shared.opts.extra_networks_advanced_card_width}px;" if shared.opts.extra_networks_card_width else ''
         width_advanced_view = f"height: {shared.opts.extra_networks_advanced_card_height}px;" if shared.opts.extra_networks_card_height else ''
+        image_width_advanced_view = f"flex-basis: {shared.opts.extra_networks_advanced_card_image_width}px;" if shared.opts.extra_networks_advanced_card_image_width else ''
+
         background_image = f"background-image: url(\"{html.escape(preview)}\");" if preview else ''
         metadata_button = ""
         metadata = item.get("metadata")
@@ -163,8 +165,8 @@ class ExtraNetworksPage:
 
         args = {
             "style": f"'{height}{width}{background_image}'",
-            "style_image_bg": f"'{background_image}'",
             "style_advanced_size": f"'{height_advanced_view}{width_advanced_view}'",
+            "style_advanced_image_w": f"'{image_width_advanced_view}{background_image}'",
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),

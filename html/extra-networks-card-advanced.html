@@ -1,23 +1,24 @@
 <div class='card' style={style_advanced_size}>
-	<div class="advanced-card-image-preview" style={style_image_bg} onclick={card_clicked}>
+	<div class='card-img-preview' style={style_advanced_image_w} onclick={card_clicked}>
         {metadata_button}
+        <div class='actions'>
+            <div class='additional'>
+                <ul class='actions-btns-list'>
+                    <li><a class='card-link-color-warning' href='#' title='Replace preview image with currently selected in gallery' onclick={save_card_preview}>Replace Preview</a></li>
+                    <li><a class='card-link-bold' href='#' title='Click to apply this model' onclick={save_card_preview}>Apply Model</a></li>
+                </ul>
+                <span style='display:none' class='search_term'>{search_term}</span>
+            </div>
+        </div>
     </div>
-	
-	<div class='actions'>
-		<div class='additional'>
-			<ul>
-				<li><a href="#" title="replace preview image with currently selected in gallery" onclick={save_card_preview}>replace preview</a></li>
-			</ul>
-			<span style="display:none" class='search_term'>{search_term}</span>
-		</div>
-	</div>
-	<article class='card-information'>
-		<h1 class='name'>{name}</h1>`
-		<div class='description'><p>{description}</p></div>
-		<div class="descriptions-actions" >
-			<a href="#" class='description-action' title="replace preview description with currently selected in gallery" onclick={save_card_description}>Update Notes</a>
-			<a href="#" class='description-action' title="read description" onclick={read_card_description}>Load Notes</a>
+	<article class='card-info'>
+		<h1 class='name' title='Click to apply this model' onclick={card_clicked}>{name}</h1>
+		<div class='description' title='Scrollable if paragraph been cut off' ><p>{description}</p></div>
+		<div class='descriptions-actions' >
+            <ul class='actions-btns-list'>
+                <li><a href='#' class='card-link-color-warning' title='replace notes with current content in the notes text area' onclick={save_card_description}>Update Notes</a></li>
+                <li><a href='#' class='card-link-bold' title='Load notes to the notes text area' onclick={read_card_description}>Load Notes</a></li>
+            </ul>
 		</div>
 	</article> 
-
 </div>
