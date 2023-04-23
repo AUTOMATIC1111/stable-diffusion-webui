@@ -1,3 +1,209 @@
-# See https://pylint.pycqa.org/en/latest/user_guide/messages/message_control.html
+[MAIN]
+analyse-fallback-blocks=no
+clear-cache-post-run=no
+#enable-all-extensions=
+#errors-only=
+#exit-zero=
+extension-pkg-allow-list=
+extension-pkg-whitelist=
+fail-on=
+fail-under=10
+ignore=CVS
+ignore-paths=^repositories/.*$,
+             ^extensions/.*$,
+             /usr/lib/.*$,
+ignore-patterns=
+ignored-modules=
+jobs=0
+limit-inference-results=100
+load-plugins=
+persistent=yes
+py-version=3.10
+recursive=no
+source-roots=
+suggestion-mode=yes
+unsafe-load-any-extension=no
+#verbose=
+
+[BASIC]
+argument-naming-style=snake_case
+#argument-rgx=
+attr-naming-style=snake_case
+#attr-rgx=
+bad-names=foo, bar, baz, toto, tutu, tata
+bad-names-rgxs=
+class-attribute-naming-style=any
+class-const-naming-style=UPPER_CASE
+#class-const-rgx=
+class-naming-style=PascalCase
+#class-rgx=
+const-naming-style=snake_case
+#const-rgx=
+docstring-min-length=-1
+function-naming-style=snake_case
+#function-rgx=
+# Good variable names which should always be accepted, separated by a comma.
+good-names=i,j,k,e,ex,ok,p
+good-names-rgxs=
+include-naming-hint=no
+inlinevar-naming-style=any
+#inlinevar-rgx=
+method-naming-style=snake_case
+#method-rgx=
+module-naming-style=snake_case
+#module-rgx=
+name-group=
+no-docstring-rgx=^_
+property-classes=abc.abstractproperty
+#typealias-rgx=
+#typevar-rgx=
+variable-naming-style=snake_case
+#variable-rgx=
+
+[CLASSES]
+check-protected-access-in-special-methods=no
+defining-attr-methods=__init__,
+                      __new__,
+                      setUp,
+                      asyncSetUp,
+                      __post_init__
+exclude-protected=_asdict,_fields,_replace,_source,_make,os._exit
+valid-classmethod-first-arg=cls
+valid-metaclass-classmethod-first-arg=mcs
+
+[DESIGN]
+exclude-too-few-public-methods=
+ignored-parents=
+max-args=5
+max-attributes=7
+max-bool-expr=5
+max-branches=12
+max-locals=15
+max-parents=7
+max-public-methods=20
+max-returns=6
+max-statements=50
+min-public-methods=2
+
+[EXCEPTIONS]
+overgeneral-exceptions=builtins.BaseException,builtins.Exception
+
+[FORMAT]
+expected-line-ending-format=
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+indent-after-paren=4
+indent-string='    '
+max-line-length=200
+max-module-lines=9999
+single-line-class-stmt=no
+single-line-if-stmt=no
+
+[IMPORTS]
+allow-any-import-level=
+allow-reexport-from-package=no
+allow-wildcard-with-all=no
+deprecated-modules=
+ext-import-graph=
+import-graph=
+int-import-graph=
+known-standard-library=
+known-third-party=enchant
+preferred-modules=
+
+[LOGGING]
+logging-format-style=new
+logging-modules=logging
+
 [MESSAGES CONTROL]
-disable=C,R,W,E,I
+confidence=HIGH,
+           CONTROL_FLOW,
+           INFERENCE,
+           INFERENCE_FAILURE,
+           UNDEFINED
+# disable=C,R,W
+disable=raw-checker-failed,
+        bad-inline-option,
+        locally-disabled,
+        file-ignored,
+        suppressed-message,
+        useless-suppression,
+        deprecated-pragma,
+        use-symbolic-message-instead,
+        line-too-long,
+        missing-function-docstring,
+        missing-module-docstring,
+        missing-class-docstring,
+        logging-fstring-interpolation,
+        import-outside-toplevel,
+        consider-iterating-dictionary,
+        wrong-import-position,
+        unnecessary-lambda,
+        consider-using-dict-items,
+        dangerous-default-value,
+        unnecessary-dunder-call,
+enable=c-extension-no-member
+
+[METHOD_ARGS]
+timeout-methods=requests.api.delete,requests.api.get,requests.api.head,requests.api.options,requests.api.patch,requests.api.post,requests.api.put,requests.api.request
+
+[MISCELLANEOUS]
+notes=FIXME,
+      XXX,
+      TODO
+notes-rgx=
+
+[REFACTORING]
+max-nested-blocks=5
+never-returning-functions=sys.exit,argparse.parse_error
+
+[REPORTS]
+evaluation=max(0, 0 if fatal else 10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10))
+msg-template=
+#output-format=
+reports=no
+score=no
+
+[SIMILARITIES]
+ignore-comments=yes
+ignore-docstrings=yes
+ignore-imports=yes
+ignore-signatures=yes
+min-similarity-lines=4
+
+[SPELLING]
+max-spelling-suggestions=4
+spelling-dict=
+spelling-ignore-comment-directives=fmt: on,fmt: off,noqa:,noqa,nosec,isort:skip,mypy:
+spelling-ignore-words=
+spelling-private-dict-file=
+spelling-store-unknown-words=no
+
+[STRING]
+check-quote-consistency=no
+check-str-concat-over-line-jumps=no
+
+[TYPECHECK]
+contextmanager-decorators=contextlib.contextmanager
+generated-members=numpy.*,torch.*,cv2.*
+ignore-none=yes
+ignore-on-opaque-inference=yes
+ignored-checks-for-mixins=no-member,
+                          not-async-context-manager,
+                          not-context-manager,
+                          attribute-defined-outside-init
+ignored-classes=optparse.Values,thread._local,_thread._local,argparse.Namespace
+missing-member-hint=yes
+missing-member-hint-distance=1
+missing-member-max-choices=1
+mixin-class-rgx=.*[Mm]ixin
+signature-mutators=
+
+[VARIABLES]
+additional-builtins=
+allow-global-unused-variables=yes
+allowed-redefined-builtins=
+callbacks=cb_,
+dummy-variables-rgx=_+$|(_[a-zA-Z0-9_]*[a-zA-Z0-9]+?$)|dummy|^ignored_|^unused_
+ignored-argument-names=_.*|^ignored_|^unused_
+init-import=no
+redefining-builtins-modules=six.moves,past.builtins,future.builtins,builtins,io

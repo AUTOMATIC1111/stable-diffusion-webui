@@ -1,38 +1,47 @@
 import sys
-import traceback
+import logging
+import warnings
+from rich import print # pylint: disable=redefined-builtin
+from rich.console import Console
+from rich.theme import Theme
+from rich.pretty import install as pretty_install
+from rich.traceback import install as traceback_install
+
+console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
+    "traceback.border": "black",
+    "traceback.border.syntax_error": "black",
+    "inspect.value.border": "black",
+}))
+
+pretty_install(console=console)
+traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False)
+already_displayed = {}
+
+
+def install(suppress=[]):
+    warnings.filterwarnings("ignore", category=UserWarning)
+    pretty_install(console=console)
+    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=suppress)
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s')
+    for handler in logging.getLogger().handlers:
+        handler.setLevel(logging.INFO)
 
 
 def print_error_explanation(message):
     lines = message.strip().split("\n")
-    max_len = max([len(x) for x in lines])
-
-    print('=' * max_len, file=sys.stderr)
     for line in lines:
         print(line, file=sys.stderr)
-    print('=' * max_len, file=sys.stderr)
 
 
-def display(e: Exception, task):
+def display(e: Exception, task, suppress=[]):
     print(f"{task or 'error'}: {type(e).__name__}", file=sys.stderr)
-    print(traceback.format_exc(), file=sys.stderr)
-
-    message = str(e)
-    if "copying a param with shape torch.Size([640, 1024]) from checkpoint, the shape in current model is torch.Size([640, 768])" in message:
-        print_error_explanation("""
-The most likely cause of this is you are trying to load Stable Diffusion 2.0 model without specifying its config file.
-See https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#stable-diffusion-20 for how to solve this.
-        """)
-
-
-already_displayed = {}
+    console.print_exception(show_locals=False, max_frames=2, extra_lines=1, suppress=suppress, theme="ansi_dark", word_wrap=False, width=min([console.width, 200]))
 
 
 def display_once(e: Exception, task):
     if task in already_displayed:
         return
-
     display(e, task)
-
     already_displayed[task] = 1
 
 
@@ -40,4 +49,8 @@ def run(code, task):
     try:
         code()
     except Exception as e:
-        display(task, e)
+        display(e, task)
+
+
+def exception(suppress=[]):
+    console.print_exception(show_locals=False, max_frames=10, extra_lines=2, suppress=suppress, theme="ansi_dark", word_wrap=False, width=min([console.width, 200]))

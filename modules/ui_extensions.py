@@ -1,17 +1,15 @@
 import json
 import os.path
-import sys
 import time
-import traceback
-
-import git
-
-import gradio as gr
-import html
 import shutil
 import errno
+import html
 
-from modules import extensions, shared, paths
+import git
+import gradio as gr
+
+from rich import print # pylint: disable=redefined-builtin
+from modules import extensions, shared, paths, errors
 from modules.call_queue import wrap_gradio_gpu_call
 
 available_extensions = {"extensions": []}
@@ -38,9 +36,8 @@ def apply_and_restart(disable_list, update_list, disable_all):
 
         try:
             ext.fetch_and_reset_hard()
-        except Exception:
-            print(f"Error getting updates for {ext.name}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+        except Exception as e:
+            errors.display(e, f'extensions apply update: {ext.name}')
 
     shared.opts.disabled_extensions = disabled
     shared.opts.disable_all_extensions = disable_all
@@ -48,9 +45,10 @@ def apply_and_restart(disable_list, update_list, disable_all):
 
     shared.state.interrupt()
     shared.state.need_restart = True
+    shared.restart_server()
 
 
-def check_updates(id_task, disable_list):
+def check_updates(_id_task, disable_list):
     check_access()
 
     disabled = json.loads(disable_list)
@@ -68,8 +66,7 @@ def check_updates(id_task, disable_list):
             if 'FETCH_HEAD' not in str(e):
                 raise
         except Exception:
-            print(f"Error checking updates for {ext.name}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.display(e, f'extensions check update: {ext.name}')
 
         shared.state.nextjob()
 
@@ -82,6 +79,7 @@ def extension_table():
         <thead>
             <tr>
                 <th><abbr title="Use checkbox to enable the extension; it will be enabled or disabled when you click apply button">Extension</abbr></th>
+                <th>Type</th>
                 <th>URL</th>
                 <th><abbr title="Extension version">Version</abbr></th>
                 <th><abbr title="Use checkbox to mark the extension for update; it will be updated when you click apply button">Update</abbr></th>
@@ -93,7 +91,7 @@ def extension_table():
     for ext in extensions.extensions:
         ext.read_info_from_repo()
 
-        remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
+        remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape(ext.remote or '')}</a>"""
 
         if ext.can_update:
             ext_status = f"""<label><input class="gr-check-radio gr-checkbox" name="update_{html.escape(ext.name)}" checked="checked" type="checkbox">{html.escape(ext.status)}</label>"""
@@ -107,6 +105,7 @@ def extension_table():
         code += f"""
             <tr>
                 <td><label{style}><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
+                <td>{"system" if ext.is_builtin else 'user'}</td>
                 <td>{remote}</td>
                 <td>{ext.version}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
@@ -137,10 +136,10 @@ def install_extension_from_url(dirname, url):
     if dirname is None or dirname == "":
         *parts, last_part = url.split('/')
         last_part = normalize_git_url(last_part)
-
         dirname = last_part
 
     target_dir = os.path.join(extensions.extensions_dir, dirname)
+    print(f'Installing extension: {url} into {target_dir}')
     assert not os.path.exists(target_dir), f'Extension directory already exists: {target_dir}'
 
     normalized_url = normalize_git_url(url)
@@ -158,18 +157,14 @@ def install_extension_from_url(dirname, url):
             os.rename(tmpdir, target_dir)
         except OSError as err:
             if err.errno == errno.EXDEV:
-                # Cross device link, typical in docker or when tmp/ and extensions/ are on different file systems
-                # Since we can't use a rename, do the slower but more versitile shutil.move()
                 shutil.move(tmpdir, target_dir)
             else:
-                # Something else, not enough free space, permissions, etc.  rethrow it so that it gets handled.
                 raise err
 
-        import launch
-        launch.run_extension_installer(target_dir)
-
+        from launch import run_extension_installer
+        run_extension_installer(target_dir)
         extensions.list_extensions()
-        return [extension_table(), html.escape(f"Installed into {target_dir}. Use Installed tab to restart.")]
+        return [extension_table(), html.escape(f"Installed into {target_dir}")]
     finally:
         shutil.rmtree(tmpdir, True)
 
@@ -183,7 +178,7 @@ def install_extension_from_index(url, hide_tags, sort_column, filter_text):
 
 
 def refresh_available_extensions(url, hide_tags, sort_column):
-    global available_extensions
+    global available_extensions # pylint: disable=global-statement
 
     import urllib.request
     with urllib.request.urlopen(url) as response:
@@ -293,24 +288,24 @@ def create_ui():
     import modules.ui
 
     with gr.Blocks(analytics_enabled=False) as ui:
-        with gr.Tabs(elem_id="tabs_extensions") as tabs:
+        with gr.Tabs(elem_id="tabs_extensions"):
             with gr.TabItem("Installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):
-                    apply = gr.Button(value="Apply and restart UI", variant="primary")
+                    apply = gr.Button(value="Apply & restart UI", variant="primary")
                     check = gr.Button(value="Check for updates")
                     extensions_disable_all = gr.Radio(label="Disable all extensions", choices=["none", "extra", "all"], value=shared.opts.disable_all_extensions, elem_id="extensions_disable_all")
                     extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
                     extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)
 
-                html = ""
+                txt = ""
                 if shared.opts.disable_all_extensions != "none":
-                    html = """
+                    txt = """
 <span style="color: var(--primary-400);">
     "Disable all extensions" was set, change it to "none" to load all extensions again
 </span>
                     """
-                info = gr.HTML(html)
+                info = gr.HTML(txt)
                 extensions_table = gr.HTML(lambda: extension_table())
 
                 apply.click(
@@ -338,9 +333,9 @@ def create_ui():
                     hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
                     sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", ], type="index")
 
-                with gr.Row(): 
+                with gr.Row():
                     search_extensions_text = gr.Text(label="Search").style(container=False)
-                   
+
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
 

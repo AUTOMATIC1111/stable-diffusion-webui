@@ -1,0 +1,14 @@
+{
+  "python.analysis.extraPaths": [
+    ".",
+    "./modules",
+    "./modules/lora",
+    "./repositories/BLIP",
+    "./repositories/CodeFormer",
+    "./repositories/k-diffusion",
+    "./repositories/taming-transformers",
+    "./repositories/stable-diffusion-stability-ai",
+    "./repositories/stable-diffusion-stability-ai/ldm"
+  ],
+  "python.analysis.typeCheckingMode": "off"
+}

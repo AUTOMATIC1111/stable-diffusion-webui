@@ -72,11 +72,11 @@ div.compact{
     padding: 0.05em 0;
 }
 
-.gradio-dropdown ul.options li.item.selected {
+.gradio-dropdown ul.options li.item:not(:has(.hide)) {
     background-color: var(--neutral-100);
 }
 
-.dark .gradio-dropdown ul.options li.item.selected {
+.dark .gradio-dropdown ul.options li.item:not(:has(.hide)) {
     background-color: var(--neutral-900);
 }
 
@@ -231,9 +231,6 @@ button.custom-button{
 
 .performance .time {
     margin-right: 0;
-}
-
-.performance .vram {
 }
 
 #txt2img_generate, #img2img_generate {
@@ -833,4 +830,18 @@ footer {
 
 .extra-network-cards .card ul a:hover{
     color: red;
+}
+
+.theme-preview {
+    display: none;
+    position: fixed;
+    border: 4px solid var(--neutral-600);
+    box-shadow: 2px 2px 2px 2px var(--neutral-700);
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    max-width: 75vw;
+    z-index: 999;
 }
