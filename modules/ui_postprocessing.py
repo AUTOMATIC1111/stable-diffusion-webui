@@ -1,11 +1,11 @@
 import gradio as gr
-from modules import scripts_postprocessing, scripts, shared, gfpgan_model, codeformer_model, ui_common, postprocessing, call_queue
+from modules import scripts_postprocessing, scripts, shared, gfpgan_model, codeformer_model, ui_common, postprocessing, call_queue # pylint: disable=unused-import
 import modules.generation_parameters_copypaste as parameters_copypaste
-from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
+from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call # pylint: disable=unused-import
 from modules.extras import run_pnginfo
 
 def create_ui():
-    tab_index = gr.State(value=0)
+    tab_index = gr.State(value=0) # pylint: disable=abstract-class-instantiated
 
     with gr.Row().style(equal_height=False, variant='compact'):
         with gr.Column(variant='compact'):
