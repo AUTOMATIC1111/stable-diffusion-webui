@@ -881,9 +881,10 @@ footer {
     height: 300px;
     width: 320px;
     /* width: 600px; */
-    background-color: rgba(151, 151, 151, 0.1);
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+    background-color:  #151821;
     border: 1px solid rgba(255,255,255, 0.1);
+    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.5);
     border-radius: 0.5em;
     transition: 0.3s;
     overflow: hidden;
@@ -912,7 +913,6 @@ footer {
     margin: 0;
     gap: 0.5em;
 }
-
 .extra-network-advanced .card ul.actions-btns-list li{
     display: flex;
     flex: 1 1 0;
@@ -929,14 +929,10 @@ footer {
     padding: 0.5em;
 }
 .extra-network-advanced .card ul.actions-btns-list li:hover{
-    background-color: rgba(255, 255, 255, 0.15);
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
-
-
-
 /* img section */
-
 .extra-network-advanced .card .card-img-preview{
     flex: 0 1 120px;
     /* flex-basis: 250px; */
@@ -967,7 +963,7 @@ footer {
     margin-bottom: auto;
 }
 
-.extra-network-advanced .card .card-img-preview .actions {
+.extra-network-advanced .card .card-img-preview .actions{
     margin-top: auto;
     padding: 0.5em;
     opacity: 0;
@@ -982,9 +978,8 @@ footer {
     flex-basis: auto;
     max-width: 10em;
 }
-
 .extra-network-advanced .card .card-img-preview ul.actions-btns-list li:hover{
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.68);
 }
 
 
@@ -995,7 +990,7 @@ footer {
     padding: 0.5em 1em;
     display: grid;
     grid-template-rows: auto 1fr auto;
-    scrollbar-width: 4px;
+    overflow: hidden;
 }
 
 .extra-network-advanced .card .card-info .name{
@@ -1007,19 +1002,56 @@ footer {
 }
 
 .extra-network-advanced .card .card-info .description{
-    overflow-y: auto;
-    scrollbar-width: 0.2em;
+    /* overflow-y: auto; */
+    /* scrollbar-width: 0.2em; */
 }
 
 .extra-network-advanced .card .card-info .description::-webkit-scrollbar {
-    width: 0.2em;
+    /* width: 0.2em; */
 }
 
-.extra-network-advanced .card .card-info .description p{
+.extra-network-advanced .card .card-info .description{
+    display: flex;
+    flex-direction: column;
     word-break: break-all;
     white-space: pre-wrap;
     line-height: 1.1em;
     color: #b8b8b8;
+    padding-bottom: 0.5em;
+}
+
+.extra-network-advanced .card .card-info .description textarea.desc-text{
+    flex: 1 1 0;
+    resize: none;
+    scrollbar-width: 0;
+    word-break: break-all;
+    white-space: pre-wrap;
+    font-size: 1em;
+    line-height: 1.1em;
+    margin-bottom: 0.5em;
+    padding: 0.2em;
+    border: 1px solid black;
+    border-radius: 0.5em;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #b8b8b8;
+    
+}
+.extra-network-advanced .card .card-info .description .desc-text:active.desc-text:active, 
+.extra-network-advanced .card .card-info .description .desc-text:active:focus-visible{
+    outline-color: coral;
+}
+
+.extra-network-advanced .card .card-info .description textarea.desc-text::-webkit-scrollbar{
+    width: 0px;
+}
+
+.extra-network-advanced .card .card-info .descriptions-actions{
+    display: none;
+    /* opacity: 0; */
+}
+.extra-network-advanced .card .card-info:hover .descriptions-actions{
+    display: block;
+    /* opacity: 1; */
 }
 
 /* quick frontend dev hack for reload btm on footer*/

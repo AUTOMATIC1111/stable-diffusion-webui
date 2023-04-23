@@ -5,7 +5,7 @@
             <div class='additional'>
                 <ul class='actions-btns-list'>
                     <li><a class='card-link-color-warning' href='#' title='Replace preview image with currently selected in gallery' onclick={save_card_preview}>Replace Preview</a></li>
-                    <li><a class='card-link-bold' href='#' title='Click to apply this model' onclick={save_card_preview}>Apply Model</a></li>
+                    <li><a class='card-link-bold' href='#' title='Click to apply this model' onclick={card_clicked}>Apply Model</a></li>
                 </ul>
                 <span style='display:none' class='search_term'>{search_term}</span>
             </div>
@@ -13,7 +13,9 @@
     </div>
 	<article class='card-info'>
 		<h1 class='name' title='Click to apply this model' onclick={card_clicked}>{name}</h1>
-		<div class='description' title='Scrollable if paragraph been cut off' ><p>{description}</p></div>
+		<div class='description' title='Scrollable if paragraph been cut off'>
+            <textarea class="desc-text">{description}</textarea>
+        </div>
 		<div class='descriptions-actions' >
             <ul class='actions-btns-list'>
                 <li><a href='#' class='card-link-color-warning' title='replace notes with current content in the notes text area' onclick={save_card_description}>Update Notes</a></li>
