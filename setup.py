@@ -200,15 +200,16 @@ def check_torch():
             log.warning("Torch repoorts CUDA not available")
         else:
             if torch.version.cuda:
-                log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version()}')
+                log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else "N/A"}')
             elif torch.version.hip:
                 log.info(f'Torch backend: AMD ROCm HIP {torch.version.hip}')
             else:
                 log.warning('Unknown Torch backend')
             for device in [torch.cuda.device(i) for i in range(torch.cuda.device_count())]:
                 log.info(f'Torch detected GPU: {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
-    except:
-        pass
+    except Exception as e:
+        log.error(f'Could not load torch: {e}')
+        exit(1)
     try:
         if 'xformers' in xformers_package:
             install(f'--no-deps {xformers_package}', ignore=True)
