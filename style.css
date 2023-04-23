@@ -1621,6 +1621,10 @@ button.tool.secondary:hover,
 [id$="2img_res_switch_btn"]{
 	margin:-1px !important;
 }
+#dim_controls > div:nth-child(2){
+	margin-top:-1px !important;
+	margin-bottom:-1px !important;
+}
 /***************************/
 /* Generate Interrupt Skip */
 /***************************/
