@@ -1093,6 +1093,7 @@ def create_ui():
                         process_multicrop = gr.Checkbox(label='Auto-sized crop', elem_id="train_process_multicrop")
                         process_caption = gr.Checkbox(label='Use BLIP for caption', elem_id="train_process_caption")
                         process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True, elem_id="train_process_caption_deepbooru")
+                        process_rotate = gr.Checkbox(label='Rotate images', visible=True, elem_id="train_process_rotate")
 
                     with gr.Row(visible=False) as process_split_extra_row:
                         process_split_threshold = gr.Slider(label='Split image threshold', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_split_threshold")
@@ -1103,6 +1104,10 @@ def create_ui():
                         process_focal_crop_entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_entropy_weight")
                         process_focal_crop_edges_weight = gr.Slider(label='Focal point edges weight', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_edges_weight")
                         process_focal_crop_debug = gr.Checkbox(label='Create debug image', elem_id="train_process_focal_crop_debug")
+                    
+                    with gr.Row(visible=False) as process_rotate_row:
+                        process_rotate_angle = gr.Slider(label='Rotate angle', value=90.0, minimum=0.0, maximum=359.9, step=1.0, elem_id="train_process_rotate_angle")
+                        process_rotate_steps = gr.Slider(label='Rotate steps', value=3.0, minimum=1.0, maximum=100, step=1.0, elem_id="train_process_rotate_steps")
                     
                     with gr.Column(visible=False) as process_multicrop_col:
                         gr.Markdown('Each image is center-cropped with an automatically chosen width and height.')
@@ -1135,6 +1140,12 @@ def create_ui():
                         fn=lambda show: gr_show(show),
                         inputs=[process_focal_crop],
                         outputs=[process_focal_crop_row],
+                    )
+
+                    process_rotate.change(
+                        fn=lambda show: gr_show(show),
+                        inputs=[process_rotate],
+                        outputs=[process_rotate_row],
                     )
 
                     process_multicrop.change(
@@ -1271,6 +1282,9 @@ def create_ui():
                 process_multicrop_maxarea,
                 process_multicrop_objective,
                 process_multicrop_threshold,
+                process_rotate,
+                process_rotate_angle,
+                process_rotate_steps,
             ],
             outputs=[
                 ti_output,
