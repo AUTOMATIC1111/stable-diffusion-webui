@@ -1414,6 +1414,24 @@ display:none !important;
 
 } */
 
+#txtimg_hr_finalres{
+    min-height: 0 !important;
+    margin-left: 0;
+    outline: 0;
+	
+}
+
+#txtimg_hr_finalres .resolution{
+    font-weight: bold;
+}
+
+#txt2img_hr_upscaler{
+	max-width:50%;
+}
+#txtimg_hr_finalres .prose.gradio-html{
+	padding: var(--ae-inside-padding-size) !important;
+}
+
 #header-top > .gradio-row:not(#nav_menu, #nav_menu_header_tabs) {
     margin-left: max(4px, var(--ae-outside-gap-size));	
 }
@@ -1428,7 +1446,7 @@ display:none !important;
 [id*="2img_toprow"] .gap {
     gap: var(--ae-inside-padding-size) !important;
 }
-
+.script-group,
 [id*="_sub-group"]{
 	padding: var(--ae-inside-padding-size) !important;
 	background-color: var(--ae-subgroup-bg-color) !important;
@@ -1437,10 +1455,11 @@ display:none !important;
 	margin-top: calc(-1px + var(--ae-outside-gap-size) * -1);
 	padding-bottom: calc(var(--ae-inside-padding-size) + 2px) !important;
 }
+.script-group > div,
 [id*="_sub-group"] > div{
 	border-radius: var(--ae-subpanel-border-radius);
 }
-
+.script-group div.block,
 [id*="_sub-group"] div.block{
     
     background-color: var(--ae-subpanel-bg-color) !important;
@@ -1449,6 +1468,8 @@ display:none !important;
 	margin: 0px;
    
 }
+.script-group fieldset.block.padded,
+.script-group div.gradio-row>.form,
 [id*="_sub-group"] div.gradio-row>.form{
 	background-color: var(--ae-subpanel-bg-color) !important;
 	border-radius: var(--ae-subpanel-border-radius) !important;
@@ -1457,15 +1478,41 @@ display:none !important;
 [id*="_sub-group"] div.gradio-row:not(:first-child) {
     /*margin-top: -1px;*/
 }
-
+.script-group div.svelte-awbtu4,
+.script-group div.gradio-row>.form,
 [id*="_sub-group"] div.gradio-row>.form {
     border: 0;
-    padding: 0;
+    padding: 1px;
     background: var(--ae-subpanel-border-color)/*transparent*/ !important;
     gap: 1px !important;
 	margin:0px;
+	border-radius: var(--ae-subpanel-border-radius) !important;
 }
 
+[id*="_sub-group"] div.gradio-row>.form {
+    border: 0;
+    padding: 0px;
+}
+
+.script-group .compact,
+.script-group .gradio-column{
+gap:1px !important;
+padding:0;
+}
+.script-group button.secondary,
+.script-group .wrap.svelte-1qxcj04.svelte-1qxcj04.svelte-1qxcj04 label,
+.script-group .wrap.svelte-1p9xokt.svelte-1p9xokt.svelte-1p9xokt label,
+.script-group input[type=checkbox],
+.script-group input[type=radio]{
+	border-radius: var(--ae-subpanel-border-radius) !important;
+}
+.script-group div.block.gradio-html{
+	background: transparent !important;
+}
+.script-group input[type=number],
+.script-group input[type=range],
+.script-group textarea,
+.script-group button.tool.secondary,
 [id*="_sub-group"] button.tool.secondary,
 [id*="_sub-group"] input:not(.border-none) {  
     border-radius: var(--ae-subpanel-border-radius) !important;
@@ -1473,6 +1520,7 @@ display:none !important;
     background: var(--ae-subgroup-input-bg-color)!important;
     color: var(--ae-subgroup-input-color)!important;
 }
+.script-group button.tool..secondary:hover, 
 button.tool.secondary:hover, 
 [id*="_sub-group"] button.tool.secondary:hover {     
     background: var(--ae-icon-color)!important;
@@ -1483,7 +1531,7 @@ button.tool.secondary:hover,
     background: var(--ae-icon-color) !important;
     color: var(--ae-icon:hover-color) !important;
 }
-
+.script-group > div.gradio-row,
 [id*="_sub-group"] > div.gradio-row {
     gap: 1px !important;
     border: 1px solid var(--ae-subpanel-border-color) !important;
@@ -1499,6 +1547,7 @@ button.tool.secondary:hover,
 [id*="_sub-group"] div.gradio-row:not(:last-child)>.form {
     /*margin-bottom: 1px;*/
 }
+.script-group + div.form,
 [id*="_group_"] + div.form {
     margin-top: calc( -1px + var(--ae-outside-gap-size) * -1);
 }
@@ -1516,15 +1565,17 @@ button.tool.secondary:hover,
 [id*="_sub-group"] [id$="-collapse-all"] > div.form{
 	background-color:transparent!important;
 }
-
+.script-group .gradio-dropdown label .wrap,
 [id*="_sub-group"] .gradio-dropdown label .wrap {
     border-radius: var(--ae-subpanel-border-radius) !important;
     background: var(--ae-subgroup-input-bg-color)!important;
     border-color: var(--ae-subgroup-input-border-color) !important;
 }
+.script-group .gradio-dropdown label .wrap span,
 [id*="_sub-group"] .gradio-dropdown label .wrap span {
 	color: var(--ae-subgroup-input-color) !important;
 }
+.script-group .dropdown-arrow,
 [id*="_sub-group"] .dropdown-arrow {
     fill: var(--ae-subgroup-input-color)!important;
 }
@@ -1859,7 +1910,7 @@ button.secondary{
 #settings_result {
     height: auto !important;
     width: 100%;
-    color: var(--primary-color);
+    color: var(--ae-primary-color);
 	padding: 0 !important;
 }
 

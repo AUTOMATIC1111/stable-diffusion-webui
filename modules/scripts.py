@@ -340,7 +340,7 @@ class ScriptRunner:
             script.args_to = len(inputs)
 
         for script in self.alwayson_scripts:
-            with gr.Group() as group:
+            with gr.Group(elem_classes="script-alwayson-group") as group:
                 create_script_ui(script, inputs, inputs_alwayson)
 
             script.group = group
@@ -349,7 +349,7 @@ class ScriptRunner:
         inputs[0] = dropdown
 
         for script in self.selectable_scripts:
-            with gr.Group(visible=False) as group:
+            with gr.Group(visible=False, elem_classes="script-group") as group:
                 create_script_ui(script, inputs, inputs_alwayson)
 
             script.group = group
