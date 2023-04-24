@@ -53,6 +53,7 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
 
     def get_x_prev_and_pred_x0(e_t, index):
         # select parameters corresponding to the currently considered timestep
+        print(alphas[index]) # DML ISSUE: PLMS Sampling does not work without this print.
         a_t = torch.full((b, 1, 1, 1), alphas[index], device=device)
         a_prev = torch.full((b, 1, 1, 1), alphas_prev[index], device=device)
         sigma_t = torch.full((b, 1, 1, 1), sigmas[index], device=device)

@@ -27,12 +27,26 @@ def get_cuda_device_string():
     return "cuda"
 
 
+def get_dml_device_string():
+    from modules import shared
+    if shared.cmd_opts.device_id is not None:
+        return f"privateuseone:{shared.cmd_opts.device_id}"
+    return "privateuseone"
+
+
 def get_optimal_device_name():
     if torch.cuda.is_available():
         return get_cuda_device_string()
     if has_mps():
         return "mps"
-    return "cpu"
+    try:
+        import torch_directml
+        if torch_directml.is_available():
+            return get_dml_device_string()
+        else:
+            return "cpu"
+    except:
+        return "cpu"
 
 
 def get_optimal_device():
