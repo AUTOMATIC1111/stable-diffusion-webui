@@ -1,20 +1,22 @@
+import json
+import html
 import glob
 import os.path
 import urllib.parse
 from pathlib import Path
 from PIL import PngImagePlugin
+import gradio as gr
 
 from modules import shared
 from modules.images import read_info_from_image
-import gradio as gr
-import json
-import html
-
 from modules.generation_parameters_copypaste import image_from_url_text
+from modules.ui_components import ToolButton
 
 extra_pages = []
 allowed_dirs = set()
 
+refresh_symbol = '\U0001f504'  # 🔄
+close_symbol = '\U0000274C'  # ❌
 
 def register_page(page):
     """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
@@ -254,8 +256,10 @@ def create_ui(container, button, tabname):
                 ui.pages.append(page_elem)
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
-    button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
+
     ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
+    button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
+    button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
@@ -271,6 +275,7 @@ def create_ui(container, button, tabname):
 
     state_visible = gr.State(value=False)
     button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
+    button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     def refresh():
         res = []

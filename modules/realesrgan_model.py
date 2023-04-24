@@ -1,14 +1,13 @@
 import os
 import sys
-import traceback
 
 import numpy as np
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
-from realesrgan import RealESRGANer
 
 from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import cmd_opts, opts
+import modules.errors as errors
 
 
 class UpscalerRealESRGAN(Upscaler):
@@ -27,14 +26,19 @@ class UpscalerRealESRGAN(Upscaler):
                 if scaler.name in opts.realesrgan_enabled_models:
                     self.scalers.append(scaler)
 
-        except Exception:
-            print("Error importing Real-ESRGAN:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+        except Exception as e:
+            errors.display(e, 'real-esrgan')
             self.enable = False
             self.scalers = []
 
     def do_upscale(self, img, path):
         if not self.enable:
+            return img
+
+        try:
+            from realesrgan import RealESRGANer
+        except:
+            print("Error importing Real-ESRGAN:", file=sys.stderr)
             return img
 
         info = self.load_model(path)
@@ -46,7 +50,7 @@ class UpscalerRealESRGAN(Upscaler):
             scale=info.scale,
             model_path=info.local_data_path,
             model=info.model(),
-            half=not cmd_opts.no_half and not cmd_opts.upcast_sampling,
+            half=not cmd_opts.no_half and not opts.upcast_sampling,
             tile=opts.ESRGAN_tile,
             tile_pad=opts.ESRGAN_tile_overlap,
         )
@@ -67,8 +71,7 @@ class UpscalerRealESRGAN(Upscaler):
             info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
             return info
         except Exception as e:
-            print(f"Error making Real-ESRGAN models list: {e}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.display(e, 'real-esrgan model list')
         return None
 
     def load_models(self, _):
@@ -125,5 +128,5 @@ def get_realesrgan_models(scaler):
         ]
         return models
     except Exception as e:
-        print("Error making Real-ESRGAN models list:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        print("Error creating Real-ESRGAN models list", file=sys.stderr)
+        return []

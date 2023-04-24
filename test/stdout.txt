@@ -1,0 +1,10 @@
+Python 3.10.10 (tags/v3.10.10:aad5f6a, Feb  7 2023, 17:20:36) [MSC v.1929 64 bit (AMD64)]
+Commit hash: f3eee04b8312e26a1778a1f7dcb55d18c749ad71
+Installing requirements for Web UI
+Launching Web UI with arguments: --skip-torch-cuda-test --deepdanbooru --no-half-vae --tests TESTS --api --ckpt C:\Users\MiaoPC-1\Documents\stable-diffusion-webui\test/test_files/empty.pt --disable-nan-check --no-tests
+No module 'xformers'. Proceeding without it.
+Calculating sha256 for C:\Users\MiaoPC-1\Documents\stable-diffusion-webui\test/test_files/empty.pt: d030ad8db708280fcae77d87e973102039acd23a11bdecc3db8eb6c0ac940ee1
+Loading weights [d030ad8db7] from C:\Users\MiaoPC-1\Documents\stable-diffusion-webui\test/test_files/empty.pt
+Creating model from config: C:\Users\MiaoPC-1\Documents\stable-diffusion-webui\configs\v1-inference.yaml
+LatentDiffusion: Running in eps-prediction mode
+DiffusionWrapper has 859.52 M params.

@@ -161,7 +161,9 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         params.subindex = 0
         filename = os.path.join(src, imagefile)
         try:
-            img = Image.open(filename).convert("RGB")
+            img = Image.open(filename)
+            img = ImageOps.exif_transpose(img)
+            img = img.convert("RGB")
         except Exception:
             continue
 
