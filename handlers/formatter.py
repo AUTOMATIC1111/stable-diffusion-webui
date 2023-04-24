@@ -29,10 +29,9 @@ def init_formatters():
         if issubclass(cls, AlwaysonScriptArgsFormatter):
             ins = cls()
             name = ins.name()
-            print(f"load {name} formatter")
             if not ins.name() or name in formatters:
                 continue
-            print(f"add {name} formatter")
+
             formatters[ins.name()] = ins.format
 
 

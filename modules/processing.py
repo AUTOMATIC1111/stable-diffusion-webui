@@ -163,6 +163,7 @@ class StableDiffusionProcessing:
         self.is_using_inpainting_conditioning = False
         self.disable_extra_networks = False
         self.compress_pnginfo = False
+        self.progress_callback = None
 
         if not seed_enable_extras:
             self.subseed = -1
@@ -780,6 +781,14 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             devices.torch_gc()
 
             state.nextjob()
+            if callable(p.progress_callback):
+                progress = 0.01
+                if shared.state.job_count > 0:
+                    progress += shared.state.job_no / shared.state.job_count
+                if shared.state.sampling_steps > 0:
+                    progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
+                progress = int(min(progress, 1) * 100)
+                p.progress_callback(progress)
 
         p.color_corrections = None
 

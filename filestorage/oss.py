@@ -35,7 +35,8 @@ class OssFileStorage(FileStorage):
         if self.auth and remoting_path and local_path:
             if os.path.isfile(local_path):
                 return local_path
-
+            if os.path.isfile(remoting_path):
+                return remoting_path
             bucket, key = self.extract_buack_key_from_path(remoting_path)
             self.logger.info(f"download {key} from oss to {local_path}")
             bucket = oss2.Bucket(self.auth, self.endpoint, bucket)

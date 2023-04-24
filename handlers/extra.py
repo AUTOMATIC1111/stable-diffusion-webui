@@ -88,7 +88,7 @@ class ExtraTaskHandler(TaskHandler):
         yield p
         result = SingleUpscalerTask.exec_task(task)
         # todo: save images
-        p.task = TaskStatus.Finsh
+        p.task = TaskStatus.Finish
         p.task_desc = f'upscaler task:{task.id} finished.'
         yield p
 

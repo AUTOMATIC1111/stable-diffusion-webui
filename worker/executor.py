@@ -27,6 +27,7 @@ class TaskExecutor(Thread):
         self.mutex = Lock()
         self.not_busy = Condition(self.mutex)
         self.queue = Queue(1)  # 也可直接使用变量进行消息传递。。
+        name = name or 'task-executor'
         super(TaskExecutor, self).__init__(group, target, name, args, kwargs, daemon=daemon)
 
     def _close(self):

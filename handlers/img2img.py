@@ -22,7 +22,7 @@ from modules.processing import StableDiffusionProcessingImg2Img, process_images,
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path, batch_model_local_paths
 from handlers.extension.controlnet import exec_control_net_annotator
-from handlers.dumper import TaskDumper
+from handlers.dumper import dumper
 from modules import sd_models
 
 AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]
@@ -378,6 +378,13 @@ class Img2ImgTaskHandler(TaskHandler):
         progress.status = TaskStatus.Running
         progress.task_desc = f'i2i task({task.id}) running'
         yield progress
+
+        def update_progress(p):
+            progress.task_progress = p
+            self._set_task_status(progress)
+
+        process_args.progress_callback = update_progress
+        shared.state.begin()
         if process_args.is_batch:
             assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
@@ -394,7 +401,7 @@ class Img2ImgTaskHandler(TaskHandler):
                                                      *process_args.script_args)  # Need to pass args as list here
             else:
                 processed = process_images(process_args)
-
+        shared.state.end()
         process_args.close()
         images = save_processed_images(processed, process_args.outpath_samples, task.id, task.user_id)
         progress.set_finish_result(images)
@@ -402,7 +409,6 @@ class Img2ImgTaskHandler(TaskHandler):
 
     def _set_task_status(self, p: TaskProgress):
         super()._set_task_status(p)
-        dumper = TaskDumper()
         dumper.dump_task_progress(p)
 
     def _exec_interrogate(self, task: Task):

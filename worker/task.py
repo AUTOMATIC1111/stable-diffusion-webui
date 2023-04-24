@@ -97,7 +97,7 @@ class TaskStatus(IntEnum):
     Prepare = 1
     Ready = 2
     Running = 3
-    Finsh = 10
+    Finish = 10
     Failed = -1
 
 
@@ -108,10 +108,11 @@ class TaskProgress:
         self.task_desc = 'waiting'
         self.task = task
         self._result = None
+        self.task_progress = 0
 
     @property
-    def task_finished(self):
-        return self.status == TaskStatus.Waiting or self.status == TaskStatus.Failed
+    def completed(self):
+        return self.status == TaskStatus.Finish or self.status == TaskStatus.Failed
 
     @property
     def result(self):
@@ -123,7 +124,7 @@ class TaskProgress:
 
     def set_finish_result(self, r: typing.Any):
         self._result = r
-        self.status = TaskStatus.Finsh
+        self.status = TaskStatus.Finish
         self.task_desc = 'ok'
 
     def to_dict(self):
@@ -142,6 +143,7 @@ class TaskProgress:
         p = cls(task)
         p.status = TaskStatus.Failed
         p.task_desc = desc
+        p.task_progress = 0
         return p
 
     @classmethod
@@ -168,7 +170,7 @@ class TaskProgress:
     @classmethod
     def new_finish(cls, task: Task, result: typing.Any):
         p = cls(task)
-        p.status = TaskStatus.Finsh
+        p.status = TaskStatus.Finish
         p.task_desc = 'ok'
         p._result = result
         return p

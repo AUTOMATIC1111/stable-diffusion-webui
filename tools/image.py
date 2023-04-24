@@ -24,9 +24,8 @@ def compress_image(infile, outfile, kb=300, step=15, quality=90):
     o_size = os.path.getsize(infile) / 1024
     # print(f'  > 原始大小：{o_size}')
     if o_size <= kb:
-        with open(infile, 'rb') as f:
-            content = f.read()
-        return content  # 大小满足要求，直接返回字节流
+        # 大小满足要求
+        shutil.copy(infile, outfile)
 
     im = Image.open(infile)
     im = im.convert("RGB")  # 兼容处理png和jpg

@@ -96,7 +96,7 @@ class TaskReceiver:
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
 
-        with redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10) as locker:
+        with redis_lock.Lock(rds, "task-lock-" + queue_name, expire=5) as locker:
             for _ in range(retry):
                 now = int(time.time() * 1000)
                 # min 最小为当前时间（ms）- VIP最大等级*放大系数（VIP提前执行权重）- 任务过期时间（1天）
@@ -134,7 +134,7 @@ class TaskReceiver:
         keys = rds.keys(TaskQueuePrefix + '*')
         return keys
 
-    def get_one_task(self, block: bool = True, sleep_time: float = 0.5) -> typing.Optional[Task]:
+    def get_one_task(self, block: bool = True, sleep_time: float = 4) -> typing.Optional[Task]:
         while 1:
             st = time.time()
             t = self._search_history_ckpt_task()
@@ -149,7 +149,7 @@ class TaskReceiver:
             if wait > 0:
                 time.sleep(wait)
 
-    def task_iter(self, sleep_time: float = 0.5) -> typing.Iterable[Task]:
+    def task_iter(self, sleep_time: float = 4) -> typing.Iterable[Task]:
         while 1:
             try:
                 st = time.time()
