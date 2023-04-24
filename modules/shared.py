@@ -432,7 +432,7 @@ options_templates.update(options_section(('ui', "Live previews"), {
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
-    "hide_samplers": OptionInfo(["Euler", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ 2M", "DPM fast", "DPM adaptive", "DPM++ 2S a Karras", "DPM++ 2S a", "DPM++ SDE Karras", "DPM2 a Karras", "LMS Karras"], "Hide samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
+    "show_samplers": OptionInfo(["Euler", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ 2M", "DPM fast", "DPM adaptive", "DPM++ 2S a Karras", "DPM++ 2S a", "DPM++ SDE Karras", "DPM2 a Karras", "LMS Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
     "eta_ddim": OptionInfo(0.0, "eta (noise multiplier) for DDIM", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "eta_ancestral": OptionInfo(1.0, "eta (noise multiplier) for ancestral samplers", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "ddim_discretize": OptionInfo('uniform', "img2img DDIM discretize", gr.Radio, {"choices": ['uniform', 'quad']}),
