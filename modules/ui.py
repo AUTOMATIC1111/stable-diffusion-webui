@@ -2013,7 +2013,7 @@ def versions_html():
          
 <li><span>gradio: </span> {gr.__version__}</li>
          
-<li><span>commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}"></span>{short_commit}</a></li>
+<li><span>commit: <a href="https://github.com/anapnoe/stable-diffusion-webui-ux/commit/{commit}"></span>{short_commit}</a></li>
          
 <li><span>checkpoint: </span><a id="sd_checkpoint_hash">N/A</a></li>
 </ul>
