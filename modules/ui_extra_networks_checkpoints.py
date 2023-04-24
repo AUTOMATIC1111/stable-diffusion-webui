@@ -27,5 +27,4 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             }
 
     def allowed_directories_for_previews(self):
-        return [v for v in [shared.cmd_opts.ckpt_dir, sd_models.model_path] if v is not None]
-
+        return [v for v in [shared.opts.ckpt_dir, sd_models.model_path] if v is not None]

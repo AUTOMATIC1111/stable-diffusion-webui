@@ -23,7 +23,7 @@ fi
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]
 then
-    install_dir="/home/$(whoami)"
+    install_dir="${HOME}"
 fi
 
 # Name of the subdirectory (defaults to stable-diffusion-webui)
@@ -103,24 +103,6 @@ then
     clone_dir="${PWD##*/}"
 fi
 
-# Check prerequisites
-gpu_info=$(lspci 2>/dev/null | grep VGA)
-case "$gpu_info" in
-    *"Navi 1"*|*"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
-    ;;
-    *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
-        printf "\n%s\n" "${delimiter}"
-        printf "Experimental support for Renoir: make sure to have at least 4GB of VRAM and 10GB of RAM or enable cpu mode: --use-cpu all --no-half"
-        printf "\n%s\n" "${delimiter}"
-    ;;
-    *) 
-    ;;
-esac
-if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
-then
-    export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
-fi  
-
 for preq in "${GIT}" "${python_cmd}"
 do
     if ! hash "${preq}" &>/dev/null
@@ -148,7 +130,7 @@ else
     printf "\n%s\n" "${delimiter}"
     printf "Clone stable-diffusion-webui"
     printf "\n%s\n" "${delimiter}"
-    "${GIT}" clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git "${clone_dir}"
+    "${GIT}" clone https://github.com/vladmandic/automatic.git "${clone_dir}"
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
 

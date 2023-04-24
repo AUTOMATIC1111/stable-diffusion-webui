@@ -205,10 +205,6 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         is when you do prompt editing: "a picture of a [cat:dog:0.4] eating ice cream"
         """
 
-        if opts.use_old_emphasis_implementation:
-            import modules.sd_hijack_clip_old
-            return modules.sd_hijack_clip_old.forward_old(self, texts)
-
         batch_chunks, token_count = self.process_texts(texts)
 
         used_embeddings = {}

@@ -1,0 +1,50 @@
+[submodule "wiki"]
+  path = wiki
+  url = https://github.com/vladmandic/automatic.wiki
+[submodule "extensions-builtin/sd-extension-system-info"]
+  path = extensions-builtin/sd-extension-system-info
+  url = https://github.com/vladmandic/sd-extension-system-info
+[submodule "extensions-builtin/sd-extension-aesthetic-scorer"]
+  path = extensions-builtin/sd-extension-aesthetic-scorer
+  url = https://github.com/vladmandic/sd-extension-aesthetic-scorer
+[submodule "extensions-builtin/sd-extension-steps-animation"]
+  path = extensions-builtin/sd-extension-steps-animation
+  url = https://github.com/vladmandic/sd-extension-steps-animation
+[submodule "extensions-builtin/stable-diffusion-webui-images-browser"]
+  path = extensions-builtin/stable-diffusion-webui-images-browser
+  url = https://github.com/AlUlkesh/stable-diffusion-webui-images-browser
+  ignore = dirty
+[submodule "extensions-builtin/seed_travel"]
+  path = extensions-builtin/seed_travel
+  url = https://github.com/yownas/seed_travel
+  ignore = dirty
+[submodule "extensions-builtin/sd-webui-model-converter"]
+  path = extensions-builtin/sd-webui-model-converter
+  url = https://github.com/Akegarasu/sd-webui-model-converter
+  ignore = dirty
+[submodule "extensions-builtin/sd-dynamic-thresholding"]
+  path = extensions-builtin/sd-dynamic-thresholding
+  url = https://github.com/mcmonkeyprojects/sd-dynamic-thresholding
+  ignore = dirty
+[submodule "modules/lora"]
+  path = modules/lora
+  url = https://github.com/kohya-ss/sd-scripts
+  ignore = dirty
+[submodule "extensions-builtin/clip-interrogator-ext"]
+	path = extensions-builtin/clip-interrogator-ext
+	url = https://github.com/pharmapsychotic/clip-interrogator-ext.git
+[submodule "extensions-builtin/sd-webui-controlnet"]
+	path = extensions-builtin/sd-webui-controlnet
+	url = https://github.com/Mikubill/sd-webui-controlnet
+[submodule "modules/lycoris"]
+	path = modules/lycoris
+	url = https://github.com/KohakuBlueleaf/LyCORIS
+[submodule "extensions-builtin/stable-diffusion-webui-rembg"]
+	path = extensions-builtin/stable-diffusion-webui-rembg
+	url = https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg
+[submodule "extensions-builtin/a1111-sd-webui-lycoris"]
+	path = extensions-builtin/a1111-sd-webui-lycoris
+	url = https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris
+[submodule "extensions-builtin/multidiffusion-upscaler-for-automatic1111"]
+	path = extensions-builtin/multidiffusion-upscaler-for-automatic1111
+	url = https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111

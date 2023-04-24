@@ -61,6 +61,7 @@ window.document.addEventListener('dragover', e => {
 
 window.document.addEventListener('drop', e => {
     const target = e.composedPath()[0];
+    if (!target.placeholder) return;
     if (target.placeholder.indexOf("Prompt") == -1) {
         return;
     }

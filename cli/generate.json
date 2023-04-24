@@ -1,0 +1,38 @@
+{
+  "paths":
+  {
+      "root": "/mnt/c/Users/mandi/OneDrive/Generative/Generate",
+      "generate": "image",
+      "upscale": "upscale",
+      "grid": "grid"
+  },
+  "generate":
+  {
+      "restore_faces": true,
+      "prompt": "dynamic",
+      "negative_prompt": "foggy, blurry, blurred, duplicate, ugly, mutilated, mutation, mutated, out of frame, bad anatomy, disfigured, deformed, censored, low res, watermark, text, poorly drawn face, signature",
+      "steps": 30,
+      "batch_size": 2,
+      "n_iter": 1,
+      "seed": -1,
+      "sampler_name": "DPM2 Karras",
+      "cfg_scale": 6,
+      "width": 512,
+      "height": 512
+  },
+  "upscale":
+  {
+      "upscaler_1": "SwinIR_4x",
+      "upscaler_2": "None",
+      "upscale_first": false,
+      "upscaling_resize": 0,
+      "gfpgan_visibility": 0,
+      "codeformer_visibility": 0,
+      "codeformer_weight": 0.5
+  },
+  "options":
+  {
+      "sd_model_checkpoint": "sd-v15-runwayml",
+      "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt"
+  }
+}

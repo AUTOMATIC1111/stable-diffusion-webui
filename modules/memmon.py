@@ -22,12 +22,15 @@ class MemUsageMonitor(threading.Thread):
         self.run_flag = threading.Event()
         self.data = defaultdict(int)
 
-        try:
-            self.cuda_mem_get_info()
-            torch.cuda.memory_stats(self.device)
-        except Exception as e:  # AMD or whatever
-            print(f"Warning: caught exception '{e}', memory monitor disabled")
+        if not torch.cuda.is_available():
             self.disabled = True
+        else:
+            try:
+                self.cuda_mem_get_info()
+                torch.cuda.memory_stats(self.device)
+            except Exception as e:  # AMD or whatever
+                print(f"Torch exception: {e}")
+                self.disabled = True
 
     def cuda_mem_get_info(self):
         index = self.device.index if self.device.index is not None else torch.cuda.current_device()

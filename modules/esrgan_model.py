@@ -6,7 +6,7 @@ from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
 
 import modules.esrgan_model_arch as arch
-from modules import shared, modelloader, images, devices
+from modules import modelloader, images, devices
 from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import opts
 
@@ -118,7 +118,7 @@ def infer_params(state_dict):
 
     nf = state_dict["model.0.weight"].shape[0]
     in_nc = state_dict["model.0.weight"].shape[1]
-    out_nc = out_nc
+    # out_nc = out_nc
     scale = 2 ** scale2x
 
     return in_nc, out_nc, nf, nb, plus, scale

@@ -448,7 +448,7 @@ class Script(scripts.Script):
             if opt.label == 'Nothing':
                 return [0]
 
-            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals)))]
 
             if opt.type == int:
                 valslist_ext = []

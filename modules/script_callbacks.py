@@ -1,16 +1,13 @@
-import sys
-import traceback
-from collections import namedtuple
 import inspect
+from collections import namedtuple
 from typing import Optional, Dict, Any
-
 from fastapi import FastAPI
 from gradio import Blocks
+import modules.errors as errors
 
 
-def report_exception(c, job):
-    print(f"Error executing callback {job} for {c.script}", file=sys.stderr)
-    print(traceback.format_exc(), file=sys.stderr)
+def report_exception(e, c, job):
+    errors.display(e, f'executing callback: {c.script} {job}')
 
 
 class ImageSaveParams:
@@ -32,27 +29,42 @@ class CFGDenoiserParams:
     def __init__(self, x, image_cond, sigma, sampling_step, total_sampling_steps, text_cond, text_uncond):
         self.x = x
         """Latent image representation in the process of being denoised"""
-        
+
         self.image_cond = image_cond
         """Conditioning image"""
-        
+
         self.sigma = sigma
         """Current sigma noise step value"""
-        
+
         self.sampling_step = sampling_step
         """Current Sampling step number"""
-        
+
         self.total_sampling_steps = total_sampling_steps
         """Total number of sampling steps planned"""
-        
+
         self.text_cond = text_cond
         """ Encoder hidden states of text conditioning from prompt"""
-        
+
         self.text_uncond = text_uncond
         """ Encoder hidden states of text conditioning from negative prompt"""
 
 
 class CFGDenoisedParams:
+    def __init__(self, x, sampling_step, total_sampling_steps, inner_model):
+        self.x = x
+        """Latent image representation in the process of being denoised"""
+
+        self.sampling_step = sampling_step
+        """Current Sampling step number"""
+
+        self.total_sampling_steps = total_sampling_steps
+        """Total number of sampling steps planned"""
+
+        self.inner_model = inner_model
+        """Inner model reference used for denoising"""
+
+
+class AfterCFGCallbackParams:
     def __init__(self, x, sampling_step, total_sampling_steps):
         self.x = x
         """Latent image representation in the process of being denoised"""
@@ -62,6 +74,10 @@ class CFGDenoisedParams:
 
         self.total_sampling_steps = total_sampling_steps
         """Total number of sampling steps planned"""
+
+        self.output_altered = False
+        """A flag for CFGDenoiser indicating whether the output has been altered by the callback"""
+
 
 
 class UiTrainTabParams:
@@ -87,6 +103,7 @@ callback_map = dict(
     callbacks_image_saved=[],
     callbacks_cfg_denoiser=[],
     callbacks_cfg_denoised=[],
+    callbacks_cfg_after_cfg=[],
     callbacks_before_component=[],
     callbacks_after_component=[],
     callbacks_image_grid=[],
@@ -105,16 +122,16 @@ def app_started_callback(demo: Optional[Blocks], app: FastAPI):
     for c in callback_map['callbacks_app_started']:
         try:
             c.callback(demo, app)
-        except Exception:
-            report_exception(c, 'app_started_callback')
+        except Exception as e:
+            report_exception(e, c, 'app_started_callback')
 
 
 def model_loaded_callback(sd_model):
     for c in callback_map['callbacks_model_loaded']:
         try:
             c.callback(sd_model)
-        except Exception:
-            report_exception(c, 'model_loaded_callback')
+        except Exception as e:
+            report_exception(e, c, 'model_loaded_callback')
 
 
 def ui_tabs_callback():
@@ -123,8 +140,8 @@ def ui_tabs_callback():
     for c in callback_map['callbacks_ui_tabs']:
         try:
             res += c.callback() or []
-        except Exception:
-            report_exception(c, 'ui_tabs_callback')
+        except Exception as e:
+            report_exception(e, c, 'ui_tabs_callback')
 
     return res
 
@@ -133,96 +150,104 @@ def ui_train_tabs_callback(params: UiTrainTabParams):
     for c in callback_map['callbacks_ui_train_tabs']:
         try:
             c.callback(params)
-        except Exception:
-            report_exception(c, 'callbacks_ui_train_tabs')
+        except Exception as e:
+            report_exception(e, c, 'callbacks_ui_train_tabs')
 
 
 def ui_settings_callback():
     for c in callback_map['callbacks_ui_settings']:
         try:
             c.callback()
-        except Exception:
-            report_exception(c, 'ui_settings_callback')
+        except Exception as e:
+            report_exception(e, c, 'ui_settings_callback')
 
 
 def before_image_saved_callback(params: ImageSaveParams):
     for c in callback_map['callbacks_before_image_saved']:
         try:
             c.callback(params)
-        except Exception:
-            report_exception(c, 'before_image_saved_callback')
+        except Exception as e:
+            report_exception(e, c, 'before_image_saved_callback')
 
 
 def image_saved_callback(params: ImageSaveParams):
     for c in callback_map['callbacks_image_saved']:
         try:
             c.callback(params)
-        except Exception:
-            report_exception(c, 'image_saved_callback')
+        except Exception as e:
+            report_exception(e, c, 'image_saved_callback')
 
 
 def cfg_denoiser_callback(params: CFGDenoiserParams):
     for c in callback_map['callbacks_cfg_denoiser']:
         try:
             c.callback(params)
-        except Exception:
-            report_exception(c, 'cfg_denoiser_callback')
+        except Exception as e:
+            report_exception(e, c, 'cfg_denoiser_callback')
 
 
 def cfg_denoised_callback(params: CFGDenoisedParams):
     for c in callback_map['callbacks_cfg_denoised']:
         try:
             c.callback(params)
-        except Exception:
-            report_exception(c, 'cfg_denoised_callback')
+        except Exception as e:
+            report_exception(e, c, 'cfg_denoised_callback')
+
+
+def cfg_after_cfg_callback(params: AfterCFGCallbackParams):
+    for c in callback_map['callbacks_cfg_after_cfg']:
+        try:
+            c.callback(params)
+        except Exception as e:
+            report_exception(e, c, 'cfg_after_cfg_callback')
 
 
 def before_component_callback(component, **kwargs):
     for c in callback_map['callbacks_before_component']:
         try:
             c.callback(component, **kwargs)
-        except Exception:
-            report_exception(c, 'before_component_callback')
+        except Exception as e:
+            report_exception(e, c, 'before_component_callback')
 
 
 def after_component_callback(component, **kwargs):
     for c in callback_map['callbacks_after_component']:
         try:
             c.callback(component, **kwargs)
-        except Exception:
-            report_exception(c, 'after_component_callback')
+        except Exception as e:
+            report_exception(e, c, 'after_component_callback')
 
 
 def image_grid_callback(params: ImageGridLoopParams):
     for c in callback_map['callbacks_image_grid']:
         try:
             c.callback(params)
-        except Exception:
-            report_exception(c, 'image_grid')
+        except Exception as e:
+            report_exception(e, c, 'image_grid')
 
 
 def infotext_pasted_callback(infotext: str, params: Dict[str, Any]):
     for c in callback_map['callbacks_infotext_pasted']:
         try:
             c.callback(infotext, params)
-        except Exception:
-            report_exception(c, 'infotext_pasted')
+        except Exception as e:
+            report_exception(e, c, 'infotext_pasted')
 
 
 def script_unloaded_callback():
     for c in reversed(callback_map['callbacks_script_unloaded']):
         try:
             c.callback()
-        except Exception:
-            report_exception(c, 'script_unloaded')
+        except Exception as e:
+            report_exception(e, c, 'script_unloaded')
 
 
 def before_ui_callback():
     for c in reversed(callback_map['callbacks_before_ui']):
         try:
             c.callback()
-        except Exception:
-            report_exception(c, 'before_ui')
+        except Exception as e:
+            report_exception(e, c, 'before_ui')
 
 
 def add_callback(callbacks, fun):
@@ -231,7 +256,7 @@ def add_callback(callbacks, fun):
 
     callbacks.append(ScriptCallback(filename, fun))
 
-    
+
 def remove_current_script_callbacks():
     stack = [x for x in inspect.stack() if x.filename != __file__]
     filename = stack[0].filename if len(stack) > 0 else 'unknown file'
@@ -316,6 +341,14 @@ def on_cfg_denoised(callback):
         - params: CFGDenoisedParams - parameters to be passed to the inner model and sampling state details.
     """
     add_callback(callback_map['callbacks_cfg_denoised'], callback)
+
+
+def on_cfg_after_cfg(callback):
+    """register a function to be called in the kdiffussion cfg_denoiser method after cfg calculations are completed.
+    The callback is called with one argument:
+        - params: AfterCFGCallbackParams - parameters to be passed to the script for post-processing after cfg calculation.
+    """
+    add_callback(callback_map['callbacks_cfg_after_cfg'], callback)
 
 
 def on_before_component(callback):

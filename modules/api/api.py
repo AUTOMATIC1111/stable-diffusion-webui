@@ -1,34 +1,33 @@
-import base64
 import io
 import time
-import datetime
-import uvicorn
-import gradio as gr
-from threading import Lock
+import base64
 from io import BytesIO
-from gradio.processing_utils import decode_base64_to_file
-from fastapi import APIRouter, Depends, FastAPI, Request, Response
+from typing import List
+from threading import Lock
+from secrets import compare_digest
+from fastapi import APIRouter, Depends, FastAPI
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
-from fastapi.responses import JSONResponse
-from fastapi.encoders import jsonable_encoder
-from secrets import compare_digest
+from PIL import PngImagePlugin,Image
+import piexif
+import piexif.helper
+import uvicorn
+import gradio as gr
+from gradio.processing_utils import decode_base64_to_file
+# from gradio_client.utils import decode_base64_to_file
 
-import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing
+from modules import errors, shared, sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing
 from modules.api.models import *
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
-from PIL import PngImagePlugin,Image
 from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
-from typing import List
-import piexif
-import piexif.helper
+
+errors.install()
 
 def upscaler_to_index(name: str):
     try:
@@ -36,9 +35,9 @@ def upscaler_to_index(name: str):
     except:
         raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be one of these: {' , '.join([x.name for x in sd_upscalers])}")
 
-def script_name_to_index(name, scripts):
+def script_name_to_index(name, scripts_list):
     try:
-        return [script.title().lower() for script in scripts].index(name.lower())
+        return [script.title().lower() for script in scripts_list].index(name.lower())
     except:
         raise HTTPException(status_code=422, detail=f"Script '{name}' not found")
 
@@ -61,7 +60,7 @@ def decode_base64_to_image(encoding):
     try:
         image = Image.open(BytesIO(base64.b64decode(encoding)))
         return image
-    except Exception as err:
+    except Exception:
         raise HTTPException(status_code=500, detail="Invalid encoded image")
 
 def encode_pil_to_base64(image):
@@ -93,67 +92,6 @@ def encode_pil_to_base64(image):
 
     return base64.b64encode(bytes_data)
 
-def api_middleware(app: FastAPI):
-    rich_available = True
-    try:
-        import anyio # importing just so it can be placed on silent list
-        import starlette # importing just so it can be placed on silent list
-        from rich.console import Console
-        console = Console()
-    except:
-        import traceback
-        rich_available = False
-
-    @app.middleware("http")
-    async def log_and_time(req: Request, call_next):
-        ts = time.time()
-        res: Response = await call_next(req)
-        duration = str(round(time.time() - ts, 4))
-        res.headers["X-Process-Time"] = duration
-        endpoint = req.scope.get('path', 'err')
-        if shared.cmd_opts.api_log and endpoint.startswith('/sdapi'):
-            print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format(
-                t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                code = res.status_code,
-                ver = req.scope.get('http_version', '0.0'),
-                cli = req.scope.get('client', ('0:0.0.0', 0))[0],
-                prot = req.scope.get('scheme', 'err'),
-                method = req.scope.get('method', 'err'),
-                endpoint = endpoint,
-                duration = duration,
-            ))
-        return res
-
-    def handle_exception(request: Request, e: Exception):
-        err = {
-            "error": type(e).__name__,
-            "detail": vars(e).get('detail', ''),
-            "body": vars(e).get('body', ''),
-            "errors": str(e),
-        }
-        print(f"API error: {request.method}: {request.url} {err}")
-        if not isinstance(e, HTTPException): # do not print backtrace on known httpexceptions
-            if rich_available:
-                console.print_exception(show_locals=True, max_frames=2, extra_lines=1, suppress=[anyio, starlette], word_wrap=False, width=min([console.width, 200]))
-            else:
-                traceback.print_exc()
-        return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
-
-    @app.middleware("http")
-    async def exception_handling(request: Request, call_next):
-        try:
-            return await call_next(request)
-        except Exception as e:
-            return handle_exception(request, e)
-
-    @app.exception_handler(Exception)
-    async def fastapi_exception_handler(request: Request, e: Exception):
-        return handle_exception(request, e)
-
-    @app.exception_handler(HTTPException)
-    async def http_exception_handler(request: Request, e: HTTPException):
-        return handle_exception(request, e)
-
 
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
@@ -166,7 +104,6 @@ class Api:
         self.router = APIRouter()
         self.app = app
         self.queue_lock = queue_lock
-        api_middleware(self.app)
         self.add_api_route("/sdapi/v1/txt2img", self.text2imgapi, methods=["POST"], response_model=TextToImageResponse)
         self.add_api_route("/sdapi/v1/img2img", self.img2imgapi, methods=["POST"], response_model=ImageToImageResponse)
         self.add_api_route("/sdapi/v1/extra-single-image", self.extras_single_image_api, methods=["POST"], response_model=ExtrasSingleImageResponse)
@@ -193,6 +130,7 @@ class Api:
         self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=PreprocessResponse)
         self.add_api_route("/sdapi/v1/train/embedding", self.train_embedding, methods=["POST"], response_model=TrainResponse)
         self.add_api_route("/sdapi/v1/train/hypernetwork", self.train_hypernetwork, methods=["POST"], response_model=TrainResponse)
+        self.add_api_route("/sdapi/v1/shutdown", self.shutdown, methods=["POST"])
         self.add_api_route("/sdapi/v1/memory", self.get_memory, methods=["GET"], response_model=MemoryResponse)
         self.add_api_route("/sdapi/v1/unload-checkpoint", self.unloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
@@ -220,17 +158,17 @@ class Api:
         script_idx = script_name_to_index(script_name, script_runner.selectable_scripts)
         script = script_runner.selectable_scripts[script_idx]
         return script, script_idx
-    
+
     def get_scripts_list(self):
         t2ilist = [str(title.lower()) for title in scripts.scripts_txt2img.titles]
         i2ilist = [str(title.lower()) for title in scripts.scripts_img2img.titles]
 
-        return ScriptsList(txt2img = t2ilist, img2img = i2ilist)  
+        return ScriptsList(txt2img = t2ilist, img2img = i2ilist)
 
     def get_script(self, script_name, script_runner):
         if script_name is None or script_name == "":
             return None, None
-        
+
         script_idx = script_name_to_index(script_name, script_runner.scripts)
         return script_runner.scripts[script_idx]
 
@@ -265,10 +203,10 @@ class Api:
         if request.alwayson_scripts and (len(request.alwayson_scripts) > 0):
             for alwayson_script_name in request.alwayson_scripts.keys():
                 alwayson_script = self.get_script(alwayson_script_name, script_runner)
-                if alwayson_script == None:
+                if alwayson_script is None:
                     raise HTTPException(status_code=422, detail=f"always on script {alwayson_script_name} not found")
                 # Selectable script in always on script param check
-                if alwayson_script.alwayson == False:
+                if not alwayson_script.alwayson:
                     raise HTTPException(status_code=422, detail=f"Cannot have a selectable script in the always on scripts params")
                 # always on script with no arg should always run so you don't really need to add them to the requests
                 if "args" in request.alwayson_scripts[alwayson_script_name]:
@@ -309,7 +247,7 @@ class Api:
             p.outpath_samples = opts.outdir_txt2img_samples
 
             shared.state.begin()
-            if selectable_scripts != None:
+            if selectable_scripts is not None:
                 p.script_args = script_args
                 processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
             else:
@@ -366,7 +304,7 @@ class Api:
             p.outpath_samples = opts.outdir_img2img_samples
 
             shared.state.begin()
-            if selectable_scripts != None:
+            if selectable_scripts is not None:
                 p.script_args = script_args
                 processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
             else:
@@ -409,7 +347,7 @@ class Api:
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
     def pnginfoapi(self, req: PNGInfoRequest):
-        if(not req.image.strip()):
+        if not req.image.strip():
             return PNGInfoResponse(info="")
 
         image = decode_base64_to_image(req.image.strip())
@@ -439,7 +377,7 @@ class Api:
             progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
 
         time_since_start = time.time() - shared.state.time_start
-        eta = (time_since_start/progress)
+        eta = time_since_start / progress
         eta_relative = eta-time_since_start
 
         progress = min(progress, 1)
@@ -493,7 +431,7 @@ class Api:
         options = {}
         for key in shared.opts.data.keys():
             metadata = shared.opts.data_labels.get(key)
-            if(metadata is not None):
+            if metadata is not None:
                 options.update({key: shared.opts.data.get(key, shared.opts.data_labels.get(key).default)})
             else:
                 options.update({key: shared.opts.data.get(key, None)})
@@ -582,7 +520,7 @@ class Api:
     def create_hypernetwork(self, args: dict):
         try:
             shared.state.begin()
-            filename = create_hypernetwork(**args) # create empty embedding
+            filename = create_hypernetwork(**args) # create empty embedding # pylint: disable=E1111
             shared.state.end()
             return CreateResponse(info = "create hypernetwork filename: {filename}".format(filename = filename))
         except AssertionError as e:
@@ -608,7 +546,7 @@ class Api:
     def train_embedding(self, args: dict):
         try:
             shared.state.begin()
-            apply_optimizations = shared.opts.training_xattention_optimizations
+            apply_optimizations = False
             error = None
             filename = ''
             if not apply_optimizations:
@@ -630,7 +568,7 @@ class Api:
         try:
             shared.state.begin()
             shared.loaded_hypernetworks = []
-            apply_optimizations = shared.opts.training_xattention_optimizations
+            apply_optimizations = False
             error = None
             filename = ''
             if not apply_optimizations:
@@ -649,6 +587,16 @@ class Api:
         except AssertionError as msg:
             shared.state.end()
             return TrainResponse(info="train embedding error: {error}".format(error=error))
+
+    def shutdown(self):
+        print('shutdown request received')
+        # from modules.shared import demo
+        # demo.close()
+        # time.sleep(0.5)
+        # import sys
+        # sys.exit(0)
+        import os
+        os._exit(0)
 
     def get_memory(self):
         try:
