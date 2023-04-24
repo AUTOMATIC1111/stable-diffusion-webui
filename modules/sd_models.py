@@ -10,13 +10,12 @@ from rich import print, progress # pylint: disable=redefined-builtin
 import torch
 import safetensors.torch
 from omegaconf import OmegaConf
+import tomesd
 import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
-
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
-import tomesd
 
 
 model_dir = "Stable-diffusion"
@@ -231,7 +230,7 @@ def read_metadata_from_safetensors(filename):
         return res
 
 
-def read_state_dict(checkpoint_file):
+def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unused-argument
     try:
         with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
             _, extension = os.path.splitext(checkpoint_file)

@@ -327,7 +327,7 @@ options_templates.update(options_section(('cuda', "CUDA Settings"), {
     "no_half_vae": OptionInfo(False, "Use full precision for VAE (--no-half-vae)"),
     "upcast_sampling": OptionInfo(False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
     "disable_nan_check": OptionInfo(True, "Do not check if produced images/latent spaces have NaN values"),
-    "rollback_vae": OptionInfo(False, "Attempt to roll back VAE when produced NaN values, requires NaN check"),
+    "rollback_vae": OptionInfo(False, "Attempt to roll back VAE when produced NaN values, requires NaN check (experimental)"),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable cuDNN benchmark feature"),
     "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
@@ -429,14 +429,14 @@ options_templates.update(options_section(('ui', "Live previews"), {
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
-    "show_samplers": OptionInfo(["Euler", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ 2M", "DPM fast", "DPM adaptive", "DPM++ 2S a Karras", "DPM++ 2S a", "DPM++ SDE Karras", "DPM2 a Karras", "LMS Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
-    "eta_ddim": OptionInfo(0.0, "eta (noise multiplier) for DDIM", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "eta_ancestral": OptionInfo(1.0, "eta (noise multiplier) for ancestral samplers", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "ddim_discretize": OptionInfo('uniform', "img2img DDIM discretize", gr.Radio, {"choices": ['uniform', 'quad']}),
+    "show_samplers": OptionInfo(["Euler a", "UniPC", "DDIM", "DPM++ SDE", "DPM++ SDE", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
+    "eta_ancestral": OptionInfo(1.0, "Noise multiplier for ancestral samplers (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
     's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
+    'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}),
     'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),

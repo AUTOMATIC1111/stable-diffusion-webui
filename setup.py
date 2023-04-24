@@ -217,7 +217,7 @@ def check_torch():
         log.debug(f'Cannot install xformers package: {e}')
     try:
         tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.12.0')
-        install(tensorflow_package, ignore=True)
+        install(tensorflow_package, 'tensorflow', ignore=True)
     except Exception as e:
         log.debug(f'Cannot install tensorflow package: {e}')
 
