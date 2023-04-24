@@ -254,15 +254,24 @@ def install_repositories():
         return os.path.join(os.path.dirname(__file__), 'repositories', name)
     log.info('Installing repositories')
     os.makedirs(os.path.join(os.path.dirname(__file__), 'repositories'), exist_ok=True)
-    stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git") # DML TODO: check samplers work well
-    stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "d4c168b2ad29d82e5fdfea4d598075f40a3b0341")
-    clone(stable_diffusion_repo, d('stable-diffusion-stability-ai'), stable_diffusion_commit)
+    try:
+        import torch_directml
+        stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/lshqqytiger/stablediffusion-directml.git") # DML Solution: DDIM sampler fix
+        stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "d4c168b2ad29d82e5fdfea4d598075f40a3b0341")
+        clone(stable_diffusion_repo, d('stable-diffusion-stability-ai'), stable_diffusion_commit)
+        k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/lshqqytiger/k-diffusion-directml.git') # DML Solution: DPM fix
+        k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', "47b6ef08bca986ff5e72815e74a419ef6616bdbb")
+        clone(k_diffusion_repo, d('k-diffusion'), k_diffusion_commit)
+    except:
+        stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
+        stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
+        clone(stable_diffusion_repo, d('stable-diffusion-stability-ai'), stable_diffusion_commit)
+        k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
+        k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', "b43db16749d51055f813255eea2fdf1def801919")
+        clone(k_diffusion_repo, d('k-diffusion'), k_diffusion_commit)
     taming_transformers_repo = os.environ.get('TAMING_TRANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
     taming_transformers_commit = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "3ba01b241669f5ade541ce990f7650a3b8f65318")
     clone(taming_transformers_repo, d('taming-transformers'), taming_transformers_commit)
-    k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git') # DML TODO: check samplers work well
-    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', "47b6ef08bca986ff5e72815e74a419ef6616bdbb")
-    clone(k_diffusion_repo, d('k-diffusion'), k_diffusion_commit)
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
     codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     clone(codeformer_repo, d('CodeFormer'), codeformer_commit)

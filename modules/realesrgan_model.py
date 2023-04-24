@@ -10,7 +10,7 @@ from modules.shared import cmd_opts, opts, device
 import modules.errors as errors
 
 
-# DML ISSUE: Some tensors turn 0 after Extended Slices.
+# DML Solution: Some tensors turn 0 after Extended Slices. Move output to cpu and get it back.
 def realesrgan_tile_process_dml_fix(self):
     import math
     import torch
