@@ -98,7 +98,6 @@ function switch_to_inpaint_sketch(){
 function switch_to_inpaint(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[2].click();
-
     return args_to_array(arguments);
 }
 */
@@ -226,14 +225,12 @@ function recalculatePromptTokens(name){
 }
 
 function recalculate_prompts_txt2img(){
-	//console.log("txt2img_prompt");
     recalculatePromptTokens('txt2img_prompt')
     recalculatePromptTokens('txt2img_neg_prompt')
     return args_to_array(arguments);
 }
 
 function recalculate_prompts_img2img(){
-	//console.log("img2img_prompt");
     recalculatePromptTokens('img2img_prompt')
     recalculatePromptTokens('img2img_neg_prompt')
     return args_to_array(arguments);
@@ -643,13 +640,17 @@ onUiUpdate(function(){
 	disabled_extensions(theme_ext.checked);
 	
 	//
-	
-		// extra networks nav menu
+	function attachAccordionListeners(elem) {	
+		elem.querySelectorAll('.gradio-accordion > div.wrap').forEach((elem) => {		
+			elem.addEventListener('click', toggleAccordion);
+		})
+	}	
 	function toggleAccordion(e) {		
-		
+		//e.preventDefault();
+		//e.stopPropagation();
 		//e.stopImmediatePropagation();
 		let accordion_content = e.currentTarget.parentElement.querySelector(".gap.svelte-vt1mxs");
-		
+
 		if(accordion_content){
 			e.preventDefault();
 			e.stopPropagation();
@@ -657,7 +658,8 @@ onUiUpdate(function(){
 			if(accordion_content.className.indexOf("hidden") != -1){
 				accordion_content.classList.remove("hidden");
 				accordion_icon.style.setProperty('transform', 'rotate(0deg)');
-				e.currentTarget.classList.add("hide");					
+				e.currentTarget.classList.add("hide");
+				
 			}else{
 				accordion_content.classList.add("hidden");
 				accordion_icon.style.setProperty('transform', 'rotate(90deg)');
@@ -666,14 +668,18 @@ onUiUpdate(function(){
 		}else{			
 			let accordion_btn = e.currentTarget.parentElement.querySelector(".label-wrap");
 			e.currentTarget.classList.add("hide");
-			accordion_btn.click();			
+			accordion_btn.click();
+			//maybe here we need to setInterval until the content is available
+			setTimeout(function(){
+				accordion_content = accordion_btn.parentElement;
+				console.log(accordion_content);
+				attachAccordionListeners(accordion_content);
+			},1000)
 		}
-	}	
-   
-	gradioApp().querySelectorAll('.gradio-accordion > div.wrap').forEach((elem) => {
-		elem.addEventListener('click', toggleAccordion);
-	})
+	}
 	
+	attachAccordionListeners(gradioApp());
+
 	
 	// additional ui styles 
 	let styleobj = {};
@@ -1486,7 +1492,6 @@ let token_timeouts = {};
 
 function update_txt2img_tokens(...args) {
 	update_token_counter("txt2img_token_button")
-	//console.log("update_txt2img_tokens");
 	if (args.length == 2)
 		return args[0]
 	return args;
@@ -1494,7 +1499,6 @@ function update_txt2img_tokens(...args) {
 
 function update_img2img_tokens(...args) {
 	update_token_counter("img2img_token_button")
-	//console.log("update_img2img_tokens");
 	if (args.length == 2)
 		return args[0]
 	return args;

@@ -1108,6 +1108,15 @@ button.secondary{
 	text-align: center!important;
 }
 
+.gradio-container-3-23-0 .prose code {
+    background-color: var(--ae-panel-bg-color);
+    border-radius: var(--ae-panel-bg-color);
+    border: 1px solid var(--ae-panel-border-color);
+    padding: 0 !important;
+    margin: 0!important;
+    white-space: break-spaces !important;
+}
+
 .wrap.svelte-1p9xokt.svelte-1p9xokt.svelte-1p9xokt label,
 .wrap.svelte-1qxcj04.svelte-1qxcj04.svelte-1qxcj04 label,
 .gradio-container-3-23-0 [type=text], 
