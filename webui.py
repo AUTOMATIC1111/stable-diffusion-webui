@@ -64,7 +64,19 @@ else:
     server_name = "0.0.0.0" if cmd_opts.listen else None
 
 
+def check_rollback_vae():
+    if shared.cmd_opts.rollback_vae:
+        if version.parse(torch.__version__) < version.parse('2.1'):
+            print("If your PyTorch version is lower than PyTorch 2.1, Rollback VAE will not work.")
+            shared.cmd_opts.rollback_vae = False
+        elif 0 < torch.cuda.get_device_capability()[0] < 8:
+            print('Rollback VAE will not work because your device does not support it.')
+            shared.cmd_opts.rollback_vae = False
+
+
 def initialize():
+    check_rollback_vae()
+
     extensions.list_extensions()
     startup_timer.record("extensions")
 
