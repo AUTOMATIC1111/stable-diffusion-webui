@@ -6,21 +6,22 @@
 # @File    : utils.py
 # @Software: Hifive
 import os
-import time
 import socket
 import typing
+from uuid import uuid1
 from PIL import Image
 from loguru import logger
 from datetime import datetime
 from worker.task_recv import Tmp
+from PIL.PngImagePlugin import PngInfo
 from tools.image import compress_image
+from tools.encryptor import des_encrypt
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
-from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3ImagePath
+from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3Tmp
 from tools.environment import get_file_storage_system_env, Env_BucketKey
 from filestorage import find_storage_classes_with_env, push_local_path, get_local_path, batch_download
-
 
 FileStorageCls = find_storage_classes_with_env()
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
@@ -69,6 +70,21 @@ def get_tmp_local_path(remoting_path: str):
     dst = os.path.join(Tmp, os.path.basename(remoting_path))
     return get_local_path(remoting_path, dst)
 
+
+def upload_tmp_files(*files):
+    keys = []
+    date = datetime.today().strftime('%Y/%m/%d')
+    storage_env = get_file_storage_system_env()
+    bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+    file_storage_system = FileStorageCls()
+
+    for f in files:
+        _, ex = os.path.splitext(f)
+        id = uuid1()
+        key = os.path.join(bucket, S3Tmp, date, str(id) + ex)
+        file_storage_system.upload(f, key)
+        keys.append(key)
+    return keys
 
 def get_host_ip():
     s = None
@@ -177,8 +193,8 @@ def load_sd_model_weights(filename):
 
 def save_processed_images(proc, output_dir, task_id, user_id):
     save_normally = output_dir == ''
-    local_images = []
-    date = datetime.today().strftime('%Y-%m-%d')
+    local_images, low_images = [], []
+    date = datetime.today().strftime('%Y/%m/%d')
     output_dir = os.path.join(output_dir, date)
     file_storage_system = FileStorageCls()
 
@@ -199,7 +215,14 @@ def save_processed_images(proc, output_dir, task_id, user_id):
                 processed_image = processed_image.convert("RGB")
             full_path = os.path.join(output_dir, filename)
             low_file = os.path.join(output_dir, 'low-' + filename)
-            processed_image.save(full_path)
+
+            pnginfo_data = PngInfo()
+            for k, v in processed_image.info.items():
+                if 'parameters' == k:
+                    v = des_encrypt(v)
+                pnginfo_data.add_text(k, str(v))
+
+            processed_image.save(full_path, pnginfo=pnginfo_data)
             compress_image(full_path, low_file)
             local_images.append(full_path)
 
@@ -218,7 +241,12 @@ def save_processed_images(proc, output_dir, task_id, user_id):
             low_key = os.path.join(bucket, output_dir, 'low-' + filename)
             low_file = os.path.join(output_dir, 'low-' + filename)
             file_storage_system.upload(low_file, low_key)
-            local_images.append(low_key)
+            low_images.append(low_key)
             local_images.append(key)
 
-    return local_images
+    output = {
+        'high': local_images,
+        'low': low_images
+    }
+
+    return output

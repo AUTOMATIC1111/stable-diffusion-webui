@@ -5,10 +5,11 @@
 # @Site    : 
 # @File    : extra.py
 # @Software: Hifive
+import os.path
 import typing
 from enum import IntEnum
 from modules.postprocessing import run_extras
-from handlers.utils import get_tmp_local_path
+from handlers.utils import get_tmp_local_path, Tmp, upload_tmp_files
 from worker.task import Task, TaskType, TaskHandler, TaskProgress, TaskStatus
 
 
@@ -70,7 +71,7 @@ class SingleUpscalerTask:
                           t.show_extras_results, t.gfpgan_visibility, t.codeformer_visibility,
                           t.codeformer_weight, t.upscaling_resize, t.upscaling_resize_w,
                           t.upscaling_resize_h, t.upscaling_crop, t.extras_upscaler_1,
-                          t.extras_upscaler_2, t.extras_upscaler_2_visibility, True)
+                          t.extras_upscaler_2, t.extras_upscaler_2_visibility, False)
 
 
 class ExtraTaskHandler(TaskHandler):
@@ -87,9 +88,21 @@ class ExtraTaskHandler(TaskHandler):
         p = TaskProgress.new_ready(task, f"ready exec upscaler, task:{task.id}")
         yield p
         result = SingleUpscalerTask.exec_task(task)
-        # todo: save images
-        p.task = TaskStatus.Finish
-        p.task_desc = f'upscaler task:{task.id} finished.'
+        if result:
+            images = self._save_images(task, result)
+            keys = upload_tmp_files(*images)
+            p.set_finish_result(keys)
+            p.task_desc = f'upscaler task:{task.id} finished.'
+        else:
+            p.status = TaskStatus.Failed
+            p.task_desc = f'upscaler task:{task.id} failed.'
         yield p
 
-
+    def _save_images(self, task: Task, r: typing.Sequence):
+        local = []
+        for image in r:
+            name, _ = os.path.splitext(os.path.basename(task['image']))
+            full_path = os.path.join(Tmp, name + '.png')
+            image.save(full_path)
+            local.append(full_path)
+        return local

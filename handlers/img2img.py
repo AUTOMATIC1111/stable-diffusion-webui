@@ -82,7 +82,6 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  img2img_batch_output_dir: str = None,
                  prompt_styles: typing.List[str] = None,  # 提示风格（模板风格也就是TAG模板）
                  img2img_batch_inpaint_mask_dir: str = None,
-                 compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
                  override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337', 'sd_vae': 'None']
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部mbending列表
@@ -203,7 +202,6 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.img2img_batch_input_dir = img2img_batch_input_dir
         self.img2img_batch_output_dir = img2img_batch_output_dir
         self.img2img_batch_inpaint_mask_dir = img2img_batch_inpaint_mask_dir
-        self.compress_pnginfo = compress_pnginfo
         self.kwargs = kwargs
         self.loras = lora_models
         self.embedding = embeddings

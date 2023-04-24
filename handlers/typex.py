@@ -22,4 +22,5 @@ ModelLocation = {
 
 S3ImageBucket = "xingzhe-sdplus"
 S3ImagePath = "output/{uid}/{dir}/{name}"
+S3Tmp = 'sd-tmp'
 

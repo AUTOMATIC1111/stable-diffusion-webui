@@ -9,6 +9,7 @@ import os
 import shutil
 from io import BytesIO
 from PIL import Image
+from PIL.PngImagePlugin import PngInfo
 
 
 # compress_image 压缩图片函数，减轻网络压力
@@ -27,14 +28,18 @@ def compress_image(infile, outfile, kb=300, step=15, quality=90):
         # 大小满足要求
         shutil.copy(infile, outfile)
 
+    pnginfo_data = PngInfo()
     im = Image.open(infile)
-    im = im.convert("RGB")  # 兼容处理png和jpg
+    if hasattr(im, "text"):
+        for k, v in im.text.items():
+            pnginfo_data.add_text(k, str(v))
 
+    im = im.convert("RGB")  # 兼容处理png和jpg
     img_bytes = None
 
     while o_size > kb:
         out = BytesIO()
-        im.save(out, format="JPEG", quality=quality)
+        im.save(out, format="JPEG", quality=quality, pnginfo=pnginfo_data)
         if quality - step < 0:
             break
         img_bytes = out.getvalue()

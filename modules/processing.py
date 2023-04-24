@@ -162,7 +162,6 @@ class StableDiffusionProcessing:
         self.override_settings_restore_afterwards = override_settings_restore_afterwards
         self.is_using_inpainting_conditioning = False
         self.disable_extra_networks = False
-        self.compress_pnginfo = False
         self.progress_callback = None
 
         if not seed_enable_extras:
@@ -506,6 +505,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
                                            shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "Artist": "xingzhe.ai"
     }
 
     generation_params.update(p.extra_generation_params)
@@ -750,9 +750,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 text = infotext(n, i)
                 infotexts.append(text)
                 if opts.enable_pnginfo:
-                    if getattr(p, "compress_pnginfo"):
-                        text = str(gzip.compress(text.encode('utf8')))
-
                     image.info["parameters"] = text
                 output_images.append(image)
 

@@ -11,9 +11,9 @@ import os.path
 from Crypto.Cipher import DES
 from Crypto.Util.Padding import pad
 
-DefaultDESKey = 'Rcsu31Ix0V'
+DefaultDESKey = 'A3094221'
 DefaultDESIV = '87651234'
-DefaultDESMode = DES.MODE_ECB
+DefaultDESMode = DES.MODE_CBC
 
 
 def des_encrypt(text, mode=None, key=None, iv=None):
