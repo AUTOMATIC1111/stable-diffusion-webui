@@ -261,7 +261,7 @@ def create_ui(container, button, tabname):
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
 
     ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
-    ui.button_read_description = gr.Button('Save description', elem_id=tabname+"_read_description", visible=False)
+    ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
     
 
