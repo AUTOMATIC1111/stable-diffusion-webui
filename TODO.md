@@ -18,6 +18,7 @@ Stuff to be added...
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage
 - Autodetect nVidia and AMD: `nvidia-smi` vs `rocm-smi`
+- [Temporal Weighing](https://github.com/comfyanonymous/ComfyUI/discussions/473)
 
 ## Investigate
 
