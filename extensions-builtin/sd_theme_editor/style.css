@@ -86,12 +86,15 @@
 #tab_ui_theme [id*="color"] label{
 	display:flex;
 	align-items: center;
+	pointer-events: none;
 }
 #tab_ui_theme [id*="color"] label span{
 	min-width: 50% !important;
 }
 #tab_ui_theme [id*="color"] label input{
 	flex-grow:1;
+	pointer-events: all;
+    cursor: pointer;
 }
 
 #settings_ui_theme > div > div

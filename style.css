@@ -721,6 +721,9 @@ div.svelte-1frtwj3 {
 	background-color: var(--ae-panel-bg-color);
 	height: 60px !important;
 }
+.thumbnails {
+    justify-content: flex-start !important;
+}
 [id$="2img_gallery"] .thumbnail-small {
     height: auto !important;
 }
