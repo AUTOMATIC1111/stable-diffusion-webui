@@ -15,9 +15,10 @@ pip install aioprometheus[starlette]
 
 
 # download models from gcp if needed, it can take while on a fresh disk.
-./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/Stable-diffusion models/Stable-diffusion --progress --config rclone.conf 
-./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/lora models/Lora --progress --config rclone.conf 
-./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/embeddings embeddings --progress --config rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/Stable-diffusion models/Stable-diffusion --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/lora models/Lora --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/extensions/sd-webui-controlnet/models extensions/sd-webui-controlnet/models --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/embeddings embeddings --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
 
 # Install directory without trailing slash
 install_dir="/workspace"
