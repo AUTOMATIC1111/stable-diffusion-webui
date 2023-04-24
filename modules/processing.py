@@ -442,9 +442,8 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
 
 
 def decode_first_stage(model, x):
-    with devices.autocast(disable=x.dtype == devices.dtype_vae):
+    with devices.autocast(disable = x.dtype==devices.dtype_vae):
         x = model.decode_first_stage(x)
-
     return x
 
 

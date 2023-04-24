@@ -217,7 +217,7 @@ def check_torch():
         log.debug(f'Cannot install xformers package: {e}')
     try:
         tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.12.0')
-        install(f'--no-deps {tensorflow_package}', ignore=True)
+        install(tensorflow_package, ignore=True)
     except Exception as e:
         log.debug(f'Cannot install tensorflow package: {e}')
 
@@ -237,7 +237,6 @@ def install_packages():
 def install_repositories():
     def d(name):
         return os.path.join(os.path.dirname(__file__), 'repositories', name)
-
     log.info('Installing repositories')
     os.makedirs(os.path.join(os.path.dirname(__file__), 'repositories'), exist_ok=True)
     stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
@@ -263,7 +262,7 @@ def run_extension_installer(folder):
     if not os.path.isfile(path_installer):
         return
     try:
-        log.debug(f"Running extension installer: {path_installer}")
+        log.debug(f"Running extension installer: {folder} / {path_installer}")
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.abspath(".")
         result = subprocess.run(f'"{sys.executable}" "{path_installer}"', shell=True, env=env, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder)
@@ -334,7 +333,7 @@ def install_submodules():
 
 def ensure_package(pkg):
     try:
-        import pkg
+        import pkg # type: ignore
     except ImportError:
         install(pkg)
 
@@ -394,6 +393,13 @@ def check_extensions():
 
 # check version of the main repo and optionally upgrade it
 def check_version():
+    if not os.path.exists('.git'):
+        log.error('Not a git repository')
+        exit(1)
+    status = git('status')
+    if 'branch' not in status:
+        log.error('Cannot get git repository status')
+        exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
     commit = git('rev-parse HEAD')
@@ -420,15 +426,18 @@ def check_version():
                     log.error('Error upgrading repository')
             else:
                 log.info(f'Latest published version: {commits["commit"]["sha"]} {commits["commit"]["commit"]["author"]["date"]}')
-        if not args.noupdate:
-            log.info('Updating Wiki')
-            try:
-                update(os.path.join(os.path.dirname(__file__), "wiki"))
-                update(os.path.join(os.path.dirname(__file__), "wiki", "origin-wiki"))
-            except:
-                log.error('Error updating wiki')
     except Exception as e:
         log.error(f'Failed to check version: {e} {commits}')
+
+
+def update_wiki():
+    if not args.noupdate:
+        log.info('Updating Wiki')
+        try:
+            update(os.path.join(os.path.dirname(__file__), "wiki"))
+            update(os.path.join(os.path.dirname(__file__), "wiki", "origin-wiki"))
+        except:
+            log.error('Error updating wiki')
 
 
 # check if we can run setup in quick mode
@@ -535,6 +544,7 @@ def run_setup():
     install_repositories()
     install_submodules()
     install_extensions()
+    update_wiki()
     if errors == 0:
         log.debug(f'Setup complete without errors: {round(time.time())}')
     else:

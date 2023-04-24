@@ -7,8 +7,7 @@ Stuff to be fixed...
 - ClipSkip not updated on read gen info
 - Usage of `sd_vae` in quick settings
 - Run VAE with hires at 1280
-- Make TensorFlow optional
-
+- Transformers version
 
 ## Features
 
@@ -58,11 +57,7 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- fix VAE dtype  
-  should fix most issues with NaN or black images  
-- add built-in Gradio themes  
-- fix setup race conditions
-- reduce requirements  
-- more AMD specific work
-- initial work on Apple platform support
-- additional PR merges
+- Use samples format for live preview
+- Identify race condition where generate locks up while fetching preview
+- Use **Approx NN** for live preview
+- Create default `styles.csv`

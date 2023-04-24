@@ -28,14 +28,12 @@ approximation_indexes = {"Full": 0, "Approx NN": 1, "Approx cheap": 2}
 def single_sample_to_image(sample, approximation=None):
     if approximation is None:
         approximation = approximation_indexes.get(opts.show_progress_type, 0)
-
     if approximation == 2:
         x_sample = sd_vae_approx.cheap_approximation(sample)
     elif approximation == 1:
         x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
     else:
         x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
-
     x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)
