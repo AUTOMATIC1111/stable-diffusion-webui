@@ -12,7 +12,7 @@ opencv-contrib-python
 requests
 piexif
 Pillow
-pytorch_lightning==1.7.7
+pytorch_lightning==2.0.1
 realesrgan
 scikit-image>=0.19
 timm==0.4.12
