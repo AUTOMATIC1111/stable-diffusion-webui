@@ -17,6 +17,7 @@ parser.add_argument("--lowram", action='store_true', help="Load checkpoint weigh
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="Path to checkpoint of stable diffusion model to load immediately",)
 parser.add_argument('--vae', type=str, help='Path to checkpoint of stable diffusion VAE model to load immediately', default=None)
 parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="Base path where all user data is stored")
+parser.add_argument("--models-dir", type=str, default="models", help="Nase path where all models are stored",)
 
 parser.add_argument("--allow-code", action='store_true', help="Allow custom script execution")
 parser.add_argument("--share", action='store_true', help="Enable to make the UI accessible through Gradio site")
