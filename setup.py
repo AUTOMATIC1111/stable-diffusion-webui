@@ -396,10 +396,10 @@ def check_version():
     if not os.path.exists('.git'):
         log.error('Not a git repository')
         exit(1)
-    status = git('status')
-    if 'branch' not in status:
-        log.error('Cannot get git repository status')
-        exit(1)
+    _status = git('status')
+    # if 'branch' not in status:
+    #    log.error('Cannot get git repository status')
+    #    exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
     commit = git('rev-parse HEAD')

@@ -57,12 +57,4 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- use samples format for live preview
-- identify race condition where generate locks up while fetching preview
-- add pulldowns to x/y/z script
-- add VAE rollback feature in case of NaNs
-- add token merging
-- use **Approx NN** for live preview
-- create default `styles.csv`
-- fix setup not installing `tensorflow` dependencies
-- update default git flags to reduce number of warnings
+- update GPU utility search paths for better GPU type detection
