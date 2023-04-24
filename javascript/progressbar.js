@@ -106,7 +106,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd = null, o
               removeProgressBar()
               return
           }
-          if (elapsedFromStart > 10 && !res.queued && res.progress == prevProgress) {
+          if (elapsedFromStart > 30 && !res.queued && res.progress == prevProgress) {
                 removeProgressBar()
                 return
             }
