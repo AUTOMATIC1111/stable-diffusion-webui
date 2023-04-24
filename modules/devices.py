@@ -1,7 +1,6 @@
 import sys
 import contextlib
 import torch
-from modules import errors
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -23,20 +22,16 @@ def extract_device_id(args, name):
 
 def get_cuda_device_string():
     from modules import shared
-
     if shared.cmd_opts.device_id is not None:
         return f"cuda:{shared.cmd_opts.device_id}"
-
     return "cuda"
 
 
 def get_optimal_device_name():
     if torch.cuda.is_available():
         return get_cuda_device_string()
-
     if has_mps():
         return "mps"
-
     return "cpu"
 
 
@@ -46,10 +41,8 @@ def get_optimal_device():
 
 def get_device_for(task):
     from modules import shared
-
     if task in shared.cmd_opts.use_cpu:
         return cpu
-
     return get_optimal_device()
 
 
@@ -60,20 +53,40 @@ def torch_gc():
             torch.cuda.ipc_collect()
 
 
-def enable_tf32():
+def set_cuda_params():
+    from modules import shared
     if torch.cuda.is_available():
+        try:
+            torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
+            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+            torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+        except:
+            pass
+        if torch.backends.cudnn.is_available():
+            try:
+                torch.backends.cudnn.benchmark = shared.opts.cudnn_benchmark
+                torch.backends.cudnn.benchmark_limit = 0
+                torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
+            except:
+                pass
+    global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
+    # set dtype
+    if shared.opts.cuda_dtype == 'FP16':
+        dtype = torch.float16
+        dtype_vae = torch.float16
+        dtype_unet = torch.float16
+    if shared.opts.cuda_dtype == 'BP16':
+        dtype = torch.bfloat16
+        dtype_vae = torch.bfloat16
+        dtype_unet = torch.bfloat16
+    if shared.opts.cuda_dtype == 'FP32' or shared.opts.no_half:
+        dtype = torch.float32
+        dtype_vae = torch.float32
+        dtype_unet = torch.float32
+    if shared.opts.no_half_vae: # set dtype again as no-half-vae options take priority
+        dtype_vae = torch.float32
+    unet_needs_upcast = shared.opts.upcast_sampling
 
-        # enabling benchmark option seems to enable a range of cards to do fp16 when they otherwise can't
-        # see https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4407
-        if any([torch.cuda.get_device_capability(devid) == (7, 5) for devid in range(0, torch.cuda.device_count())]):
-            torch.backends.cudnn.benchmark = True
-
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cudnn.allow_tf32 = True
-
-
-
-errors.run(enable_tf32, "Enabling TF32")
 
 cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
@@ -83,12 +96,12 @@ dtype_unet = torch.float16
 unet_needs_upcast = False
 
 
-def cond_cast_unet(input):
-    return input.to(dtype_unet) if unet_needs_upcast else input
+def cond_cast_unet(tensor):
+    return tensor.to(dtype_unet) if unet_needs_upcast else tensor
 
 
-def cond_cast_float(input):
-    return input.float() if unet_needs_upcast else input
+def cond_cast_float(tensor):
+    return tensor.float() if unet_needs_upcast else tensor
 
 
 def randn(seed, shape):
@@ -106,13 +119,10 @@ def randn_without_seed(shape):
 
 def autocast(disable=False):
     from modules import shared
-
     if disable:
         return contextlib.nullcontext()
-
-    if dtype == torch.float32 or shared.cmd_opts.precision == "full":
+    if dtype == torch.float32 or shared.cmd_opts.precision == "Full":
         return contextlib.nullcontext()
-
     return torch.autocast("cuda")
 
 
@@ -126,27 +136,19 @@ class NansException(Exception):
 
 def test_for_nans(x, where):
     from modules import shared
-
-    if shared.cmd_opts.disable_nan_check:
+    if shared.opts.disable_nan_check:
         return
-
     if not torch.all(torch.isnan(x)).item():
         return
-
     if where == "unet":
         message = "A tensor with all NaNs was produced in Unet."
-
         if not shared.cmd_opts.no_half:
             message += " This could be either because there's not enough precision to represent the picture, or because your video card does not support half type. Try setting the \"Upcast cross attention layer to float32\" option in Settings > Stable Diffusion or using the --no-half commandline argument to fix this."
-
     elif where == "vae":
         message = "A tensor with all NaNs was produced in VAE."
-
         if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae:
             message += " This could be because there's not enough precision to represent the picture. Try adding --no-half-vae commandline argument to fix this."
     else:
         message = "A tensor with all NaNs was produced."
-
     message += " Use --disable-nan-check commandline argument to disable this check."
-
     raise NansException(message)

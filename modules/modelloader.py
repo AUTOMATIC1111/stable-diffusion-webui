@@ -40,7 +40,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
 
         for place in places:
             if os.path.exists(place):
-                for file in glob.iglob(place + '**/**', recursive=True):
+                for file in glob.iglob(os.path.join(place, '**/**'), recursive=True):
                     full_path = file
                     if os.path.isdir(full_path):
                         continue
@@ -50,7 +50,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                     if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
                         continue
                     if len(ext_filter) != 0:
-                        model_name, extension = os.path.splitext(file)
+                        _model_name, extension = os.path.splitext(file)
                         if extension not in ext_filter:
                             continue
                     if file not in output:
@@ -75,7 +75,7 @@ def friendly_name(file: str):
         file = urlparse(file).path
 
     file = os.path.basename(file)
-    model_name, extension = os.path.splitext(file)
+    model_name, _extension = os.path.splitext(file)
     return model_name
 
 
@@ -86,8 +86,8 @@ def cleanup_models():
     root_path = script_path
     src_path = models_path
     dest_path = os.path.join(models_path, "Stable-diffusion")
-    move_files(src_path, dest_path, ".ckpt")
-    move_files(src_path, dest_path, ".safetensors")
+    # move_files(src_path, dest_path, ".ckpt")
+    # move_files(src_path, dest_path, ".safetensors")
     src_path = os.path.join(root_path, "ESRGAN")
     dest_path = os.path.join(models_path, "ESRGAN")
     move_files(src_path, dest_path)
@@ -102,6 +102,9 @@ def cleanup_models():
     move_files(src_path, dest_path)
     src_path = os.path.join(root_path, "repositories/latent-diffusion/experiments/pretrained_models/")
     dest_path = os.path.join(models_path, "LDSR")
+    move_files(src_path, dest_path)
+    src_path = os.path.join(root_path, "ScuNET")
+    dest_path = os.path.join(models_path, "ScuNET")
     move_files(src_path, dest_path)
 
 
@@ -134,10 +137,8 @@ forbidden_upscaler_classes = set()
 
 def list_builtin_upscalers():
     load_upscalers()
-
     builtin_upscaler_classes.clear()
     builtin_upscaler_classes.extend(Upscaler.__subclasses__())
-
 
 def forbid_loaded_nonbuiltin_upscalers():
     for cls in Upscaler.__subclasses__():

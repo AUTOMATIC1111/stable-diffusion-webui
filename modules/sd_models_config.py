@@ -1,24 +1,20 @@
-import re
 import os
 
 import torch
 
-from modules import shared, paths, sd_disable_initialization
+from modules import paths, sd_disable_initialization
 
-sd_configs_path = shared.sd_configs_path
 sd_repo_configs_path = os.path.join(paths.paths['Stable Diffusion'], "configs", "stable-diffusion")
-
-
-config_default = shared.sd_default_config
+config_default = paths.sd_default_config
 config_sd2 = os.path.join(sd_repo_configs_path, "v2-inference.yaml")
 config_sd2v = os.path.join(sd_repo_configs_path, "v2-inference-v.yaml")
 config_sd2_inpainting = os.path.join(sd_repo_configs_path, "v2-inpainting-inference.yaml")
 config_depth_model = os.path.join(sd_repo_configs_path, "v2-midas-inference.yaml")
 config_unclip = os.path.join(sd_repo_configs_path, "v2-1-stable-unclip-l-inference.yaml")
 config_unopenclip = os.path.join(sd_repo_configs_path, "v2-1-stable-unclip-h-inference.yaml")
-config_inpainting = os.path.join(sd_configs_path, "v1-inpainting-inference.yaml")
-config_instruct_pix2pix = os.path.join(sd_configs_path, "instruct-pix2pix.yaml")
-config_alt_diffusion = os.path.join(sd_configs_path, "alt-diffusion-inference.yaml")
+config_inpainting = os.path.join(paths.sd_configs_path, "v1-inpainting-inference.yaml")
+config_instruct_pix2pix = os.path.join(paths.sd_configs_path, "instruct-pix2pix.yaml")
+config_alt_diffusion = os.path.join(paths.sd_configs_path, "alt-diffusion-inference.yaml")
 
 
 def is_using_v_parameterization_for_sd2(state_dict):
@@ -64,7 +60,9 @@ def is_using_v_parameterization_for_sd2(state_dict):
     return out < -1
 
 
-def guess_model_config_from_state_dict(sd, filename):
+def guess_model_config_from_state_dict(sd, _filename):
+    if sd is None:
+        return None
     sd2_cond_proj_weight = sd.get('cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight', None)
     diffusion_model_input = sd.get('model.diffusion_model.input_blocks.0.0.weight', None)
     sd2_variations_weight = sd.get('embedder.model.ln_final.weight', None)
@@ -116,4 +114,3 @@ def find_checkpoint_config_near_filename(info):
         return config
 
     return None
-

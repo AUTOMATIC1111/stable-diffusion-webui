@@ -93,9 +93,6 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
         try:
             tree = schedule_parser.parse(prompt)
         except lark.exceptions.LarkError as e:
-            if 0:
-                import traceback
-                traceback.print_exc()
             return [[steps, prompt]]
         return [[t, at_step(t, tree)] for t in collect_steps(steps, tree)]
 

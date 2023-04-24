@@ -1,12 +1,11 @@
 import os
 import re
 import sys
-import traceback
 from collections import namedtuple
 
 import gradio as gr
 
-from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing
+from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
 
 AlwaysVisible = object()
 
@@ -180,7 +179,7 @@ def basedir():
     return current_basedir
 
 
-ScriptFile = namedtuple("ScriptFile", ["basedir", "filename", "path"])
+ScriptFile = namedtuple("ScriptFile", ["basedir", "filename", "path", "priority"])
 
 scripts_data = []
 postprocessing_scripts_data = []
@@ -188,19 +187,38 @@ ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedi
 
 
 def list_scripts(scriptdirname, extension):
-    scripts_list = []
+    tmp_list = []
 
-    basedir = os.path.join(paths.script_path, scriptdirname)
-    if os.path.exists(basedir):
-        for filename in sorted(os.listdir(basedir)):
-            scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(basedir, filename)))
+    base = os.path.join(paths.script_path, scriptdirname)
+    if os.path.exists(base):
+        for filename in sorted(os.listdir(base)):
+            tmp_list.append(ScriptFile(paths.script_path, filename, os.path.join(base, filename), '50'))
 
     for ext in extensions.active():
-        scripts_list += ext.list_files(scriptdirname, extension)
+        tmp_list += ext.list_files(scriptdirname, extension)
 
-    scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
+    scripts_list = []
+    for script in tmp_list:
+        if os.path.splitext(script.path)[1].lower() == extension and os.path.isfile(script.path):
+            if script.basedir == paths.script_path:
+                priority = '0'
+            elif script.basedir.startswith(os.path.join(paths.script_path, 'scripts')):
+                priority = '1'
+            elif script.basedir.startswith(os.path.join(paths.script_path, 'extensions-builtin')):
+                priority = '2'
+            elif script.basedir.startswith(os.path.join(paths.script_path, 'extensions')):
+                priority = '3'
+            else:
+                priority = '9'
+            if os.path.isfile(os.path.join(base, "..", ".priority")):
+                with open(os.path.join(base, "..", ".priority"), "r", encoding="utf-8") as f:
+                    priority = priority + str(f.read().strip())
+            else:
+                priority = priority + script.priority
+            scripts_list.append(ScriptFile(script.basedir, script.filename, script.path, priority))
 
-    return scripts_list
+    priority_sort = sorted(scripts_list, key=lambda item: item.priority + item.path.lower(), reverse=False)
+    return priority_sort
 
 
 def list_files_with_name(filename):
@@ -220,7 +238,7 @@ def list_files_with_name(filename):
 
 
 def load_scripts():
-    global current_basedir
+    global current_basedir # pylint: disable=global-statement
     scripts_data.clear()
     postprocessing_scripts_data.clear()
     script_callbacks.clear_callbacks()
@@ -230,7 +248,7 @@ def load_scripts():
     syspath = sys.path
 
     def register_scripts_from_module(module):
-        for key, script_class in module.__dict__.items():
+        for _key, script_class in module.__dict__.items():
             if type(script_class) != type:
                 continue
 
@@ -239,27 +257,15 @@ def load_scripts():
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
                 postprocessing_scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
 
-    def orderby(basedir):
-        # 1st webui, 2nd extensions-builtin, 3rd extensions
-        priority = {os.path.join(paths.script_path, "extensions-builtin"):1, paths.script_path:0}
-        for key in priority:
-            if basedir.startswith(key):
-                return priority[key]
-        return 9999
-
-    for scriptfile in sorted(scripts_list, key=lambda x: [orderby(x.basedir), x]):
+    for scriptfile in scripts_list:
         try:
             if scriptfile.basedir != paths.script_path:
                 sys.path = [scriptfile.basedir] + sys.path
             current_basedir = scriptfile.basedir
-
             script_module = script_loading.load_module(scriptfile.path)
             register_scripts_from_module(script_module)
-
-        except Exception:
-            print(f"Error loading script: {scriptfile.filename}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-
+        except Exception as e:
+            errors.display(e, f'Loading script: {scriptfile.filename}')
         finally:
             sys.path = syspath
             current_basedir = paths.script_path
@@ -269,9 +275,8 @@ def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     try:
         res = func(*args, **kwargs)
         return res
-    except Exception:
-        print(f"Error calling: {filename}/{funcname}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+    except Exception as e:
+        errors.display(e, f'Calling script: {filename}/{funcname}')
 
     return default
 
@@ -415,70 +420,62 @@ class ScriptRunner:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
-            except Exception:
-                print(f"Error running process: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+            except Exception as e:
+                errors.display(e, f'Running script process: {script.filename}')
 
     def before_process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.before_process_batch(p, *script_args, **kwargs)
-            except Exception:
-                print(f"Error running before_process_batch: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+            except Exception as e:
+                errors.display(e, f'Running script before process batch: {script.filename}')
 
     def process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process_batch(p, *script_args, **kwargs)
-            except Exception:
-                print(f"Error running process_batch: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+            except Exception as e:
+                errors.display(e, f'Running script process batch: {script.filename}')
 
     def postprocess(self, p, processed):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess(p, processed, *script_args)
-            except Exception:
-                print(f"Error running postprocess: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+            except Exception as e:
+                errors.display(e, f'Running script postprocess: {script.filename}')
 
     def postprocess_batch(self, p, images, **kwargs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_batch(p, *script_args, images=images, **kwargs)
-            except Exception:
-                print(f"Error running postprocess_batch: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+            except Exception as e:
+                errors.display(e, f'Running script before postprocess batch: {script.filename}')
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_image(p, pp, *script_args)
-            except Exception:
-                print(f"Error running postprocess_batch: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+            except Exception as e:
+                errors.display(e, f'Running script postprocess image: {script.filename}')
 
     def before_component(self, component, **kwargs):
         for script in self.scripts:
             try:
                 script.before_component(component, **kwargs)
-            except Exception:
-                print(f"Error running before_component: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+            except Exception as e:
+                errors.display(e, f'Running script before component: {script.filename}')
 
     def after_component(self, component, **kwargs):
         for script in self.scripts:
             try:
                 script.after_component(component, **kwargs)
-            except Exception:
-                print(f"Error running after_component: {script.filename}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+            except Exception as e:
+                errors.display(e, f'Running script after component: {script.filename}')
 
     def reload_sources(self, cache):
         for si, script in list(enumerate(self.scripts)):
@@ -525,8 +522,12 @@ def add_classes_to_gradio_component(comp):
     """
     this adds gradio-* to the component for css styling (ie gradio-button to gr.Button), as well as some others
     """
-
-    comp.elem_classes = ["gradio-" + comp.get_block_name(), *(comp.elem_classes or [])]
+    elem_classes = []
+    if hasattr(comp, "elem_classes"):
+        elem_classes = comp.elem_classes
+    if elem_classes is None:
+        elem_classes = []
+    comp.elem_classes = ["gradio-" + comp.get_block_name(), *(elem_classes)]
 
     if getattr(comp, 'multiselect', False):
         comp.elem_classes.append('multiselect')

@@ -1,9 +1,16 @@
 import os
 import sys
-from modules.paths_internal import models_path, script_path, data_path, extensions_dir, extensions_builtin_dir
+import modules.paths_internal
 
-import modules.safe
-
+data_path = modules.paths_internal.data_path
+script_path = modules.paths_internal.script_path
+models_path = modules.paths_internal.models_path
+sd_configs_path = modules.paths_internal.sd_configs_path
+sd_default_config = modules.paths_internal.sd_default_config
+sd_model_file = modules.paths_internal.sd_model_file
+default_sd_model_file = modules.paths_internal.default_sd_model_file
+extensions_dir = modules.paths_internal.extensions_dir
+extensions_builtin_dir = modules.paths_internal.extensions_builtin_dir
 
 # data_path = cmd_opts_pre.data
 sys.path.insert(0, script_path)
@@ -34,11 +41,38 @@ for d, must_exist, what, options in path_dirs:
         print(f"Warning: {what} not found at path {must_exist_path}", file=sys.stderr)
     else:
         d = os.path.abspath(d)
-        if "atstart" in options:
-            sys.path.insert(0, d)
-        else:
-            sys.path.append(d)
+        # if "atstart" in options:
+        #    sys.path.insert(0, d)
+        # else:
+        #    sys.path.append(d)
+        sys.path.append(d)
         paths[what] = d
+
+
+def create_paths(opts):
+    def create_path(folder):
+        if folder is None or folder == '':
+            return
+        if not os.path.exists(folder):
+            try:
+                os.makedirs(folder, exist_ok=True)
+                print('Creating folder:', folder)
+            except:
+                pass
+    create_path(opts.temp_dir)
+    create_path(extensions_dir)
+    create_path(extensions_builtin_dir)
+    create_path(opts.ckpt_dir)
+    create_path(opts.vae_dir)
+    create_path(opts.embeddings_dir)
+    create_path(opts.outdir_samples)
+    create_path(opts.outdir_txt2img_samples)
+    create_path(opts.outdir_img2img_samples)
+    create_path(opts.outdir_extras_samples)
+    create_path(opts.outdir_grids)
+    create_path(opts.outdir_txt2img_grids)
+    create_path(opts.outdir_img2img_grids)
+    create_path(opts.outdir_save)
 
 
 class Prioritize:

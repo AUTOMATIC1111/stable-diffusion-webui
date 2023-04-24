@@ -1,11 +1,8 @@
 import os
-import sys
-import traceback
-
 import time
 import git
 
-from modules import shared
+from modules import shared, errors
 from modules.paths_internal import extensions_dir, extensions_builtin_dir
 
 extensions = []
@@ -45,9 +42,8 @@ class Extension:
         try:
             if os.path.exists(os.path.join(self.path, ".git")):
                 repo = git.Repo(self.path)
-        except Exception:
-            print(f"Error reading github repository info from {self.path}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+        except Exception as e:
+            errors.display(e, f'github info from {self.path}')
 
         if repo is None or repo.bare:
             self.remote = None
@@ -71,7 +67,11 @@ class Extension:
 
         res = []
         for filename in sorted(os.listdir(dirpath)):
-            res.append(scripts.ScriptFile(self.path, filename, os.path.join(dirpath, filename)))
+            priority = '50'
+            if os.path.isfile(os.path.join(dirpath, "..", ".priority")):
+                with open(os.path.join(dirpath, "..", ".priority"), "r", encoding="utf-8") as f:
+                    priority = str(f.read().strip())
+            res.append(scripts.ScriptFile(self.path, filename, os.path.join(dirpath, filename), priority))
 
         res = [x for x in res if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 
@@ -102,13 +102,12 @@ def list_extensions():
     if not os.path.isdir(extensions_dir):
         return
 
-    if shared.opts.disable_all_extensions == "all":
-        print("*** \"Disable all extensions\" option was set, will not load any extensions ***")
-    elif shared.opts.disable_all_extensions == "extra":
-        print("*** \"Disable all extensions\" option was set, will only load built-in extensions ***")
+    if shared.opts.disable_all_extensions == "all" or shared.opts.disable_all_extensions == "extra":
+        shared.log.warning("Option set: Disable all extensions")
 
     extension_paths = []
-    for dirname in [extensions_dir, extensions_builtin_dir]:
+    extension_names = []
+    for dirname in [extensions_builtin_dir, extensions_dir]:
         if not os.path.isdir(dirname):
             return
 
@@ -116,7 +115,10 @@ def list_extensions():
             path = os.path.join(dirname, extension_dirname)
             if not os.path.isdir(path):
                 continue
-
+            if extension_dirname in extension_names:
+                shared.log.info(f'Skipping conflicting extension: {path}')
+                continue
+            extension_names.append(extension_dirname)
             extension_paths.append((extension_dirname, path, dirname == extensions_builtin_dir))
 
     for dirname, path, is_builtin in extension_paths:
