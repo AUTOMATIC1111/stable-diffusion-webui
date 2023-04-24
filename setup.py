@@ -140,7 +140,7 @@ def update(folder):
         git('checkout master', folder)
     else:
         log.warning(f'Unknown branch for: {folder}')
-    git('pull --autostash', folder)
+    git('pull --autostash --rebase', folder)
     branch = git('branch', folder)
 
 
