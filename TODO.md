@@ -5,10 +5,9 @@
 Stuff to be fixed...
 
 - ClipSkip not updated on read gen info
-- Usage of `sd_vae` in quick settings
 - Run VAE with hires at 1280
-- Make TensorFlow optional
-
+- Transformers version
+- Move Restart Server from WebUI to Launch and reload modules
 
 ## Features
 
@@ -16,7 +15,6 @@ Stuff to be added...
 
 - Add Gradio theme maker
 - Create new GitHub hooks/actions for CI/CD  
-- Move Restart Server from WebUI to Launch and reload modules
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage
 - Autodetect nVidia and AMD: `nvidia-smi` vs `rocm-smi`
@@ -58,11 +56,9 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- fix VAE dtype  
-  should fix most issues with NaN or black images  
-- add built-in Gradio themes  
-- fix setup race conditions
-- reduce requirements  
-- more AMD specific work
-- initial work on Apple platform support
-- additional PR merges
+- use samples format for live preview
+- identify race condition where generate locks up while fetching preview
+- use **Approx NN** for live preview
+- create default `styles.csv`
+- fix setup not installing `tensorflow` dependencies
+- update default git flags to reduce number of warnings

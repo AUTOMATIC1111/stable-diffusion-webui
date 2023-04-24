@@ -442,9 +442,8 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
 
 
 def decode_first_stage(model, x):
-    with devices.autocast(disable=x.dtype == devices.dtype_vae):
+    with devices.autocast(disable = x.dtype==devices.dtype_vae):
         x = model.decode_first_stage(x)
-
     return x
 
 
@@ -690,8 +689,20 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
 
             x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
-            for x in x_samples_ddim:
-                devices.test_for_nans(x, "vae")
+            try:
+                for x in x_samples_ddim:
+                    devices.test_for_nans(x, "vae")
+            except devices.NansException as e:
+                if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae and shared.cmd_opts.rollback_vae:
+                    print('\nA tensor with all NaNs was produced in VAE, try converting to bf16.')
+                    devices.dtype_vae = torch.bfloat16
+                    vae_file, vae_source = sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
+                    sd_vae.load_vae(p.sd_model, vae_file, vae_source)
+                    x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
+                    for x in x_samples_ddim:
+                        devices.test_for_nans(x, "vae")
+                else:
+                    raise e
 
             x_samples_ddim = torch.stack(x_samples_ddim).float()
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)

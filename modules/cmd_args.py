@@ -17,6 +17,7 @@ parser.add_argument("--lowram", action='store_true', help="Load checkpoint weigh
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="Path to checkpoint of stable diffusion model to load immediately",)
 parser.add_argument('--vae', type=str, help='Path to checkpoint of stable diffusion VAE model to load immediately', default=None)
 parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="Base path where all user data is stored")
+parser.add_argument("--models-dir", type=str, default="models", help="Nase path where all models are stored",)
 
 parser.add_argument("--allow-code", action='store_true', help="Allow custom script execution")
 parser.add_argument("--share", action='store_true', help="Enable to make the UI accessible through Gradio site")
@@ -43,6 +44,7 @@ parser.add_argument("--no-hashing", action='store_true', help="Disable sha256 ha
 parser.add_argument("--no-download-sd-model", action='store_true', help="Disable download of default model even if no model is found", default=False)
 parser.add_argument("--profile", action='store_true', help="Run profiler, default: %(default)s")
 parser.add_argument("--disable-queue", action='store_true', help="Disable Gradio queues and force use of HTTP instead of WebSockets, default: %(default)s")
+parser.add_argument("--rollback-vae", action='store_true', help="trying to roll back vae when produced nan image, need to enable nan check", default=False)
 parser.add_argument("--token-merging", action='store_true', help="Provides speed and memory improvements by merging redundant tokens. This has a more pronounced effect on higher resolutions.", default=False)
 
 

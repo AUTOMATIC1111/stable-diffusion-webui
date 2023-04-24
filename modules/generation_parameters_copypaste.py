@@ -3,10 +3,10 @@ import io
 import os
 import re
 
+from PIL import Image
 import gradio as gr
 from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks
-from PIL import Image
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
@@ -251,7 +251,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         lines.append(lastline)
         lastline = ''
 
-    for i, line in enumerate(lines):
+    for _i, line in enumerate(lines):
         line = line.strip()
         if line.startswith("Negative prompt:"):
             done_with_prompt = True
@@ -382,6 +382,8 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
             if os.path.exists(filename):
                 with open(filename, "r", encoding="utf8") as file:
                     prompt = file.read()
+            else:
+                prompt = ''
 
         params = parse_generation_parameters(prompt)
         script_callbacks.infotext_pasted_callback(prompt, params)

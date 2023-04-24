@@ -89,7 +89,7 @@ class UpscalerSwinIR(Upscaler):
 
         with progress.open(filename, 'rb', description=f'Loading weights: [cyan]{filename}', auto_refresh=True) as f:
             pretrained_model = torch.load(filename)
-        if params is not None:
+        if params is not None and params in pretrained_model:
             model.load_state_dict(pretrained_model[params], strict=True)
         else:
             model.load_state_dict(pretrained_model, strict=True)

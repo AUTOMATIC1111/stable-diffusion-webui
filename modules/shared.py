@@ -112,7 +112,6 @@ class State:
             "sampling_step": self.sampling_step,
             "sampling_steps": self.sampling_steps,
         }
-
         return obj
 
     def begin(self):
@@ -142,20 +141,17 @@ class State:
         """sets self.current_image from self.current_latent if enough sampling steps have been made after the last call to this"""
         if not parallel_processing_allowed:
             return
-
         if self.sampling_step - self.current_image_sampling_step >= opts.show_progress_every_n_steps and opts.live_previews_enable and opts.show_progress_every_n_steps != -1:
             self.do_set_current_image()
 
     def do_set_current_image(self):
         if self.current_latent is None:
             return
-
         import modules.sd_samplers # pylint: disable=W0621
         if opts.show_progress_grid:
             self.assign_current_image(modules.sd_samplers.samples_to_image_grid(self.current_latent))
         else:
             self.assign_current_image(modules.sd_samplers.sample_to_image(self.current_latent))
-
         self.current_image_sampling_step = self.sampling_step
 
     def assign_current_image(self, image):
@@ -425,8 +421,8 @@ options_templates.update(options_section(('ui', "Live previews"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
-    "show_progress_every_n_steps": OptionInfo(-1, "Show new live preview image every N sampling steps. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
-    "show_progress_type": OptionInfo("Full", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}),
+    "show_progress_every_n_steps": OptionInfo(1, "Show new live preview image every N sampling steps. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
+    "show_progress_type": OptionInfo("Approx NN", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}),
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
     "live_preview_refresh_period": OptionInfo(250, "Progressbar/preview update period, in milliseconds")
 }))
