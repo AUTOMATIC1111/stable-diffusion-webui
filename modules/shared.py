@@ -64,7 +64,7 @@ clip_model = None
 
 
 if device.type == 'privateuseone':
-    import modules.sd_hijack_directml
+    import modules.dml_specific
     is_device_dml = True
 
 

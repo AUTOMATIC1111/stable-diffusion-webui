@@ -2,6 +2,7 @@ import torch
 from tqdm.auto import tqdm
 
 from modules.shared import device
+from modules.sd_hijack_utils import CondFunc
 
 # k-diffusion
 from k_diffusion import sampling
@@ -172,10 +173,4 @@ DDIMSampler.p_sample_ddim = p_sample_ddim
 
 # torch
 
-Generator_init = torch.Generator.__init__
-def Generator_init_fix(self, device = None, *args, **kwargs):
-    if device is not None and device.type == 'privateuseone':
-        return Generator_init(self, 'cpu', *args, **kwargs) # DML Solution: torch.Generator fallback to cpu.
-    else:
-        return Generator_init(self, device, *args, **kwargs)
-torch.Generator.__init__ = Generator_init_fix
+CondFunc('torchsde._brownian.brownian_interval._randn', lambda _, size, dtype, device, seed: torch.randn(size, dtype=dtype, device=torch.device("cpu"), generator=torch.Generator(torch.device("cpu")).manual_seed(int(seed))).to(device), lambda _, size, dtype, device, seed: device.type == 'privateuseone')
