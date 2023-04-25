@@ -92,6 +92,7 @@ sampling.sample_dpm_adaptive = sample_dpm_adaptive
 
 # stablediffusion
 from ldm.models.diffusion.ddim import DDIMSampler
+from ldm.modules.diffusionmodules.util import noise_like
 
 @torch.no_grad()
 def p_sample_ddim(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
@@ -168,3 +169,13 @@ def p_sample_ddim(self, x, c, t, index, repeat_noise=False, use_original_steps=F
     return x_prev, pred_x0
 
 DDIMSampler.p_sample_ddim = p_sample_ddim
+
+# torch
+
+Generator_init = torch.Generator.__init__
+def Generator_init_fix(self, device = None, *args, **kwargs):
+    if device is not None and device.type == 'privateuseone':
+        return Generator_init(self, 'cpu', *args, **kwargs) # DML Solution: torch.Generator fallback to cpu.
+    else:
+        return Generator_init(self, device, *args, **kwargs)
+torch.Generator.__init__ = Generator_init_fix

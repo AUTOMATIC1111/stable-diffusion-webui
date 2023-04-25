@@ -32,7 +32,7 @@ def get_available_vram():
         return mem_free_total
     elif shared.device.type == 'privateuseone':
         # DML ISSUE: There's no way to get any memory info.
-        return 1048576
+        return 1073741824
     else:
         return psutil.virtual_memory().available
 
@@ -200,7 +200,7 @@ def einsum_op_cuda(q, k, v):
 
 def einsum_op_dml(q, k, v):
     # DML ISSUE: There's no way to get any memory info.
-    return einsum_op_tensor_mem(q, k, v, 1024)
+    return einsum_op_tensor_mem(q, k, v, 1073741824)
 
 def einsum_op(q, k, v):
     if q.device.type == 'cuda':
