@@ -107,9 +107,6 @@ def resolve_vae(checkpoint_file):
             if os.path.isfile(named_vae_location):
                 print(named_vae_location+' found in VAE dir')
                 return named_vae_location, ' found in VAE dir'
-            else:
-                print(f"Couldn't find a VAE with a matching name in {vae_path}, using None instead")
-                return None, None
 
     if shared.opts.sd_vae == "None":
         return None, None
@@ -120,6 +117,8 @@ def resolve_vae(checkpoint_file):
 
     if not is_automatic:
         print(f"Couldn't find VAE named {shared.opts.sd_vae}; using None instead")
+        
+    print(f"No matching VAE found, using None instead")    
 
     return None, None
 
