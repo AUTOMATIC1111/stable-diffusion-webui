@@ -2,7 +2,9 @@
 
 let lastHeadImg = null;
 
-notificationButton = null
+let notificationButton = null;
+
+const regExpTempImage = /(?<=\/|\\)tmp[\w\d]{8}\.png$/gm;
 
 onUiUpdate(function(){
     if(notificationButton == null){
@@ -22,6 +24,8 @@ onUiUpdate(function(){
     const headImg = galleryPreviews[0]?.src;
 
     if (headImg == null || headImg == lastHeadImg) return;
+
+    if (headImg.search(regExpTempImage) != -1) return;
 
     lastHeadImg = headImg;
 
