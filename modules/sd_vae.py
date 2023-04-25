@@ -5,6 +5,7 @@ from copy import deepcopy
 from rich import print # pylint: disable=redefined-builtin
 import torch
 from modules import paths, shared, devices, script_callbacks, sd_models
+from pathlib import Path
 
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
@@ -98,8 +99,17 @@ def resolve_vae(checkpoint_file):
     is_automatic = shared.opts.sd_vae in {"Automatic", "auto"}  # "auto" for people with old config
 
     vae_near_checkpoint = find_vae_near_checkpoint(checkpoint_file)
-    if vae_near_checkpoint is not None and (shared.opts.sd_vae_as_default or is_automatic):
+    if vae_near_checkpoint is not None and (shared.opts.sd_vae_as_default):
         return vae_near_checkpoint, 'found near the checkpoint'
+    
+    if is_automatic:
+        for named_vae_location in [vae_path + "\\" + Path(checkpoint_file).stem + ".vae.pt", vae_path + "\\" + Path(checkpoint_file).stem + ".vae.ckpt", vae_path + "\\" + Path(checkpoint_file).stem + ".vae.safetensors"]:
+            if os.path.isfile(named_vae_location):
+                print(named_vae_location+' found in VAE dir')
+                return named_vae_location
+            else:
+                print(f"Couldn't find a VAE with a matching name in {vae_path}, using None instead")
+                return None, None
 
     if shared.opts.sd_vae == "None":
         return None, None
