@@ -103,7 +103,7 @@ def resolve_vae(checkpoint_file):
         return vae_near_checkpoint, 'found near the checkpoint'
     
     if is_automatic:
-        for named_vae_location in [vae_path + "\\" + Path(checkpoint_file).stem + ".vae.pt", vae_path + "\\" + Path(checkpoint_file).stem + ".vae.ckpt", vae_path + "\\" + Path(checkpoint_file).stem + ".vae.safetensors"]:
+        for named_vae_location in [vae_path + os.sep + Path(checkpoint_file).stem + ".vae.pt", vae_path + os.sep + Path(checkpoint_file).stem + ".vae.ckpt", vae_path + os.sep + Path(checkpoint_file).stem + ".vae.safetensors"]:
             if os.path.isfile(named_vae_location):
                 print(named_vae_location+' found in VAE dir')
                 return named_vae_location, ' found in VAE dir'
