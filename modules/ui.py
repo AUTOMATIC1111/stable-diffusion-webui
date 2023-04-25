@@ -305,29 +305,6 @@ def create_generate(is_img2img):
             
     return submit 
 
-def create_generate(is_img2img):
-    id_part = "img2img" if is_img2img else "txt2img"
-    with gr.Column(scale=1):
-        with gr.Row():
-            skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
-            interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt")
-            submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
-
-            skip.click(
-                fn=lambda: shared.state.skip(),
-                inputs=[],
-                outputs=[],
-            )
-
-            interrupt.click(
-                fn=lambda: shared.state.interrupt(),
-                inputs=[],
-                outputs=[],
-            )
-            
-    return submit 
-
-    
 def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
 
@@ -636,7 +613,7 @@ def create_ui():
                 show_progress=False,
             )
 
-            #txt2img_prompt.submit(**txt2img_args)
+            txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
@@ -973,7 +950,7 @@ def create_ui():
                 outputs=[img2img_prompt, dummy_component],
             )
 
-            #img2img_prompt.submit(**img2img_args)
+            img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
@@ -1065,7 +1042,7 @@ def create_ui():
                     parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
                         paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=image,
                     ))
- 
+
         image.change(
             fn=wrap_gradio_call(modules.extras.run_pnginfo),
             inputs=[image],
@@ -2005,16 +1982,11 @@ def versions_html():
     return f"""
 <ul class="info-ul">
 <li><span>os: </span>{sys.platform}</li>    
-<li><span title="{sys.version}">python: </span> {python_version}</li>
-         
-<li><span>torch: </span>  {getattr(torch, '__long_version__',torch.__version__)}</li>
-         
-<li><span>xformers: </span> {xformers_version}</li>
-         
-<li><span>gradio: </span> {gr.__version__}</li>
-         
-<li><span>commit: <a href="https://github.com/anapnoe/stable-diffusion-webui-ux/commit/{commit}"></span>{short_commit}</a></li>
-         
+<li><span title="{sys.version}">python: </span> {python_version}</li>     
+<li><span>torch: </span>  {getattr(torch, '__long_version__',torch.__version__)}</li>     
+<li><span>xformers: </span> {xformers_version}</li>      
+<li><span>gradio: </span> {gr.__version__}</li>      
+<li><span>commit: <a href="https://github.com/anapnoe/stable-diffusion-webui-ux/commit/{commit}"></span>{short_commit}</a></li>     
 <li><span>checkpoint: </span><a id="sd_checkpoint_hash">N/A</a></li>
 </ul>
 """
