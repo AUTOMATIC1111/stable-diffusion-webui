@@ -290,6 +290,11 @@ def webui():
 
         print(f"Startup time: {startup_timer.summary()}.")
 
+        if cmd_opts.subpath:
+            redirector = FastAPI()
+            redirector.get("/")
+            mounted_app = gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
+
         wait_on_server(shared.demo)
         print('Restarting UI...')
 
