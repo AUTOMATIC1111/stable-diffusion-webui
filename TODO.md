@@ -8,7 +8,7 @@ Stuff to be fixed...
 - Run VAE with hires at 1280
 - Transformers version
 - Move Restart Server from WebUI to Launch and reload modules
-- gr.Dropdowns with None selected
+- follow-up on `p.script_args`
 
 ## Features
 

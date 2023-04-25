@@ -8,6 +8,7 @@ __pycache__
 /styles.csv
 /user.css
 /webui-user.bat
+/webui-user.sh
 /javascript/themes.json
 venv
 
