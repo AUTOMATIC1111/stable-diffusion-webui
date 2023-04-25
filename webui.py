@@ -218,7 +218,6 @@ def webui():
     print(f"Startup time: {startup_timer.summary()}")
     logging.disable(logging.DEBUG)
 
-
     while True:
         try:
             alive = shared.demo.server.thread.is_alive()

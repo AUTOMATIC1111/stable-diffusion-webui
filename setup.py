@@ -542,6 +542,7 @@ def run_setup():
     if args.skip_git:
         log.info('Skipping GIT operations')
     check_version()
+    set_environment()
     check_torch()
     install_requirements()
     if check_timestamp():
@@ -564,4 +565,3 @@ def run_setup():
 if __name__ == "__main__":
     parse_args()
     run_setup()
-    set_environment()
