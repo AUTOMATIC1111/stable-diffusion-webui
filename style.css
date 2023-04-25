@@ -3422,7 +3422,9 @@ div[data-testid="image"] canvas {
     pointer-events: none;
     display: none;
 }
-
+div.center.boundedheight.flex{
+	display:block !important;
+}
 /*************/
 /* Spotlight */
 /*************/
