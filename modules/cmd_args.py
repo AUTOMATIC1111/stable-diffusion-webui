@@ -67,11 +67,15 @@ def compatibility_args(opts, args):
     parser.add_argument("--disable-nan-check", help=argparse.SUPPRESS, default=opts.disable_nan_check)
     parser.add_argument("--token-merging", help=argparse.SUPPRESS, default=opts.token_merging)
     parser.add_argument("--rollback-vae", help=argparse.SUPPRESS, default=opts.rollback_vae)
-
     parser.add_argument("--no-half", help=argparse.SUPPRESS, default=opts.no_half)
     parser.add_argument("--no-half-vae", help=argparse.SUPPRESS, default=opts.no_half_vae)
     parser.add_argument("--precision", help=argparse.SUPPRESS, default=opts.precision)
     parser.add_argument("--api", help=argparse.SUPPRESS, default=True)
+
+    opts.use_old_emphasis_implementation = False
+    opts.use_old_karras_scheduler_sigmas = False
+    opts.no_dpmpp_sde_batch_determinism = False
+    opts.use_old_hires_fix_width_height = False
 
     parser.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     args = parser.parse_args()
