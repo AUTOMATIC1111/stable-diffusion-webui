@@ -106,7 +106,7 @@ def resolve_vae(checkpoint_file):
         for named_vae_location in [vae_path + "\\" + Path(checkpoint_file).stem + ".vae.pt", vae_path + "\\" + Path(checkpoint_file).stem + ".vae.ckpt", vae_path + "\\" + Path(checkpoint_file).stem + ".vae.safetensors"]:
             if os.path.isfile(named_vae_location):
                 print(named_vae_location+' found in VAE dir')
-                return named_vae_location
+                return named_vae_location, ' found in VAE dir'
             else:
                 print(f"Couldn't find a VAE with a matching name in {vae_path}, using None instead")
                 return None, None
