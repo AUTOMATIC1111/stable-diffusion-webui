@@ -1,7 +1,7 @@
 import torch
 from tqdm.auto import tqdm
 
-from shared import device
+from modules.shared import device
 
 # k-diffusion
 from k_diffusion import sampling
