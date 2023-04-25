@@ -62,6 +62,10 @@ sd_model = None
 clip_model = None
 
 
+#if device.type == 'privateuseone':
+#    import sd_hijack_directml
+
+
 def reload_hypernetworks():
     from modules.hypernetworks import hypernetwork
     global hypernetworks # pylint: disable=W0603
