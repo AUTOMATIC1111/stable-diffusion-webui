@@ -1,4 +1,4 @@
-<div class='card' style={style_advanced_size}>
+<div class='card' style={style_advanced_size} data-current-view='{current_view}' data-card-name="{name}">
 	<div class='card-img-preview' style={style_advanced_image_w} onclick={card_clicked}>
         {metadata_button}
         <div class='actions'>
@@ -14,29 +14,12 @@
 	<article class='card-info'>
 		<h1 class='name' title='Click to apply this model' onclick={card_clicked}>{name}</h1>
 		<div class='description' title='Scrollable if paragraph been cut off'>
-            <!-- <textarea class="desc-text">{description}</textarea> -->
-            <textarea class="desc-text">
-style >>> {style} 
-style_advanced_size >>> {style_advanced_size} 
-style_advanced_image_w >>> {style_advanced_image_w} 
-prompt >>> {prompt}
-tabname >>> {tabname} 
-local_preview >>> {local_preview} 
-name >>> {name} 
-description >>> {description} 
-card_clicked >>> {card_clicked} 
-save_card_description >>> {save_card_description} 
-save_card_preview >>> {save_card_preview} 
-read_card_description >>> {read_card_description} 
-search_term >>> {search_term} 
-metadata_button >>> {metadata_button} 
-            </textarea>
-            <!-- <textarea class="desc-text">{description}</textarea> -->
+            <textarea class="desc-text" data-desc-card-name="{name}">{description}</textarea>
         </div>
 		<div class='descriptions-actions' >
             <ul class='actions-btns-list'>
-                <li><a href='#' class='card-link-color-warning' title='replace notes with current content in the notes text area' onclick={save_card_description}>Update Notes</a></li>
-                <li><a href='#' class='card-link-bold' title='Load notes to the notes text area' onclick={read_card_description}>Load Notes</a></li>
+                <li><a href='#' class='card-link-color-warning' title='Load notes to the notes text area' onclick={read_card_description}>Reload</a></li>
+                <li><a href='#' class='card-link-bold' title='replace notes with current content in the notes text area' onclick={save_card_description}>Save</a></li>
             </ul>
 		</div>
 	</article> 

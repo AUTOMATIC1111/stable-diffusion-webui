@@ -97,31 +97,54 @@ function saveCardPreview(event, tabname, filename){
     event.preventDefault()
 }
 
-function saveCardDescription(event, tabname, filename, descript){
-    var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+function saveCardDescription(event, tabname, filename, currentView, itemName, itemDescript){
+    var filename_textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+    var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
     var button = gradioApp().getElementById(tabname + '_save_description')
-    var description = gradioApp().getElementById(tabname+ '_description_input')
+    var descrip_current_textarea_in_advanced
+    // var description = gradioApp().getElementById(tabname+ '_description_input') // prob a bug been written by some careless guy
+    filename_textarea.value = filename
 
-    textarea.value = filename
-    description.value=descript
-    updateInput(textarea)
+    if (currentView=="advanced"){
+        descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " [data-desc-card-name='" + itemName + "']")
+        if (descrip_current_textarea_in_advanced.value){
+            updateInput(descrip_current_textarea_in_advanced)
+            description_textarea.value = descrip_current_textarea_in_advanced.value 
+        }else{
+            description_textarea.value = itemDescript
+            // in advanced view, if indivisual textarea has issue when clicking save, reverse to previous description 
+        }
+    }
 
+    updateInput(filename_textarea )
+    updateInput(description_textarea)
+    
     button.click()
 
     event.stopPropagation()
     event.preventDefault()
 }
 
-function readCardDescription(event, tabname, filename, descript){
-    var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+function readCardDescription(event, tabname, filename, currentView, itemName, itemDescript){
+    var filename_textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
     var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
     var button = gradioApp().getElementById(tabname + '_read_description')
+    var descrip_current_textarea_in_advanced
 
-    textarea.value = filename
-    description_textarea.value = descript
+    filename_textarea.value = filename
+    description_textarea.value = itemDescript
 
-    updateInput(textarea)
+    updateInput(filename_textarea)
     updateInput(description_textarea)
+
+    if (currentView=="advanced"){
+        descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " [data-desc-card-name='" + itemName + "']")
+        if(descrip_current_textarea_in_advanced){
+            descrip_current_textarea_in_advanced.value = description_textarea.value 
+        }
+        updateInput(descrip_current_textarea_in_advanced)
+    }
+    
     button.click()
 
     event.stopPropagation()

@@ -144,7 +144,6 @@ class ExtraNetworksPage:
         return []
 
     def create_html_for_item(self, item, tabname):
-        current_view = shared.opts.extra_networks_default_view   
         preview = item.get("preview", None)
 
         onclick = item.get("onclick", None)
@@ -156,6 +155,7 @@ class ExtraNetworksPage:
         height_advanced_view = f"height: {shared.opts.extra_networks_advanced_card_height}px;" if shared.opts.extra_networks_advanced_card_height else ''
         width_advanced_view = f"width: {shared.opts.extra_networks_advanced_card_width}px;" if shared.opts.extra_networks_advanced_card_width else ''
         image_w_advanced_view = f"flex-basis: {shared.opts.extra_networks_advanced_card_image_width}px;" if shared.opts.extra_networks_advanced_card_image_width else ''
+        current_view = shared.opts.extra_networks_default_view 
 
         background_image = f"background-image: url(\"{html.escape(preview)}\");" if preview else ''
         metadata_button = ""
@@ -173,9 +173,10 @@ class ExtraNetworksPage:
             "name": item["name"],
             "description": (item.get("description") or ""),
             "card_clicked": onclick,
-            "save_card_description": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
+            "current_view": current_view,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
-            "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(item["description"])})""") + '"',
+            "save_card_description": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(current_view)}, {json.dumps(item["name"])}, {json.dumps(item["description"])})""") + '"',
+            "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(current_view)}, {json.dumps(item["name"])}, {json.dumps(item["description"])})""") + '"',
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
 
@@ -280,7 +281,7 @@ def create_ui(container, button, tabname):
     ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
     ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
-    ui.description_target_input = gr.TextArea('Description input save target', elem_id=tabname+"_description_target_input", visible=False)
+    # ui.description_target_input = gr.TextArea('Description input save target', elem_id=tabname+"_description_target_input", visible=False)
     
 
     def toggle_visibility(is_visible):
