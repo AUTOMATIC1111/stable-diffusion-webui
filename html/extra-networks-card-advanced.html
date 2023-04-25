@@ -14,7 +14,24 @@
 	<article class='card-info'>
 		<h1 class='name' title='Click to apply this model' onclick={card_clicked}>{name}</h1>
 		<div class='description' title='Scrollable if paragraph been cut off'>
-            <textarea class="desc-text">{description}</textarea>
+            <!-- <textarea class="desc-text">{description}</textarea> -->
+            <textarea class="desc-text">
+style >>> {style} 
+style_advanced_size >>> {style_advanced_size} 
+style_advanced_image_w >>> {style_advanced_image_w} 
+prompt >>> {prompt}
+tabname >>> {tabname} 
+local_preview >>> {local_preview} 
+name >>> {name} 
+description >>> {description} 
+card_clicked >>> {card_clicked} 
+save_card_description >>> {save_card_description} 
+save_card_preview >>> {save_card_preview} 
+read_card_description >>> {read_card_description} 
+search_term >>> {search_term} 
+metadata_button >>> {metadata_button} 
+            </textarea>
+            <!-- <textarea class="desc-text">{description}</textarea> -->
         </div>
 		<div class='descriptions-actions' >
             <ul class='actions-btns-list'>

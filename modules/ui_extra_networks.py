@@ -153,8 +153,8 @@ class ExtraNetworksPage:
 
         height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
         width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
-        height_advanced_view = f"height: {shared.opts.extra_networks_advanced_card_width}px;" if shared.opts.extra_networks_advanced_card_width else ''
-        width_advanced_view = f"height: {shared.opts.extra_networks_advanced_card_height}px;" if shared.opts.extra_networks_advanced_card_height else ''
+        height_advanced_view = f"height: {shared.opts.extra_networks_advanced_card_height}px;" if shared.opts.extra_networks_advanced_card_height else ''
+        width_advanced_view = f"width: {shared.opts.extra_networks_advanced_card_width}px;" if shared.opts.extra_networks_advanced_card_width else ''
         image_w_advanced_view = f"flex-basis: {shared.opts.extra_networks_advanced_card_image_width}px;" if shared.opts.extra_networks_advanced_card_image_width else ''
 
         background_image = f"background-image: url(\"{html.escape(preview)}\");" if preview else ''
