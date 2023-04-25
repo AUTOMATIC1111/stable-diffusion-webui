@@ -232,6 +232,7 @@ class ExtraNetworksUi:
         self.button_read_description = None
         self.description_target_filename = None
         self.description_input = None
+        self.description_target_input = None
 
         self.tabname = None
 
@@ -257,6 +258,7 @@ def create_ui(container, button, tabname):
     ui.pages = []
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
+    current_view = shared.opts.extra_networks_default_view  
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
         for page in ui.stored_extra_pages:
@@ -267,7 +269,10 @@ def create_ui(container, button, tabname):
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
-    ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
+    if current_view == "advanced" :
+        ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", visible=False)
+    else:
+        ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
@@ -275,6 +280,7 @@ def create_ui(container, button, tabname):
     ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
     ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
+    ui.description_target_input = gr.TextArea('Description input save target', elem_id=tabname+"_description_target_input", visible=False)
     
 
     def toggle_visibility(is_visible):
