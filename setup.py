@@ -136,12 +136,18 @@ def update(folder):
     branch = git('branch', folder)
     if 'main' in branch:
         git('checkout main', folder)
+        branch = 'main'
     elif 'master' in branch:
         git('checkout master', folder)
+        branch = 'master'
     else:
         log.warning(f'Unknown branch for: {folder}')
-    git('pull --autostash --rebase', folder)
-    branch = git('branch', folder)
+        branch = None
+    if branch is None:
+        git('pull --autostash --rebase', folder)
+    else:
+        git(f'pull origin {branch} --autostash --rebase', folder)
+    # branch = git('branch', folder)
 
 
 # clone git repository

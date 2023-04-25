@@ -32,6 +32,8 @@ venv
 /models/**/*
 /interrogate/**/*
 /train/log/**/*
+/textual_inversion/**/*
+/detected_maps/**/*
 /tmp
 /log
 /cert

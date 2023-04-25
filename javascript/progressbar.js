@@ -77,7 +77,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd = null, o
         setTitle("")
         if (divProgress) parentProgressbar.removeChild(divProgress)
         if (parentGallery) parentGallery.removeChild(livePreview)
-        atEnd()
+        if (atEnd) atEnd()
     }
 
     var fun = function(id_task, id_live_preview){
