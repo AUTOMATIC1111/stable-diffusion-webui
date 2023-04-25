@@ -141,7 +141,7 @@ def update(folder):
         git('checkout master', folder)
     else:
         log.warning(f'Unknown branch for: {folder}')
-    git('pull --autostash', folder)
+    git('pull --autostash --rebase', folder)
     branch = git('branch', folder)
 
 
@@ -179,11 +179,11 @@ def check_python():
 
 # check torch version
 def check_torch():
-    if shutil.which('nvidia-smi') is not None:
+    if shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe')):
         log.info('nVidia toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
-    elif shutil.which('rocminfo') is not None:
+    elif shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo'):
         log.info('AMD toolkit detected')
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
@@ -232,7 +232,7 @@ def check_torch():
         log.debug(f'Cannot install xformers package: {e}')
     try:
         tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.12.0')
-        install(tensorflow_package, ignore=True)
+        install(tensorflow_package, 'tensorflow', ignore=True)
     except Exception as e:
         log.debug(f'Cannot install tensorflow package: {e}')
 
@@ -411,10 +411,10 @@ def check_version():
     if not os.path.exists('.git'):
         log.error('Not a git repository')
         exit(1)
-    status = git('status')
-    if 'branch' not in status:
-        log.error('Cannot get git repository status')
-        exit(1)
+    _status = git('status')
+    # if 'branch' not in status:
+    #    log.error('Cannot get git repository status')
+    #    exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
     commit = git('rev-parse HEAD')

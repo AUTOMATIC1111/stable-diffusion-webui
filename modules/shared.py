@@ -259,7 +259,6 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sub_quad_kv_chunk_size": OptionInfo(512, "Sub-quadratic cross-attentionkv chunk size for the sub-quadratic cross-attention layer optimization to use", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
     "sub_quad_chunk_threshold": OptionInfo(80, "Sub-quadratic cross-attention percentage of VRAM chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
     "always_batch_cond_uncond": OptionInfo(False, "Disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram"),
-    "upcast_sampling": OptionInfo(False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
@@ -332,7 +331,9 @@ options_templates.update(options_section(('cuda', "CUDA Settings"), {
     "cuda_dtype": OptionInfo("FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
     "no_half": OptionInfo(True if is_device_dml else False, "Use full precision for model (--no-half)"),
     "no_half_vae": OptionInfo(True if is_device_dml else False, "Use full precision for VAE (--no-half-vae)"),
+    "upcast_sampling": OptionInfo(False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
     "disable_nan_check": OptionInfo(True, "Do not check if produced images/latent spaces have NaN values"),
+    "rollback_vae": OptionInfo(False, "Attempt to roll back VAE when produced NaN values, requires NaN check (experimental)"),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable cuDNN benchmark feature"),
     "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
@@ -434,19 +435,33 @@ options_templates.update(options_section(('ui', "Live previews"), {
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
-    "hide_samplers": OptionInfo(["Euler", "LMS", "Heun", "DPM2", "DPM2 a", "DPM++ 2M", "DPM fast", "DPM adaptive", "DPM++ 2S a Karras", "DPM++ 2S a", "DPM++ SDE Karras", "DPM2 a Karras", "LMS Karras"], "Hide samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
-    "eta_ddim": OptionInfo(0.0, "eta (noise multiplier) for DDIM", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "eta_ancestral": OptionInfo(1.0, "eta (noise multiplier) for ancestral samplers", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    "ddim_discretize": OptionInfo('uniform', "img2img DDIM discretize", gr.Radio, {"choices": ['uniform', 'quad']}),
+    "show_samplers": OptionInfo(["Euler a", "UniPC", "DDIM", "DPM++ SDE", "DPM++ SDE", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
+    "eta_ancestral": OptionInfo(1.0, "Noise multiplier for ancestral samplers (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
     's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}),
+    'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}),
     'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
     'uni_pc_order': OptionInfo(3, "UniPC order (must be < sampling steps)", gr.Slider, {"minimum": 1, "maximum": 50, "step": 1}),
     'uni_pc_lower_order_final': OptionInfo(True, "UniPC lower order final"),
+}))
+
+options_templates.update(options_section(('token_merging', 'Token Merging'), {
+    "token_merging": OptionInfo(False, "Enable redundant token merging via tomesd. This can provide significant speed and memory improvements.", gr.Checkbox),
+    "token_merging_ratio": OptionInfo(0.5, "Merging Ratio", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_hr_only": OptionInfo(True, "Apply only to high-res fix pass. Disabling can yield a ~20-35% speedup on contemporary resolutions.", gr.Checkbox),
+    "token_merging_ratio_hr": OptionInfo(0.5, "Merging Ratio (high-res pass) - If 'Apply only to high-res' is enabled, this will always be the ratio used.", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_random": OptionInfo(False, "Use random perturbations - Can improve outputs for certain samplers. For others, it may cause visual artifacting.", gr.Checkbox),
+    "token_merging_merge_attention": OptionInfo(True, "Merge attention", gr.Checkbox),
+    "token_merging_merge_cross_attention": OptionInfo(False, "Merge cross attention", gr.Checkbox),
+    "token_merging_merge_mlp": OptionInfo(False, "Merge mlp", gr.Checkbox),
+    "token_merging_maximum_down_sampling": OptionInfo(1, "Maximum down sampling", gr.Dropdown, lambda: {"choices": ["1", "2", "4", "8"]}),
+    "token_merging_stride_x": OptionInfo(2, "Stride - X", gr.Slider, {"minimum": 2, "maximum": 8, "step": 2}),
+    "token_merging_stride_y": OptionInfo(2, "Stride - Y", gr.Slider, {"minimum": 2, "maximum": 8, "step": 2})
 }))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
@@ -459,54 +474,6 @@ options_templates.update(options_section((None, "Hidden options"), {
     "disabled_extensions": OptionInfo([], "Disable these extensions"),
     "disable_all_extensions": OptionInfo("none", "Disable all extensions (preserves the list of disabled extensions)", gr.Radio, {"choices": ["none", "extra", "all"]}),
     "sd_checkpoint_hash": OptionInfo("", "SHA256 hash of the current checkpoint"),
-}))
-
-options_templates.update(options_section(('token_merging', 'Token Merging'), {
-    "token_merging": OptionInfo(
-        False, "Enable redundant token merging via tomesd. This can provide significant speed and memory improvements.",
-        gr.Checkbox
-    ),
-    "token_merging_ratio": OptionInfo(
-        0.5, "Merging Ratio",
-        gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}
-    ),
-    "token_merging_hr_only": OptionInfo(
-        True, "Apply only to high-res fix pass. Disabling can yield a ~20-35% speedup on contemporary resolutions.",
-        gr.Checkbox
-    ),
-    "token_merging_ratio_hr": OptionInfo(
-        0.5, "Merging Ratio (high-res pass) - If 'Apply only to high-res' is enabled, this will always be the ratio used.",
-        gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}
-    ),
-    # More advanced/niche settings:
-    "token_merging_random": OptionInfo(
-        False, "Use random perturbations - Can improve outputs for certain samplers. For others, it may cause visual artifacting.",
-        gr.Checkbox
-    ),
-    "token_merging_merge_attention": OptionInfo(
-        True, "Merge attention",
-        gr.Checkbox
-    ),
-     "token_merging_merge_cross_attention": OptionInfo(
-        False, "Merge cross attention",
-        gr.Checkbox
-    ),
-    "token_merging_merge_mlp": OptionInfo(
-        False, "Merge mlp",
-        gr.Checkbox
-    ),
-    "token_merging_maximum_down_sampling": OptionInfo(
-        1, "Maximum down sampling",
-        gr.Dropdown, lambda: {"choices": ["1", "2", "4", "8"]}
-    ),
-    "token_merging_stride_x": OptionInfo(
-        2, "Stride - X",
-        gr.Slider, {"minimum": 2, "maximum": 8, "step": 2}
-    ),
-    "token_merging_stride_y": OptionInfo(
-        2, "Stride - Y",
-        gr.Slider, {"minimum": 2, "maximum": 8, "step": 2}
-    )
 }))
 
 options_templates.update()

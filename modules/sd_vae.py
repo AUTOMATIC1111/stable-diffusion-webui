@@ -3,6 +3,7 @@ import collections
 import glob
 from copy import deepcopy
 from rich import print # pylint: disable=redefined-builtin
+import torch
 from modules import paths, shared, devices, script_callbacks, sd_models
 
 

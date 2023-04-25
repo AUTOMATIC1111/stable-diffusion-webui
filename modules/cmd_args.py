@@ -44,8 +44,6 @@ parser.add_argument("--no-hashing", action='store_true', help="Disable sha256 ha
 parser.add_argument("--no-download-sd-model", action='store_true', help="Disable download of default model even if no model is found", default=False)
 parser.add_argument("--profile", action='store_true', help="Run profiler, default: %(default)s")
 parser.add_argument("--disable-queue", action='store_true', help="Disable Gradio queues and force use of HTTP instead of WebSockets, default: %(default)s")
-parser.add_argument("--rollback-vae", action='store_true', help="trying to roll back vae when produced nan image, need to enable nan check", default=False)
-parser.add_argument("--token-merging", action='store_true', help="Provides speed and memory improvements by merging redundant tokens. This has a more pronounced effect on higher resolutions.", default=False)
 
 
 def compatibility_args(opts, args):
@@ -67,6 +65,9 @@ def compatibility_args(opts, args):
     parser.add_argument("--opt-channelslast", help=argparse.SUPPRESS, default=opts.opt_channelslast)
     parser.add_argument("--xformers", default = (opts.cross_attention_optimization == "xFormers"), action='store_true', help=argparse.SUPPRESS)
     parser.add_argument("--disable-nan-check", help=argparse.SUPPRESS, default=opts.disable_nan_check)
+    parser.add_argument("--token-merging", help=argparse.SUPPRESS, default=opts.token_merging)
+    parser.add_argument("--rollback-vae", help=argparse.SUPPRESS, default=opts.rollback_vae)
+
     parser.add_argument("--no-half", help=argparse.SUPPRESS, default=opts.no_half)
     parser.add_argument("--no-half-vae", help=argparse.SUPPRESS, default=opts.no_half_vae)
     parser.add_argument("--precision", help=argparse.SUPPRESS, default=opts.precision)

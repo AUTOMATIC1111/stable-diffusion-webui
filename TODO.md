@@ -18,6 +18,7 @@ Stuff to be added...
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage
 - Autodetect nVidia and AMD: `nvidia-smi` vs `rocm-smi`
+- [Temporal Weighing](https://github.com/comfyanonymous/ComfyUI/discussions/473)
 
 ## Investigate
 
@@ -56,9 +57,4 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- use samples format for live preview
-- identify race condition where generate locks up while fetching preview
-- use **Approx NN** for live preview
-- create default `styles.csv`
-- fix setup not installing `tensorflow` dependencies
-- update default git flags to reduce number of warnings
+- update GPU utility search paths for better GPU type detection
