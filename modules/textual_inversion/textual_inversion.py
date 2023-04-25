@@ -1,23 +1,19 @@
 import os
-from collections import namedtuple
-
-import torch
-import tqdm
 import html
 import csv
+from collections import namedtuple
+import torch
+import tqdm
 import safetensors.torch
-
+from rich import print # pylint: disable=redefined-builtin
 import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
-
 from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
-
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
 from modules.textual_inversion.logging import save_settings_to_file
-from rich import print # pylint: disable=redefined-builtin
 
 TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
 textual_inversion_templates = {}
@@ -26,7 +22,7 @@ textual_inversion_templates = {}
 def list_textual_inversion_templates():
     textual_inversion_templates.clear()
 
-    for root, dirs, fns in os.walk(shared.opts.embeddings_templates_dir):
+    for root, _dirs, fns in os.walk(shared.opts.embeddings_templates_dir):
         for fn in fns:
             path = os.path.join(root, fn)
 
@@ -198,7 +194,7 @@ class EmbeddingDatabase:
         if not os.path.isdir(embdir.path):
             return
 
-        for root, dirs, fns in os.walk(embdir.path, followlinks=True):
+        for root, _dirs, fns in os.walk(embdir.path, followlinks=True):
             for fn in fns:
                 try:
                     fullfn = os.path.join(root, fn)
@@ -214,7 +210,7 @@ class EmbeddingDatabase:
     def load_textual_inversion_embeddings(self, force_reload=False):
         if not force_reload:
             need_reload = False
-            for path, embdir in self.embedding_dirs.items():
+            for _path, embdir in self.embedding_dirs.items():
                 if embdir.has_changed():
                     need_reload = True
                     break
@@ -227,7 +223,7 @@ class EmbeddingDatabase:
         self.skipped_embeddings.clear()
         self.expected_shape = self.get_expected_shape()
 
-        for path, embdir in self.embedding_dirs.items():
+        for _path, embdir in self.embedding_dirs.items():
             self.load_from_dir(embdir)
             embdir.update()
 
@@ -270,13 +266,13 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
     # Remove illegal characters from name.
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
     fn = os.path.join(shared.opts.embeddings_dir, f"{name}.pt")
-    if not overwrite_old:
-        assert not os.path.exists(fn), f"file {fn} already exists"
-
-    embedding = Embedding(vec, name)
-    embedding.step = 0
-    embedding.save(fn)
-
+    if not overwrite_old and os.path.exists(fn):
+        print(f"Embedding already exists: {fn}")
+    else:
+        embedding = Embedding(vec, name)
+        embedding.step = 0
+        embedding.save(fn)
+        print(f'Created embedding: {fn} vectors {num_vectors_per_token} init {init_text}')
     return fn
 
 
@@ -288,7 +284,7 @@ def write_loss(log_directory, filename, step, epoch_len, values):
         return
     write_csv_header = False if os.path.exists(os.path.join(log_directory, filename)) else True
 
-    with open(os.path.join(log_directory, filename), "a+", newline='') as fout:
+    with open(os.path.join(log_directory, filename), "a+", newline='', encoding='utf-8') as fout:
         csv_writer = csv.DictWriter(fout, fieldnames=["step", "epoch", "epoch_step", *(values.keys())])
 
         if write_csv_header:
@@ -460,7 +456,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     try:
         sd_hijack_checkpoint.add()
 
-        for i in range((steps-initial_step) * gradient_step):
+        for _i in range((steps-initial_step) * gradient_step):
             if scheduler.finished:
                 break
             if shared.state.interrupted:
@@ -574,7 +570,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     if image is not None:
                         shared.state.assign_current_image(image)
 
-                        last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
+                        last_saved_image, _last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                         last_saved_image += f", prompt: {preview_text}"
 
                         if shared.opts.training_enable_tensorboard and shared.opts.training_tensorboard_save_images:
@@ -587,18 +583,17 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                         info = PngImagePlugin.PngInfo()
                         data = torch.load(last_saved_file)
                         info.add_text("sd-ti-embedding", embedding_to_b64(data))
-
-                        title = "<{}>".format(data.get('name', '???'))
+                        title = f"<{data.get('name', '???')}>"
 
                         try:
                             vectorSize = list(data['string_to_param'].values())[0].shape[0]
-                        except Exception as e:
+                        except Exception:
                             vectorSize = '?'
 
                         checkpoint = sd_models.select_checkpoint()
                         footer_left = checkpoint.model_name
-                        footer_mid = '[{}]'.format(checkpoint.shorthash)
-                        footer_right = '{}v {}s'.format(vectorSize, steps_done)
+                        footer_mid = f'[{checkpoint.shorthash}]'
+                        footer_right = f'{vectorSize}v {steps_done}s'
 
                         captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
                         captioned_image = insert_image_data_embed(captioned_image, data)
@@ -606,7 +601,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                         captioned_image.save(last_saved_image_chunks, "PNG", pnginfo=info)
                         embedding_yet_to_be_embedded = False
 
-                    last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
+                    last_saved_image, _last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                     last_saved_image += f", prompt: {preview_text}"
 
                 shared.state.job_no = embedding.step
@@ -624,7 +619,6 @@ Last saved image: {html.escape(last_saved_image)}<br/>
         save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, remove_cached_checksum=True)
     except Exception as e:
         errors.display(e, 'embedding train')
-        pass
     finally:
         pbar.leave = False
         pbar.close()

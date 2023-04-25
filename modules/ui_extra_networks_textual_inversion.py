@@ -25,12 +25,12 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         for embedding in embeddings:
             path, _ext = os.path.splitext(embedding.filename)
             yield {
-                "name": embedding.name,
+                "name": os.path.splitext(embedding.name)[0],
                 "filename": embedding.filename,
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
                 "search_term": self.search_terms_from_path(embedding.filename),
-                "prompt": json.dumps(embedding.name),
+                "prompt": json.dumps(os.path.splitext(embedding.name)[0]),
                 "local_preview": f"{path}.preview.{shared.opts.samples_format}",
             }
 

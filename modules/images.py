@@ -634,7 +634,7 @@ def read_info_from_image(image):
         if isinstance(val, bytes): # decode bytestring
             items[key] = safe_decode_string(val)
 
-    for key in ['exif', 'ExifOffset', 'JpegIFOffset', 'JpegIFByteCount', 'ExifVersion', 'icc_profile', 'jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'adobe', 'photoshop', 'loop', 'duration']: # remove unwanted tags
+    for key in ['exif', 'ExifOffset', 'JpegIFOffset', 'JpegIFByteCount', 'ExifVersion', 'icc_profile', 'jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'adobe', 'photoshop', 'loop', 'duration', 'dpi']: # remove unwanted tags
         items.pop(key, None)
 
     if items.get("Software", None) == "NovelAI":

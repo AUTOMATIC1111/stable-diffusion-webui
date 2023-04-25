@@ -32,16 +32,23 @@ def create_ui():
         with gr.Column():
             result_images, html_info_x, html_info, _html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
             html_info = gr.HTML(elem_id="pnginfo_html_info")
-            generation_info = gr.Textbox(elem_id="pnginfo_generation_info", label="Parameters")
+            generation_info = gr.Textbox(elem_id="pnginfo_generation_info", label="Parameters", visible=False)
+            generation_info_pretty = gr.Textbox(elem_id="pnginfo_generation_info_pretty", label="Parameters")
+
             gr.HTML('Full metadata')
             html2_info = gr.HTML(elem_id="pnginfo_html2_info")
 
         for tabname, button in buttons.items():
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=extras_image))
 
+    def pretty_geninfo(generation_info):
+        return generation_info.replace(', ', '\n')
+
     tab_single.select(fn=lambda: 0, inputs=[], outputs=[tab_index])
     tab_batch.select(fn=lambda: 1, inputs=[], outputs=[tab_index])
     tab_batch_dir.select(fn=lambda: 2, inputs=[], outputs=[tab_index])
+
+    generation_info.change(fn=pretty_geninfo, inputs=[generation_info], outputs=[generation_info_pretty])
 
     extras_image.change(
         fn=wrap_gradio_call(run_pnginfo),

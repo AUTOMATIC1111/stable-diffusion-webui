@@ -474,6 +474,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Size": f"{p.width}x{p.height}",
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Model": (None if not opts.add_model_name_to_info or not shared.sd_model.sd_checkpoint_info.model_name else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', '')),
+        "VAE": (None if not opts.add_model_name_to_info or sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(sd_vae.loaded_vae_file))[0]),
         "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
@@ -490,7 +491,6 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Token merging stride x": None if opts.token_merging_stride_x == 2 else opts.token_merging_stride_x,
         "Token merging stride y": None if opts.token_merging_stride_y == 2 else opts.token_merging_stride_y
     }
-
     generation_params.update(p.extra_generation_params)
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])

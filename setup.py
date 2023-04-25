@@ -137,12 +137,18 @@ def update(folder):
     branch = git('branch', folder)
     if 'main' in branch:
         git('checkout main', folder)
+        branch = 'main'
     elif 'master' in branch:
         git('checkout master', folder)
+        branch = 'master'
     else:
         log.warning(f'Unknown branch for: {folder}')
-    git('pull --autostash --rebase', folder)
-    branch = git('branch', folder)
+        branch = None
+    if branch is None:
+        git('pull --autostash --rebase', folder)
+    else:
+        git(f'pull origin {branch} --autostash --rebase', folder)
+    # branch = git('branch', folder)
 
 
 # clone git repository
@@ -175,6 +181,9 @@ def check_python():
     if shutil.which(git_cmd) is None:
         log.error('Git not found')
         exit(1)
+    else:
+        git_version = git('--version', folder=None, ignore=False)
+        log.debug(f'Git {git_version.replace("git version", "").strip()}')
 
 
 # check torch version
@@ -325,6 +334,7 @@ def install_extensions():
 def install_submodules():
     log.info('Installing submodules')
     txt = git('submodule')
+    log.debug(f'Submodules list: {txt}')
     if 'no submodule mapping found' in txt:
         log.warning('Attempting repository recover')
         git('add .')
@@ -334,7 +344,7 @@ def install_submodules():
         git('reset --hard origin/master')
         git('checkout master')
         log.info('Continuing setup')
-    git('submodule --quiet update --init --recursive')
+    txt = git('submodule --quiet update --init --recursive')
     if not args.noupdate:
         log.info('Updating submodules')
         submodules = git('submodule').splitlines()

@@ -1127,7 +1127,7 @@ def create_ui():
                         gradient_step = gr.Number(label='Gradient accumulation steps', value=1, precision=0, elem_id="train_gradient_step")
 
                     dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images", elem_id="train_dataset_directory")
-                    log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="textual_inversion", elem_id="train_log_directory")
+                    log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value="train/log/embeddings", elem_id="train_log_directory")
 
                     with FormRow():
                         template_file = gr.Dropdown(label='Prompt template', value="style_filewords.txt", elem_id="train_template_file", choices=get_textual_inversion_template_names())
@@ -1136,7 +1136,7 @@ def create_ui():
                     training_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="train_training_width")
                     training_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="train_training_height")
                     varsize = gr.Checkbox(label="Do not resize images", value=False, elem_id="train_varsize")
-                    steps = gr.Number(label='Max steps', value=100000, precision=0, elem_id="train_steps")
+                    steps = gr.Number(label='Max steps', value=1000, precision=0, elem_id="train_steps")
 
                     with FormRow():
                         create_image_every = gr.Number(label='Save an image to log directory every N steps, 0 to disable', value=500, precision=0, elem_id="train_create_image_every")
@@ -1740,32 +1740,3 @@ def reload_javascript():
 
 if not hasattr(shared, 'GradioTemplateResponseOriginal'):
     shared.GradioTemplateResponseOriginal = gradio.routes.templates.TemplateResponse
-
-
-def versions_html():
-    import torch
-    import launch
-
-    python_version = ".".join([str(x) for x in sys.version_info[0:3]])
-    commit = launch.commit_hash()
-    short_commit = commit[0:8]
-
-    if shared.xformers_available:
-        import xformers
-        xformers_version = xformers.__version__
-    else:
-        xformers_version = "N/A"
-
-    return f"""
-python: <span title="{sys.version}">{python_version}</span>
- • 
-torch: {getattr(torch, '__long_version__',torch.__version__)}
- • 
-xformers: {xformers_version}
- • 
-gradio: {gr.__version__}
- • 
-commit: <a href="https://github.com/vladmandic/automatic/commit/{commit}">{short_commit}</a>
- • 
-checkpoint: <a id="sd_checkpoint_hash">N/A</a>
-"""
