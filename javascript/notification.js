@@ -4,7 +4,7 @@ let lastHeadImg = null;
 
 let notificationButton = null;
 
-const regExpTempImage = /\/tmp.*\.png$/g;
+const regExpTempImage = /(?<=\/|\\)tmp[\w\d]{8}\.png$/gm;
 
 onUiUpdate(function(){
     if(notificationButton == null){
