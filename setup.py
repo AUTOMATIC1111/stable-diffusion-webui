@@ -174,6 +174,9 @@ def check_python():
     if shutil.which(git_cmd) is None:
         log.error('Git not found')
         exit(1)
+    else:
+        git_version = git('--version', folder=None, ignore=False)
+        log.debug(f'Git {git_version.replace("git version", "").strip()}')
 
 
 # check torch version
@@ -310,6 +313,7 @@ def install_extensions():
 def install_submodules():
     log.info('Installing submodules')
     txt = git('submodule')
+    log.debug(f'Submodules list: {txt}')
     if 'no submodule mapping found' in txt:
         log.warning('Attempting repository recover')
         git('add .')
@@ -319,7 +323,7 @@ def install_submodules():
         git('reset --hard origin/master')
         git('checkout master')
         log.info('Continuing setup')
-    git('submodule --quiet update --init --recursive')
+    txt = git('submodule --quiet update --init --recursive')
     if not args.noupdate:
         log.info('Updating submodules')
         submodules = git('submodule').splitlines()
