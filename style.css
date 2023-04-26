@@ -900,6 +900,7 @@ ul.options{
 	border-width: var(--ae-border-width);
 	max-height:25vh !important;
 	padding:1px;
+	z-index:9999;
 
 }
 
@@ -1331,6 +1332,13 @@ input.svelte-56zyyb{
     background: var(--ae-panel-bg-color);
     padding: var(--ae-outside-gap-size);
 	background: var(--ae-frame-bg-color);
+}
+
+.compact.svelte-15lo0d8 {
+    border-radius: var(--ae-panel-border-radius);
+    background: var(--ae-panel-border-color);
+    padding: 0;
+    gap: 1px !important;
 }
 
 [id$="-collapse"],

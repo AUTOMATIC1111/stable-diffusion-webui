@@ -672,7 +672,7 @@ onUiUpdate(function(){
 			//maybe here we need to setInterval until the content is available
 			setTimeout(function(){
 				accordion_content = accordion_btn.parentElement;
-				console.log(accordion_content);
+				//console.log(accordion_content);
 				attachAccordionListeners(accordion_content);
 			},1000)
 		}
