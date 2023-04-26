@@ -102,6 +102,8 @@ Use --skip-version-check commandline argument to disable this check.
 def initialize():
     check_versions()
 
+    modules.witchpot.CheckModelsExist()
+
     extensions.list_extensions()
     localization.list_localizations(cmd_opts.localizations_dir)
     startup_timer.record("list extensions")
@@ -135,8 +137,6 @@ def initialize():
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")
-
-    modules.witchpot.CheckModelsExist()
 
     try:
         modules.sd_models.load_model()
