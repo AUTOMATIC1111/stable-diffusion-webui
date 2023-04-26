@@ -60,9 +60,3 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- update process image -> info
-- add vae info to metadata
-- update GPU utility search paths for better GPU type detection
-- update git flags for wider compatibility
-- update ti training defaults
-- add compatibility opts for some old extensions

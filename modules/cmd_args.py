@@ -71,6 +71,9 @@ def compatibility_args(opts, args):
     parser.add_argument("--no-half-vae", help=argparse.SUPPRESS, default=opts.no_half_vae)
     parser.add_argument("--precision", help=argparse.SUPPRESS, default=opts.precision)
     parser.add_argument("--api", help=argparse.SUPPRESS, default=True)
+    parser.add_argument("--sub-quad-q-chunk-size", help=argparse.SUPPRESS, default=opts.sub_quad_q_chunk_size)
+    parser.add_argument("--sub-quad-kv-chunk-size", help=argparse.SUPPRESS, default=opts.sub_quad_kv_chunk_size)
+    parser.add_argument("--sub-quad-chunk-threshold", help=argparse.SUPPRESS, default=opts.sub_quad_chunk_threshold)
 
     opts.use_old_emphasis_implementation = False
     opts.use_old_karras_scheduler_sigmas = False
