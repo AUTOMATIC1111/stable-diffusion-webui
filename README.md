@@ -158,4 +158,5 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Security advice - RyotaK
 - UniPC sampler - Wenliang Zhao - https://github.com/wl-zhao/UniPC
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
+- Twitter Emoji (Twemoji) assets - https://github.com/twitter/twemoji
 - (You)

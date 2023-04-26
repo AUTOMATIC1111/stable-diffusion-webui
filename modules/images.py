@@ -6,6 +6,7 @@ import pytz
 import io
 import math
 import os
+import ast
 from collections import namedtuple
 import re
 
@@ -13,7 +14,10 @@ import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
+from svglib.svglib import svg2rlg
+from reportlab.graphics import renderPM
 from fonts.ttf import Roboto
+import unicodedata
 import string
 import json
 import hashlib
@@ -132,14 +136,25 @@ class GridAnnotation:
 
 
 def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
-    def wrap(drawing, text, font, line_length):
-        lines = ['']
-        for word in text.split():
-            line = f'{lines[-1]} {word}'.strip()
-            if drawing.textlength(line, font=font) <= line_length:
-                lines[-1] = line
+    def wrap(drawing, text, font, font_size, line_length):
+        lines = []
+        current_line = ''
+        current_width = 0
+        for word in re.findall(r'\S+|\s+', text):
+            word_width = 0
+            for char in word:
+                char_width = drawing.textlength(char, font=font)
+                if unicodedata.name(char).startswith('EMOJI'):
+                    char_width += font_size
+                word_width += char_width
+            if current_width + word_width <= line_length:
+                current_line += word
+                current_width += word_width
             else:
-                lines.append(word)
+                lines.append(current_line)
+                current_line = word.strip()
+                current_width = word_width
+        lines.append(current_line)
         return lines
 
     def get_font(fontsize):
@@ -149,13 +164,60 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
             return ImageFont.truetype(Roboto, fontsize)
 
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
+        with open(os.path.join(os.getcwd(), "modules", "emojis", "emoji_dict.txt"), 'r') as f:
+            emoji_dict = ast.literal_eval(f.read())
+
         for i, line in enumerate(lines):
             fnt = initial_fnt
             fontsize = initial_fontsize
-            while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
+            has_emoji = False
+            emoji_count = 0
+            for char in line.text:
+                if f"\\u{{{ord(char):x}}}" in emoji_dict:
+                    has_emoji = True
+                    emoji_count += 1
+            while True:
+                total_width = 0
+                if has_emoji:
+                    emoji_width = emoji_count * fontsize
+                    total_width += emoji_width
+                    for char in line.text:
+                        if f"\\u{{{ord(char):x}}}" not in emoji_dict:
+                            char_width = fnt.getsize(char)[0]
+                            total_width += char_width
+                else:
+                    total_width = drawing.multiline_textsize(line.text, font=fnt)[0]
+
+                if total_width <= line.allowed_width or fontsize <= 1:
+                    break
                 fontsize -= 1
                 fnt = get_font(fontsize)
-            drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
+
+            x, y = draw_x - line.allowed_width / 2, draw_y + line.size[1] / 2
+            text_x = x + (line.allowed_width - total_width) / 2
+
+            current_word = ''
+            original_word = ''
+            for char in line.text:
+                c = f"\\u{{{ord(char):x}}}"
+                if c in emoji_dict:
+                    filename = emoji_dict[c]
+                    drawing_emoji = svg2rlg(os.path.join(os.getcwd(), "modules", "emojis", filename))
+                    bitmap_bytes = renderPM.drawToString(drawing_emoji, fmt="PNG", dpi=326)
+                    emoji_image = Image.open(io.BytesIO(bitmap_bytes))
+                    emoji_image = emoji_image.resize((fontsize, fontsize))
+                    word_width = fnt.getsize(current_word)[0]
+                    drawing.multiline_text((text_x, y - fnt.getsize(current_word)[1] // 2), original_word, font=fnt, fill=color_active if line.is_active else color_inactive, align='center')
+                    drawing._image.paste(emoji_image, (math.floor(text_x + word_width), math.floor(y - fontsize / 2)))
+                    text_x += word_width + fontsize
+                    current_word = ''
+                    original_word = ''
+                else:
+                    current_word += char
+                    original_word += char
+
+            if current_word:
+                drawing.multiline_text((text_x, y - fnt.getsize(current_word)[1] // 2), original_word, font=fnt, fill=color_active if line.is_active else color_inactive, align='center')
 
             if not line.is_active:
                 drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2, draw_y + line.size[1] // 2), fill=color_inactive, width=4)
@@ -186,7 +248,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
         texts.clear()
 
         for line in items:
-            wrapped = wrap(calc_d, line.text, fnt, allowed_width)
+            wrapped = wrap(calc_d, line.text, fnt, fontsize, allowed_width)
             texts += [GridAnnotation(x, line.is_active) for x in wrapped]
 
         for line in texts:

@@ -12,6 +12,8 @@ opencv-contrib-python
 requests
 piexif
 Pillow
+svglib
+reportlab
 pytorch_lightning==1.7.7
 realesrgan
 scikit-image>=0.19
