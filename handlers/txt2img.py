@@ -52,8 +52,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  subseed_strength: float = 0,  # 差异强度
                  seed_resize_from_h: int = 0,  # 重置尺寸种子-高度
                  seed_resize_from_w: int = 0,  # 重置尺寸种子-宽度
-                 batch_size: int = 1,  # 批次
-                 n_iter: int = 1,  # 迭代数
+                 batch_size: int = 1,  # 批次数量
+                 n_iter: int = 1,  # 每个批次数量
                  steps: int = 30,  # 步数
                  select_script_name: str = None,  # 选择下拉框脚本名
                  select_script_args: typing.Sequence = None,  # 选择下拉框脚本参数

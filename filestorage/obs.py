@@ -38,7 +38,7 @@ class ObsFileStorage(FileStorage):
                 return local_path
             bucket, key = self.extract_buack_key_from_path(remoting_path)
             self.logger.info(f"download {key} from obs to {local_path}")
-            resp = self.obsClient.downloadFile(bucket, key, local_path, 5 * 1024 * 1024, 4, True)
+            resp = self.obsClient.downloadFile(bucket, key, local_path, 10 * 1024 * 1024, 4, True)
             if resp.status < 300:
                 return local_path
             else:

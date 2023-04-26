@@ -109,7 +109,7 @@ class TaskDumper(Thread):
         self.queue.put(info)
         if not self._dump_now:
             # 如果dump_now 已经是True,就不要覆盖
-            self._dump_now = task_progress.completed
+            self._dump_now = task_progress.task_progress > 0
 
     @abc.abstractmethod
     def progress_to_info(self, task_progress: TaskProgress) -> DumpInfo:
@@ -135,6 +135,7 @@ class MongoTaskDumper(TaskDumper):
                 "latency": int(time.time()) - task_progress.task.create_at,
             }
         )
+
         info = DumpInfo(
             {"task_id": v['task_id']},
             {'$set': v},

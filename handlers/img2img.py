@@ -51,9 +51,9 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  init_mask_inpaint: str = None,  # 局部重绘蒙版图（上传蒙版，实际MODE=4）
                  inpaint_color_sketch: str = None,  # 局部重新绘制图片手绘（局部重新绘制手涂，实际MODE=3）
                  inpaint_color_sketch_orig: str = None,  # 局部重新绘制图片原图（局部重新绘制手涂，实际MODE=3）
-                 batch_size: int = 1,  # 批次
+                 batch_size: int = 1,  # 批次数量
                  mask_blur: int = 4,  # 蒙版模糊
-                 n_iter: int = 1,  # 迭代数
+                 n_iter: int = 1,  # 每个批次数量
                  steps: int = 30,  # 步数
                  cfg_scale: float = 7.0,  # 提示词相关性
                  image_cfg_scale: float = 1.5,  # 图片相关性，一般是隐藏的不会使用
@@ -332,7 +332,9 @@ class Img2ImgTaskHandler(TaskHandler):
         # 可不使用定时刷新，直接初始化。
         self._refresh_default_script_args()
 
-        return Img2ImgTask.from_task(task, self.default_script_args)
+        t = Img2ImgTask.from_task(task, self.default_script_args)
+        t.progress_callback = lambda x: self._update_running_progress(task, x)
+        return t
 
     def _get_local_checkpoint(self, task: Task):
         base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint)
@@ -377,11 +379,6 @@ class Img2ImgTaskHandler(TaskHandler):
         progress.task_desc = f'i2i task({task.id}) running'
         yield progress
 
-        def update_progress(p):
-            progress.task_progress = p
-            self._set_task_status(progress)
-
-        process_args.progress_callback = update_progress
         shared.state.begin()
         if process_args.is_batch:
             assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
@@ -408,6 +405,14 @@ class Img2ImgTaskHandler(TaskHandler):
     def _set_task_status(self, p: TaskProgress):
         super()._set_task_status(p)
         dumper.dump_task_progress(p)
+
+    def _update_running_progress(self, task: Task, v: int):
+        if v > 99:
+            v = 99
+
+        progress = TaskProgress.new_running(task, "generate image...")
+        progress.task_progress = v
+        self._set_task_status(progress)
 
     def _exec_interrogate(self, task: Task):
         model = task.get('interrogate_model')
