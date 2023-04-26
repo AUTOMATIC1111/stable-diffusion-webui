@@ -16,10 +16,10 @@ pip install aioprometheus[starlette]
 
 # download models from gcp if needed, it can take while on a fresh disk.
 echo "Checking model downloads..."
-./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/Stable-diffusion models/Stable-diffusion --ignore-existing --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
-./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/lora models/Lora --ignore-existing --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
-./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/extensions/sd-webui-controlnet/models extensions/sd-webui-controlnet/models --ignore-existing --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
-./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/embeddings embeddings --progress --ignore-existing --config rclone-v1.62.2-linux-amd64/rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/Stable-diffusion models/Stable-diffusion --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/models/lora models/Lora --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone copy gs://ag-diffusion/extensions/sd-webui-controlnet/models extensions/sd-webui-controlnet/models --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
+./rclone-v1.62.2-linux-amd64/rclone sync gs://ag-diffusion/embeddings embeddings --progress --config rclone-v1.62.2-linux-amd64/rclone.conf 
 echo "Checking model downloads: complete"
 
 # Install directory without trailing slash
