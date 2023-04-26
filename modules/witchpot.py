@@ -30,11 +30,11 @@ def CheckModelsExist():
 
     print("LoRA_dir : " + lora_models_dir_path)
 
-    #if not os.path.exists(lora_model_path):
-    #    if not os.path.exists(lora_models_dir_path):
-    #        os.makedirs(lora_models_dir_path)
+    if not os.path.exists(lora_model_path):
+        if not os.path.exists(lora_models_dir_path):
+            os.makedirs(lora_models_dir_path)
 
-    #    load_file_from_url(lora_model_url, lora_models_dir_path, True, lora_model_name)
+        load_file_from_url(lora_model_url, lora_models_dir_path, True, lora_model_name)
 
     # ControlNet
     cn_model_url = "https://huggingface.co/comfyanonymous/ControlNet-v1-1_fp16_safetensors/resolve/main/control_v11f1p_sd15_depth_fp16.safetensors"
