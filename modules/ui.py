@@ -302,7 +302,7 @@ def create_toprow(is_img2img):
     return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button
 
 
-def setup_progressbar(*args, **kwargs):
+def setup_progressbar(*args, **kwargs): # pylint: disable=unused-argument
     pass
 
 
@@ -387,7 +387,7 @@ def get_value_for_setting(key):
     return gr.update(value=value, **args)
 
 
-def create_override_settings_dropdown(tabname, row):
+def create_override_settings_dropdown(tabname, row): # pylint: disable=unused-argument
     dropdown = gr.Dropdown([], label="Override settings", visible=False, elem_id=f"{tabname}_override_settings", multiselect=True)
 
     dropdown.change(
@@ -400,8 +400,8 @@ def create_override_settings_dropdown(tabname, row):
 
 
 def create_ui():
-    import modules.img2img
-    import modules.txt2img
+    import modules.img2img # pylint: disable=redefined-outer-name
+    import modules.txt2img # pylint: disable=redefined-outer-name
 
     reload_javascript()
 
@@ -416,9 +416,9 @@ def create_ui():
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
 
-        with FormRow(variant='compact', elem_id="txt2img_extra_networks", visible=False) as extra_networks:
+        with FormRow(variant='compact', elem_id="txt2img_extra_networks", visible=False) as extra_networks_ui:
             from modules import ui_extra_networks
-            extra_networks_ui = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'txt2img')
+            extra_networks_ui = ui_extra_networks.create_ui(extra_networks_ui, extra_networks_button, 'txt2img')
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
@@ -478,14 +478,14 @@ def create_ui():
                             custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
             hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
-            for input in hr_resolution_preview_inputs:
-                input.change(
+            for preview_input in hr_resolution_preview_inputs:
+                preview_input.change(
                     fn=calc_resolution_hires,
                     inputs=hr_resolution_preview_inputs,
                     outputs=[hr_final_resolution],
                     show_progress=False,
                 )
-                input.change(
+                preview_input.change(
                     None,
                     _js="onCalcResolutionHires",
                     inputs=hr_resolution_preview_inputs,
@@ -614,9 +614,9 @@ def create_ui():
 
         img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 
-        with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks:
+        with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks_ui:
             from modules import ui_extra_networks
-            extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'img2img')
+            extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks_ui, extra_networks_button, 'img2img')
 
         with FormRow().style(equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
@@ -767,7 +767,7 @@ def create_ui():
 
                             for i, elem in enumerate([tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]):
                                 elem.select(
-                                    fn=lambda tab=i: select_img2img_tab(tab),
+                                    fn=lambda tab=i: select_img2img_tab(tab), # pylint: disable=cell-var-from-loop
                                     inputs=[],
                                     outputs=[inpaint_controls, mask_alpha],
                                 )
@@ -1334,7 +1334,7 @@ def create_ui():
         elif t == bool:
             comp = gr.Checkbox
         else:
-            raise Exception(f'bad options item type: {str(t)} for key {key}')
+            raise ValueError(f'bad options item type: {str(t)} for key {key}')
 
         elem_id = "setting_"+key
 
@@ -1433,7 +1433,7 @@ def create_ui():
                 current_tab.__exit__()
 
             request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications", visible=False)
-            show_all_pages = gr.Button(value="Show all pages", variant='primary', elem_id="settings_show_all_pages")
+            _show_all_pages = gr.Button(value="Show all pages", variant='primary', elem_id="settings_show_all_pages")
             with gr.TabItem("Licenses"):
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
@@ -1507,7 +1507,7 @@ def create_ui():
 
         parameters_copypaste.connect_paste_params_buttons()
 
-        with gr.Tabs(elem_id="tabs") as tabs:
+        with gr.Tabs(elem_id="tabs") as _tabs:
             for interface, label, ifid in interfaces:
                 if label in shared.opts.hidden_tabs:
                     continue

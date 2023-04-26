@@ -2,7 +2,6 @@ import os
 import re
 import sys
 from collections import namedtuple
-from rich import print # pylint: disable=redefined-builtin
 import gradio as gr
 from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
 
@@ -47,9 +46,9 @@ class Script:
         Values of those returned components will be passed to run() and process() functions.
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
-    def show(self, is_img2img):
+    def show(self, is_img2img): # pylint: disable=unused-argument
         """
         is_img2img is True if this function is called for the img2img interface, and Fasle otherwise
 
@@ -72,7 +71,7 @@ class Script:
         args contains all values returned by components from ui()
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def process(self, p, *args):
         """
@@ -81,7 +80,7 @@ class Script:
         args contains all values returned by components from ui()
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def before_process_batch(self, p, *args, **kwargs):
         """
@@ -95,7 +94,7 @@ class Script:
           - subseeds - list of subseeds for current batch
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def process_batch(self, p, *args, **kwargs):
         """
@@ -108,7 +107,7 @@ class Script:
           - subseeds - list of subseeds for current batch
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def postprocess_batch(self, p, *args, **kwargs):
         """
@@ -119,14 +118,14 @@ class Script:
           - images - torch tensor with all generated images, with values ranging from 0 to 1;
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def postprocess_image(self, p, pp: PostprocessImageArgs, *args):
         """
         Called for every image after it has been generated.
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def postprocess(self, p, processed, *args):
         """
@@ -134,7 +133,7 @@ class Script:
         args contains all values returned by components from ui()
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def before_component(self, component, **kwargs):
         """
@@ -144,14 +143,14 @@ class Script:
         You can return created components in the ui() function to add them to the list of arguments for your processing functions
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def after_component(self, component, **kwargs):
         """
         Called after a component is created. Same as above.
         """
 
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def describe(self):
         """unused"""
@@ -288,6 +287,7 @@ class ScriptRunner:
         self.titles = []
         self.infotext_fields = []
         self.paste_field_names = []
+        self.script_load_ctr = 0
 
     def initialize_scripts(self, is_img2img):
         from modules import scripts_auto_postprocessing
@@ -298,7 +298,7 @@ class ScriptRunner:
 
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
-        for script_class, path, basedir, script_module in auto_processing_scripts + scripts_data:
+        for script_class, path, _basedir, _script_module in auto_processing_scripts + scripts_data:
             script = script_class()
             script.filename = path
             script.is_txt2img = not is_img2img
@@ -380,7 +380,6 @@ class ScriptRunner:
             outputs=[script.group for script in self.selectable_scripts]
         )
 
-        self.script_load_ctr = 0
         def onload_script_visibility(params):
             title = params.get('Script', None)
             if title:
@@ -416,12 +415,14 @@ class ScriptRunner:
 
     def process(self, p):
         for script in self.alwayson_scripts:
+            # from rich import print
             try:
-                if p.script_args[0] == 'enabled':
-                    return
+                # print(f'HERE: {script.filename} from {script.args_from} to {script.args_to} args {p.script_args}')
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
             except Exception as e:
+                # from modules.errors import console
+                # console.print_exception(show_locals=True, max_frames=10, extra_lines=2, theme="ansi_dark", word_wrap=False, width=min([console.width, 200]))
                 errors.display(e, f'Running script process: {script.filename}')
 
     def before_process_batch(self, p, **kwargs):
@@ -495,7 +496,7 @@ class ScriptRunner:
                 module = script_loading.load_module(script.filename)
                 cache[filename] = module
 
-            for key, script_class in module.__dict__.items():
+            for _key, script_class in module.__dict__.items():
                 if type(script_class) == type and issubclass(script_class, Script):
                     self.scripts[si] = script_class()
                     self.scripts[si].filename = filename
@@ -516,7 +517,7 @@ def reload_script_body_only():
 
 
 def reload_scripts():
-    global scripts_txt2img, scripts_img2img, scripts_postproc
+    global scripts_txt2img, scripts_img2img, scripts_postproc # pylint: disable=global-statement
 
     load_scripts()
 
@@ -547,7 +548,7 @@ def IOComponent_init(self, *args, **kwargs):
 
     script_callbacks.before_component_callback(self, **kwargs)
 
-    res = original_IOComponent_init(self, *args, **kwargs)
+    res = original_IOComponent_init(self, *args, **kwargs) # pylint: disable=assignment-from-no-return
 
     add_classes_to_gradio_component(self)
 
@@ -564,7 +565,7 @@ gr.components.IOComponent.__init__ = IOComponent_init
 
 
 def BlockContext_init(self, *args, **kwargs):
-    res = original_BlockContext_init(self, *args, **kwargs)
+    res = original_BlockContext_init(self, *args, **kwargs) # pylint: disable=assignment-from-no-return
 
     add_classes_to_gradio_component(self)
 

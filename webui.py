@@ -66,10 +66,13 @@ else:
 
 def check_rollback_vae():
     if shared.cmd_opts.rollback_vae:
-        if not torch.__version__.startswith('2.1'):
+        if not torch.cuda.is_available():
+            print("Rollback VAE functionality requires CUDA support")
+            shared.cmd_opts.rollback_vae = False
+        elif not torch.__version__.startswith('2.1'):
             print("Rollback VAE functionality requires Torch 2.1 or higher")
             shared.cmd_opts.rollback_vae = False
-        if 0 < torch.cuda.get_device_capability()[0] < 8:
+        elif 0 < torch.cuda.get_device_capability()[0] < 8:
             print('Rollback VAE functionality device capabilities not met')
             shared.cmd_opts.rollback_vae = False
 
