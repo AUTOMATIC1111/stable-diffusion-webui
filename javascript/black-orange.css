@@ -317,4 +317,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --button-small-text-size: var(--text-md);
   --button-small-text-weight: 400;
   --button-transition: none;
+  --size-9: 64px;
+  --size-14: 64px;
 }

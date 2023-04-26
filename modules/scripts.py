@@ -350,11 +350,11 @@ class ScriptRunner:
         shared.total_tqdm.clear()
         return processed
 
-    def process(self, p):
+    def process(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
-                script.process(p, *script_args)
+                script.process(p, *script_args, **kwargs)
             except Exception as e:
                 errors.display(e, f'Running script process: {script.filename}')
 
