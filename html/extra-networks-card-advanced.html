@@ -11,8 +11,8 @@
             </div>
         </div>
     </div>
-	<div class='card-info'>
-		<p class='name' title='Click to apply this model' onclick={card_clicked}>{name}</p>
+	<article class='card-info'>
+		<h1 class='name' title='Click to apply this model' onclick={card_clicked}>{name}</h1>
 		<div class='description' title='Scrollable if paragraph been cut off'>
             <textarea class="desc-text" data-desc-card-name="{name}" readOnly>{description}</textarea>
         </div>
@@ -25,5 +25,5 @@
                 <li><span class='card-btn card-link-bold' title='replace notes with current content in the notes text area' onclick={save_card_description}>Save</span></li>
             </ul>
 		</div>
-	</div> 
+	</article> 
 </div>

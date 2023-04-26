@@ -1074,17 +1074,6 @@ footer {
     color: var(--grayscale-6);
     border-radius: 0.5em;
 }
-.extra-network-advanced .card .card-info .description .desc-text::-webkit-scrollbar{
-    width: 0px;
-}
-
-.extra-network-advanced .card .card-info .description textarea.desc-text:read-only{
-    color: var(--grayscale-6);
-}
-.extra-network-advanced .card .card-info .description textarea.desc-text:read-only:focus{
-    color: var(--grayscale-8);
-    outline: 2px solid var(--grayscale-4);
-}
 
 .extra-network-advanced .card .card-info .description textarea.desc-text{
     padding: 0.2em;
@@ -1098,6 +1087,20 @@ footer {
     color: var(--grayscale-9);
     outline: 3px solid var(--secondary-500);
 }
+
+.extra-network-advanced .card .card-info .description .desc-text::-webkit-scrollbar{
+    width: 0px;
+}
+
+.extra-network-advanced .card .card-info .description textarea.desc-text:read-only{
+    color: var(--grayscale-6);
+}
+.extra-network-advanced .card .card-info .description textarea.desc-text:read-only:focus{
+    color: var(--grayscale-8);
+    outline: 2px solid var(--grayscale-4);
+}
+
+
 
 
 .extra-network-advanced .card .card-info .description-actions ul.actions-btns-list li{
