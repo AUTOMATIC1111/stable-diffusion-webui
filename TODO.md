@@ -21,6 +21,7 @@ Stuff to be added...
 - Stream-load models as option for slow storage
 - AMD optimizations
 - Apple optimizations
+- Support multiple models locations
 
 ## Investigate
 

@@ -20,6 +20,7 @@ errors.install(gr)
 demo: gr.Blocks = None
 log = setup_log
 parser = cmd_args.parser
+url = 'https://github.com/vladmandic/automatic'
 
 if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
     cmd_opts = parser.parse_args()

@@ -27,15 +27,11 @@ class ScriptPostprocessingForMainUI(scripts.Script):
 
 
 def create_auto_preprocessing_script_data():
-    from modules import scripts
-
     res = []
-
     for name in shared.opts.postprocessing_enable_in_main_ui:
         script = next(iter([x for x in scripts.postprocessing_scripts_data if x.script_class.name == name]), None)
         if script is None:
             continue
-
         constructor = lambda s=script: ScriptPostprocessingForMainUI(s.script_class())
         res.append(scripts.ScriptClassData(script_class=constructor, path=script.path, basedir=script.basedir, module=script.module))
 
