@@ -101,21 +101,18 @@ function saveCardDescription(event, tabname, filename, currentView, itemName, it
     var filename_textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
     var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
     var button = gradioApp().getElementById(tabname + '_save_description')
-    var descrip_current_textarea_in_advanced
-    // var description = gradioApp().getElementById(tabname+ '_description_input') // prob a bug been written by some careless guy
+    var descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " textarea.desc-text[data-desc-card-name='" + itemName + "']")
+
     filename_textarea.value = filename
 
-    if (currentView=="advanced"){
-        descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " [data-desc-card-name='" + itemName + "']")
-        if (descrip_current_textarea_in_advanced.value){
-            updateInput(descrip_current_textarea_in_advanced)
-            description_textarea.value = descrip_current_textarea_in_advanced.value 
-        }else{
-            description_textarea.value = itemDescript
-            // in advanced view, if indivisual textarea has issue when clicking save, reverse to previous description 
-        }
+    if (currentView=="advanced" && descrip_current_textarea_in_advanced.value){
+        updateInput(descrip_current_textarea_in_advanced)
+        description_textarea.value = descrip_current_textarea_in_advanced.value 
+    }else if(currentView=="advanced"){
+        description_textarea.value = itemDescript
+        // in advanced view, if indivisual textarea has issue when try to save, reverse to previous description 
     }
-
+    toggleEditSwitch(event, tabname, currentView, itemName)
     updateInput(filename_textarea )
     updateInput(description_textarea)
     
@@ -129,7 +126,7 @@ function readCardDescription(event, tabname, filename, currentView, itemName, it
     var filename_textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
     var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
     var button = gradioApp().getElementById(tabname + '_read_description')
-    var descrip_current_textarea_in_advanced
+    var descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " textarea.desc-text[data-desc-card-name='" + itemName + "']")
 
     filename_textarea.value = filename
     description_textarea.value = itemDescript
@@ -137,17 +134,34 @@ function readCardDescription(event, tabname, filename, currentView, itemName, it
     updateInput(filename_textarea)
     updateInput(description_textarea)
 
-    if (currentView=="advanced"){
-        descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " [data-desc-card-name='" + itemName + "']")
-        if(descrip_current_textarea_in_advanced){
-            descrip_current_textarea_in_advanced.value = description_textarea.value 
-        }
+    if (currentView=="advanced" && descrip_current_textarea_in_advanced){
+        descrip_current_textarea_in_advanced.value = description_textarea.value 
         updateInput(descrip_current_textarea_in_advanced)
     }
     
     button.click()
 
+    descrip_current_textarea_in_advanced.focus();
+
     event.stopPropagation()
+    event.preventDefault()
+}
+
+function toggleEditSwitch(event, tabname, currentView, itemName){
+    var descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " textarea.desc-text[data-desc-card-name='" + itemName + "']")
+    var toggle_action = gradioApp().querySelector("#tab_" + tabname + " .card[data-card-name='" + itemName + "'] .card-info .description-actions")
+    var toggle_list = gradioApp().querySelectorAll("#tab_" + tabname + " .card[data-card-name='" + itemName + "'] .card-info .description-actions ul.actions-btns-list")
+
+    if (currentView=="advanced" && descrip_current_textarea_in_advanced){
+        descrip_current_textarea_in_advanced.readOnly = !descrip_current_textarea_in_advanced.readOnly
+        toggle_action.classList.toggle("toggle-off")
+        toggle_list.forEach(function(toggle_list) {
+            toggle_list.classList.toggle("toggle-off")
+        })
+        if (!descrip_current_textarea_in_advanced.readOnly) {
+            descrip_current_textarea_in_advanced.focus();
+        }
+    }
     event.preventDefault()
 }
 

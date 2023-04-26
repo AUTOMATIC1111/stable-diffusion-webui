@@ -177,6 +177,8 @@ class ExtraNetworksPage:
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "save_card_description": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(current_view)}, {json.dumps(item["name"])}, {json.dumps(item["description"])})""") + '"',
             "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(current_view)}, {json.dumps(item["name"])}, {json.dumps(item["description"])})""") + '"',
+            "toggle_read_edit": '"' + html.escape(f"""return toggleEditSwitch(event, {json.dumps(tabname)}, {json.dumps(current_view)}, {json.dumps(item["name"])})""") + '"',
+            
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
 
@@ -281,7 +283,6 @@ def create_ui(container, button, tabname):
     ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
     ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
-    # ui.description_target_input = gr.TextArea('Description input save target', elem_id=tabname+"_description_target_input", visible=False)
     
 
     def toggle_visibility(is_visible):
@@ -353,7 +354,12 @@ def setup_ui(ui, gallery):
     # write description to a file
     def save_description(filename,descrip):
         lastDotIndex = filename.rindex('.')
-        filename = filename[0:lastDotIndex]+".description.txt"
+        filename = filename[0:lastDotIndex]
+        if filename.endswith(".preview"):
+            filename = filename[:-8] + ".description.txt"
+        else:
+            filename = filename + ".description.txt"
+
         if descrip != "":
             try: 
                 f = open(filename,'w')
