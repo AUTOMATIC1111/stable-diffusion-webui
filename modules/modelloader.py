@@ -42,6 +42,8 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
             if os.path.exists(place):
                 for file in glob.iglob(place + '**/**', recursive=True):
                     full_path = file
+                    if '.off' in full_path:
+                        continue
                     if os.path.isdir(full_path):
                         continue
                     if os.path.islink(full_path) and not os.path.exists(full_path):
