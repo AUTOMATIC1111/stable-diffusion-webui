@@ -25,7 +25,7 @@ def CheckModelsExist():
     # LoRA
     lora_model_url = "https://huggingface.co/Witchpot/icestage/resolve/main/witchpot-icestage-sd-1-5.safetensors"
     lora_models_dir_path = os.path.abspath(shared.cmd_opts.lora_dir)
-    lora_model_name = ""
+    lora_model_name = "witchpot-icestage-sd-1-5.safetensors"
     lora_model_path = os.path.abspath(os.path.join(lora_models_dir_path, lora_model_name))
 
     print("LoRA_dir : " + lora_models_dir_path)
