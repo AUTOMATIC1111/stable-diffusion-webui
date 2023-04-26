@@ -257,6 +257,9 @@ def webui():
         # safety_setup()
 
         from modules.user import authorization
+        auth = None
+        if not cmd_opts.noauth:
+            auth = authorization
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
@@ -265,7 +268,7 @@ def webui():
             ssl_keyfile=cmd_opts.tls_keyfile,
             ssl_certfile=cmd_opts.tls_certfile,
             debug=cmd_opts.gradio_debug,
-            auth=authorization,
+            auth=auth,
             auth_message="美术SD-WEBUI",
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
@@ -355,9 +358,9 @@ def run_worker():
     from handlers.img2img import Img2ImgTask
     from handlers.extension.controlnet import bind_debug_img_task_args
 
-    tasks = Img2ImgTask.debug_task()
-    sender = RedisSender()
-    sender.push_task(VipLevel.Level_1, *bind_debug_img_task_args(*tasks))
+    # tasks = Img2ImgTask.debug_task()
+    # sender = RedisSender()
+    # sender.push_task(VipLevel.Level_1, *bind_debug_img_task_args(*tasks))
     initialize()
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("scripts before_ui_callback")

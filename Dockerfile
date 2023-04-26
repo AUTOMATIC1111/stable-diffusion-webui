@@ -13,6 +13,7 @@ ENV TERM linux
 ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE DontWarn
 ENV DEBIAN_FRONTEND noninteractive
 ENV CRYPTOGRAPHY_DONT_BUILD_RUST=1
+ENV TORCH_HOME /root/stable-diffusion-webui/models/torch
 
 ARG TZ=Asia/Shanghai
 ARG BUILD_ARGS

@@ -369,9 +369,9 @@ class Img2ImgTaskHandler(TaskHandler):
             sd_models.user_loras = []
         if process_args.embedding:
             embedding_dirs = self._get_local_embedding_dirs(process_args.embedding)
-            sd_models.user_embendding_dirs = set(embedding_dirs)
+            sd_models.user_embedding_dirs = set(embedding_dirs)
         else:
-            sd_models.user_embendding_dirs = []
+            sd_models.user_embedding_dirs = []
 
         progress.status = TaskStatus.Running
         progress.task_desc = f'i2i task({task.id}) running'

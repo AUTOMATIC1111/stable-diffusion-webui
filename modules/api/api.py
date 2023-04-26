@@ -417,7 +417,7 @@ class Api:
             p.outpath_samples = opts.outdir_img2img_samples
 
             shared.state.begin()
-            if selectable_scripts != None:
+            if not selectable_scripts:
                 p.script_args = script_args
                 processed = scripts.scripts_img2img.run(p, *p.script_args)  # Need to pass args as list here
             else:

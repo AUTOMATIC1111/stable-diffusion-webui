@@ -156,11 +156,13 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                     'model': item.get('model', 'None'),
                     'module': item.get('module', 'none'),
                     'processor_res': item.get('processor_res', 64),
-                    'resize_mode': item.get('resize_mode', 'Scale to Fit (Inner Fit)'),
+                    'resize_mode': item.get('resize_mode', 'Crop and Resize'),
                     'rgbbgr_mode': item.get('rgbbgr_mode', False),
                     'threshold_a': item.get('threshold_a', 64),
                     'threshold_b': item.get('threshold_b', 64),
                     'weight': item.get('weight', 1),
+                    'pixel_perfect': item.get('pixel_perfect', False),
+                    'control_mode': item.get('control_mode', 'Balanced')
                 })
 
             if isinstance(control_net_script_args, Iterable):

@@ -13,6 +13,7 @@ import secrets
 import tempfile
 import time
 import traceback
+import typing
 from asyncio import TimeoutError as AsyncTimeOutError
 from collections import defaultdict
 from copy import deepcopy
@@ -59,6 +60,13 @@ BUILD_PATH_LIB = pkg_resources.resource_filename("gradio", "templates/frontend/a
 VERSION_FILE = pkg_resources.resource_filename("gradio", "version.txt")
 with open(VERSION_FILE) as version_file:
     VERSION = version_file.read()
+
+TEST_TICKETS = {
+    'Cwfrwqxxc000Swc32': 'test-user',
+    'rwwwgwqxxw00S143u': 'test-user',
+    'kvewwr091232Swc32': 'test-user',
+    'askdjkEe2d33923uE': 'test-user',
+}
 
 
 class ORJSONResponse(JSONResponse):
@@ -158,28 +166,29 @@ class App(FastAPI):
         @app.get("/user")
         @app.get("/user/")
         def get_current_user(request: fastapi.Request) -> Optional[str]:
-            token = request.cookies.get("access-token") or request.cookies.get(
-                "access-token-unsecure"
-            )
+            token = request.cookies.get("access-token") or \
+                    request.cookies.get("access-token-unsecure")
             return app.tokens.get(token)
 
         @app.get("/login_check")
         @app.get("/login_check/")
         def login_check(user: str = Depends(get_current_user)):
-            if app.auth is None or not (user is None):
+            if user is not None or not app.auth:
                 return
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
             )
 
         async def ws_login_check(websocket: WebSocket) -> Optional[str]:
-            token = websocket.cookies.get("access-token")
+            token = websocket.cookies.get("access-token") or \
+                    websocket.cookies.get("access-token-unsecure")
             return token  # token is returned to allow request in queue
 
         @app.get("/token")
         @app.get("/token/")
         def get_token(request: fastapi.Request) -> dict:
-            token = request.cookies.get("access-token")
+            token = request.cookies.get("access-token") or \
+                    request.cookies.get("access-token-unsecure")
             return {"token": token, "user": app.tokens.get(token)}
 
         @app.get("/app_id")
@@ -227,6 +236,37 @@ class App(FastAPI):
 
                 return response
             else:
+                raise HTTPException(status_code=400, detail="Incorrect credentials.")
+
+        def valid_tk(ticket: str) -> typing.Union[str]:
+            if ticket in TEST_TICKETS:
+                return TEST_TICKETS[ticket]
+
+        @app.post("/tk")
+        @app.post("/tk/")
+        def login_with_tk(request: fastapi.Request):
+            token = request.cookies.get("access-token") or \
+                    request.cookies.get("access-token-unsecure")
+            ticket = request.query_params.get('tick')
+            # 已经登录
+            if app.tokens.get(token):
+                return RedirectResponse(url='/', status_code=status.HTTP_302_FOUND)
+            else:
+                # 带有TICK
+                if ticket:
+                    user = valid_tk(ticket)
+                    if user:
+                        token = secrets.token_urlsafe(32)
+                        response = RedirectResponse(url='/', status_code=status.HTTP_302_FOUND)
+                        response.set_cookie(
+                            key="access-token", value=token, httponly=True
+                        )
+                        response.set_cookie(
+                            key="access-token-unsecure", value=token, httponly=True
+                        )
+
+                        app.tokens[token] = user
+                        return response
                 raise HTTPException(status_code=400, detail="Incorrect credentials.")
 
         ###############
