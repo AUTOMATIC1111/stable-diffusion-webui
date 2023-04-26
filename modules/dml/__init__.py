@@ -1,11 +1,9 @@
 import torch
 import torch_directml
 
-import modules.dml.kdiffusion
-import modules.dml.stablediffusion
-import modules.dml.torch
+import modules.dml.hijack
 
-from optimizer.unknown import UnknownOptimizer
+from modules.dml.optimizer.unknown import UnknownOptimizer
 
 class DirectML():
     def get_optimizer(self, device: torch.device):
@@ -13,11 +11,11 @@ class DirectML():
         try:
             device_name = torch_directml.device_name(device.index)
             if 'NVIDIA' in device_name or 'GeForce' in device_name:
-                from optimizer.nvidia import nVidiaOptimizer as optimizer
+                from modules.dml.optimizer.nvidia import nVidiaOptimizer as optimizer
             elif 'AMD' in device_name or 'Radeon' in device_name:
-                from optimizer.amd import AMDOptimizer as optimizer
+                from modules.dml.optimizer.amd import AMDOptimizer as optimizer
             elif 'Intel' in device_name:
-                from optimizer.intel import IntelOptimizer as optimizer
+                from modules.dml.optimizer.intel import IntelOptimizer as optimizer
             else:
                 return UnknownOptimizer
             return optimizer

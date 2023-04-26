@@ -20,9 +20,6 @@ if shared.opts.cross_attention_optimization == "xFormers":
     except Exception:
         pass
 
-if shared.device.type == 'privateuseone':
-    import dml
-
 
 def get_available_vram():
     if shared.device.type == 'cuda':
