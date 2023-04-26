@@ -33,7 +33,8 @@ install_dir="/workspace"
 source ~/.bashrc
 
 # Commandline arguments for webui.py, for example: export COMMANDLINE_ARGS="--medvram --opt-split-attention"
-export COMMANDLINE_ARGS="--port 3000 --xformers --api --api-auth $AUTOMATIC1111_AUTH --api-log --nowebui --ckpt /workspace/stable-diffusion-webui/models/Stable-diffusion/deliberate_v2.safetensors --listen --enable-insecure-extension-access"
+#loras only seem to load if webui is running? 
+export COMMANDLINE_ARGS="--port 3000 --xformers --api --api-auth $AUTOMATIC1111_AUTH --gradio-auth $AUTOMATIC1111_AUTH --api-log --ckpt /workspace/stable-diffusion-webui/models/Stable-diffusion/deliberate_v2.safetensors --listen --enable-insecure-extension-access"
 echo $COMMANDLINE_ARGS
 
 # python3 executable
