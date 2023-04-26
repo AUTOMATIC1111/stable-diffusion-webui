@@ -1,9 +1,11 @@
 import os
 import re
+import sys
 import time
 import signal
-import warnings
+import asyncio
 import logging
+import warnings
 from rich import print # pylint: disable=W0622
 from modules import timer, errors
 
@@ -166,9 +168,25 @@ def create_api(app):
     return api
 
 
+def async_policy():
+    _BasePolicy = asyncio.WindowsSelectorEventLoopPolicy if sys.platform == "win32" and hasattr(asyncio, "WindowsSelectorEventLoopPolicy") else asyncio.DefaultEventLoopPolicy
+
+    class AnyThreadEventLoopPolicy(_BasePolicy):
+        def get_event_loop(self) -> asyncio.AbstractEventLoop:
+            try:
+                return super().get_event_loop()
+            except (RuntimeError, AssertionError):
+                loop = self.new_event_loop()
+                self.set_event_loop(loop)
+                return loop
+
+    asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+
+
 def start_ui():
     logging.disable(logging.INFO)
     create_paths(opts)
+    async_policy()
     initialize()
     if shared.opts.clean_temp_dir_at_start:
         ui_tempdir.cleanup_tmpdr()
