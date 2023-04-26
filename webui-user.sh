@@ -3,10 +3,11 @@
 # Uncomment and change the variables below to your need:#
 #########################################################
 
-
+#clean cache
+rm -rf ~/.cache
 
 # pull changes
-git pull
+git pull --recurse-submodules
 
 # install metrics tool
 apt update
