@@ -6,12 +6,10 @@
 #clean cache
 rm -rf ~/.cache
 
-# pull changes
-git pull --recurse-submodules
 
 # install metrics tool
 apt update
-apt install nano screen unzip -y
+apt install nano screen unzip rclone -y
 pip install aioprometheus[starlette]
 
 

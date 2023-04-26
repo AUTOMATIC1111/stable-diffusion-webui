@@ -12,6 +12,9 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     fi
 fi
 
+# pull changes
+git pull --recurse-submodules
+
 # Read variables from webui-user.sh
 # shellcheck source=/dev/null
 if [[ -f webui-user.sh ]]
