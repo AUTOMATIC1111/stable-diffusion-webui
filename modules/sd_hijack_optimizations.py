@@ -20,6 +20,9 @@ if shared.opts.cross_attention_optimization == "xFormers":
     except Exception:
         pass
 
+if shared.device.type == 'privateuseone':
+    import dml
+
 
 def get_available_vram():
     if shared.device.type == 'cuda':
@@ -31,8 +34,8 @@ def get_available_vram():
         mem_free_total = mem_free_cuda + mem_free_torch
         return mem_free_total
     elif shared.device.type == 'privateuseone':
-        # DML ISSUE: There's no way to get any memory info.
-        return 1073741824
+        mem_total, mem_active = torch.dml.memory_stats(shared.device)
+        return mem_total - mem_active * (1 << 20)
     else:
         return psutil.virtual_memory().available
 
@@ -199,8 +202,9 @@ def einsum_op_cuda(q, k, v):
     return einsum_op_tensor_mem(q, k, v, mem_free_total / 3.3 / (1 << 20))
 
 def einsum_op_dml(q, k, v):
-    # DML ISSUE: There's no way to get any memory info.
-    return einsum_op_tensor_mem(q, k, v, 1073741824)
+    mem_total, mem_active = devices.adl.memory_stats()
+    mem_reserved = mem_total / (1 << 20) * 0.7
+    return einsum_op_tensor_mem(q, k, v, (mem_reserved - mem_active) if mem_reserved > mem_active else 1)
 
 def einsum_op(q, k, v):
     if q.device.type == 'cuda':

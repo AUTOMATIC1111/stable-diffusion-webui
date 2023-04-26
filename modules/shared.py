@@ -64,7 +64,7 @@ clip_model = None
 
 
 if device.type == 'privateuseone':
-    import modules.dml_specific
+    import modules.dml
     is_device_dml = True
 
 
@@ -429,7 +429,7 @@ options_templates.update(options_section(('ui', "Live previews"), {
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "show_progress_every_n_steps": OptionInfo(1, "Show new live preview image every N sampling steps. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
-    "show_progress_type": OptionInfo("Approx NN", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}), # DML ISSUE: Approx NN does not work well on DirectML device.
+    "show_progress_type": OptionInfo("Approx cheap" if is_device_dml else "Approx NN", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}), # DML Solution: Use Approx cheap instead of Approx NN as a default progress type.
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
     "live_preview_refresh_period": OptionInfo(250, "Progressbar/preview update period, in milliseconds")
 }))
