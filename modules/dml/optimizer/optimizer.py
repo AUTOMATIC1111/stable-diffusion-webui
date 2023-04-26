@@ -4,5 +4,5 @@ from typing import *
 class Optimizer(metaclass=ABCMeta):
     driver: Any = None
     @abstractmethod
-    def memory_stats(self, index: int) -> Tuple[int, int]:
+    def memory_stats(index: int) -> Tuple[int, int]:
         pass

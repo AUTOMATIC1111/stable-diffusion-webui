@@ -14,8 +14,11 @@ class ATIADLxx(object):
         AdapterInfoArray = (AdapterInfo * num_adapters.value)()
         ADL2_Adapter_AdapterInfo_Get(self.context, C.cast(AdapterInfoArray, LPAdapterInfo), C.sizeof(AdapterInfoArray))
         self.devices = []
+        busNumbers = []
         for adapter in AdapterInfoArray:
-            self.devices.append(adapter)
+            if adapter.iBusNumber not in busNumbers: # filter duplicate device
+                self.devices.append(adapter)
+                busNumbers.append(adapter.iBusNumber)
         self.iHyperMemorySize = self.get_memory_info2(0).iHyperMemorySize
 
     def get_memory_info2(self, adapterIndex: int) -> ADLMemoryInfo2:

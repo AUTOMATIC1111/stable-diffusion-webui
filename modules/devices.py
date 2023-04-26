@@ -31,7 +31,7 @@ def get_dml_device_string():
     from modules import shared
     if shared.cmd_opts.device_id is not None:
         return f"privateuseone:{shared.cmd_opts.device_id}"
-    return "privateuseone"
+    return "privateuseone:0"
 
 
 def get_optimal_device_name():
