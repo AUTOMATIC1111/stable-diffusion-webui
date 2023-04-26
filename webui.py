@@ -52,6 +52,7 @@ import modules.txt2img
 import modules.script_callbacks
 import modules.textual_inversion.textual_inversion
 import modules.progress
+import modules.witchpot
 
 import modules.ui
 from modules import modelloader
@@ -134,6 +135,8 @@ def initialize():
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")
+
+    modules.witchpot.CheckModelsExist()
 
     try:
         modules.sd_models.load_model()
