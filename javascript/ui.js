@@ -1565,7 +1565,8 @@ document.addEventListener('readystatechange', function (e) {
 window.onload = function() {
 	document.getElementsByTagName("html")[0].style.backgroundColor = localStorage.getItem("bg_color");
 	document.body.style.backgroundColor = localStorage.getItem("bg_color");
-	document.body.style.display = "none";	
+	document.body.style.display = "none";
+	document.body.classList.add("dark");
 	setTimeout(function(){document.body.style.display = "block";},1000)
 
 }
