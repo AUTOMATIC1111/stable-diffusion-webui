@@ -2,9 +2,8 @@ import os
 import re
 import sys
 from collections import namedtuple
-
+from rich import print # pylint: disable=redefined-builtin
 import gradio as gr
-
 from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
 
 AlwaysVisible = object()
@@ -418,6 +417,8 @@ class ScriptRunner:
     def process(self, p):
         for script in self.alwayson_scripts:
             try:
+                if p.script_args[0] == 'enabled':
+                    return
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process(p, *script_args)
             except Exception as e:
@@ -434,6 +435,8 @@ class ScriptRunner:
     def process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
+                if p.script_args[0] == 'enabled':
+                    return
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.process_batch(p, *script_args, **kwargs)
             except Exception as e:
@@ -442,6 +445,8 @@ class ScriptRunner:
     def postprocess(self, p, processed):
         for script in self.alwayson_scripts:
             try:
+                if p.script_args[0] == 'enabled':
+                    return
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess(p, processed, *script_args)
             except Exception as e:
@@ -450,6 +455,8 @@ class ScriptRunner:
     def postprocess_batch(self, p, images, **kwargs):
         for script in self.alwayson_scripts:
             try:
+                if p.script_args[0] == 'enabled':
+                    return
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.postprocess_batch(p, *script_args, images=images, **kwargs)
             except Exception as e:

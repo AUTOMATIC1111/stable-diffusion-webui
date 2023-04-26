@@ -8,18 +8,19 @@ Stuff to be fixed...
 - Run VAE with hires at 1280
 - Transformers version
 - Move Restart Server from WebUI to Launch and reload modules
-- gr.Dropdowns with None selected
+- follow-up on `p.script_args`
 
 ## Features
 
 Stuff to be added...
 
+- Update README
 - Add Gradio theme maker
 - Create new GitHub hooks/actions for CI/CD  
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage
-- Autodetect nVidia and AMD: `nvidia-smi` vs `rocm-smi`
-- [Temporal Weighing](https://github.com/comfyanonymous/ComfyUI/discussions/473)
+- AMD optimizations
+- Apple optimizations
 
 ## Investigate
 
@@ -28,6 +29,7 @@ Stuff to be investigated...
 - Torch Compile
 - `Torch-DirectML`
 - `TensorRT`
+- [Temporal Weighing](https://github.com/comfyanonymous/ComfyUI/discussions/473)
 
 ## Merge PRs
 
@@ -58,4 +60,3 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- update GPU utility search paths for better GPU type detection

@@ -93,13 +93,18 @@ def find_vae_near_checkpoint(checkpoint_file):
 
 def resolve_vae(checkpoint_file):
     if shared.cmd_opts.vae is not None:
-        return shared.cmd_opts.vae, 'from commandline argument'
+        return shared.cmd_opts.vae, 'forced'
 
     is_automatic = shared.opts.sd_vae in {"Automatic", "auto"}  # "auto" for people with old config
 
     vae_near_checkpoint = find_vae_near_checkpoint(checkpoint_file)
-    if vae_near_checkpoint is not None and (shared.opts.sd_vae_as_default or is_automatic):
-        return vae_near_checkpoint, 'found near the checkpoint'
+    if vae_near_checkpoint is not None and (shared.opts.sd_vae_as_default):
+        return vae_near_checkpoint, 'near checkpoint'
+    
+    if is_automatic:
+        for named_vae_location in [os.path.join(vae_path, os.path.splitext(os.path.basename(checkpoint_file))[0] + ".vae.pt"), os.path.join(vae_path, os.path.splitext(os.path.basename(checkpoint_file))[0] + ".vae.ckpt"), os.path.join(vae_path, os.path.splitext(os.path.basename(checkpoint_file))[0] + ".vae.safetensors")]:
+            if os.path.isfile(named_vae_location):
+                return named_vae_location, 'in VAE dir'
 
     if shared.opts.sd_vae == "None":
         return None, None
@@ -109,7 +114,7 @@ def resolve_vae(checkpoint_file):
         return vae_from_options, 'specified in settings'
 
     if not is_automatic:
-        print(f"Couldn't find VAE named {shared.opts.sd_vae}; using None instead")
+        print(f"VAE not found: {shared.opts.sd_vae}")
 
     return None, None
 

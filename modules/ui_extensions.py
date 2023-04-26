@@ -43,9 +43,10 @@ def apply_and_restart(disable_list, update_list, disable_all):
     shared.opts.disable_all_extensions = disable_all
     shared.opts.save(shared.config_filename)
 
-    shared.state.interrupt()
-    shared.state.need_restart = True
-    shared.restart_server()
+    # shared.state.interrupt()
+    # shared.state.need_restart = True
+    # shared.restart_server()
+    print('Extension list updated - please restart the server')
 
 
 def check_updates(_id_task, disable_list):
@@ -292,7 +293,7 @@ def create_ui():
             with gr.TabItem("Installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):
-                    apply = gr.Button(value="Apply & restart UI", variant="primary")
+                    apply = gr.Button(value="Apply (restart required)", variant="primary")
                     check = gr.Button(value="Check for updates")
                     extensions_disable_all = gr.Radio(label="Disable all extensions", choices=["none", "extra", "all"], value=shared.opts.disable_all_extensions, elem_id="extensions_disable_all")
                     extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)

@@ -92,7 +92,6 @@ def run_extension_installer(ext_dir):
 
 if __name__ == "__main__":
     setup.run_setup()
-    setup.set_environment()
     setup.extensions_preload(force=True)
     setup.log.info(f"Server arguments: {sys.argv[1:]}")
     setup.log.debug('Starting WebUI')

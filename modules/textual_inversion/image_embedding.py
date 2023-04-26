@@ -131,14 +131,10 @@ def extract_image_data_embed(image):
 
 def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, textfont=None):
     from math import cos
-
     image = srcimage.copy()
     fontsize = 32
     if textfont is None:
-        try:
-            return ImageFont.truetype(opts.font or 'javascript/roboto.ttf', fontsize)
-        except Exception:
-            return ImageFont.truetype('javascript/roboto.ttf', fontsize)
+        textfont = opts.font or 'javascript/roboto.ttf'
 
     factor = 1.5
     gradient = Image.new('RGBA', (1, image.size[1]), color=(0, 0, 0, 0))

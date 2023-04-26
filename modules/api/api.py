@@ -243,8 +243,8 @@ class Api:
         with self.queue_lock:
             p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
             p.scripts = script_runner
-            p.outpath_grids = opts.outdir_txt2img_grids
-            p.outpath_samples = opts.outdir_txt2img_samples
+            p.outpath_grids = opts.outdir_grids or opts.outdir_txt2img_grids
+            p.outpath_samples = opts.outdir_samples or opts.outdir_txt2img_samples
 
             shared.state.begin()
             if selectable_scripts is not None:
