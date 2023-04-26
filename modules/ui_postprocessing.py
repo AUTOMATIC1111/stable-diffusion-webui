@@ -41,8 +41,14 @@ def create_ui():
         for tabname, button in buttons.items():
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=extras_image))
 
-    def pretty_geninfo(generation_info):
-        return generation_info.replace(', ', '\n')
+    def pretty_geninfo(generation_info: str):
+        if generation_info is None:
+            return ''
+        sections = generation_info.split('Steps:')
+        if len(sections) > 1:
+            param = sections[0].strip() + '\nSteps:' + sections[1].strip().replace(', ', '\n')
+            return param
+        return generation_info
 
     tab_single.select(fn=lambda: 0, inputs=[], outputs=[tab_index])
     tab_batch.select(fn=lambda: 1, inputs=[], outputs=[tab_index])
