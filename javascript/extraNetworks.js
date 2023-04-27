@@ -8,11 +8,13 @@ function setupExtraNetworksForTab(tabname){
     var descriptInput = gradioApp().getElementById(tabname+ '_description_input')
     var changeViewControl = gradioApp().getElementById(tabname+ '_control_change_view')
     var tempbox = gradioApp().getElementById(tabname+ '_temp')
+    var testbtn = gradioApp().getElementById(tabname+ '_extra_test')
     // debugger above 
 
     search.classList.add('search')
     tabs.appendChild(search)
     tabs.appendChild(refresh)
+    tabs.appendChild(testbtn)
     tabs.appendChild(changeViewControl)
     tabs.appendChild(descriptInput)
     tabs.appendChild(tempbox)

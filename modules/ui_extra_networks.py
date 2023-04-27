@@ -241,7 +241,6 @@ class ExtraNetworksUi:
         self.current_view = None
         self.view_choices_in_setting = None
         self.control_change_view = None
-        self.tmptextarea = None
 
 
 def pages_in_preferred_order(pages):
@@ -290,9 +289,14 @@ def create_ui(container, button, tabname):
     ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
-    ui.control_change_view = gr.Dropdown(ui.view_choices_in_setting, value = ui.current_view, label="Change View (will reload page)", show_label=True, elem_id=tabname+"_control_change_view")
-    ui.tmptextarea = gr.TextArea('', show_label=False, elem_id=tabname+"_temp", placeholder=f"current view -- {ui.current_view} in {ui.view_choices_in_setting}", lines=2)
-    # debugger above 
+    ui.control_change_view = gr.Dropdown(ui.view_choices_in_setting, value='change view', label="Change View (Will Force Reload Page)", show_label=False, elem_id=tabname+"_control_change_view", visible=True, width="100px")
+    button_test = gr.Button('test', elem_id=tabname+"_extra_test")
+    tmptextarea = gr.TextArea(f"current view is: {ui.current_view} in {ui.view_choices_in_setting}",
+                               show_label=False, 
+                               elem_id=tabname+"_temp", 
+                               placeholder=f"current view", 
+                               lines=1)
+                            # debugger above 
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
@@ -317,16 +321,20 @@ def create_ui(container, button, tabname):
             shared.opts.set('extra_networks_default_view', f"{new_view}")
             # shared.state.interrupt()
             # shared.state.need_restart = True
+            print(f'previous view {ui.current_view}, set new view {new_view}')
         elif new_view not in ui.view_choices_in_setting:
-            raise ValueError(f"Invalid view choice: {new_view}")
+            raise ValueError(f"Invalid view args: {new_view}")
+        elif new_view == ui.current_view:
+            print(f'New view {new_view} = current view {ui.current_view}, nothing changes')
         else:
-            print(f'current view {ui.current_view}, new view {new_view}, nothing changes')
+            print(f'soemthing is wrong, view change failed, reload page')
 
     ui.control_change_view.change(
         fn=handle_view_change,
-        # _js='restart_reload',
-        inputs=[ui.control_change_view], 
-        outputs=[]
+        _js='restart_by_press_btn',
+        inputs=[ui.control_change_view],
+        outputs=[],
+        
     )
 
     return ui

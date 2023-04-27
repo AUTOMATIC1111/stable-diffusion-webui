@@ -346,6 +346,23 @@ function restart_reload(){
 
     return []
 }
+function restart_reload_args(...args){
+    document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
+    setTimeout(function(){location.reload()},2000)
+    if (args.length === 1) {
+        return args[0];
+      } else {
+        return args;
+    }
+}
+function restart_by_press_btn(...args){
+    gradioApp().getElementById('settings_restart_gradio').click()
+    if (args.length === 1) {
+        return args[0];
+      } else {
+        return args;
+    }
+}
 
 // Simulate an `input` DOM event for Gradio Textbox component. Needed after you edit its contents in javascript, otherwise your edits
 // will only visible on web page and not sent to python.
