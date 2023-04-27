@@ -167,7 +167,9 @@ class ExtraNetworksPage:
             "name": item["name"],
             "description": (item.get("description") or ""),
             "card_clicked": onclick,
+            "save_card_description": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
+            "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(item["description"])})""") + '"',
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
         }
@@ -216,6 +218,11 @@ class ExtraNetworksUi:
         self.button_save_preview = None
         self.preview_target_filename = None
 
+        self.button_save_description = None
+        self.button_read_description = None
+        self.description_target_filename = None
+        self.description_input = None
+
         self.tabname = None
 
 
@@ -249,11 +256,18 @@ def create_ui(container, button, tabname):
                 ui.pages.append(page_elem)
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
+
+    ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
     button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
     button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
+
+    ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
+    ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
+    ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
+    
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
@@ -321,3 +335,27 @@ def setup_ui(ui, gallery):
         inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename],
         outputs=[*ui.pages]
     )
+    
+    # write description to a file
+    def save_description(filename,descrip):
+        lastDotIndex = filename.rindex('.')
+        filename = filename[0:lastDotIndex]+".description.txt"
+        if descrip != "":
+            try: 
+                f = open(filename,'w')
+            except OSError:
+                print ("Could not open file to write: " + filename)
+            with f:
+                f.write(descrip)
+                f.close()
+        return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
+    
+    ui.button_save_description.click(
+        fn=save_description,
+        _js="function(x,y){return [x,y]}",
+        inputs=[ui.description_target_filename, ui.description_input],
+        outputs=[*ui.pages]
+    )
+
+        
+
