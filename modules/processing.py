@@ -970,7 +970,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         shared.state.nextjob()
 
         img2img_sampler_name = self.sampler_name
-        if self.sampler_name in ['PLMS', 'UniPC']:  # PLMS/UniPC do not support img2img so we just silently switch to DDIM
+        if self.sampler_name in ['PLMS']:
+            # PLMS does not support img2img, use fallback instead
             img2img_sampler_name = shared.opts.fallback_sampler
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
 
