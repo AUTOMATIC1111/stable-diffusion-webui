@@ -358,9 +358,9 @@ def run_worker():
     from handlers.img2img import Img2ImgTask
     from handlers.extension.controlnet import bind_debug_img_task_args
 
-    # tasks = Img2ImgTask.debug_task()
-    # sender = RedisSender()
-    # sender.push_task(VipLevel.Level_1, *bind_debug_img_task_args(*tasks))
+    tasks = Img2ImgTask.debug_task()
+    sender = RedisSender()
+    sender.push_task(VipLevel.Level_1, *bind_debug_img_task_args(*tasks))
     initialize()
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("scripts before_ui_callback")

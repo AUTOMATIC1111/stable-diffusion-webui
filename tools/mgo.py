@@ -34,10 +34,12 @@ class MongoClient(object):
                 serverSelectionTimeoutMS=timeout*1000,
                 connectTimeoutMS=5000,
                 socketTimeoutMS=timeout*1000,
-                appname='ai-draw-prof'
+                appname='ai-draw-prof',
+                username=username,
+                password=pwd
             )
             self.db = self.client[database]
-            self.db.authenticate(username, pwd)
+            # self.db.authenticate(username, pwd)
         else:
             self.client = pymongo.MongoClient(host, port)
             self.db = self.client[database]
