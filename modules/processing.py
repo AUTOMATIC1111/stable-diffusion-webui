@@ -970,9 +970,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         shared.state.nextjob()
 
         img2img_sampler_name = self.sampler_name
-        if self.sampler_name in ['PLMS']:
+        force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
+        if self.sampler_name in ['PLMS'] or force_latent_upscaler is not None:
             # PLMS does not support img2img, use fallback instead
-            img2img_sampler_name = shared.opts.fallback_sampler
+            img2img_sampler_name = force_latent_upscaler or shared.opts.fallback_sampler
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
