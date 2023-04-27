@@ -94,13 +94,13 @@ function switch_to_inpaint_sketch(){
     switch_to_img2img_tab(3);
     return args_to_array(arguments);
 }
-/*
+
 function switch_to_inpaint(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
     gradioApp().getElementById('mode_img2img').querySelectorAll('button')[2].click();
     return args_to_array(arguments);
 }
-*/
+
 function switch_to_extras(){
     gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
 

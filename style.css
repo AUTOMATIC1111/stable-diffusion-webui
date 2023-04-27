@@ -900,7 +900,7 @@ ul.options{
 	border-width: var(--ae-border-width);
 	max-height:25vh !important;
 	padding:1px;
-	z-index:9999;
+	z-index:9999!important;
 
 }
 
