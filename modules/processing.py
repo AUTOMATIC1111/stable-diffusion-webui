@@ -973,7 +973,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         img2img_sampler_name = self.sampler_name
         if self.sampler_name in ['PLMS', 'UniPC']:  # PLMS/UniPC do not support img2img so we just silently switch to DDIM
-            img2img_sampler_name = 'DDIM'
+            img2img_sampler_name = shared.opts.fallback_sampler
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
