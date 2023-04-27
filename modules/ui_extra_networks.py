@@ -239,6 +239,9 @@ class ExtraNetworksUi:
 
         self.tabname = None
         self.current_view = None
+        self.view_choices_in_setting = None
+        self.control_change_view = None
+        self.tmptextarea = None
 
 
 def pages_in_preferred_order(pages):
@@ -263,6 +266,7 @@ def create_ui(container, button, tabname):
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
     ui.current_view = shared.opts.extra_networks_default_view
+    ui.view_choices_in_setting = shared.opts.data_labels["extra_networks_default_view"].component_args["choices"]
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
         for page in ui.stored_extra_pages:
@@ -273,10 +277,6 @@ def create_ui(container, button, tabname):
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
-
-    view_choices = shared.opts.data_labels["extra_networks_default_view"].component_args["choices"]
-    dropdown_view_options = gr.Dropdown(view_choices, label="Change View (will reload page)", show_label=True, elem_id=tabname+"_dropdown_view_options")
-    tmptextarea = gr.TextArea('', show_label=False, elem_id=tabname+"temp",  placeholder=f"current view: {ui.current_view}")
 
     if ui.current_view == "advanced" :
         ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", visible=False)
@@ -289,7 +289,10 @@ def create_ui(container, button, tabname):
     ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
     ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
-    
+
+    ui.control_change_view = gr.Dropdown(ui.view_choices_in_setting, value = ui.current_view, label="Change View (will reload page)", show_label=True, elem_id=tabname+"_control_change_view")
+    ui.tmptextarea = gr.TextArea('', show_label=False, elem_id=tabname+"_temp", placeholder=f"current view -- {ui.current_view} in {ui.view_choices_in_setting}", lines=2)
+    # debugger above 
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
@@ -310,18 +313,21 @@ def create_ui(container, button, tabname):
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     def handle_view_change(new_view):
-        if dropdown_view_options != ui.current_view:
-            shared.opts.set('extra_networks_default_view', new_view)
-            shared.state.interrupt()
-            shared.state.need_restart = True
+        if new_view in ui.view_choices_in_setting and new_view != ui.current_view:
+            shared.opts.set('extra_networks_default_view', f"{new_view}")
+            # shared.state.interrupt()
+            # shared.state.need_restart = True
+        elif new_view not in ui.view_choices_in_setting:
+            raise ValueError(f"Invalid view choice: {new_view}")
         else:
-            print(f"current view {ui.current_view} nothing changes")
+            print(f'current view {ui.current_view}, new view {new_view}, nothing changes')
 
-    dropdown_view_options.change(
+    ui.control_change_view.change(
         fn=handle_view_change,
-        _js='restart_reload',
-        inputs=[dropdown_view_options], 
-        outputs=[])
+        # _js='restart_reload',
+        inputs=[ui.control_change_view], 
+        outputs=[]
+    )
 
     return ui
 
