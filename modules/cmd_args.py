@@ -74,7 +74,6 @@ def compatibility_args(opts, args):
     parser.add_argument("--sub-quad-q-chunk-size", help=argparse.SUPPRESS, default=opts.sub_quad_q_chunk_size)
     parser.add_argument("--sub-quad-kv-chunk-size", help=argparse.SUPPRESS, default=opts.sub_quad_kv_chunk_size)
     parser.add_argument("--sub-quad-chunk-threshold", help=argparse.SUPPRESS, default=opts.sub_quad_chunk_threshold)
-    parser.add_argument("--dimensions-and-batch-together", help=argparse.SUPPRESS, default=True)
 
     opts.use_old_emphasis_implementation = False
     opts.use_old_karras_scheduler_sigmas = False
