@@ -82,6 +82,7 @@ function cardClicked(tabname, textToAdd, allowNegativePrompt){
     }
 
     updateInput(textarea)
+    stopPropagation()
 }
 
 function saveCardPreview(event, tabname, filename){

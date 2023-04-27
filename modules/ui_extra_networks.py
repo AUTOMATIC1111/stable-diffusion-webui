@@ -238,6 +238,7 @@ class ExtraNetworksUi:
         self.description_target_input = None
 
         self.tabname = None
+        self.current_view = None
 
 
 def pages_in_preferred_order(pages):
@@ -261,7 +262,7 @@ def create_ui(container, button, tabname):
     ui.pages = []
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
-    current_view = shared.opts.extra_networks_default_view  
+    ui.current_view = shared.opts.extra_networks_default_view
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
         for page in ui.stored_extra_pages:
@@ -272,7 +273,12 @@ def create_ui(container, button, tabname):
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
-    if current_view == "advanced" :
+
+    view_choices = shared.opts.data_labels["extra_networks_default_view"].component_args["choices"]
+    dropdown_view_options = gr.Dropdown(view_choices, label="Change View (will reload page)", show_label=True, elem_id=tabname+"_dropdown_view_options")
+    tmptextarea = gr.TextArea('', show_label=False, elem_id=tabname+"temp",  placeholder=f"current view: {ui.current_view}")
+
+    if ui.current_view == "advanced" :
         ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", visible=False)
     else:
         ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
@@ -302,6 +308,20 @@ def create_ui(container, button, tabname):
         return res
 
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
+
+    def handle_view_change(new_view):
+        if dropdown_view_options != ui.current_view:
+            shared.opts.set('extra_networks_default_view', new_view)
+            shared.state.interrupt()
+            shared.state.need_restart = True
+        else:
+            print(f"current view {ui.current_view} nothing changes")
+
+    dropdown_view_options.change(
+        fn=handle_view_change,
+        _js='restart_reload',
+        inputs=[dropdown_view_options], 
+        outputs=[])
 
     return ui
 
@@ -376,6 +396,3 @@ def setup_ui(ui, gallery):
         inputs=[ui.description_target_filename, ui.description_input],
         outputs=[*ui.pages]
     )
-
-        
-
