@@ -205,7 +205,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         is when you do prompt editing: "a picture of a [cat:dog:0.4] eating ice cream"
         """
 
-        batch_chunks, token_count = self.process_texts(texts)
+        batch_chunks, _token_count = self.process_texts(texts)
 
         used_embeddings = {}
         chunk_count = max([len(x) for x in batch_chunks])
@@ -219,7 +219,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
             self.hijack.fixes = [x.fixes for x in batch_chunk]
 
             for fixes in self.hijack.fixes:
-                for position, embedding in fixes:
+                for _position, embedding in fixes:
                     used_embeddings[embedding.name] = embedding
 
             z = self.process_tokens(tokens, multipliers)

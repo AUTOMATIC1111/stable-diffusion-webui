@@ -11,7 +11,7 @@ from modules import shared, ui_tempdir, script_callbacks
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
 re_imagesize = re.compile(r"^(\d+)x(\d+)$")
-re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$")
+re_hypernet_hash = re.compile("\(([0-9a-f]+)\)$") # pylint: disable=anomalous-backslash-in-string
 type_of_gr_update = type(gr.update())
 
 paste_fields = {}
@@ -102,7 +102,6 @@ def bind_buttons(buttons, send_image, send_generate_info):
     for tabname, button in buttons.items():
         source_text_component = send_generate_info if isinstance(send_generate_info, gr.components.Component) else None
         source_tabname = send_generate_info if isinstance(send_generate_info, str) else None
-
         register_paste_params_button(ParamBinding(paste_button=button, tabname=tabname, source_text_component=source_text_component, source_image_component=send_image, source_tabname=source_tabname))
 
 
@@ -116,7 +115,6 @@ def connect_paste_params_buttons():
         destination_image_component = paste_fields[binding.tabname]["init_img"]
         fields = paste_fields[binding.tabname]["fields"]
         override_settings_component = binding.override_settings_component or paste_fields[binding.tabname]["override_settings_component"]
-
         destination_width_component = next(iter([field for field, name in fields if name == "Size-1"] if fields else []), None)
         destination_height_component = next(iter([field for field, name in fields if name == "Size-2"] if fields else []), None)
 
@@ -127,17 +125,14 @@ def connect_paste_params_buttons():
             else:
                 func = send_image_and_dimensions if destination_width_component else lambda x: x
                 jsfunc = None
-
             binding.paste_button.click(
                 fn=func,
                 _js=jsfunc,
                 inputs=[binding.source_image_component],
                 outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
             )
-
         if binding.source_text_component is not None and fields is not None:
             connect_paste(binding.paste_button, fields, binding.source_text_component, override_settings_component, binding.tabname)
-
         if binding.source_tabname is not None and fields is not None:
             paste_field_names = ['Prompt', 'Negative prompt', 'Steps', 'Face restoration'] + (["Seed"] if shared.opts.send_seed else []) + binding.paste_field_names
             binding.paste_button.click(
@@ -145,7 +140,6 @@ def connect_paste_params_buttons():
                 inputs=[field for field, name in paste_fields[binding.source_tabname]["fields"] if name in paste_field_names],
                 outputs=[field for field, name in fields if name in paste_field_names],
             )
-
         binding.paste_button.click(
             fn=None,
             _js=f"switch_to_{binding.tabname}",
@@ -159,14 +153,12 @@ def send_image_and_dimensions(x):
         img = x
     else:
         img = image_from_url_text(x)
-
     if shared.opts.send_size and isinstance(img, Image.Image):
         w = img.width
         h = img.height
     else:
         w = gr.update()
         h = gr.update()
-
     return img, w, h
 
 
@@ -238,33 +230,25 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     returns a dict with field values
     """
-
     res = {}
-
     prompt = ""
     negative_prompt = ""
-
     done_with_prompt = False
-
     *lines, lastline = x.strip().split("\n")
     if len(re_param.findall(lastline)) < 3:
         lines.append(lastline)
         lastline = ''
-
     for _i, line in enumerate(lines):
         line = line.strip()
         if line.startswith("Negative prompt:"):
             done_with_prompt = True
             line = line[16:].strip()
-
         if done_with_prompt:
             negative_prompt += ("" if negative_prompt == "" else "\n") + line
         else:
             prompt += ("" if prompt == "" else "\n") + line
-
     res["Prompt"] = prompt
     res["Negative prompt"] = negative_prompt
-
     for k, v in re_param.findall(lastline):
         v = v[1:-1] if v[0] == '"' and v[-1] == '"' else v
         m = re_imagesize.match(v)
@@ -273,31 +257,24 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             res[k+"-2"] = m.group(2)
         else:
             res[k] = v
-
     # Missing CLIP skip means it was set to 1 (the default)
     if "Clip skip" not in res:
         res["Clip skip"] = "1"
-
     hypernet = res.get("Hypernet", None)
     if hypernet is not None:
         res["Prompt"] += f"""<hypernet:{hypernet}:{res.get("Hypernet strength", "1.0")}>"""
-
     if "Hires resize-1" not in res:
         res["Hires resize-1"] = 0
         res["Hires resize-2"] = 0
-
     # Infer additional override settings for token merging
     token_merging_ratio = res.get("Token merging ratio", None)
     token_merging_ratio_hr = res.get("Token merging ratio hr", None)
-
     if token_merging_ratio is not None or token_merging_ratio_hr is not None:
         res["Token merging"] = 'True'
-
         if token_merging_ratio is None:
             res["Token merging hr only"] = 'True'
         else:
             res["Token merging hr only"] = 'False'
-
         if res.get("Token merging random", None) is None:
             res["Token merging random"] = 'False'
         if res.get("Token merging merge attention", None) is None:
@@ -312,12 +289,10 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             res["Token merging stride y"] = '2'
 
     restore_old_hires_fix_params(res)
-
     return res
 
 
 settings_map = {}
-
 
 
 infotext_to_setting_name_mapping = [
@@ -349,34 +324,29 @@ infotext_to_setting_name_mapping = [
 
 def create_override_settings_dict(text_pairs):
     """creates processing's override_settings parameters from gradio's multiselect
-
     Example input:
         ['Clip skip: 2', 'Model hash: e6e99610c4', 'ENSD: 31337']
 
     Example output:
         {'CLIP_stop_at_last_layers': 2, 'sd_model_checkpoint': 'e6e99610c4', 'eta_noise_seed_delta': 31337}
     """
-
     res = {}
     params = {}
     for pair in text_pairs:
         k, v = pair.split(":", maxsplit=1)
-
         params[k] = v.strip()
-
     for param_name, setting_name in infotext_to_setting_name_mapping:
         value = params.get(param_name, None)
-
         if value is None:
             continue
-
         res[setting_name] = shared.opts.cast_value(setting_name, value)
-
     return res
 
 
-def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname):
+def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname): # pylint: disable=redefined-outer-name
     def paste_func(prompt):
+        if 'Negative prompt' not in prompt and 'Steps' not in prompt:
+            prompt = None
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:
             filename = os.path.join(data_path, "params.txt")
             if os.path.exists(filename):
@@ -384,17 +354,14 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
                     prompt = file.read()
             else:
                 prompt = ''
-
         params = parse_generation_parameters(prompt)
         script_callbacks.infotext_pasted_callback(prompt, params)
         res = []
-
         for output, key in paste_fields:
             if callable(key):
                 v = key(params)
             else:
                 v = params.get(key, None)
-
             if v is None:
                 res.append(gr.update())
             elif isinstance(v, type_of_gr_update):
@@ -402,42 +369,31 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
             else:
                 try:
                     valtype = type(output.value)
-
                     if valtype == bool and v == "False":
                         val = False
                     else:
                         val = valtype(v)
-
                     res.append(gr.update(value=val))
                 except Exception:
                     res.append(gr.update())
-
         return res
 
     if override_settings_component is not None:
         def paste_settings(params):
             vals = {}
-
             for param_name, setting_name in infotext_to_setting_name_mapping:
                 v = params.get(param_name, None)
                 if v is None:
                     continue
-
                 if setting_name == "sd_model_checkpoint" and shared.opts.disable_weights_auto_swap:
                     continue
-
                 v = shared.opts.cast_value(setting_name, v)
                 current_value = getattr(shared.opts, setting_name, None)
-
                 if v == current_value:
                     continue
-
                 vals[param_name] = v
-
             vals_pairs = [f"{k}: {v}" for k, v in vals.items()]
-
             return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=len(vals_pairs) > 0)
-
         paste_fields = paste_fields + [(override_settings_component, paste_settings)]
 
     button.click(

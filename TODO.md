@@ -63,3 +63,5 @@ Tech that can be integrated as part of the core workflow...
 
 - ability to view/add/edit model description shown in extra networks cards
 - add option to specify fallback sampler if primary sampler is not compatible with desired operation
+- make clip skip a local parameter
+- remove obsolete items from settings

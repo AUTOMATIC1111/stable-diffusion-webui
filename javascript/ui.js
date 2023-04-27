@@ -338,6 +338,28 @@ function reconnect_ui() {
     const atEnd = () => showSubmitButtons('txt2img', true)
     requestProgress(task_id, el1, el2, atEnd, null, true)
   }
+
+  sd_model = gradioApp().getElementById("setting_sd_model_checkpoint")
+  let loadingStarted = 0;
+  let loadingMonitor = 0;
+  const sd_model_callback = () => {
+    loading = sd_model.querySelector(".eta-bar")
+    if (!loading) {
+      loadingStarted = 0
+      clearInterval(loadingMonitor)
+    } else {
+      if (loadingStarted === 0) {
+        loadingStarted = Date.now();
+        loadingMonitor = setInterval(() => {
+          elapsed = Date.now() - loadingStarted;
+          console.log('Loading', elapsed)
+          if (elapsed > 3000 && loading) loading.style.display = 'none';
+        }, 5000);
+      }
+    }
+  };
+  const sd_model_observer = new MutationObserver(sd_model_callback);
+  sd_model_observer.observe(sd_model, { attributes: true, childList: true, subtree: true });
 }
 
-var start_check = setInterval(reconnect_ui, 50)
+var start_check = setInterval(reconnect_ui, 50);
