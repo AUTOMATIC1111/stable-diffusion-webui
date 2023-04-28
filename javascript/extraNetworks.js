@@ -11,9 +11,8 @@ function setupExtraNetworksForTab(tabname){
     search.classList.add('search')
     tabs.appendChild(search)
     tabs.appendChild(refresh)
-    tabs.appendChild(descriptInput)
-    
     tabs.appendChild(close)
+    tabs.appendChild(descriptInput)
 
     search.addEventListener("input", function(evt){
         searchTerm = search.value.toLowerCase()
