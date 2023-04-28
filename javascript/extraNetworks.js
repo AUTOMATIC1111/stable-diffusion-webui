@@ -7,18 +7,16 @@ function setupExtraNetworksForTab(tabname){
     var refresh = gradioApp().getElementById(tabname+'_extra_refresh')
     var descriptInput = gradioApp().getElementById(tabname+ '_description_input')
     var changeViewControl = gradioApp().getElementById(tabname+ '_control_change_view')
-    var tempbox = gradioApp().getElementById(tabname+ '_temp')
-    var testbtn = gradioApp().getElementById(tabname+ '_extra_test')
-    // debugger above 
+    var changeViewsBtns = gradioApp().querySelectorAll('[id^="' + tabname + '_extra_view_to_"]')
 
     search.classList.add('search')
+    for (var i = 0; i < changeViewsBtns.length; i++) {
+        tabs.appendChild(changeViewsBtns[i]);
+    }
     tabs.appendChild(search)
     tabs.appendChild(refresh)
-    tabs.appendChild(testbtn)
     tabs.appendChild(changeViewControl)
     tabs.appendChild(descriptInput)
-    tabs.appendChild(tempbox)
-    // debugger above 
     
     search.addEventListener("input", function(evt){
         searchTerm = search.value.toLowerCase()

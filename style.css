@@ -950,6 +950,10 @@ footer {
 
 .extra-network-advanced .card .actions-btns-list .card-btn.card-btn-fold{
     padding: 0.1em 0.5em;
+    transition: 0.2s;
+}
+.extra-network-advanced .card .actions-btns-list .card-btn.card-btn-fold:hover{
+    padding: 0.5em 0.5em;
 }
 
 .extra-network-advanced .card .metadata-button:hover,

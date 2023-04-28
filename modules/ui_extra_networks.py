@@ -241,6 +241,7 @@ class ExtraNetworksUi:
         self.current_view = None
         self.view_choices_in_setting = None
         self.control_change_view = None
+        self.btns_change_view = None
 
 
 def pages_in_preferred_order(pages):
@@ -289,15 +290,15 @@ def create_ui(container, button, tabname):
     ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
-    ui.control_change_view = gr.Dropdown(ui.view_choices_in_setting, value='change view', label="Change View (Will Force Reload Page)", show_label=False, elem_id=tabname+"_control_change_view", visible=True, width="100px")
-    button_test = gr.Button('test', elem_id=tabname+"_extra_test")
-    tmptextarea = gr.TextArea(f"current view is: {ui.current_view} in {ui.view_choices_in_setting}",
-                               show_label=False, 
-                               elem_id=tabname+"_temp", 
-                               placeholder=f"current view", 
-                               lines=1)
-                            # debugger above 
-
+    # change view control option 1 (dropdown) hide for not, doesnt fit current layout
+    ui.control_change_view = gr.Dropdown(ui.view_choices_in_setting, value='Change Extra Network View (change view will force reload current page)', label="Change View (Will Force Reload Page)", show_label=False, elem_id=tabname+"_control_change_view", visible=False)
+    # change view control option 2 (buttons) best for now because it fits the layout
+    ui.btns_change_view = {}
+    for view in ui.view_choices_in_setting:
+        ui.btns_change_view[view] = gr.Button(f'{view.capitalize()} View', elem_id=f'{tabname}_extra_view_to_{view}', visible=True)
+        if view == ui.current_view:
+            ui.btns_change_view[view].visible = False
+    
     def toggle_visibility(is_visible):
         is_visible = not is_visible
         return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
@@ -316,27 +317,28 @@ def create_ui(container, button, tabname):
 
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
-    def handle_view_change(new_view):
-        if new_view in ui.view_choices_in_setting and new_view != ui.current_view:
-            shared.opts.set('extra_networks_default_view', f"{new_view}")
-            # shared.state.interrupt()
-            # shared.state.need_restart = True
-            print(f'previous view {ui.current_view}, set new view {new_view}')
-        elif new_view not in ui.view_choices_in_setting:
-            raise ValueError(f"Invalid view args: {new_view}")
-        elif new_view == ui.current_view:
-            print(f'New view {new_view} = current view {ui.current_view}, nothing changes')
-        else:
-            print(f'soemthing is wrong, view change failed, reload page')
+    # view changer function
+    def handle_view_change(btn):
+        print(btn)
+        view = btn.split(" ")[0].lower()
+        if view in ui.view_choices_in_setting and view != ui.current_view:
+            shared.opts.set('extra_networks_default_view', f"{view}")
+            shared.state.interrupt()
+            shared.state.need_restart = True
+            print(f'previous view {ui.current_view}, set new view {view}, restarting')
+        elif view not in ui.view_choices_in_setting:
+            raise ValueError(f"Invalid view args: {view}")
+        elif view == ui.current_view:
+            print(f'You are trying to set: {view} = current view: {ui.current_view}, nothing changes')
 
-    ui.control_change_view.change(
-        fn=handle_view_change,
-        _js='restart_by_press_btn',
-        inputs=[ui.control_change_view],
-        outputs=[],
-        
-    )
-
+    # print(ui.btns_change_view.items())
+    for view, btn in ui.btns_change_view.items():
+        btn.click(
+            fn=handle_view_change,
+            _js='function(x){restart_by_press_btn(); return x}',
+            inputs=[btn],
+            outputs=[]
+        )
     return ui
 
 
