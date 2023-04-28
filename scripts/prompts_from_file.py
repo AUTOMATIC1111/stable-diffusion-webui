@@ -109,7 +109,7 @@ def load_prompt_file(file):
 
 class Script(scripts.Script):
     def title(self):
-        return "Prompts from file or textbox"
+        return "Prompts from file"
 
     def ui(self, is_img2img):       
         checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))

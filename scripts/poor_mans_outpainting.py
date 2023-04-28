@@ -11,7 +11,7 @@ from modules.shared import opts, cmd_opts, state
 
 class Script(scripts.Script):
     def title(self):
-        return "Poor man's outpainting"
+        return "Outpainting alternative"
 
     def show(self, is_img2img):
         return is_img2img

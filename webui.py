@@ -69,7 +69,7 @@ else:
 def check_rollback_vae():
     if shared.cmd_opts.rollback_vae:
         if not torch.cuda.is_available():
-            print("Rollback VAE functionality requires CUDA support")
+            print("Rollback VAE functionality requires compatible GPU")
             shared.cmd_opts.rollback_vae = False
         elif not torch.__version__.startswith('2.1'):
             print("Rollback VAE functionality requires Torch 2.1 or higher")
@@ -94,9 +94,6 @@ def initialize():
 
     gfpgan.setup_model(opts.gfpgan_models_path)
     startup_timer.record("gfpgan")
-
-    modelloader.list_builtin_upscalers()
-    startup_timer.record("upscalers")
 
     modules.scripts.load_scripts()
     startup_timer.record("scripts")

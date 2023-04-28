@@ -51,6 +51,7 @@ def setup_logging(clean=False):
     rh.set_name(logging.DEBUG if args.debug else logging.INFO)
     log.addHandler(rh)
 
+
 # check if package is installed
 def installed(package, friendly: str = None):
     import pkg_resources
