@@ -193,8 +193,8 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
                 fontsize -= 1
                 fnt = get_font(fontsize)
 
-            x, y = draw_x - line.allowed_width / 2, draw_y + line.size[1] / 2
-            text_x = x + (line.allowed_width - total_width) / 2
+            text_x = math.floor(draw_x - total_width / 2)
+            text_y = math.floor(draw_y - line.size[1] // 2)
 
             current_word = ''
             original_word = ''
@@ -202,13 +202,12 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
                 c = f"\\u{{{ord(char):x}}}"
                 if c in emoji_dict:
                     filename = emoji_dict[c]
-                    drawing_emoji = svg2rlg(os.path.join(os.getcwd(), "modules", "emojis", filename))
-                    bitmap_bytes = renderPM.drawToString(drawing_emoji, fmt="PNG", dpi=326)
-                    emoji_image = Image.open(io.BytesIO(bitmap_bytes))
+                    emoji_RLG = svg2rlg(os.path.join(os.getcwd(), "modules", "emojis", filename))
+                    emoji_image = Image.open(io.BytesIO(renderPM.drawToString(emoji_RLG, fmt="PNG", dpi=326)))
                     emoji_image = emoji_image.resize((fontsize, fontsize))
                     word_width = fnt.getsize(current_word)[0]
-                    drawing.multiline_text((text_x, y - fnt.getsize(current_word)[1] // 2), original_word, font=fnt, fill=color_active if line.is_active else color_inactive, align='center')
-                    drawing._image.paste(emoji_image, (math.floor(text_x + word_width), math.floor(y - fontsize / 2)))
+                    drawing.text((text_x, text_y), original_word, font=fnt, fill=color_active if line.is_active else color_inactive, align='center')
+                    drawing._image.paste(emoji_image, (math.floor(text_x + word_width), text_y))
                     text_x += word_width + fontsize
                     current_word = ''
                     original_word = ''
@@ -217,7 +216,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
                     original_word += char
 
             if current_word:
-                drawing.multiline_text((text_x, y - fnt.getsize(current_word)[1] // 2), original_word, font=fnt, fill=color_active if line.is_active else color_inactive, align='center')
+                drawing.text((text_x, text_y), original_word, font=fnt, fill=color_active if line.is_active else color_inactive, align='center')
 
             if not line.is_active:
                 drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2, draw_y + line.size[1] // 2), fill=color_inactive, width=4)
