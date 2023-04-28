@@ -392,6 +392,9 @@ def check_extensions():
         for ext in extensions:
             newest = 0
             extension_dir = os.path.join(folder, ext)
+            if not os.path.isdir(extension_dir):
+                log.debug(f'Extension listed as installed but folder missing: {extension_dir}')
+                continue
             for f in os.listdir(extension_dir):
                 if '.json' in f or '.csv' in f or '__pycache__' in f:
                     continue

@@ -7,7 +7,8 @@ Stuff to be fixed...
 - Run VAE with hires at 1280
 - Transformers version
 - Move Restart Server from WebUI to Launch and reload modules
-- follow-up on `p.script_args`
+- Follow-up on `p.script_args`
+- Mdularize `cli` scripts
 
 ## Features
 
