@@ -26,6 +26,7 @@ venv
 *.pyc
 /*.bat
 /*.sh
+/*.txt
 !webui.bat
 !webui.sh
 
