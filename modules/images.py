@@ -194,10 +194,9 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
                 fnt = get_font(fontsize)
 
             text_x = math.floor(draw_x - total_width / 2)
-            text_y = math.floor(draw_y - line.size[1] // 2)
+            text_y = math.floor(draw_y + line.size[1] / 2)
 
             current_word = ''
-            original_word = ''
             for char in line.text:
                 c = f"\\u{{{ord(char):x}}}"
                 if c in emoji_dict:
@@ -205,18 +204,16 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
                     emoji_RLG = svg2rlg(os.path.join(os.getcwd(), "modules", "emojis", filename))
                     emoji_image = Image.open(io.BytesIO(renderPM.drawToString(emoji_RLG, fmt="PNG", dpi=326)))
                     emoji_image = emoji_image.resize((fontsize, fontsize))
-                    word_width = fnt.getsize(current_word)[0]
-                    drawing.text((text_x, text_y), original_word, font=fnt, fill=color_active if line.is_active else color_inactive, align='center')
-                    drawing._image.paste(emoji_image, (math.floor(text_x + word_width), text_y))
+                    word_width = drawing.textlength(current_word, font=fnt)
+                    drawing.text((text_x, text_y), current_word, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="lm")
+                    drawing._image.paste(emoji_image, (math.floor(text_x + word_width), math.floor(text_y - fontsize / 2)))
                     text_x += word_width + fontsize
                     current_word = ''
-                    original_word = ''
                 else:
                     current_word += char
-                    original_word += char
 
             if current_word:
-                drawing.text((text_x, text_y), original_word, font=fnt, fill=color_active if line.is_active else color_inactive, align='center')
+                drawing.text((text_x, text_y), current_word, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="lm")
 
             if not line.is_active:
                 drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2, draw_y + line.size[1] // 2), fill=color_inactive, width=4)
