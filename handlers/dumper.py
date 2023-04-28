@@ -124,6 +124,7 @@ class MongoTaskDumper(TaskDumper):
     def __init__(self):
         mgo = MongoClient()
         mgo.collect.create_index('task_id', unique=True)
+        mgo.collect.create_index('task.user_id')
         super(MongoTaskDumper, self).__init__(mgo)
 
     def progress_to_info(self, task_progress: TaskProgress) -> DumpInfo:

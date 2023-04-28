@@ -22,19 +22,45 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
         def obj_to_array(obj: typing.Mapping) -> typing.Sequence:
             # 如果是[OBJ1, OBJ2]形式的，需要转换为ARRAY
             if isinstance(obj, dict):
-                return [args['enabled'],
-                        args['override_image_size'],
-                        args['image_width'],
-                        args['image_height'],
-                        args['keep_input_size'],
-                        args['tile_width'],
-                        args['tile_height'],
-                        args['overlap'],
-                        args['batch_size'],
-                        args['upscaler_index'],
-                        args['scale_factor'],
-                        args['control_tensor_cpu']
+                array = [
+                    obj['enabled'],
+                    obj['method'],
+                    obj['noise_inverse'],
+                    obj['noise_inverse_steps'],
+                    obj['noise_inverse_retouch'],
+                    obj['noise_inverse_renoise_strength'],
+                    obj['noise_inverse_renoise_kernel'],
+                    obj['overwrite_image_size'],
+                    obj['keep_input_size'],
+                    obj['image_width'],
+                    obj['image_height'],
+                    obj['tile_width'],
+                    obj['tile_height'],
+                    obj['overlap'],
+                    obj['batch_size'],
+                    obj['upscaler'],
+                    obj['scale_factor'],
+                    obj['control_tensor_cpu'],
+                    obj['enable_bbox_control'],
+                    obj['draw_background'],
+                    obj['causal_layers'],
                 ]
+                controls = obj['controls']
+                if len(controls) > 8:
+                    raise ValueError('region length err')
+                for _, ctl in controls:
+                    array.extend([
+                        ctl['enable'],
+                        ctl['x'],
+                        ctl['y'],
+                        ctl['w'],
+                        ctl['h'],
+                        ctl['prompt'],
+                        ctl['neg_prompt'],
+                        ctl['blend_mode'],
+                        ctl['feather_ratio'],
+                        ctl['seed'],
+                    ])
 
             return obj
 

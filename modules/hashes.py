@@ -24,7 +24,7 @@ def dump_cache(title, sha256):
     cli = get_mysql_cli()
 
     def write_model_hash(mysql_cli: MySQLClient):
-        name, _ = os.path.basename(title)
+        name, _ = os.path.splitext(os.path.basename(title))
         try:
             mysql_cli.execute_noquery_cmd('''
                 CREATE TABLE IF NOT EXISTS `model` (

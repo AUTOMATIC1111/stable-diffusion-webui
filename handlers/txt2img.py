@@ -100,6 +100,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             hr_resize_y=hr_resize_y,
             override_settings=override_settings,
             outpath_samples=f"output/{user_id}/txt2img/samples/",
+            outpath_scripts=f"output/{user_id}/txt2img/scripts/",
+            outpath_grids=f"output/{user_id}/txt2img/grids/",
         )
 
         self.scripts = scripts_txt2img
@@ -191,7 +193,11 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         else:
             processed = process_images(process_args)
         process_args.close()
-        images = save_processed_images(processed, process_args.outpath_samples, task.id, task.user_id)
+        images = save_processed_images(processed,
+                                       process_args.outpath_samples,
+                                       process_args.outpath_grids,
+                                       process_args.outpath_scripts,
+                                       task.id)
         progress.set_finish_result(images)
         yield progress
 

@@ -79,7 +79,7 @@ def apply_overlay(image, paste_loc, index, overlays):
 
 
 def txt2img_image_conditioning(sd_model, x, width, height):
-    if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
+    if sd_model.model.conditioning_key in {'hybrid', 'concat'}:  # Inpainting models
 
         # The "masked-image" in this case will just be all zeros since the entire image is masked.
         image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
@@ -91,9 +91,9 @@ def txt2img_image_conditioning(sd_model, x, width, height):
 
         return image_conditioning
 
-    elif sd_model.model.conditioning_key == "crossattn-adm": # UnCLIP models
+    elif sd_model.model.conditioning_key == "crossattn-adm":  # UnCLIP models
 
-        return x.new_zeros(x.shape[0], 2*sd_model.noise_augmentor.time_embed.dim, dtype=x.dtype, device=x.device)
+        return x.new_zeros(x.shape[0], 2 * sd_model.noise_augmentor.time_embed.dim, dtype=x.dtype, device=x.device)
 
     else:
         # Dummy zero conditioning if we're not using inpainting or unclip models.
@@ -118,13 +118,14 @@ class StableDiffusionProcessing:
                  denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None,
                  s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None,
                  override_settings_restore_afterwards: bool = True, sampler_index: int = None,
-                 script_args: list = None):
+                 script_args: list = None, outpath_scripts: str = None):
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name",
                   file=sys.stderr)
 
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
+        self.outpath_scripts: str = outpath_scripts or ''
         self.prompt: str = prompt
         self.prompt_for_display: str = None
         self.negative_prompt: str = (negative_prompt or "")
@@ -178,7 +179,6 @@ class StableDiffusionProcessing:
         self.all_subseeds = None
         self.iteration = 0
 
-
     @property
     def sd_model(self):
         return shared.sd_model
@@ -215,8 +215,9 @@ class StableDiffusionProcessing:
     def unclip_image_conditioning(self, source_image):
         c_adm = self.sd_model.embedder(source_image)
         if self.sd_model.noise_augmentor is not None:
-            noise_level = 0 # TODO: Allow other noise levels?
-            c_adm, noise_level_emb = self.sd_model.noise_augmentor(c_adm, noise_level=repeat(torch.tensor([noise_level]).to(c_adm.device), '1 -> b', b=c_adm.shape[0]))
+            noise_level = 0  # TODO: Allow other noise levels?
+            c_adm, noise_level_emb = self.sd_model.noise_augmentor(c_adm, noise_level=repeat(
+                torch.tensor([noise_level]).to(c_adm.device), '1 -> b', b=c_adm.shape[0]))
             c_adm = torch.cat((c_adm, noise_level_emb), 1)
         return c_adm
 
@@ -291,7 +292,7 @@ class StableDiffusionProcessing:
 class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None,
                  all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None,
-                 comments=""):
+                 comments="", index_of_end_image=0):
         self.images = images_list
         self.prompt = p.prompt
         self.negative_prompt = p.negative_prompt
@@ -338,6 +339,11 @@ class Processed:
         self.all_seeds = all_seeds or p.all_seeds or [self.seed]
         self.all_subseeds = all_subseeds or p.all_subseeds or [self.subseed]
         self.infotexts = infotexts or [info]
+
+        if index_of_end_image <= 0 and images_list:
+            self.index_of_end_image = len(images_list) - 1 - index_of_first_image
+        else:
+            self.index_of_end_image = index_of_end_image
 
     def js(self):
         obj = {
@@ -410,7 +416,7 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
 
     for i, seed in enumerate(seeds):
         noise_shape = shape if seed_resize_from_h <= 0 or seed_resize_from_w <= 0 else (
-        shape[0], seed_resize_from_h // 8, seed_resize_from_w // 8)
+            shape[0], seed_resize_from_h // 8, seed_resize_from_w // 8)
 
         subnoise = None
         if subseeds is not None:
@@ -791,11 +797,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
         p.color_corrections = None
 
-        index_of_first_image = 0
+        index_of_first_image, index_of_end_image = 0, 0
+
         unwanted_grid_because_of_img_count = len(output_images) < 2 and opts.grid_only_if_multiple
         if (opts.return_grid or opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
             grid = images.image_grid(output_images, p.batch_size)
-
             if opts.return_grid:
                 text = infotext()
                 infotexts.insert(0, text)
@@ -813,6 +819,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     devices.torch_gc()
 
+    index_of_end_image = len(output_images) - index_of_first_image - 1
     res = Processed(p, output_images, p.all_seeds[0], infotext(), comments="".join(["\n\n" + x for x in comments]),
                     subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts)
 

@@ -14,14 +14,14 @@ from loguru import logger
 from datetime import datetime
 from worker.task_recv import Tmp
 from PIL.PngImagePlugin import PngInfo
-from tools.image import compress_image
 from tools.encryptor import des_encrypt
+from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
-from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3Tmp
+from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3Tmp, ImageOutput, OutImageType
 from tools.environment import get_file_storage_system_env, Env_BucketKey
-from filestorage import find_storage_classes_with_env, push_local_path, get_local_path, batch_download
+from filestorage import find_storage_classes_with_env, get_local_path, batch_download
 
 FileStorageCls = find_storage_classes_with_env()
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
@@ -85,6 +85,7 @@ def upload_tmp_files(*files):
         file_storage_system.upload(f, key)
         keys.append(key)
     return keys
+
 
 def get_host_ip():
     s = None
@@ -191,12 +192,19 @@ def load_sd_model_weights(filename):
     return reload_model_weights(info=checkpoint)
 
 
-def save_processed_images(proc, output_dir, task_id, user_id):
-    save_normally = output_dir == ''
-    local_images, low_images = [], []
+def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
+                          script_dir: str, task_id: str, clean_upload_files: bool = True):
+    if not output_dir:
+        raise ValueError('output is empty')
+
     date = datetime.today().strftime('%Y/%m/%d')
     output_dir = os.path.join(output_dir, date)
-    file_storage_system = FileStorageCls()
+    grid_dir = os.path.join(grid_dir, date)
+    script_dir = os.path.join(script_dir, date)
+
+    out_grid_image = ImageOutput(OutImageType.Grid, grid_dir)
+    out_image = ImageOutput(OutImageType.Image, output_dir)
+    out_script_image = ImageOutput(OutImageType.Script, script_dir)
 
     for n, processed_image in enumerate(proc.images):
         ex = '.png'
@@ -205,48 +213,42 @@ def save_processed_images(proc, output_dir, task_id, user_id):
             if saved_as:
                 _, ex = os.path.splitext(saved_as)
 
-        if n > 0:
-            filename = f"{task_id}-{n}{ex}"
-        else:
+        if n < proc.index_of_first_image:
             filename = f"{task_id}{ex}"
-        if not save_normally:
-            os.makedirs(output_dir, exist_ok=True)
-            if processed_image.mode == 'RGBA':
-                processed_image = processed_image.convert("RGB")
-            full_path = os.path.join(output_dir, filename)
-            low_file = os.path.join(output_dir, 'low-' + filename)
+            out_obj = out_grid_image
+        elif n <= proc.index_of_end_image:
+            filename = f"{task_id}-{n}{ex}"
+            out_obj = out_image
+        else:
+            filename = f"{task_id}-{n}{ex}"
+            out_obj = out_script_image
 
-            pnginfo_data = PngInfo()
-            for k, v in processed_image.info.items():
-                if 'parameters' == k:
-                    v = des_encrypt(v)
-                pnginfo_data.add_text(k, str(v))
+        if processed_image.mode == 'RGBA':
+            processed_image = processed_image.convert("RGB")
+        full_path = os.path.join(out_obj.output_dir, filename)
 
-            processed_image.save(full_path, pnginfo=pnginfo_data)
-            compress_image(full_path, low_file)
-            local_images.append(full_path)
+        pnginfo_data = PngInfo()
+        pnginfo_data.add_text('by', 'xing-zhe')
+        for k, v in processed_image.info.items():
+            if 'parameters' == k:
+                v = des_encrypt(v)
+            pnginfo_data.add_text(k, str(v))
 
-    # put s3
-    if file_storage_system.name() != 'default':
-        upload_images = [x for x in local_images]
-        local_images.clear()
-        storage_env = get_file_storage_system_env()
-        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+        processed_image.save(full_path, pnginfo=pnginfo_data)
+        out_obj.add_image(full_path)
 
-        for file_path in upload_images:
-            filename = os.path.basename(file_path)
-            key = os.path.join(bucket, output_dir, filename)
-            file_storage_system.upload(file_path, key)
+    grid_keys = out_grid_image.upload_keys(clean_upload_files)
+    image_keys = out_image.upload_keys(clean_upload_files)
+    script_keys = out_script_image.upload_keys(clean_upload_files)
 
-            low_key = os.path.join(bucket, output_dir, 'low-' + filename)
-            low_file = os.path.join(output_dir, 'low-' + filename)
-            file_storage_system.upload(low_file, low_key)
-            low_images.append(low_key)
-            local_images.append(key)
-
-    output = {
-        'high': local_images,
-        'low': low_images
-    }
+    # 这里使用了__add__并返回self,因此output实际为grid_keys对象
+    output = grid_keys + image_keys + script_keys
+    output.update({
+        'image_start_index': proc.index_of_first_image,
+        'image_end_index': proc.index_of_end_image,
+        'has_grid': proc.index_of_first_image > 0
+    })
 
     return output
+
+
