@@ -730,7 +730,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 if p.scripts is not None:
                     p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
-                x_samples_ddim = x_samples_ddim.cpu().numpy()
+                x_samples_ddim = [np.moveaxis(x.cpu().numpy(), 0, 2) for x in x_samples_ddim]
+
             else:
                 generator = [torch.Generator(device="cpu").manual_seed(s) for s in seeds]
                 output = shared.sd_model(
@@ -746,8 +747,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 x_samples_ddim = output.images
 
             for i, x_sample in enumerate(x_samples_ddim):
-                x_sample = 255. * np.moveaxis(x_sample, 0, 2)
-                x_sample = x_sample.astype(np.uint8)
+                x_sample = (255. * x_sample).astype(np.uint8)
 
                 if p.restore_faces:
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
@@ -804,7 +804,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 state.nextjob()
 
-        import ipdb; ipdb.set_trace()
         p.color_corrections = None
 
         index_of_first_image = 0
