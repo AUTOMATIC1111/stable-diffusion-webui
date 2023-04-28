@@ -290,7 +290,7 @@ def create_ui(container, button, tabname):
     ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
-    # change view control - option 1 (dropdown) - *if set value as current_view, unknow bug in JS appendChild, JS will reset the value wrong.
+    # change view control (dropdown) - *if value set = current_view, unknow bug in JS appendChild, JS will reset the value wrong.
     ui.control_change_view = gr.Dropdown(ui.view_choices_in_setting, 
                                          value = "Change View",
                                          label="*Will Force Reload UI", 
@@ -298,14 +298,6 @@ def create_ui(container, button, tabname):
                                          elem_classes='extra-view-dropdown-control',
                                          show_label=True, 
                                          visible=True)
-                                         
-    # change view control - option 2 (buttons) 
-    # ui.btns_change_view = {}
-    # for view in ui.view_choices_in_setting:
-    #     ui.btns_change_view[view] = gr.Button(f'{view.capitalize()} View', elem_id=f'{tabname}_extra_view_to_{view}', visible=True)
-    #     if view == ui.current_view:
-    #         ui.btns_change_view[view].visible = False
-    # gr.HTML('<p>View:</p>', elem_id=f'{tabname}_extra_html_tag', elem_classes='extra-html-view-tag')
     
     def toggle_visibility(is_visible):
         is_visible = not is_visible
@@ -344,13 +336,6 @@ def create_ui(container, button, tabname):
         inputs=[ui.control_change_view],
         outputs=[]
     )
-    # for view, btn in ui.btns_change_view.items():
-    #     btn.click(
-    #         fn=handle_view_change,
-    #         _js='function(x){restart_by_press_btn(); return x}',
-    #         inputs=[btn],
-    #         outputs=[]
-    #     )
 
     return ui
 
