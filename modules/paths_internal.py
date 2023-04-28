@@ -15,6 +15,6 @@ parser_pre.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.
 parser_pre.add_argument("--models-dir", type=str, default="models", help="base path where all models are stored",)
 cmd_opts_pre = parser_pre.parse_known_args()[0]
 data_path = cmd_opts_pre.data_dir
-models_path = os.path.join(data_path, cmd_opts_pre.models_dir)
+models_path = cmd_opts_pre.models_dir if os.path.isabs(cmd_opts_pre.models_dir) else os.path.join(data_path, cmd_opts_pre.models_dir)
 extensions_dir = os.path.join(data_path, "extensions")
 extensions_builtin_dir = os.path.join(script_path, "extensions-builtin")

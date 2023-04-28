@@ -112,7 +112,7 @@ class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 20, cfg_scale: float = 6.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
@@ -166,6 +166,7 @@ class StableDiffusionProcessing:
         self.all_negative_prompts = None
         self.all_seeds = None
         self.all_subseeds = None
+        self.clip_skip = opts.CLIP_stop_at_last_layers
         self.iteration = 0
 
     @property
@@ -303,8 +304,7 @@ class Processed:
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
-        self.clip_skip = opts.CLIP_stop_at_last_layers
-
+        self.clip_skip = p.clip_skip
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
         self.s_churn = p.s_churn
@@ -458,10 +458,8 @@ def fix_seed(p):
     p.subseed = get_fixed_seed(p.subseed)
 
 
-def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
+def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
     index = position_in_batch + iteration * p.batch_size
-
-    clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
 
     generation_params = {
         "Steps": p.steps,
@@ -479,7 +477,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
-        "Clip skip": None if clip_skip <= 1 else clip_skip,
+        "Clip skip": p.clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
         "Token merging ratio": None if not (opts.token_merging or cmd_opts.token_merging) or opts.token_merging_hr_only else opts.token_merging_ratio,
         "Token merging ratio hr": None if not (opts.token_merging or cmd_opts.token_merging) else opts.token_merging_ratio_hr,

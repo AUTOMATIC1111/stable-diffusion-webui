@@ -61,5 +61,3 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- ability to view/add/edit model description shown in extra networks cards
-- add option to specify fallback sampler if primary sampler is not compatible with desired operation
