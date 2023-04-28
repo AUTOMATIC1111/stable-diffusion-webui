@@ -4,6 +4,9 @@
 # change the variables in webui-user.sh instead #
 #################################################
 
+# change to local directory
+cd -- "$(dirname -- "$0")"
+
 can_run_as_root=0
 export ERROR_REPORTING=FALSE
 export PIP_IGNORE_INSTALLED=0
