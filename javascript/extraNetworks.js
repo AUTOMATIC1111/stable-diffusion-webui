@@ -7,12 +7,14 @@ function setupExtraNetworksForTab(tabname){
     var refresh = gradioApp().getElementById(tabname+'_extra_refresh')
     var descriptInput = gradioApp().getElementById(tabname+ '_description_input')
     var changeViewControl = gradioApp().getElementById(tabname+ '_control_change_view')
-    var changeViewsBtns = gradioApp().querySelectorAll('[id^="' + tabname + '_extra_view_to_"]')
+    // var changeViewsBtns = gradioApp().querySelectorAll('[id^="' + tabname + '_extra_view_to_"]')
+    // var htmlViewTag = gradioApp().getElementById(tabname+ '_extra_html_tag')
 
     search.classList.add('search')
-    for (var i = 0; i < changeViewsBtns.length; i++) {
-        tabs.appendChild(changeViewsBtns[i]);
-    }
+    // tabs.appendChild(htmlViewTag)
+    // for (var i = 0; i < changeViewsBtns.length; i++) {
+    //     tabs.appendChild(changeViewsBtns[i]);
+    // }
     tabs.appendChild(search)
     tabs.appendChild(refresh)
     tabs.appendChild(changeViewControl)

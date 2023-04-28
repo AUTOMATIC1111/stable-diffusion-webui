@@ -889,6 +889,28 @@ footer {
     color: red;
 }
 
+/* .extra-html-view-tag{
+    display: flex;
+    flex-direction: column;
+    flex:0 1 10px;
+    margin-left: 1em;
+    padding-left: 1em;
+    align-items: center;
+    display: inline-block;
+    text-align: right;
+}
+.extra-html-view-tag p{
+    height: 100%;
+    vertical-align: middle;
+} */
+[id$="_extra_networks"] .extra-view-dropdown-control{
+    flex:0 1 0;
+    margin-left: auto;
+}
+[id$="_extra_networks"] .extra-view-dropdown-control label>span{
+    font-size: 0.9em;
+}
+
 /* extra network advanced view */
 .extra-network-advanced{
     height: auto;

@@ -241,7 +241,7 @@ class ExtraNetworksUi:
         self.current_view = None
         self.view_choices_in_setting = None
         self.control_change_view = None
-        self.btns_change_view = None
+        # self.btns_change_view = None
 
 
 def pages_in_preferred_order(pages):
@@ -290,14 +290,22 @@ def create_ui(container, button, tabname):
     ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
-    # change view control option 1 (dropdown) hide for not, doesnt fit current layout
-    ui.control_change_view = gr.Dropdown(ui.view_choices_in_setting, value='Change Extra Network View (change view will force reload current page)', label="Change View (Will Force Reload Page)", show_label=False, elem_id=tabname+"_control_change_view", visible=False)
-    # change view control option 2 (buttons) best for now because it fits the layout
-    ui.btns_change_view = {}
-    for view in ui.view_choices_in_setting:
-        ui.btns_change_view[view] = gr.Button(f'{view.capitalize()} View', elem_id=f'{tabname}_extra_view_to_{view}', visible=True)
-        if view == ui.current_view:
-            ui.btns_change_view[view].visible = False
+    # change view control - option 1 (dropdown) - *if set value as current_view, unknow bug in JS appendChild, JS will reset the value wrong.
+    ui.control_change_view = gr.Dropdown(ui.view_choices_in_setting, 
+                                         value = "Change View",
+                                         label="*Will Force Reload UI", 
+                                         elem_id=tabname+"_control_change_view", 
+                                         elem_classes='extra-view-dropdown-control',
+                                         show_label=True, 
+                                         visible=True)
+                                         
+    # change view control - option 2 (buttons) 
+    # ui.btns_change_view = {}
+    # for view in ui.view_choices_in_setting:
+    #     ui.btns_change_view[view] = gr.Button(f'{view.capitalize()} View', elem_id=f'{tabname}_extra_view_to_{view}', visible=True)
+    #     if view == ui.current_view:
+    #         ui.btns_change_view[view].visible = False
+    # gr.HTML('<p>View:</p>', elem_id=f'{tabname}_extra_html_tag', elem_classes='extra-html-view-tag')
     
     def toggle_visibility(is_visible):
         is_visible = not is_visible
@@ -318,27 +326,32 @@ def create_ui(container, button, tabname):
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     # view changer function
-    def handle_view_change(btn):
-        print(btn)
-        view = btn.split(" ")[0].lower()
+    def handle_view_change(view):
+        view = view.split(" ")[0].lower()
         if view in ui.view_choices_in_setting and view != ui.current_view:
             shared.opts.set('extra_networks_default_view', f"{view}")
             shared.state.interrupt()
             shared.state.need_restart = True
             print(f'previous view {ui.current_view}, set new view {view}, restarting')
-        elif view not in ui.view_choices_in_setting:
-            raise ValueError(f"Invalid view args: {view}")
         elif view == ui.current_view:
-            print(f'You are trying to set: {view} = current view: {ui.current_view}, nothing changes')
+            print(f'You are trying to set: ({view}) = current view: ({ui.current_view}), nothing changes')
+        elif view not in ui.view_choices_in_setting:
+            raise ValueError(f"Invalid view: ({view}), in type ({type(view)})")
 
-    # print(ui.btns_change_view.items())
-    for view, btn in ui.btns_change_view.items():
-        btn.click(
-            fn=handle_view_change,
-            _js='function(x){restart_by_press_btn(); return x}',
-            inputs=[btn],
-            outputs=[]
-        )
+    ui.control_change_view.change(
+        fn=handle_view_change,
+        _js='function(x){restart_by_press_btn(); return x}',
+        inputs=[ui.control_change_view],
+        outputs=[]
+    )
+    # for view, btn in ui.btns_change_view.items():
+    #     btn.click(
+    #         fn=handle_view_change,
+    #         _js='function(x){restart_by_press_btn(); return x}',
+    #         inputs=[btn],
+    #         outputs=[]
+    #     )
+
     return ui
 
 
