@@ -200,7 +200,7 @@ def check_torch():
         machine = platform.machine()
         if 'arm' not in machine and 'aarch' not in machine and not args.nodirectml: # torch-directml is available on AMD64
             log.info('Using DirectML Backend')
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==1.13.1 torchvision==0.14.1 torch-directml')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision torch-directml')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
         else:
             log.info('Using CPU-only Torch')
