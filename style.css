@@ -1,3 +1,33 @@
+/* add colors variables for gradio (bootstrap) basic color theme and media query */
+@media (prefers-color-scheme: light) {
+    :root {
+        --grayscale-0: #FFFFFF;
+        --grayscale-1: #F9F9F9;
+        --grayscale-2: #EFEFEF;
+        --grayscale-3: #E4E4E4;
+        --grayscale-4: #959595;
+        --grayscale-5: #717171;
+        --grayscale-6: #1c1c1c;
+        --grayscale-7: #101010;
+        --grayscale-8: #050505;
+        --grayscale-9: #000000;
+    }
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --grayscale-9: #FFFFFF;
+        --grayscale-8: #F9F9F9;
+        --grayscale-7: #EFEFEF;
+        --grayscale-6: #E4E4E4;
+        --grayscale-5: #959595;
+        --grayscale-4: #717171;
+        --grayscale-3: #1c1c1c;
+        --grayscale-2: #101010;
+        --grayscale-1: #050505;
+        --grayscale-0: #000000;
+    }
+}
+
 
 /* general gradio fixes */
 
@@ -362,6 +392,7 @@ div.dimensions-tools{
     display: block;
     margin-left: 0;
     width: 10em;
+    counter-reset: setting-counter;
 }
 
 #settings > div.tab-nav button{
@@ -369,6 +400,23 @@ div.dimensions-tools{
     border: none;
     text-align: left;
     white-space: initial;
+    line-height: 1.2em;
+    margin-bottom: 0.4em;
+    position: relative;
+}
+
+#settings > div.tab-nav button:not(:last-child)::before{
+    content: counter(setting-counter);
+    counter-increment: setting-counter;
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: xx-small;
+}
+
+#settings > div.tab-nav button:nth-child(-n+9)::before{
+    font-size: small;
 }
 
 #settings_result{
@@ -679,7 +727,7 @@ footer {
 }
 
 
-.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before{
+.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before, .extra-network-advanced .card .metadata-button:before{
     content: "🛈";
 }
 .extra-network-cards .card .metadata-button, .extra-network-thumbs .card .metadata-button{
@@ -692,7 +740,7 @@ footer {
     font-size: 22pt;
     width: 1.5em;
 }
-.extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{
+.extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button, .extra-network-advanced .card:hover .metadata-button{
     display: inline-block;
 }
 .extra-network-cards .card .metadata-button:hover, .extra-network-thumbs .card .metadata-button:hover{
@@ -714,6 +762,7 @@ footer {
     background-size: cover;
     background-position: center center;
     position: relative;
+    overflow: hidden;
 }
 
 .extra-network-thumbs .card:hover .additional a {
@@ -751,6 +800,15 @@ footer {
 .extra-network-thumbs .card:hover .actions .name {
     white-space: normal;
     word-break: break-all;
+}
+
+.extra-network-thumbs .card .actions .discription-actions, 
+.extra-network-thumbs .card .actions .description{
+    display: none;
+}
+
+.extra-network-thumbs .card .additional ul li{
+    list-style: none;
 }
 
 .extra-network-cards .card{
@@ -823,10 +881,257 @@ footer {
     cursor: unset;
 }
 
-.extra-network-cards .card ul a{
+.extra-network-cards .card ul li a{
     cursor: pointer;
 }
 
-.extra-network-cards .card ul a:hover{
+.extra-network-cards .card ul li a:hover{
     color: red;
 }
+
+/* for the dorpdown control */
+[id$="_extra_networks"] .extra-view-dropdown-control{
+    flex:0 1 0;
+    margin-left: auto;
+}
+[id$="_extra_networks"] .extra-view-dropdown-control label>span{
+    font-size: 0.9em;
+}
+
+/* extra network advanced view */
+.extra-network-advanced{
+    height: auto;
+    padding: 0.5em;
+    display: flex;
+    align-content: start;
+    gap: 1em;
+    flex: 1 0 auto;
+    flex-flow: row wrap;
+}
+.extra-network-advanced .nocards{
+    flex: 1 1 auto;
+    height: auto;
+}
+
+.extra-network-advanced .card{
+    display: flex;
+    flex-direction: row;
+    position: relative;
+    height: 300px;
+    width: 320px;
+    box-sizing: border-box;
+    background-color: var(--grayscale-1);
+    border: 1px solid var(--grayscale-3);
+    box-shadow: 0px 1px 8px rgba(0, 0, 0, 0.2);
+    border-radius: 0.5em;
+    transition: 0.3s;
+    overflow: hidden;
+}
+.extra-network-advanced .card:hover{
+    background-color: var(--grayscale-2); 
+    box-shadow: 0px 2px 16px rgba(0, 0, 0, 0.7);
+}
+
+.extra-network-advanced .card .actions-btns-list{
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0.5em 0 0 0;
+    gap: 0.5em;
+}
+.extra-network-advanced .card .actions-btns-list li{
+    display: flex;
+    flex: 1 1 0;
+    margin: 0;
+    list-style: none;
+    line-height: 1.05em;
+    align-items: center;
+    border-radius: 0.5em;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.extra-network-advanced .card .actions-btns-list .card-btn{
+    flex: 1 1 auto;
+    text-align: center;
+    padding: 0.5em;
+    cursor: pointer;
+    user-select: none;
+}
+
+.extra-network-advanced .card .actions-btns-list .card-btn.card-btn-fold{
+    padding: 0.1em 0.5em;
+    transition: 0.2s;
+}
+.extra-network-advanced .card .actions-btns-list .card-btn.card-btn-fold:hover{
+    padding: 0.5em 0.5em;
+}
+
+.extra-network-advanced .card .metadata-button:hover,
+.extra-network-advanced .card .actions-btns-list .card-btn:hover{
+    color: var(--secondary-400);
+}
+.extra-network-advanced .card .actions-btns-list .card-btn-bold{
+    font-weight: 700;
+}
+
+/* extra network advanced view img section */
+.extra-network-advanced .card .card-img-preview{
+    flex: 0 1 120px;
+    display: flex;
+    flex-flow: column;
+    position: relative;
+    background-image: url('./file=html/card-no-preview.png');
+    background-size: cover;
+    background-position: center;
+    background-color: #424242;
+    cursor: pointer;
+    box-shadow: inset 0 0 1em var(--grayscale-3);
+}
+
+.extra-network-advanced .card .metadata-button{
+    display: none;
+    color: white;
+    font-size: 2em;
+    width: 1.5em;
+    border-radius: 0 0 0 0.4em;
+    text-align: center;
+    vertical-align: baseline;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.extra-network-advanced .card .card-img-preview .metadata-button{
+    position: relative;
+    margin-left: auto;
+    margin-bottom: auto;
+}
+.extra-network-advanced .card .card-img-preview .actions{
+    margin-top: auto;
+    padding: 0.5em;
+    opacity: 0;
+    transition: opacity 0.2s ease;;
+}
+.extra-network-advanced .card .card-img-preview:hover .actions{
+    opacity: 1;
+}
+
+.extra-network-advanced .card .card-img-preview .actions-btns-list li{
+    background-color: rgba(0, 0, 0, 0.7);
+    flex-grow: 1;
+    flex-basis: auto;
+    max-width: 10em;
+}
+.extra-network-advanced .card .card-img-preview .actions-btns-list li:hover{
+    background-color: rgba(0, 0, 0, 0.8);
+}
+.extra-network-advanced .card .card-img-preview .actions-btns-list li .card-btn{
+    color: white;
+}
+.extra-network-advanced .card .card-img-preview .actions-btns-list li .card-btn:hover{
+    color: var(--secondary-500);
+}
+.extra-network-advanced .card .card-img-preview .actions-btns-list li .card-btn:active{
+    color: var(--primary-500);
+}
+
+
+
+/* extra network advanced view info section */
+.extra-network-advanced .card article.card-info{
+    flex: 1 0 10px;
+    width: 100%;
+    padding: 0.5em;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    overflow: hidden;
+}
+
+.extra-network-advanced .card .card-info .toggle-off{
+    display: none;
+}
+
+.extra-network-advanced .card .card-info .name{
+    word-break: break-word;
+    font-size: 1.3em;
+    line-height: 1.1em;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    cursor: pointer;
+}
+.extra-network-advanced .card:hover .card-info .name{
+    color: var(--secondary-600);
+}
+.extra-network-advanced .card:hover .card-info .name:hover{
+    color: var(--primary-600);
+}
+
+.extra-network-advanced .card .card-info .description{
+    display: flex;
+    flex-direction: column;
+    word-break: break-all;
+    white-space: pre-wrap;
+}
+
+/* extra network advanced view textarea */
+.extra-network-advanced .card .card-info .description .desc-text{
+    display: block;
+    flex: 1 1 0;
+    width: 100%;
+    word-break: break-all;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    overflow-y: auto;
+    scrollbar-width: 0;
+    font-size: 1em;
+    line-height: 1.1em;
+    color: var(--grayscale-6);
+    border-radius: 0.5em;
+}
+
+.extra-network-advanced .card .card-info .description textarea.desc-text{
+    padding: 0.2em;
+    border: 1px solid var(--grayscale-0);
+    background-color: var(--grayscale-3);
+    color: var(--grayscale-6);
+    resize: none;
+}
+.extra-network-advanced .card .card-info .description .desc-text::-webkit-scrollbar{
+    width: 0px;
+}
+
+.extra-network-advanced .card .card-info .description textarea.desc-text:read-only{
+    color: var(--grayscale-5);
+}
+.extra-network-advanced .card .card-info .description textarea.desc-text:read-only:focus{
+    color: var(--grayscale-8);
+    outline: 2px solid var(--grayscale-4);
+}
+.extra-network-advanced .card .card-info .description textarea.desc-text:active, 
+.extra-network-advanced .card .card-info .description textarea.desc-text:focus{
+    color: var(--grayscale-9);
+    outline: 3px solid var(--secondary-500);
+}
+
+
+
+
+.extra-network-advanced .card .card-info .description-actions .actions-btns-list li{
+    background-color: var(--grayscale-6);
+}
+.extra-network-advanced .card .card-info .description-actions .actions-btns-list li:hover{
+    background-color: var(--grayscale-9);
+}
+.extra-network-advanced .card .card-info .description-actions .actions-btns-list li .card-btn{
+    color: var(--grayscale-0);
+}
+.extra-network-advanced .card .card-info .description-actions .actions-btns-list li .card-btn:hover{
+    color: var(--secondary-500);
+}
+.extra-network-advanced .card .card-info .description-actions .actions-btns-list li .card-btn:active{
+    color: var(--primary-500);
+}
+
+/* action list */
+.extra-network-advanced .card .card-info:hover .description-actions.toggle-off{
+    display: block;
+}
+
+

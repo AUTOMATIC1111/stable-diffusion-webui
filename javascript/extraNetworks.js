@@ -6,10 +6,12 @@ function setupExtraNetworksForTab(tabname){
     var search = gradioApp().querySelector('#'+tabname+'_extra_search textarea')
     var refresh = gradioApp().getElementById(tabname+'_extra_refresh')
     var descriptInput = gradioApp().getElementById(tabname+ '_description_input')
+    var changeViewControl = gradioApp().getElementById(tabname+ '_control_change_view')
 
     search.classList.add('search')
     tabs.appendChild(search)
     tabs.appendChild(refresh)
+    tabs.appendChild(changeViewControl)
     tabs.appendChild(descriptInput)
     
     search.addEventListener("input", function(evt){
@@ -82,6 +84,7 @@ function cardClicked(tabname, textToAdd, allowNegativePrompt){
     }
 
     updateInput(textarea)
+    stopPropagation()
 }
 
 function saveCardPreview(event, tabname, filename){
@@ -97,34 +100,71 @@ function saveCardPreview(event, tabname, filename){
     event.preventDefault()
 }
 
-function saveCardDescription(event, tabname, filename, descript){
-    var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+function saveCardDescription(event, tabname, filename, currentView, itemName, itemDescript){
+    var filename_textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+    var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
     var button = gradioApp().getElementById(tabname + '_save_description')
-    var description = gradioApp().getElementById(tabname+ '_description_input')
+    var descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " textarea.desc-text[data-desc-card-name='" + itemName + "']")
 
-    textarea.value = filename
-    description.value=descript
-    updateInput(textarea)
+    filename_textarea.value = filename
 
+    if (currentView=="advanced" && descrip_current_textarea_in_advanced.value){
+        updateInput(descrip_current_textarea_in_advanced)
+        description_textarea.value = descrip_current_textarea_in_advanced.value 
+    }else if(currentView=="advanced"){
+        description_textarea.value = itemDescript
+        // in advanced view, if indivisual textarea has issue when try to save, reverse to previous description 
+    }
+    toggleEditSwitch(event, tabname, currentView, itemName)
+    updateInput(filename_textarea )
+    updateInput(description_textarea)
+    
     button.click()
 
     event.stopPropagation()
     event.preventDefault()
 }
 
-function readCardDescription(event, tabname, filename, descript){
-    var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+function readCardDescription(event, tabname, filename, currentView, itemName, itemDescript){
+    var filename_textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
     var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
     var button = gradioApp().getElementById(tabname + '_read_description')
+    var descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " textarea.desc-text[data-desc-card-name='" + itemName + "']")
 
-    textarea.value = filename
-    description_textarea.value = descript
+    filename_textarea.value = filename
+    description_textarea.value = itemDescript
 
-    updateInput(textarea)
+    updateInput(filename_textarea)
     updateInput(description_textarea)
+
+    if (currentView=="advanced" && descrip_current_textarea_in_advanced){
+        descrip_current_textarea_in_advanced.value = description_textarea.value 
+        updateInput(descrip_current_textarea_in_advanced)
+    }
+    
     button.click()
 
+    descrip_current_textarea_in_advanced.focus();
+
     event.stopPropagation()
+    event.preventDefault()
+}
+
+function toggleEditSwitch(event, tabname, currentView, itemName){
+    var descrip_current_textarea_in_advanced = gradioApp().querySelector("#tab_" + tabname + " textarea.desc-text[data-desc-card-name='" + itemName + "']")
+    var toggle_action = gradioApp().querySelector("#tab_" + tabname + " .card[data-card-name='" + itemName + "'] .card-info .description-actions")
+    var toggle_list = gradioApp().querySelectorAll("#tab_" + tabname + " .card[data-card-name='" + itemName + "'] .card-info .description-actions ul.actions-btns-list")
+
+    if (currentView=="advanced" && descrip_current_textarea_in_advanced){
+        descrip_current_textarea_in_advanced.readOnly = !descrip_current_textarea_in_advanced.readOnly
+        toggle_action.classList.toggle("toggle-off")
+        toggle_list.forEach(function(toggle_list) {
+            toggle_list.classList.toggle("toggle-off")
+        })
+        if (!descrip_current_textarea_in_advanced.readOnly) {
+            descrip_current_textarea_in_advanced.focus();
+        }
+    }
     event.preventDefault()
 }
 

@@ -1,0 +1,29 @@
+<div class='card' style={style_advanced_size} data-current-view='{current_view}' data-card-name="{name}">
+	<div class='card-img-preview' style={style_advanced_image_w} onclick={card_clicked}>
+        {metadata_button}
+        <div class='actions'>
+            <div class='additional'>
+                <ul class='actions-btns-list'>
+                    <li><span class='card-btn' title='Replace preview image with currently selected in gallery' onclick={save_card_preview}>Replace Preview</span></li>
+                    <li><span class='card-btn card-btn-bold' title='Click to apply this model'>Apply Model</span></li>
+                </ul>
+                <span style='display:none' class='search_term'>{search_term}</span>
+            </div>
+        </div>
+    </div>
+	<article class='card-info'>
+		<h1 class='name' title='Click to apply this model' onclick={card_clicked}>{name}</h1>
+		<div class='description' title='Scrollable if paragraph been cut off'>
+            <textarea class="desc-text" data-desc-card-name="{name}" readOnly>{description}</textarea>
+        </div>
+		<div class='description-actions toggle-off'>
+            <ul class='actions-btns-list'>
+                <li><span class='card-btn card-btn-fold card-btn-bold' title='Edit notes content' onclick={toggle_read_edit}>Edit Descrip.</span></li>
+            </ul>
+            <ul class='actions-btns-list toggle-off'>
+                <li><span class='card-btn' title='Load notes to the notes text area' onclick={read_card_description}>Reload</span></li>
+                <li><span class='card-btn card-btn-bold' title='replace notes with current content in the notes text area' onclick={save_card_description}>Save</span></li>
+            </ul>
+		</div>
+	</article> 
+</div>
