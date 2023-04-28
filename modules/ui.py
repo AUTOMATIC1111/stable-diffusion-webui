@@ -232,7 +232,14 @@ def update_token_counter(text, steps):
 
     flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
     prompts = [prompt_text for step, prompt_text in flat_prompts]
-    token_count, max_length = max([model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
+    if shared.backend == shared.Backend.ORIG_SD:
+        token_count, max_length = max([model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
+    elif shared.backend == shared.Backend.DIFFUSERS:
+        tokenizer = shared.sd_model.tokenizer
+        has_bos_token, has_eos_token = tokenizer.bos_token_id is not None, tokenizer.eos_token_id is not None
+        token_count = max([len(shared.sd_model.tokenizer(prompt)) for prompt in prompts]) - int(has_bos_token) - int(has_eos_token)
+        max_length = tokenizer.model_max_length - int(has_bos_token) - int(has_eos_token)
+
     return f"<span class='gr-box gr-text-input'>{token_count}/{max_length}</span>"
 
 

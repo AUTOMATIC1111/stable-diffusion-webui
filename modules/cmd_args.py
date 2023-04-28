@@ -14,6 +14,7 @@ parser.add_argument("--medvram", action='store_true', help="Enable model optimiz
 parser.add_argument("--lowvram", action='store_true', help="Enable model optimizations for sacrificing a lot of speed for lowest memory usage")
 parser.add_argument("--lowram", action='store_true', help="Load checkpoint weights to VRAM instead of RAM")
 
+parser.add_argument("--diffusers", action='store_true', help="Use `diffusers` library as model backend",)
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="Path to checkpoint of stable diffusion model to load immediately",)
 parser.add_argument('--vae', type=str, help='Path to checkpoint of stable diffusion VAE model to load immediately', default=None)
 parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="Base path where all user data is stored")

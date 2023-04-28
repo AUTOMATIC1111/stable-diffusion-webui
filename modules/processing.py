@@ -4,6 +4,7 @@ import os
 import sys
 import random
 import logging
+from contextlib import nullcontext
 from typing import Any, Dict, List
 
 import torch
@@ -497,9 +498,16 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
-
 def process_images(p: StableDiffusionProcessing) -> Processed:
     stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
+    if shared.backend == shared.Backend.DIFFUSERS:
+        try:
+            res = process_images_inner(p)
+
+        finally:
+            pass
+
+        return res
 
     try:
         for k, v in p.override_settings.items():
@@ -557,8 +565,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
 
-    modules.sd_hijack.model_hijack.apply_circular(p.tiling)
-    modules.sd_hijack.model_hijack.clear_comments()
+    if shared.backend == shared.Backend.ORIG_SD:
+        modules.sd_hijack.model_hijack.apply_circular(p.tiling)
+        modules.sd_hijack.model_hijack.clear_comments()
 
     comments = {}
 
@@ -617,13 +626,16 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         cache[0] = (required_prompts, steps)
         return cache[1]
 
-    with torch.no_grad(), p.sd_model.ema_scope():
+    ema_scope_context = p.sd_model.ema_scope if shared.backend == shared.Backend.ORIG_SD else nullcontext
+
+    with torch.no_grad(), ema_scope_context():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
 
-            # for OSX, loading the model during sampling changes the generated picture, so it is loaded here
-            if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
-                sd_vae_approx.model()
+            if shared.backend == shared.Backend.ORIG_SD:
+                # for OSX, loading the model during sampling changes the generated picture, so it is loaded here
+                if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
+                    sd_vae_approx.model()
 
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -673,60 +685,78 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     step_multiplier = 2 if sd_samplers.all_samplers_map.get(p.sampler_name).aliases[0] in ['k_dpmpp_2s_a', 'k_dpmpp_2s_a_ka', 'k_dpmpp_sde', 'k_dpmpp_sde_ka', 'k_dpm_2', 'k_dpm_2_a', 'k_heun'] else 1
                 except:
                     pass
-            uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
-            c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
 
-            if len(model_hijack.comments) > 0:
-                for comment in model_hijack.comments:
-                    comments[comment] = 1
+            if shared.backend == shared.Backend.ORIG_SD:
+                uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
+                c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
+
+                if len(model_hijack.comments) > 0:
+                    for comment in model_hijack.comments:
+                        comments[comment] = 1
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
-                samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
+            if shared.backend == shared.Backend.ORIG_SD:
+                with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
+                    samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
 
-            x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
-            try:
-                for x in x_samples_ddim:
-                    devices.test_for_nans(x, "vae")
-            except devices.NansException as e:
-                if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae and shared.cmd_opts.rollback_vae:
-                    print('\nA tensor with all NaNs was produced in VAE, try converting to bf16.')
-                    devices.dtype_vae = torch.bfloat16
-                    vae_file, vae_source = sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
-                    sd_vae.load_vae(p.sd_model, vae_file, vae_source)
-                    x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
+                x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
+                try:
                     for x in x_samples_ddim:
                         devices.test_for_nans(x, "vae")
-                else:
-                    raise e
+                except devices.NansException as e:
+                    if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae and shared.cmd_opts.rollback_vae:
+                        print('\nA tensor with all NaNs was produced in VAE, try converting to bf16.')
+                        devices.dtype_vae = torch.bfloat16
+                        vae_file, vae_source = sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
+                        sd_vae.load_vae(p.sd_model, vae_file, vae_source)
+                        x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
+                        for x in x_samples_ddim:
+                            devices.test_for_nans(x, "vae")
+                    else:
+                        raise e
 
-            x_samples_ddim = torch.stack(x_samples_ddim).float()
-            x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+                x_samples_ddim = torch.stack(x_samples_ddim).float()
+                x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
-            del samples_ddim
+                del samples_ddim
 
-            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-                lowvram.send_everything_to_cpu()
+                if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                    lowvram.send_everything_to_cpu()
 
-            devices.torch_gc()
+                devices.torch_gc()
 
-            if p.scripts is not None:
-                p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
+                if p.scripts is not None:
+                    p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
+
+                x_samples_ddim = x_samples_ddim.cpu().numpy()
+            else:
+                generator = [torch.Generator(device="cpu").manual_seed(s) for s in seeds]
+                output = shared.sd_model(
+                    prompt=prompts,
+                    negative_prompt=negative_prompts,
+                    num_inference_steps=p.steps,
+                    guidance_scale=p.cfg_scale,
+                    height=p.height,
+                    width=p.width,
+                    generator=generator,
+                    output_type="np",
+                )
+                x_samples_ddim = output.images
 
             for i, x_sample in enumerate(x_samples_ddim):
-                x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                x_sample = 255. * np.moveaxis(x_sample, 0, 2)
                 x_sample = x_sample.astype(np.uint8)
 
                 if p.restore_faces:
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
                         images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-face-restoration")
 
-                    devices.torch_gc()
+                        devices.torch_gc()
 
-                    x_sample = modules.face_restoration.restore_faces(x_sample)
-                    devices.torch_gc()
+                        x_sample = modules.face_restoration.restore_faces(x_sample)
+                        devices.torch_gc()
 
                 image = Image.fromarray(x_sample)
 
@@ -768,12 +798,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     if opts.return_mask_composite:
                         output_images.append(image_mask_composite)
 
-            del x_samples_ddim
+                del x_samples_ddim
 
-            devices.torch_gc()
+                devices.torch_gc()
 
-            state.nextjob()
+                state.nextjob()
 
+        import ipdb; ipdb.set_trace()
         p.color_corrections = None
 
         index_of_first_image = 0

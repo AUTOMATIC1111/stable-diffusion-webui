@@ -9,7 +9,10 @@ import warnings
 from rich import print # pylint: disable=W0622
 from modules import timer, errors
 
+from diffusers import DiffusionPipeline, UniPCMultistepScheduler
+
 startup_timer = timer.Timer()
+
 
 import torch # pylint: disable=C0411
 import torchvision # pylint: disable=W0611,C0411
@@ -147,17 +150,27 @@ def initialize():
 def load_model():
     shared.state.begin()
     shared.state.job = 'load model'
-    try:
-        modules.sd_models.load_model()
-    except Exception as e:
-        errors.display(e, "loading stable diffusion model")
-        print("Stable diffusion model failed to load")
-        exit(1)
-    if shared.sd_model is None:
-        print("No stable diffusion model loaded")
-        exit(1)
-    shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+    if not cmd_opts.diffusers:
+        try:
+            modules.sd_models.load_model()
+        except Exception as e:
+            errors.display(e, "loading stable diffusion model")
+            print("Stable diffusion model failed to load")
+            exit(1)
+        if shared.sd_model is None:
+            print("No stable diffusion model loaded")
+            exit(1)
+        shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
+        shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+    else:
+        print("Loading `diffusers` backend")
+        model_id = "runwayml/stable-diffusion-v1-5"
+        scheduler = UniPCMultistepScheduler.from_pretrained(model_id, subfolder="scheduler")
+        sd_model = DiffusionPipeline.from_pretrained(model_id, scheduler=scheduler, torch_dtype=torch.float16)
+        sd_model.to("cuda")
+        sd_model.sd_model_hash = sd_model.unet.config._name_or_path.split("/")[-2]
+        shared.sd_model = sd_model
+
     shared.state.end()
     startup_timer.record("checkpoint")
 

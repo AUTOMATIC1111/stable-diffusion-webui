@@ -129,7 +129,11 @@ class EmbeddingDatabase:
         if shared.sd_model is None:
             print('Model not loaded')
             return 0
-        vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
+        if shared.backend == shared.Backend.ORIG_SD:
+            vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
+        elif shared.backend == shared.Backend.DIFFUSERS:
+            vec = shared.sd_model.text_encoder.get_input_embeddings().weight
+
         return vec.shape[1]
 
     def load_from_file(self, path, filename):

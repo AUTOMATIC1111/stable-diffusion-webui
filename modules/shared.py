@@ -1,3 +1,4 @@
+from enum import Enum
 import os
 import sys
 import time
@@ -52,6 +53,10 @@ ui_reorder_categories = [
     "scripts",
 ]
 
+class Backend(Enum):
+    ORIG_SD = 1
+    DIFFUSERS = 2
+
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.enable_insecure
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = \
@@ -61,6 +66,7 @@ device = devices.device
 sd_upscalers = []
 sd_model = None
 clip_model = None
+backend = Backend.DIFFUSERS if cmd_opts.diffusers else Backend.ORIG_SD
 
 
 def reload_hypernetworks():
@@ -402,9 +408,9 @@ options_templates.update(options_section(('ui', "User interface"), {
     "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results for web"),
     "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
-    "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
-    "add_model_name_to_info": OptionInfo(True, "Add model name to generation information"),
-    "disable_weights_auto_swap": OptionInfo(True, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
+    "add_model_hash_to_info": OptionInfo(True if backend == Backend.ORIG_SD else False, "Add model hash to generation information"),
+    "add_model_name_to_info": OptionInfo(True if backend == Backend.ORIG_SD else False, "Add model name to generation information"),
+    "disable_weights_auto_swap": OptionInfo(True, "Do not change the selected model when reading generation parameters."),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
     "font": OptionInfo("", "Font for image grids that have text"),
@@ -468,7 +474,7 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
 
 options_templates.update(options_section((None, "Hidden options"), {
     "disabled_extensions": OptionInfo([], "Disable these extensions"),
-    "disable_all_extensions": OptionInfo("none", "Disable all extensions (preserves the list of disabled extensions)", gr.Radio, {"choices": ["none", "extra", "all"]}),
+    "disable_all_extensions": OptionInfo("all" if cmd_opts.diffusers else "none", "Disable all extensions (preserves the list of disabled extensions)", gr.Radio, {"choices": ["none", "extra", "all"]}),
     "sd_checkpoint_hash": OptionInfo("", "SHA256 hash of the current checkpoint"),
 }))
 
