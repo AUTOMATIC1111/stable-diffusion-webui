@@ -293,7 +293,12 @@ button.custom-button{
     margin-left: -0.75em
 }
 
-#txtimg_hr_finalres .resolution{
+#img2img_scale_resolution_preview.block{
+    display: flex;
+    align-items: end;
+}
+
+#txtimg_hr_finalres .resolution, #img2img_scale_resolution_preview .resolution{
     font-weight: bold;
 }
 
@@ -310,6 +315,10 @@ div.dimensions-tools{
     max-width: fit-content;
     flex-direction: row;
     align-content: center;
+}
+
+div#extras_scale_to_tab div.form{
+    flex-direction: row;
 }
 
 #mode_img2img .gradio-image > div.fixed-height, #mode_img2img .gradio-image > div.fixed-height img{
@@ -331,6 +340,18 @@ div.dimensions-tools{
 
 .infotext {
     overflow-wrap: break-word;
+}
+
+#img2img_column_batch{
+    align-self: end;
+    margin-bottom: 0.9em;
+}
+
+#img2img_unused_scale_by_slider{
+    visibility: hidden;
+    width: 0.5em;
+    max-width: 0.5em;
+    min-width: 0.5em;
 }
 
 /* settings */
@@ -641,6 +662,12 @@ footer {
 }
 
 /* extra networks UI */
+
+.extra-network-cards{
+    height: 725px;
+    overflow: scroll;
+    resize: vertical;
+}
 
 .extra-networks > div > [id *= '_extra_']{
     margin: 0.3em;
