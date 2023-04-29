@@ -78,7 +78,6 @@ def compatibility_args(opts, args):
     opts.use_old_emphasis_implementation = False
     opts.use_old_karras_scheduler_sigmas = False
     opts.no_dpmpp_sde_batch_determinism = False
-    opts.use_old_hires_fix_width_height = False
 
     parser.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     args = parser.parse_args()

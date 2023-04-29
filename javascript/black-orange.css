@@ -103,6 +103,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_tools, #img2img_tools { margin-top: 54px; scale: 120%; margin-left: 26px; }
 #txtimg_hr_finalres { max-width: 200px; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
+#txt2img_extra_refresh, #txt2img_extra_close { height: 1.7em }
 
 /* custom elements overrides */
 #steps-animation, #controlnet { border-width: 0; }
