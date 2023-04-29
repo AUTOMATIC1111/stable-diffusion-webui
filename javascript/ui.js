@@ -365,3 +365,13 @@ function selectCheckpoint(name){
     desiredCheckpointName = name;
     gradioApp().getElementById('change_checkpoint').click()
 }
+
+
+function dashabi(newView, currentView){
+    if(newView == currentView){
+        return currentView;
+    }else{
+        restart_by_press_btn();
+        return newView
+    }
+}

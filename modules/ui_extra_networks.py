@@ -322,6 +322,7 @@ def create_ui(container, button, tabname):
         view = view.split(" ")[0].lower()
         if view in ui.view_choices_in_setting and view != ui.current_view:
             shared.opts.set('extra_networks_default_view', f"{view}")
+            shared.opts.save(shared.config_filename)
             shared.state.interrupt()
             shared.state.need_restart = True
             print(f'previous view {ui.current_view}, set new view {view}, restarting')
