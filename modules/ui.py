@@ -130,6 +130,16 @@ def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resiz
     return f"resize: from <span class='resolution'>{p.width}x{p.height}</span> to <span class='resolution'>{p.hr_resize_x or p.hr_upscale_to_x}x{p.hr_resize_y or p.hr_upscale_to_y}</span>"
 
 
+def resize_from_to_html(width, height, scale_by):
+    target_width = int(width * scale_by)
+    target_height = int(height * scale_by)
+
+    if not target_width or not target_height:
+        return "no image selected"
+
+    return f"resize: from <span class='resolution'>{width}x{height}</span> to <span class='resolution'>{target_width}x{target_height}</span>"
+
+
 def apply_styles(prompt, prompt_neg, styles):
     prompt = shared.prompt_styles.apply_styles_to_prompt(prompt, styles)
     prompt_neg = shared.prompt_styles.apply_negative_styles_to_prompt(prompt_neg, styles)
@@ -676,6 +686,8 @@ def create_ui():
                             copy_image_buttons.append((button, name, elem))
 
                 with gr.Tabs(elem_id="mode_img2img"):
+                    img2img_selected_tab = gr.State(0)
+
                     with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
                         init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=480)
                         add_copy_image_controls('img2img', init_img)
@@ -718,6 +730,12 @@ def create_ui():
                         img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, elem_id="img2img_batch_output_dir")
                         img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
 
+                    img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
+                    img2img_image_inputs = [init_img, sketch, init_img_with_mask, inpaint_color_sketch]
+
+                    for i, tab in enumerate(img2img_tabs):
+                        tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
+
                 def copy_image(img):
                     if isinstance(img, dict) and 'image' in img:
                         return img['image']
@@ -747,11 +765,34 @@ def create_ui():
                     elif category == "dimensions":
                         with FormRow():
                             with gr.Column(elem_id="img2img_column_size", scale=4):
-                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
-                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                                selected_scale_tab = gr.State(value=0)
 
-                            with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
-                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                with gr.Tabs():
+                                    with gr.Tab(label="Resize to") as tab_scale_to:
+                                        with FormRow():
+                                            with gr.Column(elem_id="img2img_column_size", scale=4):
+                                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
+                                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                                            with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
+                                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+
+                                    with gr.Tab(label="Resize by") as tab_scale_by:
+                                        scale_by = gr.Slider(minimum=0.05, maximum=4.0, step=0.05, label="Scale", value=1.0, elem_id="img2img_scale")
+
+                                        with FormRow():
+                                            scale_by_html = FormHTML(resize_from_to_html(0, 0, 0.0), elem_id="img2img_scale_resolution_preview")
+                                            gr.Slider(label="Unused", elem_id="img2img_unused_scale_by_slider")
+
+                                    scale_by.change(
+                                        fn=resize_from_to_html,
+                                        _js="currentImg2imgSourceResolution",
+                                        inputs=[dummy_component, dummy_component, scale_by],
+                                        outputs=scale_by_html,
+                                        show_progress=False,
+                                    )
+
+                            tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
+                            tab_scale_by.select(fn=lambda: 1, inputs=[], outputs=[selected_scale_tab])
 
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="img2img_column_batch"):
@@ -809,7 +850,7 @@ def create_ui():
                             def select_img2img_tab(tab):
                                 return gr.update(visible=tab in [2, 3, 4]), gr.update(visible=tab == 3),
 
-                            for i, elem in enumerate([tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]):
+                            for i, elem in enumerate(img2img_tabs):
                                 elem.select(
                                     fn=lambda tab=i: select_img2img_tab(tab),
                                     inputs=[],
@@ -862,8 +903,10 @@ def create_ui():
                     denoising_strength,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
+                    selected_scale_tab,
                     height,
                     width,
+                    scale_by,
                     resize_mode,
                     inpaint_full_res,
                     inpaint_full_res_padding,
