@@ -101,6 +101,5 @@ if __name__ == "__main__":
         setup.log.info("Test only")
         import webui
         exit(0)
-    else:
-        import webui
-        webui.webui()
+    import webui
+    webui.webui()
