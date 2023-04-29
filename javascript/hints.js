@@ -65,8 +65,60 @@ titles = {
 
     "Interrogate": "Reconstruct prompt from existing image and put it into the prompt field.",
 
-    "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [clip_skip], [batch_number], [generation_number], [prompt_hash], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp], [hasprompt<prompt1|default><prompt2>..]; leave empty for default.",
-    "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [clip_skip], [batch_number], [generation_number], [prompt_hash], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp], [hasprompt<prompt1|default><prompt2>..]; leave empty for default.",
+    "Images filename pattern":
+    "Use following tags to define how filenames for images are chosen:\n" +
+    "[steps]\n" +
+    "[cfg]\n" +
+    "[sampler]\n" +
+    "[seed]\n" +
+    "[clip_skip]\n" +
+    "[width]\n" +
+    "[height]\n" +
+    "[batch_number]\n" +
+    "[generation_number]\n" +
+    "[model_hash]\n" +
+    "[model_name]\n" +
+    "[prompt_hash]\n" +
+    "[styles]\n" +
+    "[prompt]\n" +
+    "[prompt_spaces]\n" +
+    "[prompt_words]\n" +
+    "[prompt_no_styles]\n" +
+    "[hasprompt<prompt1|default><prompt2>...]\n" +
+    "[date]\n" +
+    "[datetime]\n" +
+    "[datetime<Format>]\n" +
+    "[datetime<Format><Time Zone>]\n" +
+    "[job_timestamp]" +
+    "\n\nLeave empty for default.\nSee wiki for usage detail and examples.",
+
+    "Directory name pattern":
+    "Use following tags to define how subdirectories for images and grids are chosen:\n" +
+    "[steps]\n" +
+    "[cfg]\n" +
+    "[sampler]\n" +
+    "[seed]\n" +
+    "[clip_skip]\n" +
+    "[width]\n" +
+    "[height]\n" +
+    "[batch_number]\n" +
+    "[generation_number]\n" +
+    "[model_hash]\n" +
+    "[model_name]\n" +
+    "[prompt_hash]\n" +
+    "[styles]\n" +
+    "[prompt]\n" +
+    "[prompt_spaces]\n" +
+    "[prompt_words]\n" +
+    "[prompt_no_styles]\n" +
+    "[hasprompt<prompt1|default><prompt2>...]\n" +
+    "[date]\n" +
+    "[datetime]\n" +
+    "[datetime<Format>]\n" +
+    "[datetime<Format><Time Zone>]\n" +
+    "[job_timestamp]" +
+    "\n\nLeave empty for default.\nSee wiki for usage detail and examples.",
+
     "Max prompt words": "Set the maximum number of words to be used in the [prompt_words] option; ATTENTION: If the words are too long, they may exceed the maximum length of the file path that the system can handle",
 
     "Loopback": "Performs img2img processing multiple times. Output images are used as input for the next loop.",
