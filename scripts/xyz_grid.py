@@ -1,26 +1,18 @@
+import re
+import csv
+import random
 from collections import namedtuple
 from copy import copy
 from itertools import permutations, chain
-import random
-import csv
 from io import StringIO
 from PIL import Image
 import numpy as np
-
-import modules.scripts as scripts
 import gradio as gr
-
-from modules import images, paths, sd_samplers, processing, sd_models, sd_vae
-from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
-from modules.shared import opts, cmd_opts, state
+import modules.scripts as scripts
 import modules.shared as shared
-import modules.sd_samplers
-import modules.sd_models
-import modules.sd_vae
-import glob
-import os
-import re
-
+from modules import images, sd_samplers, processing, sd_models, sd_vae
+from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
+from modules.shared import opts, state
 from modules.ui_components import ToolButton
 
 fill_values_symbol = "\U0001f4d2"  # 📒
@@ -83,15 +75,15 @@ def confirm_samplers(p, xs):
 
 
 def apply_checkpoint(p, x, xs):
-    info = modules.sd_models.get_closet_checkpoint_match(x)
+    info = sd_models.get_closet_checkpoint_match(x)
     if info is None:
         raise RuntimeError(f"Unknown checkpoint: {x}")
-    modules.sd_models.reload_model_weights(shared.sd_model, info)
+    sd_models.reload_model_weights(shared.sd_model, info)
 
 
 def confirm_checkpoints(p, xs):
     for x in xs:
-        if modules.sd_models.get_closet_checkpoint_match(x) is None:
+        if sd_models.get_closet_checkpoint_match(x) is None:
             raise RuntimeError(f"Unknown checkpoint: {x}")
 
 
@@ -108,24 +100,32 @@ def apply_upscale_latent_space(p, x, xs):
 
 def find_vae(name: str):
     if name.lower() in ['auto', 'automatic']:
-        return modules.sd_vae.unspecified
+        return sd_vae.unspecified
     if name.lower() == 'none':
         return None
     else:
-        choices = [x for x in sorted(modules.sd_vae.vae_dict, key=lambda x: len(x)) if name.lower().strip() in x.lower()]
+        choices = [x for x in sorted(sd_vae.vae_dict, key=lambda x: len(x)) if name.lower().strip() in x.lower()]
         if len(choices) == 0:
             print(f"No VAE found for {name}; using automatic")
-            return modules.sd_vae.unspecified
+            return sd_vae.unspecified
         else:
-            return modules.sd_vae.vae_dict[choices[0]]
+            return sd_vae.vae_dict[choices[0]]
 
 
 def apply_vae(p, x, xs):
-    modules.sd_vae.reload_vae_weights(shared.sd_model, vae_file=find_vae(x))
+    sd_vae.reload_vae_weights(shared.sd_model, vae_file=find_vae(x))
 
 
 def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
     p.styles.extend(x.split(','))
+
+
+def apply_fallback(p, x, xs):
+    sampler_name = sd_samplers.samplers_map.get(x.lower(), None)
+    if sampler_name is None:
+        raise RuntimeError(f"Unknown sampler: {x}")
+
+    opts.data["xyz_fallback_sampler"] = sampler_name
 
 
 def apply_uni_pc_order(p, x, xs):
@@ -220,6 +220,7 @@ axis_options = [
     AxisOption("Clip skip", int, apply_clip_skip),
     AxisOption("Denoising", float, apply_field("denoising_strength")),
     AxisOptionTxt2Img("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
+    AxisOptionTxt2Img("Fallback latent upscaler sampler", str, apply_fallback, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
     AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: list(sd_vae.vae_dict)),
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
@@ -332,7 +333,6 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     if draw_legend:
         z_grid = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], title_texts, [[images.GridAnnotation()]])
     processed_result.images.insert(0, z_grid)
-    #TODO: Deeper aspects of the program rely on grid info being misaligned between metadata arrays, which is not ideal.
     #processed_result.all_prompts.insert(0, processed_result.all_prompts[0])
     #processed_result.all_seeds.insert(0, processed_result.all_seeds[0])
     processed_result.infotexts.insert(0, processed_result.infotexts[0])
@@ -345,12 +345,12 @@ class SharedSettingsStackHelper(object):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.vae = opts.sd_vae
         self.uni_pc_order = opts.uni_pc_order
-  
+
     def __exit__(self, exc_type, exc_value, tb):
         opts.data["sd_vae"] = self.vae
         opts.data["uni_pc_order"] = self.uni_pc_order
-        modules.sd_models.reload_model_weights()
-        modules.sd_vae.reload_vae_weights()
+        sd_models.reload_model_weights()
+        sd_vae.reload_vae_weights()
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
 
@@ -390,15 +390,13 @@ class Script(scripts.Script):
                     fill_z_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_z_tool_button", visible=False)
 
         with gr.Row(variant="compact", elem_id="axis_options"):
-            with gr.Column():
-                draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
-                no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
-            with gr.Column():
-                include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
-                include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
-            with gr.Column():
-                margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
-        
+            draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
+            no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
+            include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
+            include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
+        with gr.Row(variant="compact", elem_id="axis_options"):
+            margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
+
         with gr.Row(variant="compact", elem_id="swap_axes"):
             swap_xy_axes_button = gr.Button(value="Swap X/Y axes", elem_id="xy_grid_swap_axes_button")
             swap_yz_axes_button = gr.Button(value="Swap Y/Z axes", elem_id="yz_grid_swap_axes_button")
@@ -428,6 +426,9 @@ class Script(scripts.Script):
             current_values = axis_values_dropdown
             if has_choices:
                 choices = choices()
+                if len(choices) > 12:
+                    has_choices = False
+            if has_choices:
                 if isinstance(current_values,str):
                     current_values = current_values.split(",")
                 current_values = list(filter(lambda x: x in choices, current_values))
@@ -459,7 +460,7 @@ class Script(scripts.Script):
 
     def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size):
         if not no_fixed_seeds:
-            modules.processing.fix_seed(p)
+            processing.fix_seed(p)
 
         if not opts.return_grid:
             p.batch_size = 1
@@ -489,7 +490,7 @@ class Script(scripts.Script):
                         start = int(mc.group(1))
                         end   = int(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+
                         valslist_ext += [int(x) for x in np.linspace(start=start, stop=end, num=num).tolist()]
                     else:
                         valslist_ext.append(val)
@@ -511,7 +512,7 @@ class Script(scripts.Script):
                         start = float(mc.group(1))
                         end   = float(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+
                         valslist_ext += np.linspace(start=start, stop=end, num=num).tolist()
                     else:
                         valslist_ext.append(val)
@@ -699,13 +700,12 @@ class Script(scripts.Script):
             # Auto-save main and sub-grids:
             grid_count = z_count + 1 if z_count > 1 else 1
             for g in range(grid_count):
-                #TODO: See previous comment about intentional data misalignment.
                 adj_g = g-1 if g > 0 else g
                 images.save_image(processed.images[g], p.outpath_grids, "xyz_grid", info=processed.infotexts[g], extension=opts.grid_format, prompt=processed.all_prompts[adj_g], seed=processed.all_seeds[adj_g], grid=True, p=processed)
 
         if not include_sub_grids:
             # Done with sub-grids, drop all related information:
-            for sg in range(z_count):
+            for _sg in range(z_count):
                 del processed.images[1]
                 del processed.all_prompts[1]
                 del processed.all_seeds[1]

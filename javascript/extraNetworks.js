@@ -5,12 +5,14 @@ function setupExtraNetworksForTab(tabname){
     var tabs = gradioApp().querySelector('#'+tabname+'_extra_tabs > div')
     var search = gradioApp().querySelector('#'+tabname+'_extra_search textarea')
     var refresh = gradioApp().getElementById(tabname+'_extra_refresh')
+    var descriptInput = gradioApp().getElementById(tabname+ '_description_input')
     var close = gradioApp().getElementById(tabname+'_extra_close')
 
     search.classList.add('search')
     tabs.appendChild(search)
     tabs.appendChild(refresh)
     tabs.appendChild(close)
+    tabs.appendChild(descriptInput)
 
     search.addEventListener("input", function(evt){
         searchTerm = search.value.toLowerCase()
@@ -91,6 +93,37 @@ function saveCardPreview(event, tabname, filename){
     textarea.value = filename
     updateInput(textarea)
 
+    button.click()
+
+    event.stopPropagation()
+    event.preventDefault()
+}
+
+function saveCardDescription(event, tabname, filename, descript){
+    var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+    var button = gradioApp().getElementById(tabname + '_save_description')
+    var description = gradioApp().getElementById(tabname+ '_description_input')
+
+    textarea.value = filename
+    description.value=descript
+    updateInput(textarea)
+
+    button.click()
+
+    event.stopPropagation()
+    event.preventDefault()
+}
+
+function readCardDescription(event, tabname, filename, descript){
+    var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
+    var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
+    var button = gradioApp().getElementById(tabname + '_read_description')
+
+    textarea.value = filename
+    description_textarea.value = descript
+
+    updateInput(textarea)
+    updateInput(description_textarea)
     button.click()
 
     event.stopPropagation()

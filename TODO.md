@@ -4,11 +4,11 @@
 
 Stuff to be fixed...
 
-- ClipSkip not updated on read gen info
 - Run VAE with hires at 1280
 - Transformers version
 - Move Restart Server from WebUI to Launch and reload modules
-- follow-up on `p.script_args`
+- Follow-up on `p.script_args`
+- Mdularize `cli` scripts
 
 ## Features
 
@@ -19,8 +19,6 @@ Stuff to be added...
 - Create new GitHub hooks/actions for CI/CD  
 - Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage
-- AMD optimizations
-- Apple optimizations
 
 ## Investigate
 

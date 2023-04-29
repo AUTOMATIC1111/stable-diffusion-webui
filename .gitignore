@@ -24,6 +24,11 @@ venv
 *.zip
 *.rar
 *.pyc
+/*.bat
+/*.sh
+/*.txt
+!webui.bat
+!webui.sh
 
 # all dynamic stuff
 /repositories/**/*

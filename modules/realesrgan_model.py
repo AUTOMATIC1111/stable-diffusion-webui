@@ -13,7 +13,7 @@ import modules.errors as errors
 class UpscalerRealESRGAN(Upscaler):
     def __init__(self, path):
         self.name = "RealESRGAN"
-        self.user_path = path
+        self.model_path = path
         super().__init__()
         try:
             from basicsr.archs.rrdbnet_arch import RRDBNet
@@ -31,7 +31,7 @@ class UpscalerRealESRGAN(Upscaler):
             self.enable = False
             self.scalers = []
 
-    def do_upscale(self, img, path):
+    def do_upscale(self, img, selected_model):
         if not self.enable:
             return img
 
@@ -41,9 +41,9 @@ class UpscalerRealESRGAN(Upscaler):
             print("Error importing Real-ESRGAN:", file=sys.stderr)
             return img
 
-        info = self.load_model(path)
+        info = self.load_model(selected_model)
         if not os.path.exists(info.local_data_path):
-            print("Unable to load RealESRGAN model: %s" % info.name)
+            print(f"Unable to load RealESRGAN model: {info.name}")
             return img
 
         upsampler = RealESRGANer(
@@ -68,7 +68,6 @@ class UpscalerRealESRGAN(Upscaler):
             if info is None:
                 print(f"Unable to find model info: {path}")
                 return None
-
             info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
             return info
         except Exception as e:
@@ -128,6 +127,6 @@ def get_realesrgan_models(scaler):
             ),
         ]
         return models
-    except Exception as e:
+    except Exception:
         print("Error creating Real-ESRGAN models list", file=sys.stderr)
         return []

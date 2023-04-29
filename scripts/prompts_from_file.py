@@ -109,7 +109,7 @@ def load_prompt_file(file):
 
 class Script(scripts.Script):
     def title(self):
-        return "Prompts from file or textbox"
+        return "Prompts from file"
 
     def ui(self, is_img2img):       
         checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))
@@ -129,8 +129,6 @@ class Script(scripts.Script):
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str):
         lines = [x.strip() for x in prompt_txt.splitlines()]
         lines = [x for x in lines if len(x) > 0]
-
-        p.do_not_save_grid = True
 
         job_count = 0
         jobs = []

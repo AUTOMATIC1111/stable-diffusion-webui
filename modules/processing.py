@@ -111,7 +111,7 @@ class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 20, cfg_scale: float = 6.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
@@ -165,6 +165,7 @@ class StableDiffusionProcessing:
         self.all_negative_prompts = None
         self.all_seeds = None
         self.all_subseeds = None
+        self.clip_skip = opts.CLIP_stop_at_last_layers
         self.iteration = 0
 
     @property
@@ -302,8 +303,7 @@ class Processed:
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
-        self.clip_skip = opts.CLIP_stop_at_last_layers
-
+        self.clip_skip = p.clip_skip
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
         self.s_churn = p.s_churn
@@ -457,10 +457,8 @@ def fix_seed(p):
     p.subseed = get_fixed_seed(p.subseed)
 
 
-def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
+def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
     index = position_in_batch + iteration * p.batch_size
-
-    clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
 
     generation_params = {
         "Steps": p.steps,
@@ -478,7 +476,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Seed resize from": (None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
-        "Clip skip": None if clip_skip <= 1 else clip_skip,
+        "Clip skip": p.clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
         "Token merging ratio": None if not (opts.token_merging or cmd_opts.token_merging) or opts.token_merging_hr_only else opts.token_merging_ratio,
         "Token merging ratio hr": None if not (opts.token_merging or cmd_opts.token_merging) else opts.token_merging_ratio_hr,
@@ -972,8 +970,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         shared.state.nextjob()
 
         img2img_sampler_name = self.sampler_name
-        if self.sampler_name in ['PLMS', 'UniPC']:  # PLMS/UniPC do not support img2img so we just silently switch to DDIM
-            img2img_sampler_name = 'DDIM'
+        force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
+        if self.sampler_name in ['PLMS'] or (force_latent_upscaler is not None and force_latent_upscaler != 'None'):
+            img2img_sampler_name = force_latent_upscaler or shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
@@ -1026,27 +1025,24 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_conditioning = None
 
     def init(self, all_prompts, all_seeds, all_subseeds):
+        force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
+        if self.sampler_name in ['PLMS'] or (force_latent_upscaler is not None and force_latent_upscaler != 'None'):
+            self.sampler_name = force_latent_upscaler or shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         crop_region = None
-
         image_mask = self.image_mask
-
         if image_mask is not None:
             image_mask = image_mask.convert('L')
-
             if self.inpainting_mask_invert:
                 image_mask = ImageOps.invert(image_mask)
-
             if self.mask_blur > 0:
                 image_mask = image_mask.filter(ImageFilter.GaussianBlur(self.mask_blur))
-
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
                 crop_region = masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
                 crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                 x1, y1, x2, y2 = crop_region
-
                 mask = mask.crop(crop_region)
                 image_mask = images.resize_image(2, mask, self.width, self.height)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
@@ -1055,42 +1051,31 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 np_mask = np.array(image_mask)
                 np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
-
             self.overlay_images = []
-
         latent_mask = self.latent_mask if self.latent_mask is not None else image_mask
-
         add_color_corrections = opts.img2img_color_correction and self.color_corrections is None
         if add_color_corrections:
             self.color_corrections = []
         imgs = []
         for img in self.init_images:
             image = images.flatten(img, opts.img2img_background_color)
-
             if crop_region is None and self.resize_mode != 3:
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
-
             if image_mask is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
                 image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
-
                 self.overlay_images.append(image_masked.convert('RGBA'))
-
             # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
                 image = images.resize_image(2, image, self.width, self.height)
-
             if image_mask is not None:
                 if self.inpainting_fill != 1:
                     image = masking.fill(image, latent_mask)
-
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
-
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
-
             imgs.append(image)
 
         if len(imgs) == 1:

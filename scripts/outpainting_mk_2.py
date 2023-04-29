@@ -120,7 +120,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
 
 class Script(scripts.Script):
     def title(self):
-        return "Outpainting mk2"
+        return "Outpainting"
 
     def show(self, is_img2img):
         return is_img2img
