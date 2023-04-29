@@ -5,6 +5,7 @@ import importlib
 import signal
 import re
 import warnings
+import json
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -40,7 +41,7 @@ if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__long_version__ = torch.__version__
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 
-from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks
+from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks, config_states
 import modules.codeformer_model as codeformer
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
@@ -149,6 +150,19 @@ def initialize():
     extensions.list_extensions()
     localization.list_localizations(cmd_opts.localizations_dir)
     startup_timer.record("list extensions")
+
+    config_state_file = shared.opts.restore_config_state_file
+    shared.opts.restore_config_state_file = ""
+    shared.opts.save(shared.config_filename)
+
+    if os.path.isfile(config_state_file):
+        print(f"*** About to restore extension state from file: {config_state_file}")
+        with open(config_state_file, "r", encoding="utf-8") as f:
+            config_state = json.load(f)
+            config_states.restore_extension_config(config_state)
+        startup_timer.record("restore extension config")
+    elif config_state_file:
+        print(f"!!! Config state backup not found: {config_state_file}")
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
@@ -343,6 +357,19 @@ def webui():
         modules.script_callbacks.script_unloaded_callback()
         extensions.list_extensions()
         startup_timer.record("list extensions")
+
+        config_state_file = shared.opts.restore_config_state_file
+        shared.opts.restore_config_state_file = ""
+        shared.opts.save(shared.config_filename)
+
+        if os.path.isfile(config_state_file):
+            print(f"*** About to restore extension state from file: {config_state_file}")
+            with open(config_state_file, "r", encoding="utf-8") as f:
+                config_state = json.load(f)
+                config_states.restore_extension_config(config_state)
+            startup_timer.record("restore extension config")
+        elif config_state_file:
+            print(f"!!! Config state backup not found: {config_state_file}")
 
         localization.list_localizations(cmd_opts.localizations_dir)
 
