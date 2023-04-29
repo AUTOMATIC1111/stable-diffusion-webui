@@ -14,6 +14,7 @@ from rich import print # pylint: disable=redefined-builtin,wrong-import-order
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
+setup.add_args()
 setup.extensions_preload(force=False)
 setup.parse_args()
 args, _ = modules.cmd_args.parser.parse_known_args()

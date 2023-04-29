@@ -486,12 +486,9 @@ def check_timestamp():
     return ok
 
 
-def parse_args():
-    # command line args
-    # parser = argparse.ArgumentParser(description = 'Setup for SD WebUI')
-    if vars(parser)['_option_string_actions'].get('--debug', None) is not None:
-        return
-    parser.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
+def add_args():
+    if vars(parser)['_option_string_actions'].get('--debug', None) is None:
+        parser.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     parser.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     parser.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
     parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
@@ -499,6 +496,10 @@ def parse_args():
     parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     parser.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
     parser.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
+
+
+def parse_args():
+    # command line args
     global args # pylint: disable=global-statement
     args = parser.parse_args()
 
