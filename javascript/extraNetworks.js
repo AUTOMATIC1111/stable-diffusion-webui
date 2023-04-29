@@ -118,16 +118,16 @@ function readCardDescription(event, tabname, filename, descript){
     var textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
     var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
     var button = gradioApp().getElementById(tabname + '_read_description')
-
     textarea.value = filename
     description_textarea.value = descript
-
     updateInput(textarea)
     updateInput(description_textarea)
     button.click()
-
     event.stopPropagation()
     event.preventDefault()
+    requestGet("./sd_extra_networks/metadata", {"page": extraPage, "item": cardName}, (data) => {
+        if (data && data.metadata) extraNetworksShowMetadata(data.metadata)
+    }, () => {})
 }
 
 function extraNetworksSearchButton(tabs_id, event){
@@ -171,7 +171,6 @@ function extraNetworksShowMetadata(text){
     elem = document.createElement('pre')
     elem.classList.add('popup-metadata');
     elem.textContent = text;
-
     popup(elem);
 }
 
@@ -201,7 +200,6 @@ function requestGet(url, data, handler, errorHandler){
 
 function extraNetworksRequestMetadata(event, extraPage, cardName){
     showError = function(){ extraNetworksShowMetadata("there was an error getting metadata"); }
-
     requestGet("./sd_extra_networks/metadata", {"page": extraPage, "item": cardName}, function(data){
         if(data && data.metadata){
             extraNetworksShowMetadata(data.metadata)
@@ -209,6 +207,5 @@ function extraNetworksRequestMetadata(event, extraPage, cardName){
             showError()
         }
     }, showError)
-
     event.stopPropagation()
 }

@@ -151,7 +151,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     )
 
     p.scripts = modules.scripts.scripts_img2img
-    # p.script_args = args
+    p.script_args = args
 
     if mask:
         p.extra_generation_params["Mask blur"] = mask_blur

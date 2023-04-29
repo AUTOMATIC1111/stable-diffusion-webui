@@ -142,7 +142,7 @@ class ExtraNetworksPage:
             "card_clicked": onclick,
             "save_card_description": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
-            "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(item["description"])})""") + '"',
+            "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(item["description"])}, {json.dumps(self.name)}, {json.dumps(item["name"])})""") + '"',
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
         }

@@ -41,7 +41,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         override_settings=override_settings,
     )
     p.scripts = modules.scripts.scripts_txt2img
-    # p.script_args = args
+    p.script_args = args
     processed = modules.scripts.scripts_txt2img.run(p, *args)
     if processed is None:
         processed = process_images(p)
