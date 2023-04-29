@@ -47,8 +47,6 @@ class UniPCSampler(object):
                 shared.opts.uni_pc_order+1,
             )
 
-        t = torch.full(t.shape, self.steps).to(t.device)
-
         scheduler_timesteps = np.linspace(
                 0,
                 self.model.num_timesteps-1,
@@ -62,13 +60,17 @@ class UniPCSampler(object):
         latent_timestep = sample_timesteps[:1].repeat(x0.shape[0])
 
         alphas_cumprod = self.alphas_cumprod
-        sqrt_alphas_prod = alphas_cumprod[latent_timestep] ** 0.5
-        sqrt_alphas_prod = sqrt_alphas_prod.flatten()
+        sqrt_alpha_prod = alphas_cumprod[latent_timestep] ** 0.5
+        sqrt_alpha_prod = sqrt_alpha_prod.flatten()
+        while len(sqrt_alpha_prod.shape) < len(x0.shape):
+            sqrt_alpha_prod = sqrt_alpha_prod.unsqueeze(-1)
 
         sqrt_one_minus_alpha_prod = (1 - alphas_cumprod[latent_timestep]) ** 0.5
         sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.flatten()
+        while len(sqrt_one_minus_alpha_prod.shape) < len(x0.shape):
+            sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.unsqueeze(-1)
 
-        return (sqrt_alphas_prod * x0 + sqrt_one_minus_alpha_prod * noise)
+        return (sqrt_alpha_prod * x0 + sqrt_one_minus_alpha_prod * noise)
 
     def decode(self, x_latent, conditioning, t_start, unconditional_guidance_scale=1.0, unconditional_conditioning=None,
                use_original_steps=False, callback=None):
