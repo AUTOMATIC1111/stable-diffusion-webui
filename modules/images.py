@@ -318,6 +318,7 @@ re_nonletters = re.compile(r'[\s' + string.punctuation + ']+')
 re_pattern = re.compile(r"(.*?)(?:\[([^\[\]]+)\]|$)")
 re_pattern_arg = re.compile(r"(.*)<([^>]*)>$")
 max_filename_part_length = 128
+NOTHING_AND_SKIP_PREVIOUS_TEXT = object()
 
 
 def sanitize_filename_part(text, replace_spaces=True):
@@ -352,9 +353,9 @@ class FilenameGenerator:
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
         'prompt_words': lambda self: self.prompt_words(),
-        'batch_number': lambda self: self.p.batch_index + 1,
-        'generation_number': lambda self: self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
-        'hasprompt': lambda self, *args: self.hasprompt(*args), #accept formats:[hasprompt<prompt1|default><prompt2>..]
+        'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.batch_index + 1,
+        'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
+        'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
         'clip_skip': lambda self: opts.data["CLIP_stop_at_last_layers"],
     }
     default_time_format = '%Y%m%d%H%M%S'
@@ -424,12 +425,8 @@ class FilenameGenerator:
         for m in re_pattern.finditer(x):
             text, pattern = m.groups()
 
-            if pattern is not None and (pattern.lower() == 'batch_number' and self.p.batch_size == 1 or pattern.lower() == 'generation_number' and self.p.n_iter == 1 and self.p.batch_size == 1):
-                continue
-
-            res += text
-
             if pattern is None:
+                res += text
                 continue
 
             pattern_args = []
@@ -450,11 +447,13 @@ class FilenameGenerator:
                     print(f"Error adding [{pattern}] to filename", file=sys.stderr)
                     print(traceback.format_exc(), file=sys.stderr)
 
-                if replacement is not None:
-                    res += str(replacement)
+                if replacement == NOTHING_AND_SKIP_PREVIOUS_TEXT:
+                    continue
+                elif replacement is not None:
+                    res += text + str(replacement)
                     continue
 
-            res += f'[{pattern}]'
+            res += f'{text}[{pattern}]'
 
         return res
 
