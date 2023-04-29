@@ -115,11 +115,12 @@ sudo dnf install wget git python3
 # Arch-based:
 sudo pacman -S wget git python3
 ```
-2. To install in `/home/$(whoami)/stable-diffusion-webui/`, run:
+2. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
 ```
 3. Run `webui.sh`.
+4. Check `webui-user.sh` for options.
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).
