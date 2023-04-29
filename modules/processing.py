@@ -971,9 +971,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         img2img_sampler_name = self.sampler_name
         force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
-        if self.sampler_name in ['PLMS'] or force_latent_upscaler is not None:
-            # PLMS does not support img2img, use fallback instead
-            img2img_sampler_name = force_latent_upscaler or shared.opts.fallback_sampler
+        if self.sampler_name in ['PLMS'] or (force_latent_upscaler is not None and force_latent_upscaler != 'None'):
+            img2img_sampler_name = force_latent_upscaler or shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
@@ -1026,29 +1025,24 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_conditioning = None
 
     def init(self, all_prompts, all_seeds, all_subseeds):
-        if self.sampler_name in ['PLMS', 'UniPC']:  # PLMS/UniPC do not support img2img so we just silently switch to DDIM
-            self.sampler_name = shared.opts.fallback_sampler
+        force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
+        if self.sampler_name in ['PLMS'] or (force_latent_upscaler is not None and force_latent_upscaler != 'None'):
+            self.sampler_name = force_latent_upscaler or shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         crop_region = None
-
         image_mask = self.image_mask
-
         if image_mask is not None:
             image_mask = image_mask.convert('L')
-
             if self.inpainting_mask_invert:
                 image_mask = ImageOps.invert(image_mask)
-
             if self.mask_blur > 0:
                 image_mask = image_mask.filter(ImageFilter.GaussianBlur(self.mask_blur))
-
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
                 mask = image_mask.convert('L')
                 crop_region = masking.get_crop_region(np.array(mask), self.inpaint_full_res_padding)
                 crop_region = masking.expand_crop_region(crop_region, self.width, self.height, mask.width, mask.height)
                 x1, y1, x2, y2 = crop_region
-
                 mask = mask.crop(crop_region)
                 image_mask = images.resize_image(2, mask, self.width, self.height)
                 self.paste_to = (x1, y1, x2-x1, y2-y1)
@@ -1057,42 +1051,31 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 np_mask = np.array(image_mask)
                 np_mask = np.clip((np_mask.astype(np.float32)) * 2, 0, 255).astype(np.uint8)
                 self.mask_for_overlay = Image.fromarray(np_mask)
-
             self.overlay_images = []
-
         latent_mask = self.latent_mask if self.latent_mask is not None else image_mask
-
         add_color_corrections = opts.img2img_color_correction and self.color_corrections is None
         if add_color_corrections:
             self.color_corrections = []
         imgs = []
         for img in self.init_images:
             image = images.flatten(img, opts.img2img_background_color)
-
             if crop_region is None and self.resize_mode != 3:
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
-
             if image_mask is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
                 image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
-
                 self.overlay_images.append(image_masked.convert('RGBA'))
-
             # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
                 image = images.resize_image(2, image, self.width, self.height)
-
             if image_mask is not None:
                 if self.inpainting_fill != 1:
                     image = masking.fill(image, latent_mask)
-
             if add_color_corrections:
                 self.color_corrections.append(setup_color_correction(image))
-
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
-
             imgs.append(image)
 
         if len(imgs) == 1:
