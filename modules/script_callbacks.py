@@ -94,13 +94,13 @@ callback_map = dict(
     callbacks_script_unloaded=[],
     callbacks_before_ui=[],
     callbacks_on_reload=[],
-    callbacks_on_polling=[],
 )
 
 
 def clear_callbacks():
     for callback_list in callback_map.values():
         callback_list.clear()
+
 
 def app_started_callback(demo: Optional[Blocks], app: FastAPI):
     for c in callback_map['callbacks_app_started']:
@@ -109,14 +109,8 @@ def app_started_callback(demo: Optional[Blocks], app: FastAPI):
         except Exception:
             report_exception(c, 'app_started_callback')
 
-def app_polling_callback(demo: Optional[Blocks], app: FastAPI):
-    for c in callback_map['callbacks_on_polling']:
-        try:
-            c.callback()
-        except Exception:
-            report_exception(c, 'callbacks_on_polling')
 
-def app_reload_callback(demo: Optional[Blocks], app: FastAPI):
+def app_reload_callback():
     for c in callback_map['callbacks_on_reload']:
         try:
             c.callback()
@@ -269,13 +263,10 @@ def on_app_started(callback):
     add_callback(callback_map['callbacks_app_started'], callback)
 
 
-def on_polling(callback):
-    """register a function to be called on each polling of the server."""
-    add_callback(callback_map['callbacks_on_polling'], callback)
-
 def on_before_reload(callback):
     """register a function to be called just before the server reloads."""
     add_callback(callback_map['callbacks_on_reload'], callback)
+
 
 def on_model_loaded(callback):
     """register a function to be called when the stable diffusion model is created; the model is
