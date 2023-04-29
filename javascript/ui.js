@@ -361,3 +361,19 @@ function selectCheckpoint(name){
     desiredCheckpointName = name;
     gradioApp().getElementById('change_checkpoint').click()
 }
+
+function currentImg2imgSourceResolution(_, _, scaleBy){
+    var img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img')
+    return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy]
+}
+
+function updateImg2imgResizeToTextAfterChangingImage(){
+    // At the time this is called from gradio, the image has no yet been replaced.
+    // There may be a better solution, but this is simple and straightforward so I'm going with it.
+
+    setTimeout(function() {
+        gradioApp().getElementById('img2img_update_resize_to').click()
+    }, 500);
+
+    return []
+}
