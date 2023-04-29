@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing, progress
 from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 
@@ -41,7 +41,6 @@ from modules.textual_inversion import textual_inversion
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.extras
-from modules.progress import restore_progress_call
 
 warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
 
@@ -85,6 +84,7 @@ extra_networks_symbol = '\U0001F3B4'  # 🎴
 #switch_values_symbol = '\U000021C5' # ⇅
 switch_values_symbol = '\u2B80' # ⮀                                     
 restore_progress_symbol = '\U0001F300'  # 🌀
+
 
 interogate_bubble_symbol = '\U0001F5E8' # 🗨
 interogate_2bubble_symbol = '\U0001F5EA' # 🗪
@@ -356,7 +356,8 @@ def create_toprow(is_img2img):
                 if is_img2img:            
                     button_interrogate = ToolButton(value=interogate_bubble_symbol, elem_id="interrogate")
                     button_deepbooru = ToolButton(value=interogate_2bubble_symbol, elem_id="deepbooru")
-                restore_progress_button = ToolButton(value=restore_progress_symbol, elem_id=f"{id_part}_restore_progress")
+                    
+                restore_progress_button = ToolButton(value=restore_progress_symbol, elem_id=f"{id_part}_restore_progress", visible=False)
 
                 token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")               
                 negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
@@ -637,15 +638,16 @@ def create_ui():
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
             restore_progress_button.click(
-              fn=restore_progress_call,
-              _js="() => restoreProgress('txt2img')",
-              inputs=[],
-              outputs=[
-                  txt2img_gallery,
-                  generation_info,
-                  html_info,
-                  html_log,
-              ]
+                fn=progress.restore_progress,
+                _js="restoreProgressTxt2img",
+                inputs=[dummy_component],
+                outputs=[
+                    txt2img_gallery,
+                    generation_info,
+                    html_info,
+                    html_log,
+                ],
+                show_progress=False,
             )
 
             txt_prompt_img.change(
@@ -1052,15 +1054,16 @@ def create_ui():
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
             restore_progress_button.click(
-              fn=restore_progress_call,
-              _js="() => restoreProgress('img2img')",
-              inputs=[],
-              outputs=[
-                  img2img_gallery,
-                  generation_info,
-                  html_info,
-                  html_log,
-              ]
+                fn=progress.restore_progress,
+                _js="restoreProgressImg2img",
+                inputs=[dummy_component],
+                outputs=[
+                    img2img_gallery,
+                    generation_info,
+                    html_info,
+                    html_log,
+                ],
+                show_progress=False,
             )
 
             img2img_interrogate.click(
@@ -1700,7 +1703,7 @@ def create_ui():
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
             gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
-
+            
 
         def unload_sd_weights():
             modules.sd_models.unload_model_weights()

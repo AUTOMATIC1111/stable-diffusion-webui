@@ -3867,6 +3867,7 @@ div[data-testid="image"] canvas {
 [id^="spotlight"].menu .spl-prev {
   transform: translateX(0);
 }
+
 [id^="spotlight"].menu .spl-next {
   transform: translateX(0) scaleX(-1);
 }
