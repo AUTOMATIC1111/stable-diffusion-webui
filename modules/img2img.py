@@ -60,7 +60,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
                 if processed_image.mode == 'RGBA':
                     processed_image = processed_image.convert("RGB")
                 processed_image.save(os.path.join(output_dir, filename))
-    if cmd_opts.debug:
+    if cmd_opts.get('debug', False):
         log.info(f'Processed: {len(images)} Memory: {memory_stats()} batch')
 
 
@@ -146,6 +146,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
             processed = process_images(p)
     p.close()
     generation_info_js = processed.js()
-    if cmd_opts.debug:
+    if cmd_opts.get('debug', False):
         log.info(f'Processed: {len(processed.images)} Memory: {memory_stats()} img')
     return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments)

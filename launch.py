@@ -98,7 +98,7 @@ if __name__ == "__main__":
     setup.log.debug('Starting WebUI')
     logging.disable(logging.INFO)
     if args.test:
-        setup.log.info(f"Test only")
+        setup.log.info("Test only")
         import webui
         exit(0)
     else:
