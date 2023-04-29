@@ -128,6 +128,14 @@ def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
     p.styles.extend(x.split(','))
 
 
+def apply_fallback(p, x, xs):
+    sampler_name = sd_samplers.samplers_map.get(x.lower(), None)
+    if sampler_name is None:
+        raise RuntimeError(f"Unknown sampler: {x}")
+
+    opts.data["xyz_fallback_sampler"] = sampler_name
+
+
 def apply_uni_pc_order(p, x, xs):
     opts.data["uni_pc_order"] = min(x, p.steps - 1)
 
@@ -220,6 +228,7 @@ axis_options = [
     AxisOption("Clip skip", int, apply_clip_skip),
     AxisOption("Denoising", float, apply_field("denoising_strength")),
     AxisOptionTxt2Img("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
+    AxisOptionTxt2Img("Fallback latent upscaler sampler", str, apply_fallback, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
     AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: list(sd_vae.vae_dict)),
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
