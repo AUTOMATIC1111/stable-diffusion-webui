@@ -19,6 +19,7 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
     if extras_mode == 1:
         for img in image_folder:
             if isinstance(img, Image.Image):
+                image = img
                 fn = ''
             else:
                 image = Image.open(img)
