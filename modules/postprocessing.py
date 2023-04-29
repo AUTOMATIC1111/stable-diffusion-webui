@@ -24,7 +24,6 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
             else:
                 image = Image.open(os.path.abspath(img.name))
                 fn = os.path.splitext(img.orig_name)[0]
-
             image_data.append(image)
             image_names.append(fn)
     elif extras_mode == 2:
