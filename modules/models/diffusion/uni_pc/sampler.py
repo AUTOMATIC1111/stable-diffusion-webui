@@ -1,5 +1,6 @@
 """SAMPLING ONLY."""
 
+import numpy as np
 import torch
 
 from .uni_pc import NoiseScheduleVP, model_wrapper, UniPC
@@ -26,26 +27,48 @@ class UniPCSampler(object):
             noise = torch.randn_like(x0)
 
         # first time we have all the info to get the real parameters from the ui
-        hires_steps = t[0] + 1
+        # value from the hires steps slider:
+        num_inference_steps = t[0] + 1
+        # (num_inference_steps // denoising_strength):
         inflated_steps = self.inflated_steps
-        self.denoising_strength = hires_steps/inflated_steps
+        # not exact:
+        self.denoising_strength = num_inference_steps/inflated_steps
 
-        adjusted_steps = int(hires_steps * self.denoising_strength)
-        self.steps = max(adjusted_steps, shared.opts.uni_pc_order+1)
+        # values used for timesteps that generate noise in diffusers repo
+        init_timestep = min(
+                int(num_inference_steps * self.denoising_strength),
+                num_inference_steps,
+            )
+        t_start = max(num_inference_steps - init_timestep, 0)
+
+        # actual number of steps we'll run
+        self.steps = max(
+                num_inference_steps - init_timestep,
+                shared.opts.uni_pc_order+1,
+            )
 
         t = torch.full(t.shape, self.steps).to(t.device)
 
-        timesteps = torch.asarray(list(range(
-            t,
-            self.model.num_timesteps,
-            self.model.num_timesteps // hires_steps,
-        ))) + 1
-        alphas = self.model.alphas_cumprod[timesteps]
-        sqrt_one_minus_alphas = torch.sqrt(1. - alphas)
-        a = extract_into_tensor(torch.sqrt(alphas), t, x0.shape) * x0 
-        b = extract_into_tensor(sqrt_one_minus_alphas, t, x0.shape) * noise
+        scheduler_timesteps = np.linspace(
+                0,
+                self.model.num_timesteps-1,
+                num_inference_steps + 1,
+            ).round()[::-1][:-1].copy().astype(np.int64)
+        _, unique_indices = np.unique(scheduler_timesteps, return_index=True)
+        scheduler_timesteps = scheduler_timesteps[np.sort(unique_indices)]
+        scheduler_timesteps = torch.from_numpy(scheduler_timesteps).to(t.device)
 
-        return (a+b)
+        sample_timesteps = scheduler_timesteps[t_start:]
+        latent_timestep = sample_timesteps[:1].repeat(x0.shape[0])
+
+        alphas_cumprod = self.alphas_cumprod
+        sqrt_alphas_prod = alphas_cumprod[latent_timestep] ** 0.5
+        sqrt_alphas_prod = sqrt_alphas_prod.flatten()
+
+        sqrt_one_minus_alpha_prod = (1 - alphas_cumprod[latent_timestep]) ** 0.5
+        sqrt_one_minus_alpha_prod = sqrt_one_minus_alpha_prod.flatten()
+
+        return (sqrt_alphas_prod * x0 + sqrt_one_minus_alpha_prod * noise)
 
     def decode(self, x_latent, conditioning, t_start, unconditional_guidance_scale=1.0, unconditional_conditioning=None,
                use_original_steps=False, callback=None):
