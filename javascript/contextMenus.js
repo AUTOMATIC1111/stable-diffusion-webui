@@ -161,14 +161,6 @@ addContextMenuEventListener = initResponse[2];
   appendContextMenuOption('#img2img_interrupt','Cancel generate forever',cancelGenerateForever)
   appendContextMenuOption('#img2img_generate', 'Cancel generate forever',cancelGenerateForever)
 
-  appendContextMenuOption('#roll','Roll three',
-    function(){
-      let rollbutton = get_uiCurrentTabContent().querySelector('#roll');
-      setTimeout(function(){rollbutton.click()},100)
-      setTimeout(function(){rollbutton.click()},200)
-      setTimeout(function(){rollbutton.click()},300)
-    }
-  )
 })();
 //End example Context Menu Items
 
