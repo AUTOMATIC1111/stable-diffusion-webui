@@ -354,8 +354,8 @@ def create_ui():
                                     batch_size = gr.Slider(minimum=1, maximum=32, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
                     elif category == "cfg":
                         with FormRow():
-                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id="txt2img_cfg_scale")
-                            clip_skip = gr.Slider(label='CLIP Skip', value=1, minimum=1, maximum=4, step=1, elem_id='txt2img_clip_skip', interactive=True)
+                            cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=6.0, elem_id="txt2img_cfg_scale")
+                            clip_skip = gr.Slider(label='CLIP Skip', value=shared.opts.CLIP_stop_at_last_layers, minimum=1, maximum=4, step=1, elem_id='txt2img_clip_skip', interactive=True)
                             clip_skip.change(fn=change_clip_skip, show_progress=False, inputs=clip_skip)
                     elif category == "seed":
                         seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('txt2img')
