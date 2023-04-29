@@ -664,7 +664,7 @@ footer {
 /* extra networks UI */
 
 .extra-network-cards{
-    height: 400px;
+    height: 725px;
     overflow: scroll;
     resize: vertical;
 }
