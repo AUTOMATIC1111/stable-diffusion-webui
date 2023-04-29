@@ -101,6 +101,8 @@ function saveCardPreview(event, tabname, filename){
 }
 
 function saveCardDescription(event, tabname, filename, currentView, itemName, itemDescript){
+    event.stopPropagation()
+    event.preventDefault()
     var filename_textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
     var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
     var button = gradioApp().getElementById(tabname + '_save_description')
@@ -120,12 +122,11 @@ function saveCardDescription(event, tabname, filename, currentView, itemName, it
     updateInput(description_textarea)
     
     button.click()
-
-    event.stopPropagation()
-    event.preventDefault()
 }
 
 function readCardDescription(event, tabname, filename, currentView, itemName, itemDescript){
+    event.preventDefault()
+    event.stopPropagation()
     var filename_textarea = gradioApp().querySelector("#" + tabname + '_description_filename  > label > textarea')
     var description_textarea = gradioApp().querySelector("#" + tabname+ '_description_input > label > textarea')
     var button = gradioApp().getElementById(tabname + '_read_description')
@@ -141,13 +142,9 @@ function readCardDescription(event, tabname, filename, currentView, itemName, it
         descrip_current_textarea_in_advanced.value = description_textarea.value 
         updateInput(descrip_current_textarea_in_advanced)
     }
-    
-    button.click()
-
     descrip_current_textarea_in_advanced.focus();
 
-    event.stopPropagation()
-    event.preventDefault()
+    button.click()
 }
 
 function toggleEditSwitch(event, tabname, currentView, itemName){
