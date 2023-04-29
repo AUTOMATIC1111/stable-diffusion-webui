@@ -70,17 +70,6 @@ def gr_show(visible=True):
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
 sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 
-css_hide_progressbar = """
-.wrap .m-12 svg { display:none!important; }
-.wrap .m-12::before { content:"Loading..." }
-.wrap .z-20 svg { display:none!important; }
-.wrap .z-20::before { content:"Loading..." }
-.wrap.cover-bg .z-20::before { content:"" }
-.progress-bar { display:none!important; }
-.meta-text { display:none!important; }
-.meta-text-center { display:none!important; }
-"""
-
 # Using constants for these since the variation selector isn't visible.
 # Important that they exactly match script.js for tooltip to work.
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
@@ -182,8 +171,8 @@ def create_seed_inputs(target_interface):
     with FormRow(elem_id=target_interface + '_seed_row', variant="compact"):
         seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=target_interface + '_seed')
         seed.style(container=False)
-        random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed')
-        reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed')
+        random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed', label='Random seed')
+        reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed', label='Reuse seed')
 
         seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
 
@@ -479,7 +468,7 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
                             with gr.Column(elem_id="txt2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
-                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn", label="Switch dims")
 
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="txt2img_column_batch"):
@@ -1215,7 +1204,7 @@ def create_ui():
 
             with gr.Column(elem_id='ti_gallery_container'):
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
-                ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(grid=4)
+                ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(columns=4)
                 ti_progress = gr.HTML(elem_id="ti_progress", value="")
                 ti_outcome = gr.HTML(elem_id="ti_error", value="")
 
@@ -1566,22 +1555,6 @@ def create_ui():
         (train_interface, "Train", "ti"),
     ]
 
-    css = ""
-
-    for cssfile in modules.scripts.list_files_with_name("style.css"):
-        if not os.path.isfile(cssfile):
-            continue
-
-        with open(cssfile, "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if os.path.exists(os.path.join(data_path, "user.css")):
-        with open(os.path.join(data_path, "user.css"), "r", encoding="utf8") as file:
-            css += file.read() + "\n"
-
-    if not cmd_opts.no_progressbar_hiding:
-        css += css_hide_progressbar
-
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
 
@@ -1592,7 +1565,7 @@ def create_ui():
     for _interface, label, _ifid in interfaces:
         shared.tab_names.append(label)
 
-    with gr.Blocks(css=css, analytics_enabled=False, title="Stable Diffusion") as demo:
+    with gr.Blocks(theme=shared.gradio_theme, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
@@ -1655,6 +1628,7 @@ def create_ui():
             fn=get_settings_values,
             inputs=[],
             outputs=[component_dict[k] for k in component_keys],
+            queue=False,
         )
 
         def modelmerger(*args):
@@ -1731,7 +1705,7 @@ def create_ui():
                 if init_field is not None:
                     init_field(saved_value)
 
-        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown] and x.visible:
+        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton] and x.visible:
             apply_field(x, 'visible')
 
         if type(x) == gr.Slider:
@@ -1777,25 +1751,60 @@ def create_ui():
     return demo
 
 
-def reload_javascript():
+def webpath(fn):
+    if fn.startswith(script_path):
+        web_path = os.path.relpath(fn, script_path).replace('\\', '/')
+    else:
+        web_path = os.path.abspath(fn)
+
+    return f'file={web_path}?{os.path.getmtime(fn)}'
+
+
+def javascript_html():
     script_js = os.path.join(script_path, "script.js")
-    head = f'<script type="text/javascript" src="file={os.path.abspath(script_js)}?{os.path.getmtime(script_js)}"></script>\n'
+    head = f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
 
     inline = f"{localization.localization_js(shared.opts.localization)};"
     if cmd_opts.theme is not None:
         inline += f"set_theme('{cmd_opts.theme}');"
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
-        head += f'<script type="text/javascript" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
+        head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
 
     for script in modules.scripts.list_scripts("javascript", ".mjs"):
-        head += f'<script type="module" src="file={script.path}?{os.path.getmtime(script.path)}"></script>\n'
+        head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
 
     head += f'<script type="text/javascript">{inline}</script>\n'
 
+    return head
+
+
+def css_html():
+    head = ""
+
+    def stylesheet(fn):
+        return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
+
+    for cssfile in modules.scripts.list_files_with_name("style.css"):
+        if not os.path.isfile(cssfile):
+            continue
+
+        head += stylesheet(cssfile)
+
+    if os.path.exists(os.path.join(data_path, "user.css")):
+        head += stylesheet(os.path.join(data_path, "user.css"))
+
+    return head
+
+
+def reload_javascript():
+    js = javascript_html()
+    css = css_html()
+
     def template_response(*args, **kwargs):
         res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'{head}</head>'.encode("utf8"))
+        res.body = res.body.replace(b'</head>', f'{js}</head>'.encode("utf8"))
+        res.body = res.body.replace(b'</body>', f'{css}</body>'.encode("utf8"))
         res.init_headers()
         return res
 

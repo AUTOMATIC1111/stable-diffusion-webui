@@ -60,3 +60,13 @@ def store_latent(decoded):
 
 class InterruptedException(BaseException):
     pass
+
+
+if opts.randn_source == "CPU":
+    import torchsde._brownian.brownian_interval
+
+    def torchsde_randn(size, dtype, device, seed):
+        generator = torch.Generator(devices.cpu).manual_seed(int(seed))
+        return torch.randn(size, dtype=dtype, device=devices.cpu, generator=generator).to(device)
+
+    torchsde._brownian.brownian_interval._randn = torchsde_randn

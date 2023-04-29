@@ -312,10 +312,21 @@ div.dimensions-tools{
     align-content: center;
 }
 
+div#extras_scale_to_tab div.form{
+    flex-direction: row;
+}
+
 #mode_img2img .gradio-image > div.fixed-height, #mode_img2img .gradio-image > div.fixed-height img{
     height: 480px !important;
     max-height: 480px !important;
     min-height: 480px !important;
+}
+
+#img2img_sketch, #img2maskimg, #inpaint_sketch {
+    overflow: overlay !important;
+    resize: auto;
+    background: var(--panel-background-fill);
+    z-index: 5;
 }
 
 .image-buttons button{
@@ -329,6 +340,7 @@ div.dimensions-tools{
 /* settings */
 #quicksettings {
     width: fit-content;
+    align-items: end;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
