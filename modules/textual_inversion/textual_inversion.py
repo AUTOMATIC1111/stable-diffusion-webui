@@ -526,7 +526,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     save_embedding(embedding, optimizer, checkpoint, embedding_name_every, last_saved_file, remove_cached_checksum=True)
                     embedding_yet_to_be_embedded = True
 
-                write_loss(log_directory, shared.ops.embeddings_train_log, embedding.step, steps_per_epoch, {
+                write_loss(log_directory, shared.opts.embeddings_train_log, embedding.step, steps_per_epoch, {
                     "loss": f"{loss_step:.7f}",
                     "learn_rate": scheduler.learn_rate
                 })
