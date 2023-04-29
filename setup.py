@@ -229,6 +229,7 @@ def check_torch():
                 log.info(f'Torch backend: DirectML ({version})')
                 for i in range(0, torch_directml.device_count()):
                     log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
+                log.info(f'DirectML default device: {torch_directml.device_name(torch_directml.default_device())}')
             except:
                 log.warning("Torch repoorts CUDA not available")
     except Exception as e:

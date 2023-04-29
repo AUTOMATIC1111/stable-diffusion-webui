@@ -1,7 +1,11 @@
 import ctypes as C
+from platform import platform
 from .atiadlxx_structures import *
 
-atiadlxx = C.WinDLL("atiadlxx.dll")
+if 'Windows' in platform():
+    atiadlxx = C.WinDLL("atiadlxx.dll")
+else:
+    atiadlxx = C.CDLL("libatiadlxx.so") # Not tested on Linux system. But will be supported.
 
 ADL_MAIN_MALLOC_CALLBACK = C.CFUNCTYPE(C.c_void_p, C.c_int)
 ADL_MAIN_FREE_CALLBACK = C.CFUNCTYPE(None, C.POINTER(C.c_void_p))
