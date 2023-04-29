@@ -174,8 +174,8 @@ def create_seed_inputs(target_interface):
     with FormRow(elem_id=target_interface + '_seed_row', variant="compact"):
         seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=target_interface + '_seed')
         seed.style(container=False)
-        random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed')
-        reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed')
+        random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed', label='Random seed')
+        reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed', label='Reuse seed')
 
         seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
 
@@ -471,7 +471,7 @@ def create_ui():
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
                             with gr.Column(elem_id="txt2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
-                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
+                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn", label="Switch dims")
 
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="txt2img_column_batch"):
@@ -1022,8 +1022,9 @@ def create_ui():
                 interp_method.change(fn=update_interp_description, inputs=[interp_method], outputs=[interp_description])
 
                 with FormRow():
-                    checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="ckpt", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
+                    checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
                     save_as_half = gr.Checkbox(value=False, label="Save as float16", elem_id="modelmerger_save_as_half")
+                    save_metadata = gr.Checkbox(value=True, label="Save metadata (.safetensors only)", elem_id="modelmerger_save_metadata")
 
                 with FormRow():
                     with gr.Column():
@@ -1207,7 +1208,7 @@ def create_ui():
 
             with gr.Column(elem_id='ti_gallery_container'):
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
-                ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(grid=4)
+                ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(columns=4)
                 ti_progress = gr.HTML(elem_id="ti_progress", value="")
                 ti_outcome = gr.HTML(elem_id="ti_error", value="")
 
@@ -1568,7 +1569,7 @@ def create_ui():
     for _interface, label, _ifid in interfaces:
         shared.tab_names.append(label)
 
-    with gr.Blocks(analytics_enabled=False, title="Stable Diffusion") as demo:
+    with gr.Blocks(theme=shared.gradio_theme, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
@@ -1661,6 +1662,7 @@ def create_ui():
                 config_source,
                 bake_in_vae,
                 discard_weights,
+                save_metadata,
             ],
             outputs=[
                 primary_model_name,
@@ -1708,7 +1710,7 @@ def create_ui():
                 if init_field is not None:
                     init_field(saved_value)
 
-        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown] and x.visible:
+        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton] and x.visible:
             apply_field(x, 'visible')
 
         if type(x) == gr.Slider:
