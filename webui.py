@@ -97,8 +97,12 @@ To reinstall the desired version, run with commandline flag --reinstall-xformers
 Use --skip-version-check commandline argument to disable this check.
             """.strip())
 
+
 def check_rollback_vae():
-    if shared.cmd_opts.rollback_vae:
+    if devices.device == devices.cpu:
+        print("Rollback VAE does not support CPU devices and will not work.")
+        shared.cmd_opts.rollback_vae = False
+    elif shared.cmd_opts.rollback_vae:
         if version.parse(torch.__version__) < version.parse('2.1'):
             print("If your PyTorch version is lower than PyTorch 2.1, Rollback VAE will not work.")
             shared.cmd_opts.rollback_vae = False
