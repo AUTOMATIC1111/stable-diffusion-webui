@@ -19,7 +19,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing, progress
 from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 
@@ -81,6 +81,7 @@ apply_style_symbol = '\U0001f4cb'  # 📋
 clear_prompt_symbol = '\U0001f5d1\ufe0f'  # 🗑️
 extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
+restore_progress_symbol = '\U0001F300' # 🌀
 
 
 def plaintext_to_html(text):
@@ -325,6 +326,7 @@ def create_toprow(is_img2img):
                 extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks")
                 prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
                 save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
+                restore_progress_button = ToolButton(value=restore_progress_symbol, elem_id=f"{id_part}_restore_progress", visible=False)
 
                 token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])
                 token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
@@ -342,7 +344,7 @@ def create_toprow(is_img2img):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
                 create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
 
-    return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button
+    return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button
 
 
 def setup_progressbar(*args, **kwargs):
@@ -459,7 +461,7 @@ def create_ui():
     modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=False)
+        txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
@@ -591,6 +593,19 @@ def create_ui():
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
+            restore_progress_button.click(
+                fn=progress.restore_progress,
+                _js="restoreProgressTxt2img",
+                inputs=[dummy_component],
+                outputs=[
+                    txt2img_gallery,
+                    generation_info,
+                    html_info,
+                    html_log,
+                ],
+                show_progress=False,
+            )
+
             txt_prompt_img.change(
                 fn=modules.images.image_data,
                 inputs=[
@@ -659,7 +674,7 @@ def create_ui():
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button = create_toprow(is_img2img=True)
+        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=True)
 
         img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 
@@ -950,6 +965,19 @@ def create_ui():
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
+
+            restore_progress_button.click(
+                fn=progress.restore_progress,
+                _js="restoreProgressImg2img",
+                inputs=[dummy_component],
+                outputs=[
+                    img2img_gallery,
+                    generation_info,
+                    html_info,
+                    html_log,
+                ],
+                show_progress=False,
+            )
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),

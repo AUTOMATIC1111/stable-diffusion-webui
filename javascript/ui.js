@@ -159,14 +159,24 @@ function showSubmitButtons(tabname, show){
     gradioApp().getElementById(tabname+'_skip').style.display = show ? "none" : "block"
 }
 
+function showRestoreProgressButton(tabname, show){
+    button = gradioApp().getElementById(tabname + "_restore_progress")
+    if(! button) return
+
+    button.style.display = show ? "flex" : "none"
+}
+
 function submit(){
     rememberGallerySelection('txt2img_gallery')
     showSubmitButtons('txt2img', false)
 
     var id = randomId()
+    localStorage.setItem("txt2img_task_id", id);
+
     requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
         showSubmitButtons('txt2img', true)
-
+        localStorage.removeItem("txt2img_task_id")
+        showRestoreProgressButton('txt2img', false)
     })
 
     var res = create_submit_args(arguments)
@@ -181,8 +191,12 @@ function submit_img2img(){
     showSubmitButtons('img2img', false)
 
     var id = randomId()
+    localStorage.setItem("img2img_task_id", id);
+
     requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
         showSubmitButtons('img2img', true)
+        localStorage.removeItem("img2img_task_id")
+        showRestoreProgressButton('img2img', false)
     })
 
     var res = create_submit_args(arguments)
@@ -192,6 +206,36 @@ function submit_img2img(){
 
     return res
 }
+
+function restoreProgressTxt2img(x){
+    id = localStorage.getItem("txt2img_task_id")
+
+    if(id) {
+        requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
+            showSubmitButtons('txt2img', true)
+        }, null, 0)
+    }
+
+    return [id]
+}
+function restoreProgressImg2img(x){
+    id = localStorage.getItem("img2img_task_id")
+
+    if(id) {
+        requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
+            showSubmitButtons('img2img', true)
+        }, null, 0)
+    }
+
+    return [id]
+}
+
+
+onUiLoaded(function () {
+    showRestoreProgressButton('txt2img', localStorage.getItem("txt2img_task_id"))
+    showRestoreProgressButton('img2img', localStorage.getItem("img2img_task_id"))
+});
+
 
 function modelmerger(){
     var id = randomId()
