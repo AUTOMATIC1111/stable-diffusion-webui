@@ -129,7 +129,7 @@ def normalize_git_url(url):
     return url
 
 
-def install_extension_from_url(dirname, branch_name, url):
+def install_extension_from_url(dirname, url, branch_name=None):
     check_access()
 
     assert url, 'No URL specified'
@@ -150,7 +150,7 @@ def install_extension_from_url(dirname, branch_name, url):
 
     try:
         shutil.rmtree(tmpdir, True)
-        if branch_name == '':
+        if not branch_name:
             # if no branch is specified, use the default branch
             with git.Repo.clone_from(url, tmpdir) as repo:
                 repo.remote().fetch()
@@ -390,7 +390,7 @@ def create_ui():
 
                 install_button.click(
                     fn=modules.ui.wrap_gradio_call(install_extension_from_url, extra_outputs=[gr.update()]),
-                    inputs=[install_dirname, install_branch, install_url],
+                    inputs=[install_dirname, install_url, install_branch],
                     outputs=[extensions_table, install_result],
                 )
 
