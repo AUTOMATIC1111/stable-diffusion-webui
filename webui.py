@@ -20,6 +20,8 @@ startup_timer = timer.Timer()
 import torch
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
+warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
+
 startup_timer.record("import torch")
 
 import gradio

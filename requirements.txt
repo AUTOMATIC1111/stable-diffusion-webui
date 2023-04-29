@@ -1,3 +1,4 @@
+astunparse
 blendmodes
 accelerate
 basicsr
