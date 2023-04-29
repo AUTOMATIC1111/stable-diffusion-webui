@@ -362,7 +362,8 @@ class Api:
         info['wait_duration_seconds'] = genstart_ts-start_ts
         info = json.dumps(info)
 
-        print(f"INFO {info}")
+        ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        print(f"INFO {ts} {info}")
 
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=info)
 
@@ -448,6 +449,9 @@ class Api:
         info['process_duration_seconds'] = gen_dt
         info['wait_duration_seconds'] = genstart_ts-start_ts
         info = json.dumps(info)
+
+        ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
+        print(f"INFO {ts} {info}")
 
         return ImageToImageResponse(images=b64images, parameters=vars(img2imgreq), info=info)
 
