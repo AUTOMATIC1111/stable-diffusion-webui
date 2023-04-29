@@ -260,16 +260,16 @@ axis_options = [
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
     AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
-    AxisOption("Token merging ratio",float,apply_token_merging_ratio),
-    AxisOption("Token merging ratio for Hires fix",float,apply_token_merging_ratio_hr),
-    AxisOption("Token merging apply only to Hires fix",str,apply_token_merging_hr_only, choices= lambda: ["Yes","No"]),
-    AxisOption("Token Merging use random pertubations",str,apply_token_merging_random, choices = lambda: ["Yes","No"]),
-    AxisOption("Token Merging merge attention", str, apply_token_merging_attention, choices= lambda: ["Yes","No"]),
-    AxisOption("Token Merging merge cross attention", str, apply_token_merging_cross_attention, choices= lambda: ["Yes","No"]),
-    AxisOption("Token Merging merge mlp", str, apply_token_merging_mlp, choices= lambda: ["Yes","No"]),
-    AxisOption("Token Merging maxium down sampling", int, apply_token_merging_maximum_down_sampling, choices= lambda: ["1","2","4","8"]),
-    AxisOption("Token Merging Stride - X", int, apply_token_merging_stride_x, choices= lambda: ["2","4","6","8"]),
-    AxisOption("Token Merging Stride - Y", int, apply_token_merging_stride_y, choices= lambda: ["2","4","6","8"])
+    AxisOption("ToMe ratio",float,apply_token_merging_ratio),
+    AxisOption("ToMe ratio for Hires fix",float,apply_token_merging_ratio_hr),
+    AxisOption("ToMe apply only to Hires fix",str,apply_token_merging_hr_only, choices= lambda: ["Yes","No"]),
+    AxisOption("ToMe random pertubations",str,apply_token_merging_random, choices = lambda: ["Yes","No"]),
+    AxisOption("ToMe merge attention", str, apply_token_merging_attention, choices= lambda: ["Yes","No"]),
+    AxisOption("ToMe merge cross attention", str, apply_token_merging_cross_attention, choices= lambda: ["Yes","No"]),
+    AxisOption("ToMe merge mlp", str, apply_token_merging_mlp, choices= lambda: ["Yes","No"]),
+    AxisOption("ToMe maximum down sampling", int, apply_token_merging_maximum_down_sampling, choices= lambda: ["1","2","4","8"]),
+    AxisOption("ToMe Stride - X", int, apply_token_merging_stride_x, choices= lambda: ["2","4","6","8"]),
+    AxisOption("ToMe Stride - Y", int, apply_token_merging_stride_y, choices= lambda: ["2","4","6","8"])
 ]
 
 
