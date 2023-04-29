@@ -889,13 +889,20 @@ footer {
     color: red;
 }
 
-/* for the dorpdown control */
+/* for the extra networks dorpdown control */
 [id$="_extra_networks"] .extra-view-dropdown-control{
     flex:0 1 0;
     margin-left: auto;
 }
 [id$="_extra_networks"] .extra-view-dropdown-control label>span{
-    font-size: 0.9em;
+    font-size: 0.8em;
+}
+[id$="_extra_networks"] .extra-view-dropdown-control label>.wrap>.wrap-inner{
+    padding: 0 0.5em;
+}
+[id$="_extra_networks"] .extra-view-dropdown-control label>.wrap ul.options{
+    border: 1px solid var(--grayscale-5);
+    background-color: var(--grayscale-2);
 }
 
 /* extra network advanced view */
@@ -917,7 +924,7 @@ footer {
     display: flex;
     flex-direction: row;
     position: relative;
-    height: 300px;
+    height: 280px;
     width: 320px;
     box-sizing: border-box;
     background-color: var(--grayscale-1);
@@ -975,7 +982,7 @@ footer {
 
 /* extra network advanced view img section */
 .extra-network-advanced .card .card-img-preview{
-    flex: 0 1 120px;
+    flex: 0 1 150px;
     display: flex;
     flex-flow: column;
     position: relative;
