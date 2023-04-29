@@ -8,7 +8,7 @@ import io
 import json
 import time
 from PIL import Image
-import sdapi as sdapi
+import sdapi
 from util import Map, log
 
 

@@ -1,7 +1,6 @@
 import threading
 import time
 from collections import defaultdict
-
 import torch
 
 
@@ -17,11 +16,9 @@ class MemUsageMonitor(threading.Thread):
         self.name = name
         self.device = device
         self.opts = opts
-
         self.daemon = True
         self.run_flag = threading.Event()
         self.data = defaultdict(int)
-
         if not torch.cuda.is_available():
             self.disabled = True
         else:
@@ -39,37 +36,29 @@ class MemUsageMonitor(threading.Thread):
     def run(self):
         if self.disabled:
             return
-
         while True:
             self.run_flag.wait()
-
             torch.cuda.reset_peak_memory_stats()
             self.data.clear()
-
             if self.opts.memmon_poll_rate <= 0:
                 self.run_flag.clear()
                 continue
-
             self.data["min_free"] = self.cuda_mem_get_info()[0]
-
             while self.run_flag.is_set():
-                free, total = self.cuda_mem_get_info()
+                free, _total = self.cuda_mem_get_info()
                 self.data["min_free"] = min(self.data["min_free"], free)
-
                 time.sleep(1 / self.opts.memmon_poll_rate)
 
     def dump_debug(self):
         print(self, 'recorded data:')
         for k, v in self.read().items():
             print(k, -(v // -(1024 ** 2)))
-
         print(self, 'raw torch memory stats:')
         tm = torch.cuda.memory_stats(self.device)
         for k, v in tm.items():
             if 'bytes' not in k:
                 continue
             print('\t' if 'peak' in k else '', k, -(v // -(1024 ** 2)))
-
         print(torch.cuda.memory_summary())
 
     def monitor(self):

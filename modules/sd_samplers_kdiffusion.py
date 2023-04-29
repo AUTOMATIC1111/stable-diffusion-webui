@@ -231,7 +231,6 @@ class KDiffusionSampler:
             raise sd_samplers_common.InterruptedException
 
         state.sampling_step = step
-        shared.total_tqdm.update()
 
     def launch_sampling(self, steps, func):
         state.sampling_steps = steps

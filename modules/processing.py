@@ -6,6 +6,7 @@ import random
 import logging
 from typing import Any, Dict, List
 
+import psutil
 import torch
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
@@ -39,6 +40,33 @@ logger = logging.getLogger(__name__)
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
 opt_f = 8
+
+
+def memory_stats():
+    def gb(val: float):
+        return round(val / 1024 / 1024 / 1024, 2)
+    mem = {}
+    try:
+        process = psutil.Process(os.getpid())
+        res = process.memory_info()
+        ram_total = 100 * res.rss / process.memory_percent()
+        ram = { 'used': gb(res.rss), 'total': gb(ram_total) }
+        mem.update({ 'ram': ram })
+    except Exception as e:
+        mem.update({ 'ram': e })
+    try:
+        if torch.cuda.is_available():
+            s = torch.cuda.mem_get_info()
+            gpu = { 'used': gb(s[1] - s[0]), 'total': gb(s[1]) }
+            s = dict(torch.cuda.memory_stats(shared.device))
+            mem.update({
+                'gpu': gpu,
+                'retries': s['num_alloc_retries'],
+                'oom': s['num_ooms']
+            })
+    except:
+        pass
+    return mem
 
 
 def setup_color_correction(image):
@@ -317,7 +345,6 @@ class Processed:
         self.seed = int(self.seed if type(self.seed) != list else self.seed[0]) if self.seed is not None else -1
         self.subseed = int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
         self.is_using_inpainting_conditioning = p.is_using_inpainting_conditioning
-
         self.all_prompts = all_prompts or p.all_prompts or [self.prompt]
         self.all_negative_prompts = all_negative_prompts or p.all_negative_prompts or [self.negative_prompt]
         self.all_seeds = all_seeds or p.all_seeds or [self.seed]
@@ -892,8 +919,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if not state.processing_has_refined_job_count:
                 if state.job_count == -1:
                     state.job_count = self.n_iter
-
-                shared.total_tqdm.updateTotal((self.steps + (self.hr_second_pass_steps or self.steps)) * state.job_count)
                 state.job_count = state.job_count * 2
                 state.processing_has_refined_job_count = True
 

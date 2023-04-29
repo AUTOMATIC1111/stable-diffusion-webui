@@ -109,7 +109,6 @@ class VanillaStableDiffusionSampler:
             else:
                 cond = {"c_concat": [image_conditioning], "c_crossattn": [cond]}
                 unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
-
         return x, ts, cond, unconditional_conditioning
 
     def update_step(self, last_latent):
@@ -117,17 +116,13 @@ class VanillaStableDiffusionSampler:
             self.last_latent = self.init_latent * self.mask + self.nmask * last_latent
         else:
             self.last_latent = last_latent
-
         sd_samplers_common.store_latent(self.last_latent)
-
         self.step += 1
         state.sampling_step = self.step
-        shared.total_tqdm.update()
 
     def after_sample(self, x, ts, cond, uncond, res):
         if not self.is_unipc:
             self.update_step(res[1])
-
         return x, ts, cond, uncond, res
 
     def unipc_after_update(self, x, model_x):

@@ -79,6 +79,18 @@ def compatibility_args(opts, args):
     opts.use_old_karras_scheduler_sigmas = False
     opts.no_dpmpp_sde_batch_determinism = False
     opts.lora_apply_to_outputs = False
+    opts.do_not_show_images = False
+    opts.add_model_hash_to_info = True
+    opts.add_model_name_to_info = True
+    opts.js_modal_lightbox = True
+    opts.js_modal_lightbox_initially_zoomed = True
+    opts.show_progress_in_title = False
+    opts.sd_vae_as_default = True
+    opts.enable_emphasis = True
+    opts.enable_batch_seeds = True
+    opts.multiple_tqdm = False
+    opts.print_hypernet_extra = False
+    opts.dimensions_and_batch_together = True
 
     parser.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     args = parser.parse_args()

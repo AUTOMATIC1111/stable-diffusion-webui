@@ -3,7 +3,7 @@ import re
 import sys
 from collections import namedtuple
 import gradio as gr
-from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
+from modules import paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
 
 AlwaysVisible = object()
 
@@ -347,7 +347,6 @@ class ScriptRunner:
             return None
         parsed = p.per_script_args.get(script.title(), args[script.args_from:script.args_to])
         processed = script.run(p, *parsed)
-        shared.total_tqdm.clear()
         return processed
 
     def process(self, p, **kwargs):

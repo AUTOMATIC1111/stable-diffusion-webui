@@ -587,7 +587,6 @@ class Script(scripts.Script):
         cell_console_text = f"; {image_cell_count} images per cell" if image_cell_count > 1 else ""
         plural_s = 's' if len(zs) > 1 else ''
         print(f"X/Y/Z plot will create {len(xs) * len(ys) * len(zs) * image_cell_count} images on {len(zs)} {len(xs)}x{len(ys)} grid{plural_s}{cell_console_text}. (Total steps to process: {total_steps})")
-        shared.total_tqdm.updateTotal(total_steps)
 
         state.xyz_plot_x = AxisInfo(x_opt, xs)
         state.xyz_plot_y = AxisInfo(y_opt, ys)
