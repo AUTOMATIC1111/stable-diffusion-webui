@@ -102,4 +102,5 @@ if __name__ == "__main__":
         import webui
         exit(0)
     else:
+        import webui
         webui.webui()
