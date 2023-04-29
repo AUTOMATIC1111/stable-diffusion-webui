@@ -362,6 +362,32 @@ function selectCheckpoint(name){
     gradioApp().getElementById('change_checkpoint').click()
 }
 
+function restoreProgress (task_tag) {
+
+  if (task_tag) {
+    let successHandler = ({ current_task }) => {
+      if (current_task) {
+        showSubmitButtons(task_tag, false)
+        requestProgress(current_task, gradioApp().getElementById(`${task_tag}_gallery_container`), gradioApp().getElementById(`${task_tag}_gallery`), function(){
+          showSubmitButtons(task_tag, true)
+        })
+      }
+    }
+
+    let errorHandler = e => window.alert(`invalid internal api respsonse. message: ${e}`)
+
+    fetch("./internal/current_task")
+      .then(res => res.json())
+      .then(successHandler)
+      .catch(errorHandler)
+  }
+
+  var res = create_submit_args(arguments)
+  res[0] = 0
+  return res
+
+}
+
 function currentImg2imgSourceResolution(_, _, scaleBy){
     var img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img')
     return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy]
@@ -377,3 +403,4 @@ function updateImg2imgResizeToTextAfterChangingImage(){
 
     return []
 }
+
