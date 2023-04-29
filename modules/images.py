@@ -352,6 +352,7 @@ class FilenameGenerator:
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
         'prompt_words': lambda self: self.prompt_words(),
+        'hasprompt': lambda self, *args: self.hasprompt(*args), #accept formats:[hasprompt<prompt1|default><prompt2>..]
         'clip_skip': lambda self: opts.data["CLIP_stop_at_last_layers"],
     }
     default_time_format = '%Y%m%d%H%M%S'
@@ -361,6 +362,22 @@ class FilenameGenerator:
         self.seed = seed
         self.prompt = prompt
         self.image = image
+        
+    def hasprompt(self, *args):
+        lower = self.prompt.lower()
+        if self.p is None or self.prompt is None:
+            return None
+        outres = ""
+        for arg in args:
+            if arg != "":
+                division = arg.split("|")
+                expected = division[0].lower()
+                default = division[1] if len(division) > 1 else ""
+                if lower.find(expected) >= 0:
+                    outres = f'{outres}{expected}'
+                else:
+                    outres = outres if default == "" else f'{outres}{default}'
+        return sanitize_filename_part(outres)
 
     def prompt_no_style(self):
         if self.p is None or self.prompt is None:
