@@ -1,0 +1,13 @@
+<div class='card' style={style} onclick={card_clicked}>
+	<div class='actions'>
+		<div class='additional'>
+			<ul>
+				<li><a href="#" title="set preview image with current selection" onclick={save_card_preview}>Replace preview</a></li>
+				<li><a href="#" title="read description" onclick={read_card_description}>Description</a> <a href="#" title="[replace]" onclick={save_card_description}>[Replace]</a></li>
+			</ul>
+			<span style="display:none" class='search_term'>{search_term}</span>
+		</div>
+		<span class='name'>{name}</span>
+		<span class='description'>{description}</span>
+	</div>
+</div>
