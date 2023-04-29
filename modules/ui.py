@@ -94,6 +94,9 @@ def send_gradio_gallery_to_image(x):
 
 def visit(x, func, path=""):
     if hasattr(x, 'children'):
+        if isinstance(x, gr.Tabs) and x.elem_id is not None:
+            # Tabs element can't have a label, have to use elem_id instead
+            func(f"{path}/Tabs@{x.elem_id}", x)
         for c in x.children:
             visit(c, func, path)
     elif x.label is not None:
@@ -1049,7 +1052,7 @@ def create_ui():
         with gr.Row(variant="compact").style(equal_height=False):
             with gr.Tabs(elem_id="train_tabs"):
 
-                with gr.Tab(label="Create embedding"):
+                with gr.Tab(label="Create embedding", id="create_embedding"):
                     new_embedding_name = gr.Textbox(label="Name", elem_id="train_new_embedding_name")
                     initialization_text = gr.Textbox(label="Initialization text", value="*", elem_id="train_initialization_text")
                     nvpt = gr.Slider(label="Number of vectors per token", minimum=1, maximum=75, step=1, value=1, elem_id="train_nvpt")
@@ -1062,7 +1065,7 @@ def create_ui():
                         with gr.Column():
                             create_embedding = gr.Button(value="Create embedding", variant='primary', elem_id="train_create_embedding")
 
-                with gr.Tab(label="Create hypernetwork"):
+                with gr.Tab(label="Create hypernetwork", id="create_hypernetwork"):
                     new_hypernetwork_name = gr.Textbox(label="Name", elem_id="train_new_hypernetwork_name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "1024", "320", "640", "1280"], elem_id="train_new_hypernetwork_sizes")
                     new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'", elem_id="train_new_hypernetwork_layer_structure")
@@ -1080,7 +1083,7 @@ def create_ui():
                         with gr.Column():
                             create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary', elem_id="train_create_hypernetwork")
 
-                with gr.Tab(label="Preprocess images"):
+                with gr.Tab(label="Preprocess images", id="preprocess_images"):
                     process_src = gr.Textbox(label='Source directory', elem_id="train_process_src")
                     process_dst = gr.Textbox(label='Destination directory', elem_id="train_process_dst")
                     process_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="train_process_width")
@@ -1147,7 +1150,7 @@ def create_ui():
                 def get_textual_inversion_template_names():
                     return sorted([x for x in textual_inversion.textual_inversion_templates])
 
-                with gr.Tab(label="Train"):
+                with gr.Tab(label="Train", id="train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images <a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\" style=\"font-weight:bold;\">[wiki]</a></p>")
                     with FormRow():
                         train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
@@ -1480,7 +1483,7 @@ def create_ui():
                 current_row.__exit__()
                 current_tab.__exit__()
 
-            with gr.TabItem("Actions"):
+            with gr.TabItem("Actions", id="actions"):
                 request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
                 download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
                 reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
@@ -1488,7 +1491,7 @@ def create_ui():
                     unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
                     reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
 
-            with gr.TabItem("Licenses"):
+            with gr.TabItem("Licenses", id="licenses"):
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
             gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
@@ -1737,11 +1740,26 @@ def create_ui():
 
             apply_field(x, 'value', check_dropdown, getattr(x, 'init_field', None))
 
+        def check_tab_id(tab_id):
+            tab_items = list(filter(lambda e: isinstance(e, gr.TabItem), x.children))
+            if type(tab_id) == str:
+                tab_ids = [t.id for t in tab_items]
+                return tab_id in tab_ids
+            elif type(tab_id) == int:
+                return tab_id >= 0 and tab_id < len(tab_items)
+            else:
+                return False
+
+        if type(x) == gr.Tabs:
+            apply_field(x, 'selected', check_tab_id)
+
     visit(txt2img_interface, loadsave, "txt2img")
     visit(img2img_interface, loadsave, "img2img")
     visit(extras_interface, loadsave, "extras")
     visit(modelmerger_interface, loadsave, "modelmerger")
     visit(train_interface, loadsave, "train")
+
+    loadsave(f"webui/Tabs@{tabs.elem_id}", tabs)
 
     if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):
         with open(ui_config_file, "w", encoding="utf8") as file:

@@ -241,9 +241,9 @@ def create_ui(container, button, tabname):
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
         for page in ui.stored_extra_pages:
-            with gr.Tab(page.title):
+            with gr.Tab(page.title, id=page.title.lower().replace(" ", "_")):
 
-                page_elem = gr.HTML(page.create_html(ui.tabname))
+                page_elem = gr.HTML("")
                 ui.pages.append(page_elem)
 
     filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
@@ -284,7 +284,7 @@ def setup_ui(ui, gallery):
     def save_preview(index, images, filename):
         if len(images) == 0:
             print("There is no image in gallery to save as a preview.")
-            return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
+            return ["" for page in ui.stored_extra_pages]
 
         index = int(index)
         index = 0 if index < 0 else index
@@ -309,7 +309,7 @@ def setup_ui(ui, gallery):
         else:
             image.save(filename)
 
-        return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
+        return ["" for page in ui.stored_extra_pages]
 
     ui.button_save_preview.click(
         fn=save_preview,

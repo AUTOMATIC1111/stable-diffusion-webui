@@ -490,7 +490,7 @@ def create_ui():
 
     with gr.Blocks(analytics_enabled=False) as ui:
         with gr.Tabs(elem_id="tabs_extensions") as tabs:
-            with gr.TabItem("Installed"):
+            with gr.TabItem("Installed", id="installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):
                     apply = gr.Button(value="Apply and restart UI", variant="primary")
@@ -523,7 +523,7 @@ def create_ui():
                     outputs=[extensions_table, info],
                 )
 
-            with gr.TabItem("Available"):
+            with gr.TabItem("Available", id="available"):
                 with gr.Row():
                     refresh_available_extensions_button = gr.Button(value="Load from:", variant="primary")
                     available_extensions_index = gr.Text(value="https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui-extensions/master/index.json", label="Extension index URL").style(container=False)
@@ -570,7 +570,7 @@ def create_ui():
                     outputs=[available_extensions_table, install_result]
                 )
 
-            with gr.TabItem("Install from URL"):
+            with gr.TabItem("Install from URL", id="install_from_url"):
                 install_url = gr.Text(label="URL for extension's git repository")
                 install_branch = gr.Text(label="Specific branch name", placeholder="Leave empty for default main branch")
                 install_dirname = gr.Text(label="Local directory name", placeholder="Leave empty for auto")
