@@ -164,6 +164,7 @@ class StableDiffusionProcessing:
         self.all_seeds = None
         self.all_subseeds = None
         self.iteration = 0
+        self.is_hr_pass = False
         
 
     @property
@@ -883,6 +884,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if not self.enable_hr:
             return samples
 
+        self.is_hr_pass = True
+
         target_width = self.hr_upscale_to_x
         target_height = self.hr_upscale_to_y
 
@@ -951,6 +954,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         devices.torch_gc()
 
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
+
+        self.is_hr_pass = False
 
         return samples
 
