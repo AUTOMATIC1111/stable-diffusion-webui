@@ -95,7 +95,7 @@ def randn(seed, shape):
     from modules.shared import opts
 
     torch.manual_seed(seed)
-    if opts.use_cpu_randn or device.type == 'mps':
+    if opts.randn_source == "CPU" or device.type == 'mps':
         return torch.randn(shape, device=cpu).to(device)
     return torch.randn(shape, device=device)
 
@@ -103,7 +103,7 @@ def randn(seed, shape):
 def randn_without_seed(shape):
     from modules.shared import opts
 
-    if opts.use_cpu_randn or device.type == 'mps':
+    if opts.randn_source == "CPU" or device.type == 'mps':
         return torch.randn(shape, device=cpu).to(device)
     return torch.randn(shape, device=device)
 

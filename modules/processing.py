@@ -477,7 +477,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
-        "Init image hash": getattr(p, 'init_img_hash', None)
+        "Init image hash": getattr(p, 'init_img_hash', None),
+        "RNG": (opts.randn_source if opts.randn_source != "GPU" else None)
     }
 
     generation_params.update(p.extra_generation_params)

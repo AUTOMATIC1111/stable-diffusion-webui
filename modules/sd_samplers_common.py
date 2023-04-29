@@ -61,7 +61,8 @@ def store_latent(decoded):
 class InterruptedException(BaseException):
     pass
 
-if opts.use_cpu_randn:
+
+if opts.randn_source == "CPU":
     import torchsde._brownian.brownian_interval
 
     def torchsde_randn(size, dtype, device, seed):
