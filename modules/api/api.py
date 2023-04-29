@@ -362,6 +362,8 @@ class Api:
         info['wait_duration_seconds'] = genstart_ts-start_ts
         info = json.dumps(info)
 
+        print(f"INFO {info}")
+
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=info)
 
     def img2imgapi(self, img2imgreq: StableDiffusionImg2ImgProcessingAPI):
