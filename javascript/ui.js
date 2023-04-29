@@ -1540,29 +1540,37 @@ function updateInput(target){
 	target.dispatchEvent(e);
 }
 
-
 var desiredCheckpointName = null;
 function selectCheckpoint(name){
     desiredCheckpointName = name;
     gradioApp().getElementById('change_checkpoint').click()
 }
 
-document.addEventListener('readystatechange', function (e) {		
-	document.body.style.display = "none";
-	if(localStorage.hasOwnProperty('bg_color')){
-		document.getElementsByTagName("html")[0].style.backgroundColor = localStorage.getItem("bg_color");
-		document.body.style.backgroundColor = localStorage.getItem("bg_color");
-	}
-})
+function restoreProgress (task_tag) {
 
-window.onload = function() {
-	document.getElementsByTagName("html")[0].style.backgroundColor = localStorage.getItem("bg_color");
-	document.body.style.backgroundColor = localStorage.getItem("bg_color");
-	document.body.style.display = "none";	
-	setTimeout(function(){document.body.style.display = "block";},1000)
+  if (task_tag) {
+    let successHandler = ({ current_task }) => {
+      if (current_task) {
+        showSubmitButtons(task_tag, false)
+        requestProgress(current_task, gradioApp().getElementById(`${task_tag}_gallery_container`), gradioApp().getElementById(`${task_tag}_gallery`), function(){
+          showSubmitButtons(task_tag, true)
+        })
+      }
+    }
+
+    let errorHandler = e => window.alert(`invalid internal api respsonse. message: ${e}`)
+
+    fetch("./internal/current_task")
+      .then(res => res.json())
+      .then(successHandler)
+      .catch(errorHandler)
+  }
+
+  var res = create_submit_args(arguments)
+  res[0] = 0
+  return res
 
 }
-
 
 function currentImg2imgSourceResolution(_, _, scaleBy){
     var img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img')
@@ -1580,3 +1588,18 @@ function updateImg2imgResizeToTextAfterChangingImage(){
     return []
 }
 
+document.addEventListener('readystatechange', function (e) {		
+	document.body.style.display = "none";
+	if(localStorage.hasOwnProperty('bg_color')){
+		document.getElementsByTagName("html")[0].style.backgroundColor = localStorage.getItem("bg_color");
+		document.body.style.backgroundColor = localStorage.getItem("bg_color");
+	}
+})
+
+window.onload = function() {
+	document.getElementsByTagName("html")[0].style.backgroundColor = localStorage.getItem("bg_color");
+	document.body.style.backgroundColor = localStorage.getItem("bg_color");
+	document.body.style.display = "none";	
+	setTimeout(function(){document.body.style.display = "block";},1000)
+
+}
