@@ -161,6 +161,7 @@ class StableDiffusionProcessing:
             self.seed_resize_from_w = 0
         self.scripts = None
         self.script_args = script_args
+        self.per_script_args = {}
         self.all_prompts = None
         self.all_negative_prompts = None
         self.all_seeds = None

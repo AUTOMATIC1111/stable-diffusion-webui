@@ -10,7 +10,7 @@ try:
     from modules.cmd_args import parser
 except:
     import argparse
-    parser = argparse.ArgumentParser(description="Stable Diffusion", formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=55,indent_increment=2,width=200))
+    parser = argparse.ArgumentParser(description="Stable Diffusion", conflict_handler='resolve', formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=55, indent_increment=2, width=200))
 
 
 class Dot(dict): # dot notation access to dictionary attributes
