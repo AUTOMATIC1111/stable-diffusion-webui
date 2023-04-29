@@ -25,6 +25,6 @@ lark==1.1.2
 inflection==0.5.1
 GitPython==3.1.30
 torchsde==0.2.5
-safetensors==0.3.0
+safetensors==0.3.1
 httpcore<=0.15
 fastapi==0.94.0

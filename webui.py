@@ -21,6 +21,8 @@ import torch
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
+warnings.filterwarnings(action='ignore', category=UserWarning, message='TypedStorage is deprecated')
+
 
 startup_timer.record("import torch")
 
@@ -113,7 +115,7 @@ def check_versions():
     if shared.cmd_opts.skip_version_check:
         return
 
-    expected_torch_version = "1.13.1"
+    expected_torch_version = "2.0.0"
 
     if version.parse(torch.__version__) < version.parse(expected_torch_version):
         errors.print_error_explanation(f"""
@@ -126,7 +128,7 @@ there are reports of issues with training tab on the latest version.
 Use --skip-version-check commandline argument to disable this check.
         """.strip())
 
-    expected_xformers_version = "0.0.16rc425"
+    expected_xformers_version = "0.0.17"
     if shared.xformers_available:
         import xformers
 
