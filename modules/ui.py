@@ -766,8 +766,12 @@ def create_ui():
 
                                 with gr.Tabs():
                                     with gr.Tab(label="Resize to") as tab_scale_to:
-                                        width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
-                                        height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                                        with FormRow():
+                                            with gr.Column(elem_id="img2img_column_size", scale=4):
+                                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
+                                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                                            with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
+                                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
 
                                     with gr.Tab(label="Resize by") as tab_scale_by:
                                         scale_by = gr.Slider(minimum=0.05, maximum=4.0, step=0.05, label="Scale", value=1.0, elem_id="img2img_scale")
@@ -786,9 +790,6 @@ def create_ui():
 
                             tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
                             tab_scale_by.select(fn=lambda: 1, inputs=[], outputs=[selected_scale_tab])
-
-                            with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
-                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
 
                             if opts.dimensions_and_batch_together:
                                 with gr.Column(elem_id="img2img_column_batch"):
