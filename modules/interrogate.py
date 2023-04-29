@@ -32,8 +32,7 @@ def download_default_clip_interrogate_categories(content_dir):
     category_types = ["artists", "flavors", "mediums", "movements"]
 
     try:
-        if not os.path.exists(tmpdir):
-            os.makedirs(tmpdir)
+        os.makedirs(tmpdir, exist_ok=True)
         for category_type in category_types:
             torch.hub.download_url_to_file(f"https://raw.githubusercontent.com/pharmapsychotic/clip-interrogator/main/clip_interrogator/data/{category_type}.txt", os.path.join(tmpdir, f"{category_type}.txt"))
         os.rename(tmpdir, content_dir)
