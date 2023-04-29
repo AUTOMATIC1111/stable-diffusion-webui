@@ -3,6 +3,7 @@ import math
 import os
 import sys
 import warnings
+import hashlib
 
 import torch
 import numpy as np
@@ -476,6 +477,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "Init image hash": getattr(p, 'init_img_hash', None),
+        "RNG": (opts.randn_source if opts.randn_source != "GPU" else None)
     }
 
     generation_params.update(p.extra_generation_params)
@@ -1007,6 +1010,12 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.color_corrections = []
         imgs = []
         for img in self.init_images:
+
+            # Save init image
+            if opts.save_init_img:
+                self.init_img_hash = hashlib.md5(img.tobytes()).hexdigest()
+                images.save_image(img, path=opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, save_to_dirs=False)
+
             image = images.flatten(img, opts.img2img_background_color)
 
             if crop_region is None and self.resize_mode != 3:

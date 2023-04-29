@@ -190,7 +190,7 @@ class TorchHijack:
             if noise.shape == x.shape:
                 return noise
 
-        if x.device.type == 'mps':
+        if opts.randn_source == "CPU" or x.device.type == 'mps':
             return torch.randn_like(x, device=devices.cpu).to(x.device)
         else:
             return torch.randn_like(x)

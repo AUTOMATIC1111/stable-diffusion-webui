@@ -17,7 +17,7 @@ function keyupEditAttention(event){
 		// Find opening parenthesis around current cursor
 		const before = text.substring(0, selectionStart);
 		let beforeParen = before.lastIndexOf(OPEN);
-		if (beforeParen == -1) return  false;
+		if (beforeParen == -1) return false;
 		let beforeParenClose = before.lastIndexOf(CLOSE);
 		while (beforeParenClose !== -1 && beforeParenClose > beforeParen) {
 			beforeParen = before.lastIndexOf(OPEN, beforeParen - 1);
@@ -27,7 +27,7 @@ function keyupEditAttention(event){
 		// Find closing parenthesis around current cursor
 		const after = text.substring(selectionStart);
 		let afterParen = after.indexOf(CLOSE);
-		if (afterParen == -1) return  false;
+		if (afterParen == -1) return false;
 		let afterParenOpen = after.indexOf(OPEN);
 		while (afterParenOpen !== -1 && afterParen > afterParenOpen) {
 			afterParen = after.indexOf(CLOSE, afterParen + 1);
@@ -43,10 +43,28 @@ function keyupEditAttention(event){
 		target.setSelectionRange(selectionStart, selectionEnd);
 		return true;
     }
+    
+    function selectCurrentWord(){
+        if (selectionStart !== selectionEnd) return false;
+        const delimiters = opts.keyedit_delimiters + " \r\n\t";
+        
+        // seek backward until to find beggining
+        while (!delimiters.includes(text[selectionStart - 1]) && selectionStart > 0) {
+            selectionStart--;
+        }
+        
+        // seek forward to find end
+        while (!delimiters.includes(text[selectionEnd]) && selectionEnd < text.length) {
+            selectionEnd++;
+        }
 
-	// If the user hasn't selected anything, let's select their current parenthesis block
-    if(! selectCurrentParenthesisBlock('<', '>')){
-        selectCurrentParenthesisBlock('(', ')')
+        target.setSelectionRange(selectionStart, selectionEnd);
+        return true;
+    }
+
+	// If the user hasn't selected anything, let's select their current parenthesis block or word
+    if (!selectCurrentParenthesisBlock('<', '>') && !selectCurrentParenthesisBlock('(', ')')) {
+        selectCurrentWord();
     }
 
 	event.preventDefault();
@@ -81,7 +99,13 @@ function keyupEditAttention(event){
 	weight = parseFloat(weight.toPrecision(12));
 	if(String(weight).length == 1) weight += ".0"
 
-	text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + 1 + end - 1);
+    if (closeCharacter == ')' && weight == 1) {
+        text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + 5);
+        selectionStart--;
+        selectionEnd--;
+    } else {
+        text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + 1 + end - 1);
+    }
 
 	target.focus();
 	target.value = text;
