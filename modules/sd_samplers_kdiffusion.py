@@ -167,7 +167,7 @@ class CFGDenoiser(torch.nn.Module):
         devices.test_for_nans(x_out, "unet")
 
         if opts.live_preview_content == "Prompt":
-            sd_samplers_common.store_latent(x_out[0:x_out.shape[0]-uncond.shape[0]])
+            sd_samplers_common.store_latent(torch.cat([x_out[i:i+1] for i in denoised_image_indexes]))
         elif opts.live_preview_content == "Negative prompt":
             sd_samplers_common.store_latent(x_out[-uncond.shape[0]:])
 
