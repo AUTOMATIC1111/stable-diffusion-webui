@@ -55,12 +55,12 @@ def setup_for_low_vram(sd_model, use_medvram):
     if hasattr(sd_model.cond_stage_model, 'model'):
         sd_model.cond_stage_model.transformer = sd_model.cond_stage_model.model
 
-    # remove four big modules, cond, first_stage, depth (if applicable), and unet from the model and then
+    # remove several big modules: cond, first_stage, depth/embedder (if applicable), and unet from the model and then
     # send the model to GPU. Then put modules back. the modules will be in CPU.
-    stored = sd_model.cond_stage_model.transformer, sd_model.first_stage_model, getattr(sd_model, 'depth_model', None), sd_model.model
-    sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.depth_model, sd_model.model = None, None, None, None
+    stored = sd_model.cond_stage_model.transformer, sd_model.first_stage_model, getattr(sd_model, 'depth_model', None), getattr(sd_model, 'embedder', None), sd_model.model
+    sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.depth_model, sd_model.embedder, sd_model.model = None, None, None, None, None
     sd_model.to(devices.device)
-    sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.depth_model, sd_model.model = stored
+    sd_model.cond_stage_model.transformer, sd_model.first_stage_model, sd_model.depth_model, sd_model.embedder, sd_model.model = stored
 
     # register hooks for those the first three models
     sd_model.cond_stage_model.transformer.register_forward_pre_hook(send_me_to_gpu)
@@ -69,6 +69,8 @@ def setup_for_low_vram(sd_model, use_medvram):
     sd_model.first_stage_model.decode = first_stage_model_decode_wrap
     if sd_model.depth_model:
         sd_model.depth_model.register_forward_pre_hook(send_me_to_gpu)
+    if sd_model.embedder:
+        sd_model.embedder.register_forward_pre_hook(send_me_to_gpu)
     parents[sd_model.cond_stage_model.transformer] = sd_model.cond_stage_model
 
     if hasattr(sd_model.cond_stage_model, 'model'):

@@ -1,10 +1,11 @@
+astunparse
 blendmodes
 accelerate
 basicsr
 fonts
 font-roboto
 gfpgan
-gradio==3.16.2
+gradio==3.27
 invisible-watermark
 numpy
 omegaconf
@@ -30,3 +31,4 @@ GitPython
 torchsde
 safetensors
 psutil
+rich

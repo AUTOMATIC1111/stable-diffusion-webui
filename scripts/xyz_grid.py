@@ -247,7 +247,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
 
         state.job = f"{index(ix, iy, iz) + 1} out of {list_size}"
 
-        processed: Processed = cell(x, y, z)
+        processed: Processed = cell(x, y, z, ix, iy, iz)
 
         if processed_result is None:
             # Use our first processed result object as a template container to hold our full results
@@ -374,16 +374,19 @@ class Script(scripts.Script):
                 with gr.Row():
                     x_type = gr.Dropdown(label="X type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
                     x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
+                    x_values_dropdown = gr.Dropdown(label="X values",visible=False,multiselect=True,interactive=True)
                     fill_x_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_x_tool_button", visible=False)
 
                 with gr.Row():
                     y_type = gr.Dropdown(label="Y type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
                     y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
+                    y_values_dropdown = gr.Dropdown(label="Y values",visible=False,multiselect=True,interactive=True)
                     fill_y_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_y_tool_button", visible=False)
 
                 with gr.Row():
                     z_type = gr.Dropdown(label="Z type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("z_type"))
                     z_values = gr.Textbox(label="Z values", lines=1, elem_id=self.elem_id("z_values"))
+                    z_values_dropdown = gr.Dropdown(label="Z values",visible=False,multiselect=True,interactive=True)
                     fill_z_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_z_tool_button", visible=False)
 
         with gr.Row(variant="compact", elem_id="axis_options"):
@@ -401,54 +404,74 @@ class Script(scripts.Script):
             swap_yz_axes_button = gr.Button(value="Swap Y/Z axes", elem_id="yz_grid_swap_axes_button")
             swap_xz_axes_button = gr.Button(value="Swap X/Z axes", elem_id="xz_grid_swap_axes_button")
 
-        def swap_axes(axis1_type, axis1_values, axis2_type, axis2_values):
-            return self.current_axis_options[axis2_type].label, axis2_values, self.current_axis_options[axis1_type].label, axis1_values
+        def swap_axes(axis1_type, axis1_values, axis1_values_dropdown, axis2_type, axis2_values, axis2_values_dropdown):
+            return self.current_axis_options[axis2_type].label, axis2_values, axis2_values_dropdown, self.current_axis_options[axis1_type].label, axis1_values, axis1_values_dropdown
 
-        xy_swap_args = [x_type, x_values, y_type, y_values]
+        xy_swap_args = [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown]
         swap_xy_axes_button.click(swap_axes, inputs=xy_swap_args, outputs=xy_swap_args)
-        yz_swap_args = [y_type, y_values, z_type, z_values]
+        yz_swap_args = [y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown]
         swap_yz_axes_button.click(swap_axes, inputs=yz_swap_args, outputs=yz_swap_args)
-        xz_swap_args = [x_type, x_values, z_type, z_values]
+        xz_swap_args = [x_type, x_values, x_values_dropdown, z_type, z_values, z_values_dropdown]
         swap_xz_axes_button.click(swap_axes, inputs=xz_swap_args, outputs=xz_swap_args)
 
         def fill(x_type):
             axis = self.current_axis_options[x_type]
-            return ", ".join(axis.choices()) if axis.choices else gr.update()
+            return axis.choices() if axis.choices else gr.update()
 
-        fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values])
-        fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values])
-        fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values])
+        fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values_dropdown])
+        fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values_dropdown])
+        fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values_dropdown])
 
-        def select_axis(x_type):
-            return gr.Button.update(visible=self.current_axis_options[x_type].choices is not None)
+        def select_axis(axis_type,axis_values_dropdown):
+            choices = self.current_axis_options[axis_type].choices
+            has_choices = choices is not None
+            current_values = axis_values_dropdown
+            if has_choices:
+                choices = choices()
+                if isinstance(current_values,str):
+                    current_values = current_values.split(",")
+                current_values = list(filter(lambda x: x in choices, current_values))
+            return gr.Button.update(visible=has_choices),gr.Textbox.update(visible=not has_choices),gr.update(choices=choices if has_choices else None,visible=has_choices,value=current_values)
 
-        x_type.change(fn=select_axis, inputs=[x_type], outputs=[fill_x_button])
-        y_type.change(fn=select_axis, inputs=[y_type], outputs=[fill_y_button])
-        z_type.change(fn=select_axis, inputs=[z_type], outputs=[fill_z_button])
+        x_type.change(fn=select_axis, inputs=[x_type,x_values_dropdown], outputs=[fill_x_button,x_values,x_values_dropdown])
+        y_type.change(fn=select_axis, inputs=[y_type,y_values_dropdown], outputs=[fill_y_button,y_values,y_values_dropdown])
+        z_type.change(fn=select_axis, inputs=[z_type,z_values_dropdown], outputs=[fill_z_button,z_values,z_values_dropdown])
+
+        def get_dropdown_update_from_params(axis,params):
+            val_key = axis + " Values"
+            vals = params.get(val_key,"")
+            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+            return gr.update(value = valslist)
 
         self.infotext_fields = (
             (x_type, "X Type"),
             (x_values, "X Values"),
+            (x_values_dropdown, lambda params:get_dropdown_update_from_params("X",params)),
             (y_type, "Y Type"),
             (y_values, "Y Values"),
+            (y_values_dropdown, lambda params:get_dropdown_update_from_params("Y",params)),
             (z_type, "Z Type"),
             (z_values, "Z Values"),
+            (z_values_dropdown, lambda params:get_dropdown_update_from_params("Z",params)),
         )
 
-        return [x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size]
 
-    def run(self, p, x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size):
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
         if not opts.return_grid:
             p.batch_size = 1
 
-        def process_axis(opt, vals):
+        def process_axis(opt, vals, vals_dropdown):
             if opt.label == 'Nothing':
                 return [0]
 
-            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+            if opt.choices is not None:
+                valslist = vals_dropdown
+            else:
+                valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
 
             if opt.type == int:
                 valslist_ext = []
@@ -506,15 +529,22 @@ class Script(scripts.Script):
             return valslist
 
         x_opt = self.current_axis_options[x_type]
-        xs = process_axis(x_opt, x_values)
+        if x_opt.choices is not None:
+            x_values = ",".join(x_values_dropdown)
+        xs = process_axis(x_opt, x_values, x_values_dropdown)
 
         y_opt = self.current_axis_options[y_type]
-        ys = process_axis(y_opt, y_values)
+        if y_opt.choices is not None:
+            y_values = ",".join(y_values_dropdown)
+        ys = process_axis(y_opt, y_values, y_values_dropdown)
 
         z_opt = self.current_axis_options[z_type]
-        zs = process_axis(z_opt, z_values)
+        if z_opt.choices is not None:
+            z_values = ",".join(z_values_dropdown)
+        zs = process_axis(z_opt, z_values, z_values_dropdown)
 
         # this could be moved to common code, but unlikely to be ever triggered anywhere else
+        Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
         grid_mp = round(len(xs) * len(ys) * len(zs) * p.width * p.height / 1000000)
         assert grid_mp < opts.img_max_size_mp, f'Error: Resulting grid would be too large ({grid_mp} MPixels) (max configured size is {opts.img_max_size_mp} MPixels)'
 
@@ -558,8 +588,6 @@ class Script(scripts.Script):
         print(f"X/Y/Z plot will create {len(xs) * len(ys) * len(zs) * image_cell_count} images on {len(zs)} {len(xs)}x{len(ys)} grid{plural_s}{cell_console_text}. (Total steps to process: {total_steps})")
         shared.total_tqdm.updateTotal(total_steps)
 
-        grid_infotext = [None]
-
         state.xyz_plot_x = AxisInfo(x_opt, xs)
         state.xyz_plot_y = AxisInfo(y_opt, ys)
         state.xyz_plot_z = AxisInfo(z_opt, zs)
@@ -588,7 +616,9 @@ class Script(scripts.Script):
             else:
                 second_axes_processed = 'y'
 
-        def cell(x, y, z):
+        grid_infotext = [None] * (1 + len(zs))
+
+        def cell(x, y, z, ix, iy, iz):
             if shared.state.interrupted:
                 return Processed(p, [], p.seed, "")
 
@@ -600,7 +630,9 @@ class Script(scripts.Script):
 
             res = process_images(pc)
 
-            if grid_infotext[0] is None:
+            # Sets subgrid infotexts
+            subgrid_index = 1 + iz
+            if grid_infotext[subgrid_index] is None and ix == 0 and iy == 0:
                 pc.extra_generation_params = copy(pc.extra_generation_params)
                 pc.extra_generation_params['Script'] = self.title()
 
@@ -615,6 +647,12 @@ class Script(scripts.Script):
                     pc.extra_generation_params["Y Values"] = y_values
                     if y_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
                         pc.extra_generation_params["Fixed Y Values"] = ", ".join([str(y) for y in ys])
+
+                grid_infotext[subgrid_index] = processing.create_infotext(pc, pc.all_prompts, pc.all_seeds, pc.all_subseeds)
+
+            # Sets main grid infotext
+            if grid_infotext[0] is None and ix == 0 and iy == 0 and iz == 0:
+                pc.extra_generation_params = copy(pc.extra_generation_params)
 
                 if z_opt.label != 'Nothing':
                     pc.extra_generation_params["Z Type"] = z_opt.label
@@ -649,6 +687,9 @@ class Script(scripts.Script):
             return processed
 
         z_count = len(zs)
+
+        # Set the grid infotexts to the real ones with extra_generation_params (1 main grid + z_count sub-grids)
+        processed.infotexts[:1+z_count] = grid_infotext[:1+z_count]
 
         if not include_lone_images:
             # Don't need sub-images anymore, drop from list:
