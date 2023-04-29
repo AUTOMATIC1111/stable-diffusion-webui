@@ -1422,7 +1422,12 @@ display:none !important;
 	
 }
 
-#txtimg_hr_finalres .resolution{
+#img2img_scale_resolution_preview.block{
+    display: flex;
+    align-items: end;
+}
+
+#txtimg_hr_finalres .resolution, #img2img_scale_resolution_preview .resolution{
     font-weight: bold;
 }
 
@@ -1705,6 +1710,7 @@ button.primary:hover {
     display: inline-block;
 }
 
+
 .performance .time {
     margin-right: 0;
 }
@@ -1712,10 +1718,41 @@ button.primary:hover {
 /* Context Menu */
 /***************************/
 
-#context-menu {
-    z-index: 99999;
-    position: absolute;
-    display: block;
+
+#img2img_sketch, #img2maskimg, #inpaint_sketch {
+    overflow: overlay !important;
+    resize: auto;
+    background: var(--panel-background-fill);
+    z-index: 5;
+}
+
+.image-buttons button{
+    min-width: auto;
+}
+
+.infotext {
+    overflow-wrap: break-word;
+}
+
+#img2img_column_batch{
+    align-self: end;
+    margin-bottom: 0.9em;
+}
+
+#img2img_unused_scale_by_slider{
+    visibility: hidden;
+    width: 0.5em;
+    max-width: 0.5em;
+    min-width: 0.5em;
+}
+
+/* settings */
+#quicksettings {
+    width: fit-content;
+    align-items: end;
+}
+
+#quicksettings > div, #quicksettings > fieldset{
     padding: 0;
     border: 1px solid var(--ae-primary-color);
     border-radius: 0;
@@ -3826,6 +3863,7 @@ div[data-testid="image"] canvas {
   right: 20px;
   transform: translateX(100px) scaleX(-1);
 }
+
 [id^="spotlight"].menu .spl-prev {
   transform: translateX(0);
 }

@@ -251,10 +251,10 @@ def create_ui(container, button, tabname):
         
         with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
             for page in ui.stored_extra_pages:
-                with gr.Tab(page.title):
-
+                with gr.Tab(page.title, id=page.title.lower().replace(" ", "_")):
                     page_elem = gr.HTML(page.create_html(ui.tabname))
                     ui.pages.append(page_elem)
+
 
         filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)       
         button_refresh = ToolButton(value=refresh_symbol, elem_id=tabname+"_extra_refresh")

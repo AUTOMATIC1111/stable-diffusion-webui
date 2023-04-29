@@ -23,7 +23,7 @@ Default theme
 - [x] drag and drop images to txt2img and img2img and import generation info parameters along with a preview image
 - [x] ignore - remove overrides when import [multiselect] (option setting)
 - [x] resizable cards for extra networks and number of rows (option setting)
-- [x] alternative offcanvas aside view for extra networks (option setting)
+- [x] lazy loading alternative offcanvas aside view for extra networks (option setting)
 - [x] live preview image fit method (option setting)
 - [x] generated image fit method (option setting)
 - [x] max resolution output for txt2img and img2img (option setting)
@@ -165,13 +165,14 @@ Alternatively, use online services (like Google Colab):
 
 - [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
-### Automatic Installation on Windows
-1. Install [Python 3.10.6](https://www.python.org/downloads/windows/), checking "Add Python to PATH"
+### Installation on Windows
+
+1. Install [Python 3.10.6](https://www.python.org/downloads/release/python-3106/) (Newer version of Python does not support torch), checking "Add Python to PATH".
 2. Install [git](https://git-scm.com/download/win).
 3. Download the stable-diffusion-webui-ux repository, for example by running `git clone https://github.com/anapnoe/stable-diffusion-webui-ux.git`.
 4. Run `webui-user.bat` from Windows Explorer as normal, non-administrator, user.
 
-### Automatic Installation on Linux
+### Installation on Linux
 1. Install the dependencies:
 ```bash
 # Debian-based:
@@ -181,11 +182,12 @@ sudo dnf install wget git python3
 # Arch-based:
 sudo pacman -S wget git python3
 ```
-2. To install in `/home/$(whoami)/stable-diffusion-webui/`, run:
+2. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
 bash <(wget -qO- https://raw.githubusercontent.com/anapnoe/stable-diffusion-webui-ux/master/webui.sh)
 ```
 3. Run `webui.sh`.
+4. Check `webui-user.sh` for options.
 ### Installation on Apple Silicon
 
 Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Installation-on-Apple-Silicon).

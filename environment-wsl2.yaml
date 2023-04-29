@@ -4,8 +4,8 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - pip=22.2.2
-  - cudatoolkit=11.3
-  - pytorch=1.12.1
-  - torchvision=0.13.1
-  - numpy=1.23.1
+  - pip=23.0
+  - cudatoolkit=11.8
+  - pytorch=2.0
+  - torchvision=0.15
+  - numpy=1.23
