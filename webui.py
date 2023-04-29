@@ -126,9 +126,6 @@ def initialize():
     modules.scripts.load_scripts()
     startup_timer.record("load scripts")
 
-    modelloader.load_upscalers()
-    startup_timer.record("load upscalers")
-
     modules.sd_vae.refresh_vae_list()
     startup_timer.record("refresh VAE")
 
