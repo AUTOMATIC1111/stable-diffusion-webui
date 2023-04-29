@@ -309,6 +309,7 @@ infotext_to_setting_name_mapping = [
     ('UniPC order', 'uni_pc_order'),
     ('UniPC lower order final', 'uni_pc_lower_order_final'),
     ('RNG', 'randn_source'),
+    ('NGMS', 's_min_uncond'),
 ]
 
 

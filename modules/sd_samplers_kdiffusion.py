@@ -115,20 +115,21 @@ class CFGDenoiser(torch.nn.Module):
         sigma_in = denoiser_params.sigma
         tensor = denoiser_params.text_cond
         uncond = denoiser_params.text_uncond
+        skip_uncond = False
 
-        if self.step % 2 and s_min_uncond > 0 and not is_edit_model:
-            # alternating uncond allows for higher thresholds without the quality loss normally expected from raising it
-            sigma_threshold = s_min_uncond
-            if(torch.dot(sigma,sigma) < sigma.shape[0] * (sigma_threshold*sigma_threshold) ):
-                uncond = torch.zeros([0,0,uncond.shape[2]])
-                x_in=x_in[:x_in.shape[0]//2]
-                sigma_in=sigma_in[:sigma_in.shape[0]//2]
+        # alternating uncond allows for higher thresholds without the quality loss normally expected from raising it
+        if self.step % 2 and s_min_uncond > 0 and sigma[0] < s_min_uncond and not is_edit_model:
+            skip_uncond = True
+            x_in = x_in[:-batch_size]
+            sigma_in = sigma_in[:-batch_size]
 
-        if tensor.shape[1] == uncond.shape[1]:
-            if not is_edit_model:
-                cond_in = torch.cat([tensor, uncond])
-            else:
+        if tensor.shape[1] == uncond.shape[1] or skip_uncond:
+            if is_edit_model:
                 cond_in = torch.cat([tensor, uncond, uncond])
+            elif skip_uncond:
+                cond_in = tensor
+            else:
+                cond_in = torch.cat([tensor, uncond])
 
             if shared.batch_cond_uncond:
                 x_out = self.inner_model(x_in, sigma_in, cond=make_condition_dict([cond_in], image_cond_in))
@@ -152,8 +153,14 @@ class CFGDenoiser(torch.nn.Module):
 
                 x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict(c_crossattn, image_cond_in[a:b]))
 
-            if uncond.shape[0]:
+            if not skip_uncond:
                 x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict([uncond], image_cond_in[-uncond.shape[0]:]))
+
+        if skip_uncond:
+            #x_out = torch.cat([x_out, x_out[0:batch_size]])  # we skipped uncond denoising, so we put cond-denoised image to where the uncond-denoised image should be
+            denoised_image_indexes = [x[0][0] for x in conds_list]
+            fake_uncond = torch.cat([x_out[i:i+1] for i in denoised_image_indexes])
+            x_out = torch.cat([x_out, fake_uncond])
 
         denoised_params = CFGDenoisedParams(x_out, state.sampling_step, state.sampling_steps)
         cfg_denoised_callback(denoised_params)
@@ -165,13 +172,12 @@ class CFGDenoiser(torch.nn.Module):
         elif opts.live_preview_content == "Negative prompt":
             sd_samplers_common.store_latent(x_out[-uncond.shape[0]:])
 
-        if not is_edit_model:
-            if uncond.shape[0]:
-                denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
-            else:
-                denoised = x_out
-        else:
+        if is_edit_model:
             denoised = self.combine_denoised_for_edit_model(x_out, cond_scale)
+        elif skip_uncond:
+            denoised = self.combine_denoised(x_out, conds_list, uncond, 1.0)
+        else:
+            denoised = self.combine_denoised(x_out, conds_list, uncond, cond_scale)
 
         if self.mask is not None:
             denoised = self.init_latent * self.mask + self.nmask * denoised
@@ -221,6 +227,7 @@ class KDiffusionSampler:
         self.eta = None
         self.config = None
         self.last_latent = None
+        self.s_min_uncond = None
 
         self.conditioning_key = sd_model.model.conditioning_key
 

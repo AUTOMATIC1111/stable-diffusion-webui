@@ -480,7 +480,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
         "Init image hash": getattr(p, 'init_img_hash', None),
-        "RNG": (opts.randn_source if opts.randn_source != "GPU" else None)
+        "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
+        "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
     }
 
     generation_params.update(p.extra_generation_params)
