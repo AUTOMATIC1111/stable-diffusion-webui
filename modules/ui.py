@@ -782,14 +782,21 @@ def create_ui():
                                         with FormRow():
                                             scale_by_html = FormHTML(resize_from_to_html(0, 0, 0.0), elem_id="img2img_scale_resolution_preview")
                                             gr.Slider(label="Unused", elem_id="img2img_unused_scale_by_slider")
+                                            button_update_resize_to = gr.Button(visible=False, elem_id="img2img_update_resize_to")
 
-                                    scale_by.change(
+                                    on_change_args = dict(
                                         fn=resize_from_to_html,
                                         _js="currentImg2imgSourceResolution",
                                         inputs=[dummy_component, dummy_component, scale_by],
                                         outputs=scale_by_html,
                                         show_progress=False,
                                     )
+
+                                    scale_by.release(**on_change_args)
+                                    button_update_resize_to.click(**on_change_args)
+
+                                    for component in img2img_image_inputs:
+                                        component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
 
                             tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
                             tab_scale_by.select(fn=lambda: 1, inputs=[], outputs=[selected_scale_tab])
@@ -1647,7 +1654,8 @@ def create_ui():
             component = component_dict[k]
             info = opts.data_labels[k]
 
-            component.change(
+            change_handler = component.release if hasattr(component, 'release') else component.change
+            change_handler(
                 fn=lambda value, k=k: run_settings_single(value, key=k),
                 inputs=[component],
                 outputs=[component, text_settings],
