@@ -145,6 +145,39 @@ def apply_face_restore(p, opt, x):
 
     p.restore_faces = is_active
 
+def apply_token_merging1(p, x, xs):
+    is_active = x.lower() in ('true', 'yes', 'y', '1')
+    p.override_settings["token_merging"] = is_active
+
+def apply_token_merging_ratio_hr(p, x, xs):
+    p.override_settings["token_merging_ratio_hr"] = x
+
+def apply_token_merging_ratio(p, x, xs):
+    p.override_settings["token_merging_ratio"] = x
+
+def apply_token_merging_hr_only(p, x, xs):
+    is_active = x.lower() in ('true', 'yes', 'y', '1')
+    p.override_settings["token_merging_hr_only"] = is_active
+
+def apply_token_merging_random(p, x, xs):
+    is_active = x.lower() in ('true', 'yes', 'y', '1')
+    p.override_settings["token_merging_random"] = is_active
+
+def apply_token_merging_attention(p, x, xs):
+    is_active = x.lower() in ('true', 'yes', 'y', '1')
+    p.override_settings["token_merging_merge_attention"] = is_active
+
+def apply_token_merging_cross_attention(p, x, xs):
+    is_active = x.lower() in ('true', 'yes', 'y', '1')
+    p.override_settings["token_merging_merge_cross_attention"] = is_active
+
+def apply_token_merging_mlp(p, x, xs):
+    is_active = x.lower() in ('true', 'yes', 'y', '1')
+    p.override_settings["token_merging_merge_mlp"] = is_active
+
+def apply_token_merging_maximum_down_sampling (p, x, xs):
+    p.override_settings["token_merging_maximum_down_sampling"] = x
+    #opts.data["token_merging_maximum_down_sampling"] = x
 
 def format_value_add_label(p, opt, x):
     if type(x) == float:
@@ -226,6 +259,15 @@ axis_options = [
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
     AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
+    AxisOption("Token Merging", str, apply_token_merging1),
+    AxisOption("Token merging ratio",float,apply_token_merging_ratio),
+    AxisOption("Token merging ratio for Hires fix",float,apply_token_merging_ratio_hr),
+    AxisOption("Token merging apply only to Hires fix",str,apply_token_merging_hr_only, choices= lambda: ["Yes","No"]),
+    AxisOption("Token Merging use random pertubations",str,apply_token_merging_random, choices = lambda: ["Yes","No"]),
+    AxisOption("Token Merging merge attention", str, apply_token_merging_attention, choices= lambda: ["Yes","No"]),
+    AxisOption("Token Merging merge cross attention", str, apply_token_merging_cross_attention, choices= lambda: ["Yes","No"]),
+    AxisOption("Token Merging merge mlp", str, apply_token_merging_mlp, choices= lambda: ["Yes","No"]),
+    AxisOption("Token Merging maxium down sampling", int, apply_token_merging_maximum_down_sampling, choices= lambda: ["1","2","4","8"])
 ]
 
 

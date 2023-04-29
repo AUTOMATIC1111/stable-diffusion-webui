@@ -316,7 +316,7 @@ infotext_to_setting_name_mapping = [
     ('Token merging merge attention', 'token_merging_merge_attention'),
     ('Token merging merge cross attention', 'token_merging_merge_cross_attention'),
     ('Token merging merge mlp', 'token_merging_merge_mlp'),
-    ('Token merging maximum downsampling', 'token_merging_maximum_downsampling'),
+    ('Token merging maximum downsampling', 'token_merging_maximum_down_sampling'),
     ('Token merging stride x', 'token_merging_stride_x'),
     ('Token merging stride y', 'token_merging_stride_y')
 ]
