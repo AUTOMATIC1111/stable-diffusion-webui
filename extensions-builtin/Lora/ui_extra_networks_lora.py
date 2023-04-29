@@ -18,7 +18,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             yield {
                 "name": name,
                 "filename": path,
-                "preview": self.find_preview(path),
+                "preview": self.find_preview(path) if self.find_preview(path) else './file=html/card-no-preview.png',
                 "description": self.find_description(path),
                 "search_term": self.search_terms_from_path(lora_on_disk.filename),
                 "prompt": json.dumps(f"<lora:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),

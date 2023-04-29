@@ -165,6 +165,7 @@ class ExtraNetworksPage:
         args = {
             #"style": f"'{height}{width}{background_image}'",
             "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
+            "preview_image": html.escape(preview) if preview else './file=html/card-no-preview.png',
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
