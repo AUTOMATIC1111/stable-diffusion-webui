@@ -1,11 +1,11 @@
+astunparse
 blendmodes
 accelerate
 basicsr
 fonts
 font-roboto
 gfpgan
-gradio==3.23
-invisible-watermark
+gradio==3.28.1
 numpy
 omegaconf
 opencv-contrib-python
