@@ -145,6 +145,15 @@ def apply_face_restore(p, opt, x):
 
     p.restore_faces = is_active
 
+def apply_token_merging_ratio_hr(p, x, xs):
+    opts.data["token_merging_ratio_hr"] = x
+
+def apply_token_merging_ratio(p, x, xs):
+    opts.data["token_merging_ratio"] = x
+
+def apply_token_merging_random(p, x, xs):
+    is_active = x.lower() in ('true', 'yes', 'y', '1')
+    opts.data["token_merging_random"] = is_active
 
 def format_value_add_label(p, opt, x):
     if type(x) == float:
@@ -226,6 +235,9 @@ axis_options = [
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
     AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
+    AxisOption("ToMe ratio",float,apply_token_merging_ratio),
+    AxisOption("ToMe ratio for Hires fix",float,apply_token_merging_ratio_hr),
+    AxisOption("ToMe random pertubations",str,apply_token_merging_random, choices = lambda: ["Yes","No"])
 ]
 
 
@@ -342,11 +354,16 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
 
 class SharedSettingsStackHelper(object):
     def __enter__(self):
+        #Save overridden settings so they can be restored later.
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.vae = opts.sd_vae
         self.uni_pc_order = opts.uni_pc_order
+        self.token_merging_ratio_hr = opts.token_merging_ratio_hr
+        self.token_merging_ratio = opts.token_merging_ratio
+        self.token_merging_random = opts.token_merging_random
 
     def __exit__(self, exc_type, exc_value, tb):
+        #Restore overriden settings after plot generation.
         opts.data["sd_vae"] = self.vae
         opts.data["uni_pc_order"] = self.uni_pc_order
         sd_models.reload_model_weights()
@@ -354,6 +371,9 @@ class SharedSettingsStackHelper(object):
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
 
+        opts.data["token_merging_ratio_hr"] = self.token_merging_ratio_hr
+        opts.data["token_merging_ratio"] = self.token_merging_ratio
+        opts.data["token_merging_random"] = self.token_merging_random
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
 re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\(([+-]\d+(?:.\d*)?)\s*\))?\s*")
