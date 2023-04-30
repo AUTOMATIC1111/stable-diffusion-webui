@@ -351,7 +351,7 @@ onUiUpdate(function(){
 onOptionsChanged(function(){
     var elem = gradioApp().getElementById('sd_checkpoint_hash')
     var sd_checkpoint_hash = opts.sd_checkpoint_hash || ""
-    var shorthash = sd_checkpoint_hash.substr(0,10)
+    var shorthash = sd_checkpoint_hash.substring(0,10)
 
 	if(elem && elem.textContent != shorthash){
 	    elem.textContent = shorthash

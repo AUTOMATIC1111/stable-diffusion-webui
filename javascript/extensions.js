@@ -5,10 +5,10 @@ function extensions_apply(_disabled_list, _update_list, disable_all){
 
     gradioApp().querySelectorAll('#extensions input[type="checkbox"]').forEach(function(x){
         if(x.name.startsWith("enable_") && ! x.checked)
-            disable.push(x.name.substr(7))
+            disable.push(x.name.substring(7))
 
         if(x.name.startsWith("update_") && x.checked)
-            update.push(x.name.substr(7))
+            update.push(x.name.substring(7))
     })
 
     restart_reload()
@@ -21,7 +21,7 @@ function extensions_check(){
 
     gradioApp().querySelectorAll('#extensions input[type="checkbox"]').forEach(function(x){
         if(x.name.startsWith("enable_") && ! x.checked)
-            disable.push(x.name.substr(7))
+            disable.push(x.name.substring(7))
     })
 
     gradioApp().querySelectorAll('#extensions .extension_status').forEach(function(x){
