@@ -55,19 +55,14 @@ function dimensionChange(e, is_width, is_height){
 		var cleintRectCentreY = cleintRectTop  + (targetElement.clientHeight/2)
 		var cleintRectCentreX = cleintRectLeft + (targetElement.clientWidth/2)
 
-		var viewRectTop    = cleintRectCentreY-(scaledy/2)  // TODO: unused?
-		var viewRectLeft   = cleintRectCentreX-(scaledx/2)  // TODO: unused?
-		var arRectWidth  = scaledx
-		var arRectHeight = scaledy
-
-		var arscale = Math.min(  arRectWidth/currentWidth, arRectHeight/currentHeight )
+		var arscale = Math.min(  scaledx/currentWidth, scaledy/currentHeight )
 		var arscaledx = currentWidth*arscale
 		var arscaledy = currentHeight*arscale
 
 		var arRectTop    = cleintRectCentreY-(arscaledy/2)
 		var arRectLeft   = cleintRectCentreX-(arscaledx/2)
-		arRectWidth  = arscaledx
-		arRectHeight = arscaledy
+		var arRectWidth  = arscaledx
+		var arRectHeight = arscaledy
 
 	    arPreviewRect.style.top  = arRectTop+'px';
 	    arPreviewRect.style.left = arRectLeft+'px';

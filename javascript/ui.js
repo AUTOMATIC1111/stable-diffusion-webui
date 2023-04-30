@@ -207,7 +207,7 @@ function submit_img2img(){
     return res
 }
 
-function restoreProgressTxt2img(x){
+function restoreProgressTxt2img(){
     var id = localStorage.getItem("txt2img_task_id")
 
     if(id) {
@@ -218,7 +218,7 @@ function restoreProgressTxt2img(x){
 
     return [id]
 }
-function restoreProgressImg2img(x){
+function restoreProgressImg2img(){
     var id = localStorage.getItem("img2img_task_id")
 
     if(id) {

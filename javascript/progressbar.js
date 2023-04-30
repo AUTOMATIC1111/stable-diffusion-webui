@@ -1,10 +1,10 @@
 // code related to showing and updating progressbar shown as the image is being made
 
-function rememberGallerySelection(id_gallery){
+function rememberGallerySelection(){
 
 }
 
-function getGallerySelectedIndex(id_gallery){
+function getGallerySelectedIndex(){
 
 }
 

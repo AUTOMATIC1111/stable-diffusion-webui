@@ -35,7 +35,7 @@ contextMenuInit = function(){
     menuEntries.forEach(function(entry){
       let contextMenuEntry = document.createElement('a')
       contextMenuEntry.innerHTML = entry['name']
-      contextMenuEntry.addEventListener("click", function(e) {
+      contextMenuEntry.addEventListener("click", function() {
         entry['func']();
       })
       contextMenuList.append(contextMenuEntry);
@@ -78,7 +78,7 @@ contextMenuInit = function(){
   }
 
   function removeContextMenuOption(uid){
-    menuSpecs.forEach(function(v,k) {
+    menuSpecs.forEach(function(v) {
       let index = -1
       v.forEach(function(e,ei){if(e['id']==uid){index=ei}})
       if(index>=0){

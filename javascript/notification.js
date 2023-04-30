@@ -9,7 +9,7 @@ onUiUpdate(function(){
         notificationButton = gradioApp().getElementById('request_notifications')
 
         if(notificationButton != null){
-            notificationButton.addEventListener('click', function (evt) {
+            notificationButton.addEventListener('click', () => {
                 Notification.requestPermission();
             },true);
         }

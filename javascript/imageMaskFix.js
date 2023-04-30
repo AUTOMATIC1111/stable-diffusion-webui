@@ -23,7 +23,6 @@ function imageMaskResize() {
     const nw = previewImage.naturalWidth;
     const nh = previewImage.naturalHeight;
     const portrait = nh > nw;
-    const factor = portrait;
 
     const wW = Math.min(w, portrait ? h/nh*nw : w/nw*nw);
     const wH = Math.min(h, portrait ? h/nh*nh : w/nw*nh);
