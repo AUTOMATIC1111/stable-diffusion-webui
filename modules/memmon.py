@@ -2,6 +2,12 @@ import threading
 import time
 from collections import defaultdict
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
+
+from modules import shared
 
 
 class MemUsageMonitor(threading.Thread):
@@ -19,26 +25,41 @@ class MemUsageMonitor(threading.Thread):
         self.daemon = True
         self.run_flag = threading.Event()
         self.data = defaultdict(int)
-        if not torch.cuda.is_available():
+        if not torch.cuda.is_available() or not shared.cmd_opts.use_ipex:
             self.disabled = True
         else:
-            try:
-                self.cuda_mem_get_info()
-                torch.cuda.memory_stats(self.device)
-            except Exception as e:  # AMD or whatever
-                print(f"Torch exception: {e}")
-                self.disabled = True
+            if shared.cmd_opts.use_ipex:
+                try:
+                    self.cuda_mem_get_info()
+                    torch.cuda.memory_stats("xpu")
+                except Exception as e:  # AMD or whatever
+                    print(f"Torch exception: {e}")
+                    self.disabled = True
+
+            else:
+                try:
+                    self.cuda_mem_get_info()
+                    torch.cuda.memory_stats(self.device)
+                except Exception as e:  # AMD or whatever
+                    print(f"Torch exception: {e}")
+                    self.disabled = True
 
     def cuda_mem_get_info(self):
-        index = self.device.index if self.device.index is not None else torch.cuda.current_device()
-        return torch.cuda.mem_get_info(index)
+        if shared.cmd_opts.use_ipex:
+            return [(torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated()), torch.xpu.get_device_properties("xpu").total_memory]
+        else:
+            index = self.device.index if self.device.index is not None else torch.cuda.current_device()
+            return torch.cuda.mem_get_info(index)
 
     def run(self):
         if self.disabled:
             return
         while True:
             self.run_flag.wait()
-            torch.cuda.reset_peak_memory_stats()
+            if shared.cmd_opts.use_ipex:
+                torch.xpu.reset_peak_memory_stats()
+            else:
+                torch.cuda.reset_peak_memory_stats()
             self.data.clear()
             if self.opts.memmon_poll_rate <= 0:
                 self.run_flag.clear()
@@ -54,12 +75,18 @@ class MemUsageMonitor(threading.Thread):
         for k, v in self.read().items():
             print(k, -(v // -(1024 ** 2)))
         print(self, 'raw torch memory stats:')
-        tm = torch.cuda.memory_stats(self.device)
+        if shared.cmd_opts.use_ipex:
+            tm = torch.xpu.memory_stats("xpu")
+        else:
+            tm = torch.cuda.memory_stats(self.device)
         for k, v in tm.items():
             if 'bytes' not in k:
                 continue
             print('\t' if 'peak' in k else '', k, -(v // -(1024 ** 2)))
-        print(torch.cuda.memory_summary())
+        if shared.cmd_opts.use_ipex:
+            print(torch.xpu.memory_summary())
+        else:
+            print(torch.cuda.memory_summary())
 
     def monitor(self):
         self.run_flag.set()
@@ -70,7 +97,10 @@ class MemUsageMonitor(threading.Thread):
             self.data["free"] = free
             self.data["total"] = total
 
-            torch_stats = torch.cuda.memory_stats(self.device)
+            if shared.cmd_opts.use_ipex:
+                torch_stats = torch.xpu.memory_stats("xpu")
+            else:
+                torch_stats = torch.cuda.memory_stats(self.device)
             self.data["active"] = torch_stats["active.all.current"]
             self.data["active_peak"] = torch_stats["active_bytes.all.peak"]
             self.data["reserved"] = torch_stats["reserved_bytes.all.current"]

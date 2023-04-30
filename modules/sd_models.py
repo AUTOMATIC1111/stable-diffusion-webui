@@ -8,6 +8,10 @@ from os import mkdir
 from urllib import request
 from rich import print, progress # pylint: disable=redefined-builtin
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import safetensors.torch
 from omegaconf import OmegaConf
 import tomesd
@@ -533,7 +537,6 @@ def unload_model_weights(sd_model=None, _info=None):
         sd_model = None
         gc.collect()
         devices.torch_gc()
-        torch.cuda.empty_cache()
     print(f"Unloaded weights {timer.summary()}")
     return sd_model
 

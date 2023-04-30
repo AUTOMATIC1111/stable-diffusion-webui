@@ -2,6 +2,10 @@
 
 import numpy as np
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 
 from .uni_pc import NoiseScheduleVP, model_wrapper, UniPC
 from modules import shared, devices

@@ -1,6 +1,10 @@
 from collections import deque
 import inspect
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import k_diffusion.sampling
 from modules import prompt_parser, devices, sd_samplers_common
 

@@ -12,6 +12,10 @@ from modules import timer, errors
 startup_timer = timer.Timer()
 
 import torch # pylint: disable=C0411
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import torchvision # pylint: disable=W0611,C0411
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them # pylint: disable=W0611,C0411
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())

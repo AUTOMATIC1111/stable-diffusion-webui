@@ -316,7 +316,7 @@ options_templates.update(options_section(('cuda', "CUDA Settings"), {
     "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
     "no_half": OptionInfo(True if is_device_dml else False, "Use full precision for model (--no-half)", None, None, lambda: print("Warning: Most of DirectML devices do not fully support half mode. Recommend to use full precision to model.") if is_device_dml else None),
     "no_half_vae": OptionInfo(True if is_device_dml else False, "Use full precision for VAE (--no-half-vae)"),
-    "upcast_sampling": OptionInfo(True if sys.platform == "darwin" else False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
+    "upcast_sampling": OptionInfo(True if sys.platform == "darwin" or cmd_opts.use_ipex else False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
     "disable_nan_check": OptionInfo(True, "Do not check if produced images/latent spaces have NaN values"),
     "rollback_vae": OptionInfo(False, "Attempt to roll back VAE when produced NaN values, requires NaN check (experimental)"),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),

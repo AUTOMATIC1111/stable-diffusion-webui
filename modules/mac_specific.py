@@ -1,4 +1,8 @@
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import platform
 from modules.sd_hijack_utils import CondFunc
 from packaging import version

@@ -10,6 +10,10 @@ https://github.com/CompVis/taming-transformers
 # See more details in LICENSE.
 
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import torch.nn as nn
 import numpy as np
 import pytorch_lightning as pl

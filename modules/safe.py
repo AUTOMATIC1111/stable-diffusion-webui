@@ -6,6 +6,10 @@ import zipfile
 import re
 
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import numpy
 import _codecs
 

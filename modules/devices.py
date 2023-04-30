@@ -1,6 +1,11 @@
 import sys
 import contextlib
 import torch
+from modules import shared
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -21,21 +26,24 @@ def extract_device_id(args, name):
 
 
 def get_cuda_device_string():
-    from modules import shared
-    if shared.cmd_opts.device_id is not None:
-        return f"cuda:{shared.cmd_opts.device_id}"
-    return "cuda"
+    if shared.cmd_opts.use_ipex:
+        return "xpu"
+    else:
+        if shared.cmd_opts.device_id is not None:
+            return f"cuda:{shared.cmd_opts.device_id}"
+        return "cuda"
 
 
 def get_dml_device_string():
-    from modules import shared
     if shared.cmd_opts.device_id is not None:
         return f"privateuseone:{shared.cmd_opts.device_id}"
     return "privateuseone:0"
 
 
 def get_optimal_device_name():
-    if torch.cuda.is_available():
+    if shared.cmd_opts.use_ipex:
+        return "xpu"
+    elif torch.cuda.is_available():
         return get_cuda_device_string()
     if has_mps():
         return "mps"
@@ -54,21 +62,22 @@ def get_optimal_device():
 
 
 def get_device_for(task):
-    from modules import shared
     if task in shared.cmd_opts.use_cpu:
         return cpu
     return get_optimal_device()
 
 
 def torch_gc():
-    if torch.cuda.is_available():
+    if shared.cmd_opts.use_ipex:
+        with torch.xpu.device("xpu"):
+            torch.xpu.empty_cache()
+    elif torch.cuda.is_available():
         with torch.cuda.device(get_cuda_device_string()):
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
 
 
 def set_cuda_params():
-    from modules import shared
     if torch.cuda.is_available():
         try:
             torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
@@ -132,16 +141,21 @@ def randn_without_seed(shape):
 
 
 def autocast(disable=False):
-    from modules import shared
     if disable:
         return contextlib.nullcontext()
     if dtype == torch.float32 or shared.cmd_opts.precision == "Full":
         return contextlib.nullcontext()
-    return torch.autocast("cuda")
+    if shared.cmd_opts.use_ipex:
+        return torch.xpu.amp.autocast(enabled=True, dtype=dtype, cache_enabled=False)
+    else:
+        return torch.autocast("cuda")
 
 
 def without_autocast(disable=False):
-    return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
+    if shared.cmd_opts.use_ipex:
+        return torch.autocast("xpu", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
+    else:
+        return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
 
 
 class NansException(Exception):
@@ -149,7 +163,6 @@ class NansException(Exception):
 
 
 def test_for_nans(x, where):
-    from modules import shared
     if shared.opts.disable_nan_check:
         return
     if not torch.all(torch.isnan(x)).item():

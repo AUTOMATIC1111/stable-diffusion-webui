@@ -27,6 +27,7 @@ group.add_argument("--allow-code", action='store_true', help="Allow custom scrip
 group.add_argument("--share", action='store_true', help="Enable UI accessible through Gradio site, default: %(default)s")
 group.add_argument("--insecure", action='store_true', help="Enable extensions tab regardless of other options, default: %(default)s")
 group.add_argument("--use-cpu", nargs='+', default=[], type=str.lower, help="Force use CPU for specified modules, default: %(default)s")
+group.add_argument("--use-ipex", action='store_true', help="Force use Intel OneAPI XPU backend, default: %(default)s", default=False)
 group.add_argument("--listen", action='store_true', help="Launch web server using public IP address, default: %(default)s")
 group.add_argument("--port", type=int, default=7860, help="Launch web server with given server port, default: %(default)s")
 group.add_argument("--freeze", action='store_true', help="Disable editing settings", default=False)

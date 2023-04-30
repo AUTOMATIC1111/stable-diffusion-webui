@@ -1,6 +1,10 @@
 from types import MethodType
 from rich import print # pylint: disable=redefined-builtin
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 from torch.nn.functional import silu
 import ldm.modules.attention
 import ldm.modules.diffusionmodules.model
