@@ -118,7 +118,7 @@ def list_models():
         checkpoint_info.register()
     print(f'Available models: {shared.opts.ckpt_dir} {len(checkpoints_list)}')
     if len(checkpoints_list) == 0:
-        if not shared.cmd_opts.no_download_sd_model:
+        if not shared.cmd_opts.no_download:
             key = input('Download the default model? (y/N) ')
             if key.lower().startswith('y'):
                 model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"

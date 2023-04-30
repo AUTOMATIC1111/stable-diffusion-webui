@@ -254,7 +254,7 @@ def setup_progressbar(*args, **kwargs): # pylint: disable=unused-argument
 def apply_setting(key, value):
     if value is None:
         return gr.update()
-    if shared.cmd_opts.freeze_settings:
+    if shared.cmd_opts.freeze:
         return gr.update()
     # dont allow model to be swapped when model hash exists in prompt
     if key == "sd_model_checkpoint" and opts.disable_weights_auto_swap:
@@ -1292,7 +1292,7 @@ def create_ui():
                     current_row = gr.Column(variant='compact')
                     current_row.__enter__()
                     previous_section = item.section
-                if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
+                if k in quicksettings_names and not shared.cmd_opts.freeze:
                     quicksettings_list.append((i, k, item))
                     components.append(dummy_component)
                 elif section_must_be_skipped:
