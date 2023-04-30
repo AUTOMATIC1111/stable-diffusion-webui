@@ -105,8 +105,8 @@ function setupImageForLightbox(e) {
 	var isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1
 	var event = isFirefox ? 'mousedown' : 'click'
 	e.addEventListener(event, function (evt) {
-		if(!opts.js_modal_lightbox || evt.button != 0) return;
-		modalZoomSet(gradioApp().getElementById('modalImage'), opts.js_modal_lightbox_initially_zoomed)
+		if (evt.button != 0) return;
+		modalZoomSet(gradioApp().getElementById('modalImage'), true)
 		evt.preventDefault()
 		showModal(evt)
 	}, true);

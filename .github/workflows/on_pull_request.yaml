@@ -24,15 +24,12 @@ jobs:
           python-version: 3.10.6
           cache: pip
           cache-dependency-path: requirements.txt
-      - name: Install PyLint
-        run: | 
+      - name: Test Startup
+        run: |
+          export COMMANDLINE_ARGS="--debug --test"
+          python launch.py
+      - name: Linting
+        run: |
           python -m pip install --upgrade pip
           pip install pylint
-      # This lets PyLint check to see if it can resolve imports
-      - name: Install dependencies
-        run: |
-          export COMMANDLINE_ARGS="--skip-torch-cuda-test --exit"
-          python launch.py
-      - name: Analysing the code with pylint
-        run: |
           pylint $(git ls-files '*.py')

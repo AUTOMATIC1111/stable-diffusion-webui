@@ -97,5 +97,9 @@ if __name__ == "__main__":
     setup.log.info(f"Server arguments: {sys.argv[1:]}")
     setup.log.debug('Starting WebUI')
     logging.disable(logging.INFO)
+    if args.test:
+        setup.log.info("Test only")
+        import webui
+        exit(0)
     import webui
     webui.webui()
