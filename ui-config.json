@@ -643,7 +643,7 @@
     "img2img/Random seed/visible": false,
     "img2img/Reuse seed/visible": false,
     "txt2img/Switch dims/visible": false,
-    "txt2img/Clear prompt/visible": true,
+    "txt2img/Clear prompt/visible": false,
     "txt2img/Extra networks/visible": false,
     "txt2img/Style apply/visible": false,
     "txt2img/Style create/visible": false,
@@ -672,5 +672,11 @@
     "img2img/Send to extras/visible": true,
     "extras/Send to img2img/visible": true,
     "extras/Send to inpaint/visible": true,
-    "extras/Send to extras/visible": true
+    "extras/Send to extras/visible": true,
+    "txt2img/Paste prompt/visible": false,
+    "img2img/Paste prompt/visible": true,
+    "txt2img/Save txt2img/visible": false,
+    "txt2img/Save zip txt2img/visible": false,
+    "img2img/Save img2img/visible": true,
+    "img2img/Save zip img2img/visible": true
 }
