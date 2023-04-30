@@ -35,11 +35,11 @@ function canBeTranslated(node, text){
     if(! text) return false;
     if(! node.parentElement) return false;
 
-    parentType = node.parentElement.nodeName
+    var parentType = node.parentElement.nodeName
     if(parentType=='SCRIPT' || parentType=='STYLE' || parentType=='TEXTAREA') return false;
 
     if (parentType=='OPTION' || parentType=='SPAN'){
-        pnode = node
+        var pnode = node
         for(var level=0; level<4; level++){
             pnode = pnode.parentElement
             if(! pnode) break;
@@ -69,7 +69,7 @@ function getTranslation(text){
 }
 
 function processTextNode(node){
-    text = node.textContent.trim()
+    var text = node.textContent.trim()
 
     if(! canBeTranslated(node, text)) return
 
@@ -105,7 +105,7 @@ function processNode(node){
 }
 
 function dumpTranslations(){
-    dumped = {}
+    var dumped = {}
     if (localization.rtl) {
         dumped.rtl = true
     }
@@ -151,7 +151,7 @@ document.addEventListener("DOMContentLoaded", function() {
 })
 
 function download_localization() {
-    text = JSON.stringify(dumpTranslations(), null, 4)
+    var text = JSON.stringify(dumpTranslations(), null, 4)
 
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));

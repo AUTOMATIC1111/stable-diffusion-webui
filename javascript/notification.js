@@ -2,7 +2,7 @@
 
 let lastHeadImg = null;
 
-notificationButton = null
+let notificationButton = null;
 
 onUiUpdate(function(){
     if(notificationButton == null){

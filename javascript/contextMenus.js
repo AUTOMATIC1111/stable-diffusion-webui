@@ -16,8 +16,7 @@ contextMenuInit = function(){
       oldMenu.remove()
     }
 
-    let tabButton = uiCurrentTab
-    let baseStyle = window.getComputedStyle(tabButton)
+    let baseStyle = window.getComputedStyle(uiCurrentTab)
 
     const contextMenu = document.createElement('nav')
     contextMenu.id = "context-menu"
@@ -63,7 +62,7 @@ contextMenuInit = function(){
 
   function appendContextMenuOption(targetElementSelector,entryName,entryFunction){
 
-    currentItems = menuSpecs.get(targetElementSelector)
+    var currentItems = menuSpecs.get(targetElementSelector)
 
     if(!currentItems){
       currentItems = []

@@ -5,7 +5,7 @@
 function imageMaskResize() {
     const canvases = gradioApp().querySelectorAll('#img2maskimg .touch-none canvas');
     if ( ! canvases.length ) {
-    canvases_fixed = false;
+    canvases_fixed = false; // TODO: this is unused..?
     window.removeEventListener( 'resize', imageMaskResize );
     return;
     }

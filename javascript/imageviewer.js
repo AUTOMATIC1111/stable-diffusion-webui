@@ -57,7 +57,7 @@ function modalImageSwitch(offset) {
         })
 
         if (result != -1) {
-            nextButton = galleryButtons[negmod((result + offset), galleryButtons.length)]
+            var nextButton = galleryButtons[negmod((result + offset), galleryButtons.length)]
             nextButton.click()
             const modalImage = gradioApp().getElementById("modalImage");
             const modal = gradioApp().getElementById("lightboxModal");
@@ -148,7 +148,7 @@ function modalZoomSet(modalImage, enable) {
 }
 
 function modalZoomToggle(event) {
-    modalImage = gradioApp().getElementById("modalImage");
+    var modalImage = gradioApp().getElementById("modalImage");
     modalZoomSet(modalImage, !modalImage.classList.contains('modalImageFullscreen'))
     event.stopPropagation()
 }
@@ -175,7 +175,7 @@ function galleryImageHandler(e) {
 }
 
 onUiUpdate(function() {
-    fullImg_preview = gradioApp().querySelectorAll('.gradio-gallery > div > img')
+    var fullImg_preview = gradioApp().querySelectorAll('.gradio-gallery > div > img')
     if (fullImg_preview != null) {
         fullImg_preview.forEach(setupImageForLightbox);
     }
