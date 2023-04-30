@@ -257,9 +257,6 @@ class EmbeddingsWithFixes(torch.nn.Module):
             for offset, embedding in fixes:
                 emb = devices.cond_cast_unet(embedding.vec)
                 emb_len = min(tensor.shape[0] - offset - 1, emb.shape[0])
-                # DML Solution: type mismatch on half mode
-                if tensor.dtype == torch.float16 and emb.dtype == torch.float32 and not shared.cmd_opts.no_half:
-                    emb = emb.half()
                 tensor = torch.cat([tensor[0:offset + 1], emb[0:emb_len], tensor[offset + 1 + emb_len:]])
 
             vecs.append(tensor)
