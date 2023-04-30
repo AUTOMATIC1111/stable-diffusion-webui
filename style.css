@@ -5,7 +5,7 @@ div.gradio-container{ max-width: unset !important; }
 .compact{ background: transparent !important; padding: 0 !important; }
 div.form{ border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 0.5em; }
 .block.gradio-dropdown, .block.gradio-slider, .block.gradio-checkbox, .block.gradio-textbox, .block.gradio-radio, .block.gradio-checkboxgroup, .block.gradio-number, .block.gradio-colorpicker { border-width: 0 !important; box-shadow: none !important;}
-.gap.compact{ padding: 0; gap: 0.2em 0; }
+.gap.compact{ padding: 0; gap: 0.5em 0; }
 div.compact{ gap: 1em; }
 .gradio-dropdown label span:not(.has-info), .gradio-textbox label span:not(.has-info), .gradio-number label span:not(.has-info) { margin-bottom: 0; }
 .gradio-dropdown ul.options{ z-index: 3000; min-width: fit-content; max-width: inherit; white-space: nowrap; }
@@ -234,6 +234,14 @@ div#extras_scale_to_tab div.form{
     border: none;
     text-align: left;
     white-space: initial;
+}
+
+#settings > div.tabitem {
+    padding-top: var(--size-1);
+}
+
+#settings .block.gradio-checkbox {
+    margin-top: 0;
 }
 
 #settings_result{
