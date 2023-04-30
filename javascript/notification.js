@@ -10,7 +10,7 @@ onUiUpdate(function(){
 
         if(notificationButton != null){
             notificationButton.addEventListener('click', () => {
-                Notification.requestPermission();
+                void Notification.requestPermission();
             },true);
         }
     }
