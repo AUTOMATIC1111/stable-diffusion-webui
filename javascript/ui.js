@@ -260,7 +260,8 @@ onOptionsChanged(function(){
 function markIfModified(setting_name, value) {
     elem = gradioApp().getElementById("setting_"+setting_name)
     if(elem == null) return;
-    let is_new_value = value != opts[setting_name]
+    // Use JSON.stringify to compare nested objects (e.g. arrays for checkbox-groups)
+    let is_new_value = JSON.stringify(value) != JSON.stringify(opts[setting_name])
     elem.classList.toggle("modified", is_new_value)
 }
 
