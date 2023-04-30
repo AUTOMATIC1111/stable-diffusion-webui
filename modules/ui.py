@@ -1222,6 +1222,10 @@ def create_ui():
                     create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
         else:
             res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
+
+        if not is_quicksettings:
+            res.change(fn=None, inputs=res, outputs=[], _js=f'(val) => markIfModified("{key}", val)')
+
         return res
 
     components = []

@@ -249,7 +249,20 @@ onOptionsChanged(function(){
 	    elem.title = sd_checkpoint_hash
 	    elem.href = "https://google.com/search?q=" + sd_checkpoint_hash
 	}
+
+    setting_elems = gradioApp().querySelectorAll('#settings [id^="setting_"]')
+    setting_elems.forEach(function(elem){
+        setting_name = elem.id.replace("setting_", "")
+        markIfModified(setting_name, opts[setting_name])
+    })
 })
+
+function markIfModified(setting_name, value) {
+    elem = gradioApp().getElementById("setting_"+setting_name)
+    if(elem == null) return;
+    let is_new_value = value != opts[setting_name]
+    elem.classList.toggle("modified", is_new_value)
+}
 
 let txt2img_textarea, img2img_textarea = undefined;
 let wait_time = 800

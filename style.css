@@ -244,6 +244,21 @@ div#extras_scale_to_tab div.form{
     margin-top: 0;
 }
 
+#settings [id^="setting_"] {
+    margin-left: 1.2em;
+}
+
+#settings [id^="setting_"].modified::before {
+    content: "";
+    width: .25em;
+    position: absolute;
+    height: 100%;
+    left: -.75em;
+    background-color: var(--color-accent);
+    background-clip: content-box;
+    border-radius: 1em;
+}
+
 #settings_result{
     height: 1.4em;
     margin: 0 1.2em;
