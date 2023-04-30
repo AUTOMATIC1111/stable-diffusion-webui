@@ -111,7 +111,6 @@ contextMenuInit = function(){
         if(e.composedPath()[0].matches(k)){
           showContextMenu(e,e.composedPath()[0],v)
           e.preventDefault()
-          return
         }
       })
     });
