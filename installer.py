@@ -13,7 +13,6 @@ except:
     import argparse
     parser = argparse.ArgumentParser(description="Stable Diffusion", conflict_handler='resolve', formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=55, indent_increment=2, width=200))
 
-
 class Dot(dict): # dot notation access to dictionary attributes
     __getattr__ = dict.get
     __setattr__ = dict.__setitem__
@@ -224,9 +223,9 @@ def check_torch():
         import torch
         log.info(f'Torch {torch.__version__}')
         if shared.cmd_opts.use_ipex:
-                import intel_extension_for_pytorch as ipex
-                log.info(f'Torch backend: Intel OneAPI {torch.__version__}')
-                log.info(f'Torch detected GPU: {torch.xpu.get_device_name("xpu")} VRAM {round(torch.xpu.get_device_properties("xpu").total_memory / 1024 / 1024)}')
+            import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+            log.info(f'Torch backend: Intel OneAPI {torch.__version__}')
+            log.info(f'Torch detected GPU: {torch.xpu.get_device_name("xpu")} VRAM {round(torch.xpu.get_device_properties("xpu").total_memory / 1024 / 1024)}')
         elif torch.cuda.is_available():
             if torch.version.cuda:
                 log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else "N/A"}')
@@ -524,6 +523,7 @@ def add_args():
     group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
+    group.add_argument("--use-ipex", action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s", default=False)
     group.add_argument('--no-directml', default = False, action='store_true', help = "Use CPU instead of DirectML if no compatible GPU is detected, default: %(default)s")
     group.add_argument('--skip-update', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
     group.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")

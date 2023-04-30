@@ -12,11 +12,11 @@ import modules.devices as devices
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.paths_internal as paths
-from setup import log as setup_log # pylint: disable=E0611
+from installer import log as central_logger # pylint: disable=E0611
 
 errors.install(gr)
 demo: gr.Blocks = None
-log = setup_log
+log = central_logger
 parser = cmd_args.parser
 url = 'https://github.com/vladmandic/automatic'
 if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:

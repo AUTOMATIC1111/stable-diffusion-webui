@@ -1,23 +1,24 @@
+### majority of this file is superflous, but used by some extensions as helpers during extension installation
+
 import subprocess
 import os
 import sys
 import shlex
 import logging
-import setup
-import modules.paths_internal
-import modules.cmd_args
-
-setup.ensure_base_requirements()
-from rich import print # pylint: disable=redefined-builtin,wrong-import-order
-
-### majority of this file is superflous, but used by some extensions as helpers during extension installation
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
-setup.add_args()
-setup.extensions_preload(force=False)
-setup.parse_args()
+
+import installer
+installer.add_args()
+installer.ensure_base_requirements()
+installer.extensions_preload(force=False)
+installer.parse_args()
+
+import modules.cmd_args
 args, _ = modules.cmd_args.parser.parse_known_args()
+
+import modules.paths_internal
 script_path = modules.paths_internal.script_path
 extensions_dir = modules.paths_internal.extensions_dir
 git = os.environ.get('GIT', "git")
@@ -41,6 +42,7 @@ def commit_hash():
 
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
     if desc is not None:
+        from rich import print # pylint: disable=redefined-builtin,wrong-import-order
         print(desc)
     if live:
         result = subprocess.run(command, check=False, shell=True, env=os.environ if custom_env is None else custom_env)
@@ -62,7 +64,7 @@ def check_run(command):
 
 
 def is_installed(package):
-    return setup.installed(package)
+    return installer.installed(package)
 
 
 def repo_dir(name):
@@ -85,20 +87,20 @@ def check_run_python(code):
 
 
 def git_clone(url, tgt, _name, commithash=None):
-    setup.clone(url, tgt, commithash)
+    installer.clone(url, tgt, commithash)
 
 
 def run_extension_installer(ext_dir):
-    setup.run_extension_installer(ext_dir)
+    installer.run_extension_installer(ext_dir)
 
 if __name__ == "__main__":
-    setup.run_setup()
-    setup.extensions_preload(force=True)
-    setup.log.info(f"Server arguments: {sys.argv[1:]}")
-    setup.log.debug('Starting WebUI')
+    installer.run_setup()
+    installer.extensions_preload(force=True)
+    installer.log.info(f"Server arguments: {sys.argv[1:]}")
+    installer.log.debug('Starting WebUI')
     logging.disable(logging.INFO)
     if args.test:
-        setup.log.info("Test only")
+        installer.log.info("Test only")
         import webui
         exit(0)
     import webui
