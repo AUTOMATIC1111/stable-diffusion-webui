@@ -21,7 +21,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-args = Dot({ 'debug': False, 'upgrade': False, 'noupdate': False, 'nodirectml': False, 'skip-extensions': False, 'skip-requirements': False, 'reset': False })
+args = Dot({ 'debug': False, 'upgrade': False, 'skip_update': False, 'no_directml': False, 'skip_extensions': False, 'skip_requirements': False, 'reset': False })
 quick_allowed = True
 errors = 0
 opts = {}
@@ -175,7 +175,6 @@ def clone(url, folder, commithash=None):
 
 # check python version
 def check_python():
-    import platform
     supported_minors = [9, 10]
     if args.experimental:
         supported_minors.append(11)
@@ -211,7 +210,7 @@ def check_torch():
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
         machine = platform.machine()
-        if 'arm' not in machine and 'aarch' not in machine and not args.nodirectml: # torch-directml is available on AMD64
+        if 'arm' not in machine and 'aarch' not in machine and not args.no_directml: # torch-directml is available on AMD64
             log.info('Using DirectML Backend')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision torch-directml')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
@@ -239,7 +238,7 @@ def check_torch():
                 log.info(f'Torch detected GPU: {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
         else:
             try:
-                import torch_directml
+                import torch_directml # pylint: disable=import-error
                 import pkg_resources
                 version = pkg_resources.get_distribution("torch-directml")
                 log.info(f'Torch backend: DirectML ({version})')
@@ -261,6 +260,8 @@ def check_torch():
         install(tensorflow_package, 'tensorflow', ignore=True)
     except Exception as e:
         log.debug(f'Cannot install tensorflow package: {e}')
+    if opts.get('cuda_compile_mode', '') == 'hidet':
+        install('hidet', 'hidet')
 
 
 # install required packages
@@ -338,7 +339,7 @@ def install_extensions():
         extensions = list_extensions(folder)
         log.info(f'Extensions enabled: {extensions}')
         for ext in extensions:
-            if not args.noupdate:
+            if not args.skip_update:
                 try:
                     update(os.path.join(folder, ext))
                 except:
@@ -362,7 +363,7 @@ def install_submodules():
         git('checkout master')
         log.info('Continuing setup')
     txt = git('submodule --quiet update --init --recursive')
-    if not args.noupdate:
+    if not args.skip_update:
         log.info('Updating submodules')
         submodules = git('submodule').splitlines()
         for submodule in submodules:
@@ -477,7 +478,7 @@ def check_version():
 
 
 def update_wiki():
-    if not args.noupdate:
+    if not args.skip_update:
         log.info('Updating Wiki')
         try:
             update(os.path.join(os.path.dirname(__file__), "wiki"))
@@ -519,16 +520,17 @@ def check_timestamp():
 
 
 def add_args():
-    parser.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
-    parser.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
-    parser.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
-    parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
-    parser.add_argument('--nodirectml', default = False, action='store_true', help = "Although nVidia and AMD toolkit aren't detected, use CPU not DirectML, default: %(default)s")
-    parser.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
-    parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
-    parser.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
-    parser.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
-    parser.add_argument('--test', default = False, action='store_true', help = "Run test only, default: %(default)s")
+    group = parser.add_argument_group('Setup options')
+    group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
+    group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
+    group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
+    group.add_argument('--no-directml', default = False, action='store_true', help = "Use CPU instead of DirectML if no compatible GPU is detected, default: %(default)s")
+    group.add_argument('--skip-update', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
+    group.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
+    group.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
+    group.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
+    group.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
+    group.add_argument('--test', default = False, action='store_true', help = "Run test only, default: %(default)s")
 
 
 def parse_args():
@@ -566,8 +568,8 @@ def git_reset():
 
 def read_options():
     global opts # pylint: disable=global-statement
-    if os.path.isfile(args.ui_settings_file):
-        with open(args.ui_settings_file, "r", encoding="utf8") as file:
+    if os.path.isfile(args.config):
+        with open(args.config, "r", encoding="utf8") as file:
             opts = json.load(file)
 
 

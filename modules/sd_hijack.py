@@ -96,12 +96,12 @@ def undo_optimizations():
 def fix_checkpoint():
     """checkpoints are now added and removed in embedding/hypernet code, since torch doesn't want
     checkpoints to be added when not training (there's a warning)"""
-    pass
+    pass # pylint: disable=unnecessary-pass
 
 
 def weighted_loss(sd_model, pred, target, mean=True):
     #Calculate the weight normally, but ignore the mean
-    loss = sd_model._old_get_loss(pred, target, mean=False)
+    loss = sd_model._old_get_loss(pred, target, mean=False) # pylint: disable=protected-access
 
     #Check if we have weights available
     weight = getattr(sd_model, '_custom_loss_weight', None)
@@ -114,12 +114,12 @@ def weighted_loss(sd_model, pred, target, mean=True):
 def weighted_forward(sd_model, x, c, w, *args, **kwargs):
     try:
         #Temporarily append weights to a place accessible during loss calc
-        sd_model._custom_loss_weight = w
+        sd_model._custom_loss_weight = w # pylint: disable=protected-access
 
         #Replace 'get_loss' with a weight-aware one. Otherwise we need to reimplement 'forward' completely
         #Keep 'get_loss', but don't overwrite the previous old_get_loss if it's already set
         if not hasattr(sd_model, '_old_get_loss'):
-            sd_model._old_get_loss = sd_model.get_loss
+            sd_model._old_get_loss = sd_model.get_loss # pylint: disable=protected-access
         sd_model.get_loss = MethodType(weighted_loss, sd_model)
 
         #Run the standard forward function, but with the patched 'get_loss'
@@ -133,7 +133,7 @@ def weighted_forward(sd_model, x, c, w, *args, **kwargs):
 
         #If we have an old loss function, reset the loss function to the original one
         if hasattr(sd_model, '_old_get_loss'):
-            sd_model.get_loss = sd_model._old_get_loss
+            sd_model.get_loss = sd_model._old_get_loss # pylint: disable=protected-access
             del sd_model._old_get_loss
 
 def apply_weighted_forward(sd_model):
@@ -182,8 +182,13 @@ class StableDiffusionModelHijack:
         if opts.cuda_compile and opts.cuda_compile_mode != 'none':
             try:
                 import torch._dynamo as dynamo # pylint: disable=unused-import
-                torch._dynamo.config.verbose = True # pylint: disable=protected-access
+                torch._dynamo.config.verbose = opts.cuda_compile_verbose # pylint: disable=protected-access
+                torch._dynamo.config.suppress_errors = opts.cuda_compile_errors # pylint: disable=protected-access
                 torch.backends.cudnn.benchmark = True
+                if opts.cuda_compile_mode == 'hidet':
+                    import hidet
+                    hidet.torch.dynamo_config.use_tensor_core(True)
+                    hidet.torch.dynamo_config.search_space(2)
                 m.model = torch.compile(m.model, mode="default", backend=opts.cuda_compile_mode, fullgraph=False, dynamic=False)
                 print("Model compile enabled:", opts.cuda_compile_mode)
             except Exception as err:

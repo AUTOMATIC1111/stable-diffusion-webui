@@ -49,7 +49,7 @@ ui_reorder_categories = [
     "scripts",
 ]
 
-cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.enable_insecure
+cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.insecure
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
 device = devices.device
 is_device_dml = False
@@ -59,7 +59,7 @@ clip_model = None
 
 
 if device.type == 'privateuseone':
-    import modules.dml
+    import modules.dml # pylint: disable=ungrouped-imports
     is_device_dml = True
 
 
@@ -252,8 +252,6 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
     "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Embeddings directory for textual inversion"),
-    "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train/templates'), "Embeddings train templates directory"),
-    "embeddings_train_log": OptionInfo(os.path.join(paths.script_path, 'train.csv'), "Embeddings train log file"),
     "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Hypernetwork directory"),
     "codeformer_models_path": OptionInfo(os.path.join(paths.models_path, 'Codeformer'), "Path to directory with codeformer model file(s)."),
     "gfpgan_models_path": OptionInfo(os.path.join(paths.models_path, 'GFPGAN'), "Path to directory with GFPGAN model file(s)"),
@@ -326,7 +324,9 @@ options_templates.update(options_section(('cuda', "CUDA Settings"), {
     "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
     "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
     "cuda_compile": OptionInfo(False, "Enable model compile (experimental)"),
-    "cuda_compile_mode": OptionInfo("none", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser']}),
+    "cuda_compile_mode": OptionInfo("none", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet']}),
+    "cuda_compile_verbose": OptionInfo(True, "Model compile verbose mode"),
+    "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
@@ -351,6 +351,8 @@ options_templates.update(options_section(('training', "Training"), {
     "save_training_settings_to_txt": OptionInfo(True, "Save textual inversion and hypernet settings to a text file whenever training starts."),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
+    "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train', 'templates'), "Embeddings train templates directory"),
+    "embeddings_train_log": OptionInfo(os.path.join(paths.script_path, 'train', 'log', 'train.csv'), "Embeddings train log file"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
     "training_write_csv_every": OptionInfo(0, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
     "training_enable_tensorboard": OptionInfo(False, "Enable tensorboard logging."),
@@ -428,14 +430,14 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
 
 options_templates.update(options_section(('token_merging', 'Token Merging'), {
     "token_merging": OptionInfo(False, "Enable redundant token merging via tomesd. This can provide significant speed and memory improvements.", gr.Checkbox),
-    "token_merging_ratio": OptionInfo(0.5, "Merging Ratio", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio": OptionInfo(0.5, "Merging Ratio. Higher merging ratio = faster generation, smaller VRAM usage, lower quality.", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
     "token_merging_hr_only": OptionInfo(True, "Apply only to high-res fix pass. Disabling can yield a ~20-35% speedup on contemporary resolutions.", gr.Checkbox),
     "token_merging_ratio_hr": OptionInfo(0.5, "Merging Ratio (high-res pass) - If 'Apply only to high-res' is enabled, this will always be the ratio used.", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
     "token_merging_random": OptionInfo(False, "Use random perturbations - Can improve outputs for certain samplers. For others, it may cause visual artifacting.", gr.Checkbox),
-    "token_merging_merge_attention": OptionInfo(True, "Merge attention", gr.Checkbox),
-    "token_merging_merge_cross_attention": OptionInfo(False, "Merge cross attention", gr.Checkbox),
-    "token_merging_merge_mlp": OptionInfo(False, "Merge mlp", gr.Checkbox),
-    "token_merging_maximum_down_sampling": OptionInfo(1, "Maximum down sampling", gr.Dropdown, lambda: {"choices": ["1", "2", "4", "8"]}),
+    "token_merging_merge_attention": OptionInfo(True, "Merge attention (Recommend on)", gr.Checkbox),
+    "token_merging_merge_cross_attention": OptionInfo(False, "Merge cross attention (Recommend off)", gr.Checkbox),
+    "token_merging_merge_mlp": OptionInfo(False, "Merge mlp (Strongly recommend off)", gr.Checkbox),
+    "token_merging_maximum_down_sampling": OptionInfo(1, "Maximum down sampling", gr.Radio, lambda: {"choices": [1, 2, 4, 8]}),
     "token_merging_stride_x": OptionInfo(2, "Stride - X", gr.Slider, {"minimum": 2, "maximum": 8, "step": 2}),
     "token_merging_stride_y": OptionInfo(2, "Stride - Y", gr.Slider, {"minimum": 2, "maximum": 8, "step": 2})
 }))
@@ -466,7 +468,7 @@ class Options:
     def __setattr__(self, key, value):
         if self.data is not None:
             if key in self.data or key in self.data_labels:
-                if cmd_opts.freeze_settings:
+                if cmd_opts.freeze:
                     print(f'Settings are frozen: {key}')
                     return
                 if cmd_opts.hide_ui_dir_config and key in restricted_opts:
@@ -512,7 +514,7 @@ class Options:
         return data_label.default
 
     def save(self, filename):
-        assert not cmd_opts.freeze_settings, "saving settings is disabled"
+        assert not cmd_opts.freeze, "saving settings is disabled"
         with open(filename, "w", encoding="utf8") as file:
             json.dump(self.data, file, indent=4)
 
@@ -585,7 +587,7 @@ opts = Options()
 batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 xformers_available = False
-config_filename = cmd_opts.ui_settings_file
+config_filename = cmd_opts.config
 os.makedirs(opts.hypernetwork_dir, exist_ok=True)
 hypernetworks = {}
 loaded_hypernetworks = []
