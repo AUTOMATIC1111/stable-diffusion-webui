@@ -44,7 +44,6 @@ def get_memory():
         mem.update({ 'ram': e })
     try:
         import torch
-        from modules import shared
         if torch.cuda.is_available():
             s = torch.cuda.mem_get_info()
             gpu = { 'free': gb(s[0]), 'used': gb(s[1] - s[0]), 'total': gb(s[1]) }
