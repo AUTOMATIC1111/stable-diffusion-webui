@@ -25,6 +25,10 @@ re_emoji = /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F9B0}-\u{1F9B3}]/u
 original_lines = {}
 translated_lines = {}
 
+function hasLocalization() {
+    return window.localization && Object.keys(window.localization).length > 0;
+}
+
 function textNodesUnder(el){
     var n, a=[], walk=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null,false);
     while(n=walk.nextNode()) a.push(n);
@@ -119,37 +123,6 @@ function dumpTranslations(){
     return dumped
 }
 
-onUiUpdate(function(m){
-    m.forEach(function(mutation){
-        mutation.addedNodes.forEach(function(node){
-            processNode(node)
-        })
-    });
-})
-
-
-document.addEventListener("DOMContentLoaded", function() {
-    processNode(gradioApp())
-
-    if (localization.rtl) {  // if the language is from right to left,
-        (new MutationObserver((mutations, observer) => { // wait for the style to load
-            mutations.forEach(mutation => {
-                mutation.addedNodes.forEach(node => {
-                    if (node.tagName === 'STYLE') {
-                        observer.disconnect();
-
-                        for (const x of node.sheet.rules) {  // find all rtl media rules
-                            if (Array.from(x.media || []).includes('rtl')) {
-                                x.media.appendMedium('all');  // enable them
-                            }
-                        }
-                    }
-                })
-            });
-        })).observe(gradioApp(), { childList: true });
-    }
-})
-
 function download_localization() {
     var text = JSON.stringify(dumpTranslations(), null, 4)
 
@@ -162,4 +135,37 @@ function download_localization() {
     element.click();
 
     document.body.removeChild(element);
+}
+
+if(hasLocalization()) {
+    onUiUpdate(function (m) {
+        m.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function (node) {
+                processNode(node)
+            })
+        });
+    })
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        processNode(gradioApp())
+
+        if (localization.rtl) {  // if the language is from right to left,
+            (new MutationObserver((mutations, observer) => { // wait for the style to load
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.tagName === 'STYLE') {
+                            observer.disconnect();
+
+                            for (const x of node.sheet.rules) {  // find all rtl media rules
+                                if (Array.from(x.media || []).includes('rtl')) {
+                                    x.media.appendMedium('all');  // enable them
+                                }
+                            }
+                        }
+                    })
+                });
+            })).observe(gradioApp(), { childList: true });
+        }
+    })
 }
