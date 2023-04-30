@@ -75,8 +75,6 @@ def installed(package, friendly: str = None):
             ok = ok and spec is not None
             if ok:
                 version = pkg_resources.get_distribution(p[0]).version
-                if args.use_ipex and p[0] == "pytorch_lightning":
-                    p[1] = "1.8.6"
                 log.debug(f"Package version found: {p[0]} {version}")
                 if len(p) > 1:
                     ok = ok and version == p[1]
@@ -191,17 +189,17 @@ def check_python():
 # check torch version
 def check_torch():
     if shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe')):
-        log.info('nVidia toolkit detected')
+        log.info('nVidia CUDA toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
     elif shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo'):
-        log.info('AMD toolkit detected')
+        log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     elif shutil.which('sycl-ls') is not None or os.path.exists('/opt/intel/oneapi') or args.use_ipex:
-        log.info('Intel toolkit detected')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch==1.13.0a0+git6c9b55e torchvision==0.14.1a0 intel_extension_for_pytorch==1.13.120+xpu --index-url https://developer.intel.com/ipex-whl-stable-xpu')
+        log.info('Intel OneAPI Toolkit detected')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch==1.13.0a0+git6c9b55e torchvision==0.14.1a0 intel_extension_for_pytorch==1.13.120+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
         machine = platform.machine()

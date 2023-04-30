@@ -446,9 +446,6 @@ class Script(scripts.Script):
             current_values = axis_values_dropdown
             if has_choices:
                 choices = choices()
-                if len(choices) > 12:
-                    has_choices = False
-            if has_choices:
                 if isinstance(current_values,str):
                     current_values = current_values.split(",")
                 current_values = list(filter(lambda x: x in choices, current_values))
