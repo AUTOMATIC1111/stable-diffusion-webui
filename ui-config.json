@@ -23,7 +23,7 @@
     "txt2img/Height/maximum": 2048,
     "txt2img/Height/step": 8,
     "txt2img/Batch count/visible": false,
-    "txt2img/Batch count/value": 1,
+    "txt2img/Batch count/value": 4,
     "txt2img/Batch count/minimum": 1,
     "txt2img/Batch count/maximum": 100,
     "txt2img/Batch count/step": 1,

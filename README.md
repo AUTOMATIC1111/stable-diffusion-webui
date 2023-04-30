@@ -216,14 +216,6 @@ so I need to run same python version as a base.
 Installation started in 11:07, finished 11:33
 
 config notes:
-in `ui-config` I set
-```json
-{
-    "txt2img/Batch count/value": 1
-}
-```
-for my laptop to speedup the experiments
-        random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed', label='Random seed')
-        reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed', label='Reuse seed')
-
-startup time after everything has been installed ~ 30s
+I have ui-config-ntb for my laptop, most should be same as ui-config.json, but
+has lower steps num and batch size to be practical for just trying it out, although
+with ugly images

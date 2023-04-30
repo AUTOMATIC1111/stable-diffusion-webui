@@ -112,7 +112,7 @@
     "keyedit_precision_attention": 0.1,
     "keyedit_precision_extra": 0.05,
     "quicksettings": "sd_model_checkpoint",
-    "hidden_tabs": ["img2img", "Extras", "PNG Info", "Checkpoint Merger", "Train", "Extensions"],
+    "hidden_tabs": ["img2img", "Extras", "PNG Info", "Checkpoint Merger", "Train", "Extensions", "Settings"],
     "ui_reorder": "inpaint, sampler, checkboxes, hires_fix, dimensions, cfg, seed, batch, override_settings, scripts",
     "ui_extra_networks_tab_reorder": "",
     "localization": "None",
