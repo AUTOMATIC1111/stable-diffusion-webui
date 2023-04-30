@@ -5,8 +5,7 @@ from modules import shared
 try:
     import intel_extension_for_pytorch as ipex
 except:
-    if shared.cmd_opts.use_ipex:
-        print("Failed to import IPEX")
+    pass
 
 if sys.platform == "darwin":
     from modules import mac_specific

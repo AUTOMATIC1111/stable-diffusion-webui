@@ -8,6 +8,10 @@ from typing import Any, Dict, List
 
 import psutil
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 import cv2
@@ -55,10 +59,8 @@ def memory_stats():
     except Exception as e:
         mem.update({ 'ram': e })
     try:
-        from modules import shared
-        if shared.cmd_opts.use_ipex:
-            s = torch.xpu.mem_get_info()
-            gpu = { 'used': gb(s[1] - s[0]), 'total': gb(s[1]) }
+        if cmd_opts.use_ipex:
+            gpu = { 'used': gb(torch.xpu.memory_allocated()), 'total': gb(torch.xpu.get_device_properties("xpu").total_memory) }
             s = dict(torch.xpu.memory_stats("xpu"))
             mem.update({
                 'gpu': gpu,

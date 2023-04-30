@@ -3,6 +3,10 @@ import sys
 
 import cv2
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 
 import modules.face_restoration
 from modules import shared, devices, modelloader, errors
@@ -103,8 +107,7 @@ def setup_model(dirname):
                             output = self.net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight, adain=True)[0]
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output
-                        from modules import shared
-                        if shared.cmd_opts.use_ipex:
+                        if cmd_opts.use_ipex:
                             torch.xpu.empty_cache()
                         else:
                             torch.cuda.empty_cache()

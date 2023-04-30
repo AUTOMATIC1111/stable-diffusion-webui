@@ -3,6 +3,10 @@ import html
 import csv
 from collections import namedtuple
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import tqdm
 import safetensors.torch
 from rich import print # pylint: disable=redefined-builtin
@@ -434,7 +438,6 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
         else:
             print("No saved optimizer exists in checkpoint")
 
-    from modules import shared
     if shared.cmd_opts.use_ipex:
         scaler = torch.xpu.amp.GradScaler()
     else:

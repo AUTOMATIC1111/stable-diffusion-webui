@@ -8,6 +8,10 @@ from os import mkdir
 from urllib import request
 from rich import print, progress # pylint: disable=redefined-builtin
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import safetensors.torch
 from omegaconf import OmegaConf
 import tomesd

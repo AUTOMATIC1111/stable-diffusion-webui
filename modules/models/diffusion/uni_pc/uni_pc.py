@@ -1,4 +1,8 @@
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import torch.nn.functional as F
 import math
 import time

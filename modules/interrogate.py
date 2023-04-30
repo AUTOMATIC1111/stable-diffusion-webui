@@ -5,6 +5,10 @@ from pathlib import Path
 import re
 
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import torch.hub
 
 from torchvision import transforms

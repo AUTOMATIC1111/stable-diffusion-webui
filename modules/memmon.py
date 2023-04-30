@@ -2,6 +2,12 @@ import threading
 import time
 from collections import defaultdict
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
+
+from modules import shared
 
 
 class MemUsageMonitor(threading.Thread):
@@ -19,7 +25,6 @@ class MemUsageMonitor(threading.Thread):
         self.daemon = True
         self.run_flag = threading.Event()
         self.data = defaultdict(int)
-        from modules import shared
         if not torch.cuda.is_available() or not shared.cmd_opts.use_ipex:
             self.disabled = True
         else:
@@ -40,9 +45,8 @@ class MemUsageMonitor(threading.Thread):
                     self.disabled = True
 
     def cuda_mem_get_info(self):
-        from modules import shared
         if shared.cmd_opts.use_ipex:
-            return torch.xpu.mem_get_info("xpu")
+            return [(torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated()), torch.xpu.get_device_properties("xpu").total_memory]
         else:
             index = self.device.index if self.device.index is not None else torch.cuda.current_device()
             return torch.cuda.mem_get_info(index)
@@ -52,7 +56,6 @@ class MemUsageMonitor(threading.Thread):
             return
         while True:
             self.run_flag.wait()
-            from modules import shared
             if shared.cmd_opts.use_ipex:
                 torch.xpu.reset_peak_memory_stats()
             else:
@@ -72,7 +75,6 @@ class MemUsageMonitor(threading.Thread):
         for k, v in self.read().items():
             print(k, -(v // -(1024 ** 2)))
         print(self, 'raw torch memory stats:')
-        from modules import shared
         if shared.cmd_opts.use_ipex:
             tm = torch.xpu.memory_stats("xpu")
         else:
@@ -95,7 +97,6 @@ class MemUsageMonitor(threading.Thread):
             self.data["free"] = free
             self.data["total"] = total
 
-            from modules import shared
             if shared.cmd_opts.use_ipex:
                 torch_stats = torch.xpu.memory_stats("xpu")
             else:

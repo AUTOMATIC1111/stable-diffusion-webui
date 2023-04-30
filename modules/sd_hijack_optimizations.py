@@ -2,6 +2,10 @@ import math
 import psutil
 
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 from torch import einsum
 
 from ldm.util import default
@@ -26,7 +30,7 @@ def get_available_vram():
         stats = torch.xpu.memory_stats("xpu")
         mem_active = stats['active_bytes.all.current']
         mem_reserved = stats['reserved_bytes.all.current']
-        mem_free_xpu, _ = torch.xpu.mem_get_info("xpu")
+        mem_free_xpu, _ = [(torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated()), torch.xpu.get_device_properties("xpu").total_memory]
         mem_free_torch = mem_reserved - mem_active
         mem_free_total = mem_free_xpu + mem_free_torch
         return mem_free_total
@@ -201,7 +205,7 @@ def einsum_op_cuda(q, k, v):
         stats = torch.xpu.memory_stats("xpu")
         mem_active = stats['active_bytes.all.current']
         mem_reserved = stats['reserved_bytes.all.current']
-        mem_free_xpu, _ = torch.xpu.mem_get_info("xpu")
+        mem_free_xpu, _ = [(torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated()), torch.xpu.get_device_properties("xpu").total_memory]
         mem_free_torch = mem_reserved - mem_active
         mem_free_total = mem_free_xpu + mem_free_torch
         # Divide factor of safety as there's copying and fragmentation

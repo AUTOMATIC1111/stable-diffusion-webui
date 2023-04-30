@@ -3,8 +3,14 @@ import collections
 import glob
 from copy import deepcopy
 from rich import print # pylint: disable=redefined-builtin
+from modules import shared
 import torch
-from modules import paths, shared, devices, script_callbacks, sd_models
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    if shared.cmd_opts.use_ipex:
+        print("Failed to import IPEX")
+from modules import paths, devices, script_callbacks, sd_models
 
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}

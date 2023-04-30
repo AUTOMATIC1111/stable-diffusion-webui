@@ -1,5 +1,9 @@
 from typing import Optional
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import torch.nn as nn
 from transformers import XLMRobertaModel,XLMRobertaTokenizer, BertPreTrainedModel, BertModel, BertConfig # pylint: disable=unused-import
 from transformers.models.xlm_roberta.configuration_xlm_roberta import XLMRobertaConfig
