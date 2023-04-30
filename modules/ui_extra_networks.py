@@ -241,7 +241,6 @@ class ExtraNetworksUi:
         self.current_view = None
         self.view_choices_in_setting = None
         self.control_change_view = None
-        # self.btns_change_view = None
 
 
 def pages_in_preferred_order(pages):
@@ -290,7 +289,8 @@ def create_ui(container, button, tabname):
     ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
     ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
-    # change view control (dropdown) - *if value set = ui.current_view, unknow bug in JS appendChild, JS will reset the value wrong.
+    # change view control (dropdown) 
+    # *if value set = ui.current_view, JS appendChild will cause a bug, that will reset the value wrong, so to keep the inintal value as "change view" might be the best approach
     ui.control_change_view = gr.Dropdown(ui.view_choices_in_setting, 
                                          value = "Change View",
                                          label="*Will Force Reload UI", 
