@@ -23,12 +23,6 @@ import shutil
 import argparse
 import tempfile
 import torch
-from modules import shared
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    if shared.cmd_opts.use_ipex:
-        print("Failed to import IPEX")
 import logging
 import importlib
 import transformers
@@ -123,12 +117,7 @@ options = Map({
 
 def mem_stats():
     gc.collect()
-    if shared.cmd_opts.use_ipex:
-        with torch.no_grad():
-            torch.xpu.empty_cache()
-        with torch.xpu.device('xpu'):
-            torch.cuda.empty_cache()
-    elif torch.cuda.is_available():
+    if torch.cuda.is_available():
         with torch.no_grad():
             torch.cuda.empty_cache()
         with torch.cuda.device('cuda'):

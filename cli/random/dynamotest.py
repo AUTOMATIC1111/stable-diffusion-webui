@@ -7,13 +7,8 @@ import warnings
 
 import numpy as np
 import torch
-from modules import shared
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    if shared.cmd_opts.use_ipex:
-        print("Failed to import IPEX")
 from torchvision.models import resnet18
+
 
 print('torch:', torch.__version__)
 try:
@@ -29,42 +24,24 @@ warnings.filterwarnings('ignore', category=UserWarning) # disable those for now 
 
 
 def timed(fn): # returns the result of running `fn()` and the time it took for `fn()` to run in ms using CUDA events
-    if shared.cmd_opts.use_ipex:
-        start = torch.xpu.Event(enable_timing=True)
-        end = torch.xpu.Event(enable_timing=True)
-        start.record()
-        result = fn()
-        end.record()
-        torch.xpu.synchronize()
-        return result, start.elapsed_time(end)
-    else:
-        start = torch.cuda.Event(enable_timing=True)
-        end = torch.cuda.Event(enable_timing=True)
-        start.record()
-        result = fn()
-        end.record()
-        torch.cuda.synchronize()
-        return result, start.elapsed_time(end)
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    start.record()
+    result = fn()
+    end.record()
+    torch.cuda.synchronize()
+    return result, start.elapsed_time(end)
 
 
 def generate_data(b):
-    if shared.cmd_opts.use_ipex:
-        return (
-            torch.randn(b, 3, 128, 128).to(torch.float32).xpu(),
-            torch.randint(1000, (b,)).xpu(),
-        )
-    else:
-        return (
-            torch.randn(b, 3, 128, 128).to(torch.float32).cuda(),
-            torch.randint(1000, (b,)).cuda(),
-        )
+    return (
+        torch.randn(b, 3, 128, 128).to(torch.float32).cuda(),
+        torch.randint(1000, (b,)).cuda(),
+    )
 
 
 def init_model():
-    if shared.cmd_opts.use_ipex:
-        return resnet18().to(torch.float32).xpu()
-    else:
-        return resnet18().to(torch.float32).cuda()
+    return resnet18().to(torch.float32).cuda()
 
 
 def eval(mod, inp):
