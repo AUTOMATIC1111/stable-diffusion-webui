@@ -6,7 +6,7 @@ from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
 
 from modules.upscaler import Upscaler, UpscalerData
-from modules.shared import cmd_opts, opts
+from modules.shared import cmd_opts, opts, device
 import modules.errors as errors
 
 
@@ -53,6 +53,7 @@ class UpscalerRealESRGAN(Upscaler):
             half=not cmd_opts.no_half and not opts.upcast_sampling,
             tile=opts.ESRGAN_tile,
             tile_pad=opts.ESRGAN_tile_overlap,
+            device=device,
         )
 
         upsampled = upsampler.enhance(np.array(img), outscale=info.scale)[0]

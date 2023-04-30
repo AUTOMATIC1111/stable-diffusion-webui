@@ -4,6 +4,7 @@ import json
 import time
 import shutil
 import logging
+import platform
 import subprocess
 
 try:
@@ -20,7 +21,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-args = Dot({ 'debug': False, 'upgrade': False, 'noupdate': False, 'skip-extensions': False, 'skip-requirements': False, 'reset': False })
+args = Dot({ 'debug': False, 'upgrade': False, 'noupdate': False, 'nodirectml': False, 'skip-extensions': False, 'skip-requirements': False, 'reset': False })
 quick_allowed = True
 errors = 0
 opts = {}
@@ -197,17 +198,21 @@ def check_torch():
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
-        log.info('Using CPU-only Torch')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision')
-        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
+        machine = platform.machine()
+        if 'arm' not in machine and 'aarch' not in machine and not args.nodirectml: # torch-directml is available on AMD64
+            log.info('Using DirectML Backend')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision torch-directml')
+            xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
+        else:
+            log.info('Using CPU-only Torch')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision')
+            xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if 'torch' in torch_command:
         install(torch_command, 'torch torchvision torchaudio')
     try:
         import torch
         log.info(f'Torch {torch.__version__}')
-        if not torch.cuda.is_available():
-            log.warning("Torch repoorts CUDA not available")
-        else:
+        if torch.cuda.is_available():
             if torch.version.cuda:
                 log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else "N/A"}')
             elif torch.version.hip:
@@ -216,6 +221,17 @@ def check_torch():
                 log.warning('Unknown Torch backend')
             for device in [torch.cuda.device(i) for i in range(torch.cuda.device_count())]:
                 log.info(f'Torch detected GPU: {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
+        else:
+            try:
+                import torch_directml
+                import pkg_resources
+                version = pkg_resources.get_distribution("torch-directml")
+                log.info(f'Torch backend: DirectML ({version})')
+                for i in range(0, torch_directml.device_count()):
+                    log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
+                log.info(f'DirectML default device: {torch_directml.device_name(torch_directml.default_device())}')
+            except:
+                log.warning("Torch repoorts CUDA not available")
     except Exception as e:
         log.error(f'Could not load torch: {e}')
         exit(1)
@@ -491,6 +507,7 @@ def add_args():
     parser.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     parser.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
     parser.add_argument('--noupdate', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
+    parser.add_argument('--nodirectml', default = False, action='store_true', help = "Although nVidia and AMD toolkit aren't detected, use CPU not DirectML, default: %(default)s")
     parser.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     parser.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     parser.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
