@@ -144,11 +144,7 @@ function setupImageForLightbox(e) {
 }
 
 function modalZoomSet(modalImage, enable) {
-    if (enable) {
-        modalImage.classList.add('modalImageFullscreen');
-    } else {
-        modalImage.classList.remove('modalImageFullscreen');
-    }
+    if(modalImage) modalImage.classList.toggle('modalImageFullscreen', !!enable);
 }
 
 function modalZoomToggle(event) {

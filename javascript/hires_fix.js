@@ -1,13 +1,9 @@
 
-function setInactive(elem, inactive){
-    if(inactive){
-        elem.classList.add('inactive')
-    } else{
-        elem.classList.remove('inactive')
-    }
-}
-
 function onCalcResolutionHires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y){
+    function setInactive(elem, inactive){
+        elem.classList.toggle('inactive', !!inactive)
+    }
+
     hrUpscaleBy = gradioApp().getElementById('txt2img_hr_scale')
     hrResizeX = gradioApp().getElementById('txt2img_hr_resize_x')
     hrResizeY = gradioApp().getElementById('txt2img_hr_resize_y')
