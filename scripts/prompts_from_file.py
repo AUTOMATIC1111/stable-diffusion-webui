@@ -130,8 +130,6 @@ class Script(scripts.Script):
         lines = [x.strip() for x in prompt_txt.splitlines()]
         lines = [x for x in lines if len(x) > 0]
 
-        p.do_not_save_grid = True
-
         job_count = 0
         jobs = []
 
