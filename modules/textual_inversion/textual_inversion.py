@@ -434,7 +434,11 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
         else:
             print("No saved optimizer exists in checkpoint")
 
-    scaler = torch.cuda.amp.GradScaler()
+    from modules import shared
+    if shared.cmd_opts.use_ipex:
+        scaler = torch.xpu.amp.GradScaler()
+    else:
+        scaler = torch.cuda.amp.GradScaler()
 
     batch_size = ds.batch_size
     gradient_step = ds.gradient_step

@@ -23,6 +23,7 @@ parser.add_argument("--allow-code", action='store_true', help="Allow custom scri
 parser.add_argument("--share", action='store_true', help="Enable to make the UI accessible through Gradio site")
 parser.add_argument("--enable-insecure", action='store_true', help="Enable extensions tab regardless of other options")
 parser.add_argument("--use-cpu", nargs='+', help="Force use CPU for specified modules", default=[], type=str.lower)
+parser.add_argument("--use-ipex", action='store_true', help="Force use Intel OneAPI XPU backend")
 parser.add_argument("--listen", action='store_true', help="Launch web server using public IP address")
 parser.add_argument("--port", type=int, help="Launch web server with given server port", default=None)
 parser.add_argument("--hide-ui-dir-config", action='store_true', help="Hide directory configuration from UI", default=False)

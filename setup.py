@@ -56,6 +56,7 @@ def setup_logging(clean=False):
 # check if package is installed
 def installed(package, friendly: str = None):
     import pkg_resources
+    from modules import shared
     ok = True
     try:
         if friendly:
@@ -76,6 +77,8 @@ def installed(package, friendly: str = None):
             ok = ok and spec is not None
             if ok:
                 version = pkg_resources.get_distribution(p[0]).version
+                if shared.cmd_opts.use_ipex and p[0] == "pytorch_lightning":
+                    p[1] = "1.8.6"
                 log.debug(f"Package version found: {p[0]} {version}")
                 if len(p) > 1:
                     ok = ok and version == p[1]
@@ -91,6 +94,9 @@ def installed(package, friendly: str = None):
 
 # install package using pip if not already installed
 def install(package, friendly: str = None, ignore: bool = False):
+    from modules import shared
+    if shared.cmd_opts.use_ipex and package == "pytorch_lightning==1.9.4":
+        package = "pytorch_lightning==1.8.6"
     def pip(arg: str):
         arg = arg.replace('>=', '==')
         log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("  ", " ").strip()}')
@@ -188,6 +194,7 @@ def check_python():
 
 # check torch version
 def check_torch():
+    from modules import shared
     if shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe')):
         log.info('nVidia toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
@@ -196,6 +203,11 @@ def check_torch():
         log.info('AMD toolkit detected')
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
+    elif shutil.which('sycl-ls') is not None or os.path.exists('/opt/intel/oneapi'):
+        shared.cmd_opts.use_ipex = True
+        log.info('Intel toolkit detected')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch==1.13.0a0+git6c9b55e torchvision==0.14.1a0 intel_extension_for_pytorch==1.13.120+xpu --index-url https://developer.intel.com/ipex-whl-stable-xpu')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
         machine = platform.machine()
@@ -212,7 +224,11 @@ def check_torch():
     try:
         import torch
         log.info(f'Torch {torch.__version__}')
-        if torch.cuda.is_available():
+        if shared.cmd_opts.use_ipex:
+                import intel_extension_for_pytorch as ipex
+                log.info(f'Torch backend: Intel OneAPI {torch.__version__}')
+                log.info(f'Torch detected GPU: {torch.xpu.get_device_name("xpu")} VRAM {round(torch.xpu.get_device_properties("xpu").total_memory / 1024 / 1024)}')
+        elif torch.cuda.is_available():
             if torch.version.cuda:
                 log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else "N/A"}')
             elif torch.version.hip:
