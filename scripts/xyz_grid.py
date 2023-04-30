@@ -151,34 +151,9 @@ def apply_token_merging_ratio_hr(p, x, xs):
 def apply_token_merging_ratio(p, x, xs):
     opts.data["token_merging_ratio"] = x
 
-def apply_token_merging_hr_only(p, x, xs):
-    is_active = x.lower() in ('true', 'yes', 'y', '1')
-    opts.data["token_merging_hr_only"] = is_active
-
 def apply_token_merging_random(p, x, xs):
     is_active = x.lower() in ('true', 'yes', 'y', '1')
     opts.data["token_merging_random"] = is_active
-
-def apply_token_merging_attention(p, x, xs):
-    is_active = x.lower() in ('true', 'yes', 'y', '1')
-    opts.data["token_merging_merge_attention"] = is_active
-
-def apply_token_merging_cross_attention(p, x, xs):
-    is_active = x.lower() in ('true', 'yes', 'y', '1')
-    opts.data["token_merging_merge_cross_attention"] = is_active
-
-def apply_token_merging_mlp(p, x, xs):
-    is_active = x.lower() in ('true', 'yes', 'y', '1')
-    opts.data["token_merging_merge_mlp"] = is_active
-
-def apply_token_merging_maximum_down_sampling (p, x, xs):
-    opts.data["token_merging_maximum_down_sampling"] = x
-
-def apply_token_merging_stride_x(p, x, xs):
-    opts.data["token_merging_stride_x"] = x
-
-def apply_token_merging_stride_y(p, x, xs):
-    opts.data["token_merging_stride_y"] = x
 
 def format_value_add_label(p, opt, x):
     if type(x) == float:
@@ -262,14 +237,7 @@ axis_options = [
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
     AxisOption("ToMe ratio",float,apply_token_merging_ratio),
     AxisOption("ToMe ratio for Hires fix",float,apply_token_merging_ratio_hr),
-    AxisOption("ToMe apply only to Hires fix",str,apply_token_merging_hr_only, choices= lambda: ["Yes","No"]),
-    AxisOption("ToMe random pertubations",str,apply_token_merging_random, choices = lambda: ["Yes","No"]),
-    AxisOption("ToMe merge attention", str, apply_token_merging_attention, choices= lambda: ["Yes","No"]),
-    AxisOption("ToMe merge cross attention", str, apply_token_merging_cross_attention, choices= lambda: ["Yes","No"]),
-    AxisOption("ToMe merge mlp", str, apply_token_merging_mlp, choices= lambda: ["Yes","No"]),
-    AxisOption("ToMe maximum down sampling", int, apply_token_merging_maximum_down_sampling, choices= lambda: ["1","2","4","8"]),
-    AxisOption("ToMe Stride - X", int, apply_token_merging_stride_x, choices= lambda: ["2","4","6","8"]),
-    AxisOption("ToMe Stride - Y", int, apply_token_merging_stride_y, choices= lambda: ["2","4","6","8"])
+    AxisOption("ToMe random pertubations",str,apply_token_merging_random, choices = lambda: ["Yes","No"])
 ]
 
 
@@ -392,14 +360,7 @@ class SharedSettingsStackHelper(object):
         self.uni_pc_order = opts.uni_pc_order
         self.token_merging_ratio_hr = opts.token_merging_ratio_hr
         self.token_merging_ratio = opts.token_merging_ratio
-        self.token_merging_hr_only = opts.token_merging_hr_only
         self.token_merging_random = opts.token_merging_random
-        self.token_merging_merge_attention = opts.token_merging_merge_attention
-        self.token_merging_merge_cross_attention = opts.token_merging_merge_cross_attention
-        self.token_merging_merge_mlp = opts.token_merging_merge_mlp
-        self.token_merging_maximum_down_sampling = opts.token_merging_maximum_down_sampling
-        self.token_merging_stride_x = opts.token_merging_stride_x
-        self.token_merging_stride_y = opts.token_merging_stride_y
 
     def __exit__(self, exc_type, exc_value, tb):
         #Restore overriden settings after plot generation.
@@ -412,14 +373,7 @@ class SharedSettingsStackHelper(object):
 
         opts.data["token_merging_ratio_hr"] = self.token_merging_ratio_hr
         opts.data["token_merging_ratio"] = self.token_merging_ratio
-        opts.data["token_merging_hr_only"] = self.token_merging_hr_only
         opts.data["token_merging_random"] = self.token_merging_random
-        opts.data["token_merging_merge_attention"] = self.token_merging_merge_attention
-        opts.data["token_merging_merge_cross_attention"] = self.token_merging_merge_cross_attention
-        opts.data["token_merging_merge_mlp"] = self.token_merging_merge_mlp
-        opts.data["token_merging_maximum_down_sampling"] = self.token_merging_maximum_down_sampling
-        opts.data["token_merging_stride_x"] = self.token_merging_stride_x
-        opts.data["token_merging_stride_y"] = self.token_merging_stride_y
 
 re_range = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\(([+-]\d+)\s*\))?\s*")
 re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\(([+-]\d+(?:.\d*)?)\s*\))?\s*")
