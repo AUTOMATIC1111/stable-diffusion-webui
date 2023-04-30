@@ -6,6 +6,12 @@ import json
 import time
 import argparse
 import torch
+from modules import shared
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    if shared.cmd_opts.use_ipex:
+        print("Failed to import IPEX")
 import filetype
 from PIL import Image
 import transformers
@@ -19,7 +25,10 @@ model = None
 processor = None
 extractor = None
 dtype = torch.float32
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+if shared.cmd_opts.use_ipex:
+    device = torch.device('xpu')
+else:
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 options = Map({
     'input': '',
@@ -129,7 +138,12 @@ def unload_model():
         del extractor
         extractor = None
     gc.collect()
-    if torch.cuda.is_available():
+    if shared.cmd_opts.use_ipex:
+        with torch.no_grad():
+            torch.xpu.empty_cache()
+        with torch.xpu.device('xpu'):
+            torch.xpu.empty_cache()
+    elif torch.cuda.is_available():
         with torch.no_grad():
             torch.cuda.empty_cache()
         with torch.cuda.device('cuda'):

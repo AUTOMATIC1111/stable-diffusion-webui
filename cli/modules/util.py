@@ -44,7 +44,26 @@ def get_memory():
         mem.update({ 'ram': e })
     try:
         import torch
-        if torch.cuda.is_available():
+        from modules import shared
+        if shared.cmd_opts.use_ipex:
+            import intel_extension_for_pytorch as ipex
+            s = torch.xpu.mem_get_info()
+            gpu = { 'free': gb(s[0]), 'used': gb(s[1] - s[0]), 'total': gb(s[1]) }
+            s = dict(torch.xpu.memory_stats('xpu'))
+            allocated = { 'current': gb(s['allocated_bytes.all.current']), 'peak': gb(s['allocated_bytes.all.peak']) }
+            reserved = { 'current': gb(s['reserved_bytes.all.current']), 'peak': gb(s['reserved_bytes.all.peak']) }
+            active = { 'current': gb(s['active_bytes.all.current']), 'peak': gb(s['active_bytes.all.peak']) }
+            inactive = { 'current': gb(s['inactive_split_bytes.all.current']), 'peak': gb(s['inactive_split_bytes.all.peak']) }
+            warnings = { 'retries': s['num_alloc_retries'], 'oom': s['num_ooms'] }
+            mem.update({
+                'gpu': gpu,
+                'gpu-active': active,
+                'gpu-allocated': allocated,
+                'gpu-reserved': reserved,
+                'gpu-inactive': inactive,
+                'events': warnings,
+            })
+        elif torch.cuda.is_available():
             s = torch.cuda.mem_get_info()
             gpu = { 'free': gb(s[0]), 'used': gb(s[1] - s[0]), 'total': gb(s[1]) }
             s = dict(torch.cuda.memory_stats('cuda'))

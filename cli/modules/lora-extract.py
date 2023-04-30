@@ -10,6 +10,12 @@ import sys
 import time
 import argparse
 import torch
+from modules import shared
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    if shared.cmd_opts.use_ipex:
+        print("Failed to import IPEX")
 import transformers
 from tqdm import tqdm
 from util import log
@@ -20,7 +26,10 @@ import networks.lora as lora
 
 
 def svd(args): # pylint: disable=redefined-outer-name
-    device = 'cuda' if torch.cuda.is_available() and args.device == 'cuda' else 'cpu'
+    if shared.cmd_opts.use_ipex:
+        device = torch.device('xpu')
+    else:
+        device = 'cuda' if torch.cuda.is_available() and args.device == 'cuda' else 'cpu'
     transformers.logging.set_verbosity_error()
     CLAMP_QUANTILE = 0.99
     MIN_DIFF = 1e-6
@@ -38,7 +47,10 @@ def svd(args): # pylint: disable=redefined-outer-name
     log.info({ 'loading model': args.tuned })
     text_encoder_t, _, unet_t = model_util.load_models_from_stable_diffusion_checkpoint(args.v2, args.tuned)
     with torch.no_grad():
-        torch.cuda.empty_cache()
+        if shared.cmd_opts.use_ipex:
+            torch.xpu.empty_cache()
+        else:
+            torch.cuda.empty_cache()
     # create LoRA network to extract weights: Use dim (rank) as alpha
     lora_network_o = lora.create_network(1.0, args.dim, args.dim, None, text_encoder_o, unet_o)
     lora_network_t = lora.create_network(1.0, args.dim, args.dim, None, text_encoder_t, unet_t)

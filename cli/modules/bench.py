@@ -10,7 +10,7 @@ import time
 from PIL import Image
 import sdapi
 from util import Map, log
-
+from modules import shared
 
 options = Map({
     'restore_faces': False,
@@ -56,7 +56,10 @@ async def txt2img():
 def memstats():
     mem = sdapi.getsync('/sdapi/v1/memory')
     cpu = mem.get('ram', 'unavailable')
-    gpu = mem.get('cuda', 'unavailable')
+    if shared.cmd_opts.use_ipex:
+        gpu = mem.get('xpu', 'unavailable')
+    else:
+        gpu = mem.get('cuda', 'unavailable')
     if 'active' in gpu:
         gpu['session'] = gpu.pop('active')
     if 'reserved' in gpu:

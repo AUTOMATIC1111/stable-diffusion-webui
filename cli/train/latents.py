@@ -10,6 +10,12 @@ import warnings
 import cv2
 import numpy as np
 import torch
+from modules import shared
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    if shared.cmd_opts.use_ipex:
+        print("Failed to import IPEX")
 from PIL import Image
 from torchvision import transforms
 from tqdm import tqdm
@@ -28,7 +34,10 @@ import library.model_util as model_util
 import library.train_util as train_util
 
 warnings.filterwarnings('ignore')
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+if shared.cmd_opts.use_ipex:
+    device = torch.device('xpu')
+else:
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 options = Map({
   'batch': 1,
   'input': '',

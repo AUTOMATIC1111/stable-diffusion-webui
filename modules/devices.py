@@ -1,6 +1,12 @@
 import sys
 import contextlib
 import torch
+from modules import shared
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    if shared.cmd_opts.use_ipex:
+        print("Failed to import IPEX")
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -21,25 +27,21 @@ def extract_device_id(args, name):
 
 
 def get_cuda_device_string():
-    from modules import shared
     if shared.cmd_opts.use_ipex:
         return "xpu"
     else:
-        from modules import shared
         if shared.cmd_opts.device_id is not None:
             return f"cuda:{shared.cmd_opts.device_id}"
         return "cuda"
 
 
 def get_dml_device_string():
-    from modules import shared
     if shared.cmd_opts.device_id is not None:
         return f"privateuseone:{shared.cmd_opts.device_id}"
     return "privateuseone:0"
 
 
 def get_optimal_device_name():
-    from modules import shared
     if shared.cmd_opts.use_ipex:
         return "xpu"
     elif torch.cuda.is_available():
@@ -61,14 +63,12 @@ def get_optimal_device():
 
 
 def get_device_for(task):
-    from modules import shared
     if task in shared.cmd_opts.use_cpu:
         return cpu
     return get_optimal_device()
 
 
 def torch_gc():
-    from modules import shared
     if shared.cmd_opts.use_ipex:
         with torch.xpu.device("xpu"):
             torch.xpu.empty_cache()
@@ -79,7 +79,6 @@ def torch_gc():
 
 
 def set_cuda_params():
-    from modules import shared
     if torch.cuda.is_available():
         try:
             torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
@@ -143,12 +142,10 @@ def randn_without_seed(shape):
 
 
 def autocast(disable=False):
-    from modules import shared
     if disable:
         return contextlib.nullcontext()
     if dtype == torch.float32 or shared.cmd_opts.precision == "Full":
         return contextlib.nullcontext()
-    from modules import shared
     if shared.cmd_opts.use_ipex:
         return torch.xpu.amp.autocast(enabled=True, dtype=dtype, cache_enabled=False)
     else:
@@ -156,7 +153,6 @@ def autocast(disable=False):
 
 
 def without_autocast(disable=False):
-    from modules import shared
     if shared.cmd_opts.use_ipex:
         return torch.autocast("xpu", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
     else:
@@ -168,7 +164,6 @@ class NansException(Exception):
 
 
 def test_for_nans(x, where):
-    from modules import shared
     if shared.opts.disable_nan_check:
         return
     if not torch.all(torch.isnan(x)).item():
