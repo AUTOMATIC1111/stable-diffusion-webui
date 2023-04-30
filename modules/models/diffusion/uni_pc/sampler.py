@@ -47,7 +47,7 @@ class UniPCSampler(object):
 
         # actual number of steps we'll run
         self.steps = max(
-                num_inference_steps - init_timestep,
+                init_timestep,
                 shared.opts.uni_pc_order+1,
             )
 
