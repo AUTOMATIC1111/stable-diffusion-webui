@@ -1,4 +1,5 @@
 import os
+import platform
 import sys
 import traceback
 import inspect
@@ -199,12 +200,18 @@ class EmbeddingDatabase:
         if not os.path.isdir(embdir.path):
             return
 
+        platform_name = platform.system()
+
         for root, dirs, fns in os.walk(embdir.path, followlinks=True):
             for fn in fns:
                 try:
                     fullfn = os.path.join(root, fn)
 
                     if os.stat(fullfn).st_size == 0:
+                        continue
+
+                    # Darwin(macOS) with ExFAT workaround
+                    if platform_name == 'Darwin' and fn.startswith('._'):
                         continue
 
                     self.load_from_file(fullfn, fn)
