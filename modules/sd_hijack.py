@@ -178,7 +178,8 @@ class StableDiffusionModelHijack:
         if opts.cuda_compile and opts.cuda_compile_mode != 'none':
             try:
                 import torch._dynamo as dynamo # pylint: disable=unused-import
-                torch._dynamo.config.verbose = True # pylint: disable=protected-access
+                torch._dynamo.config.verbose = opts.cuda_compile_verbose # pylint: disable=protected-access
+                torch._dynamo.config.suppress_errors = opts.cuda_compile_errors # pylint: disable=protected-access
                 torch.backends.cudnn.benchmark = True
                 m.model = torch.compile(m.model, mode="default", backend=opts.cuda_compile_mode, fullgraph=False, dynamic=False)
                 print("Model compile enabled:", opts.cuda_compile_mode)

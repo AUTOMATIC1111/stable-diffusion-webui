@@ -325,6 +325,8 @@ options_templates.update(options_section(('cuda', "CUDA Settings"), {
     "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
     "cuda_compile": OptionInfo(False, "Enable model compile (experimental)"),
     "cuda_compile_mode": OptionInfo("none", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser']}),
+    "cuda_compile_verbose": OptionInfo(True, "Compile verbose mode"),
+    "cuda_compile_errors": OptionInfo(True, "Compile suppress errors"),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
