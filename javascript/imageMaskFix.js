@@ -2,7 +2,6 @@
  * temporary fix for https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/668
  * @see https://github.com/gradio-app/gradio/issues/1721
  */
-window.addEventListener( 'resize', () => imageMaskResize());
 function imageMaskResize() {
     const canvases = gradioApp().querySelectorAll('#img2maskimg .touch-none canvas');
     if ( ! canvases.length ) {
@@ -15,7 +14,7 @@ function imageMaskResize() {
     const previewImage = wrapper.previousElementSibling;
 
     if ( ! previewImage.complete ) {
-        previewImage.addEventListener( 'load', () => imageMaskResize());
+        previewImage.addEventListener( 'load', imageMaskResize);
         return;
     }
 
@@ -40,6 +39,7 @@ function imageMaskResize() {
         c.style.maxHeight = '100%';
         c.style.objectFit = 'contain';
     });
- }
-  
- onUiUpdate(() => imageMaskResize());
+}
+
+onUiUpdate(imageMaskResize);
+window.addEventListener( 'resize', imageMaskResize);
