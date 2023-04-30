@@ -13,7 +13,7 @@ startup_timer = timer.Timer()
 
 import torch # pylint: disable=C0411
 try:
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
 except:
     pass
 import torchvision # pylint: disable=W0611,C0411

@@ -95,7 +95,6 @@ def compatibility_args(opts, args):
     opts.dimensions_and_batch_together = True
 
     group.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
+    group.add_argument("--lyco-dir", help=argparse.SUPPRESS, default=opts.lyco_dir)
     args = parser.parse_args()
-    if 'lyco_dir' in args: # pylint disable=unsupported-membership-test
-        args.lyco_dir = opts.lyco_dir
     return args

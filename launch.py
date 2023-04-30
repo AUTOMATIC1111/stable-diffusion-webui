@@ -17,7 +17,6 @@ installer.parse_args()
 
 import modules.cmd_args
 args, _ = modules.cmd_args.parser.parse_known_args()
-
 import modules.paths_internal
 script_path = modules.paths_internal.script_path
 extensions_dir = modules.paths_internal.extensions_dir
