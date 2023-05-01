@@ -250,6 +250,10 @@ div#extras_scale_to_tab div.form{
     gap: .5em;
 }
 
+#settings .dirtyable.hidden {
+    display: none;
+}
+
 #settings .modification-indicator {
     width: 100%;
     height: 100%;

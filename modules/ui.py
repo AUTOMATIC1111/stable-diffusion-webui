@@ -1214,7 +1214,9 @@ def create_ui():
         elem_id = "setting_"+key
 
         if not is_quicksettings:
-            dirtyable_setting = gr.Group(elem_classes="dirtyable")
+            # FIXME: the visibility is only copied once initially, so if the user changes it, it won't be updated
+            # This can probably be fixed by using a proper wrapper element
+            dirtyable_setting = gr.Group(elem_classes="dirtyable", visible=(args or {}).get("visible", True))
             dirtyable_setting.__enter__()
             dirty_indicator = gr.Button(
                 "",
