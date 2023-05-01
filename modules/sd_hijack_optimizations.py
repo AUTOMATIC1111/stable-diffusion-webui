@@ -3,7 +3,7 @@ import psutil
 
 import torch
 try:
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # pylint: disable=unused-import,import-error
 except:
     pass
 from torch import einsum
@@ -14,12 +14,12 @@ from einops import rearrange
 from modules import shared, errors, devices
 from modules.hypernetworks import hypernetwork
 
-from .sub_quadratic_attention import efficient_dot_product_attention
+from .sub_quadratic_attention import efficient_dot_product_attention # pylint: disable=relative-beyond-top-level
 
 
 if shared.opts.cross_attention_optimization == "xFormers":
     try:
-        import xformers.ops
+        import xformers.ops # pylint: disable=import-error
         shared.xformers_available = True
     except Exception:
         pass
@@ -35,12 +35,16 @@ def get_available_vram():
         mem_free_total = mem_free_xpu + mem_free_torch
         return mem_free_total
     elif shared.device.type == 'cuda':
-        stats = torch.cuda.memory_stats(shared.device)
-        mem_active = stats['active_bytes.all.current']
-        mem_reserved = stats['reserved_bytes.all.current']
-        mem_free_cuda, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
-        mem_free_torch = mem_reserved - mem_active
-        mem_free_total = mem_free_cuda + mem_free_torch
+        try:
+            stats = torch.cuda.memory_stats(shared.device)
+            mem_active = stats['active_bytes.all.current']
+            mem_reserved = stats['reserved_bytes.all.current']
+            mem_free_cuda, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
+            mem_free_torch = mem_reserved - mem_active
+            mem_free_total = mem_free_cuda + mem_free_torch
+        except:
+            mem_free_total = 1024 * 1024 * 1024
+
         return mem_free_total
     elif shared.device.type == 'privateuseone':
         mem_total, mem_active = torch.dml.memory_stats(shared.device)
@@ -74,10 +78,8 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
             end = i + 2
             s1 = einsum('b i d, b j d -> b i j', q[i:end], k[i:end])
             s1 *= self.scale
-    
             s2 = s1.softmax(dim=-1)
             del s1
-    
             r1[i:end] = einsum('b i j, b j d -> b i d', s2, v[i:end])
             del s2
         del q, k, v
@@ -93,7 +95,6 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
 # taken from https://github.com/Doggettx/stable-diffusion and modified
 def split_cross_attention_forward(self, x, context=None, mask=None):
     h = self.heads
-
     q_in = self.to_q(x)
     context = default(context, x)
 
@@ -107,47 +108,34 @@ def split_cross_attention_forward(self, x, context=None, mask=None):
 
     with devices.without_autocast(disable=not shared.opts.upcast_attn):
         k_in = k_in * self.scale
-    
         del context, x
-    
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q_in, k_in, v_in))
         del q_in, k_in, v_in
-    
         r1 = torch.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype)
-    
         mem_free_total = get_available_vram()
-    
         gb = 1024 ** 3
         tensor_size = q.shape[0] * q.shape[1] * k.shape[1] * q.element_size()
         modifier = 3 if q.element_size() == 2 else 2.5
         mem_required = tensor_size * modifier
         steps = 1
-    
         if mem_required > mem_free_total:
             steps = 2 ** (math.ceil(math.log(mem_required / mem_free_total, 2)))
             # print(f"Expected tensor size:{tensor_size/gb:0.1f}GB, cuda free:{mem_free_cuda/gb:0.1f}GB "
             #       f"torch free:{mem_free_torch/gb:0.1f} total:{mem_free_total/gb:0.1f} steps:{steps}")
-    
         if steps > 64:
             max_res = math.floor(math.sqrt(math.sqrt(mem_free_total / 2.5)) / 8) * 64
             raise RuntimeError(f'Not enough memory, use lower resolution (max approx. {max_res}x{max_res}). '
                                f'Need: {mem_required / 64 / gb:0.1f}GB free, Have:{mem_free_total / gb:0.1f}GB free')
-    
         slice_size = q.shape[1] // steps if (q.shape[1] % steps) == 0 else q.shape[1]
         for i in range(0, q.shape[1], slice_size):
             end = i + slice_size
             s1 = einsum('b i d, b j d -> b i j', q[:, i:end], k)
-    
             s2 = s1.softmax(dim=-1, dtype=q.dtype)
             del s1
-    
             r1[:, i:end] = einsum('b i j, b j d -> b i d', s2, v)
             del s2
-    
         del q, k, v
-
     r1 = r1.to(dtype)
-
     r2 = rearrange(r1, '(b h) n d -> b n (h d)', h=h)
     del r1
 
@@ -211,12 +199,15 @@ def einsum_op_cuda(q, k, v):
         # Divide factor of safety as there's copying and fragmentation
         return einsum_op_tensor_mem(q, k, v, mem_free_total / 3.3 / (1 << 20))
     else:
-        stats = torch.cuda.memory_stats(q.device)
-        mem_active = stats['active_bytes.all.current']
-        mem_reserved = stats['reserved_bytes.all.current']
-        mem_free_cuda, _ = torch.cuda.mem_get_info(q.device)
-        mem_free_torch = mem_reserved - mem_active
-        mem_free_total = mem_free_cuda + mem_free_torch
+        try:
+            stats = torch.cuda.memory_stats(q.device)
+            mem_active = stats['active_bytes.all.current']
+            mem_reserved = stats['reserved_bytes.all.current']
+            mem_free_cuda, _ = torch.cuda.mem_get_info(q.device)
+            mem_free_torch = mem_reserved - mem_active
+            mem_free_total = mem_free_cuda + mem_free_torch
+        except:
+            mem_free_total = 1024 * 1024 * 1024
         # Divide factor of safety as there's copying and fragmentation
         return einsum_op_tensor_mem(q, k, v, mem_free_total / 3.3 / (1 << 20))
 
@@ -261,7 +252,6 @@ def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None):
 
     with devices.without_autocast(disable=not shared.opts.upcast_attn):
         k = k * self.scale
-    
         q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
         r = einsum_op(q, k, v)
     r = r.to(dtype)
@@ -400,9 +390,7 @@ def scaled_dot_product_attention_forward(self, x, context=None, mask=None):
     q = q_in.view(batch_size, -1, h, head_dim).transpose(1, 2)
     k = k_in.view(batch_size, -1, h, head_dim).transpose(1, 2)
     v = v_in.view(batch_size, -1, h, head_dim).transpose(1, 2)
-    
     del q_in, k_in, v_in
-
     dtype = q.dtype
     if shared.opts.upcast_attn:
         q, k, v = q.float(), k.float(), v.float()
