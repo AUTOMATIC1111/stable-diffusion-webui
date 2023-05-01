@@ -69,8 +69,8 @@ function keyupEditAttention(event){
 
 	event.preventDefault();
 
-    closeCharacter = ')'
-    delta = opts.keyedit_precision_attention
+    var closeCharacter = ')'
+    var delta = opts.keyedit_precision_attention
 
     if (selectionStart > 0 && text[selectionStart - 1] == '<'){
         closeCharacter = '>'
@@ -91,8 +91,8 @@ function keyupEditAttention(event){
         selectionEnd += 1;
     }
 
-	end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
-	weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + 1 + end));
+	var end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
+	var weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + 1 + end));
 	if (isNaN(weight)) return;
 
 	weight += isPlus ? delta : -delta;
