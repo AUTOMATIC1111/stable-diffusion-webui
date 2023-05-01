@@ -208,7 +208,10 @@ function submit_img2img(){
 }
 
 function restoreProgressTxt2img(){
+    showRestoreProgressButton("txt2img", false)
     var id = localStorage.getItem("txt2img_task_id")
+
+    id = localStorage.getItem("txt2img_task_id")
 
     if(id) {
         requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
@@ -216,9 +219,12 @@ function restoreProgressTxt2img(){
         }, null, 0)
     }
 
-    return [id]
+    return id
 }
+
 function restoreProgressImg2img(){
+    showRestoreProgressButton("img2img", false)
+    
     var id = localStorage.getItem("img2img_task_id")
 
     if(id) {
@@ -227,7 +233,7 @@ function restoreProgressImg2img(){
         }, null, 0)
     }
 
-    return [id]
+    return id
 }
 
 
