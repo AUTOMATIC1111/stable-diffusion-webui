@@ -127,7 +127,9 @@ titles = {
 
 onUiUpdate(function(){
 	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
-		tooltip = titles[span.textContent];
+		if (span.title) return;  // already has a title
+
+		let tooltip = titles[span.textContent];
 
 		if(!tooltip){
 		    tooltip = titles[span.value];

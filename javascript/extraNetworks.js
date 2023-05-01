@@ -13,6 +13,7 @@ function setupExtraNetworksForTab(tabname){
 	clear.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"></path></svg>'
     
     search.classList.add('search')
+
     tabs.appendChild(search)    
 	tabs.appendChild(clear)
 	tabs.appendChild(refresh)
@@ -26,7 +27,7 @@ function setupExtraNetworksForTab(tabname){
         searchTerm = search.value.toLowerCase()
 
         gradioApp().querySelectorAll('#'+tabname+'_extra_tabs div.card').forEach(function(elem){
-            text = elem.querySelector('.name').textContent.toLowerCase() + " " + elem.querySelector('.search_term').textContent.toLowerCase()
+            var text = elem.querySelector('.name').textContent.toLowerCase() + " " + elem.querySelector('.search_term').textContent.toLowerCase()
             elem.parentElement.style.display = text.indexOf(searchTerm) == -1 ? "none" : ""
         })
     });
@@ -67,7 +68,7 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text){
 
     var partToSearch = m[1]
     var replaced = false
-    var newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found, index){
+    var newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found){
         m = found.match(re_extranet);
         if(m[1] == partToSearch){
             replaced = true;
@@ -108,9 +109,10 @@ function saveCardPreview(event, tabname, filename){
 }
 
 function extraNetworksSearchButton(tabs_id, event){
-    searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea')
-    button = event.target
-    text = button.classList.contains("search-all") ? "" : button.textContent.trim()	
+
+    var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea')
+    var button = event.target
+    var text = button.classList.contains("search-all") ? "" : button.textContent.trim()	
 	//text = event.target.selectedIndex == 0 ? "" : event.target.options[event.target.selectedIndex].text;
 
     searchTextarea.value = text
@@ -146,7 +148,7 @@ function popup(contents){
 }
 
 function extraNetworksShowMetadata(text){
-    elem = document.createElement('pre')
+    var elem = document.createElement('pre')
     elem.classList.add('popup-metadata');
     elem.textContent = text;
 
@@ -178,7 +180,7 @@ function requestGet(url, data, handler, errorHandler){
 }
 
 function extraNetworksRequestMetadata(event, extraPage, cardName){
-    showError = function(){ extraNetworksShowMetadata("there was an error getting metadata"); }
+    var showError = function(){ extraNetworksShowMetadata("there was an error getting metadata"); }
 
     requestGet("./sd_extra_networks/metadata", {"page": extraPage, "item": cardName}, function(data){
         if(data && data.metadata){
