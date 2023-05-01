@@ -6,9 +6,9 @@ set PYTHON=C:\Python310\python.exe
 set GIT=
 set VENV_DIR=
 :: the hide-ui-dir-config is separate flag, hides server-side
-:: set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config-af.json --hide-ui-dir-config
+set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config-af.json --ui-config-file=ui-config.json --hide-ui-dir-config
 :: for my laptop
-set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config-af.json --hide-ui-dir-config --ui-config-file=ui-config-ntb.json
+::set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config-af.json --hide-ui-dir-config --ui-config-file=ui-config-ntb.json
 ::set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config.json --ui-config-file=ui-config-default.json
 ::set COMMANDLINE_ARGS=--theme dark --medvram
 ::set COMMANDLINE_ARGS=--theme dark --lowvram

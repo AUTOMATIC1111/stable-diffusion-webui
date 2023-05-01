@@ -219,3 +219,34 @@ config notes:
 I have ui-config-ntb for my laptop, most should be same as ui-config.json, but
 has lower steps num and batch size to be practical for just trying it out, although
 with ugly images
+
+
+### web server for showing generated images:
+https://stackoverflow.com/questions/5050851/best-lightweight-web-server-only-static-content-for-windows
+easiest, multi-platform and fully working seems to be just running python http server:
+```bash
+cd <sd base>/outputs/txt2img-images
+python -m http.server 8081
+```
+with redirect of stdout to some log file
+e.g.
+```bash
+cd <sd base>/outputs/txt2img-images
+python -m http.server 8081 > img_access.log 2>&1
+```
+
+gradio seems to serve all local images from the working directory, e.g.:
+http://localhost:7860/file=C:/Projects/others/stable-diffusion-webui/outputs/txt2img-images/2023-04-30/00008-2994637937.png
+is for showing the image. 
+I don't want to have this open to public internet, could be used to see configs.
+It can show other file types, e.g. http://localhost:7860/file=C:/Projects/others/stable-diffusion-webui/ui-config.json
+so we want to keep this only on the local server, and make public only something other
+
+On target pc:
+copy these 3 bat files to desktop:
+change the path in cd there to absolute one.
+
+todo:
+- roztáhnout na celé
+- vedle orbázku hodit jeho QR kód
+- skrýt ve výstupu negative prompt
