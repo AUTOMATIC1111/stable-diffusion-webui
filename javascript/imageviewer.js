@@ -362,10 +362,13 @@ function createGallerySpotlight() {
 	//console.log("clicked");
 	slide = 0;
 	gallery = [];
-	
-	gradioApp().querySelectorAll("#"+selectedTabItemId+' .grid-wrap img').forEach(function (elem, i){
+
+
+	gradioApp().querySelectorAll("#"+selectedTabItemId+' .thumbnails img').forEach(function (elem, i){
 		elem.setAttribute("gal-id", i);
-		if(fullImg_src == elem.src) slide = (i+1);
+		//if(fullImg_src == elem.src) slide = parseInt(i+1);
+		if(elem.parentElement.className.indexOf("selected") != -1) slide = parseInt(i+1);
+		//console.log(slide);
 		gallery[i] = {
 			src: elem.src,
 			title: "Seed:" + elem.src,
@@ -407,7 +410,7 @@ function createGallerySpotlight() {
 
 		},		
 		onclose: function(index){
-			gradioApp().querySelector("#"+selectedTabItemId+' .thumbnail-item:nth-child('+(slide+1)+')').click();			
+			gradioApp().querySelector("#"+selectedTabItemId+' .thumbnails .thumbnail-item:nth-child('+(slide+1)+')').click();			
 		}
 	};
 
@@ -432,13 +435,14 @@ function onUiHeaderTabUpdate(){
 	intervalUiUpdateIViewer = setInterval(onUiUpdateIViewer, 500);
 }
 
+
 let fullImg_preview;
 function onUiUpdateIViewer(){
 	clearInterval(intervalUiUpdateIViewer);
 	//update_performant_inputs(selectedTabItemId);
 	
 	//fullImg_preview = gradioApp().querySelector('#'+selectedTabItemId+' [id$="2img_results"] .modify-upload + img.w-full.object-contain');
-	fullImg_preview = gradioApp().querySelector('#'+selectedTabItemId+' .preview img');	
+	fullImg_preview = gradioApp().querySelector('#'+selectedTabItemId+' .preview > img');	
 	if(opts.js_modal_lightbox && fullImg_preview ) {
 
 		fullImg_src = fullImg_preview.src;

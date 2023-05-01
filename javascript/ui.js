@@ -1,10 +1,11 @@
 // various functions for interaction with ui.py not large enough to warrant putting them in separate files
-
 function set_theme(theme){
-    gradioURL = window.location.href
+	/*     
+	gradioURL = window.location.href
     if (!gradioURL.includes('?__theme=')) {
       window.location.replace(gradioURL + '?__theme=' + theme);
-    }
+    } 
+	*/
 }
 
 function all_gallery_buttons() {
@@ -200,7 +201,6 @@ function modelmerger(){
     return res
 }
 
-
 function ask_for_style_name(_, prompt_text, negative_prompt_text) {
     name_ = prompt('Style name:')
     return [name_, prompt_text, negative_prompt_text]
@@ -242,7 +242,7 @@ function recalculate_prompts_inpaint(){
     return args_to_array(arguments);
 }
 
-let selectedTabItemId = "tab_txt2img";									   
+let selectedTabItemId = "tab_txt2img";							   
 opts = {}
 onUiUpdate(function(){
 	if(Object.keys(opts).length != 0) return;
