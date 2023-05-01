@@ -810,7 +810,10 @@ def create_ui():
                                     scale_by.release(**on_change_args)
                                     button_update_resize_to.click(**on_change_args)
 
-                                    for component in img2img_image_inputs:
+                                    # the code below is meant to update the resolution label after the image in the image selection UI has changed.
+                                    # as it is now the event keeps firing continuously for inpaint edits, which ruins the page with constant requests.
+                                    # I assume this must be a gradio bug and for now we'll just do it for non-inpaint inputs.
+                                    for component in [init_img, sketch]:
                                         component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
 
                             tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
