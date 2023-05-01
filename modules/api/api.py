@@ -181,18 +181,27 @@ class Api:
                     script_args[script.args_from:script.args_to] = ui_default_values
         return script_args
 
-    def init_script_args(self, p, request, default_script_args, script_runner):
+    def init_script_args(self, p, request, default_script_args, selectable_scripts, selectable_script_idx, script_runner):
         script_args = default_script_args.copy()
+        # position 0 in script_arg is the idx+1 of the selectable script that is going to be run when using scripts.scripts_*2img.run()
+        if selectable_scripts:
+            # TODO this can corrupt values for other scripts
+            script_args[selectable_scripts.args_from:selectable_scripts.args_to] = request.script_args
+            script_args[0] = selectable_script_idx + 1
+        # Now check for always on scripts
         if request.alwayson_scripts and (len(request.alwayson_scripts) > 0):
             for alwayson_script_name in request.alwayson_scripts.keys():
                 alwayson_script = self.get_script(alwayson_script_name, script_runner)
                 if alwayson_script is None:
-                    raise HTTPException(status_code=422, detail=f"always on script {alwayson_script_name} not found")
+                    raise HTTPException(status_code=422, detail=f"Always on script not found: {alwayson_script_name}")
                 if not alwayson_script.alwayson:
-                    raise HTTPException(status_code=422, detail="Cannot have a selectable script in the always on scripts params")
+                    raise HTTPException(status_code=422, detail=f"Selectable script cannot be in always on params: {alwayson_script_name}")
                 if "args" in request.alwayson_scripts[alwayson_script_name]:
-                    p.per_script_args[alwayson_script.title()] = request.alwayson_scripts[alwayson_script_name]["args"] + script_args
+                    # TODO this can corrupt values for other scripts
+                    script_args[alwayson_script.args_from:alwayson_script.args_to] = request.alwayson_scripts[alwayson_script_name]["args"]
+                    p.per_script_args[alwayson_script.title()] = request.alwayson_scripts[alwayson_script_name]["args"]
         return script_args
+
 
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         script_runner = scripts.scripts_txt2img
@@ -201,7 +210,7 @@ class Api:
             ui.create_ui()
         if not self.default_script_arg_txt2img:
             self.default_script_arg_txt2img = self.init_default_script_args(script_runner)
-        selectable_scripts, _selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
+        selectable_scripts, selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
         populate = txt2imgreq.copy(update={  # Override __init__ params
             "sampler_name": validate_sampler_name(txt2imgreq.sampler_name or txt2imgreq.sampler_index),
             "do_not_save_samples": not txt2imgreq.save_images,
@@ -222,7 +231,7 @@ class Api:
             p.outpath_grids = opts.outdir_grids or opts.outdir_txt2img_grids
             p.outpath_samples = opts.outdir_samples or opts.outdir_txt2img_samples
             shared.state.begin()
-            script_args = self.init_script_args(p, txt2imgreq, self.default_script_arg_txt2img, script_runner)
+            script_args = self.init_script_args(p, txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner)
             if selectable_scripts is not None:
                 processed = scripts.scripts_txt2img.run(p, *script_args) # Need to pass args as list here
             else:
@@ -246,7 +255,7 @@ class Api:
             ui.create_ui()
         if not self.default_script_arg_img2img:
             self.default_script_arg_img2img = self.init_default_script_args(script_runner)
-        selectable_scripts, _selectable_script_idx = self.get_selectable_script(img2imgreq.script_name, script_runner)
+        selectable_scripts, selectable_script_idx = self.get_selectable_script(img2imgreq.script_name, script_runner)
         populate = img2imgreq.copy(update={  # Override __init__ params
             "sampler_name": validate_sampler_name(img2imgreq.sampler_name or img2imgreq.sampler_index),
             "do_not_save_samples": not img2imgreq.save_images,
@@ -270,7 +279,7 @@ class Api:
             p.outpath_grids = opts.outdir_img2img_grids
             p.outpath_samples = opts.outdir_img2img_samples
             shared.state.begin()
-            script_args = self.init_script_args(p, img2imgreq, self.default_script_arg_txt2img, script_runner)
+            script_args = self.init_script_args(p, img2imgreq, self.default_script_arg_img2img, selectable_scripts, selectable_script_idx, script_runner)
             if selectable_scripts is not None:
                 processed = scripts.scripts_img2img.run(p, *script_args) # Need to pass args as list here
             else:
@@ -574,7 +583,7 @@ class Api:
         try:
             import torch
             if shared.cmd_opts.use_ipex():
-                import intel_extension_for_pytorch as ipex
+                import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
                 system = { 'free': (torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated()), 'used': torch.xpu.memory_allocated(), 'total': torch.xpu.get_device_properties("xpu").total_memory }
                 s = dict(torch.xpu.memory_stats("xpu"))
                 allocated = { 'current': s['allocated_bytes.all.current'], 'peak': s['allocated_bytes.all.peak'] }
