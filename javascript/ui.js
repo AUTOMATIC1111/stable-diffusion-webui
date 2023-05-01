@@ -216,7 +216,7 @@ function restoreProgressTxt2img(x){
         }, null, 0)
     }
 
-    return [id]
+    return id
 }
 function restoreProgressImg2img(x){
     id = localStorage.getItem("img2img_task_id")
@@ -227,7 +227,7 @@ function restoreProgressImg2img(x){
         }, null, 0)
     }
 
-    return [id]
+    return id
 }
 
 
