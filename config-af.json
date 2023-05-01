@@ -142,5 +142,8 @@
     "SWIN_tile": 192,
     "SWIN_tile_overlap": 8,
     "sd_lora": "None",
-    "lora_apply_to_outputs": false
+    "lora_apply_to_outputs": false,
+    "add_qr_code": true,
+    "static_server_uri": "http://192.168.0.24:8081",
+    "hide_negative_prompt": true
 }

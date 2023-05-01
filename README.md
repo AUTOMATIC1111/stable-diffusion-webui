@@ -239,8 +239,11 @@ gradio seems to serve all local images from the working directory, e.g.:
 http://localhost:7860/file=C:/Projects/others/stable-diffusion-webui/outputs/txt2img-images/2023-04-30/00008-2994637937.png
 is for showing the image. 
 I don't want to have this open to public internet, could be used to see configs.
-It can show other file types, e.g. http://localhost:7860/file=C:/Projects/others/stable-diffusion-webui/ui-config.json
+It can show other file types, e.g. http://localhost:7860/file=C:/Projects/others/stable-diffusion-webui/ui-config.json,
 so we want to keep this only on the local server, and make public only something other
+
+I use https://pypi.org/project/qrcode/ to generate images. Pillow is already installed as dependency, so no need to
+install it as qrcode[pil].
 
 On target pc:
 copy these 3 bat files to desktop:
@@ -251,3 +254,14 @@ todo:
 - roztáhnout na celé
 - vedle orbázku hodit jeho QR kód
 - skrýt ve výstupu negative prompt
+
+checklist at place:
+- install python & git
+- clone
+- copy models
+- edit bat files
+- run everything from bat files
+- generate anything
+- verify QR code
+- check QR code link over wifi and data from phone
+  - if not working, check firewall settings

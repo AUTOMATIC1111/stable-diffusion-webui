@@ -543,6 +543,7 @@ def create_ui():
                     show_progress=False,
                 )
 
+        with gr.Row().style(equal_height=False):    # adding new row so all the hidden stuff would be in the same hidden row
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)

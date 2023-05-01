@@ -11,6 +11,7 @@ requests
 piexif
 Pillow
 pytorch_lightning==1.7.7
+qrcode
 realesrgan
 scikit-image>=0.19
 timm==0.4.12
