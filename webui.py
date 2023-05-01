@@ -199,7 +199,7 @@ def start_ui():
     if cmd_opts.disable_queue:
         print('Server queues disabled')
     else:
-        shared.demo.queue(16)
+        shared.demo.queue(concurrency_count=16)
 
     gradio_auth_creds = []
     if cmd_opts.auth:
@@ -220,6 +220,7 @@ def start_ui():
         auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
         inbrowser=cmd_opts.autolaunch,
         prevent_thread_lock=True,
+        show_api=True,
         favicon_path='automatic.ico',
     )
     setup_middleware(app, cmd_opts)
