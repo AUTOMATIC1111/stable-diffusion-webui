@@ -245,6 +245,7 @@ so we want to keep this only on the local server, and make public only something
 On target pc:
 copy these 3 bat files to desktop:
 change the path in cd there to absolute one.
+change the path to firefox or other browser to correct one
 
 todo:
 - roztáhnout na celé
