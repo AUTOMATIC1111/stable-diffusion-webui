@@ -62,12 +62,19 @@ body {
     display: none !important;
 }
 
-.app.svelte-ac4rv4.svelte-ac4rv4 {
+.app.svelte-1mya07g.svelte-1mya07g
+{
+    position: relative;
+    margin: auto;
     padding: var(--size-4);
-	max-width: unset !important;
-	background:transparent !important;
-	padding-top: 0;
+    padding-top: 0;
+    width: 100%;
+    min-height: 100vh !important;
+    min-width: unset !important;
+    max-width: unset !important;
+    background-color: var(--ae-main-bg-color);
 }
+
 
 .block.svelte-mppz8v {
     line-height: 16px !important;
@@ -888,7 +895,7 @@ min-height: 34px;
 }
 
 
-div.svelte-awbtu4, div.gradio-row>.form {
+div.svelte-b6y5bg, div.gradio-row>.form {
     overflow: visible !important;
 }
 
@@ -1060,7 +1067,7 @@ fieldset.block.padded
     border-radius: var(--ae-panel-border-radius) !important;
 }
 
-div.svelte-awbtu4,
+div.svelte-b6y5bg,
 div.gradio-row>.form{
     /*box-shadow: var(--block-shadow);*/
     border-width: var(--ae-border-width) !important;
@@ -1297,7 +1304,7 @@ input.svelte-56zyyb{
     flex-direction: column !important;
     min-width: unset !important;
 }
-[id$="2img_tools"] > .form.svelte-awbtu4{
+[id$="2img_tools"] > .form.svelte-b6y5bg{
 	background:0 !important;
 	border:0 !important;
 }
@@ -1392,7 +1399,7 @@ div.svelte-15lo0d8>.form>* {
 }
 
 /* gradio preloader*/
-.svelte-gjihhp {  
+.svelte-j1gjts {  
     pointer-events: none!important;
     width: 5px!important;
     height: 5px!important;
@@ -1400,7 +1407,7 @@ div.svelte-15lo0d8>.form>* {
     top: 2px !important;
     left: 2px !important;
 }
-.svelte-gjihhp > * {  
+.svelte-j1gjts > * {  
 display:none !important;
 }
 
@@ -1484,7 +1491,7 @@ display:none !important;
 [id*="_sub-group"] div.gradio-row:not(:first-child) {
     /*margin-top: -1px;*/
 }
-.script-group div.svelte-awbtu4,
+.script-group div.svelte-b6y5bg,
 .script-group div.gradio-row>.form,
 [id*="_sub-group"] div.gradio-row>.form {
     border: 0;
@@ -2948,7 +2955,7 @@ pre {
 /************/
 /* Footer */
 /************/
-.app.svelte-ac4rv4.svelte-ac4rv4 {
+.gradio-container.app {
     min-height: 100vh !important;
 }
 .main > .wrap > .contain{
