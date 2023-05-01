@@ -236,6 +236,7 @@ def read_metadata_from_safetensors(filename):
 
 def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unused-argument
     try:
+        pl_sd = None
         with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
             _, extension = os.path.splitext(checkpoint_file)
             if 'v1-5-pruned-emaonly.safetensors' or 'vae-ft-mse-840000-ema-pruned.ckpt' in checkpoint_file:
@@ -251,6 +252,7 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
                     buffer = io.BytesIO(f.read())
                     pl_sd = torch.load(buffer, map_location='cpu')
             sd = get_state_dict_from_checkpoint(pl_sd)
+        del pl_sd
     except Exception as e:
         errors.display(e, f'loading model: {checkpoint_file}')
         sd = None

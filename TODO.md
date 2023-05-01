@@ -20,6 +20,7 @@ Stuff to be added...
 - Auto-test `torch.layer_norm` for FP16
 - Monitor file changes by misbehaving extensions
 - Kitchen theme: <https://github.com/canisminor1990/sd-webui-kitchen-theme>
+- Lightbox improvements
 
 ## Investigate
 

@@ -260,6 +260,9 @@ def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.Mu
     If not, restores orginal weights from backup and alters weights according to loras.
     """
 
+    if len(loaded_loras) == 0:
+        return
+
     lora_layer_name = getattr(self, 'lora_layer_name', None)
     if lora_layer_name is None:
         return
