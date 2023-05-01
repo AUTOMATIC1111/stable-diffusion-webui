@@ -352,7 +352,6 @@ options_templates.update(options_section(('training', "Training"), {
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
     "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train', 'templates'), "Embeddings train templates directory"),
-    "embeddings_train_log": OptionInfo(os.path.join(paths.script_path, 'train', 'log', 'train.csv'), "Embeddings train log file"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
     "training_write_csv_every": OptionInfo(0, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
     "training_enable_tensorboard": OptionInfo(False, "Enable tensorboard logging."),

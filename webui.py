@@ -212,7 +212,7 @@ def start_ui():
     app, _local_url, _share_url = shared.demo.launch(
         share=cmd_opts.share,
         server_name=server_name,
-        server_port=cmd_opts.port,
+        server_port=cmd_opts.port if cmd_opts.port != 7860 else None,
         ssl_keyfile=cmd_opts.tls_keyfile,
         ssl_certfile=cmd_opts.tls_certfile,
         debug=False,
