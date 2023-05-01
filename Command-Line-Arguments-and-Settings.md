@@ -122,6 +122,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --disable-safe-unpickle | None | False				| disable checking pytorch models for malicious code |
 --ngrok | NGROK | None         				 | ngrok authtoken, alternative to gradio --share
 --ngrok-region | NGROK_REGION | us			 | The region in which ngrok should start.
+--update-all-extensions | None | None | On startup, it pulls the latest updates for all extensions you have installed.
 | **DEFUNCT OPTIONS** |
 --show-negative-prompt | None | False 					| does not do anything |
 --deepdanbooru | None | False 					| does not do anything |
