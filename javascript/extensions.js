@@ -47,3 +47,25 @@ function install_extension_from_index(button, url){
 
     gradioApp().querySelector('#install_extension_button').click()
 }
+
+function config_state_confirm_restore(_, config_state_name, config_restore_type) {
+    if (config_state_name == "Current") {
+        return [false, config_state_name, config_restore_type];
+    }
+    let restored = "";
+    if (config_restore_type == "extensions") {
+        restored = "all saved extension versions";
+    } else if (config_restore_type == "webui") {
+        restored = "the webui version";
+    } else {
+        restored = "the webui version and all saved extension versions";
+    }
+    let confirmed = confirm("Are you sure you want to restore from this state?\nThis will reset " + restored + ".");
+    if (confirmed) {
+        restart_reload();
+        gradioApp().querySelectorAll('#extensions .extension_status').forEach(function(x){
+            x.innerHTML = "Loading..."
+        })
+    }
+    return [confirmed, config_state_name, config_restore_type];
+}

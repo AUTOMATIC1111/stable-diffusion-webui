@@ -95,6 +95,7 @@ parser.add_argument("--cors-allow-origins", type=str, help="Allowed CORS origin(
 parser.add_argument("--cors-allow-origins-regex", type=str, help="Allowed CORS origin(s) in the form of a single regular expression", default=None)
 parser.add_argument("--tls-keyfile", type=str, help="Partially enables TLS, requires --tls-certfile to fully function", default=None)
 parser.add_argument("--tls-certfile", type=str, help="Partially enables TLS, requires --tls-keyfile to fully function", default=None)
+parser.add_argument("--disable-tls-verify", action="store_false", help="When passed, enables the use of self-signed certificates.", default=None)
 parser.add_argument("--server-name", type=str, help="Sets hostname of server", default=None)
 parser.add_argument("--gradio-queue", action='store_true', help="does not do anything", default=True)
 parser.add_argument("--no-gradio-queue", action='store_true', help="Disables gradio queue; causes the webpage to use http requests instead of websockets; was the defaul in earlier versions")
