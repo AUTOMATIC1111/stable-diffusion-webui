@@ -12,6 +12,10 @@ from modules import timer, errors
 startup_timer = timer.Timer()
 
 import torch # pylint: disable=C0411
+try:
+    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+except:
+    pass
 import torchvision # pylint: disable=W0611,C0411
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them # pylint: disable=W0611,C0411
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
@@ -105,7 +109,7 @@ def initialize():
     startup_timer.record("vae")
 
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
-    shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
+    # shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
     shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
     startup_timer.record("opts onchange")
@@ -198,19 +202,20 @@ def start_ui():
         shared.demo.queue(16)
 
     gradio_auth_creds = []
-    if cmd_opts.gradio_auth:
-        gradio_auth_creds += [x.strip() for x in cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',') if x.strip()]
-    if cmd_opts.gradio_auth_path:
-        with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
+    if cmd_opts.auth:
+        gradio_auth_creds += [x.strip() for x in cmd_opts.auth.strip('"').replace('\n', '').split(',') if x.strip()]
+    if cmd_opts.authfile:
+        with open(cmd_opts.authfile, 'r', encoding="utf8") as file:
             for line in file.readlines():
                 gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
     app, _local_url, _share_url = shared.demo.launch(
         share=cmd_opts.share,
         server_name=server_name,
-        server_port=cmd_opts.port,
+        server_port=cmd_opts.port if cmd_opts.port != 7860 else None,
         ssl_keyfile=cmd_opts.tls_keyfile,
         ssl_certfile=cmd_opts.tls_certfile,
+        ssl_verify=False if cmd_opts.tls_selfsign else True,
         debug=False,
         auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
         inbrowser=cmd_opts.autolaunch,

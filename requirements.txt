@@ -51,13 +51,13 @@ yapf
 scikit-image
 accelerate==0.18.0
 opencv-python==4.7.0.72
-diffusers==0.15.0
+diffusers==0.16.1
 einops==0.4.1
-gradio==3.23.0
+gradio==3.28.1
 numexpr==2.8.4
 pandas==1.5.3
 protobuf==3.20.3
 pytorch_lightning==1.9.4
-transformers==4.26.1
+transformers==4.28.1
 timm==0.6.13
 tomesd==0.1.2

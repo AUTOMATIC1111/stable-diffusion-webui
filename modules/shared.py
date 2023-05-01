@@ -5,18 +5,18 @@ import json
 import datetime
 import gradio as gr
 import tqdm
+from modules import errors, ui_components, shared_items, cmd_args
+from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import errors, ui_components, shared_items, cmd_args
-from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.paths_internal as paths
-from setup import log as setup_log # pylint: disable=E0611
+from installer import log as central_logger # pylint: disable=E0611
 
 errors.install(gr)
 demo: gr.Blocks = None
-log = setup_log
+log = central_logger
 parser = cmd_args.parser
 url = 'https://github.com/vladmandic/automatic'
 if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
@@ -49,12 +49,18 @@ ui_reorder_categories = [
     "scripts",
 ]
 
-cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.enable_insecure
+cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_opts.server_name) and not cmd_opts.insecure
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
 device = devices.device
+is_device_dml = False
 sd_upscalers = []
 sd_model = None
 clip_model = None
+
+
+if device.type == 'privateuseone':
+    import modules.dml # pylint: disable=ungrouped-imports
+    is_device_dml = True
 
 
 def reload_hypernetworks():
@@ -223,27 +229,21 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_checkpoint_cache": OptionInfo(0, "Model checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae_checkpoint_cache": OptionInfo(0, "VAE checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "Select VAE", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
-    "sd_vae_as_default": OptionInfo(True, "Ignore selected VAE for stable diffusion checkpoints that have their own .vae.pt next to them", gr.Checkbox, {"visible": False}),
     "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "initial_noise_multiplier": OptionInfo(1.0, "Noise multiplier for img2img", gr.Slider, {"minimum": 0.5, "maximum": 1.5, "step": 0.01}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
     "img2img_fix_steps": OptionInfo(False, "For image processing do exactly the amount of steps as specified."),
     "img2img_background_color": OptionInfo("#ffffff", "With img2img, fill image's transparent parts with this color.", ui_components.FormColorPicker, {}),
     "enable_quantization": OptionInfo(True, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds."),
-    "enable_emphasis": OptionInfo(True, "Emphasis: use (text) to make model pay more attention to text and [text] to make it pay less attention", gr.Checkbox, {"visible": False}),
-    "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image", gr.Checkbox, {"visible": False}),
     "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1, "visible": False}),
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
-    "cross_attention_optimization": OptionInfo("Scaled-Dot-Product", "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
+    "cross_attention_optimization": OptionInfo("Sub-quadratic" if is_device_dml else "Scaled-Dot-Product", "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
     "cross_attention_options": OptionInfo([], "Cross-attention advanced options", gr.CheckboxGroup, lambda: {"choices": ['xFormers enable flash Attention', 'SDP disable memory attention']}),
     "sub_quad_q_chunk_size": OptionInfo(512, "Sub-quadratic cross-attention query chunk size for the  layer optimization to use", gr.Slider, {"minimum": 16, "maximum": 8192, "step": 8}),
     "sub_quad_kv_chunk_size": OptionInfo(512, "Sub-quadratic cross-attentionkv chunk size for the sub-quadratic cross-attention layer optimization to use", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
     "sub_quad_chunk_threshold": OptionInfo(80, "Sub-quadratic cross-attention percentage of VRAM chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
     "always_batch_cond_uncond": OptionInfo(False, "Disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram"),
-    "multiple_tqdm": OptionInfo(False, "Add a second progress bar to the console that shows progress for an entire job.", gr.Checkbox, {"visible": False}),
-    "print_hypernet_extra": OptionInfo(False, "Print extra hypernetwork information to console.", gr.Checkbox, {"visible": False}),
-    "dimensions_and_batch_together": OptionInfo(True, "", gr.Checkbox, {"visible": False}),
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
@@ -252,8 +252,6 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
     "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Embeddings directory for textual inversion"),
-    "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train/templates'), "Embeddings train templates directory"),
-    "embeddings_train_log": OptionInfo(os.path.join(paths.script_path, 'train.csv'), "Embeddings train log file"),
     "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Hypernetwork directory"),
     "codeformer_models_path": OptionInfo(os.path.join(paths.models_path, 'Codeformer'), "Path to directory with codeformer model file(s)."),
     "gfpgan_models_path": OptionInfo(os.path.join(paths.models_path, 'GFPGAN'), "Path to directory with GFPGAN model file(s)"),
@@ -316,9 +314,9 @@ options_templates.update(options_section(('cuda', "CUDA Settings"), {
     "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "precision": OptionInfo("Autocast", "Precision type", gr.Radio, lambda: {"choices": ["Autocast", "Full"]}),
     "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
-    "no_half": OptionInfo(False, "Use full precision for model (--no-half)"),
-    "no_half_vae": OptionInfo(False, "Use full precision for VAE (--no-half-vae)"),
-    "upcast_sampling": OptionInfo(True if sys.platform == "darwin" else False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
+    "no_half": OptionInfo(True if is_device_dml else False, "Use full precision for model (--no-half)", None, None, lambda: print("Warning: Most of DirectML devices do not fully support half mode. Recommend to use full precision to model.") if is_device_dml else None),
+    "no_half_vae": OptionInfo(True if is_device_dml else False, "Use full precision for VAE (--no-half-vae)"),
+    "upcast_sampling": OptionInfo(True if sys.platform == "darwin" or cmd_opts.use_ipex else False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
     "disable_nan_check": OptionInfo(True, "Do not check if produced images/latent spaces have NaN values"),
     "rollback_vae": OptionInfo(False, "Attempt to roll back VAE when produced NaN values, requires NaN check (experimental)"),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
@@ -326,15 +324,17 @@ options_templates.update(options_section(('cuda', "CUDA Settings"), {
     "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
     "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
     "cuda_compile": OptionInfo(False, "Enable model compile (experimental)"),
-    "cuda_compile_mode": OptionInfo("none", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser']}),
+    "cuda_compile_mode": OptionInfo("none", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet']}),
+    "cuda_compile_verbose": OptionInfo(True, "Model compile verbose mode"),
+    "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
-    "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for ESRGAN upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Select which Real-ESRGAN models to show in the web UI.", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
+    "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers (0 = no tiling)", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
+    "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
+    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Real-ESRGAN available models", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
     "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
-    "use_old_hires_fix_width_height": OptionInfo(False, "For hires fix, use width/height sliders to set final resolution rather than first pass (disables Upscale by, Resize width/height to)."),
+    "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution rather than first pass"),
     "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers."),
 }))
 
@@ -351,6 +351,7 @@ options_templates.update(options_section(('training', "Training"), {
     "save_training_settings_to_txt": OptionInfo(True, "Save textual inversion and hypernet settings to a text file whenever training starts."),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
     "dataset_filename_join_string": OptionInfo(" ", "Filename join string"),
+    "embeddings_templates_dir": OptionInfo(os.path.join(paths.script_path, 'train', 'templates'), "Embeddings train templates directory"),
     "training_image_repeats_per_epoch": OptionInfo(1, "Number of repeats for a single input image per epoch; used only for displaying epoch number", gr.Number, {"precision": 0}),
     "training_write_csv_every": OptionInfo(0, "Save an csv containing the loss to log directory every N steps, 0 to disable"),
     "training_enable_tensorboard": OptionInfo(False, "Enable tensorboard logging."),
@@ -387,16 +388,10 @@ options_templates.update(options_section(('ui', "User interface"), {
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results for web"),
     "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results for web"),
-    "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
-    "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
-    "add_model_name_to_info": OptionInfo(True, "Add model name to generation information"),
     "disable_weights_auto_swap": OptionInfo(True, "Do not change the selected model when reading generation parameters."),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
     "font": OptionInfo("", "Font for image grids that have text"),
-    "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer", gr.Checkbox, {"visible": False}),
-    "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer", gr.Checkbox, {"visible": False}),
-    "show_progress_in_title": OptionInfo(False, "Show generation progress in window title.", gr.Checkbox, {"visible": False}),
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
@@ -417,7 +412,7 @@ options_templates.update(options_section(('ui', "Live previews"), {
 
 options_templates.update(options_section(('sampler-params', "Sampler parameters"), {
     "show_samplers": OptionInfo(["Euler a", "UniPC", "DDIM", "DPM++ SDE", "DPM++ SDE", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers()]}),
-    "fallback_sampler": OptionInfo("Euler a", "Fallback sampler if primary sampler is not compatible", gr.Dropdown, lambda: {"choices": [x.name for x in list_samplers()]}),
+    "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     "eta_ancestral": OptionInfo(1.0, "Noise multiplier for ancestral samplers (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
@@ -434,14 +429,14 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
 
 options_templates.update(options_section(('token_merging', 'Token Merging'), {
     "token_merging": OptionInfo(False, "Enable redundant token merging via tomesd. This can provide significant speed and memory improvements.", gr.Checkbox),
-    "token_merging_ratio": OptionInfo(0.5, "Merging Ratio", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio": OptionInfo(0.5, "Merging Ratio. Higher merging ratio = faster generation, smaller VRAM usage, lower quality.", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
     "token_merging_hr_only": OptionInfo(True, "Apply only to high-res fix pass. Disabling can yield a ~20-35% speedup on contemporary resolutions.", gr.Checkbox),
     "token_merging_ratio_hr": OptionInfo(0.5, "Merging Ratio (high-res pass) - If 'Apply only to high-res' is enabled, this will always be the ratio used.", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
     "token_merging_random": OptionInfo(False, "Use random perturbations - Can improve outputs for certain samplers. For others, it may cause visual artifacting.", gr.Checkbox),
-    "token_merging_merge_attention": OptionInfo(True, "Merge attention", gr.Checkbox),
-    "token_merging_merge_cross_attention": OptionInfo(False, "Merge cross attention", gr.Checkbox),
-    "token_merging_merge_mlp": OptionInfo(False, "Merge mlp", gr.Checkbox),
-    "token_merging_maximum_down_sampling": OptionInfo(1, "Maximum down sampling", gr.Dropdown, lambda: {"choices": ["1", "2", "4", "8"]}),
+    "token_merging_merge_attention": OptionInfo(True, "Merge attention (Recommend on)", gr.Checkbox),
+    "token_merging_merge_cross_attention": OptionInfo(False, "Merge cross attention (Recommend off)", gr.Checkbox),
+    "token_merging_merge_mlp": OptionInfo(False, "Merge mlp (Strongly recommend off)", gr.Checkbox),
+    "token_merging_maximum_down_sampling": OptionInfo(1, "Maximum down sampling", gr.Radio, lambda: {"choices": [1, 2, 4, 8]}),
     "token_merging_stride_x": OptionInfo(2, "Stride - X", gr.Slider, {"minimum": 2, "maximum": 8, "step": 2}),
     "token_merging_stride_y": OptionInfo(2, "Stride - Y", gr.Slider, {"minimum": 2, "maximum": 8, "step": 2})
 }))
@@ -472,7 +467,7 @@ class Options:
     def __setattr__(self, key, value):
         if self.data is not None:
             if key in self.data or key in self.data_labels:
-                if cmd_opts.freeze_settings:
+                if cmd_opts.freeze:
                     print(f'Settings are frozen: {key}')
                     return
                 if cmd_opts.hide_ui_dir_config and key in restricted_opts:
@@ -518,7 +513,7 @@ class Options:
         return data_label.default
 
     def save(self, filename):
-        assert not cmd_opts.freeze_settings, "saving settings is disabled"
+        assert not cmd_opts.freeze, "saving settings is disabled"
         with open(filename, "w", encoding="utf8") as file:
             json.dump(self.data, file, indent=4)
 
@@ -591,7 +586,7 @@ opts = Options()
 batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 xformers_available = False
-config_filename = cmd_opts.ui_settings_file
+config_filename = cmd_opts.config
 os.makedirs(opts.hypernetwork_dir, exist_ok=True)
 hypernetworks = {}
 loaded_hypernetworks = []

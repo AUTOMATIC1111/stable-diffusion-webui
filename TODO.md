@@ -4,21 +4,22 @@
 
 Stuff to be fixed...
 
-- Run VAE with hires at 1280
-- Transformers version
 - Move Restart Server from WebUI to Launch and reload modules
-- Follow-up on `p.script_args`
 - Mdularize `cli` scripts
 
 ## Features
 
 Stuff to be added...
 
-- Update README
+- Update `README.md`
 - Add Gradio theme maker
 - Create new GitHub hooks/actions for CI/CD  
-- Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
+- Redo Extensions tab: <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage
+- Auto-test `torch.layer_norm` for FP16
+- Monitor file changes by misbehaving extensions
+- Kitchen theme: <https://github.com/canisminor1990/sd-webui-kitchen-theme>
+- Lightbox improvements
 
 ## Investigate
 

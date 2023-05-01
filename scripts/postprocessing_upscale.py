@@ -1,9 +1,7 @@
 from PIL import Image
 import numpy as np
-
-from modules import scripts_postprocessing, shared
 import gradio as gr
-
+from modules import scripts_postprocessing, shared
 from modules.ui_components import FormRow, ToolButton
 from modules.ui import switch_values_symbol
 
@@ -15,7 +13,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
     order = 1000
 
     def ui(self):
-        selected_tab = gr.State(value=0)
+        selected_tab = gr.State(value=0) # pylint: disable=abstract-class-instantiated
 
         with gr.Column():
             with FormRow():
@@ -80,7 +78,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 
         return image
 
-    def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_mode=1, upscale_by=2.0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0):
+    def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_mode=1, upscale_by=2.0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0): # pylint: disable=arguments-differ
         if upscaler_1_name == "None":
             upscaler_1_name = None
 
@@ -97,13 +95,13 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         assert upscaler2 or (upscaler_2_name is None), f'could not find upscaler named {upscaler_2_name}'
 
         upscaled_image = self.upscale(pp.image, pp.info, upscaler1, upscale_mode, upscale_by, upscale_to_width, upscale_to_height, upscale_crop)
-        pp.info[f"Postprocess upscaler"] = upscaler1.name
+        pp.info["Postprocess upscaler"] = upscaler1.name
 
         if upscaler2 and upscaler_2_visibility > 0:
             second_upscale = self.upscale(pp.image, pp.info, upscaler2, upscale_mode, upscale_by, upscale_to_width, upscale_to_height, upscale_crop)
             upscaled_image = Image.blend(upscaled_image, second_upscale, upscaler_2_visibility)
 
-            pp.info[f"Postprocess upscaler 2"] = upscaler2.name
+            pp.info["Postprocess upscaler 2"] = upscaler2.name
 
         pp.image = upscaled_image
 
@@ -125,7 +123,7 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
             "upscaler_name": upscaler_name,
         }
 
-    def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_by=2.0, upscaler_name=None):
+    def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_by=2.0, upscaler_name=None): # pylint: disable=arguments-differ
         if upscaler_name is None or upscaler_name == "None":
             return
 
@@ -133,4 +131,4 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
         assert upscaler1, f'could not find upscaler named {upscaler_name}'
 
         pp.image = self.upscale(pp.image, pp.info, upscaler1, 0, upscale_by, 0, 0, False)
-        pp.info[f"Postprocess upscaler"] = upscaler1.name
+        pp.info["Postprocess upscaler"] = upscaler1.name

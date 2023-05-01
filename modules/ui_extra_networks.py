@@ -54,7 +54,8 @@ class ExtraNetworksPage:
     def __init__(self, title):
         self.title = title
         self.name = title.lower()
-        self.card_page = shared.html("extra-networks-card.html")
+        self.card_long = shared.html("extra-networks-card-long.html")
+        self.card_short = shared.html("extra-networks-card-short.html")
         self.allow_negative_prompt = False
         self.metadata = {}
 
@@ -128,10 +129,6 @@ class ExtraNetworksPage:
         height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
         width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
         background_image = f"background-image: url(\"{html.escape(preview)}\");" if preview else ''
-        metadata_button = ""
-        metadata = item.get("metadata")
-        if metadata:
-            metadata_button = f"<div class='metadata-button' title='Show metadata' onclick='extraNetworksRequestMetadata(event, {json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
         args = {
             "style": f"'{height}{width}{background_image}'",
             "prompt": item.get("prompt", None),
@@ -142,11 +139,14 @@ class ExtraNetworksPage:
             "card_clicked": onclick,
             "save_card_description": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
-            "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(item["description"])})""") + '"',
+            "read_card_description": '"' + html.escape(f"""return readCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])}, {json.dumps(item["description"])}, {json.dumps(self.name)}, {json.dumps(item["name"])})""") + '"',
             "search_term": item.get("search_term", ""),
-            "metadata_button": metadata_button,
+            "read_card_metadata": '"' + html.escape(f"""return readCardMetadata(event, {json.dumps(self.name)}, {json.dumps(item["name"])})""") + '"',
         }
-        return self.card_page.format(**args)
+        if item.get("metadata"):
+            return self.card_long.format(**args)
+        else:
+            return self.card_short.format(**args)
 
     def find_preview(self, path):
         """

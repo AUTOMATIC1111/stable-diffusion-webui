@@ -8,6 +8,10 @@ from os import mkdir
 from urllib import request
 from rich import print, progress # pylint: disable=redefined-builtin
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import safetensors.torch
 from omegaconf import OmegaConf
 import tomesd
@@ -118,7 +122,7 @@ def list_models():
         checkpoint_info.register()
     print(f'Available models: {shared.opts.ckpt_dir} {len(checkpoints_list)}')
     if len(checkpoints_list) == 0:
-        if not shared.cmd_opts.no_download_sd_model:
+        if not shared.cmd_opts.no_download:
             key = input('Download the default model? (y/N) ')
             if key.lower().startswith('y'):
                 model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
@@ -232,6 +236,7 @@ def read_metadata_from_safetensors(filename):
 
 def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unused-argument
     try:
+        pl_sd = None
         with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
             _, extension = os.path.splitext(checkpoint_file)
             if 'v1-5-pruned-emaonly.safetensors' or 'vae-ft-mse-840000-ema-pruned.ckpt' in checkpoint_file:
@@ -247,6 +252,7 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
                     buffer = io.BytesIO(f.read())
                     pl_sd = torch.load(buffer, map_location='cpu')
             sd = get_state_dict_from_checkpoint(pl_sd)
+        del pl_sd
     except Exception as e:
         errors.display(e, f'loading model: {checkpoint_file}')
         sd = None
@@ -533,7 +539,6 @@ def unload_model_weights(sd_model=None, _info=None):
         sd_model = None
         gc.collect()
         devices.torch_gc()
-        torch.cuda.empty_cache()
     print(f"Unloaded weights {timer.summary()}")
     return sd_model
 

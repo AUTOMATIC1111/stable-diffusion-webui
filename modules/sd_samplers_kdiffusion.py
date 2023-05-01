@@ -1,6 +1,10 @@
 from collections import deque
 import inspect
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 import k_diffusion.sampling
 from modules import prompt_parser, devices, sd_samplers_common
 
@@ -231,7 +235,6 @@ class KDiffusionSampler:
             raise sd_samplers_common.InterruptedException
 
         state.sampling_step = step
-        shared.total_tqdm.update()
 
     def launch_sampling(self, steps, func):
         state.sampling_steps = steps

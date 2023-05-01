@@ -1,6 +1,10 @@
 import os
 
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 from torch import nn
 from modules import devices, paths
 

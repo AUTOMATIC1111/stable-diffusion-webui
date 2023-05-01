@@ -1,6 +1,10 @@
 import os
 
 import torch
+try:
+    import intel_extension_for_pytorch as ipex
+except:
+    pass
 
 from modules import paths, sd_disable_initialization
 

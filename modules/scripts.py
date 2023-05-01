@@ -3,7 +3,7 @@ import re
 import sys
 from collections import namedtuple
 import gradio as gr
-from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
+from modules import paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
 
 AlwaysVisible = object()
 
@@ -345,56 +345,55 @@ class ScriptRunner:
         script = self.selectable_scripts[script_index-1]
         if script is None:
             return None
-        script_args = args[script.args_from:script.args_to]
-        processed = script.run(p, *script_args)
-        shared.total_tqdm.clear()
+        parsed = p.per_script_args.get(script.title(), args[script.args_from:script.args_to])
+        processed = script.run(p, *parsed)
         return processed
 
     def process(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
-                script_args = p.script_args[script.args_from:script.args_to]
-                script.process(p, *script_args, **kwargs)
+                args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
+                script.process(p, *args, **kwargs)
             except Exception as e:
                 errors.display(e, f'Running script process: {script.filename}')
 
     def before_process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
-                script_args = p.script_args[script.args_from:script.args_to]
-                script.before_process_batch(p, *script_args, **kwargs)
+                args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
+                script.before_process_batch(p, *args, **kwargs)
             except Exception as e:
                 errors.display(e, f'Running script before process batch: {script.filename}')
 
     def process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
-                script_args = p.script_args[script.args_from:script.args_to]
-                script.process_batch(p, *script_args, **kwargs)
+                args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
+                script.process_batch(p, *args, **kwargs)
             except Exception as e:
                 errors.display(e, f'Running script process batch: {script.filename}')
 
     def postprocess(self, p, processed):
         for script in self.alwayson_scripts:
             try:
-                script_args = p.script_args[script.args_from:script.args_to]
-                script.postprocess(p, processed, *script_args)
+                args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
+                script.postprocess(p, processed, *args)
             except Exception as e:
                 errors.display(e, f'Running script postprocess: {script.filename}')
 
     def postprocess_batch(self, p, images, **kwargs):
         for script in self.alwayson_scripts:
             try:
-                script_args = p.script_args[script.args_from:script.args_to]
-                script.postprocess_batch(p, *script_args, images=images, **kwargs)
+                args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
+                script.postprocess_batch(p, *args, images=images, **kwargs)
             except Exception as e:
                 errors.display(e, f'Running script before postprocess batch: {script.filename}')
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         for script in self.alwayson_scripts:
             try:
-                script_args = p.script_args[script.args_from:script.args_to]
-                script.postprocess_image(p, pp, *script_args)
+                args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
+                script.postprocess_image(p, pp, *args)
             except Exception as e:
                 errors.display(e, f'Running script postprocess image: {script.filename}')
 
