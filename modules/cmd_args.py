@@ -5,17 +5,8 @@ from modules.paths_internal import data_path
 parser = argparse.ArgumentParser(description="SD.Next", conflict_handler='resolve', epilog='For other options see UI Settings page', prog='', add_help=True, formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=55, indent_increment=2, width=200))
 parser._optionals = parser.add_argument_group('Other options') # pylint: disable=protected-access
 group = parser.add_argument_group('Server options')
-# group.add_argument("--config", type=str, default=sd_default_config, help=argparse.SUPPRESS)
 
-group.add_argument("-f", action='store_true', help=argparse.SUPPRESS)  # allows running as root; implemented outside of webui
-group.add_argument("--ui-settings-file", type=str, help=argparse.SUPPRESS, default=os.path.join(data_path, 'config.json'))
-group.add_argument("--ui-config-file", type=str, help=argparse.SUPPRESS, default=os.path.join(data_path, 'ui-config.json'))
-group.add_argument("--hide-ui-dir-config", action='store_true', help=argparse.SUPPRESS, default=False)
-group.add_argument("--theme", type=str, help=argparse.SUPPRESS, default=None)
-group.add_argument("--disable-console-progressbars", action='store_true', help=argparse.SUPPRESS, default=True)
-group.add_argument("--disable-safe-unpickle", action='store_true', help=argparse.SUPPRESS, default=True)
-group.add_argument("--lowram", action='store_true', help=argparse.SUPPRESS)
-
+# main server args
 group.add_argument("--config", type=str, default=os.path.join(data_path, 'config.json'), help="Use specific configuration file, default: %(default)s")
 group.add_argument("--medvram", action='store_true', help="Split model stages and keep only active part in VRAM, default: %(default)s")
 group.add_argument("--lowvram", action='store_true', help="Split model components and keep only active part in VRAM, default: %(default)s")
@@ -45,9 +36,24 @@ group.add_argument("--no-hashing", action='store_true', help="Disable hashing of
 group.add_argument("--no-download", action='store_true', help="Disable download of default model, default: %(default)s", default=False)
 group.add_argument("--profile", action='store_true', help="Run profiler, default: %(default)s")
 group.add_argument("--disable-queue", action='store_true', help="Disable queues, default: %(default)s")
+group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
+group.add_argument("--use-ipex", action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s", default=False)
+
+# removed args are added here as hidden in fixed format for compatbility reasons
+group.add_argument("-f", action='store_true', help=argparse.SUPPRESS)  # allows running as root; implemented outside of webui
+group.add_argument("--ui-settings-file", type=str, help=argparse.SUPPRESS, default=os.path.join(data_path, 'config.json'))
+group.add_argument("--ui-config-file", type=str, help=argparse.SUPPRESS, default=os.path.join(data_path, 'ui-config.json'))
+group.add_argument("--hide-ui-dir-config", action='store_true', help=argparse.SUPPRESS, default=False)
+group.add_argument("--theme", type=str, help=argparse.SUPPRESS, default=None)
+group.add_argument("--disable-console-progressbars", action='store_true', help=argparse.SUPPRESS, default=True)
+group.add_argument("--disable-safe-unpickle", action='store_true', help=argparse.SUPPRESS, default=True)
+group.add_argument("--lowram", action='store_true', help=argparse.SUPPRESS)
+group.add_argument("--disable-extension-access", default = False, action='store_true', help=argparse.SUPPRESS)
+group.add_argument("--api", help=argparse.SUPPRESS, default=True)
 
 
 def compatibility_args(opts, args):
+    # removed args that have been moved to opts are added here as hidden with default values as defined in opts
     group.add_argument("--ckpt-dir", type=str, help=argparse.SUPPRESS, default=opts.ckpt_dir)
     group.add_argument("--vae-dir", type=str, help=argparse.SUPPRESS, default=opts.vae_dir)
     group.add_argument("--embeddings-dir", type=str, help=argparse.SUPPRESS, default=opts.embeddings_dir)
@@ -62,7 +68,6 @@ def compatibility_args(opts, args):
     group.add_argument("--swinir-models-path", help=argparse.SUPPRESS, default=opts.swinir_models_path)
     group.add_argument("--ldsr-models-path", help=argparse.SUPPRESS, default=opts.ldsr_models_path)
     group.add_argument("--clip-models-path", type=str, help=argparse.SUPPRESS, default=opts.clip_models_path)
-    group.add_argument("--disable-extension-access", default = False, action='store_true', help=argparse.SUPPRESS)
     group.add_argument("--opt-channelslast", help=argparse.SUPPRESS, default=opts.opt_channelslast)
     group.add_argument("--xformers", default = (opts.cross_attention_optimization == "xFormers"), action='store_true', help=argparse.SUPPRESS)
     group.add_argument("--disable-nan-check", help=argparse.SUPPRESS, default=opts.disable_nan_check)
@@ -71,15 +76,13 @@ def compatibility_args(opts, args):
     group.add_argument("--no-half", help=argparse.SUPPRESS, default=opts.no_half)
     group.add_argument("--no-half-vae", help=argparse.SUPPRESS, default=opts.no_half_vae)
     group.add_argument("--precision", help=argparse.SUPPRESS, default=opts.precision)
-    group.add_argument("--api", help=argparse.SUPPRESS, default=True)
     group.add_argument("--sub-quad-q-chunk-size", help=argparse.SUPPRESS, default=opts.sub_quad_q_chunk_size)
     group.add_argument("--sub-quad-kv-chunk-size", help=argparse.SUPPRESS, default=opts.sub_quad_kv_chunk_size)
     group.add_argument("--sub-quad-chunk-threshold", help=argparse.SUPPRESS, default=opts.sub_quad_chunk_threshold)
-    group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     group.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     group.add_argument("--lyco-dir", help=argparse.SUPPRESS, default=opts.lyco_dir)
-    group.add_argument("--use-ipex", action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s", default=False)
 
+    # removed opts are added here with fixed values for compatibility reasons
     opts.use_old_emphasis_implementation = False
     opts.use_old_karras_scheduler_sigmas = False
     opts.no_dpmpp_sde_batch_determinism = False

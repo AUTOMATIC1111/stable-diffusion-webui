@@ -25,7 +25,7 @@ class MemUsageMonitor(threading.Thread):
         self.daemon = True
         self.run_flag = threading.Event()
         self.data = defaultdict(int)
-        if not torch.cuda.is_available() or not shared.cmd_opts.use_ipex:
+        if not torch.cuda.is_available():
             self.disabled = True
         else:
             if shared.cmd_opts.use_ipex:
@@ -35,7 +35,6 @@ class MemUsageMonitor(threading.Thread):
                 except Exception as e:  # AMD or whatever
                     print(f"Torch exception: {e}")
                     self.disabled = True
-
             else:
                 try:
                     self.cuda_mem_get_info()
@@ -96,7 +95,6 @@ class MemUsageMonitor(threading.Thread):
             free, total = self.cuda_mem_get_info()
             self.data["free"] = free
             self.data["total"] = total
-
             if shared.cmd_opts.use_ipex:
                 torch_stats = torch.xpu.memory_stats("xpu")
             else:
@@ -106,7 +104,6 @@ class MemUsageMonitor(threading.Thread):
             self.data["reserved"] = torch_stats["reserved_bytes.all.current"]
             self.data["reserved_peak"] = torch_stats["reserved_bytes.all.peak"]
             self.data["system_peak"] = total - self.data["min_free"]
-
         return self.data
 
     def stop(self):
