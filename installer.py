@@ -20,7 +20,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-args = Dot({ 'debug': False, 'upgrade': False, 'skip_update': False, 'no_directml': False, 'skip_extensions': False, 'skip_requirements': False, 'reset': False })
+args = Dot({ 'debug': False, 'upgrade': False, 'no_directml': False, 'skip_update': False, 'skip_extensions': False, 'skip_requirements': False, 'skip_git': False, 'reset': False, 'use_ipex': False, 'experimental': False, 'test': False })
 quick_allowed = True
 errors = 0
 opts = {}

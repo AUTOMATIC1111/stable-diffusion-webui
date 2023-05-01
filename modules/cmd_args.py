@@ -76,6 +76,9 @@ def compatibility_args(opts, args):
     group.add_argument("--sub-quad-kv-chunk-size", help=argparse.SUPPRESS, default=opts.sub_quad_kv_chunk_size)
     group.add_argument("--sub-quad-chunk-threshold", help=argparse.SUPPRESS, default=opts.sub_quad_chunk_threshold)
     group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
+    group.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
+    group.add_argument("--lyco-dir", help=argparse.SUPPRESS, default=opts.lyco_dir)
+    group.add_argument("--use-ipex", action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s", default=False)
 
     opts.use_old_emphasis_implementation = False
     opts.use_old_karras_scheduler_sigmas = False
@@ -94,7 +97,6 @@ def compatibility_args(opts, args):
     opts.print_hypernet_extra = False
     opts.dimensions_and_batch_together = True
 
-    group.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
-    group.add_argument("--lyco-dir", help=argparse.SUPPRESS, default=opts.lyco_dir)
     args = parser.parse_args()
+
     return args
