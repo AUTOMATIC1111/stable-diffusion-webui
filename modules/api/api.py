@@ -13,8 +13,8 @@ import piexif
 import piexif.helper
 import uvicorn
 import gradio as gr
-from gradio.processing_utils import decode_base64_to_file
-# from gradio_client.utils import decode_base64_to_file
+# from gradio.processing_utils import decode_base64_to_file # gradio 3.23
+from gradio_client.utils import decode_base64_to_file # gradio 3.28
 
 from modules import errors, shared, sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing
 from modules.api.models import * # pylint: disable=unused-wildcard-import, wildcard-import

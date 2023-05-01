@@ -13,7 +13,6 @@ Stuff to be added...
 
 - Update `README.md`
 - Add Gradio theme maker
-- Transformers version
 - Create new GitHub hooks/actions for CI/CD  
 - Redo Extensions tab: <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Stream-load models as option for slow storage

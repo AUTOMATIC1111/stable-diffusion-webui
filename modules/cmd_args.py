@@ -31,6 +31,7 @@ group.add_argument("--cors-origins", type=str, help="Allowed CORS origins as com
 group.add_argument("--cors-regex", type=str, help="Allowed CORS origins as regular expression, default: %(default)s", default=None)
 group.add_argument("--tls-keyfile", type=str, help="Enable TLS and specify key file, default: %(default)s", default=None)
 group.add_argument("--tls-certfile", type=str, help="Enable TLS and specify cert file, default: %(default)s", default=None)
+group.add_argument("--tls-selfsign", action="store_true", help="Enable TLS with self-signed certificates, default: %(default)s", default=None)
 group.add_argument("--server-name", type=str, help="Sets hostname of server, default: %(default)s", default=None)
 group.add_argument("--no-hashing", action='store_true', help="Disable hashing of checkpoints, default: %(default)s", default=False)
 group.add_argument("--no-download", action='store_true', help="Disable download of default model, default: %(default)s", default=False)
