@@ -241,7 +241,8 @@ div#extras_scale_to_tab div.form{
 }
 
 #settings .block.gradio-checkbox {
-    margin-top: 0;
+    margin: 0;
+    width: auto;
 }
 
 #settings .dirtyable {
