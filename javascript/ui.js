@@ -249,7 +249,9 @@ onOptionsChanged(function(){
 	    elem.title = sd_checkpoint_hash
 	    elem.href = "https://google.com/search?q=" + sd_checkpoint_hash
 	}
+})
 
+onOptionsChanged(function(){
     setting_elems = gradioApp().querySelectorAll('#settings [id^="setting_"]')
     setting_elems.forEach(function(elem){
         setting_name = elem.id.replace("setting_", "")
@@ -267,6 +269,19 @@ function markIfModified(setting_name, value) {
     if (is_new_value) {
         elem.title = `Changed from previous value: ${previous_value_json}`
     }
+}
+
+function onSettingComponentChanged(setting_name, value) {
+    markIfModified(setting_name, value)
+    return []
+}
+
+function onModificationIndicatorClicked(setting_name) {
+    elem = gradioApp().getElementById("modification_indicator_"+setting_name)
+    if (elem) {
+        elem.disabled = true
+    }
+    return JSON.parse(JSON.stringify(opts[setting_name]));
 }
 
 let txt2img_textarea, img2img_textarea = undefined;
