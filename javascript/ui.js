@@ -218,7 +218,7 @@ function restoreProgressTxt2img(x){
         }, null, 0)
     }
 
-    return [id]
+    return id
 }
 function restoreProgressImg2img(x){
     showRestoreProgressButton("img2img", false)
@@ -231,7 +231,7 @@ function restoreProgressImg2img(x){
         }, null, 0)
     }
 
-    return [id]
+    return id
 }
 
 
