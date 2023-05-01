@@ -320,7 +320,7 @@ onUiUpdate(function(){
 	/* auto grow textarea */
 	function autoGrowPromptTextarea(){
 		gradioApp().querySelectorAll('[id$="_prompt"] textarea').forEach(function (elem) {
-			elem.focus();			
+			elem.parentElement.click();			
 		});
 	}
 	
@@ -332,10 +332,12 @@ onUiUpdate(function(){
 			e.target.style.minHeight = e.target.scrollHeight + offset + 2 + 'px';
 		});
 		
-		elem.addEventListener('focus', function (e) {
-			e.target.style.minHeight = 'auto';
-			e.target.style.minHeight = e.target.scrollHeight + offset + 2 + 'px';
+		elem.parentElement.addEventListener('click', function (e) {
+			let textarea = e.currentTarget.querySelector('textarea');
+			textarea.style.minHeight = 'auto';
+			textarea.style.minHeight = textarea.scrollHeight + offset + 2 + 'px';
 		});
+		
 	});
 	
 
