@@ -9,6 +9,7 @@ set VENV_DIR=
 set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config-af.json --ui-config-file=ui-config.json --hide-ui-dir-config
 :: for my laptop
 ::set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config-af.json --hide-ui-dir-config --ui-config-file=ui-config-ntb.json
+:: for the full-config in my fork
 ::set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config.json --ui-config-file=ui-config-default.json
 ::set COMMANDLINE_ARGS=--theme dark --medvram
 ::set COMMANDLINE_ARGS=--theme dark --lowvram
