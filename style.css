@@ -244,19 +244,22 @@ div#extras_scale_to_tab div.form{
     margin-top: 0;
 }
 
-#settings [id^="setting_"] {
-    margin-left: 1.2em;
+#settings .dirtyable {
+    display: grid;
+    grid-template-columns: .3em auto;
+    gap: .5em;
 }
 
-#settings [id^="setting_"].modified::before {
-    content: "";
-    width: .25em;
-    position: absolute;
+#settings .modification-indicator {
+    width: 100%;
     height: 100%;
-    left: -.75em;
-    background-color: var(--color-accent);
-    background-clip: content-box;
-    border-radius: 1em;
+    background: var(--color-accent);
+    border-radius: 1em !important;
+    padding: 0;
+}
+
+#settings .modification-indicator:disabled {
+    visibility: hidden;
 }
 
 #settings_result{

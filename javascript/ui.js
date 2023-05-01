@@ -258,11 +258,15 @@ onOptionsChanged(function(){
 })
 
 function markIfModified(setting_name, value) {
-    elem = gradioApp().getElementById("setting_"+setting_name)
+    elem = gradioApp().getElementById("modification_indicator_"+setting_name)
     if(elem == null) return;
     // Use JSON.stringify to compare nested objects (e.g. arrays for checkbox-groups)
-    let is_new_value = JSON.stringify(value) != JSON.stringify(opts[setting_name])
-    elem.classList.toggle("modified", is_new_value)
+    let previous_value_json = JSON.stringify(opts[setting_name])
+    let is_new_value = JSON.stringify(value) != previous_value_json
+    elem.disabled = !is_new_value
+    if (is_new_value) {
+        elem.title = `Changed from previous value: ${previous_value_json}`
+    }
 }
 
 let txt2img_textarea, img2img_textarea = undefined;
