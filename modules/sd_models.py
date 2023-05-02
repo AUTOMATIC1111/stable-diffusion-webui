@@ -50,7 +50,14 @@ class CheckpointInfo:
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
         self.ids = [self.hash, self.model_name, self.title, name, f'{name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
-
+        self.metadata = {}
+        _, ext = os.path.splitext(self.filename)
+        if ext.lower() == ".safetensors":
+            try:
+                self.metadata = read_metadata_from_safetensors(filename)
+            except Exception as e:
+                errors.display(e, f"reading checkpoint metadata: {filename}")
+    
     def register(self):
         checkpoints_list[self.title] = self
         for i in self.ids:

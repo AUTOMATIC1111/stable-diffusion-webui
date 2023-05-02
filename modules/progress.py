@@ -8,12 +8,20 @@ import modules.shared as shared
 current_task = None
 pending_tasks = {}
 finished_tasks = []
+recorded_results = []
+recorded_results_limit = 2
 
 
 def start_task(id_task):
     global current_task # pylint: disable=global-statement
     current_task = id_task
     pending_tasks.pop(id_task, None)
+
+
+def record_results(id_task, res):
+    recorded_results.append((id_task, res))
+    if len(recorded_results) > recorded_results_limit:
+        recorded_results.pop(0)
 
 
 def finish_task(id_task):

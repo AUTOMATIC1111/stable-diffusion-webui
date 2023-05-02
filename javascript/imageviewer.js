@@ -106,7 +106,8 @@ function setupImageForLightbox(e) {
 	var event = isFirefox ? 'mousedown' : 'click'
 	e.addEventListener(event, function (evt) {
 		if (evt.button != 0) return;
-		modalZoomSet(gradioApp().getElementById('modalImage'), true)
+    initialZoom = (localStorage.getItem('modalZoom') || true) == 'yes'
+		modalZoomSet(gradioApp().getElementById('modalImage'), initialZoom)
 		evt.preventDefault()
 		showModal(evt)
 	}, true);
@@ -115,6 +116,7 @@ function setupImageForLightbox(e) {
 function modalZoomSet(modalImage, enable) {
     if (enable) modalImage.classList.add('modalImageFullscreen');
     else modalImage.classList.remove('modalImageFullscreen');
+    localStorage.setItem('modalZoom', enable ? 'yes' : 'no')
 }
 
 function modalZoomToggle(event) {
