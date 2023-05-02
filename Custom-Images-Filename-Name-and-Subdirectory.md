@@ -42,7 +42,7 @@ user can chain these patterns togetherm forming a filename that suits their use 
 | `[prompt_words]`               | Prompt   with Styles, Bracket and Comma removed      | 1gir white space very important not important some value 1 5 whatever the   end crystals texture Hair ， extremely detailed           |
 | `[prompt_hash]` | The first 8 characters of the prompt's SHA-256 hash | 1girl -> 6362d0d2<br>(1girl:1.1) -> 0102e068 |
 | `[clip_skip]` | CLIP stop at last layers | 1 |
-| `[batch_number]` | the NO. N-th image in a singel batch job | BatchNo_[batch_number] -> Batch_3
+| `[batch_number]` | the NO. N-th image in a singel batch job | BatchNo_[batch_number] -> BatchNo_3
 | `[generation_number]` | the NO. N-th image in a entire job | GenNo_[generation_number] -> GenNo_9
 | `[hasprompt<prompt1\|default><prompt2>...]` | if specified `prompt` is found in prompts then `prompt` will be added to filename, else `default` will be added to filename (`default` can be blank) | [hasprompt<girl><boy>] -> girl<br>[hasprompt<girl\|no girl><boy\|no boy>] -> girlno boy
 
