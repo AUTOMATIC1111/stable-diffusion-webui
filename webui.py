@@ -198,6 +198,7 @@ def start_ui():
     startup_timer.record("ui")
     if cmd_opts.disable_queue:
         print('Server queues disabled')
+        shared.demo.progress_tracking = False
     else:
         shared.demo.queue(concurrency_count=16)
 
