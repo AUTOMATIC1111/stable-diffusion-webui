@@ -41,7 +41,7 @@ def commit_hash():
 
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
     if desc is not None:
-        installer.log(desc)
+        installer.log.info(desc)
     if live:
         result = subprocess.run(command, check=False, shell=True, env=os.environ if custom_env is None else custom_env)
         if result.returncode != 0:

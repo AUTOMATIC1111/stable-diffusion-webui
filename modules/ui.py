@@ -1,7 +1,6 @@
 import json
 import mimetypes
 import os
-import sys
 from functools import reduce
 
 import gradio as gr
@@ -1385,7 +1384,7 @@ def create_ui():
                     interface.render()
 
         if opts.notification_audio_enable and os.path.exists(os.path.join(script_path, opts.notification_audio_path)):
-            audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, opts.notification_audio_path), elem_id="audio_notification", visible=False)
+            _audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, opts.notification_audio_path), elem_id="audio_notification", visible=False)
 
         text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
         settings_submit.click(
