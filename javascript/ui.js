@@ -296,7 +296,7 @@ function recalculate_prompts_inpaint(){
 
 
 let selectedTabItemId = "tab_txt2img";									   
-var opts = {}
+let opts = {}
 
 onUiUpdate(function(){
 	if(Object.keys(opts).length != 0) return;
@@ -1082,6 +1082,7 @@ onUiUpdate(function(){
 		let comp_parent = parent.parentElement.parentElement;		
 		if( comp_parent.id == "img2img_width" || 
 		comp_parent.id == "img2img_height" || 
+		comp_parent.id == "img2img_scale" || 
 		comp_parent.id.indexOf("--ae-") != -1 || 
 		comp_parent.id.indexOf("theme") != -1 || 
 		comp_parent.className.indexOf("posex") != -1) return;

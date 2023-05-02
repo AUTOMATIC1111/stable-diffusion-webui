@@ -63,6 +63,7 @@ onUiLoaded(function(){
 			if(img){
 				if(img_src[i] != img.src){
 					let tool_buttons = img_parent.querySelectorAll('button');
+					//console.log(tool_buttons);
 					if(tool_buttons.length > 2){
 						let spl_parent = elem.parentElement;
 						let spl;
@@ -76,7 +77,7 @@ onUiLoaded(function(){
 							spl.addControl("undo", spl_undo_handler);
 							spl_pan = spl.addControl("pan", spl_pan_handler);	
 							spl.addControl("brush", spl_brush_handler, brush_size);
-							if(tool_buttons.length == 4){
+							if(tool_buttons.length == 5){
 								spl.addControl("color", spl_color_handler, color_box);
 							}
 							spl.addControl("clear",spl_clear_handler);
@@ -97,7 +98,7 @@ onUiLoaded(function(){
 						}
 						
 						function spl_clear_handler(e){							
-							tool_buttons[1].click();
+							tool_buttons[2].click();
 							spl.panzoom(false);
 							img_parent.classList.remove("no-point-events");
 							img_parent.parentElement.classList.remove("move");
@@ -157,7 +158,7 @@ onUiLoaded(function(){
 									pan_toggle(false, spl_pan);					
 								})
 							}
-						}
+						} 
 
 						function update_brush(listener){
 							let input_range = img_parent.querySelector("input[type='range']");
@@ -173,11 +174,13 @@ onUiLoaded(function(){
 							}
 						}
 
-						function init_drawing_tools(){							
-							let input_color = img_parent.querySelector("input[type='color']");			
+ 						function init_drawing_tools(){	
+						
+							let input_color = img_parent.querySelector("input[type='color']");
 							if(!input_color){
-								if(tool_buttons[3]){
-									tool_buttons[3].click();	
+								let tbcolor = img_parent.querySelector("button[aria-label='Select brush color']");
+								if(tbcolor){									
+									tbcolor.click();	
 									setTimeout(function() { update_color(true);	}, 100);
 								}
 							}else{
@@ -186,13 +189,17 @@ onUiLoaded(function(){
 							
 							let input_range = img_parent.querySelector("input[type='range']");
 							if(!input_range){
-								if(tool_buttons[2]){
-									tool_buttons[2].click();	
+								let tbrange = img_parent.querySelector("button[aria-label='Use brush']");
+								
+								if(tbrange){
+									tbrange.click();	
 									setTimeout(function() { update_brush(true);	}, 100);
 								}
 							}else{
 								setTimeout(function() { update_brush(false);}, 100);		
-							}
+							} 
+							
+							
 							
 						}
 
@@ -220,6 +227,27 @@ onUiLoaded(function(){
 			}
 		}));
     observer.observe(container, { childList: true, subtree: true });
+	
+	
+/* 	gradioApp().querySelectorAll('#mode_img2img > .tabitem').forEach(function (tb, ti){	
+		tb.querySelectorAll('[id^="img2img_copy_to_"] > button').forEach(function (btn, bi){	
+			
+			btn.addEventListener("click", function(e) {
+				console.log(ti + " > " + bi);
+				let src_canvas = tb.querySelector('[key="drawing"]');
+				if(src_canvas){					
+					let dest_canvas = gradioApp().querySelector('#mode_img2img .tabitem:nth-child('+parseInt(bi+1)+') [key="drawing"]');
+					//let destCtx = dest_canvas.getContext('2d');
+					//destCtx.drawImage(src_canvas, 0, 0);	
+					console.log(src_canvas);
+					console.log(dest_canvas);
+				}
+			})
+		})
+	})
+	
+ */
+	
 	
 })
 

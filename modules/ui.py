@@ -632,7 +632,7 @@ def create_ui():
                 show_progress=False,
             )
 
-            txt2img_prompt.submit(**txt2img_args)
+            #txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
@@ -743,11 +743,10 @@ def create_ui():
                     copy_image_buttons = []
                     copy_image_destinations = {}
 
-
                     def add_copy_image_controls(tab_name, elem):
                         with gr.Row(variant="compact", elem_id=f"img2img_copy_to_{tab_name}"):
                             gr.HTML("Copy image to: ", elem_id=f"img2img_label_copy_to_{tab_name}")
-                            
+
                             for title, name in zip(['img2img', 'sketch', 'inpaint', 'inpaint sketch'], ['img2img', 'sketch', 'inpaint', 'inpaint_sketch']):
                                 if name == tab_name:
                                     gr.Button(title, interactive=False)
@@ -801,19 +800,58 @@ def create_ui():
                                 img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, elem_id="img2img_batch_input_dir")
                                 img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, elem_id="img2img_batch_output_dir")
                                 img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
-                            
+                                
+                                img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
+                                img2img_image_inputs = [init_img, sketch, init_img_with_mask, inpaint_color_sketch]
+
+                                for i, tab in enumerate(img2img_tabs):
+                                    tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
+                                    
                             for category in ordered_ui_categories():    
                                 if category == "inpaint":  
                                     
-                                    with FormGroup(elem_id="dim_controls", visible=True):
+                                    with gr.Column(elem_id="dim_controls", visible=True):
                                         with gr.Row():
                                             resize_mode = gr.Dropdown(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
-                                        with gr.Row():
+                                        #with gr.Row():
                                             #with gr.Column(elem_id="img2img_column_size", scale=4):
-                                            width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")                         
-                                            res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
-                                            height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                                            # width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")                         
+                                            # res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                            # height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                                            #with gr.Column(elem_id="img2img_column_size", scale=4):
+                                        selected_scale_tab = gr.State(value=0)
+
+                                        with gr.Tabs():
+                                            with gr.Tab(label="Resize to") as tab_scale_to:
+                                                with gr.Row():                                                      
+                                                    width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
+                                                    res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                                    height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                                                  
+                                            with gr.Tab(label="Resize by") as tab_scale_by:
+                                                scale_by = gr.Slider(minimum=0.05, maximum=4.0, step=0.05, label="Scale", value=1.0, elem_id="img2img_scale")
+                                                with gr.Row(elem_id="img2img_scale_resolution_row"):
+                                                    scale_by_html = FormHTML(resize_from_to_html(0, 0, 0.0), elem_id="img2img_scale_resolution_preview")
+                                                    gr.Slider(label="Unused", elem_id="img2img_unused_scale_by_slider")
+                                                    button_update_resize_to = gr.Button(visible=False, elem_id="img2img_update_resize_to")
+
+                                            on_change_args = dict(
+                                                fn=resize_from_to_html,
+                                                _js="currentImg2imgSourceResolution",
+                                                inputs=[dummy_component, dummy_component, scale_by],
+                                                outputs=scale_by_html,
+                                                show_progress=False,
+                                            )
+
+                                            scale_by.release(**on_change_args)
+                                            button_update_resize_to.click(**on_change_args)
+
+                                            for component in img2img_image_inputs:
+                                                component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
+
+                                    tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
+                                    tab_scale_by.select(fn=lambda: 1, inputs=[], outputs=[selected_scale_tab])
 
                                     with FormGroup(elem_id="inpaint_controls_sub-group-collapse", visible=False) as inpaint_controls:
                                       
@@ -858,88 +896,20 @@ def create_ui():
                             outputs=[],
                         )
 
+                    #with FormRow():
+                    #    resize_mode = gr.Dropdown(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
                     for category in ordered_ui_categories():
                         if category == "sampler":
                             steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
+                                         
+                        elif category == "dimensions":
                             
-                        elif category == "dimensions":                                       
-                            if opts.dimensions_and_batch_together:                              
+                            if opts.dimensions_and_batch_together:
                                 with gr.Row(elem_id="img2img_column_batch"):
-
-                    img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
-                    img2img_image_inputs = [init_img, sketch, init_img_with_mask, inpaint_color_sketch]
-
-                    for i, tab in enumerate(img2img_tabs):
-                        tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
-
-                def copy_image(img):
-                    if isinstance(img, dict) and 'image' in img:
-                        return img['image']
-
-                    return img
-
-                for button, name, elem in copy_image_buttons:
-                    button.click(
-                        fn=copy_image,
-                        inputs=[elem],
-                        outputs=[copy_image_destinations[name]],
-                    )
-                    button.click(
-                        fn=lambda: None,
-                        _js="switch_to_"+name.replace(" ", "_"),
-                        inputs=[],
-                        outputs=[],
-                    )
-
-                with FormRow():
-                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
-
-                for category in ordered_ui_categories():
-                    if category == "sampler":
-                        steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
-
-                    elif category == "dimensions":
-                        with FormRow():
-                            with gr.Column(elem_id="img2img_column_size", scale=4):
-                                selected_scale_tab = gr.State(value=0)
-
-                                with gr.Tabs():
-                                    with gr.Tab(label="Resize to") as tab_scale_to:
-                                        with FormRow():
-                                            with gr.Column(elem_id="img2img_column_size", scale=4):
-                                                width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
-                                                height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
-                                            with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
-                                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
-
-                                    with gr.Tab(label="Resize by") as tab_scale_by:
-                                        scale_by = gr.Slider(minimum=0.05, maximum=4.0, step=0.05, label="Scale", value=1.0, elem_id="img2img_scale")
-
-                                        with FormRow():
-                                            scale_by_html = FormHTML(resize_from_to_html(0, 0, 0.0), elem_id="img2img_scale_resolution_preview")
-                                            gr.Slider(label="Unused", elem_id="img2img_unused_scale_by_slider")
-                                            button_update_resize_to = gr.Button(visible=False, elem_id="img2img_update_resize_to")
-
-                                    on_change_args = dict(
-                                        fn=resize_from_to_html,
-                                        _js="currentImg2imgSourceResolution",
-                                        inputs=[dummy_component, dummy_component, scale_by],
-                                        outputs=scale_by_html,
-                                        show_progress=False,
-                                    )
-
-                                    scale_by.release(**on_change_args)
-                                    button_update_resize_to.click(**on_change_args)
-
-                                    # the code below is meant to update the resolution label after the image in the image selection UI has changed.
-                                    # as it is now the event keeps firing continuously for inpaint edits, which ruins the page with constant requests.
-                                    # I assume this must be a gradio bug and for now we'll just do it for non-inpaint inputs.
-                                    for component in [init_img, sketch]:
-                                        component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
-
-                            tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
-                            tab_scale_by.select(fn=lambda: 1, inputs=[], outputs=[selected_scale_tab])
+                                    batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="img2img_batch_count")
+                                    batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
+                                    
 
                         elif category == "cfg":                       
                             with gr.Row():                                                                         
@@ -969,7 +939,6 @@ def create_ui():
                         elif category == "scripts":
                             #with FormGroup(elem_id="img2img_script_container"):
                             custom_inputs = modules.scripts.scripts_img2img.setup_ui()
-
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -1208,6 +1177,7 @@ def create_ui():
                     with FormRow():
                         checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="ckpt", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
                         save_as_half = gr.Checkbox(value=False, label="Save as float16", elem_id="modelmerger_save_as_half")
+                        save_metadata = gr.Checkbox(value=True, label="Save metadata (.safetensors only)", elem_id="modelmerger_save_metadata")
 
                     with FormRow():
                         with gr.Column():
@@ -2103,15 +2073,10 @@ def versions_html():
 <ul class="info-ul">
 <li><span>os: </span>{sys.platform}</li>    
 <li><span title="{sys.version}">python: </span> {python_version}</li>
-         
 <li><span>torch: </span>  {getattr(torch, '__long_version__',torch.__version__)}</li>
-         
 <li><span>xformers: </span> {xformers_version}</li>
-         
 <li><span>gradio: </span> {gr.__version__}</li>
-         
 <li><span>commit: <a href="https://github.com/anapnoe/stable-diffusion-webui-ux/commit/{commit}"></span>{short_commit}</a></li>
-         
 <li><span>checkpoint: </span><a id="sd_checkpoint_hash">N/A</a></li>
 </ul>
 """
