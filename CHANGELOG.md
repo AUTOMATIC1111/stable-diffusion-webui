@@ -1,3 +1,7 @@
+## 1.1.1
+### Bug Fixes:
+ * fix an error that prevents running webui on torch<2.0 without --disable-safe-unpickle
+
 ## 1.1.0
 ### Features:
  * switch to torch 2.0.0 (except for AMD GPUs)
