@@ -1,4 +1,8 @@
-## Upcoming version:
+## 1.1.1
+### Bug Fixes:
+ * fix an error that prevents running webui on torch<2.0 without --disable-safe-unpickle
+
+## 1.1.0
 ### Features:
  * switch to torch 2.0.0 (except for AMD GPUs)
  * visual improvements to custom code scripts
@@ -54,5 +58,5 @@
  * outpainting Mk2 & Poorman should use the SAMPLE file format to save images, not GRID file format
  * do not fail all Loras if some have failed to load when making a picture
 
-## Before versions:
+## 1.0.0
   * everything
