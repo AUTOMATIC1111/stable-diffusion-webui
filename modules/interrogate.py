@@ -6,10 +6,10 @@ import re
 
 import torch
 try:
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # pylint: disable=unused-import,import-error
 except:
     pass
-import torch.hub
+import torch.hub # pylint: disable=ungrouped-imports
 
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
@@ -28,7 +28,7 @@ def category_types():
 
 
 def download_default_clip_interrogate_categories(content_dir):
-    print("Downloading CLIP categories...")
+    shared.log.info("Downloading CLIP categories...")
 
     tmpdir = content_dir + "_tmp"
     cat_types = ["artists", "flavors", "mediums", "movements"]

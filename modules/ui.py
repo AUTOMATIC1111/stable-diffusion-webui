@@ -109,9 +109,7 @@ def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_di
     elif mode == 2:
         return [interrogation_function(ii_singles[mode]["image"]), None]
     elif mode == 5:
-        assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
         images = shared.listfiles(ii_input_dir)
-        print(f"Will process {len(images)} images.")
         if ii_output_dir != "":
             os.makedirs(ii_output_dir, exist_ok=True)
         else:
@@ -183,8 +181,7 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
                 res = all_seeds[index if 0 <= index < len(all_seeds) else 0]
         except json.decoder.JSONDecodeError:
             if gen_info_string != '':
-                print("Error parsing JSON generation info:", file=sys.stderr)
-                print(gen_info_string, file=sys.stderr)
+                shared.log.error(f"Error parsing JSON generation info: {gen_info_string}")
         return [res, gr_show(False)]
 
     reuse_seed.click(fn=copy_seed, _js="(x, y) => [x, selected_gallery_index()]", show_progress=False, inputs=[generation_info, dummy_component], outputs=[seed, dummy_component])
@@ -1496,9 +1493,6 @@ def create_ui():
                 ui_settings[key] = getattr(obj, field)
             elif condition and not condition(saved_value):
                 pass
-
-                # this warning is generally not useful;
-                # print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
             else:
                 setattr(obj, field, saved_value)
                 if init_field is not None:

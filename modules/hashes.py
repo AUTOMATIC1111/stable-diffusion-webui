@@ -1,12 +1,10 @@
 import hashlib
 import json
 import os.path
-
 import filelock
-
+from rich import progress
 from modules import shared
 from modules.paths import data_path
-
 
 cache_filename = os.path.join(data_path, "cache.json")
 cache_data = None
@@ -19,8 +17,7 @@ def dump_cache():
 
 
 def cache(subsection):
-    global cache_data
-
+    global cache_data # pylint: disable=global-statement
     if cache_data is None:
         with filelock.FileLock(cache_filename+".lock"):
             if not os.path.isfile(cache_filename):
@@ -39,7 +36,7 @@ def calculate_sha256(filename):
     hash_sha256 = hashlib.sha256()
     blksize = 1024 * 1024
 
-    with open(filename, "rb") as f:
+    with progress.open(filename, 'rb', description=f'Calculating model hash: [cyan]{filename}', auto_refresh=True) as f:
         for chunk in iter(lambda: f.read(blksize), b""):
             hash_sha256.update(chunk)
 
@@ -72,9 +69,7 @@ def sha256(filename, title):
     if shared.cmd_opts.no_hashing:
         return None
 
-    print(f"Calculating sha256: {filename}", end='')
     sha256_value = calculate_sha256(filename)
-    print(f"{sha256_value}")
 
     hashes[title] = {
         "mtime": os.path.getmtime(filename),

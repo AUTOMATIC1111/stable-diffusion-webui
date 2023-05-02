@@ -2,7 +2,6 @@ import json
 import html
 import os
 import platform
-import sys
 import subprocess as sp
 
 import gradio as gr
@@ -107,15 +106,10 @@ def create_output_panel(tabname, outdir):
 
     def open_folder(f):
         if not os.path.exists(f):
-            print(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
+            shared.log.warning(f'Folder "{f}" does not exist. After you create an image, the folder will be created.')
             return
         elif not os.path.isdir(f):
-            print(f"""
-WARNING
-An open_folder request was made with an argument that is not a folder.
-This could be an error or a malicious attempt to run code on your computer.
-Requested path was: {f}
-""", file=sys.stderr)
+            shared.log.warning(f"An open_folder request was made with an argument that is not a folder: {f}")
             return
 
         if not shared.cmd_opts.hide_ui_dir_config:

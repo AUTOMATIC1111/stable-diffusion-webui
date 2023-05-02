@@ -40,7 +40,7 @@ class Upscaler:
             os.makedirs(self.model_path, exist_ok=True)
 
         try:
-            import cv2
+            import cv2 # pylint: disable=unused-import
             self.can_tile = True
         except:
             pass

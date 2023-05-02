@@ -6,7 +6,6 @@ import signal
 import asyncio
 import logging
 import warnings
-from rich import print # pylint: disable=W0622
 from modules import timer, errors
 
 startup_timer = timer.Timer()
@@ -18,6 +17,9 @@ except:
     pass
 import torchvision # pylint: disable=W0611,C0411
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them # pylint: disable=W0611,C0411
+if ".dev" in torch.__version__ or "+git" in torch.__version__:
+    torch.__long_version__ = torch.__version__
+    torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 logging.getLogger("pytorch_lightning").disabled = True
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
@@ -34,12 +36,6 @@ from modules import extra_networks, ui_extra_networks_checkpoints # pylint: disa
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
 from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call # pylint: disable=W0611,C0411
 from modules.paths import create_paths
-
-# Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
-if ".dev" in torch.__version__ or "+git" in torch.__version__:
-    torch.__long_version__ = torch.__version__
-    torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
-
 from modules import shared, extensions, ui_tempdir, ui_extra_networks
 import modules.devices
 import modules.sd_samplers
@@ -59,11 +55,14 @@ import modules.textual_inversion.textual_inversion
 import modules.progress
 import modules.ui
 from modules import modelloader
-from modules.shared import cmd_opts, opts
+from modules.shared import cmd_opts, opts, log
 import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
 startup_timer.record("libraries")
 
+
+log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
+logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
 if cmd_opts.server_name:
     server_name = cmd_opts.server_name
 else:
@@ -73,17 +72,18 @@ else:
 def check_rollback_vae():
     if shared.cmd_opts.rollback_vae:
         if not torch.cuda.is_available():
-            print("Rollback VAE functionality requires compatible GPU")
+            log.error("Rollback VAE functionality requires compatible GPU")
             shared.cmd_opts.rollback_vae = False
         elif not torch.__version__.startswith('2.1'):
-            print("Rollback VAE functionality requires Torch 2.1 or higher")
+            log.error("Rollback VAE functionality requires Torch 2.1 or higher")
             shared.cmd_opts.rollback_vae = False
         elif 0 < torch.cuda.get_device_capability()[0] < 8:
-            print('Rollback VAE functionality device capabilities not met')
+            log.error('Rollback VAE functionality device capabilities not met')
             shared.cmd_opts.rollback_vae = False
 
 
 def initialize():
+    log.debug('Entering Initialize')
     check_rollback_vae()
 
     extensions.list_extensions()
@@ -127,19 +127,19 @@ def initialize():
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
         try:
             if not os.path.exists(cmd_opts.tls_keyfile):
-                print("Invalid path to TLS keyfile given")
+                log.error("Invalid path to TLS keyfile given")
             if not os.path.exists(cmd_opts.tls_certfile):
-                print(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
+                log.error(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
         except TypeError:
             cmd_opts.tls_keyfile = cmd_opts.tls_certfile = None
-            print("TLS setup invalid, running webui without TLS")
+            log.error("TLS setup invalid, running webui without TLS")
         else:
-            print("Running with TLS")
+            log.info("Running with TLS")
         startup_timer.record("TLS")
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(_sig, _frame):
-        print('Exiting')
+        log.info('Exiting')
         os._exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)
@@ -152,10 +152,10 @@ def load_model():
         modules.sd_models.load_model()
     except Exception as e:
         errors.display(e, "loading stable diffusion model")
-        print("Stable diffusion model failed to load")
+        log.error("Stable diffusion model failed to load")
         exit(1)
     if shared.sd_model is None:
-        print("No stable diffusion model loaded")
+        log.error("No stable diffusion model loaded")
         exit(1)
     shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
@@ -185,7 +185,8 @@ def async_policy():
 
 
 def start_ui():
-    logging.disable(logging.INFO)
+    log.debug('Entering StartUI')
+    logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
     create_paths(opts)
     async_policy()
     initialize()
@@ -197,7 +198,7 @@ def start_ui():
     shared.demo = modules.ui.create_ui()
     startup_timer.record("ui")
     if cmd_opts.disable_queue:
-        print('Server queues disabled')
+        log.info('Server queues disabled')
         shared.demo.progress_tracking = False
     else:
         shared.demo.queue(concurrency_count=16)
@@ -238,10 +239,10 @@ def start_ui():
 
 
 def webui():
+    log.debug('Entering WebUI')
     start_ui()
     load_model()
-    print(f"Startup time: {startup_timer.summary()}")
-    logging.disable(logging.DEBUG)
+    log.info(f"Startup time: {startup_timer.summary()}")
 
     while True:
         try:
@@ -249,10 +250,10 @@ def webui():
         except:
             alive = False
         if not alive:
-            print('Server restart')
+            log.warning('Server restart')
             startup_timer.reset()
             start_ui()
-            print(f"Startup time: {startup_timer.summary()}")
+            log.info(f"Startup time: {startup_timer.summary()}")
         time.sleep(1)
 
     """

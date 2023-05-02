@@ -162,6 +162,12 @@ state.server_start = time.time()
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 face_restorers = []
 
+
+def debug(message):
+    if cmd_opts.debug:
+        log.info(message)
+
+
 class OptionInfo:
     def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None):
         self.default = default
@@ -215,9 +221,9 @@ def refresh_themes():
             with open(os.path.join('javascript', 'themes.json'), mode='w', encoding='utf=8') as f:
                 f.write(json.dumps(res))
         else:
-            print('Error refreshing UI themes')
+            log.error('Error refreshing UI themes')
     except:
-        print('Exception refreshing UI themes')
+        log.error('Exception refreshing UI themes')
 
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 tab_names = []
@@ -229,6 +235,8 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_checkpoint_cache": OptionInfo(0, "Model checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae_checkpoint_cache": OptionInfo(0, "VAE checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "Select VAE", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
+    "stream_load": OptionInfo(False, "When loading models attempt stream loading optimized for slow or network storage"),
+    "model_reuse_dict": OptionInfo(False, "When loading models attempt to reuse previous model dictionary"),
     "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "initial_noise_multiplier": OptionInfo(1.0, "Noise multiplier for img2img", gr.Slider, {"minimum": 0.5, "maximum": 1.5, "step": 0.01}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
@@ -314,7 +322,7 @@ options_templates.update(options_section(('cuda', "CUDA Settings"), {
     "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation. Set to 0 to disable.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "precision": OptionInfo("Autocast", "Precision type", gr.Radio, lambda: {"choices": ["Autocast", "Full"]}),
     "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
-    "no_half": OptionInfo(True if is_device_dml else False, "Use full precision for model (--no-half)", None, None, lambda: print("Warning: Most of DirectML devices do not fully support half mode. Recommend to use full precision to model.") if is_device_dml else None),
+    "no_half": OptionInfo(True if is_device_dml else False, "Use full precision for model (--no-half)", None, None, None),
     "no_half_vae": OptionInfo(True if is_device_dml else False, "Use full precision for VAE (--no-half-vae)"),
     "upcast_sampling": OptionInfo(True if sys.platform == "darwin" or cmd_opts.use_ipex else False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
     "disable_nan_check": OptionInfo(True, "Do not check if produced images/latent spaces have NaN values"),
@@ -468,10 +476,10 @@ class Options:
         if self.data is not None:
             if key in self.data or key in self.data_labels:
                 if cmd_opts.freeze:
-                    print(f'Settings are frozen: {key}')
+                    log.warning(f'Settings are frozen: {key}')
                     return
                 if cmd_opts.hide_ui_dir_config and key in restricted_opts:
-                    print(f'Settings key is restricted: {key}')
+                    log.warning(f'Settings key is restricted: {key}')
                     return
                 else:
                     self.data[key] = value
@@ -531,11 +539,11 @@ class Options:
         for k, v in self.data.items():
             info = self.data_labels.get(k, None)
             if info is not None and not self.same_type(info.default, v):
-                log.error(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})", file=sys.stderr)
+                log.error(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})")
                 bad_settings += 1
 
         if bad_settings > 0:
-            log.error(f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.", file=sys.stderr)
+            log.error(f"The program is likely to not work with bad settings.\nSettings file: {filename}\nEither fix the file, or delete it and restart.")
 
     def onchange(self, key, func, call=True):
         item = self.data_labels.get(key)
@@ -630,9 +638,9 @@ def reload_gradio_theme(theme_name=None):
         try:
             gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
         except:
-            print("Theme download error accessing HuggingFace")
+            log.error("Theme download error accessing HuggingFace")
             gradio_theme = gr.themes.Default()
-    print(f'Loading theme: {theme_name}')
+    log.info(f'Loading theme: {theme_name}')
 
 
 class TotalTQDM:
@@ -678,14 +686,14 @@ def restart_server():
         return
     try:
         import logging
-        logging.disable(logging.CRITICAL)
+        log.setLevel(logging.DEBUG if cmd_opts.debug else logging.CRITICAL)
         demo.server.should_exit = True
         demo.server.force_exit = True
         demo.close(verbose=False)
         demo.server.close()
     except:
         pass
-    print('Server shutdown')
+    log.info('Server shutdown')
 
 
 def listfiles(dirname):

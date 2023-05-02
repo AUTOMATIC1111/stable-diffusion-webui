@@ -9,7 +9,6 @@ except:
     pass
 import tqdm
 import safetensors.torch
-from rich import print # pylint: disable=redefined-builtin
 import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
@@ -131,7 +130,7 @@ class EmbeddingDatabase:
 
     def get_expected_shape(self):
         if shared.sd_model is None:
-            print('Model not loaded')
+            shared.log.error('Model not loaded')
             return 0
         vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
         return vec.shape[1]
@@ -234,9 +233,9 @@ class EmbeddingDatabase:
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
-            print(f"Embeddings loaded: {', '.join(self.word_embeddings.keys())} ({len(self.word_embeddings)})")
+            shared.log.info(f"Embeddings loaded: {', '.join(self.word_embeddings.keys())} ({len(self.word_embeddings)})")
             if len(self.skipped_embeddings) > 0:
-                print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
+                shared.log.info(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
@@ -271,12 +270,12 @@ def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
     fn = os.path.join(shared.opts.embeddings_dir, f"{name}.pt")
     if not overwrite_old and os.path.exists(fn):
-        print(f"Embedding already exists: {fn}")
+        shared.log.warning(f"Embedding already exists: {fn}")
     else:
         embedding = Embedding(vec, name)
         embedding.step = 0
         embedding.save(fn)
-        print(f'Created embedding: {fn} vectors {num_vectors_per_token} init {init_text}')
+        shared.log.info(f'Created embedding: {fn} vectors {num_vectors_per_token} init {init_text}')
     return fn
 
 
@@ -424,9 +423,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 optimizer_state_dict = optimizer_saved_dict.get('optimizer_state_dict', None)
         if optimizer_state_dict is not None:
             optimizer.load_state_dict(optimizer_state_dict)
-            print("Loaded existing optimizer from checkpoint")
+            shared.log.info("Loaded existing optimizer from checkpoint")
         else:
-            print("No saved optimizer exists in checkpoint")
+            shared.log.info("No saved optimizer exists in checkpoint")
 
     if shared.cmd_opts.use_ipex:
         scaler = torch.xpu.amp.GradScaler()

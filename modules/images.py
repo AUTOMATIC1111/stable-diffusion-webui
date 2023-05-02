@@ -14,7 +14,7 @@ import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
 
 from modules import sd_samplers, shared, script_callbacks, errors
-from modules.shared import opts, cmd_opts # pylint: disable=unused-import
+from modules.shared import opts, log
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -258,7 +258,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
             upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
             if len(upscalers) == 0:
                 upscaler = shared.sd_upscalers[0]
-                print(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
+                log.warning(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
             else:
                 upscaler = upscalers[0]
 
@@ -588,7 +588,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     return fullfn, txt_fullfn
 
 def safe_decode_string(s: bytes):
-    remove_prefix = lambda text, prefix: text[len(prefix):] if text.startswith(prefix) else text
+    remove_prefix = lambda text, prefix: text[len(prefix):] if text.startswith(prefix) else text # pylint: disable=unnecessary-lambda-assignment
     for encoding in ['utf-8', 'utf-16', 'ascii', 'latin_1', 'cp1252', 'cp437']: # try different encodings
         try:
             s = remove_prefix(s, b'UNICODE')

@@ -41,8 +41,7 @@ def commit_hash():
 
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
     if desc is not None:
-        from rich import print # pylint: disable=redefined-builtin,wrong-import-order
-        print(desc)
+        installer.log(desc)
     if live:
         result = subprocess.run(command, check=False, shell=True, env=os.environ if custom_env is None else custom_env)
         if result.returncode != 0:
@@ -97,7 +96,7 @@ if __name__ == "__main__":
     installer.extensions_preload(force=True)
     installer.log.info(f"Server arguments: {sys.argv[1:]}")
     installer.log.debug('Starting WebUI')
-    logging.disable(logging.INFO)
+    logging.disable(logging.NOTSET if args.debug else logging.DEBUG)
     if args.test:
         installer.log.info("Test only")
         import webui

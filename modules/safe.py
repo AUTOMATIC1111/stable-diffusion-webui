@@ -7,14 +7,14 @@ import re
 
 import torch
 try:
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
 except:
     pass
 import numpy
 import _codecs
 
 # PyTorch 1.13 and later have _TypedStorage renamed to TypedStorage
-TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorage') else torch.storage._TypedStorage
+TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorage') else torch.storage._TypedStorage # pylint: disable=protected-access
 
 
 def encode(*args):
@@ -27,7 +27,10 @@ class RestrictedUnpickler(pickle.Unpickler):
 
     def persistent_load(self, saved_id):
         assert saved_id[0] == 'storage'
-        return TypedStorage()
+        try:
+            return TypedStorage(_internal=True)
+        except TypeError:
+            return TypedStorage()  # PyTorch before 2.0 does not have the _internal argument
 
     def find_class(self, module, name):
         if self.extra_handler is not None:
@@ -38,7 +41,7 @@ class RestrictedUnpickler(pickle.Unpickler):
         if module == 'collections' and name == 'OrderedDict':
             return getattr(collections, name)
         if module == 'torch._utils' and name in ['_rebuild_tensor_v2', '_rebuild_parameter', '_rebuild_device_tensor_from_numpy']:
-            return getattr(torch._utils, name)
+            return getattr(torch._utils, name) # pylint: disable=protected-access
         if module == 'torch' and name in ['FloatStorage', 'HalfStorage', 'IntStorage', 'LongStorage', 'DoubleStorage', 'ByteStorage', 'float32']:
             return getattr(torch, name)
         if module == 'torch.nn.modules.container' and name in ['ParameterDict']:
@@ -59,7 +62,7 @@ class RestrictedUnpickler(pickle.Unpickler):
             return set
 
         # Forbid everything else.
-        raise Exception(f"global '{module}/{name}' is forbidden")
+        raise Exception(f"global '{module}/{name}' is forbidden") # pylint: disable=broad-exception-raised
 
 
 # Regular expression that accepts 'dirname/version', 'dirname/data.pkl', and 'dirname/data/<number>'
@@ -71,7 +74,7 @@ def check_zip_filenames(filename, names):
         if allowed_zip_names_re.match(name):
             continue
 
-        raise Exception(f"bad file inside {filename}: {name}")
+        raise Exception(f"bad file inside {filename}: {name}") # pylint: disable=broad-exception-raised
 
 
 def check_pt(filename, extra_handler):
@@ -84,9 +87,9 @@ def check_pt(filename, extra_handler):
             # find filename of data.pkl in zip file: '<directory name>/data.pkl'
             data_pkl_filenames = [f for f in z.namelist() if data_pkl_re.match(f)]
             if len(data_pkl_filenames) == 0:
-                raise Exception(f"data.pkl not found in {filename}")
+                raise Exception(f"data.pkl not found in {filename}") # pylint: disable=broad-exception-raised
             if len(data_pkl_filenames) > 1:
-                raise Exception(f"Multiple data.pkl found in {filename}")
+                raise Exception(f"Multiple data.pkl found in {filename}") # pylint: disable=broad-exception-raised
             with z.open(data_pkl_filenames[0]) as file:
                 unpickler = RestrictedUnpickler(file)
                 unpickler.extra_handler = extra_handler
@@ -98,7 +101,7 @@ def check_pt(filename, extra_handler):
         with open(filename, "rb") as file:
             unpickler = RestrictedUnpickler(file)
             unpickler.extra_handler = extra_handler
-            for i in range(5):
+            for _i in range(5):
                 unpickler.load()
 
 
@@ -106,7 +109,7 @@ def load(filename, *args, **kwargs):
     return load_with_extra(filename, extra_handler=global_extra_handler, *args, **kwargs)
 
 
-def load_with_extra(filename, extra_handler=None, *args, **kwargs):
+def load_with_extra(filename, extra_handler=None, *args, **kwargs): # pylint: disable=keyword-arg-before-vararg
     """
     this function is intended to be used by extensions that want to load models with
     some extra classes in them that the usual unpickler would find suspicious.
@@ -164,13 +167,13 @@ with safe.Extra(handler):
         self.handler = handler
 
     def __enter__(self):
-        global global_extra_handler
+        global global_extra_handler # pylint: disable=global-statement
 
         assert global_extra_handler is None, 'already inside an Extra() block'
         global_extra_handler = self.handler
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        global global_extra_handler
+        global global_extra_handler # pylint: disable=global-statement
 
         global_extra_handler = None
 
@@ -178,4 +181,3 @@ with safe.Extra(handler):
 unsafe_torch_load = torch.load
 torch.load = load
 global_extra_handler = None
-

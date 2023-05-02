@@ -1,8 +1,7 @@
 from types import MethodType
-from rich import print # pylint: disable=redefined-builtin
 import torch
 try:
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # pylint: disable=unused-import
 except:
     pass
 from torch.nn.functional import silu
@@ -41,49 +40,48 @@ def apply_optimizations():
     can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention"))
     if devices.device == torch.device("cpu"):
         if opts.cross_attention_optimization == "Scaled-Dot-Product":
-            print("Scaled dot product cross attention is not available on CPU")
+            shared.log.warning("Scaled dot product cross attention is not available on CPU")
             can_use_sdp = False
         if opts.cross_attention_optimization == "xFormers":
-            print("xFormers cross attention is not available on CPU")
+            shared.log.warning("xFormers cross attention is not available on CPU")
             shared.xformers_available = False
 
     if opts.cross_attention_optimization == "Disable cross-attention layer optimization":
-        print("Cross-attention optimization disabled")
+        shared.log.warning("Cross-attention optimization disabled")
         optimization_method = 'none'
     if can_use_sdp and opts.cross_attention_optimization == "Scaled-Dot-Product" and 'SDP disable memory attention' in opts.cross_attention_options:
-        print("Applying scaled dot product cross attention optimization (without memory efficient attention)")
+        shared.log.info("Applying scaled dot product cross attention optimization (without memory efficient attention)")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_no_mem_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_no_mem_attnblock_forward
         optimization_method = 'sdp-no-mem'
     elif can_use_sdp and opts.cross_attention_optimization == "Scaled-Dot-Product":
-        print("Applying scaled dot product cross attention optimization")
+        shared.log.info("Applying scaled dot product cross attention optimization")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.scaled_dot_product_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sdp_attnblock_forward
         optimization_method = 'sdp'
     if shared.xformers_available and opts.cross_attention_optimization == "xFormers":
-        print("Applying xformers cross attention optimization")
+        shared.log.info("Applying xformers cross attention optimization")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.xformers_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.xformers_attnblock_forward
         optimization_method = 'xformers'
     if opts.cross_attention_optimization == "Sub-quadratic":
-        print("Applying sub-quadratic cross attention optimization")
+        shared.log.info("Applying sub-quadratic cross attention optimization")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.sub_quad_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.sub_quad_attnblock_forward
         optimization_method = 'sub-quadratic'
     if opts.cross_attention_optimization == "Split attention":
-        print("Applying split attention optimization")
+        shared.log.info("Applying split attention optimization")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_v1
         optimization_method = 'v1'
     if opts.cross_attention_optimization == "InvokeAI's":
-        print("Applying InvokeAI's cross attention optimization")
+        shared.log.info("Applying InvokeAI cross attention optimization")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward_invokeAI
         optimization_method = 'invokeai'
     if opts.cross_attention_optimization == "Doggettx's":
-        print("Applying cross attention optimization (Doggettx).")
+        shared.log.info("Applying Doggettx cross attention optimization")
         ldm.modules.attention.CrossAttention.forward = sd_hijack_optimizations.split_cross_attention_forward
         ldm.modules.diffusionmodules.model.AttnBlock.forward = sd_hijack_optimizations.cross_attention_attnblock_forward
         optimization_method = 'doggettx'
-
     return optimization_method
 
 
@@ -190,9 +188,9 @@ class StableDiffusionModelHijack:
                     hidet.torch.dynamo_config.use_tensor_core(True)
                     hidet.torch.dynamo_config.search_space(2)
                 m.model = torch.compile(m.model, mode="default", backend=opts.cuda_compile_mode, fullgraph=False, dynamic=False)
-                print("Model compile enabled:", opts.cuda_compile_mode)
+                shared.log.info(f"Model compile enabled: {opts.cuda_compile_mode}")
             except Exception as err:
-                print(f"Model compile not supported: {err}")
+                shared.log.warning(f"Model compile not supported: {err}")
 
         self.optimization_method = apply_optimizations()
 

@@ -2,16 +2,13 @@ import os
 import collections
 import glob
 from copy import deepcopy
-from rich import print # pylint: disable=redefined-builtin
-from modules import shared
 import torch
+from modules import shared, paths, devices, script_callbacks, sd_models
 try:
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # pylint: disable=unused-import
 except:
     if shared.cmd_opts.use_ipex:
-        print("Failed to import IPEX")
-from modules import paths, devices, script_callbacks, sd_models
-
+        shared.log.error("Failed to import IPEX")
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 vae_dict = {}
@@ -44,7 +41,7 @@ def delete_base_vae():
 def restore_base_vae(model):
     global loaded_vae_file # pylint: disable=global-statement
     if base_vae is not None and checkpoint_info == model.sd_checkpoint_info:
-        print("Restoring base VAE")
+        shared.log.info("Restoring base VAE")
         _load_vae_dict(model, base_vae)
         loaded_vae_file = None
     delete_base_vae()
@@ -120,7 +117,7 @@ def resolve_vae(checkpoint_file):
         return vae_from_options, 'specified in settings'
 
     if not is_automatic:
-        print(f"VAE not found: {shared.opts.sd_vae}")
+        shared.log.warning(f"VAE not found: {shared.opts.sd_vae}")
 
     return None, None
 
@@ -140,7 +137,7 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
     if vae_file:
         if cache_enabled and vae_file in checkpoints_loaded:
             # use vae checkpoint cache
-            print(f"Loading VAE weights {vae_source}: cached {get_filename(vae_file)}")
+            shared.log.info(f"Loading VAE weights {vae_source}: cached {get_filename(vae_file)}")
             store_base_vae(model)
             _load_vae_dict(model, checkpoints_loaded[vae_file])
         else:
@@ -220,5 +217,5 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)
 
-    print("VAE weights loaded.")
+    shared.log.info("VAE weights loaded.")
     return sd_model

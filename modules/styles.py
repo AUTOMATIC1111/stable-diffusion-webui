@@ -1,11 +1,9 @@
 # We need this so Python doesn't complain about the unknown StableDiffusionProcessing-typehint at runtime
 from __future__ import annotations
-
 import csv
 import os
 import os.path
 import typing
-import collections.abc as abc
 import tempfile
 import shutil
 
@@ -49,7 +47,6 @@ class StyleDatabase:
         self.styles.clear()
 
         if not os.path.exists(self.path):
-            print(f'Creating styles database: {self.path}')
             self.save_styles(self.path)
 
         with open(self.path, "r", encoding="utf-8-sig", newline='') as file:

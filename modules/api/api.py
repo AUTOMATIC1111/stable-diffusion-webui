@@ -561,7 +561,7 @@ class Api:
             return TrainResponse(info=f"train embedding error: {error}")
 
     def shutdown(self):
-        print('shutdown request received')
+        shared.log.info('Shutdown request received')
         # from modules.shared import demo
         # demo.close()
         # time.sleep(0.5)

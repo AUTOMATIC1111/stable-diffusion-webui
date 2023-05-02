@@ -4,11 +4,8 @@ import time
 import shutil
 import errno
 import html
-
 import git
 import gradio as gr
-
-from rich import print # pylint: disable=redefined-builtin
 from modules import extensions, shared, paths, errors
 from modules.call_queue import wrap_gradio_gpu_call
 
@@ -46,7 +43,7 @@ def apply_and_restart(disable_list, update_list, disable_all):
     # shared.state.interrupt()
     # shared.state.need_restart = True
     # shared.restart_server()
-    print('Extension list updated - please restart the server')
+    shared.log.warning('Extension list updated - please restart the server')
 
 
 def check_updates(_id_task, disable_list):
@@ -135,12 +132,12 @@ def install_extension_from_url(dirname, url):
     assert url, 'No URL specified'
 
     if dirname is None or dirname == "":
-        *parts, last_part = url.split('/')
+        *parts, last_part = url.split('/') # pylint: disable=unused-variable
         last_part = normalize_git_url(last_part)
         dirname = last_part
 
     target_dir = os.path.join(extensions.extensions_dir, dirname)
-    print(f'Installing extension: {url} into {target_dir}')
+    shared.log.info(f'Installing extension: {url} into {target_dir}')
     assert not os.path.exists(target_dir), f'Extension directory already exists: {target_dir}'
 
     normalized_url = normalize_git_url(url)

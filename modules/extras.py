@@ -53,9 +53,7 @@ def create_config(ckpt_result, config_source, a, b, c):
     filename, _ = os.path.splitext(ckpt_result)
     checkpoint_filename = filename + ".yaml"
 
-    print("Copying config:")
-    print("   from:", cfg)
-    print("     to:", checkpoint_filename)
+    shared.log.info("Copying config: {cfg} -> {checkpoint_filename}")
     shutil.copyfile(cfg, checkpoint_filename)
 
 
@@ -134,14 +132,14 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     if theta_func2:
         shared.state.textinfo = "Loading B"
-        print(f"Loading {secondary_model_info.filename}...")
+        shared.log.info(f"Loading {secondary_model_info.filename}...")
         theta_1 = sd_models.read_state_dict(secondary_model_info.filename)
     else:
         theta_1 = None
 
     if theta_func1:
         shared.state.textinfo = "Loading C"
-        print(f"Loading {tertiary_model_info.filename}...")
+        shared.log.info(f"Loading {tertiary_model_info.filename}...")
         theta_2 = sd_models.read_state_dict(tertiary_model_info.filename)
 
         shared.state.textinfo = 'Merging B and C'
@@ -163,10 +161,10 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         shared.state.nextjob()
 
     shared.state.textinfo = f"Loading {primary_model_info.filename}..."
-    print(f"Loading {primary_model_info.filename}...")
+    shared.log.info(f"Loading {primary_model_info.filename}...")
     theta_0 = sd_models.read_state_dict(primary_model_info.filename)
 
-    print("Merging...")
+    shared.log.info("Merging...")
     shared.state.textinfo = 'Merging A and B'
     shared.state.sampling_steps = len(theta_0.keys())
     for key in tqdm.tqdm(theta_0.keys()):
@@ -205,7 +203,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     bake_in_vae_filename = sd_vae.vae_dict.get(bake_in_vae, None)
     if bake_in_vae_filename is not None:
-        print(f"Baking in VAE from {bake_in_vae_filename}")
+        shared.log.info(f"Baking in VAE from {bake_in_vae_filename}")
         shared.state.textinfo = 'Baking in VAE'
         vae_dict = sd_vae.load_vae_dict(bake_in_vae_filename)
 
@@ -237,7 +235,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     shared.state.nextjob()
     shared.state.textinfo = "Saving"
-    print(f"Saving to {output_modelname}...")
+    shared.log.info(f"Saving to {output_modelname}...")
 
     _, extension = os.path.splitext(output_modelname)
     if extension.lower() == ".safetensors":
@@ -249,7 +247,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
 
     create_config(output_modelname, config_source, primary_model_info, secondary_model_info, tertiary_model_info)
 
-    print(f"Checkpoint saved to {output_modelname}.")
+    shared.log.info(f"Checkpoint saved to {output_modelname}.")
     shared.state.textinfo = "Checkpoint saved"
     shared.state.end()
 

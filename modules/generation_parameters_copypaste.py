@@ -56,7 +56,7 @@ def image_from_url_text(filedata):
         if is_in_right_dir:
             return Image.open(filename)
         else:
-            print(f'Attempted to open file outside of allowed directories: {filename}')
+            shared.log.warning(f'Attempted to open file outside of allowed directories: {filename}')
 
     if type(filedata) == list:
         if len(filedata) == 0:

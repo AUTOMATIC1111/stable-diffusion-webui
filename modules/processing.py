@@ -1,12 +1,9 @@
 import json
 import math
 import os
-import sys
 import random
 import logging
 from typing import Any, Dict, List
-
-import psutil
 import torch
 try:
     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
@@ -16,12 +13,10 @@ import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 import cv2
 from skimage import exposure
-
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
-
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts # pylint: disable=unused-import
 from modules.sd_hijack import model_hijack
@@ -37,41 +32,6 @@ import tomesd # pylint: disable=wrong-import-order
 
 opt_C = 4
 opt_f = 8
-
-
-def memory_stats():
-    def gb(val: float):
-        return round(val / 1024 / 1024 / 1024, 2)
-    mem = {}
-    try:
-        process = psutil.Process(os.getpid())
-        res = process.memory_info()
-        ram_total = 100 * res.rss / process.memory_percent()
-        ram = { 'used': gb(res.rss), 'total': gb(ram_total) }
-        mem.update({ 'ram': ram })
-    except Exception as e:
-        mem.update({ 'ram': e })
-    try:
-        if cmd_opts.use_ipex:
-            gpu = { 'used': gb(torch.xpu.memory_allocated()), 'total': gb(torch.xpu.get_device_properties("xpu").total_memory) }
-            s = dict(torch.xpu.memory_stats("xpu"))
-            mem.update({
-                'gpu': gpu,
-                'retries': s['num_alloc_retries'],
-                'oom': s['num_ooms']
-            })
-        elif torch.cuda.is_available():
-            s = torch.cuda.mem_get_info()
-            gpu = { 'used': gb(s[1] - s[0]), 'total': gb(s[1]) }
-            s = dict(torch.cuda.memory_stats(shared.device))
-            mem.update({
-                'gpu': gpu,
-                'retries': s['num_alloc_retries'],
-                'oom': s['num_ooms']
-            })
-    except:
-        pass
-    return mem
 
 
 def setup_color_correction(image):
@@ -145,8 +105,6 @@ class StableDiffusionProcessing:
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
     def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 20, cfg_scale: float = 6.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None): # pylint: disable=unused-argument
-        if sampler_index is not None:
-            print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
         self.outpath_samples: str = outpath_samples
         self.outpath_grids: str = outpath_grids
@@ -723,7 +681,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     devices.test_for_nans(x, "vae")
             except devices.NansException as e:
                 if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae and shared.cmd_opts.rollback_vae:
-                    print('\nA tensor with all NaNs was produced in VAE, try converting to bf16.')
+                    log.warning('Tensor with all NaNs was produced in VAE')
                     devices.dtype_vae = torch.bfloat16
                     vae_file, vae_source = sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
                     sd_vae.load_vae(p.sd_model, vae_file, vae_source)

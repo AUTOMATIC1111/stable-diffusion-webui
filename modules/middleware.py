@@ -10,12 +10,13 @@ from starlette.responses import JSONResponse
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import HTTPException
 from fastapi.encoders import jsonable_encoder
+from installer import log
 import modules.errors as errors
 
 errors.install()
 
 def setup_middleware(app: FastAPI, cmd_opts):
-    print('Initializing middleware')
+    log.info('Initializing middleware')
     uvicorn_logger=logging.getLogger("uvicorn.error")
     uvicorn_logger.disabled = True
     from fastapi.middleware.cors import CORSMiddleware
@@ -38,7 +39,7 @@ def setup_middleware(app: FastAPI, cmd_opts):
         res.headers["X-Process-Time"] = duration
         endpoint = req.scope.get('path', 'err')
         if cmd_opts.api_log and endpoint.startswith('/sdapi'):
-            print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format( # pylint: disable=consider-using-f-string
+            log.info('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format( # pylint: disable=consider-using-f-string
                 t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                 code = res.status_code,
                 ver = req.scope.get('http_version', '0.0'),
@@ -57,7 +58,7 @@ def setup_middleware(app: FastAPI, cmd_opts):
             "body": vars(e).get('body', ''),
             "errors": str(e),
         }
-        print(f"API error: {req.method}: {req.url} {err}")
+        log.error(f"API error: {req.method}: {req.url} {err}")
         if not isinstance(e, HTTPException) and err['error'] != 'TypeError': # do not print backtrace on known httpexceptions
             errors.display(e, 'HTTP API', [anyio, fastapi, uvicorn, starlette])
         return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
@@ -67,7 +68,7 @@ def setup_middleware(app: FastAPI, cmd_opts):
         try:
             return await call_next(req)
         except CancelledError:
-            print('WebSocket closed (ignore asyncio.exceptions.CancelledError)')
+            log.warning('WebSocket closed (ignore asyncio.exceptions.CancelledError)')
         except BaseException as e:
             return handle_exception(req, e)
 

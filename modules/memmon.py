@@ -64,27 +64,6 @@ class MemUsageMonitor(threading.Thread):
                 self.data["min_free"] = min(self.data["min_free"], free)
                 time.sleep(1 / self.opts.memmon_poll_rate)
 
-    def dump_debug(self):
-        try:
-            print(self, 'recorded data:')
-            for k, v in self.read().items():
-                print(k, -(v // -(1024 ** 2)))
-            print(self, 'raw torch memory stats:')
-            if shared.cmd_opts.use_ipex:
-                tm = torch.xpu.memory_stats("xpu")
-            else:
-                tm = torch.cuda.memory_stats(self.device)
-            for k, v in tm.items():
-                if 'bytes' not in k:
-                    continue
-                print('\t' if 'peak' in k else '', k, -(v // -(1024 ** 2)))
-            if shared.cmd_opts.use_ipex:
-                print(torch.xpu.memory_summary())
-            else:
-                print(torch.cuda.memory_summary())
-        except:
-            self.disabled = True
-
     def monitor(self):
         self.run_flag.set()
 
