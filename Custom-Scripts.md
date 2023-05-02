@@ -331,6 +331,28 @@ https://github.com/coolzilj/infinite-zoom
 
 Generate Zoom in/out videos, with outpainting, as a custom script for inpaint mode in img2img tab.
 
+## ImageReward Scorer
+
+https://github.com/THUDM/ImageReward#integration-into-stable-diffusion-web-ui
+
+An image **scorer** based on [ImageReward](https://github.com/THUDM/ImageReward), the first general-purpose text-to-image human preference RM, which is trained on in total **137k pairs of expert comparisons**.
+
+[**Features**](https://github.com/THUDM/ImageReward#features) developed to date (2023-04-24) include:  (click to expand demo video)
+<details>
+    <summary>1. Score generated images and append to image information</summary>
+    
+https://user-images.githubusercontent.com/98524878/233889441-d593675a-dff4-43aa-ad6b-48cc68326fb0.mp4
+  
+</details>
+<details>
+    <summary>2. Automatically filter out images with low scores</summary>
+    
+https://user-images.githubusercontent.com/98524878/233889490-5c4a062f-bb5e-4179-ba98-b336cda4d290.mp4
+  
+</details>
+
+For details including **installing** and **feature-specific usage**, check [the script introduction](https://github.com/THUDM/ImageReward#integration-into-stable-diffusion-web-ui).
+
 
 ## Saving steps of the sampling process
 (Example Script) \
