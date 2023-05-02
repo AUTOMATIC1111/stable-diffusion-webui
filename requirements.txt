@@ -45,10 +45,10 @@ torch
 torchdiffeq
 torchsde
 torchvision
-tqdm
 voluptuous
 yapf
 scikit-image
+tqdm==4.65.0
 accelerate==0.18.0
 opencv-python==4.7.0.72
 diffusers==0.16.1
@@ -58,6 +58,6 @@ numexpr==2.8.4
 pandas==1.5.3
 protobuf==3.20.3
 pytorch_lightning==1.9.4
-transformers==4.28.1
+transformers==4.26.1
 timm==0.6.13
 tomesd==0.1.2

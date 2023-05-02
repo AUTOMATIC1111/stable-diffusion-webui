@@ -34,7 +34,7 @@ Stuff to be investigated...
 
 Pick & merge PRs from main repo...
 
-- Merge backlog: <https://github.com/vladmandic/automatic/pulls>
+- Merge backlog: <https://github.com/vladmandic/automatic/compare/master...AUTOMATIC1111:stable-diffusion-webui:master>
 
 ## Models
 

@@ -20,7 +20,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-args = Dot({ 'debug': False, 'upgrade': False, 'no_directml': False, 'skip_update': False, 'skip_extensions': False, 'skip_requirements': False, 'skip_git': False, 'reset': False, 'use_ipex': False, 'experimental': False, 'test': False })
+args = Dot({ 'debug': False, 'upgrade': False, 'skip_update': False, 'skip_extensions': False, 'skip_requirements': False, 'skip_git': False, 'reset': False, 'use_directml': False, 'use_ipex': False, 'experimental': False, 'test': False })
 quick_allowed = True
 errors = 0
 opts = {}
@@ -203,7 +203,7 @@ def check_torch():
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
         machine = platform.machine()
-        if 'arm' not in machine and 'aarch' not in machine and not args.no_directml: # torch-directml is available on AMD64
+        if 'arm' not in machine and 'aarch' not in machine and args.use_directml: # torch-directml is available on AMD64
             log.info('Using DirectML Backend')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision torch-directml')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
@@ -514,7 +514,7 @@ def add_args():
     group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
     group.add_argument("--use-ipex", action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s", default=False)
-    group.add_argument('--no-directml', default = False, action='store_true', help = "Use CPU instead of DirectML if no compatible GPU is detected, default: %(default)s")
+    group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
     group.add_argument('--skip-update', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
     group.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     group.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
@@ -594,5 +594,7 @@ def run_setup():
 
 
 if __name__ == "__main__":
+    add_args()
+    ensure_base_requirements()
     parse_args()
     run_setup()
