@@ -46,12 +46,12 @@ function imageMaskResize() {
 
  onUiUpdate(() => imageMaskResize());
 */
- 
+
 onUiLoaded(function(){
 	
 	const color_box = '<input type="color">';
 	const brush_size = '<input type="range" min="0.75" max="110.0">';
-	
+	let is_drawing = false;
 	let img_src = [];
 	let spl_instances = [];
 	let spl_pan_instances = [];
@@ -60,9 +60,17 @@ onUiLoaded(function(){
 		gradioApp().querySelectorAll('div[data-testid="image"]').forEach(function (elem, i){			
 			let img_parent = elem.parentElement.querySelector('div[data-testid="image"] > div');
 			let img = img_parent.querySelector('img');
-			if(img){
+			if(img && !is_drawing){
 				if(img_src[i] != img.src){
 					let tool_buttons = img_parent.querySelectorAll('button');
+					
+					
+					
+					
+					if(is_drawing){
+						return;
+					}
+					//console.log();
 					//console.log(tool_buttons);
 					if(tool_buttons.length > 2){
 						let spl_parent = elem.parentElement;
@@ -221,6 +229,14 @@ onUiLoaded(function(){
 						pan_toggle(false, spl_pan);					
 						spl.panzoom(false);
 						setTimeout(function() { init_drawing_tools(); }, 500);
+						
+						img.addEventListener('mouseout', function(e){
+							is_drawing = false;
+						})
+						img.addEventListener('mouseover', function(e){
+							is_drawing = true;
+							
+						})
 						
 					}
 				}
