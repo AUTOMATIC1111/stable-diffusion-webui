@@ -16,6 +16,7 @@ import modules.styles
 import modules.devices as devices
 from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
+from ldm.models.diffusion.ddpm import LatentDiffusion
 
 demo = None
 
@@ -600,13 +601,37 @@ class Options:
         return value
 
 
-
 opts = Options()
 if os.path.exists(config_filename):
     opts.load(config_filename)
 
+
+class Shared(sys.modules[__name__].__class__):
+    """
+    this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than
+    at program startup.
+    """
+
+    sd_model_val = None
+
+    @property
+    def sd_model(self):
+        import modules.sd_models
+
+        return modules.sd_models.model_data.get_sd_model()
+
+    @sd_model.setter
+    def sd_model(self, value):
+        import modules.sd_models
+
+        modules.sd_models.model_data.set_sd_model(value)
+
+
+sd_model: LatentDiffusion = None  # this var is here just for IDE's type checking; it cannot be accessed because the class field above will be accessed instead
+sys.modules[__name__].__class__ = Shared
+
 settings_components = None
-"""assinged from ui.py, a mapping on setting anmes to gradio components repsponsible for those settings"""
+"""assinged from ui.py, a mapping on setting names to gradio components repsponsible for those settings"""
 
 latent_upscale_default_mode = "Latent"
 latent_upscale_modes = {
@@ -619,8 +644,6 @@ latent_upscale_modes = {
 }
 
 sd_upscalers = []
-
-sd_model = None
 
 clip_model = None
 
