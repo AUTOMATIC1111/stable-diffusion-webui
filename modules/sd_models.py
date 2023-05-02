@@ -110,7 +110,7 @@ def list_models():
         checkpoint_info.register()
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file:
-        shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}", file=sys.stderr)
+        shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         checkpoint_info.register()
