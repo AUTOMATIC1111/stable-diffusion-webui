@@ -8,18 +8,14 @@ onUiUpdate(function(){
       notificationButton = gradioApp().getElementById('request_notifications')
         if (notificationButton) notificationButton.addEventListener('click', (evt) => Notification.requestPermission(), true);
     }
+    if (document.hasFocus()) return; // window is in focus so don't send notifications
     const galleryPreviews = gradioApp().querySelectorAll('div[id^="tab_"][style*="display: block"] div[id$="_results"] .thumbnail-item > img');
     if (!galleryPreviews) return;
-
-    if (document.hasFocus()) return; // window is in focus so don't send notifications
-
-    const audioNotification = gradioApp().querySelector('#audio_notification audio');
-    if (audioNotification) audioNotification.play();
-
     const headImg = galleryPreviews[0]?.src;
     if (!headImg || headImg == lastHeadImg || headImg.endsWith('automatic.png')) return;
+    const audioNotification = gradioApp().querySelector('#audio_notification audio');
+    if (audioNotification) audioNotification.play();
     lastHeadImg = headImg;
-    console.log(headImg)
     const imgs = new Set(Array.from(galleryPreviews).map(img => img.src)); // Multiple copies of the images are in the DOM when one is selected
     const notification = new Notification(
         'SD.Next', {
