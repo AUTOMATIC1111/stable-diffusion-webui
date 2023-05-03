@@ -5,6 +5,7 @@ import json
 import datetime
 import gradio as gr
 import tqdm
+import urllib.request
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.interrogate
@@ -623,25 +624,38 @@ def reload_gradio_theme(theme_name=None):
     global gradio_theme # pylint: disable=global-statement
     if not theme_name:
         theme_name = opts.gradio_theme
+    default_font_params = {}
+    ret_code = 0
+    try:
+        req = urllib.request.Request("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono", method="HEAD")
+        ret_code = urllib.request.urlopen(req, timeout=3.0).get_code()
+    except:
+        ret_code = 0
+    if (ret_code != 200):
+        log.info('No internet access detected, using default fonts')
+        default_font_params = {
+            'font':['Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            'font_mono':['IBM Plex Mono', 'ui-monospace', 'Consolas', 'monospace']
+        }
     if theme_name == "black-orange":
-        gradio_theme = gr.themes.Default()
+        gradio_theme = gr.themes.Default(**default_font_params)
     elif theme_name.startswith("gradio/"):
         if theme_name == "gradio/default":
-            gradio_theme = gr.themes.Default()
+            gradio_theme = gr.themes.Default(**default_font_params)
         if theme_name == "gradio/base":
-            gradio_theme = gr.themes.Base()
+            gradio_theme = gr.themes.Base(**default_font_params)
         if theme_name == "gradio/glass":
-            gradio_theme = gr.themes.Glass()
+            gradio_theme = gr.themes.Glass(**default_font_params)
         if theme_name == "gradio/monochrome":
-            gradio_theme = gr.themes.Monochrome()
+            gradio_theme = gr.themes.Monochrome(**default_font_params)
         if theme_name == "gradio/soft":
-            gradio_theme = gr.themes.Soft()
+            gradio_theme = gr.themes.Soft(**default_font_params)
     else:
         try:
             gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
         except:
             log.error("Theme download error accessing HuggingFace")
-            gradio_theme = gr.themes.Default()
+            gradio_theme = gr.themes.Default(**default_font_params)
     log.info(f'Loading theme: {theme_name}')
 
 
