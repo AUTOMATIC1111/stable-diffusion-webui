@@ -42,7 +42,8 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --ckpt 		| CKPT   | model.ckpt        				 | path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded |
 --ckpt-dir 	| CKPT_DIR | None   				 | Path to directory with stable diffusion checkpoints |
 --no-download-sd-model | None | False | don't download SD1.5 model even if no model is found |
---vae-dir | VAE_PATH | None  					| Path to Variational Autoencoders model |
+--vae-dir | VAE_PATH | None  					| Path to Variational Autoencoders model | disables all settings related to VAE
+--vae-path | VAE_PATH | None | Checkpoint to use as VAE; setting this argument
 --gfpgan-dir| GFPGAN_DIR | GFPGAN/			 | GFPGAN directory |
 --gfpgan-model| GFPGAN_MODEL			 | GFPGAN model file name |
 --codeformer-models-path | CODEFORMER_MODELS_PATH | models/Codeformer/ | Path to directory with codeformer model file(s). |
@@ -87,15 +88,20 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --cors-allow-origins-regex | CORS_ALLOW_ORIGINS_REGEX | None | Allowed CORS origin(s) in the form of a single regular expression |
 --tls-keyfile | TLS_KEYFILE | None | Partially enables TLS, requires --tls-certfile to fully function |
 --tls-certfile | TLS_CERTFILE | None | Partially enables TLS, requires --tls-keyfile to fully function |
+--disable-tls-verify | None | False | When passed, enables the use of self-signed certificates.
 --server-name | SERVER_NAME | None | Sets hostname of server |
---gradio-queue | None | False | Uses gradio queue; experimental option; breaks restart UI button |
---skip-version-check | None | False | Do not check versions of torch and xformers |
+--no-gradio-queue | Disables gradio queue; causes the webpage to use http requests instead of websockets; was the defaul in earlier versions
 --no-hashing | None | False | disable sha256 hashing of checkpoints to help loading performance |
+--skip-version-check | None | False | Do not check versions of torch and xformers |
+--skip-python-version-check | None | False | Do not check versions of Python |
+--skip-torch-cuda-test | None | False | do not check if CUDA is able to work properly |
+--skip-install | None | False | skip installation of packages |
 | **PERFORMANCE** |
 --xformers | None | False           					| enable xformers for cross attention layers |
---reinstall-xformers | None | False           					| force reinstall xformers. Useful for upgrading - but remove it after upgrading or you'll reinstall xformers perpetually. |
 --force-enable-xformers	| None | False				| enable xformers for cross attention layers regardless of whether the checking code thinks you can run it; ***do not make bug reports if this fails to work*** |
 --xformers-flash-attention | None | False | enable xformers with Flash Attention to improve reproducibility (supported for SD2.x or variant only)
+--opt-sdp-attention | None | False | enable scaled dot product cross-attention layer optimization; requires PyTorch 2.*
+--opt-sdp-no-mem-attention | False | None | enable scaled dot product cross-attention layer optimization without memory efficient attention, makes image generation deterministic; requires PyTorch 2.*
 --opt-split-attention | None | False 		| force-enables Doggettx's cross-attention layer optimization. By default, it's on for cuda enabled systems. |
 --opt-split-attention-invokeai | None | False			| force-enables InvokeAI's cross-attention layer optimization. By default, it's on when cuda is unavailable. |
 --opt-split-attention-v1 | None | False 				| enable older version of split attention optimization that does not consume all the VRAM it can find |
@@ -122,10 +128,16 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --disable-safe-unpickle | None | False				| disable checking pytorch models for malicious code |
 --ngrok | NGROK | None         				 | ngrok authtoken, alternative to gradio --share
 --ngrok-region | NGROK_REGION | us			 | The region in which ngrok should start.
+--update-check | None | None | On startup, notifies whether or not your webui version (commit) is up-to-date with che current master brach.
 --update-all-extensions | None | None | On startup, it pulls the latest updates for all extensions you have installed.
+--reinstall-xformers | None | False | force reinstall xformers. Useful for upgrading - but remove it after upgrading or you'll reinstall xformers perpetually. |
+--reinstall-torch | None | False | force reinstall torch. Useful for upgrading - but remove it after upgrading or you'll reinstall torch perpetually. |
+--tests | TESTS | False | Run test to validate webui functionality, see wiki topic for more details.
+--no-tests | None | False | do not run tests even if --tests option is specified
 | **DEFUNCT OPTIONS** |
 --show-negative-prompt | None | False 					| does not do anything |
 --deepdanbooru | None | False 					| does not do anything |
 --unload-gfpgan | None | False      				 | does not do anything.
 --gradio-img2img-tool | GRADIO_IMG2IMG_TOOL | None | does not do anything |
---gradio-inpaint-tool | GRADIO_INPAINT_TOOL | None | gdoes not do anything |
+--gradio-inpaint-tool | GRADIO_INPAINT_TOOL | None | does not do anything |
+--gradio-queue | None | False | does not do anything |
