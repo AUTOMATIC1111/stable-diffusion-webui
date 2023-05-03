@@ -1304,7 +1304,6 @@ def create_ui():
                     if current_tab is not None:
                         current_row.__exit__()
                         current_tab.__exit__()
-                    gr.Group()
                     current_tab = gr.TabItem(elem_id=f"settings_{elem_id}", label=text)
                     current_tab.__enter__()
                     current_row = gr.Column(variant='compact')
