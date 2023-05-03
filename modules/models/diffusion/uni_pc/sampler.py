@@ -2,10 +2,6 @@
 
 import numpy as np
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 
 from .uni_pc import NoiseScheduleVP, model_wrapper, UniPC, get_time_steps
 from modules import shared, devices

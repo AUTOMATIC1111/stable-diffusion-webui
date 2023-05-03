@@ -3,10 +3,6 @@ import sys
 
 import cv2
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 
 import modules.face_restoration
 from modules import shared, devices, modelloader, errors

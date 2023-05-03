@@ -2,11 +2,6 @@ import threading
 import time
 from collections import defaultdict
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=unused-import,import-error
-except:
-    pass
-
 from modules import shared
 
 

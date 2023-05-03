@@ -1,8 +1,4 @@
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 from modules import devices
 
 module_in_gpu = None

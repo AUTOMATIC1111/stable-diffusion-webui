@@ -2,10 +2,6 @@ import os
 import numpy as np
 import PIL
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader, Sampler
 from torchvision import transforms

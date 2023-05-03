@@ -3,10 +3,6 @@
 import math
 import numpy as np
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 from torch import nn, Tensor
 import torch.nn.functional as F
 from typing import Optional, List

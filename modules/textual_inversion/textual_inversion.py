@@ -3,10 +3,6 @@ import html
 import csv
 from collections import namedtuple
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
-    pass
 import tqdm
 import safetensors.torch
 import numpy as np

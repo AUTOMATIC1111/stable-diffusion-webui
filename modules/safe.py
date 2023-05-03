@@ -6,10 +6,6 @@ import zipfile
 import re
 
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
-    pass
 import numpy
 import _codecs
 

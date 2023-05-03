@@ -14,10 +14,6 @@ from functools import partial
 import math
 from typing import Optional, NamedTuple, List
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 from torch import Tensor
 from torch.utils.checkpoint import checkpoint
 

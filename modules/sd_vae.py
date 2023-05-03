@@ -4,11 +4,6 @@ import glob
 from copy import deepcopy
 import torch
 from modules import shared, paths, devices, script_callbacks, sd_models
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=unused-import
-except:
-    if shared.cmd_opts.use_ipex:
-        shared.log.error("Failed to import IPEX")
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 vae_dict = {}

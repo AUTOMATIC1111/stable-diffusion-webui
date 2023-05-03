@@ -1,10 +1,6 @@
 from collections import namedtuple
 import numpy as np
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 from PIL import Image
 from modules import devices, processing, images, sd_vae_approx
 

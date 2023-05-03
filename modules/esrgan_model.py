@@ -2,10 +2,6 @@ import os
 
 import numpy as np
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
 

@@ -7,10 +7,6 @@ from os import mkdir
 from urllib import request
 from rich import progress # pylint: disable=redefined-builtin
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
-    pass
 import safetensors.torch
 from omegaconf import OmegaConf
 import tomesd

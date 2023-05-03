@@ -1,9 +1,5 @@
 from types import MethodType
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=unused-import
-except:
-    pass
 from torch.nn.functional import silu
 import ldm.modules.attention
 import ldm.modules.diffusionmodules.model

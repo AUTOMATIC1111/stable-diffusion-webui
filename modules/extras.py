@@ -4,10 +4,6 @@ import html
 import shutil
 
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
-    pass
 import tqdm
 import gradio as gr
 import safetensors.torch
