@@ -37,9 +37,10 @@ function formatTime(secs) {
 }
 
 function setTitle(progress) {
-    var title = 'Stable Diffusion'
-    if(opts.show_progress_in_title && progress) title = '[' + progress.trim() + '] ' + title;
-    if(document.title != title) document.title =  title;
+    var title = 'SD.Next'
+    console.log('progress:', progress)
+    if (progress) title += ' ' + progress.split(' ')[0].trim();
+    if (document.title != title) document.title =  title;
 }
 
 function randomId() {
