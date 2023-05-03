@@ -313,9 +313,14 @@ body {
 	color:var(--ae-nav-color);
 	background: 0 !important;
 	padding-left: 10px;
+	opacity:0.75;
 }
 #nav_menu_header_tabs button.selected{
 	color:var(--ae-primary-color);
+	opacity:1;
+}
+#nav_menu_header_tabs button:hover{
+	opacity:1;
 }
 
 .container {
@@ -1123,6 +1128,10 @@ input[type=number] {
 button.tool.secondary,
 button.secondary{
 	text-align: center!important;
+}
+
+.gradio-container-3-28-1 .prose * {
+    color: var(--ae-label-color);
 }
 
 .gradio-container-3-23-0 .prose code {
@@ -2219,10 +2228,12 @@ height: calc(var(--ae-container-height-gap) - 150px) !important;
     left: 0;
     right: 0;
     padding: .5em;
-    color: #fff;
+   
     background: rgba(0, 0, 0, .5);
     /*box-shadow: 0 0 .25em .25em rgba(0, 0, 0, .5);*/
-    text-shadow: 0 0 .2em #000;
+    /*text-shadow: 0 0 .2em #000;*/
+	text-shadow: none;
+    box-shadow: none;
 }
 
 .extra-network-cards .card .actions:hover {
@@ -2233,6 +2244,7 @@ height: calc(var(--ae-container-height-gap) - 150px) !important;
     font-size: var(--ae-extra-networks-name-size);
     font-weight: 700;
     line-break: anywhere;
+	color: var(--ae-text-color);
 }
 
 .extra-network-cards .card .actions:hover .additional {
@@ -2302,6 +2314,11 @@ height: calc(var(--ae-container-height-gap) - 150px) !important;
     padding-left: 0;
     color: var(--ae-label-color);
     border: 0;
+	opacity:0.75;
+}
+.tabs>div>button:hover {
+    color: var(--ae-label-color);
+	opacity:1;
 }
 
 .tabs>div>.selected {
