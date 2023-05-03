@@ -35,6 +35,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
             try:
                 res = func(*args, **kwargs)
+                progress.record_results(id_task, res)
             finally:
                 progress.finish_task(id_task)
 

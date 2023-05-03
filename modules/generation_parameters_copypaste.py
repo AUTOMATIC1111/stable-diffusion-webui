@@ -309,6 +309,10 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     restore_old_hires_fix_params(res)
 
+    # Missing RNG means the default was set, which is GPU RNG
+    if "RNG" not in res:
+        res["RNG"] = "GPU"
+
     return res
 
 
@@ -339,7 +343,9 @@ infotext_to_setting_name_mapping = [
     ('Token merging merge mlp', 'token_merging_merge_mlp'),
     ('Token merging maximum downsampling', 'token_merging_maximum_downsampling'),
     ('Token merging stride x', 'token_merging_stride_x'),
-    ('Token merging stride y', 'token_merging_stride_y')
+    ('Token merging stride y', 'token_merging_stride_y'),
+    ('RNG', 'randn_source'),
+    ('NGMS', 's_min_uncond')
 ]
 
 
