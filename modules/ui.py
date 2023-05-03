@@ -623,7 +623,7 @@ def create_ui():
                                 cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=6.0, elem_id="img2img_cfg_scale")
                                 image_cfg_scale = gr.Slider(minimum=0, maximum=3.0, step=0.05, label='Image CFG Scale', value=1.5, elem_id="img2img_image_cfg_scale", visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
                                 denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
-                                clip_skip = gr.Slider(label='CLIP Skip', value=1, minimum=1, maximum=4, step=1, elem_id='img2img_clip_skip', interactive=True)
+                                clip_skip = gr.Slider(label='CLIP Skip', value=shared.opts.CLIP_stop_at_last_layers, minimum=1, maximum=4, step=1, elem_id='img2img_clip_skip', interactive=True)
                                 clip_skip.change(fn=change_clip_skip, show_progress=False, inputs=clip_skip)
 
                     elif category == "seed":

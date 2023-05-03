@@ -93,14 +93,11 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             reserved_peak = mem_stats['reserved_peak']
             sys_peak = mem_stats['system_peak']
             sys_total = mem_stats['total']
-            sys_pct = round(sys_peak/max(sys_total, 1) * 100, 2)
-
-            vram_html = f"<p class='vram'>Torch active/reserved: {active_peak}/{reserved_peak} MiB, <wbr>Sys VRAM: {sys_peak}/{sys_total} MiB ({sys_pct}%)</p>"
+            vram_html = f" | <p class='vram'>GPU active {active_peak} MB reserved {reserved_peak} MB | System peak {sys_peak} MB total {sys_total} MB</p>"
         else:
             vram_html = ''
 
-        # last item is always HTML
-        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed_text}</p>{vram_html}</div>"
+        res[-1] += f"<div class='performance'><p class='time'>Time taken: {elapsed_text}</p>{vram_html}</div>"
 
         return tuple(res)
 
