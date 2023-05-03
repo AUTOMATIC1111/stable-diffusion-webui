@@ -3,9 +3,9 @@ import sys
 import time
 import json
 import datetime
+import urllib.request
 import gradio as gr
 import tqdm
-import urllib.request
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.interrogate
@@ -625,13 +625,13 @@ def reload_gradio_theme(theme_name=None):
     if not theme_name:
         theme_name = opts.gradio_theme
     default_font_params = {}
-    ret_code = 0
+    res = 0
     try:
         req = urllib.request.Request("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono", method="HEAD")
-        ret_code = urllib.request.urlopen(req, timeout=3.0).get_code()
+        res = urllib.request.urlopen(req, timeout=3.0).status
     except:
-        ret_code = 0
-    if (ret_code != 200):
+        res = 0
+    if res != 200:
         log.info('No internet access detected, using default fonts')
         default_font_params = {
             'font':['Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],

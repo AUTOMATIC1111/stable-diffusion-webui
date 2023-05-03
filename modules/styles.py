@@ -52,10 +52,12 @@ class StyleDatabase:
         with open(self.path, "r", encoding="utf-8-sig", newline='') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                # Support loading old CSV format with "name, text"-columns
-                prompt = row["prompt"] if "prompt" in row else row["text"]
-                negative_prompt = row.get("negative_prompt", "")
-                self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
+                try:
+                    prompt = row["prompt"] if "prompt" in row else row["text"]
+                    negative_prompt = row.get("negative_prompt", "")
+                    self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
+                except:
+                    pass
 
     def get_style_prompts(self, styles):
         return [self.styles.get(x, self.no_style).prompt for x in styles]

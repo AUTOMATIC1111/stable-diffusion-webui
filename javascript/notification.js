@@ -16,7 +16,8 @@ onUiUpdate(function(){
     if (headImg.search(regExpTempImage) != -1) return;
     lastHeadImg = headImg;
     // play notification sound if available
-    gradioApp().querySelector('#audio_notification audio')?.play();
+    const audioNotification = gradioApp().querySelector('#audio_notification audio');
+    if (audioNotification) audioNotification.play();
     if (document.hasFocus()) return;
     // Multiple copies of the images are in the DOM when one is selected. Dedup with a Set to get the real number generated.
     const imgs = new Set(Array.from(galleryPreviews).map(img => img.src));
