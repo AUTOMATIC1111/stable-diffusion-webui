@@ -65,13 +65,13 @@ def save_files(js_data, images, do_make_zip, index):
 
         for image_index, filedata in enumerate(images, start_index):
             image = image_from_url_text(filedata)
-            is_grid = image_index < p.index_of_first_image
-            i = 0 if is_grid else (image_index - p.index_of_first_image)
-            if len(p.all_seeds) <= i:
-                p.all_seeds.append(p.seed)
-            if len(p.all_prompts) <= i:
-                p.all_prompts.append(p.prompt)
-            fullfn, txt_fullfn = modules.images.save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
+            is_grid = image_index < p.index_of_first_image # pylint: disable=no-member
+            i = 0 if is_grid else (image_index - p.index_of_first_image) # pylint: disable=no-member
+            if len(p.all_seeds) <= i: # pylint: disable=no-member
+                p.all_seeds.append(p.seed) # pylint: disable=no-member
+            if len(p.all_prompts) <= i: # pylint: disable=no-member
+                p.all_prompts.append(p.prompt) # pylint: disable=no-member
+            fullfn, txt_fullfn = modules.images.save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs) # pylint: disable=no-member
 
             filename = os.path.relpath(fullfn, path)
             filenames.append(filename)
@@ -95,11 +95,6 @@ def save_files(js_data, images, do_make_zip, index):
 
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
-
-def initial_image():
-    from PIL import Image
-    img = Image.open('automatic.png')
-    return [img]
 
 def create_output_panel(tabname, outdir):
     import modules.generation_parameters_copypaste as parameters_copypaste
@@ -125,7 +120,7 @@ def create_output_panel(tabname, outdir):
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(initial_image, label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
+            result_gallery = gr.Gallery(value=['automatic.png'], label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
 
         generation_info = None
         with gr.Column():
