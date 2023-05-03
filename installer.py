@@ -176,11 +176,13 @@ def check_python():
     log.info(f'Python {platform.python_version()} on {platform.system()}')
     if not (int(sys.version_info.major) == 3 and int(sys.version_info.minor) in supported_minors):
         log.error(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.{supported_minors}")
-        exit(1)
+        if not args.ignore:
+            exit(1)
     git_cmd = os.environ.get('GIT', "git")
     if shutil.which(git_cmd) is None:
         log.error('Git not found')
-        exit(1)
+        if not args.ignore:
+            exit(1)
     else:
         git_version = git('--version', folder=None, ignore=False)
         log.debug(f'Git {git_version.replace("git version", "").strip()}')
@@ -242,7 +244,8 @@ def check_torch():
                 log.warning("Torch repoorts CUDA not available")
     except Exception as e:
         log.error(f'Could not load torch: {e}')
-        exit(1)
+        if not args.ignore:
+            exit(1)
     if args.version:
         return
     try:
@@ -434,7 +437,8 @@ def check_extensions():
 def check_version(offline=False):
     if not os.path.exists('.git'):
         log.error('Not a git repository')
-        exit(1)
+        if not args.ignore:
+            exit(1)
     _status = git('status')
     # if 'branch' not in status:
     #    log.error('Cannot get git repository status')
@@ -498,7 +502,8 @@ def check_timestamp():
         version_time = int(git('log -1 --pretty=format:"%at"'))
     except Exception as e:
         log.error(f'Error getting local repository version: {e}')
-        exit(1)
+        if not args.ignore:
+            exit(1)
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
     if setup_time == -1:
         return False
@@ -527,6 +532,7 @@ def add_args():
     group.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
     group.add_argument('--test', default = False, action='store_true', help = "Run test only and exit")
     group.add_argument('--version', default = False, action='store_true', help = "Print version information")
+    group.add_argument('--ignore', default = False, action='store_true', help = "Ignore any errors and attempt to continue")
 
 
 def parse_args():
