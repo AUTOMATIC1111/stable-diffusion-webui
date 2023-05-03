@@ -400,6 +400,7 @@ def set_environment():
     os.environ.setdefault('GRADIO_ANALYTICS_ENABLED', 'False')
     os.environ.setdefault('SAFETENSORS_FAST_GPU', '1')
     os.environ.setdefault('NUMEXPR_MAX_THREADS', '16')
+    os.environ.setdefault('PYTHONHTTPSVERIFY', '0')
     if sys.platform == 'darwin':
         os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
 
