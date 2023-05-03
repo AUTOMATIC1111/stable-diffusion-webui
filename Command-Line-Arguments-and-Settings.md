@@ -10,7 +10,7 @@
 | TORCH_COMMAND          | command for installing pytorch                                                                                                            |
 | INDEX_URL              | --index-url parameter for pip                                                                                                             |
 | TRANSFORMERS_CACHE     | path to where transformers library will download and keep its files related to the CLIP model                                             |
-
+| CUDA_VISIBLE_DEVICES   | select gpu to use for your instance on a system with multiple gpus. For example if you want to use secondary gpu, put "1". (add a line to webui-user.bat): `set CUDA_VISIBLE_DEVICES=0` alternatively, just use `--device-id` flag. |
 
 ### webui-user
 The recommended way to specify environment variables is by editing `webui-user.bat` (Windows) and `webui-user.sh` (Linux):
