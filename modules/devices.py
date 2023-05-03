@@ -111,7 +111,11 @@ def set_cuda_params():
     unet_needs_upcast = shared.opts.upcast_sampling
 
 
-cpu = torch.device("cpu")
+from launch import args
+if args.use_ipex:
+    cpu = torch.device("xpu") #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
+else:
+    cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
 dtype = torch.float16
 dtype_vae = torch.float16
