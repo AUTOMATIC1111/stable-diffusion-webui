@@ -166,7 +166,7 @@ face_restorers = []
 
 def debug(message):
     if cmd_opts.debug:
-        log.info(message)
+        log.debug(message)
 
 
 class OptionInfo:

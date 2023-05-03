@@ -1,6 +1,5 @@
 import collections
 import os.path
-import sys
 import gc
 import re
 import io
@@ -57,7 +56,7 @@ class CheckpointInfo:
                 self.metadata = read_metadata_from_safetensors(filename)
             except Exception as e:
                 errors.display(e, f"reading checkpoint metadata: {filename}")
-    
+
     def register(self):
         checkpoints_list[self.title] = self
         for i in self.ids:
@@ -109,7 +108,7 @@ def list_models():
         checkpoint_info = CheckpointInfo(shared.cmd_opts.ckpt)
         checkpoint_info.register()
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
-    elif shared.cmd_opts.ckpt != shared.default_sd_model_file:
+    elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
@@ -347,6 +346,7 @@ sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_w
 
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None):
+    shared.debug(f'Load model: {checkpoint_info}')
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
     do_inpainting_hijack()
@@ -407,16 +407,23 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     shared.debug(f'Model load finished: {memory_stats()}')
     return sd_model
 
+skip_next_load = False
 
 def reload_model_weights(sd_model=None, info=None):
+    global skip_next_load # pylint: disable=global-statement
+    if skip_next_load:
+        shared.debug('Reload model weights skip')
+        skip_next_load = False
+        return
+    shared.debug(f'Reload model weights: {sd_model} {info}')
     from modules import lowvram, sd_hijack
     checkpoint_info = info or select_checkpoint()
     if not sd_model:
         sd_model = shared.sd_model
-    if not shared.opts.model_reuse_dict and sd_model is not None:
-        sd_model = None
-    else:
+    if shared.opts.model_reuse_dict and sd_model is not None:
         shared.log.info('Reusing previous model dictionary')
+    else:
+        sd_model = None
     if sd_model is None:  # previous model load failed
         current_checkpoint_info = None
     else:
@@ -442,7 +449,6 @@ def reload_model_weights(sd_model=None, info=None):
     except Exception:
         shared.log.error("Failed to load checkpoint, restoring previous")
         load_model_weights(sd_model, current_checkpoint_info, None, timer)
-        raise
     finally:
         sd_hijack.model_hijack.hijack(sd_model)
         timer.record("hijack")

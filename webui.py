@@ -60,7 +60,7 @@ import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
 startup_timer.record("libraries")
 
-
+log.info('Libraries loaded')
 log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
 logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
 if cmd_opts.server_name:
@@ -150,6 +150,7 @@ def load_model():
     shared.state.job = 'load model'
     try:
         modules.sd_models.load_model()
+        modules.sd_models.skip_next_load = True
     except Exception as e:
         errors.display(e, "loading stable diffusion model")
         log.error("Stable diffusion model failed to load")
