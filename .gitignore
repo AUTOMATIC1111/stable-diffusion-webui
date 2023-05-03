@@ -27,7 +27,7 @@ venv
 /*.bat
 /*.sh
 /*.txt
-/notification.mp3
+/*.mp3
 !webui.bat
 !webui.sh
 
