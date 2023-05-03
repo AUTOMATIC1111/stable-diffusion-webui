@@ -398,6 +398,9 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     sd_hijack.model_hijack.hijack(sd_model)
     timer.record("hijack")
     sd_model.eval()
+    if shared.cmd_opts.use_ipex:
+        sd_model = torch.xpu.optimize(sd_model, dtype=devices.dtype)
+        shared.log.info("Applied IPEX Optimize")
     shared.sd_model = sd_model
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
     timer.record("embeddings")
