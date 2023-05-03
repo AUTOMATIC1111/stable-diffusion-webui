@@ -92,6 +92,14 @@ def run_extension_installer(ext_dir):
     installer.run_extension_installer(ext_dir)
 
 if __name__ == "__main__":
+    if args.version:
+        installer.add_args()
+        installer.setup_logging(clean=False)
+        installer.log.info('SD.Next version information')
+        installer.check_python()
+        installer.check_version()
+        installer.check_torch()
+        exit(0)
     installer.run_setup()
     installer.extensions_preload(force=True)
     installer.log.info(f"Server arguments: {sys.argv[1:]}")

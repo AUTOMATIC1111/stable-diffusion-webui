@@ -211,7 +211,7 @@ def check_torch():
             log.info('Using CPU-only Torch')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
-    if 'torch' in torch_command:
+    if 'torch' in torch_command and not args.version:
         install(torch_command, 'torch torchvision torchaudio')
     try:
         import torch
@@ -243,6 +243,8 @@ def check_torch():
     except Exception as e:
         log.error(f'Could not load torch: {e}')
         exit(1)
+    if args.version:
+        return
     try:
         if 'xformers' in xformers_package:
             install(f'--no-deps {xformers_package}', ignore=True)
@@ -429,7 +431,7 @@ def check_extensions():
 
 
 # check version of the main repo and optionally upgrade it
-def check_version():
+def check_version(offline=False):
     if not os.path.exists('.git'):
         log.error('Not a git repository')
         exit(1)
@@ -439,12 +441,14 @@ def check_version():
     #    exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
+    if args.version:
+        return
     commit = git('rev-parse HEAD')
     try:
         import requests
     except ImportError:
         return
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.ERROR)
     commits = None
     try:
         commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master', timeout=10).json()
@@ -521,7 +525,8 @@ def add_args():
     group.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     group.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
     group.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
-    group.add_argument('--test', default = False, action='store_true', help = "Run test only, default: %(default)s")
+    group.add_argument('--test', default = False, action='store_true', help = "Run test only and exit")
+    group.add_argument('--version', default = False, action='store_true', help = "Print version information")
 
 
 def parse_args():
@@ -567,6 +572,7 @@ def read_options():
 # entry method when used as module
 def run_setup():
     setup_logging(args.upgrade)
+    log.info('Starting SD.Next')
     read_options()
     check_python()
     if args.reset:
