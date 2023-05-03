@@ -92,7 +92,7 @@ contextMenuInit = function(){
     if(eventListenerApplied){
       return;
     }
-    gradioApp().addEventListener("click", function(e) {
+    gradioApp().addEventListener("click", function grClickGenFun(e) {
       let source = e.composedPath()[0]
       if(source.id && source.id.indexOf('check_progress')>-1){
         return
