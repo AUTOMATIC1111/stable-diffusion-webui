@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-import time
 import signal
 import asyncio
 import logging
@@ -226,6 +225,7 @@ def start_ui():
         show_api=True,
         favicon_path='automatic.ico',
     )
+    shared.demo.server.wants_restart = False
     setup_middleware(app, cmd_opts)
 
     cmd_opts.autolaunch = False
@@ -244,26 +244,7 @@ def webui():
     start_ui()
     load_model()
     log.info(f"Startup time: {startup_timer.summary()}")
-
-    while True:
-        try:
-            alive = shared.demo.server.thread.is_alive()
-        except:
-            alive = False
-        if not alive:
-            log.warning('Server restart')
-            startup_timer.reset()
-            start_ui()
-            log.info(f"Startup time: {startup_timer.summary()}")
-        time.sleep(1)
-
-    """
-    import sys
-    import types
-    from modules.paths_internal import script_path
-    libs = [name for name, m in sys.modules.items() if isinstance(m, types.ModuleType) and (getattr(m, '__file__', '') or '').startswith(script_path)]
-    print(libs)
-    """
+    return shared.demo.server
 
 
 if __name__ == "__main__":

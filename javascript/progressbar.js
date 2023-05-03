@@ -38,7 +38,6 @@ function formatTime(secs) {
 
 function setTitle(progress) {
     var title = 'SD.Next'
-    console.log('progress:', progress)
     if (progress) title += ' ' + progress.split(' ')[0].trim();
     if (document.title != title) document.title =  title;
 }

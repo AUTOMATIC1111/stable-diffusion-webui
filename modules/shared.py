@@ -697,19 +697,20 @@ mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
 
 
-def restart_server():
+def restart_server(restart=True):
     if demo is None:
         return
+    log.info('Server shutdown requested')
     try:
-        import logging
-        log.setLevel(logging.DEBUG if cmd_opts.debug else logging.CRITICAL)
+        demo.server.wants_restart = restart
         demo.server.should_exit = True
         demo.server.force_exit = True
         demo.close(verbose=False)
         demo.server.close()
     except:
         pass
-    log.info('Server shutdown')
+    if restart:
+        log.info('Server will restart')
 
 
 def listfiles(dirname):

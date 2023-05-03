@@ -277,9 +277,33 @@ function update_token_counter(button_id) {
 	token_timeouts[button_id] = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
 }
 
+function monitor_server_status() {
+  document.open();
+  document.write(`
+    <html>
+      <head><title>SD.Next</title></head>
+      <body style="background: #222222; font-size: 1rem; font-family:monospace; margin-top:20%; color:lightgray; text-align:center">
+        <h1>Waiting for server...</h1>
+        <script>
+          function monitor_server_status() {
+            fetch('http://127.0.0.1:7860/sdapi/v1/progress')
+              .then((res) => { !res?.ok ? setTimeout(monitor_server_status, 1000) : location.reload(); })
+              .catch((e) => setTimeout(monitor_server_status, 1000))
+          }
+          window.onload = () => monitor_server_status();
+        </script>
+      </body>
+    </html>
+  `);
+  document.close();
+}
+
 function restart_reload(){
-    document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
-    setTimeout(function(){location.reload()},8000)
+    document.body.style = "background: #222222; font-size: 1rem; font-family:monospace; margin-top:20%; color:lightgray; text-align:center"
+    document.body.innerHTML = "<h1>Server shutdown in progress...</h1>"
+    fetch('http://127.0.0.1:7860/sdapi/v1/progress')
+      .then((res) => setTimeout(restart_reload, 1000))
+      .catch((e) => setTimeout(monitor_server_status, 500))
     return []
 }
 
@@ -307,7 +331,7 @@ function create_theme_element() {
 }
 
 function preview_theme() {
-  const name = gradioApp().getElementById('setting_gradio_theme').querySelectorAll('span')[1].innerText; // ugly but we want current value without the need to set apply
+  const name = gradioApp().getElementById('setting_gradio_theme').querySelectorAll('input')?.[0].value || '';
   if (name === 'black-orange' || name.startsWith('gradio/')) {
     el = document.getElementById('theme-preview') || create_theme_element();
     el.style.display = el.style.display === 'block' ? 'none' : 'block';

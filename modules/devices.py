@@ -1,14 +1,14 @@
 import sys
 import contextlib
 import torch
-from modules import shared
+from modules import cmd_args, shared
 try:
-    import intel_extension_for_pytorch as ipex
+    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
 except:
     pass
 
 if sys.platform == "darwin":
-    from modules import mac_specific
+    from modules import mac_specific # pylint: disable=ungrouped-imports
 
 
 def has_mps() -> bool:
@@ -17,11 +17,10 @@ def has_mps() -> bool:
     else:
         return mac_specific.has_mps
 
-def extract_device_id(args, name):
+def extract_device_id(args, name): # pylint: disable=redefined-outer-name
     for x in range(len(args)):
         if name in args[x]:
             return args[x + 1]
-
     return None
 
 
@@ -48,7 +47,7 @@ def get_optimal_device_name():
     if has_mps():
         return "mps"
     try:
-        import torch_directml
+        import torch_directml # pylint: disable=import-error
         if torch_directml.is_available():
             return get_dml_device_string()
         else:
@@ -110,9 +109,7 @@ def set_cuda_params():
         dtype_vae = torch.float32
     unet_needs_upcast = shared.opts.upcast_sampling
 
-
-from modules.cmd_args import parser
-args = parser.parse_args()
+args = cmd_args.parser.parse_args()
 if args.use_ipex:
     cpu = torch.device("xpu") #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
     print("Using XPU instead of CPU.")

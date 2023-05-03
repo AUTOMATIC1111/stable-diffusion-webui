@@ -4,7 +4,6 @@ import sys
 from collections import namedtuple
 import gradio as gr
 from modules import paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
-from installer import log
 
 AlwaysVisible = object()
 
@@ -219,7 +218,7 @@ def load_scripts():
         for _key, script_class in module.__dict__.items():
             if type(script_class) != type:
                 continue
-            log.debug(f'Registering script: {scriptfile.path}')
+            # log.debug(f'Registering script: {scriptfile.path}')
             if issubclass(script_class, Script):
                 scripts_data.append(ScriptClassData(script_class, scriptfile.path, scriptfile.basedir, module))
             elif issubclass(script_class, scripts_postprocessing.ScriptPostprocessing):
