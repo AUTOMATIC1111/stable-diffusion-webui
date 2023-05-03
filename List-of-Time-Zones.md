@@ -4,8 +4,9 @@ import pytz
 for tz in pytz.all_timezones:
     print(tz)
 ```
-Or you can reference this this pre-generated list (might be outdated).
+Or you can reference this pre-generated list (might be outdated).
 ```
+Africa/Abidjan
 Africa/Accra
 Africa/Addis_Ababa
 Africa/Algiers
@@ -100,6 +101,7 @@ America/Cayenne
 America/Cayman
 America/Chicago
 America/Chihuahua
+America/Ciudad_Juarez
 America/Coral_Harbour
 America/Cordoba
 America/Costa_Rica
