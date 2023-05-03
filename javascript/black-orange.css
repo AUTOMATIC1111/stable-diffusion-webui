@@ -64,7 +64,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #tab_extensions table thead { background-color: var(--neutral-700); }
 
 /* automatic style classes */
-.progressDiv { border-radius: 0 !important; position: fixed; top: 318px; right: 26px; max-width: 262px; height: 48px; z-index: 99; }
+.progressDiv { border-radius: 0 !important; position: fixed; top: 44px; right: 26px; max-width: 262px; height: 48px; z-index: 99; box-shadow: var(--button-shadow); }
 .progressDiv .progress { border-radius: 0 !important; background: var(--highlight-color); line-height: 3rem; height: 48px; }
 .gallery-item { box-shadow: none !important; }
 .performance { color: #888; }
