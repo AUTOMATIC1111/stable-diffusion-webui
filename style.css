@@ -900,6 +900,10 @@ div.svelte-b6y5bg, div.gradio-row>.form {
 	position:relative!important;
 } */
 
+.gradio-dropdown input {
+    color: var(--ae-input-color) !important;
+}
+
 ul.options{
 	width:auto;	
 	background: var(--ae-input-bg-color) !important;
@@ -983,6 +987,7 @@ div.token-remove {
 	padding: var(--ae-accordion-vertical-padding) var(--ae-accordion-horizontal-padding);
 	border-radius: var(--ae-panel-border-radius);
 	line-height: var(--ae-accordion-line-height);
+	color: var(--ae-label-color);
 	/*pointer-events: none !important;*/
 }
 .block.gradio-accordion .hide + .open.label-wrap {
@@ -3437,8 +3442,6 @@ input[type=range]::-ms-fill-lower {
 input[type=range]::-ms-fill-upper {
     background-color: var(--ae-input-bg-color);
 }
-
-
 
 /*****************/
 /* img2img fixes */
