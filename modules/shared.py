@@ -488,10 +488,7 @@ options_templates.update(options_section(('token_merging', 'Token Merging'), {
         False, "Merge mlp",
         gr.Checkbox
     ),
-    "token_merging_maximum_down_sampling": OptionInfo(
-        1, "Maximum down sampling",
-        gr.Dropdown, lambda: {"choices": ["1", "2", "4", "8"]}
-    ),
+    "token_merging_maximum_down_sampling": OptionInfo(1, "Maximum down sampling", gr.Radio, lambda: {"choices": ['1', '2', '4', '8']}),
     "token_merging_stride_x": OptionInfo(
         2, "Stride - X",
         gr.Slider, {"minimum": 2, "maximum": 8, "step": 2}

@@ -306,6 +306,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             res["Token merging stride x"] = '2'
         if res.get("Token merging stride y", None) is None:
             res["Token merging stride y"] = '2'
+        if res.get("Token merging maximum down sampling", None) is None:
+            res["Token merging maximum down sampling"] = '1'
 
     restore_old_hires_fix_params(res)
 
@@ -341,7 +343,7 @@ infotext_to_setting_name_mapping = [
     ('Token merging merge attention', 'token_merging_merge_attention'),
     ('Token merging merge cross attention', 'token_merging_merge_cross_attention'),
     ('Token merging merge mlp', 'token_merging_merge_mlp'),
-    ('Token merging maximum downsampling', 'token_merging_maximum_downsampling'),
+    ('Token merging maximum down sampling', 'token_merging_maximum_down_sampling'),
     ('Token merging stride x', 'token_merging_stride_x'),
     ('Token merging stride y', 'token_merging_stride_y'),
     ('RNG', 'randn_source'),

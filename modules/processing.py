@@ -495,6 +495,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Token merging merge mlp": None if opts.token_merging_merge_mlp is False else opts.token_merging_merge_mlp,
         "Token merging stride x": None if opts.token_merging_stride_x == 2 else opts.token_merging_stride_x,
         "Token merging stride y": None if opts.token_merging_stride_y == 2 else opts.token_merging_stride_y,
+        "Token merging maximum down sampling": None if opts.token_merging_maximum_down_sampling == 1 else opts.token_merging_maximum_down_sampling,
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
