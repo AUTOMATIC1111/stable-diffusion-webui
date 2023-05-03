@@ -135,7 +135,7 @@ def get_selectable_script(script_runner, script_name):
 
 def script_name_to_index(name, scripts):
     try:
-        return [script.title().lower() for script in scripts].index(name.lower())
+        return [script.title().lower().replace(' ', '-') for script in scripts].index(name.lower())
     except:
         raise Exception(f"Script '{name}' not found")
 
