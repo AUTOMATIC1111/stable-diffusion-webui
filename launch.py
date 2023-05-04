@@ -249,6 +249,8 @@ def prepare_environment():
 
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
+    
+    run(f'"{python}" -m pip install --upgrade pip', "Upgrading pip", "Couldn't upgrade pip", live=True)
 
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
