@@ -1625,6 +1625,9 @@ def html_head():
     script_js = os.path.join(script_path, "javascript", "script.js")
     head = f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
     for script in modules.scripts.list_scripts("javascript", ".js"):
+        if script.path == script_js:
+            continue
+        print(script.path)
         head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
     for script in modules.scripts.list_scripts("javascript", ".mjs"):
         head += f'<script type="module" src="{webpath(script.path)}"></script>\n'

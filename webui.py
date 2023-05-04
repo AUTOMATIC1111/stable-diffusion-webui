@@ -201,7 +201,7 @@ def start_ui():
         log.info('Server queues disabled')
         shared.demo.progress_tracking = False
     else:
-        shared.demo.queue(concurrency_count=16)
+        shared.demo.queue(concurrency_count=64)
 
     gradio_auth_creds = []
     if cmd_opts.auth:
@@ -211,7 +211,7 @@ def start_ui():
             for line in file.readlines():
                 gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
-    app, _local_url, _share_url = shared.demo.launch(
+    app, local_url, share_url = shared.demo.launch(
         share=cmd_opts.share,
         server_name=server_name,
         server_port=cmd_opts.port if cmd_opts.port != 7860 else None,
@@ -222,9 +222,14 @@ def start_ui():
         auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
         inbrowser=cmd_opts.autolaunch,
         prevent_thread_lock=True,
+        max_threads=64,
         show_api=True,
         favicon_path='html/logo.ico',
     )
+    shared.log.info(f'Local URL: {local_url}')
+    if share_url is not None:
+        shared.log.info(f'Share URL: {share_url}')
+    shared.log.debug(f'Gradio registered functions: {len(shared.demo.fns)}')
     shared.demo.server.wants_restart = False
     setup_middleware(app, cmd_opts)
 

@@ -358,6 +358,9 @@ function preview_theme() {
 }
 
 function reconnect_ui() {
+  const api_logo = Array.from(gradioApp().querySelectorAll("img")).filter((el) => el?.src?.endsWith('api-logo.svg'))
+  if (api_logo.length > 0) api_logo[0].remove()
+
   const el1 = gradioApp().getElementById('txt2img_gallery_container')
   const el2 = gradioApp().getElementById('txt2img_gallery')
   const task_id = localStorage.getItem('task')

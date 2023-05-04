@@ -406,6 +406,7 @@ def set_environment():
     os.environ.setdefault('SAFETENSORS_FAST_GPU', '1')
     os.environ.setdefault('NUMEXPR_MAX_THREADS', '16')
     os.environ.setdefault('PYTHONHTTPSVERIFY', '0')
+    os.environ.setdefault('HF_HUB_DISABLE_TELEMETRY', '1')
     if sys.platform == 'darwin':
         os.environ.setdefault('PYTORCH_ENABLE_MPS_FALLBACK', '1')
 
