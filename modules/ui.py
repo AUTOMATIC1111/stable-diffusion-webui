@@ -847,7 +847,7 @@ def create_ui():
                                             scale_by.release(**on_change_args)
                                             button_update_resize_to.click(**on_change_args)
 
-                                            for component in img2img_image_inputs:
+                                            for component in [init_img, sketch]:
                                                 component.change(fn=lambda: None, _js="updateImg2imgResizeToTextAfterChangingImage", inputs=[], outputs=[], show_progress=False)
 
                                     tab_scale_to.select(fn=lambda: 0, inputs=[], outputs=[selected_scale_tab])
