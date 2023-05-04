@@ -14,7 +14,7 @@ import piexif.helper
 import uvicorn
 import gradio as gr
 # from gradio.processing_utils import decode_base64_to_file # gradio 3.23
-from gradio_client.utils import decode_base64_to_file # gradio 3.28
+# from gradio_client.utils import decode_base64_to_file # gradio 3.28
 
 from modules import errors, shared, sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing
 from modules.api.models import * # pylint: disable=unused-wildcard-import, wildcard-import
@@ -198,7 +198,9 @@ class Api:
                     raise HTTPException(status_code=422, detail=f"Selectable script cannot be in always on params: {alwayson_script_name}")
                 if "args" in request.alwayson_scripts[alwayson_script_name]:
                     # TODO this can corrupt values for other scripts
-                    script_args[alwayson_script.args_from:alwayson_script.args_to] = request.alwayson_scripts[alwayson_script_name]["args"]
+                    # min between arg length in scriptrunner and arg length in the request
+                    for idx in range(0, min((alwayson_script.args_to - alwayson_script.args_from), len(request.alwayson_scripts[alwayson_script_name]["args"]))):
+                        script_args[alwayson_script.args_from + idx] = request.alwayson_scripts[alwayson_script_name]["args"][idx]
                     p.per_script_args[alwayson_script.title()] = request.alwayson_scripts[alwayson_script_name]["args"]
         return script_args
 
@@ -306,16 +308,11 @@ class Api:
     def extras_batch_images_api(self, req: ExtrasBatchImagesRequest):
         reqDict = setUpscalers(req)
 
-        def prepareFiles(file):
-            file = decode_base64_to_file(file.data, file_path=file.name)
-            file.orig_name = file.name
-            return file
-
-        reqDict['image_folder'] = list(map(prepareFiles, reqDict['imageList']))
-        reqDict.pop('imageList')
+        image_list = reqDict.pop('imageList', [])
+        image_folder = [decode_base64_to_image(x.data) for x in image_list]
 
         with self.queue_lock:
-            result = postprocessing.run_extras(extras_mode=1, image="", input_dir="", output_dir="", save_output=False, **reqDict)
+            result = postprocessing.run_extras(extras_mode=1, image_folder=image_folder, image="", input_dir="", output_dir="", save_output=False, **reqDict)
 
         return ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
