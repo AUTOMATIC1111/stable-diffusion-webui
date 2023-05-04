@@ -15,11 +15,7 @@ samplers_map = {}
 
 
 def create_sampler(name, model):
-    if name is not None:
-        config = all_samplers_map.get(name, None)
-    else:
-        config = all_samplers[0]
-
+    config = all_samplers[0] if name is None else all_samplers_map.get(name, None)
     assert config is not None, f'bad sampler name: {name}'
 
     sampler = config.constructor(model)

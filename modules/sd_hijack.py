@@ -233,7 +233,11 @@ class EmbeddingsWithFixes(torch.nn.Module):
 
         inputs_embeds = self.wrapped(input_ids)
 
-        if batch_fixes is None or len(batch_fixes) == 0 or max([len(x) for x in batch_fixes]) == 0:
+        if (
+            batch_fixes is None
+            or len(batch_fixes) == 0
+            or max(len(x) for x in batch_fixes) == 0
+        ):
             return inputs_embeds
 
         vecs = []
@@ -241,7 +245,13 @@ class EmbeddingsWithFixes(torch.nn.Module):
             for offset, embedding in fixes:
                 emb = devices.cond_cast_unet(embedding.vec)
                 emb_len = min(tensor.shape[0] - offset - 1, emb.shape[0])
-                tensor = torch.cat([tensor[0:offset + 1], emb[0:emb_len], tensor[offset + 1 + emb_len:]])
+                tensor = torch.cat(
+                    [
+                        tensor[: offset + 1],
+                        emb[:emb_len],
+                        tensor[offset + 1 + emb_len :],
+                    ]
+                )
 
             vecs.append(tensor)
 
@@ -265,9 +275,8 @@ def register_buffer(self, name, attr):
     Fix register buffer bug for Mac OS.
     """
 
-    if type(attr) == torch.Tensor:
-        if attr.device != devices.device:
-            attr = attr.to(device=devices.device, dtype=(torch.float32 if devices.device.type == 'mps' else None))
+    if type(attr) == torch.Tensor and attr.device != devices.device:
+        attr = attr.to(device=devices.device, dtype=(torch.float32 if devices.device.type == 'mps' else None))
 
     setattr(self, name, attr)
 

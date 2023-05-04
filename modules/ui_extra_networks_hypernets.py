@@ -21,7 +21,8 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
                 "search_term": self.search_terms_from_path(path),
-                "prompt": json.dumps(f"<hypernet:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
+                "prompt": f'{json.dumps(f"<hypernet:{name}:")} + opts.extra_networks_default_multiplier + '
+                + json.dumps(">"),
                 "local_preview": f"{path}.preview.{shared.opts.samples_format}",
             }
 

@@ -4,7 +4,7 @@ import traceback
 
 def print_error_explanation(message):
     lines = message.strip().split("\n")
-    max_len = max([len(x) for x in lines])
+    max_len = max(len(x) for x in lines)
 
     print('=' * max_len, file=sys.stderr)
     for line in lines:

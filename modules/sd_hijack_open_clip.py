@@ -19,19 +19,12 @@ class FrozenOpenCLIPEmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWit
     def tokenize(self, texts):
         assert not opts.use_old_emphasis_implementation, 'Old emphasis implementation not supported for Open Clip'
 
-        tokenized = [tokenizer.encode(text) for text in texts]
-
-        return tokenized
+        return [tokenizer.encode(text) for text in texts]
 
     def encode_with_transformers(self, tokens):
-        # set self.wrapped.layer_idx here according to opts.CLIP_stop_at_last_layers
-        z = self.wrapped.encode_with_transformer(tokens)
-
-        return z
+        return self.wrapped.encode_with_transformer(tokens)
 
     def encode_embedding_init_text(self, init_text, nvpt):
         ids = tokenizer.encode(init_text)
         ids = torch.asarray([ids], device=devices.device, dtype=torch.int)
-        embedded = self.wrapped.model.token_embedding.wrapped(ids).squeeze(0)
-
-        return embedded
+        return self.wrapped.model.token_embedding.wrapped(ids).squeeze(0)

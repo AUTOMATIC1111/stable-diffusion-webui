@@ -192,9 +192,12 @@ def list_scripts(scriptdirname, extension):
 
     basedir = os.path.join(paths.script_path, scriptdirname)
     if os.path.exists(basedir):
-        for filename in sorted(os.listdir(basedir)):
-            scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(basedir, filename)))
-
+        scripts_list.extend(
+            ScriptFile(
+                paths.script_path, filename, os.path.join(basedir, filename)
+            )
+            for filename in sorted(os.listdir(basedir))
+        )
     for ext in extensions.active():
         scripts_list += ext.list_files(scriptdirname, extension)
 
@@ -267,8 +270,7 @@ def load_scripts():
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     try:
-        res = func(*args, **kwargs)
-        return res
+        return func(*args, **kwargs)
     except Exception:
         print(f"Error calling: {filename}/{funcname}", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
@@ -526,7 +528,10 @@ def add_classes_to_gradio_component(comp):
     this adds gradio-* to the component for css styling (ie gradio-button to gr.Button), as well as some others
     """
 
-    comp.elem_classes = ["gradio-" + comp.get_block_name(), *(comp.elem_classes or [])]
+    comp.elem_classes = [
+        f"gradio-{comp.get_block_name()}",
+        *(comp.elem_classes or []),
+    ]
 
     if getattr(comp, 'multiselect', False):
         comp.elem_classes.append('multiselect')

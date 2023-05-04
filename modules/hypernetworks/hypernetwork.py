@@ -78,7 +78,7 @@ class HypernetworkModule(torch.nn.Module):
             self.load_state_dict(state_dict)
         else:
             for layer in self.linear:
-                if type(layer) == torch.nn.Linear or type(layer) == torch.nn.LayerNorm:
+                if type(layer) in [torch.nn.Linear, torch.nn.LayerNorm]:
                     w, b = layer.weight.data, layer.bias.data
                     if weight_init == "Normal" or type(layer) == torch.nn.LayerNorm:
                         normal_(w, mean=0.0, std=0.01)
@@ -90,10 +90,20 @@ class HypernetworkModule(torch.nn.Module):
                         xavier_normal_(w)
                         zeros_(b)
                     elif weight_init == 'KaimingUniform':
-                        kaiming_uniform_(w, nonlinearity='leaky_relu' if 'leakyrelu' == activation_func else 'relu')
+                        kaiming_uniform_(
+                            w,
+                            nonlinearity='leaky_relu'
+                            if activation_func == 'leakyrelu'
+                            else 'relu',
+                        )
                         zeros_(b)
                     elif weight_init == 'KaimingNormal':
-                        kaiming_normal_(w, nonlinearity='leaky_relu' if 'leakyrelu' == activation_func else 'relu')
+                        kaiming_normal_(
+                            w,
+                            nonlinearity='leaky_relu'
+                            if activation_func == 'leakyrelu'
+                            else 'relu',
+                        )
                         zeros_(b)
                     else:
                         raise KeyError(f"Key {weight_init} is not defined as initialization!")
@@ -116,12 +126,12 @@ class HypernetworkModule(torch.nn.Module):
             state_dict[to] = x
 
     def forward(self, x):
-        return x + self.linear(x) * (self.multiplier if not self.training else 1)
+        return x + self.linear(x) * (1 if self.training else self.multiplier)
 
     def trainables(self):
         layer_structure = []
         for layer in self.linear:
-            if type(layer) == torch.nn.Linear or type(layer) == torch.nn.LayerNorm:
+            if type(layer) in [torch.nn.Linear, torch.nn.LayerNorm]:
                 layer_structure += [layer.weight, layer.bias]
         return layer_structure
 
@@ -212,12 +222,12 @@ class Hypernetwork:
                     param.requires_grad = False
 
     def save(self, filename):
-        state_dict = {}
         optimizer_saved_dict = {}
 
-        for k, v in self.layers.items():
-            state_dict[k] = (v[0].state_dict(), v[1].state_dict())
-
+        state_dict = {
+            k: (v[0].state_dict(), v[1].state_dict())
+            for k, v in self.layers.items()
+        }
         state_dict['step'] = self.step
         state_dict['name'] = self.name
         state_dict['layer_structure'] = self.layer_structure
@@ -239,7 +249,7 @@ class Hypernetwork:
         if shared.opts.save_optimizer_state and self.optimizer_state_dict:
             optimizer_saved_dict['hash'] = self.shorthash()
             optimizer_saved_dict['optimizer_state_dict'] = self.optimizer_state_dict
-            torch.save(optimizer_saved_dict, filename + '.optim')
+            torch.save(optimizer_saved_dict, f'{filename}.optim')
 
     def load(self, filename):
         self.filename = filename
@@ -273,7 +283,11 @@ class Hypernetwork:
             print(f"  Activate last layer: {self.activate_output}")
             print(f"  Dropout structure: {self.dropout_structure}")
 
-        optimizer_saved_dict = torch.load(self.filename + '.optim', map_location='cpu') if os.path.exists(self.filename + '.optim') else {}
+        optimizer_saved_dict = (
+            torch.load(f'{self.filename}.optim', map_location='cpu')
+            if os.path.exists(f'{self.filename}.optim')
+            else {}
+        )
 
         if self.shorthash() == optimizer_saved_dict.get('hash', None):
             self.optimizer_state_dict = optimizer_saved_dict.get('optimizer_state_dict', None)
@@ -307,7 +321,7 @@ class Hypernetwork:
     def shorthash(self):
         sha256 = hashes.sha256(self.filename, f'hypernet/{self.name}')
 
-        return sha256[0:10] if sha256 else None
+        return sha256[:10] if sha256 else None
 
 
 def list_hypernetworks(path):
@@ -339,12 +353,11 @@ def load_hypernetwork(name):
 
 
 def load_hypernetworks(names, multipliers=None):
-    already_loaded = {}
-
-    for hypernetwork in shared.loaded_hypernetworks:
-        if hypernetwork.name in names:
-            already_loaded[hypernetwork.name] = hypernetwork
-
+    already_loaded = {
+        hypernetwork.name: hypernetwork
+        for hypernetwork in shared.loaded_hypernetworks
+        if hypernetwork.name in names
+    }
     shared.loaded_hypernetworks.clear()
 
     for i, name in enumerate(names):
@@ -427,7 +440,7 @@ def stack_conds(conds):
         return torch.stack(conds)
 
     # same as in reconstruct_multicond_batch
-    token_count = max([x.shape[0] for x in conds])
+    token_count = max(x.shape[0] for x in conds)
     for i in range(len(conds)):
         if conds[i].shape[0] != token_count:
             last_vector = conds[i][-1:]
@@ -438,16 +451,10 @@ def stack_conds(conds):
 
 
 def statistics(data):
-    if len(data) < 2:
-        std = 0
-    else:
-        std = stdev(data)
+    std = 0 if len(data) < 2 else stdev(data)
     total_information = f"loss:{mean(data):.3f}" + u"\u00B1" + f"({std/ (len(data) ** 0.5):.3f})"
     recent_data = data[-32:]
-    if len(recent_data) < 2:
-        std = 0
-    else:
-        std = stdev(recent_data)
+    std = 0 if len(recent_data) < 2 else stdev(recent_data)
     recent_information = f"recent 32 loss:{mean(recent_data):.3f}" + u"\u00B1" + f"({std / (len(recent_data) ** 0.5):.3f})"
     return total_information, recent_information
 
@@ -456,7 +463,7 @@ def report_statistics(loss_info:dict):
     keys = sorted(loss_info.keys(), key=lambda x: sum(loss_info[x]) / len(loss_info[x]))
     for key in keys:
         try:
-            print("Loss statistics for file " + key)
+            print(f"Loss statistics for file {key}")
             info, recent = statistics(list(loss_info[key]))
             print(info)
             print(recent)

@@ -56,6 +56,4 @@ def cheap_approximation(sample):
         [-0.184, -0.271, -0.473],
     ]).to(sample.device)
 
-    x_sample = torch.einsum("lxy,lr -> rxy", sample, coefs)
-
-    return x_sample
+    return torch.einsum("lxy,lr -> rxy", sample, coefs)

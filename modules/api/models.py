@@ -210,21 +210,23 @@ for key, metadata in opts.data_labels.items():
     optType = opts.typemap.get(type(metadata.default), type(value))
 
     if (metadata is not None):
-        fields.update({key: (Optional[optType], Field(
-            default=metadata.default ,description=metadata.label))})
+        fields[key] = (
+            Optional[optType],
+            Field(default=metadata.default, description=metadata.label),
+        )
     else:
-        fields.update({key: (Optional[optType], Field())})
+        fields[key] = (Optional[optType], Field())
 
 OptionsModel = create_model("Options", **fields)
 
 flags = {}
 _options = vars(parser)['_option_string_actions']
 for key in _options:
-    if(_options[key].dest != 'help'):
+    if (_options[key].dest != 'help'):
         flag = _options[key]
         _type = str
         if _options[key].default is not None: _type = type(_options[key].default)
-        flags.update({flag.dest: (_type,Field(default=flag.default, description=flag.help))})
+        flags[flag.dest] = (_type,Field(default=flag.default, description=flag.help))
 
 FlagsModel = create_model("Flags", **flags)
 

@@ -21,18 +21,15 @@ class UpscalerSwinIR(Upscaler):
     def __init__(self, dirname):
         self.name = "SwinIR"
         self.model_url = "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0" \
-                         "/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR" \
-                         "-L_x4_GAN.pth "
+                             "/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR" \
+                             "-L_x4_GAN.pth "
         self.model_name = "SwinIR 4x"
         self.user_path = dirname
         super().__init__()
         scalers = []
         model_files = self.find_models(ext_filter=[".pt", ".pth"])
         for model in model_files:
-            if "http" in model:
-                name = self.model_name
-            else:
-                name = modelloader.friendly_name(model)
+            name = self.model_name if "http" in model else modelloader.friendly_name(model)
             model_data = UpscalerData(name, model, self)
             scalers.append(model_data)
         self.scalers = scalers
@@ -51,7 +48,7 @@ class UpscalerSwinIR(Upscaler):
 
     def load_model(self, path, scale=4):
         if "http" in path:
-            dl_name = "%s%s" % (self.model_name.replace(" ", "_"), ".pth")
+            dl_name = f'{self.model_name.replace(" ", "_")}.pth'
             filename = load_file_from_url(url=path, model_dir=self.model_path, file_name=dl_name, progress=True)
         else:
             filename = path
@@ -151,7 +148,7 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
             for w_idx in w_idx_list:
                 if state.interrupted or state.skipped:
                     break
-                
+
                 in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
                 out_patch = model(in_patch)
                 out_patch_mask = torch.ones_like(out_patch)
@@ -163,9 +160,7 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
                 ..., h_idx * sf: (h_idx + tile) * sf, w_idx * sf: (w_idx + tile) * sf
                 ].add_(out_patch_mask)
                 pbar.update(1)
-    output = E.div_(W)
-
-    return output
+    return E.div_(W)
 
 
 def on_ui_settings():

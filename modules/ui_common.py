@@ -152,7 +152,7 @@ Requested path was: {f}
                     html_log = gr.HTML(elem_id=f'html_log_{tabname}')
 
                     generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
-                    if tabname == 'txt2img' or tabname == 'img2img':
+                    if tabname in ['txt2img', 'img2img']:
                         generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
                         generation_info_button.click(
                             fn=update_generation_info,

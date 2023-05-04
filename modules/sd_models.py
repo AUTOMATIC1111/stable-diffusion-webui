@@ -45,8 +45,8 @@ class CheckpointInfo:
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         self.hash = model_hash(filename)
 
-        self.sha256 = hashes.sha256_from_cache(self.filename, "checkpoint/" + name)
-        self.shorthash = self.sha256[0:10] if self.sha256 else None
+        self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
+        self.shorthash = self.sha256[:10] if self.sha256 else None
 
         self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
 
@@ -67,11 +67,11 @@ class CheckpointInfo:
             checkpoint_alisases[id] = self
 
     def calculate_shorthash(self):
-        self.sha256 = hashes.sha256(self.filename, "checkpoint/" + self.name)
+        self.sha256 = hashes.sha256(self.filename, f"checkpoint/{self.name}")
         if self.sha256 is None:
             return
 
-        self.shorthash = self.sha256[0:10]
+        self.shorthash = self.sha256[:10]
 
         if self.shorthash not in self.ids:
             self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]']
@@ -141,8 +141,14 @@ def get_closet_checkpoint_match(search_string):
     if checkpoint_info is not None:
         return checkpoint_info
 
-    found = sorted([info for info in checkpoints_list.values() if search_string in info.title], key=lambda x: len(x.title))
-    if found:
+    if found := sorted(
+        [
+            info
+            for info in checkpoints_list.values()
+            if search_string in info.title
+        ],
+        key=lambda x: len(x.title),
+    ):
         return found[0]
 
     return None
@@ -158,7 +164,7 @@ def model_hash(filename):
 
             file.seek(0x100000)
             m.update(file.read(0x10000))
-            return m.hexdigest()[0:8]
+            return m.hexdigest()[:8]
     except FileNotFoundError:
         return 'NOFILE'
 
@@ -234,7 +240,7 @@ def read_metadata_from_safetensors(filename):
         res = {}
         for k, v in json_obj.get("__metadata__", {}).items():
             res[k] = v
-            if isinstance(v, str) and v[0:1] == '{':
+            if isinstance(v, str) and v[:1] == '{':
                 try:
                     res[k] = json.loads(v)
                 except Exception as e:
@@ -254,8 +260,7 @@ def read_state_dict(checkpoint_file, print_global_state=False, map_location=None
     if print_global_state and "global_step" in pl_sd:
         print(f"Global Step: {pl_sd['global_step']}")
 
-    sd = get_state_dict_from_checkpoint(pl_sd)
-    return sd
+    return get_state_dict_from_checkpoint(pl_sd)
 
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):

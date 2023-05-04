@@ -23,7 +23,12 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
     def f(*args, **kwargs):
 
         # if the first argument is a string that says "task(...)", it is treated as a job id
-        if len(args) > 0 and type(args[0]) == str and args[0][0:5] == "task(" and args[0][-1] == ")":
+        if (
+            args
+            and type(args[0]) == str
+            and args[0][:5] == "task("
+            and args[0][-1] == ")"
+        ):
             id_task = args[0]
             progress.add_task_to_queue(id_task)
         else:
@@ -60,7 +65,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             max_debug_str_len = 131072 # (1024*1024)/8
 
             print("Error completing request", file=sys.stderr)
-            argStr = f"Arguments: {str(args)} {str(kwargs)}"
+            argStr = f"Arguments: {args} {kwargs}"
             print(argStr[:max_debug_str_len], file=sys.stderr)
             if len(argStr) > max_debug_str_len:
                 print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
@@ -73,7 +78,9 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             if extra_outputs_array is None:
                 extra_outputs_array = [None, '']
 
-            res = extra_outputs_array + [f"<div class='error'>{html.escape(type(e).__name__+': '+str(e))}</div>"]
+            res = extra_outputs_array + [
+                f"<div class='error'>{html.escape(f'{type(e).__name__}: {str(e)}')}</div>"
+            ]
 
         shared.state.skipped = False
         shared.state.interrupted = False
@@ -87,7 +94,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         elapsed_s = elapsed % 60
         elapsed_text = f"{elapsed_s:.2f}s"
         if elapsed_m > 0:
-            elapsed_text = f"{elapsed_m}m "+elapsed_text
+            elapsed_text = f"{elapsed_m}m {elapsed_text}"
 
         if run_memmon:
             mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.stop().items()}

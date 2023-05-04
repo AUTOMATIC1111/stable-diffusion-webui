@@ -15,14 +15,11 @@ from modules.shared import opts
 def mod2normal(state_dict):
     # this code is copied from https://github.com/victorca25/iNNfer
     if 'conv_first.weight' in state_dict:
-        crt_net = {}
-        items = []
-        for k, v in state_dict.items():
-            items.append(k)
-
-        crt_net['model.0.weight'] = state_dict['conv_first.weight']
-        crt_net['model.0.bias'] = state_dict['conv_first.bias']
-
+        items = [k for k, v in state_dict.items()]
+        crt_net = {
+            'model.0.weight': state_dict['conv_first.weight'],
+            'model.0.bias': state_dict['conv_first.bias'],
+        }
         for k in items.copy():
             if 'RDB' in k:
                 ori_k = k.replace('RRDB_trunk.', 'model.1.sub.')
@@ -51,14 +48,11 @@ def resrgan2normal(state_dict, nb=23):
     # this code is copied from https://github.com/victorca25/iNNfer
     if "conv_first.weight" in state_dict and "body.0.rdb1.conv1.weight" in state_dict:
         re8x = 0
-        crt_net = {}
-        items = []
-        for k, v in state_dict.items():
-            items.append(k)
-
-        crt_net['model.0.weight'] = state_dict['conv_first.weight']
-        crt_net['model.0.bias'] = state_dict['conv_first.bias']
-
+        items = [k for k, v in state_dict.items()]
+        crt_net = {
+            'model.0.weight': state_dict['conv_first.weight'],
+            'model.0.bias': state_dict['conv_first.bias'],
+        }
         for k in items.copy():
             if "rdb" in k:
                 ori_k = k.replace('body.', 'model.1.sub.')
@@ -133,16 +127,12 @@ class UpscalerESRGAN(Upscaler):
         self.user_path = dirname
         super().__init__()
         model_paths = self.find_models(ext_filter=[".pt", ".pth"])
-        scalers = []
         if len(model_paths) == 0:
             scaler_data = UpscalerData(self.model_name, self.model_url, self, 4)
+            scalers = []
             scalers.append(scaler_data)
         for file in model_paths:
-            if "http" in file:
-                name = self.model_name
-            else:
-                name = modelloader.friendly_name(file)
-
+            name = self.model_name if "http" in file else modelloader.friendly_name(file)
             scaler_data = UpscalerData(name, file, self, 4)
             self.scalers.append(scaler_data)
 
@@ -156,13 +146,16 @@ class UpscalerESRGAN(Upscaler):
 
     def load_model(self, path: str):
         if "http" in path:
-            filename = load_file_from_url(url=self.model_url, model_dir=self.model_path,
-                                          file_name="%s.pth" % self.model_name,
-                                          progress=True)
+            filename = load_file_from_url(
+                url=self.model_url,
+                model_dir=self.model_path,
+                file_name=f"{self.model_name}.pth",
+                progress=True,
+            )
         else:
             filename = path
         if not os.path.exists(filename) or filename is None:
-            print("Unable to load %s from %s" % (self.model_path, filename))
+            print(f"Unable to load {self.model_path} from {filename}")
             return None
 
         state_dict = torch.load(filename, map_location='cpu' if devices.device_esrgan.type == 'mps' else None)

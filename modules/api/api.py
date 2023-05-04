@@ -58,8 +58,7 @@ def decode_base64_to_image(encoding):
     if encoding.startswith("data:image/"):
         encoding = encoding.split(";")[1].split(",")[1]
     try:
-        image = Image.open(BytesIO(base64.b64decode(encoding)))
-        return image
+        return Image.open(BytesIO(base64.b64decode(encoding)))
     except Exception as err:
         raise HTTPException(status_code=500, detail="Invalid encoded image")
 
@@ -157,7 +156,7 @@ def api_middleware(app: FastAPI):
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
         if shared.cmd_opts.api_auth:
-            self.credentials = dict()
+            self.credentials = {}
             for auth in shared.cmd_opts.api_auth.split(","):
                 user, password = auth.split(":")
                 self.credentials[user] = password
@@ -206,9 +205,10 @@ class Api:
         return self.app.add_api_route(path, endpoint, **kwargs)
 
     def auth(self, credentials: HTTPBasicCredentials = Depends(HTTPBasic())):
-        if credentials.username in self.credentials:
-            if compare_digest(credentials.password, self.credentials[credentials.username]):
-                return True
+        if credentials.username in self.credentials and compare_digest(
+            credentials.password, self.credentials[credentials.username]
+        ):
+            return True
 
         raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
 
@@ -237,8 +237,7 @@ class Api:
         #find max idx from the scripts in runner and generate a none array to init script_args
         last_arg_index = 1
         for script in script_runner.scripts:
-            if last_arg_index < script.args_to:
-                last_arg_index = script.args_to
+            last_arg_index = max(last_arg_index, script.args_to)
         # None everywhere except position 0 to initialize script args
         script_args = [None]*last_arg_index
         script_args[0] = 0
@@ -247,9 +246,7 @@ class Api:
         with gr.Blocks(): # will throw errors calling ui function without this
             for script in script_runner.scripts:
                 if script.ui(script.is_img2img):
-                    ui_default_values = []
-                    for elem in script.ui(script.is_img2img):
-                        ui_default_values.append(elem.value)
+                    ui_default_values = [elem.value for elem in script.ui(script.is_img2img)]
                     script_args[script.args_from:script.args_to] = ui_default_values
         return script_args
 
@@ -264,11 +261,14 @@ class Api:
         if request.alwayson_scripts and (len(request.alwayson_scripts) > 0):
             for alwayson_script_name in request.alwayson_scripts.keys():
                 alwayson_script = self.get_script(alwayson_script_name, script_runner)
-                if alwayson_script == None:
+                if alwayson_script is None:
                     raise HTTPException(status_code=422, detail=f"always on script {alwayson_script_name} not found")
                 # Selectable script in always on script param check
                 if alwayson_script.alwayson == False:
-                    raise HTTPException(status_code=422, detail=f"Cannot have a selectable script in the always on scripts params")
+                    raise HTTPException(
+                        status_code=422,
+                        detail="Cannot have a selectable script in the always on scripts params",
+                    )
                 # always on script with no arg should always run so you don't really need to add them to the requests
                 if "args" in request.alwayson_scripts[alwayson_script_name]:
                     # min between arg length in scriptrunner and arg length in the request
@@ -489,10 +489,12 @@ class Api:
         options = {}
         for key in shared.opts.data.keys():
             metadata = shared.opts.data_labels.get(key)
-            if(metadata is not None):
-                options.update({key: shared.opts.data.get(key, shared.opts.data_labels.get(key).default)})
+            if (metadata is not None):
+                options[key] = shared.opts.data.get(
+                    key, shared.opts.data_labels.get(key).default
+                )
             else:
-                options.update({key: shared.opts.data.get(key, None)})
+                options[key] = shared.opts.data.get(key, None)
 
         return options
 
