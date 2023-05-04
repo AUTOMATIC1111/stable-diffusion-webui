@@ -23,7 +23,7 @@ fi
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]
 then
-    install_dir="/home/$(whoami)"
+    install_dir="$(pwd)"
 fi
 
 # Name of the subdirectory (defaults to stable-diffusion-webui)
@@ -113,12 +113,13 @@ case "$gpu_info" in
         printf "Experimental support for Renoir: make sure to have at least 4GB of VRAM and 10GB of RAM or enable cpu mode: --use-cpu all --no-half"
         printf "\n%s\n" "${delimiter}"
     ;;
-    *) 
+    *)
     ;;
 esac
 if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
 then
-    export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
+    # AMD users will still use torch 1.13 because 2.0 does not seem to work.
+    export TORCH_COMMAND="pip install torch==1.13.1+rocm5.2 torchvision==0.14.1+rocm5.2 --index-url https://download.pytorch.org/whl/rocm5.2"
 fi  
 
 for preq in "${GIT}" "${python_cmd}"
@@ -172,15 +173,30 @@ else
     exit 1
 fi
 
+# Try using TCMalloc on Linux
+prepare_tcmalloc() {
+    if [[ "${OSTYPE}" == "linux"* ]] && [[ -z "${NO_TCMALLOC}" ]] && [[ -z "${LD_PRELOAD}" ]]; then
+        TCMALLOC="$(ldconfig -p | grep -Po "libtcmalloc.so.\d" | head -n 1)"
+        if [[ ! -z "${TCMALLOC}" ]]; then
+            echo "Using TCMalloc: ${TCMALLOC}"
+            export LD_PRELOAD="${TCMALLOC}"
+        else
+            printf "\e[1m\e[31mCannot locate TCMalloc (improves CPU memory usage)\e[0m\n"
+        fi
+    fi
+}
+
 if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]
 then
     printf "\n%s\n" "${delimiter}"
     printf "Accelerating launch.py..."
     printf "\n%s\n" "${delimiter}"
+    prepare_tcmalloc
     exec accelerate launch --num_cpu_threads_per_process=6 "${LAUNCH_SCRIPT}" "$@"
 else
     printf "\n%s\n" "${delimiter}"
     printf "Launching launch.py..."
-    printf "\n%s\n" "${delimiter}"      
+    printf "\n%s\n" "${delimiter}"
+    prepare_tcmalloc
     exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
 fi
