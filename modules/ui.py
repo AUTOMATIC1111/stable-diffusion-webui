@@ -1520,6 +1520,9 @@ def create_ui():
         with gr.Row():
             with gr.Column(scale=6):
                 settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
+            # button to save panel settings
+            with gr.Column(scale=6):
+                settings_save = gr.Button(value="Save settings", variant='primary', elem_id="settings_save")
             with gr.Column():
                 restart_gradio = gr.Button(value='Reload UI', variant='primary', elem_id="settings_restart_gradio")
 
@@ -1625,6 +1628,22 @@ def create_ui():
         def request_restart():
             shared.state.interrupt()
             shared.state.need_restart = True
+
+        def save_ui_config():
+            # currently only interface settings are saved
+            visit(txt2img_interface, loadsave, "txt2img")
+            visit(img2img_interface, loadsave, "img2img")
+            visit(extras_interface, loadsave, "extras")
+            visit(modelmerger_interface, loadsave, "modelmerger")
+            visit(train_interface, loadsave, "train")
+            with open(ui_config_file, "w", encoding="utf8") as file:
+                json.dump(ui_settings, file, indent=4)
+        # save panel settings to ui-config.json
+        settings_save.click(
+            fn=save_ui_config,
+            inputs=[],
+            outputs=[],
+        )
 
         restart_gradio.click(
             fn=request_restart,
