@@ -223,7 +223,7 @@ def start_ui():
         inbrowser=cmd_opts.autolaunch,
         prevent_thread_lock=True,
         show_api=True,
-        favicon_path='automatic.ico',
+        favicon_path='html/logo.ico',
     )
     shared.demo.server.wants_restart = False
     setup_middleware(app, cmd_opts)

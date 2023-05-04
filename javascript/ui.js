@@ -321,6 +321,16 @@ function selectCheckpoint(name){
     gradioApp().getElementById('change_checkpoint').click()
 }
 
+function updateImg2imgResizeToTextAfterChangingImage(){
+  // At the time this is called from gradio, the image has no yet been replaced.
+  // There may be a better solution, but this is simple and straightforward so I'm going with it.
+  setTimeout(function() {
+      gradioApp().getElementById('img2img_update_resize_to').click()
+  }, 500);
+
+  return []
+}
+
 function create_theme_element() {
   el = document.createElement('img');
   el.id = 'theme-preview';

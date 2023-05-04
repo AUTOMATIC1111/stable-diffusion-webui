@@ -6,6 +6,7 @@ import datetime
 import urllib.request
 import gradio as gr
 import tqdm
+import requests
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.interrogate
@@ -35,6 +36,7 @@ restricted_opts = {
     "outdir_grids",
     "outdir_txt2img_grids",
     "outdir_save",
+    "outdir_init_images"
 }
 
 ui_reorder_categories = [
@@ -301,6 +303,7 @@ options_templates.update(options_section(('saving-images', "Image options"), {
     "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process in extras tab"),
     "use_upscaler_name_as_suffix": OptionInfo(True, "Use upscaler name as filename suffix in the extras tab"),
     "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
+    "save_init_img": OptionInfo(False, "Save init images when using image processing"),
     "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
     "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
     "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
@@ -317,6 +320,7 @@ options_templates.update(options_section(('saving-paths', "Image Paths"), {
     "outdir_txt2img_grids": OptionInfo("outputs/grids", 'Output directory for txt2img grids', component_args=hide_dirs),
     "outdir_img2img_grids": OptionInfo("outputs/grids", 'Output directory for img2img grids', component_args=hide_dirs),
     "outdir_save": OptionInfo("outputs/save", "Directory for saving images using the Save button", component_args=hide_dirs),
+    "outdir_init_images": OptionInfo("outputs/init-images", "Directory for saving init images when using img2img", component_args=hide_dirs),
 }))
 
 options_templates.update(options_section(('cuda', "CUDA Settings"), {
@@ -339,10 +343,12 @@ options_templates.update(options_section(('cuda', "CUDA Settings"), {
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
+    "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
+    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Real-ESRGAN available models", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
     "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers (0 = no tiling)", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Real-ESRGAN available models", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
-    "upscaler_for_img2img": OptionInfo("None", "Default upscaler for image resize operations", gr.Dropdown, lambda: {"choices": [x.name for x in sd_upscalers]}),
+    "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
+    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SCUNET upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),    
     "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution rather than first pass"),
     "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
 }))
@@ -403,6 +409,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "font": OptionInfo("", "Font for image grids that have text"),
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
+    "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"),
     "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
@@ -428,6 +435,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
     's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    's_min_uncond': OptionInfo(0, "Negative Guidance minimum sigma", gr.Slider, {"minimum": 0.0, "maximum": 4.0, "step": 0.01}),
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}),

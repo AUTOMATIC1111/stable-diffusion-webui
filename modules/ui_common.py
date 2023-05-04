@@ -120,7 +120,7 @@ def create_output_panel(tabname, outdir):
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(value=['automatic.png'], label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(preview=False, container=False, columns=[1,2,3,4,5,6]) # <576px, <768px, <992px, <1200px, <1400px, >1400px
+            result_gallery = gr.Gallery(value=['html/logo.png'], label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(preview=False, container=False, columns=[1,2,3,4,5,6]) # <576px, <768px, <992px, <1200px, <1400px, >1400px
 
         generation_info = None
         with gr.Column():
