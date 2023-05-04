@@ -65,8 +65,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         print(generation_info_js)
 
     for img in processed.images:
-        if hasattr(img, 'already_saved_as'):
-            img.already_saved_as += f'?{int(time())}'
+        img.already_saved_as += f'?{int(time())}'
 
     if opts.do_not_show_images:
         processed.images = []
