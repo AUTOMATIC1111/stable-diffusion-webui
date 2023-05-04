@@ -9,6 +9,7 @@ import subprocess as sp
 
 from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
+from modules.shared import opts
 import modules.images
 
 folder_symbol = '\U0001f4c2'  # 📂
@@ -125,7 +126,7 @@ Requested path was: {f}
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(columns=4)
+            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(columns=4).style(preview=opts.gallery_preview)
 
         generation_info = None
         with gr.Column():
