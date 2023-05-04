@@ -48,35 +48,28 @@ function imageMaskResize() {
 */
 
 onUiLoaded(function(){
-	
 	const color_box = '<input type="color">';
 	const brush_size = '<input type="range" min="0.75" max="110.0">';
 	let is_drawing = false;
 	let img_src = [];
 	let spl_instances = [];
 	let spl_pan_instances = [];
+	let img2img_tab_index = 0;
 	const container = gradioApp().querySelector(".gradio-container");
     const observer  = new MutationObserver(() => 
 		gradioApp().querySelectorAll('div[data-testid="image"]').forEach(function (elem, i){			
 			let img_parent = elem.parentElement.querySelector('div[data-testid="image"] > div');
 			let img = img_parent.querySelector('img');
-			if(img && !is_drawing){
+			if(img){
 				if(img_src[i] != img.src){
 					let tool_buttons = img_parent.querySelectorAll('button');
-					
-					
-					
-					
-					if(is_drawing){
-						return;
-					}
-					//console.log();
 					//console.log(tool_buttons);
 					if(tool_buttons.length > 2){
 						let spl_parent = elem.parentElement;
 						let spl;
 						let spl_pan;
 						let isPanning;
+						let splid;
 						
 						if(spl_parent.className != "spl-pane"){							
 							spl = new Spotlight();	
@@ -91,11 +84,11 @@ onUiLoaded(function(){
 							spl.addControl("clear",spl_clear_handler);
 							
 							spl_instances[i] = spl;
-							spl_pan_instances[i] = spl_pan;
+							spl_pan_instances[i] = spl_pan;							
 							
 						}else{
 							spl = spl_instances[i];							
-							spl_pan = spl_pan_instances[i];							
+							spl_pan = spl_pan_instances[i];														
 						}
 						
 						img_src[i] = img.src;						
@@ -114,7 +107,7 @@ onUiLoaded(function(){
 							setTimeout(function() { 
 								spl.close(false, true);
 								img_parent.style.flexGrow = "1";
-								img_src[i] = "";
+								img_src[i] = "";								
 								elem.style.transform = "none";
 							}, 200);					
 							
@@ -206,9 +199,7 @@ onUiLoaded(function(){
 							}else{
 								setTimeout(function() { update_brush(false);}, 100);		
 							} 
-							
-							
-							
+
 						}
 
 						let w = img.naturalWidth; 
@@ -230,14 +221,10 @@ onUiLoaded(function(){
 						spl.panzoom(false);
 						setTimeout(function() { init_drawing_tools(); }, 500);
 						
-						img.addEventListener('mouseout', function(e){
-							is_drawing = false;
+						img.addEventListener('mouseup', function(e){
+							img_src[i] = img.src;							
 						})
-						img.addEventListener('mouseover', function(e){
-							is_drawing = true;
-							
-						})
-						
+
 					}
 				}
 			}
@@ -305,8 +292,8 @@ function onLastUIUpdate(){
 		//}
 	}
 }
-*/
-/* onUiUpdate(function() {	
+
+onUiUpdate(function() {	
 	if(intervalLastUIUpdate != null) clearInterval(intervalLastUIUpdate);
 	intervalLastUIUpdate = setInterval(onLastUIUpdate, 1000);	
 }) */
