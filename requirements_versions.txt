@@ -29,3 +29,15 @@ safetensors==0.3.1
 httpcore<=0.15
 fastapi==0.94.0
 mediapipe
+addict
+future
+lmdb
+opencv-python
+pyyaml
+scipy
+tb-nightly
+torchvision
+tqdm
+yapf
+lpips
+gdown # supports downloading the large file from Google Drive
