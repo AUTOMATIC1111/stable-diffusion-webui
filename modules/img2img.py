@@ -15,7 +15,6 @@ import modules.processing as processing
 from modules.ui import plaintext_to_html
 import modules.images as images
 import modules.scripts
-from time import time
 
 
 def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
@@ -179,9 +178,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     generation_info_js = processed.js()
     if opts.samples_log_stdout:
         print(generation_info_js)
-
-    for img in processed.images:
-        img.already_saved_as += f'?{int(time())}'
 
     if opts.do_not_show_images:
         processed.images = []
