@@ -32,3 +32,15 @@ torchsde
 safetensors
 psutil
 rich
+addict
+future
+lmdb
+opencv-python
+pyyaml
+scipy
+tb-nightly
+torchvision
+tqdm
+yapf
+lpips
+gdown # supports downloading the large file from Google Drive
