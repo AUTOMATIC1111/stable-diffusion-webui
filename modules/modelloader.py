@@ -133,11 +133,8 @@ forbidden_upscaler_classes = set()
 
 
 def list_builtin_upscalers():
-    load_upscalers()
-
     builtin_upscaler_classes.clear()
     builtin_upscaler_classes.extend(Upscaler.__subclasses__())
-
 
 def forbid_loaded_nonbuiltin_upscalers():
     for cls in Upscaler.__subclasses__():
