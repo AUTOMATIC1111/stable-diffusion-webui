@@ -583,7 +583,6 @@ class Api:
         try:
             import torch
             if shared.cmd_opts.use_ipex():
-                import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
                 system = { 'free': (torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated()), 'used': torch.xpu.memory_allocated(), 'total': torch.xpu.get_device_properties("xpu").total_memory }
                 s = dict(torch.xpu.memory_stats("xpu"))
                 allocated = { 'current': s['allocated_bytes.all.current'], 'peak': s['allocated_bytes.all.peak'] }

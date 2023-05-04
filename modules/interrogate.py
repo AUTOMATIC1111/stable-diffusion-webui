@@ -5,10 +5,6 @@ from pathlib import Path
 import re
 
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=unused-import,import-error
-except:
-    pass
 import torch.hub # pylint: disable=ungrouped-imports
 
 from torchvision import transforms

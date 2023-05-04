@@ -2,10 +2,6 @@ import math
 import psutil
 
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=unused-import,import-error
-except:
-    pass
 from torch import einsum
 
 from ldm.util import default

@@ -2,10 +2,6 @@ import math
 from collections import namedtuple
 
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 
 from modules import prompt_parser, devices, sd_hijack
 from modules.shared import opts

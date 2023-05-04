@@ -5,10 +5,6 @@ import random
 import logging
 from typing import Any, Dict, List
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
-    pass
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 import cv2

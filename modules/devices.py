@@ -2,10 +2,6 @@ import sys
 import contextlib
 import torch
 from modules import cmd_args, shared
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
-    pass
 
 if sys.platform == "darwin":
     from modules import mac_specific # pylint: disable=ungrouped-imports

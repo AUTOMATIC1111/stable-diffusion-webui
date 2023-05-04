@@ -7,10 +7,6 @@ https://github.com/samb-t/unleashing-transformers/blob/master/models/vqgan.py
 '''
 import numpy as np
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 import torch.nn as nn
 import torch.nn.functional as F
 import copy

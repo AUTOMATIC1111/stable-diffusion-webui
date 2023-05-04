@@ -1,10 +1,6 @@
 import platform
 from packaging import version
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
-    pass
 from modules.sd_hijack_utils import CondFunc
 
 

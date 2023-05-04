@@ -1,9 +1,5 @@
 import open_clip.tokenizer
 import torch
-try:
-    import intel_extension_for_pytorch as ipex
-except:
-    pass
 
 from modules import sd_hijack_clip, devices
 
