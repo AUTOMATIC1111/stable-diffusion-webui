@@ -66,7 +66,7 @@ function randomId(){
 // starts sending progress requests to "/internal/progress" uri, creating progressbar above progressbarContainer element and
 // preview inside gallery element. Cleans up all created stuff when the task is over and calls atEnd.
 // calls onProgress every time there is a progress update
-function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgress){
+function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgress, inactivityTimeout=40){
     var dateStart = new Date()
     var wasEverActive = false
     var parentProgressbar = progressbarContainer.parentNode
@@ -138,7 +138,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
                 return
             }
 
-            if(elapsedFromStart > 5 && !res.queued && !res.active){
+            if(elapsedFromStart > inactivityTimeout && !res.queued && !res.active){
                 removeProgressBar()
                 return
             }
