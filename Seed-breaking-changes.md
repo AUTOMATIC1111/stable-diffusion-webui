@@ -1,3 +1,6 @@
+# v1.1.0 #9669 - Fix prompt schedule for second order samplers
+Second order samplers (Heun, DPM2/a, DPM++ 2S/a, DPM++ SDE / Karras) cause the prompt schedule to run twice as fast when prompting something like [dog:cat:0.5] (i.e. for 100 steps, prompt is dog until step 25, cat until 50, and remains dog until 100). This fixes that by checking if the sampler is any of these second order samplers and multiplies the step count by 2 for calculating the prompt schedule.
+
 # [2023-03-26](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/80b26d2a69617b75d2d01c1e6b7d11445815ed4d) - Apply LoRA by altering layer's weights
 
 Highres fix & img2img mode affected
