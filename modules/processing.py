@@ -492,11 +492,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
-        if sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+        if p.override_settings.get('sd_model_checkpoint', None) is not None and sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
             p.override_settings.pop('sd_model_checkpoint', None)
             sd_models.reload_model_weights()
         for k, v in p.override_settings.items():
             setattr(opts, k, v)
+            if k == 'sd_model_checkpoint':
+                sd_models.reload_model_weights()
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()
 

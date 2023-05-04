@@ -143,8 +143,8 @@ def connect_paste_params_buttons():
         binding.paste_button.click(
             fn=None,
             _js=f"switch_to_{binding.tabname}",
-            inputs=None,
-            outputs=None,
+            inputs=[],
+            outputs=[],
         )
 
 
@@ -343,7 +343,7 @@ def create_override_settings_dict(text_pairs):
     return res
 
 
-def connect_paste(button, paste_fields, input_comp, override_settings_component, tabname): # pylint: disable=redefined-outer-name
+def connect_paste(button, local_paste_fields, input_comp, override_settings_component, tabname):
     def paste_func(prompt):
         if 'Negative prompt' not in prompt and 'Steps' not in prompt:
             prompt = None
@@ -357,7 +357,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         params = parse_generation_parameters(prompt)
         script_callbacks.infotext_pasted_callback(prompt, params)
         res = []
-        for output, key in paste_fields:
+        for output, key in local_paste_fields:
             if callable(key):
                 v = key(params)
             else:
@@ -394,12 +394,12 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
                 vals[param_name] = v
             vals_pairs = [f"{k}: {v}" for k, v in vals.items()]
             return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=len(vals_pairs) > 0)
-        paste_fields = paste_fields + [(override_settings_component, paste_settings)]
+        local_paste_fields = local_paste_fields + [(override_settings_component, paste_settings)]
 
     button.click(
         fn=paste_func,
         inputs=[input_comp],
-        outputs=[x[0] for x in paste_fields],
+        outputs=[x[0] for x in local_paste_fields],
     )
     button.click(
         fn=None,

@@ -74,7 +74,7 @@ def activate(p, extra_network_data):
         try:
             extra_network.activate(p, extra_network_args)
         except Exception as e:
-            errors.display(e, f"Error activating extra network {extra_network_name} with arguments {extra_network_args}")
+            errors.display(e, f"activating extra network {extra_network_name} with arguments {extra_network_args}")
 
     for extra_network_name, extra_network in extra_network_registry.items():
         args = extra_network_data.get(extra_network_name, None)
@@ -84,7 +84,7 @@ def activate(p, extra_network_data):
         try:
             extra_network.activate(p, [])
         except Exception as e:
-            errors.display(e, f"Error activating extra network {extra_network_name}")
+            errors.display(e, f"activating extra network {extra_network_name}")
 
 
 def deactivate(p, extra_network_data):
@@ -99,7 +99,7 @@ def deactivate(p, extra_network_data):
         try:
             extra_network.deactivate(p)
         except Exception as e:
-            errors.display(e, f"Error deactivating extra network {extra_network_name}")
+            errors.display(e, f"deactivating extra network {extra_network_name}")
 
     for extra_network_name, extra_network in extra_network_registry.items():
         args = extra_network_data.get(extra_network_name, None)
@@ -109,7 +109,7 @@ def deactivate(p, extra_network_data):
         try:
             extra_network.deactivate(p)
         except Exception as e:
-            errors.display(e, f"Error deactivating unmentioned extra network {extra_network_name}")
+            errors.display(e, f"deactivating unmentioned extra network {extra_network_name}")
 
 
 re_extra_net = re.compile(r"<(\w+):([^>]+)>")

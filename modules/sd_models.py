@@ -212,18 +212,18 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
         pl_sd = None
         with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
             _, extension = os.path.splitext(checkpoint_file)
-            if 'v1-5-pruned-emaonly.safetensors' in checkpoint_file and not shared.opts.stream_load:
-                if extension.lower() == ".safetensors":
-                    pl_sd = safetensors.torch.load_file(checkpoint_file, device='cpu')
-                else:
-                    pl_sd = torch.load(checkpoint_file, map_location='cpu')
-            else:
+            if shared.opts.stream_load:
                 if extension.lower() == ".safetensors":
                     buffer = f.read()
                     pl_sd = safetensors.torch.load(buffer)
                 else:
                     buffer = io.BytesIO(f.read())
                     pl_sd = torch.load(buffer, map_location='cpu')
+            else:
+                if extension.lower() == ".safetensors":
+                    pl_sd = safetensors.torch.load_file(checkpoint_file, device='cpu')
+                else:
+                    pl_sd = torch.load(f, map_location='cpu')
             sd = get_state_dict_from_checkpoint(pl_sd)
         del pl_sd
     except Exception as e:
@@ -342,10 +342,9 @@ sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_w
 
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None):
-    shared.debug(f'Load model: {checkpoint_info}')
+    shared.debug(f'Load model: {checkpoint_info} {already_loaded_state_dict}')
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
-    do_inpainting_hijack()
     if timer is None:
         timer = Timer()
     current_checkpoint_info = None
@@ -353,9 +352,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
         current_checkpoint_info = shared.sd_model.sd_checkpoint_info
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
         shared.sd_model = None
-    gc.collect()
-    devices.torch_gc()
+        gc.collect()
+        devices.torch_gc()
     shared.debug(f'Model unloaded: {memory_stats()}')
+    do_inpainting_hijack()
     if already_loaded_state_dict is not None:
         state_dict = already_loaded_state_dict
     else:
@@ -380,6 +380,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
             sd_model = instantiate_from_config(sd_config.model)
     except Exception:
         sd_model = instantiate_from_config(sd_config.model)
+    # sd_model = instantiate_from_config(sd_config.model)
     sd_model.used_config = checkpoint_config
     timer.record("create")
     load_model_weights(sd_model, checkpoint_info, state_dict, timer)
@@ -403,6 +404,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     script_callbacks.model_loaded_callback(sd_model)
     timer.record("callbacks")
     shared.log.info(f"Model loaded in {timer.summary()}")
+    gc.collect()
     shared.debug(f'Model load finished: {memory_stats()}')
     return sd_model
 

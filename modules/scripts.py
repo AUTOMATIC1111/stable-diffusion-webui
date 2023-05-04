@@ -261,6 +261,14 @@ class ScriptRunner:
         from modules import scripts_auto_postprocessing
 
         self.scripts.clear()
+        self.selectable_scripts.clear()
+        self.alwayson_scripts.clear()
+        self.titles.clear()
+        self.infotext_fields.clear()
+        self.paste_field_names.clear()
+        self.script_load_ctr = 0
+
+        self.scripts.clear()
         self.alwayson_scripts.clear()
         self.selectable_scripts.clear()
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
@@ -428,7 +436,6 @@ class ScriptRunner:
                     self.scripts[si].filename = filename
                     self.scripts[si].args_from = args_from
                     self.scripts[si].args_to = args_to
-
 
 scripts_txt2img = ScriptRunner()
 scripts_img2img = ScriptRunner()

@@ -387,7 +387,6 @@ function reconnect_ui() {
         loadingStarted = Date.now();
         loadingMonitor = setInterval(() => {
           elapsed = Date.now() - loadingStarted;
-          console.log('Loading', elapsed)
           if (elapsed > 3000 && loading) loading.style.display = 'none';
         }, 5000);
       }

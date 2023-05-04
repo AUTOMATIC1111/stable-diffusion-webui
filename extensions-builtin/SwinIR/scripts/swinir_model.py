@@ -4,10 +4,10 @@ import torch
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
 from tqdm import tqdm
-from rich import print, progress # pylint: disable=redefined-builtin
+from rich import progress
 
 from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import cmd_opts, opts, state
+from modules.shared import opts, state
 from swinir_model_arch import SwinIR as net
 from swinir_model_arch_v2 import Swin2SR as net2
 from modules.upscaler import Upscaler, UpscalerData
@@ -88,7 +88,7 @@ class UpscalerSwinIR(Upscaler):
             params = "params_ema"
 
         with progress.open(filename, 'rb', description=f'Loading weights: [cyan]{filename}', auto_refresh=True) as f:
-            pretrained_model = torch.load(filename)
+            pretrained_model = torch.load(f)
         if params is not None and params in pretrained_model:
             model.load_state_dict(pretrained_model[params], strict=True)
         else:
@@ -151,7 +151,7 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
             for w_idx in w_idx_list:
                 if state.interrupted or state.skipped:
                     break
-                
+
                 in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
                 out_patch = model(in_patch)
                 out_patch_mask = torch.ones_like(out_patch)

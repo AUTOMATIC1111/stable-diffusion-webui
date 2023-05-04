@@ -562,7 +562,7 @@ footer {
     height: 9em;
     width: 9em;
     cursor: pointer;
-    background-image: url('./file=html/card-no-preview.png');
+    background-image: url('../html/card-no-preview.png');
     background-size: cover;
     background-position: center center;
     position: relative;
@@ -592,11 +592,11 @@ footer {
     box-shadow: 0 0 5px rgba(128, 128, 128, 0.5);
     border-radius: 0.2em;
     position: relative;
-    background-size: auto 100%;
+    background-size: cover;
     background-position: center;
     overflow: hidden;
     cursor: pointer;
-    background-image: url('./file=html/card-no-preview.png')
+    background-image: url('../html/card-no-preview.png')
 }
 
 .extra-network-cards .card:hover { box-shadow: 0 0 2px 0.3em rgba(0, 128, 255, 0.35); }

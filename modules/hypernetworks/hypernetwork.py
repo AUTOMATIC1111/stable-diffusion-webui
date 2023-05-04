@@ -1,24 +1,21 @@
-import csv
 import datetime
 import glob
 import html
 import os
-import sys
+from collections import deque
 import inspect
-
-import modules.textual_inversion.dataset
-import torch
+from statistics import stdev, mean
+from rich import progress
 import tqdm
+import torch
+from torch import einsum
+from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
 from einops import rearrange, repeat
 from ldm.util import default
 from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint, errors
+import modules.textual_inversion.dataset
 from modules.textual_inversion import textual_inversion, logging
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
-from torch import einsum
-from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
-
-from collections import defaultdict, deque
-from statistics import stdev, mean
 
 
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
@@ -245,7 +242,8 @@ class Hypernetwork:
         if self.name is None:
             self.name = os.path.splitext(os.path.basename(filename))[0]
 
-        state_dict = torch.load(filename, map_location='cpu')
+        with progress.open(filename, 'rb', description=f'Loading hypernetwork: [cyan]{filename}', auto_refresh=True) as f:
+            state_dict = torch.load(f, map_location='cpu')
 
         self.layer_structure = state_dict.get('layer_structure', [1, 2, 1])
         self.optional_info = state_dict.get('optional_info', None)
@@ -539,7 +537,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
         return hypernetwork, filename
 
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
-    
+
     clip_grad = torch.nn.utils.clip_grad_value_ if clip_grad_mode == "value" else torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else None
     if clip_grad:
         clip_grad_sched = LearnRateScheduler(clip_grad_value, steps, initial_step, verbose=False)
@@ -595,7 +593,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
         scaler = torch.xpu.amp.GradScaler()
     else:
         scaler = torch.cuda.amp.GradScaler()
-    
+
     batch_size = ds.batch_size
     gradient_step = ds.gradient_step
     # n steps = batch_size * gradient_step * n image processed
@@ -638,7 +636,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                 if clip_grad:
                     clip_grad_sched.step(hypernetwork.step)
-                
+
                 with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
                     if use_weight:
@@ -659,14 +657,14 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                     _loss_step += loss.item()
                 scaler.scale(loss).backward()
-                
+
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
                 loss_logging.append(_loss_step)
                 if clip_grad:
                     clip_grad(weights, clip_grad_sched.learn_rate)
-                
+
                 scaler.step(optimizer)
                 scaler.update()
                 hypernetwork.step += 1
@@ -674,9 +672,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                 optimizer.zero_grad(set_to_none=True)
                 loss_step = _loss_step
                 _loss_step = 0
-
                 steps_done = hypernetwork.step + 1
-                
                 epoch_num = hypernetwork.step // steps_per_epoch
                 epoch_step = hypernetwork.step % steps_per_epoch
 

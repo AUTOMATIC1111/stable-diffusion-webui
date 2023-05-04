@@ -20,6 +20,8 @@ Stuff to be added...
 - Monitor file changes by misbehaving extensions
 - Kitchen theme: <https://github.com/canisminor1990/sd-webui-kitchen-theme>
 - Lightbox improvements
+- Check duplicate extensions
+- Reload browser on server restart
 
 ## Investigate
 
