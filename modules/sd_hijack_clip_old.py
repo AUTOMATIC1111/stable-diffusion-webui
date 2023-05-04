@@ -57,11 +57,11 @@ def process_text_old(self: sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase,
 
             token_count = len(remade_tokens)
             remade_tokens = remade_tokens + [id_end] * (maxlen - 2 - len(remade_tokens))
-            remade_tokens = [id_start] + remade_tokens[0:maxlen - 2] + [id_end]
+            remade_tokens = [id_start] + remade_tokens[:maxlen - 2] + [id_end]
             cache[tuple_tokens] = (remade_tokens, fixes, multipliers)
 
         multipliers = multipliers + [1.0] * (maxlen - 2 - len(multipliers))
-        multipliers = [1.0] + multipliers[0:maxlen - 2] + [1.0]
+        multipliers = [1.0] + multipliers[:maxlen - 2] + [1.0]
 
         remade_batch_tokens.append(remade_tokens)
         hijack_fixes.append(fixes)

@@ -47,7 +47,7 @@ class DisableInitialization:
             return res
 
         def transformers_modeling_utils_load_pretrained_model(*args, **kwargs):
-            args = args[0:3] + ('/', ) + args[4:]  # resolved_archive_file; must set it to something to prevent what seems to be a bug
+            args = args[:3] + ('/', ) + args[4:]
             return self.transformers_modeling_utils_load_pretrained_model(*args, **kwargs)
 
         def transformers_utils_hub_get_file_from_cache(original, url, *args, **kwargs):

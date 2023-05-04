@@ -24,7 +24,11 @@ def cumsum_fix(input, cumsum_func, *args, **kwargs):
         output_dtype = kwargs.get('dtype', input.dtype)
         if output_dtype == torch.int64:
             return cumsum_func(input.cpu(), *args, **kwargs).to(input.device)
-        elif output_dtype == torch.bool or cumsum_needs_int_fix and (output_dtype == torch.int8 or output_dtype == torch.int16):
+        elif (
+            output_dtype == torch.bool
+            or cumsum_needs_int_fix
+            and output_dtype in [torch.int8, torch.int16]
+        ):
             return cumsum_func(input.to(torch.int32), *args, **kwargs).to(torch.int64)
     return cumsum_func(input, *args, **kwargs)
 

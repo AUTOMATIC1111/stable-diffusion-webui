@@ -71,8 +71,7 @@ def image_from_url_text(filedata):
         filedata = filedata[len("data:image/png;base64,"):]
 
     filedata = base64.decodebytes(filedata.encode('utf-8'))
-    image = Image.open(io.BytesIO(filedata))
-    return image
+    return Image.open(io.BytesIO(filedata))
 
 
 def add_paste_fields(tabname, init_img, fields, override_settings_component=None):
@@ -87,10 +86,10 @@ def add_paste_fields(tabname, init_img, fields, override_settings_component=None
 
 
 def create_buttons(tabs_list):
-    buttons = {}
-    for tab in tabs_list:
-        buttons[tab] = gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab")
-    return buttons
+    return {
+        tab: gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab")
+        for tab in tabs_list
+    }
 
 
 def bind_buttons(buttons, send_image, send_generate_info):
@@ -151,11 +150,7 @@ def connect_paste_params_buttons():
 
 
 def send_image_and_dimensions(x):
-    if isinstance(x, Image.Image):
-        img = x
-    else:
-        img = image_from_url_text(x)
-
+    img = x if isinstance(x, Image.Image) else image_from_url_text(x)
     if shared.opts.send_size and isinstance(img, Image.Image):
         w = img.width
         h = img.height
@@ -235,8 +230,6 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     returns a dict with field values
     """
 
-    res = {}
-
     prompt = ""
     negative_prompt = ""
 
@@ -247,7 +240,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         lines.append(lastline)
         lastline = ''
 
-    for i, line in enumerate(lines):
+    for line in lines:
         line = line.strip()
         if line.startswith("Negative prompt:"):
             done_with_prompt = True
@@ -258,15 +251,13 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         else:
             prompt += ("" if prompt == "" else "\n") + line
 
-    res["Prompt"] = prompt
-    res["Negative prompt"] = negative_prompt
-
+    res = {"Prompt": prompt, "Negative prompt": negative_prompt}
     for k, v in re_param.findall(lastline):
         v = v[1:-1] if v[0] == '"' and v[-1] == '"' else v
         m = re_imagesize.match(v)
         if m is not None:
-            res[k+"-1"] = m.group(1)
-            res[k+"-2"] = m.group(2)
+            res[f"{k}-1"] = m.group(1)
+            res[f"{k}-2"] = m.group(2)
         else:
             res[k] = v
 
@@ -355,11 +346,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         res = []
 
         for output, key in paste_fields:
-            if callable(key):
-                v = key(params)
-            else:
-                v = params.get(key, None)
-
+            v = key(params) if callable(key) else params.get(key, None)
             if v is None:
                 res.append(gr.update())
             elif isinstance(v, type_of_gr_update):
@@ -368,11 +355,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
                 try:
                     valtype = type(output.value)
 
-                    if valtype == bool and v == "False":
-                        val = False
-                    else:
-                        val = valtype(v)
-
+                    val = False if valtype == bool and v == "False" else valtype(v)
                     res.append(gr.update(value=val))
                 except Exception:
                     res.append(gr.update())

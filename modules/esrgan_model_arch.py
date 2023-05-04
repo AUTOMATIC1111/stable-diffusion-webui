@@ -130,10 +130,7 @@ class ResidualDenseBlock_5C(nn.Module):
         self.conv4 = conv_block(nf+3*gc, gc, kernel_size, stride, bias=bias, pad_type=pad_type,
             norm_type=norm_type, act_type=act_type, mode=mode, convtype=convtype,
             spectral_norm=spectral_norm)
-        if mode == 'CNA':
-            last_act = None
-        else:
-            last_act = act_type
+        last_act = None if mode == 'CNA' else act_type
         self.conv5 = conv_block(nf+4*gc, nf, 3, stride, bias=bias, pad_type=pad_type,
             norm_type=norm_type, act_type=last_act, mode=mode, convtype=convtype,
             spectral_norm=spectral_norm)
@@ -148,10 +145,7 @@ class ResidualDenseBlock_5C(nn.Module):
         if self.conv1x1:
             x4 = x4 + x2
         x5 = self.conv5(torch.cat((x, x1, x2, x3, x4), 1))
-        if self.noise:
-            return self.noise(x5.mul(0.2) + x)
-        else:
-            return x5 * 0.2 + x
+        return self.noise(x5.mul(0.2) + x) if self.noise else x5 * 0.2 + x
 
 
 ####################
@@ -261,10 +255,10 @@ class Upsample(nn.Module):
 
     def extra_repr(self):
         if self.scale_factor is not None:
-            info = 'scale_factor=' + str(self.scale_factor)
+            info = f'scale_factor={str(self.scale_factor)}'
         else:
-            info = 'size=' + str(self.size)
-        info += ', mode=' + self.mode
+            info = f'size={str(self.size)}'
+        info += f', mode={self.mode}'
         return info
 
 
@@ -330,9 +324,7 @@ def make_layer(basic_block, num_basic_block, **kwarg):
     Returns:
         nn.Sequential: Stacked blocks in nn.Sequential.
     """
-    layers = []
-    for _ in range(num_basic_block):
-        layers.append(basic_block(**kwarg))
+    layers = [basic_block(**kwarg) for _ in range(num_basic_block)]
     return nn.Sequential(*layers)
 
 
@@ -394,8 +386,7 @@ def pad(pad_type, padding):
 
 def get_valid_padding(kernel_size, dilation):
     kernel_size = kernel_size + (kernel_size - 1) * (dilation - 1)
-    padding = (kernel_size - 1) // 2
-    return padding
+    return (kernel_size - 1) // 2
 
 
 class ShortcutBlock(nn.Module):
@@ -405,8 +396,7 @@ class ShortcutBlock(nn.Module):
         self.sub = submodule
 
     def forward(self, x):
-        output = x + self.sub(x)
-        return output
+        return x + self.sub(x)
 
     def __repr__(self):
         return 'Identity + \n|' + self.sub.__repr__().replace('\n', '\n|')
@@ -421,8 +411,7 @@ def sequential(*args):
     modules = []
     for module in args:
         if isinstance(module, nn.Sequential):
-            for submodule in module.children():
-                modules.append(submodule)
+            modules.extend(iter(module.children()))
         elif isinstance(module, nn.Module):
             modules.append(module)
     return nn.Sequential(*modules)

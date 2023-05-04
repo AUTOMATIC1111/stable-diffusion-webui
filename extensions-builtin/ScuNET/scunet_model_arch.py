@@ -181,45 +181,108 @@ class SCUNet(nn.Module):
         self.m_head = [nn.Conv2d(in_nc, dim, 3, 1, 1, bias=False)]
 
         begin = 0
-        self.m_down1 = [ConvTransBlock(dim // 2, dim // 2, self.head_dim, self.window_size, dpr[i + begin],
-                                       'W' if not i % 2 else 'SW', input_resolution)
-                        for i in range(config[0])] + \
-                       [nn.Conv2d(dim, 2 * dim, 2, 2, 0, bias=False)]
+        self.m_down1 = [
+            ConvTransBlock(
+                dim // 2,
+                dim // 2,
+                self.head_dim,
+                self.window_size,
+                dpr[i + begin],
+                'SW' if i % 2 else 'W',
+                input_resolution,
+            )
+            for i in range(config[0])
+        ] + [nn.Conv2d(dim, 2 * dim, 2, 2, 0, bias=False)]
 
         begin += config[0]
-        self.m_down2 = [ConvTransBlock(dim, dim, self.head_dim, self.window_size, dpr[i + begin],
-                                       'W' if not i % 2 else 'SW', input_resolution // 2)
-                        for i in range(config[1])] + \
-                       [nn.Conv2d(2 * dim, 4 * dim, 2, 2, 0, bias=False)]
+        self.m_down2 = [
+            ConvTransBlock(
+                dim,
+                dim,
+                self.head_dim,
+                self.window_size,
+                dpr[i + begin],
+                'SW' if i % 2 else 'W',
+                input_resolution // 2,
+            )
+            for i in range(config[1])
+        ] + [nn.Conv2d(2 * dim, 4 * dim, 2, 2, 0, bias=False)]
 
         begin += config[1]
-        self.m_down3 = [ConvTransBlock(2 * dim, 2 * dim, self.head_dim, self.window_size, dpr[i + begin],
-                                       'W' if not i % 2 else 'SW', input_resolution // 4)
-                        for i in range(config[2])] + \
-                       [nn.Conv2d(4 * dim, 8 * dim, 2, 2, 0, bias=False)]
+        self.m_down3 = [
+            ConvTransBlock(
+                2 * dim,
+                2 * dim,
+                self.head_dim,
+                self.window_size,
+                dpr[i + begin],
+                'SW' if i % 2 else 'W',
+                input_resolution // 4,
+            )
+            for i in range(config[2])
+        ] + [nn.Conv2d(4 * dim, 8 * dim, 2, 2, 0, bias=False)]
 
         begin += config[2]
-        self.m_body = [ConvTransBlock(4 * dim, 4 * dim, self.head_dim, self.window_size, dpr[i + begin],
-                                      'W' if not i % 2 else 'SW', input_resolution // 8)
-                       for i in range(config[3])]
+        self.m_body = [
+            ConvTransBlock(
+                4 * dim,
+                4 * dim,
+                self.head_dim,
+                self.window_size,
+                dpr[i + begin],
+                'SW' if i % 2 else 'W',
+                input_resolution // 8,
+            )
+            for i in range(config[3])
+        ]
 
         begin += config[3]
-        self.m_up3 = [nn.ConvTranspose2d(8 * dim, 4 * dim, 2, 2, 0, bias=False), ] + \
-                     [ConvTransBlock(2 * dim, 2 * dim, self.head_dim, self.window_size, dpr[i + begin],
-                                     'W' if not i % 2 else 'SW', input_resolution // 4)
-                      for i in range(config[4])]
+        self.m_up3 = [
+            nn.ConvTranspose2d(8 * dim, 4 * dim, 2, 2, 0, bias=False),
+        ] + [
+            ConvTransBlock(
+                2 * dim,
+                2 * dim,
+                self.head_dim,
+                self.window_size,
+                dpr[i + begin],
+                'SW' if i % 2 else 'W',
+                input_resolution // 4,
+            )
+            for i in range(config[4])
+        ]
 
         begin += config[4]
-        self.m_up2 = [nn.ConvTranspose2d(4 * dim, 2 * dim, 2, 2, 0, bias=False), ] + \
-                     [ConvTransBlock(dim, dim, self.head_dim, self.window_size, dpr[i + begin],
-                                     'W' if not i % 2 else 'SW', input_resolution // 2)
-                      for i in range(config[5])]
+        self.m_up2 = [
+            nn.ConvTranspose2d(4 * dim, 2 * dim, 2, 2, 0, bias=False),
+        ] + [
+            ConvTransBlock(
+                dim,
+                dim,
+                self.head_dim,
+                self.window_size,
+                dpr[i + begin],
+                'SW' if i % 2 else 'W',
+                input_resolution // 2,
+            )
+            for i in range(config[5])
+        ]
 
         begin += config[5]
-        self.m_up1 = [nn.ConvTranspose2d(2 * dim, dim, 2, 2, 0, bias=False), ] + \
-                     [ConvTransBlock(dim // 2, dim // 2, self.head_dim, self.window_size, dpr[i + begin],
-                                     'W' if not i % 2 else 'SW', input_resolution)
-                      for i in range(config[6])]
+        self.m_up1 = [
+            nn.ConvTranspose2d(2 * dim, dim, 2, 2, 0, bias=False),
+        ] + [
+            ConvTransBlock(
+                dim // 2,
+                dim // 2,
+                self.head_dim,
+                self.window_size,
+                dpr[i + begin],
+                'SW' if i % 2 else 'W',
+                input_resolution,
+            )
+            for i in range(config[6])
+        ]
 
         self.m_tail = [nn.Conv2d(dim, in_nc, 3, 1, 1, bias=False)]
 

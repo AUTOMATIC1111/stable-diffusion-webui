@@ -20,16 +20,17 @@ def run_pnginfo(image):
     geninfo, items = images.read_info_from_image(image)
     items = {**{'parameters': geninfo}, **items}
 
-    info = ''
-    for key, text in items.items():
-        info += f"""
+    info = ''.join(
+        f"""
 <div>
 <p><b>{plaintext_to_html(str(key))}</b></p>
 <p>{plaintext_to_html(str(text))}</p>
 </div>
-""".strip()+"\n"
-
-    if len(info) == 0:
+""".strip()
+        + "\n"
+        for key, text in items.items()
+    )
+    if not info:
         message = "Nothing found in the image."
         info = f"<div><p>{message}<p></div>"
 
@@ -54,7 +55,7 @@ def create_config(ckpt_result, config_source, a, b, c):
         return
 
     filename, _ = os.path.splitext(ckpt_result)
-    checkpoint_filename = filename + ".yaml"
+    checkpoint_filename = f"{filename}.yaml"
 
     print("Copying config:")
     print("   from:", cfg)
@@ -66,10 +67,7 @@ checkpoint_dict_skip_on_merge = ["cond_stage_model.transformer.text_model.embedd
 
 
 def to_half(tensor, enable):
-    if enable and tensor.dtype == torch.float:
-        return tensor.half()
-
-    return tensor
+    return tensor.half() if enable and tensor.dtype == torch.float else tensor
 
 
 def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format, config_source, bake_in_vae, discard_weights, save_metadata):
@@ -136,14 +134,14 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     result_is_instruct_pix2pix_model = False
 
     if theta_func2:
-        shared.state.textinfo = f"Loading B"
+        shared.state.textinfo = "Loading B"
         print(f"Loading {secondary_model_info.filename}...")
         theta_1 = sd_models.read_state_dict(secondary_model_info.filename, map_location='cpu')
     else:
         theta_1 = None
 
     if theta_func1:
-        shared.state.textinfo = f"Loading C"
+        shared.state.textinfo = "Loading C"
         print(f"Loading {tertiary_model_info.filename}...")
         theta_2 = sd_models.read_state_dict(tertiary_model_info.filename, map_location='cpu')
 
@@ -184,7 +182,10 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
             # this enables merging an inpainting model (A) with another one (B);
             # where normal model would have 4 channels, for latenst space, inpainting model would
             # have another 4 channels for unmasked picture's latent space, plus one channel for mask, for a total of 9
-            if a.shape != b.shape and a.shape[0:1] + a.shape[2:] == b.shape[0:1] + b.shape[2:]:
+            if (
+                a.shape != b.shape
+                and a.shape[:1] + a.shape[2:] == b.shape[:1] + b.shape[2:]
+            ):
                 if a.shape[1] == 4 and b.shape[1] == 9:
                     raise RuntimeError("When merging inpainting model with a normal one, A must be the inpainting model.")
                 if a.shape[1] == 4 and b.shape[1] == 8:
@@ -199,7 +200,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
                     result_is_inpainting_model = True
             else:
                 theta_0[key] = theta_func2(a, b, multiplier)
-            
+
             theta_0[key] = to_half(theta_0[key], save_as_half)
 
         shared.state.sampling_step += 1
@@ -213,7 +214,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         vae_dict = sd_vae.load_vae_dict(bake_in_vae_filename, map_location='cpu')
 
         for key in vae_dict.keys():
-            theta_0_key = 'first_stage_model.' + key
+            theta_0_key = f'first_stage_model.{key}'
             if theta_0_key in theta_0:
                 theta_0[theta_0_key] = to_half(vae_dict[key], save_as_half)
 
@@ -234,7 +235,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     filename = filename_generator() if custom_name == '' else custom_name
     filename += ".inpainting" if result_is_inpainting_model else ""
     filename += ".instruct-pix2pix" if result_is_instruct_pix2pix_model else ""
-    filename += "." + checkpoint_format
+    filename += f".{checkpoint_format}"
 
     output_modelname = os.path.join(ckpt_dir, filename)
 
@@ -297,4 +298,10 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     shared.state.textinfo = "Checkpoint saved"
     shared.state.end()
 
-    return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], "Checkpoint saved to " + output_modelname]
+    return [
+        *[
+            gr.Dropdown.update(choices=sd_models.checkpoint_tiles())
+            for _ in range(4)
+        ],
+        f"Checkpoint saved to {output_modelname}",
+    ]

@@ -83,7 +83,9 @@ class VanillaStableDiffusionSampler:
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         unconditional_conditioning = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)
 
-        assert all([len(conds) == 1 for conds in conds_list]), 'composition via AND is not supported for DDIM/PLMS samplers'
+        assert all(
+            len(conds) == 1 for conds in conds_list
+        ), 'composition via AND is not supported for DDIM/PLMS samplers'
         cond = tensor
 
         # for DDIM, shapes must match, we can't just process cond and uncond independently;
@@ -100,8 +102,6 @@ class VanillaStableDiffusionSampler:
             img_orig = self.sampler.model.q_sample(self.init_latent, ts)
             x = img_orig * self.mask + self.nmask * x
 
-        # Wrap the image conditioning back up since the DDIM code can accept the dict directly.
-        # Note that they need to be lists because it just concatenates them later.
         if image_conditioning is not None:
             if self.conditioning_key == "crossattn-adm":
                 cond = {"c_adm": image_conditioning, "c_crossattn": [cond]}
@@ -192,9 +192,16 @@ class VanillaStableDiffusionSampler:
                 conditioning = {"c_concat": [image_conditioning], "c_crossattn": [conditioning]}
                 unconditional_conditioning = {"c_concat": [image_conditioning], "c_crossattn": [unconditional_conditioning]}
 
-        samples = self.launch_sampling(t_enc + 1, lambda: self.sampler.decode(x1, conditioning, t_enc, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning))
-
-        return samples
+        return self.launch_sampling(
+            t_enc + 1,
+            lambda: self.sampler.decode(
+                x1,
+                conditioning,
+                t_enc,
+                unconditional_guidance_scale=p.cfg_scale,
+                unconditional_conditioning=unconditional_conditioning,
+            ),
+        )
 
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         self.initialize(p)
@@ -215,6 +222,17 @@ class VanillaStableDiffusionSampler:
                 conditioning = {"dummy_for_plms": np.zeros((conditioning.shape[0],)), "c_crossattn": [conditioning], "c_concat": [image_conditioning]}
                 unconditional_conditioning = {"c_crossattn": [unconditional_conditioning], "c_concat": [image_conditioning]}
 
-        samples_ddim = self.launch_sampling(steps, lambda: self.sampler.sample(S=steps, conditioning=conditioning, batch_size=int(x.shape[0]), shape=x[0].shape, verbose=False, unconditional_guidance_scale=p.cfg_scale, unconditional_conditioning=unconditional_conditioning, x_T=x, eta=self.eta)[0])
-
-        return samples_ddim
+        return self.launch_sampling(
+            steps,
+            lambda: self.sampler.sample(
+                S=steps,
+                conditioning=conditioning,
+                batch_size=int(x.shape[0]),
+                shape=x[0].shape,
+                verbose=False,
+                unconditional_guidance_scale=p.cfg_scale,
+                unconditional_conditioning=unconditional_conditioning,
+                x_T=x,
+                eta=self.eta,
+            )[0],
+        )

@@ -111,9 +111,6 @@ def find_checkpoint_config_near_filename(info):
     if info is None:
         return None
 
-    config = os.path.splitext(info.filename)[0] + ".yaml"
-    if os.path.exists(config):
-        return config
-
-    return None
+    config = f"{os.path.splitext(info.filename)[0]}.yaml"
+    return config if os.path.exists(config) else None
 

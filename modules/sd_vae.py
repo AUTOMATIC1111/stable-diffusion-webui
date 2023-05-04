@@ -89,11 +89,18 @@ def refresh_vae_list():
 
 def find_vae_near_checkpoint(checkpoint_file):
     checkpoint_path = os.path.splitext(checkpoint_file)[0]
-    for vae_location in [checkpoint_path + ".vae.pt", checkpoint_path + ".vae.ckpt", checkpoint_path + ".vae.safetensors"]:
-        if os.path.isfile(vae_location):
-            return vae_location
-
-    return None
+    return next(
+        (
+            vae_location
+            for vae_location in [
+                f"{checkpoint_path}.vae.pt",
+                f"{checkpoint_path}.vae.ckpt",
+                f"{checkpoint_path}.vae.safetensors",
+            ]
+            if os.path.isfile(vae_location)
+        ),
+        None,
+    )
 
 
 def resolve_vae(checkpoint_file):
@@ -121,17 +128,20 @@ def resolve_vae(checkpoint_file):
 
 def load_vae_dict(filename, map_location):
     vae_ckpt = sd_models.read_state_dict(filename, map_location=map_location)
-    vae_dict_1 = {k: v for k, v in vae_ckpt.items() if k[0:4] != "loss" and k not in vae_ignore_keys}
-    return vae_dict_1
+    return {
+        k: v
+        for k, v in vae_ckpt.items()
+        if k[:4] != "loss" and k not in vae_ignore_keys
+    }
 
 
 def load_vae(model, vae_file=None, vae_source="from unknown source"):
     global vae_dict, loaded_vae_file
-    # save_settings = False
-
-    cache_enabled = shared.opts.sd_vae_checkpoint_cache > 0
-
     if vae_file:
+        # save_settings = False
+
+        cache_enabled = shared.opts.sd_vae_checkpoint_cache > 0
+
         if cache_enabled and vae_file in checkpoints_loaded:
             # use vae checkpoint cache
             print(f"Loading VAE weights {vae_source}: cached {get_filename(vae_file)}")

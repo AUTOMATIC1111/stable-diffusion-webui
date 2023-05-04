@@ -50,8 +50,7 @@ class ScriptPostprocessing:
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     try:
-        res = func(*args, **kwargs)
-        return res
+        return func(*args, **kwargs)
     except Exception as e:
         errors.display(e, f"calling {filename}/{funcname}")
 
@@ -123,10 +122,12 @@ class ScriptPostprocessingRunner:
 
             script_args = args[script.args_from:script.args_to]
 
-            process_args = {}
-            for (name, component), value in zip(script.controls.items(), script_args):
-                process_args[name] = value
-
+            process_args = {
+                name: value
+                for (name, component), value in zip(
+                    script.controls.items(), script_args
+                )
+            }
             script.process(pp, **process_args)
 
     def create_args_for_run(self, scripts_args):
@@ -135,7 +136,7 @@ class ScriptPostprocessingRunner:
                 self.setup_ui()
 
         scripts = self.scripts_in_preferred_order()
-        args = [None] * max([x.args_to for x in scripts])
+        args = [None] * max(x.args_to for x in scripts)
 
         for script in scripts:
             script_args_dict = scripts_args.get(script.name, None)

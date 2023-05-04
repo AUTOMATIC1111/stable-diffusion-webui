@@ -71,9 +71,9 @@ class LDSR:
         split_input = height >= 128 and width >= 128
 
         if split_input:
-            ks = 128
             stride = 64
-            vqf = 4  #
+            vqf = 4
+            ks = 128
             model.split_input_params = {"ks": (ks, ks), "stride": (stride, stride),
                                         "vqf": vqf,
                                         "patch_distributed_vq": True,
@@ -82,13 +82,12 @@ class LDSR:
                                         "clip_min_weight": 0.01,
                                         "clip_max_tie_weight": 0.5,
                                         "clip_min_tie_weight": 0.01}
-        else:
-            if hasattr(model, "split_input_params"):
-                delattr(model, "split_input_params")
+        elif hasattr(model, "split_input_params"):
+            delattr(model, "split_input_params")
 
         x_t = None
         logs = None
-        for n in range(n_runs):
+        for _ in range(n_runs):
             if custom_shape is not None:
                 x_t = torch.randn(1, custom_shape[1], custom_shape[2], custom_shape[3]).to(model.device)
                 x_t = repeat(x_t, '1 c h w -> b c h w', b=custom_shape[0])
@@ -158,7 +157,6 @@ class LDSR:
 
 
 def get_cond(selected_path):
-    example = dict()
     up_f = 4
     c = selected_path.convert('RGB')
     c = torch.unsqueeze(torchvision.transforms.ToTensor()(c), 0)
@@ -169,10 +167,7 @@ def get_cond(selected_path):
     c = 2. * c - 1.
 
     c = c.to(shared.device)
-    example["LR_image"] = c
-    example["image"] = c_up
-
-    return example
+    return {"LR_image": c, "image": c_up}
 
 
 @torch.no_grad()
@@ -196,13 +191,14 @@ def convsample_ddim(model, cond, steps, shape, eta=1.0, callback=None, normals_s
 @torch.no_grad()
 def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize_x0=False, custom_shape=None, temperature=1., noise_dropout=0., corrector=None,
                               corrector_kwargs=None, x_T=None, ddim_use_x0_pred=False):
-    log = dict()
-
-    z, c, x, xrec, xc = model.get_input(batch, model.first_stage_key,
-                                        return_first_stage_outputs=True,
-                                        force_c_encode=not (hasattr(model, 'split_input_params')
-                                                            and model.cond_stage_key == 'coordinates_bbox'),
-                                        return_original_cond=True)
+    z, c, x, xrec, xc = model.get_input(
+        batch,
+        model.first_stage_key,
+        return_first_stage_outputs=True,
+        force_c_encode=not hasattr(model, 'split_input_params')
+        or model.cond_stage_key != 'coordinates_bbox',
+        return_original_cond=True,
+    )
 
     if custom_shape is not None:
         z = torch.randn(custom_shape)
@@ -210,9 +206,7 @@ def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize
 
     z0 = None
 
-    log["input"] = x
-    log["reconstruction"] = xrec
-
+    log = {"input": x, "reconstruction": xrec}
     if ismap(xc):
         log["original_conditioning"] = model.to_rgb(xc)
         if hasattr(model, 'cond_stage_key'):

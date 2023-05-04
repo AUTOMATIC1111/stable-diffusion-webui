@@ -41,6 +41,8 @@ def setup_model(dirname):
 
         net_class = CodeFormer
 
+
+
         class FaceRestorerCodeFormer(modules.face_restoration.FaceRestoration):
             def name(self):
                 return "CodeFormer"
@@ -83,7 +85,7 @@ def setup_model(dirname):
             def restore(self, np_image, w=None):
                 np_image = np_image[:, :, ::-1]
 
-                original_resolution = np_image.shape[0:2]
+                original_resolution = np_image.shape[:2]
 
                 self.create_models()
                 if self.net is None or self.face_helper is None:
@@ -119,7 +121,7 @@ def setup_model(dirname):
                 restored_img = self.face_helper.paste_faces_to_input_image()
                 restored_img = restored_img[:, :, ::-1]
 
-                if original_resolution != restored_img.shape[0:2]:
+                if original_resolution != restored_img.shape[:2]:
                     restored_img = cv2.resize(restored_img, (0, 0), fx=original_resolution[1]/restored_img.shape[1], fy=original_resolution[0]/restored_img.shape[0], interpolation=cv2.INTER_LINEAR)
 
                 self.face_helper.clean_all()
@@ -128,6 +130,7 @@ def setup_model(dirname):
                     self.send_model_to(devices.cpu)
 
                 return restored_img
+
 
         global have_codeformer
         have_codeformer = True

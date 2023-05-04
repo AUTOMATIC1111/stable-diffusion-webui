@@ -84,8 +84,7 @@ class PositionEmbeddingSine(nn.Module):
         pos_y = torch.stack(
             (pos_y[:, :, :, 0::2].sin(), pos_y[:, :, :, 1::2].cos()), dim=4
         ).flatten(3)
-        pos = torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
-        return pos
+        return torch.cat((pos_y, pos_x), dim=3).permute(0, 3, 1, 2)
 
 def _get_activation_fn(activation):
     """Return an activation function given a string"""
@@ -155,8 +154,7 @@ class Fuse_sft_block(nn.Module):
         scale = self.scale(enc_feat)
         shift = self.shift(enc_feat)
         residual = w * (dec_feat * scale + shift)
-        out = dec_feat + residual
-        return out
+        return dec_feat + residual
 
 
 @ARCH_REGISTRY.register()
@@ -268,11 +266,10 @@ class CodeFormer(VQAutoEncoder):
         fuse_list = [self.fuse_generator_block[f_size] for f_size in self.connect_list]
 
         for i, block in enumerate(self.generator.blocks):
-            x = block(x) 
-            if i in fuse_list: # fuse after i-th block
+            x = block(x)
+            if i in fuse_list and w > 0:
                 f_size = str(x.shape[-1])
-                if w>0:
-                    x = self.fuse_convs_dict[f_size](enc_feat_dict[f_size].detach(), x, w)
+                x = self.fuse_convs_dict[f_size](enc_feat_dict[f_size].detach(), x, w)
         out = x
         # logits doesn't need softmax before cross_entropy loss
         return out, logits, lq_feat

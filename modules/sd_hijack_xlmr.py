@@ -22,13 +22,11 @@ class FrozenXLMREmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWithCus
 
         attention_mask = (tokens != self.id_pad).to(device=tokens.device, dtype=torch.int64)
         features = self.wrapped(input_ids=tokens, attention_mask=attention_mask)
-        z = features['projection_state']
-
-        return z
+        return features['projection_state']
 
     def encode_embedding_init_text(self, init_text, nvpt):
         embedding_layer = self.wrapped.roberta.embeddings
         ids = self.wrapped.tokenizer(init_text, max_length=nvpt, return_tensors="pt", add_special_tokens=False)["input_ids"]
-        embedded = embedding_layer.token_embedding.wrapped(ids.to(devices.device)).squeeze(0)
-
-        return embedded
+        return embedding_layer.token_embedding.wrapped(
+            ids.to(devices.device)
+        ).squeeze(0)

@@ -15,8 +15,7 @@ import re
 TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorage') else torch.storage._TypedStorage
 
 def encode(*args):
-    out = _codecs.encode(*args)
-    return out
+    return _codecs.encode(*args)
 
 
 class RestrictedUnpickler(pickle.Unpickler):
@@ -84,7 +83,7 @@ def check_pt(filename, extra_handler):
 
             # find filename of data.pkl in zip file: '<directory name>/data.pkl'
             data_pkl_filenames = [f for f in z.namelist() if data_pkl_re.match(f)]
-            if len(data_pkl_filenames) == 0:
+            if not data_pkl_filenames:
                 raise Exception(f"data.pkl not found in {filename}")
             if len(data_pkl_filenames) > 1:
                 raise Exception(f"Multiple data.pkl found in {filename}")
@@ -99,7 +98,7 @@ def check_pt(filename, extra_handler):
         with open(filename, "rb") as file:
             unpickler = RestrictedUnpickler(file)
             unpickler.extra_handler = extra_handler
-            for i in range(5):
+            for _ in range(5):
                 unpickler.load()
 
 

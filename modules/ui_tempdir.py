@@ -23,7 +23,7 @@ def register_tmp_file(gradio, filename):
 
 def check_tmp_file(gradio, filename):
     if hasattr(gradio, 'temp_file_sets'):
-        return any([filename in fileset for fileset in gradio.temp_file_sets])
+        return any(filename in fileset for fileset in gradio.temp_file_sets)
 
     if hasattr(gradio, 'temp_dirs'):
         return any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in gradio.temp_dirs)
@@ -36,9 +36,7 @@ def save_pil_to_file(pil_image, dir=None):
     if already_saved_as and os.path.isfile(already_saved_as):
         register_tmp_file(shared.demo, already_saved_as)
 
-        file_obj = Savedfile(already_saved_as)
-        return file_obj
-
+        return Savedfile(already_saved_as)
     if shared.opts.temp_dir != "":
         dir = shared.opts.temp_dir
 

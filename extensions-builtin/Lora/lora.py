@@ -86,10 +86,12 @@ class LoraOnDisk:
                 errors.display(e, f"reading lora {filename}")
 
         if self.metadata:
-            m = {}
-            for k, v in sorted(self.metadata.items(), key=lambda x: metadata_tags_order.get(x[0], 999)):
-                m[k] = v
-
+            m = dict(
+                sorted(
+                    self.metadata.items(),
+                    key=lambda x: metadata_tags_order.get(x[0], 999),
+                )
+            )
             self.metadata = m
 
         self.ssmd_cover_images = self.metadata.pop('ssmd_cover_images', None)  # those are cover images and they are too big to display in UI as text
@@ -142,8 +144,7 @@ def load_lora(name, filename):
         sd_module = shared.sd_model.lora_layer_mapping.get(key, None)
 
         if sd_module is None:
-            m = re_x_proj.match(key)
-            if m:
+            if m := re_x_proj.match(key):
                 sd_module = shared.sd_model.lora_layer_mapping.get(m.group(1), None)
 
         if sd_module is None:
@@ -170,37 +171,32 @@ def load_lora(name, filename):
         else:
             print(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
             continue
-            assert False, f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}'
-
         with torch.no_grad():
             module.weight.copy_(weight)
 
         module.to(device=devices.cpu, dtype=devices.dtype)
 
-        if lora_key == "lora_up.weight":
-            lora_module.up = module
-        elif lora_key == "lora_down.weight":
+        if lora_key == "lora_down.weight":
             lora_module.down = module
+        elif lora_key == "lora_up.weight":
+            lora_module.up = module
         else:
             assert False, f'Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha'
 
-    if len(keys_failed_to_match) > 0:
+    if keys_failed_to_match:
         print(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
 
     return lora
 
 
 def load_loras(names, multipliers=None):
-    already_loaded = {}
-
-    for lora in loaded_loras:
-        if lora.name in names:
-            already_loaded[lora.name] = lora
-
+    already_loaded = {
+        lora.name: lora for lora in loaded_loras if lora.name in names
+    }
     loaded_loras.clear()
 
     loras_on_disk = [available_loras.get(name, None) for name in names]
-    if any([x is None for x in loras_on_disk]):
+    if any(x is None for x in loras_on_disk):
         list_available_loras()
 
         loras_on_disk = [available_loras.get(name, None) for name in names]
@@ -209,13 +205,15 @@ def load_loras(names, multipliers=None):
         lora = already_loaded.get(name, None)
 
         lora_on_disk = loras_on_disk[i]
-        if lora_on_disk is not None:
-            if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
-                try:
-                    lora = load_lora(name, lora_on_disk.filename)
-                except Exception as e:
-                    errors.display(e, f"loading Lora {lora_on_disk.filename}")
-                    continue
+        if lora_on_disk is not None and (
+            lora is None
+            or os.path.getmtime(lora_on_disk.filename) > lora.mtime
+        ):
+            try:
+                lora = load_lora(name, lora_on_disk.filename)
+            except Exception as e:
+                errors.display(e, f"loading Lora {lora_on_disk.filename}")
+                continue
 
         if lora is None:
             print(f"Couldn't find Lora with name {name}")
@@ -277,10 +275,10 @@ def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.Mu
                 self.weight += lora_calc_updown(lora, module, self.weight)
                 continue
 
-            module_q = lora.modules.get(lora_layer_name + "_q_proj", None)
-            module_k = lora.modules.get(lora_layer_name + "_k_proj", None)
-            module_v = lora.modules.get(lora_layer_name + "_v_proj", None)
-            module_out = lora.modules.get(lora_layer_name + "_out_proj", None)
+            module_q = lora.modules.get(f"{lora_layer_name}_q_proj", None)
+            module_k = lora.modules.get(f"{lora_layer_name}_k_proj", None)
+            module_v = lora.modules.get(f"{lora_layer_name}_v_proj", None)
+            module_out = lora.modules.get(f"{lora_layer_name}_out_proj", None)
 
             if isinstance(self, torch.nn.MultiheadAttention) and module_q and module_k and module_v and module_out:
                 updown_q = lora_calc_updown(lora, module_q, self.in_proj_weight)

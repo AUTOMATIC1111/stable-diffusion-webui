@@ -8,17 +8,10 @@ if sys.platform == "darwin":
 
 
 def has_mps() -> bool:
-    if sys.platform != "darwin":
-        return False
-    else:
-        return mac_specific.has_mps
+    return False if sys.platform != "darwin" else mac_specific.has_mps
 
 def extract_device_id(args, name):
-    for x in range(len(args)):
-        if name in args[x]:
-            return args[x + 1]
-
-    return None
+    return next((args[x + 1] for x in range(len(args)) if name in args[x]), None)
 
 
 def get_cuda_device_string():
@@ -34,10 +27,7 @@ def get_optimal_device_name():
     if torch.cuda.is_available():
         return get_cuda_device_string()
 
-    if has_mps():
-        return "mps"
-
-    return "cpu"
+    return "mps" if has_mps() else "cpu"
 
 
 def get_optimal_device():
@@ -47,10 +37,7 @@ def get_optimal_device():
 def get_device_for(task):
     from modules import shared
 
-    if task in shared.cmd_opts.use_cpu:
-        return cpu
-
-    return get_optimal_device()
+    return cpu if task in shared.cmd_opts.use_cpu else get_optimal_device()
 
 
 def torch_gc():
@@ -65,7 +52,10 @@ def enable_tf32():
 
         # enabling benchmark option seems to enable a range of cards to do fp16 when they otherwise can't
         # see https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4407
-        if any([torch.cuda.get_device_capability(devid) == (7, 5) for devid in range(0, torch.cuda.device_count())]):
+        if any(
+            torch.cuda.get_device_capability(devid) == (7, 5)
+            for devid in range(0, torch.cuda.device_count())
+        ):
             torch.backends.cudnn.benchmark = True
 
         torch.backends.cuda.matmul.allow_tf32 = True

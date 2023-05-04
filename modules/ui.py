@@ -89,9 +89,7 @@ def plaintext_to_html(text):
 
 
 def send_gradio_gallery_to_image(x):
-    if len(x) == 0:
-        return None
-    return image_from_url_text(x[0])
+    return None if len(x) == 0 else image_from_url_text(x[0])
 
 def visit(x, func, path=""):
     if hasattr(x, 'children'):
@@ -101,12 +99,12 @@ def visit(x, func, path=""):
         for c in x.children:
             visit(c, func, path)
     elif x.label is not None:
-        func(path + "/" + str(x.label), x)
+        func(f"{path}/{str(x.label)}", x)
 
 
 def add_style(name: str, prompt: str, negative_prompt: str):
     if name is None:
-        return [gr_show() for x in range(4)]
+        return [gr_show() for _ in range(4)]
 
     style = modules.styles.PromptStyle(name, prompt, negative_prompt)
     shared.prompt_styles.styles[style.name] = style
@@ -166,7 +164,10 @@ def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_di
             img = Image.open(image)
             filename = os.path.basename(image)
             left, _ = os.path.splitext(filename)
-            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, left + ".txt"), 'a'))
+            print(
+                interrogation_function(img),
+                file=open(os.path.join(ii_output_dir, f"{left}.txt"), 'a'),
+            )
 
         return [gr.update(), None]
 
@@ -182,29 +183,72 @@ def interrogate_deepbooru(image):
 
 
 def create_seed_inputs(target_interface):
-    with FormRow(elem_id=target_interface + '_seed_row', variant="compact"):
-        seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=target_interface + '_seed')
+    with FormRow(elem_id=f'{target_interface}_seed_row', variant="compact"):
+        seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(
+            label='Seed', value=-1, elem_id=f'{target_interface}_seed'
+        )
         seed.style(container=False)
-        random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed', label='Random seed')
-        reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed', label='Reuse seed')
+        random_seed = ToolButton(
+            random_symbol,
+            elem_id=f'{target_interface}_random_seed',
+            label='Random seed',
+        )
+        reuse_seed = ToolButton(
+            reuse_symbol,
+            elem_id=f'{target_interface}_reuse_seed',
+            label='Reuse seed',
+        )
 
-        seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
+        seed_checkbox = gr.Checkbox(
+            label='Extra',
+            elem_id=f'{target_interface}_subseed_show',
+            value=False,
+        )
 
     # Components to show/hide based on the 'Extra' checkbox
     seed_extras = []
 
-    with FormRow(visible=False, elem_id=target_interface + '_subseed_row') as seed_extra_row_1:
+    with FormRow(visible=False, elem_id=f'{target_interface}_subseed_row') as seed_extra_row_1:
         seed_extras.append(seed_extra_row_1)
-        subseed = gr.Number(label='Variation seed', value=-1, elem_id=target_interface + '_subseed')
+        subseed = gr.Number(
+            label='Variation seed',
+            value=-1,
+            elem_id=f'{target_interface}_subseed',
+        )
         subseed.style(container=False)
-        random_subseed = ToolButton(random_symbol, elem_id=target_interface + '_random_subseed')
-        reuse_subseed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_subseed')
-        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=target_interface + '_subseed_strength')
+        random_subseed = ToolButton(
+            random_symbol, elem_id=f'{target_interface}_random_subseed'
+        )
+        reuse_subseed = ToolButton(
+            reuse_symbol, elem_id=f'{target_interface}_reuse_subseed'
+        )
+        subseed_strength = gr.Slider(
+            label='Variation strength',
+            value=0.0,
+            minimum=0,
+            maximum=1,
+            step=0.01,
+            elem_id=f'{target_interface}_subseed_strength',
+        )
 
     with FormRow(visible=False) as seed_extra_row_2:
         seed_extras.append(seed_extra_row_2)
-        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from width", value=0, elem_id=target_interface + '_seed_resize_from_w')
-        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from height", value=0, elem_id=target_interface + '_seed_resize_from_h')
+        seed_resize_from_w = gr.Slider(
+            minimum=0,
+            maximum=2048,
+            step=8,
+            label="Resize seed from width",
+            value=0,
+            elem_id=f'{target_interface}_seed_resize_from_w',
+        )
+        seed_resize_from_h = gr.Slider(
+            minimum=0,
+            maximum=2048,
+            step=8,
+            label="Resize seed from height",
+            value=0,
+            elem_id=f'{target_interface}_seed_resize_from_h',
+        )
 
     random_seed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[seed])
     random_subseed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[subseed])
@@ -276,7 +320,10 @@ def update_token_counter(text, steps):
 
     flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
     prompts = [prompt_text for step, prompt_text in flat_prompts]
-    token_count, max_length = max([model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
+    token_count, max_length = max(
+        (model_hijack.get_prompt_lengths(prompt) for prompt in prompts),
+        key=lambda args: args[0],
+    )
     return f"<span class='gr-box gr-text-input'>{token_count}/{max_length}</span>"
 
 
