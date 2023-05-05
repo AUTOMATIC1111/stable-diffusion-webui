@@ -40,12 +40,10 @@ class PreprocessParams:
     preprocess_txt_action = None
 
 
-def save_pic_with_caption(image, index, params: PreprocessParams, existing_caption=None):
+def save_pic_with_caption(image, index, params: PreprocessParams, existing_caption=None, existing_caption_filename=None):
     caption = ""
-
     if params.process_caption:
         caption += shared.interrogator.generate_caption(image)
-
     if params.process_caption_deepbooru:
         if len(caption) > 0:
             caption += ", "
@@ -65,20 +63,22 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         caption = caption + ' ' + existing_caption
     elif params.preprocess_txt_action == 'copy' and existing_caption:
         caption = existing_caption
-
     caption = caption.strip()
-
     if len(caption) > 0:
-        with open(os.path.join(params.dstdir, f"{basename}.txt"), "w", encoding="utf8") as file:
+        if params.process_caption_only and existing_caption_filename is not None:
+            fn = existing_caption_filename
+        else:
+            fn = os.path.join(params.dstdir, f"{basename}.txt")
+        with open(fn, "w", encoding="utf8") as file:
             file.write(caption)
 
     params.subindex += 1
 
 
-def save_pic(image, index, params, existing_caption=None):
-    save_pic_with_caption(image, index, params, existing_caption=existing_caption)
+def save_pic(image, index, params, existing_caption=None, existing_caption_filename=None):
+    save_pic_with_caption(image, index, params, existing_caption=existing_caption, existing_caption_filename=existing_caption_filename)
     if params.flip:
-        save_pic_with_caption(ImageOps.mirror(image), index, params, existing_caption=existing_caption)
+        save_pic_with_caption(ImageOps.mirror(image), index, params, existing_caption=existing_caption, existing_caption_filename=existing_caption_filename)
 
 
 def split_pic(image, inverse_xy, width, height, overlap_ratio):
@@ -177,6 +177,8 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         if os.path.exists(existing_caption_filename):
             with open(existing_caption_filename, 'r', encoding="utf8") as file:
                 existing_caption = file.read()
+        else:
+            existing_caption_filename = None
 
         if shared.state.interrupted:
             break
@@ -192,7 +194,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
 
         if process_split and ratio < 1.0 and ratio <= split_threshold:
             for splitted in split_pic(img, inverse_xy, width, height, overlap_ratio):
-                save_pic(splitted, index, params, existing_caption=existing_caption)
+                save_pic(splitted, index, params, existing_caption=existing_caption, existing_caption_filename=existing_caption_filename)
             process_default_resize = False
 
         if process_focal_crop and img.height != img.width:
