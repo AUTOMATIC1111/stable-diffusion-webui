@@ -1134,14 +1134,32 @@ onUiUpdate(function(){
 			clone_num.addEventListener('input', function (e) {								
 				clone_range.value = e.target.value;	
 			})
+			
 			const rect = clone_range.getBoundingClientRect();
 			const xoffset = (rect.left + window.scrollX);
+			const yoffset_min = (rect.top + window.scrollY);
+			const yoffset_max = (rect.bottom + window.scrollY);
+			let drag_clone_range = false;
 			clone_range.addEventListener('touchmove', function(e) {
 				e.preventDefault();				
-				let percent = parseInt(((e.touches[0].pageX - xoffset) / this.offsetWidth) * 10000) / 10000;				
-				clone_range.value = ( percent * (this.max - this.min)) + parseFloat(this.min);				
-				clone_num.value = clone_range.value;
-			});			
+				if(	drag_clone_range){			
+					let percent = parseInt(((e.touches[0].pageX - xoffset) / this.offsetWidth) * 10000) / 10000;				
+					clone_range.value = ( percent * (this.max - this.min)) + parseFloat(this.min);				
+					clone_num.value = clone_range.value;
+				}
+			}, {passive: true});
+			clone_range.addEventListener('touchstart', function(e) {
+				e.preventDefault();				
+				if(	e.touches[0].pageY > yoffset_min && e.touches[0].pageY < yoffset_max){			
+					drag_clone_range = true;
+				}
+			}, {passive: true});
+			clone_range.addEventListener('touchend', function(e) {
+				e.preventDefault();		
+				drag_clone_range = false;
+			}, {passive: true});
+
+					
 		}				
 	}
 	function ui_input_focus_handler(e){
@@ -1617,8 +1635,7 @@ function currentImg2imgSourceResolution(_, _, scaleBy){
 function updateImg2imgResizeToTextAfterChangingImage(){
     // At the time this is called from gradio, the image has no yet been replaced.
     // There may be a better solution, but this is simple and straightforward so I'm going with it.
-
-    setTimeout(function() {
+	setTimeout(function() {		
         gradioApp().getElementById('img2img_update_resize_to').click()
     }, 500);
 
