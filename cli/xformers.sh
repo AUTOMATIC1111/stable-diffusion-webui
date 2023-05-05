@@ -1,4 +1,4 @@
-#/bin/env bash
+#!/usr/bin/env bash
 echo "Installing xformers"
 
 NVCC_FLAGS="--use_fast_math" 

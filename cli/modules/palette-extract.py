@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # based on <https://towardsdatascience.com/image-color-extraction-with-python-in-4-steps-8d9370d9216e>
 
 import os

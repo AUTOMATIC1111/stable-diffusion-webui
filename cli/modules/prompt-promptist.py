@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """
 use microsoft promptist to beautify prompt
 - <https://huggingface.co/spaces/microsoft/Promptist>

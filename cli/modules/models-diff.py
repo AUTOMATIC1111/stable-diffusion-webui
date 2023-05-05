@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # based on <https://huggingface.co/JosephusCheung/ASimilarityCalculatior>
 
 import safetensors
