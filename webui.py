@@ -169,6 +169,17 @@ def create_api(app):
     return api
 
 
+def monkey_patch_docs():
+    def setup_with_docs(self):
+        self.docs_url = "/docs"
+        self.redoc_url = "/redoc"
+        self.setup_original()
+
+    from fastapi import FastAPI
+    FastAPI.setup_original = FastAPI.setup
+    setattr(FastAPI, "setup", setup_with_docs)
+
+
 def async_policy():
     _BasePolicy = asyncio.WindowsSelectorEventLoopPolicy if sys.platform == "win32" and hasattr(asyncio, "WindowsSelectorEventLoopPolicy") else asyncio.DefaultEventLoopPolicy
 
@@ -196,6 +207,7 @@ def start_ui():
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("scripts before_ui_callback")
     shared.demo = modules.ui.create_ui()
+    monkey_patch_docs()
     startup_timer.record("ui")
     if cmd_opts.disable_queue:
         log.info('Server queues disabled')
@@ -227,6 +239,7 @@ def start_ui():
         favicon_path='html/logo.ico',
     )
     shared.log.info(f'Local URL: {local_url}')
+    shared.log.info(f'API Docs: {local_url[:-1]}/docs') # {local_url[:-1]}?view=api
     if share_url is not None:
         shared.log.info(f'Share URL: {share_url}')
     shared.log.debug(f'Gradio registered functions: {len(shared.demo.fns)}')
