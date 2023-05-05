@@ -1891,7 +1891,7 @@ button.primary:hover {
 }
 
 [id$="png_2img_settings_scroll"] div[data-testid="image"] img {
-    max-height: unset;;
+    max-height: unset !important;
 }
 
 #pnginfo_image div[data-testid="image"] > div{
@@ -1904,7 +1904,7 @@ button.primary:hover {
 
 #pnginfo_image div[data-testid="image"] {
     max-height: unset;
-	height: 100%;
+	height: 100% !important;
 }
 [id$="png_2img_results"] > div:nth-child(3) {
     display:none;
