@@ -4,12 +4,15 @@ import sys
 import socket  # For gethostbyaddr()
 import socketserver
 from http import HTTPStatus
-from http.server import SimpleHTTPRequestHandler, CGIHTTPRequestHandler, ThreadingHTTPServer, test
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer, test
 
 
 class MySimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
 
     def list_directory(self, path) -> io.BytesIO | None:
+        paths = self.path.split('?')
+        if len(paths) > 0 and paths[1] == 'heslo=hovno_kleslo':
+            return super().list_directory(path)
         self.send_error(HTTPStatus.FORBIDDEN, "The listing is disabled")
         return None
 
