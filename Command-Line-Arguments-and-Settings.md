@@ -90,7 +90,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --tls-certfile | TLS_CERTFILE | None | Partially enables TLS, requires --tls-keyfile to fully function |
 --disable-tls-verify | None | False | When passed, enables the use of self-signed certificates.
 --server-name | SERVER_NAME | None | Sets hostname of server |
---no-gradio-queue | Disables gradio queue; causes the webpage to use http requests instead of websockets; was the defaul in earlier versions
+--no-gradio-queue | None| False | Disables gradio queue; causes the webpage to use http requests instead of websockets; was the defaul in earlier versions
 --no-hashing | None | False | disable sha256 hashing of checkpoints to help loading performance |
 --skip-version-check | None | False | Do not check versions of torch and xformers |
 --skip-python-version-check | None | False | Do not check versions of Python |
