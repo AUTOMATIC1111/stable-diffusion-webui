@@ -176,7 +176,9 @@ def monkey_patch_docs():
         self.setup_original()
 
     from fastapi import FastAPI
-    FastAPI.setup_original = FastAPI.setup
+    setup_original = getattr(FastAPI, "setup_original", None)
+    if setup_original is None:
+        FastAPI.setup_original = FastAPI.setup
     setattr(FastAPI, "setup", setup_with_docs)
 
 

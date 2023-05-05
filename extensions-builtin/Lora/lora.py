@@ -134,6 +134,7 @@ def load_lora(name, filename):
 
     keys_failed_to_match = {}
     is_sd2 = 'model_transformer_resblocks' in shared.sd_model.lora_layer_mapping
+    warnings = 0
 
     for key_diffusers, weight in sd.items():
         lora_key_parts = key_diffusers.split(".", 1)
@@ -169,7 +170,9 @@ def load_lora(name, filename):
         elif type(sd_module) == torch.nn.Conv2d:
             module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (weight.shape[2], weight.shape[3]), bias=False)
         else:
-            print(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
+            if warnings == 0:
+                shared.log.warning(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
+            warnings += 1
             continue
 
         with torch.no_grad():
@@ -182,10 +185,14 @@ def load_lora(name, filename):
         elif lora_key == "lora_down.weight":
             lora_module.down = module
         else:
-            assert False, f'Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha'
+            if warnings == 0:
+                shared.log.warning(f'Unknown Lora layer: {key_diffusers}')
+                shared.log.warning('Try using LyCORIS instead')
+            warnings += 1
 
     if len(keys_failed_to_match) > 0:
-        print(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
+        shared.log.warning(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
+        warnings += 1
 
     return lora
 
@@ -218,7 +225,7 @@ def load_loras(names, multipliers=None):
                     continue
 
         if lora is None:
-            print(f"Couldn't find Lora with name {name}")
+            shared.log.warning(f"Could not find Lora with name {name}")
             continue
 
         lora.multiplier = multipliers[i] if multipliers else 1.0
@@ -312,7 +319,7 @@ def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.Mu
             if module is None:
                 continue
 
-            print(f'failed to calculate lora weights for layer {lora_layer_name}')
+            shared.log.warning(f'failed to calculate lora weights for layer {lora_layer_name}')
 
         setattr(self, "lora_current_names", wanted_names)
 
