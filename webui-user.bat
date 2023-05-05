@@ -6,7 +6,7 @@ set PYTHON=C:\Users\Animefest\miniconda3\python.exe
 set GIT=
 set VENV_DIR=
 :: the hide-ui-dir-config is separate flag, hides server-side
-set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config-af.json --ui-config-file=ui-config.json --hide-ui-dir-config
+set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config-af.json --ui-config-file=ui-config.json --hide-ui-dir-config --freeze-settings
 :: for my laptop
 ::set COMMANDLINE_ARGS=--theme dark --ui-settings-file=config-af.json --hide-ui-dir-config --ui-config-file=ui-config-ntb.json
 :: for the full-config in my fork
