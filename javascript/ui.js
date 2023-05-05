@@ -349,7 +349,7 @@ onOptionsChanged(function() {
     if (elem && elem.textContent != shorthash) {
         elem.textContent = shorthash;
         elem.title = sd_checkpoint_hash;
-        elem.href = "https://google.com/search?q=" + sd_checkpoint_hash;
+        //elem.href = "https://google.com/search?q=" + sd_checkpoint_hash;
     }
 });
 
@@ -398,6 +398,10 @@ function restart_reload() {
     return [];
 }
 
+function reload_page(){
+    location.reload()
+    return []
+}
 // Simulate an `input` DOM event for Gradio Textbox component. Needed after you edit its contents in javascript, otherwise your edits
 // will only visible on web page and not sent to python.
 function updateInput(target) {
