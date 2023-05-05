@@ -28,7 +28,7 @@ def mkdir(path):
 
 
 def pull_code_former_weights():
-    base_url = 'http://apksamba.ops.ilongyuan.cn:8000/ai/sd/'
+    base_url = 'https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/'
     file_ids = {
         'codeformer.pth': 'CodeFormer/codeformer.pth',
         'yolov5l-face.pth': 'facelib/detection_Resnet50_Final.pth',

@@ -256,9 +256,9 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         models_dir = '/home/jty/stable-diffusion-webui-master/models/Stable-diffusion'
         models = [
             'v1-5-pruned-emaonly.ckpt',
-            'chilloutmix_NiCkpt.ckpt',
-            'guofeng2_v20.safetensors',
-            'v1-5-pruned-emaonly.ckpt',
+            # 'chilloutmix_NiCkpt.ckpt',
+            # 'guofeng2_v20.safetensors',
+            # 'v1-5-pruned-emaonly.ckpt',
         ]
         model_hash_map = {
             'v1-5-pruned-emaonly.ckpt': 'cc6cb27103417325ff94f52b7a5d2dde45a7515b25c255d8e396c90014281516',
@@ -404,6 +404,8 @@ class Img2ImgTaskHandler(TaskHandler):
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
                                        task.id)
+
+        progress.update_seed(processed.seed)
         progress.set_finish_result(images)
         yield progress
 
@@ -432,10 +434,12 @@ class Img2ImgTaskHandler(TaskHandler):
             progress = TaskProgress.new_failed(task, f'download image failed:{img_key}')
             yield progress
         else:
+            pil_img = Image.open(img)
+            pil_img = pil_img.convert('RGB')
             if model == "clip":
-                processed = shared.interrogator.interrogate(img)
+                processed = shared.interrogator.interrogate(pil_img)
             else:
-                processed = deepbooru.model.tag(img)
+                processed = deepbooru.model.tag(pil_img)
             progress = TaskProgress.new_finish(task, processed)
             yield progress
 

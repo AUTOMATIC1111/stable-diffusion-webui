@@ -7,7 +7,9 @@
 # @Software: Hifive
 import os.path
 import typing
+from PIL import Image
 from enum import IntEnum
+from handlers.dumper import dumper
 from modules.postprocessing import run_extras
 from handlers.utils import get_tmp_local_path, Tmp, upload_tmp_files
 from worker.task import Task, TaskType, TaskHandler, TaskProgress, TaskStatus
@@ -40,7 +42,6 @@ class SingleUpscalerTask:
         self.output_dir = ""
         self.save_output = False
         self.show_extras_results = True
-        self.image = get_tmp_local_path(image)
         self.gfpgan_visibility = gfpgan_visibility
         self.codeformer_visibility = codeformer_visibility
         self.codeformer_weight = codeformer_weight
@@ -51,6 +52,12 @@ class SingleUpscalerTask:
         self.extras_upscaler_1 = extras_upscaler_1
         self.extras_upscaler_2 = extras_upscaler_2
         self.extras_upscaler_2_visibility = extras_upscaler_2_visibility
+
+        local_image = get_tmp_local_path(image)
+        if local_image and os.path.isfile(local_image):
+            self.image = Image.open(local_image)
+        else:
+            raise OSError(f'cannot found image:{image}')
 
     @classmethod
     def exec_task(cls, task: Task):
@@ -98,11 +105,18 @@ class ExtraTaskHandler(TaskHandler):
             p.task_desc = f'upscaler task:{task.id} failed.'
         yield p
 
-    def _save_images(self, task: Task, r: typing.Sequence):
+    def _save_images(self, task: Task, r: typing.List):
         local = []
-        for image in r:
+        if r:
             name, _ = os.path.splitext(os.path.basename(task['image']))
-            full_path = os.path.join(Tmp, name + '.png')
-            image.save(full_path)
-            local.append(full_path)
+            images = r[0]
+            for image in images:
+                full_path = os.path.join(Tmp, name + '.png')
+                image.save(full_path)
+                local.append(full_path)
+
         return local
+
+    def _set_task_status(self, p: TaskProgress):
+        super()._set_task_status(p)
+        dumper.dump_task_progress(p)

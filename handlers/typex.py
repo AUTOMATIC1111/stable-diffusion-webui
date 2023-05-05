@@ -35,6 +35,12 @@ ModelLocation = {
     ModelType.Lora: 'models/Lora'
 }
 
+UserModelLocation = {
+    ModelType.Embedding: 'embendings',
+    ModelType.CheckPoint: 'user-models/Stable-diffusion',
+    ModelType.Lora: 'user-models/Lora'
+}
+
 S3ImageBucket = "xingzhe-sdplus"
 S3ImagePath = "output/{uid}/{dir}/{name}"
 S3Tmp = 'sd-tmp'
@@ -51,8 +57,8 @@ class ImageKeys(UserDict):
         return len(self['high']) == 0
 
     def __add__(self, ik: UserDict):
-        self['high'] = list(set(self['high'] + ik['high']))
-        self['low'] = list(set(self['low'] + ik['low']))
+        self['high'] = self['high'] + ik['high']
+        self['low'] = self['low'] + ik['low']
         return self
 
 
@@ -90,8 +96,7 @@ class ImageOutput:
         if file_storage_system.name() != 'default':
             low_keys, keys = [], []
             for low_file in low_files:
-                filename = os.path.basename(low_file)
-                low_key = os.path.join(bucket, self.output_dir, 'low-' + filename)
+                low_key = os.path.join(bucket, low_file)
                 file_storage_system.upload(low_file, low_key)
                 low_keys.append(low_key)
 

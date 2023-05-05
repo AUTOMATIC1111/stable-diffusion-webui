@@ -22,7 +22,7 @@ class Task(UserDict):
 
     def __init__(self, **kwargs):
         super(Task, self).__init__(None, **kwargs)
-        if 'create_at' not in self:
+        if 'create_at' not in self or self['create_at'] < 1:
             self['create_at'] = int(time.time())
 
     @property
@@ -126,6 +126,10 @@ class TaskProgress:
         self._result = r
         self.status = TaskStatus.Finish
         self.task_desc = 'ok'
+
+    def update_seed(self, seed):
+        if isinstance(self.task, Task):
+            self.task['seed'] = seed
 
     def to_dict(self):
         pr = {}

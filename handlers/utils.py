@@ -19,12 +19,16 @@ from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
-from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3Tmp, ImageOutput, OutImageType
 from tools.environment import get_file_storage_system_env, Env_BucketKey
 from filestorage import find_storage_classes_with_env, get_local_path, batch_download
+from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3Tmp, ImageOutput, OutImageType, UserModelLocation
 
 FileStorageCls = find_storage_classes_with_env()
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
+
+
+def clean_models():
+    pass
 
 
 def get_model_local_path(remoting_path: str, model_type: ModelType):
@@ -32,10 +36,17 @@ def get_model_local_path(remoting_path: str, model_type: ModelType):
         raise OSError(f'remoting path is empty')
     if os.path.isfile(remoting_path):
         return remoting_path
+    # 判断user-models下
+    os.makedirs(UserModelLocation[model_type], exist_ok=True)
+    dst = os.path.join(UserModelLocation[model_type], os.path.basename(remoting_path))
+    if os.path.isfile(dst):
+        return dst
+
     os.makedirs(ModelLocation[model_type], exist_ok=True)
     dst = os.path.join(ModelLocation[model_type], os.path.basename(remoting_path))
     if os.path.isfile(dst):
         return dst
+
     dst = get_local_path(remoting_path, dst)
     if os.path.isfile(dst):
         if model_type == ModelType.CheckPoint:
