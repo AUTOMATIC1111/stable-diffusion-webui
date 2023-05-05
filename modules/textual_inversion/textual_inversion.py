@@ -3,7 +3,7 @@ import html
 import csv
 from collections import namedtuple
 import torch
-import tqdm
+from tqdm.rich import tqdm
 import safetensors.torch
 import numpy as np
 from PIL import Image, PngImagePlugin
@@ -448,7 +448,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     is_training_inpainting_model = shared.sd_model.model.conditioning_key in {'hybrid', 'concat'}
     img_c = None
 
-    pbar = tqdm.tqdm(total=steps - initial_step)
+    pbar = tqdm(total=steps - initial_step)
     try:
         sd_hijack_checkpoint.add()
 

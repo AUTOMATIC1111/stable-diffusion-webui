@@ -23,6 +23,7 @@ model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 checkpoints_list = {}
 checkpoint_aliases = {}
 checkpoints_loaded = collections.OrderedDict()
+skip_next_load = False
 
 
 class CheckpointInfo:
@@ -380,7 +381,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
             sd_model = instantiate_from_config(sd_config.model)
     except Exception:
         sd_model = instantiate_from_config(sd_config.model)
-    # sd_model = instantiate_from_config(sd_config.model)
     sd_model.used_config = checkpoint_config
     timer.record("create")
     load_model_weights(sd_model, checkpoint_info, state_dict, timer)
@@ -406,9 +406,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     shared.log.info(f"Model loaded in {timer.summary()}")
     gc.collect()
     shared.debug(f'Model load finished: {memory_stats()}')
-    return sd_model
 
-skip_next_load = False
 
 def reload_model_weights(sd_model=None, info=None):
     global skip_next_load # pylint: disable=global-statement

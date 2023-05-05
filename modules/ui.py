@@ -975,12 +975,14 @@ def create_ui():
 
                     with gr.Row():
                         process_keep_original_size = gr.Checkbox(label='Keep original size', elem_id="train_process_keep_original_size")
+                        process_keep_channels = gr.Checkbox(label='Keep original image channels', elem_id="train_process_keep_channels")
                         process_flip = gr.Checkbox(label='Create flipped copies', elem_id="train_process_flip")
                         process_split = gr.Checkbox(label='Split oversized images', elem_id="train_process_split")
                         process_focal_crop = gr.Checkbox(label='Auto focal point crop', elem_id="train_process_focal_crop")
                         process_multicrop = gr.Checkbox(label='Auto-sized crop', elem_id="train_process_multicrop")
-                        process_caption = gr.Checkbox(label='Use BLIP for caption', elem_id="train_process_caption")
-                        process_caption_deepbooru = gr.Checkbox(label='Use deepbooru for caption', visible=True, elem_id="train_process_caption_deepbooru")
+                        process_caption_only = gr.Checkbox(label='Create captions only', elem_id="train_process_multicrop")
+                        process_caption = gr.Checkbox(label='Create BLIP captions', elem_id="train_process_caption")
+                        process_caption_deepbooru = gr.Checkbox(label='Create Deepbooru captions', visible=True, elem_id="train_process_caption_deepbooru")
 
                     with gr.Row(visible=False) as process_split_extra_row:
                         process_split_threshold = gr.Slider(label='Split image threshold', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_split_threshold")
@@ -1142,8 +1144,10 @@ def create_ui():
                 process_height,
                 preprocess_txt_action,
                 process_keep_original_size,
+                process_keep_channels,
                 process_flip,
                 process_split,
+                process_caption_only,
                 process_caption,
                 process_caption_deepbooru,
                 process_split_threshold,

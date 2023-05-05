@@ -20,7 +20,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-args = Dot({ 'debug': False, 'upgrade': False, 'skip_update': False, 'skip_extensions': False, 'skip_requirements': False, 'skip_git': False, 'reset': False, 'use_directml': False, 'use_ipex': False, 'experimental': False, 'test': False })
+args = Dot({ 'debug': False, 'upgrade': False, 'skip_update': False, 'skip_extensions': False, 'skip_requirements': False, 'skip_git': False, 'reset': False, 'use_directml': False, 'use_ipex': False, 'experimental': False, 'test': False, 'tls_selfsign': False })
 quick_allowed = True
 errors = 0
 opts = {}
@@ -146,9 +146,9 @@ def update(folder):
     log.debug(f'Setting branch: {folder} / {branch}')
     git(f'checkout {branch}', folder)
     if branch is None:
-        git('pull --autostash --rebase', folder)
+        git('pull --autostash --rebase --force', folder)
     else:
-        git(f'pull origin {branch} --autostash --rebase', folder)
+        git(f'pull origin {branch} --autostash --rebase --force', folder)
     # branch = git('branch', folder)
 
 
@@ -239,7 +239,6 @@ def check_torch():
                 log.info(f'Torch backend: DirectML ({version})')
                 for i in range(0, torch_directml.device_count()):
                     log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
-                log.info(f'DirectML default device: {torch_directml.device_name(torch_directml.default_device())}')
             except:
                 log.warning("Torch repoorts CUDA not available")
     except Exception as e:
@@ -435,7 +434,7 @@ def check_extensions():
 
 
 # check version of the main repo and optionally upgrade it
-def check_version(offline=False):
+def check_version(offline=False): # pylint: disable=unused-argument
     if not os.path.exists('.git'):
         log.error('Not a git repository')
         if not args.ignore:
@@ -464,7 +463,7 @@ def check_version(offline=False):
                 try:
                     git('add .')
                     git('stash')
-                    update('.')
+                    update('.') # TODO: can fail
                     # git('git stash pop')
                     ver = git('log -1 --pretty=format:"%h %ad"')
                     log.info(f'Upgraded to version: {ver}')

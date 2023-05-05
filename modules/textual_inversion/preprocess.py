@@ -1,12 +1,12 @@
 import os
 import math
-import tqdm
+from tqdm.rich import tqdm
 from PIL import Image, ImageOps
 from modules import paths, shared, images, deepbooru
 from modules.textual_inversion import autocrop
 
 
-def preprocess(id_task, process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None): # pylint: disable=unused-argument
+def preprocess(id_task, process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size=False, process_keep_channels=False, process_flip=False, process_split=False, process_caption_only=False, process_caption=False, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None): # pylint: disable=unused-argument
     try:
         if process_caption:
             shared.interrogator.load()
@@ -14,7 +14,7 @@ def preprocess(id_task, process_src, process_dst, process_width, process_height,
         if process_caption_deepbooru:
             deepbooru.model.start()
 
-        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight, process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop, process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea, process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold)
+        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size, process_keep_channels, process_flip, process_split, process_caption, process_caption_deepbooru, process_caption_only, split_threshold, overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight, process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop, process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea, process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold)
 
     finally:
 
@@ -34,6 +34,7 @@ class PreprocessParams:
     dstdir = None
     subindex = 0
     flip = False
+    process_caption_only = False
     process_caption = False
     process_caption_deepbooru = False
     preprocess_txt_action = None
@@ -55,7 +56,8 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
     filename_part = os.path.basename(filename_part)
 
     basename = f"{index:05}-{params.subindex}-{filename_part}"
-    image.save(os.path.join(params.dstdir, f"{basename}.png"))
+    if not params.process_caption_only:
+        image.save(os.path.join(params.dstdir, f"{basename}.png"))
 
     if params.preprocess_txt_action == 'prepend' and existing_caption:
         caption = existing_caption + ' ' + caption
@@ -75,7 +77,6 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
 
 def save_pic(image, index, params, existing_caption=None):
     save_pic_with_caption(image, index, params, existing_caption=existing_caption)
-
     if params.flip:
         save_pic_with_caption(ImageOps.mirror(image), index, params, existing_caption=existing_caption)
 
@@ -117,7 +118,7 @@ def center_crop(image: Image, w: int, h: int):
 
 def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, threshold):
     iw, ih = image.size
-    err = lambda w, h: 1-(lambda x: x if x < 1 else 1/x)(iw/ih/(w/h))
+    err = lambda w, h: 1-(lambda x: x if x < 1 else 1/x)(iw/ih/(w/h)) # pylint: disable=unnecessary-lambda-assignment,unnecessary-direct-lambda-call
     wh = max(((w, h) for w in range(mindim, maxdim+1, 64) for h in range(mindim, maxdim+1, 64)
         if minarea <= w * h <= maxarea and err(w, h) <= threshold),
         key= lambda wh: (wh[0]*wh[1], -err(*wh))[::1 if objective=='Maximize area' else -1],
@@ -126,7 +127,7 @@ def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, thr
     return wh and center_crop(image, *wh)
 
 
-def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None):
+def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size, process_keep_channels, process_flip, process_split, process_caption, process_caption_deepbooru, process_caption_only, split_threshold, overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight, process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop, process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea, process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold):
 
     width = process_width
     height = process_height
@@ -148,22 +149,24 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
     params = PreprocessParams()
     params.dstdir = dst
     params.flip = process_flip
+    params.process_caption_only = process_caption_only
     params.process_caption = process_caption
     params.process_caption_deepbooru = process_caption_deepbooru
     params.preprocess_txt_action = preprocess_txt_action
 
-    pbar = tqdm.tqdm(files)
+    pbar = tqdm(files)
     for index, imagefile in enumerate(pbar):
         params.subindex = 0
         filename = os.path.join(src, imagefile)
         try:
             img = Image.open(filename)
             img = ImageOps.exif_transpose(img)
-            img = img.convert("RGB")
+            if not process_keep_channels:
+                img = img.convert("RGB")
         except Exception:
             continue
 
-        description = f"Preprocessing [Image {index}/{len(files)}]"
+        description = f"Preprocessing image {index + 1}/{len(files)}"
         pbar.set_description(description)
         shared.state.textinfo = description
 

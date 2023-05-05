@@ -24,7 +24,6 @@ import latents
 import options
 
 # console handler
-from rich import print # pylint: disable=redefined-builtin
 from rich.pretty import install as pretty_install
 from rich.traceback import install as traceback_install
 from rich.console import Console

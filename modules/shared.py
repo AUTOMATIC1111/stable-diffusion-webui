@@ -360,7 +360,7 @@ options_templates.update(options_section(('face-restoration', "Face restoration"
 
 options_templates.update(options_section(('training', "Training"), {
     "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible"),
-    "pin_memory": OptionInfo(True, "Turn on pin_memory for DataLoader"),
+    "pin_memory": OptionInfo(True, "Pin training dataset to memory"),
     "save_optimizer_state": OptionInfo(False, "Saves resumable optimizer state when training embedding or hypernetwork"),
     "save_training_settings_to_txt": OptionInfo(True, "Save textual inversion and hypernet settings to a text file whenever training starts"),
     "dataset_filename_word_regex": OptionInfo("", "Filename word regex"),
