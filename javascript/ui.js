@@ -1140,22 +1140,19 @@ onUiUpdate(function(){
 			const yoffset_min = (rect.top + window.scrollY);
 			const yoffset_max = (rect.bottom + window.scrollY);
 			let drag_clone_range = false;
-			clone_range.addEventListener('touchmove', function(e) {
-				e.preventDefault();				
+			clone_range.addEventListener('touchmove', function(e) {						
 				if(	drag_clone_range){			
 					let percent = parseInt(((e.touches[0].pageX - xoffset) / this.offsetWidth) * 10000) / 10000;				
 					clone_range.value = ( percent * (this.max - this.min)) + parseFloat(this.min);				
 					clone_num.value = clone_range.value;
 				}
 			}, {passive: true});
-			clone_range.addEventListener('touchstart', function(e) {
-				e.preventDefault();				
+			clone_range.addEventListener('touchstart', function(e) {							
 				if(	e.touches[0].pageY > yoffset_min && e.touches[0].pageY < yoffset_max){			
 					drag_clone_range = true;
 				}
 			}, {passive: true});
-			clone_range.addEventListener('touchend', function(e) {
-				e.preventDefault();		
+			clone_range.addEventListener('touchend', function(e) {				
 				drag_clone_range = false;
 			}, {passive: true});
 
