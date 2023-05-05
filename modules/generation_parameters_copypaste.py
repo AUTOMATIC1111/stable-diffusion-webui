@@ -59,6 +59,7 @@ def image_from_url_text(filedata):
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
+        filename = filename.rsplit('?', 1)[0]
         return Image.open(filename)
 
     if type(filedata) == list:
