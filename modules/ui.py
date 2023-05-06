@@ -822,7 +822,7 @@ def create_ui():
                                             #with gr.Column(elem_id="img2img_column_size"):
                                         selected_scale_tab = gr.State(value=0)
 
-                                        with gr.Tabs():
+                                        with gr.Tabs(elem_id="scale_tabs"):
                                             with gr.Tab(label="Resize to") as tab_scale_to:
                                                 with gr.Row():                                                      
                                                     width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
