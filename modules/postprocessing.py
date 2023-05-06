@@ -10,28 +10,27 @@ from modules.shared import opts
 
 def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemporaryFile], input_dir, output_dir, show_extras_results, *args, save_output: bool = True):
     devices.torch_gc()
-
     shared.state.begin()
     shared.state.job = 'extras'
-
     image_data = []
     image_names = []
+    image_ext = []
     outputs = []
-
     if extras_mode == 1:
         for img in image_folder:
             if isinstance(img, Image.Image):
                 image = img
                 fn = ''
+                ext = None
             else:
                 image = Image.open(os.path.abspath(img.name))
-                fn = os.path.splitext(img.orig_name)[0]
+                fn, ext = os.path.splitext(img.orig_name)
             image_data.append(image)
             image_names.append(fn)
+            image_ext.append(ext)
     elif extras_mode == 2:
         assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
         assert input_dir, 'input directory not selected'
-
         image_list = shared.listfiles(input_dir)
         for filename in image_list:
             try:
@@ -40,47 +39,38 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
                 continue
             image_data.append(image)
             image_names.append(filename)
+            image_ext.append(None)
     else:
         image_data.append(image)
         image_names.append(None)
-
+        image_ext.append(None)
     if extras_mode == 2 and output_dir != '':
         outpath = output_dir
     else:
         outpath = opts.outdir_samples or opts.outdir_extras_samples
-
     infotext = ''
-
-    for image, name in zip(image_data, image_names):
+    for image, name, ext in zip(image_data, image_names, image_ext):
         if image is None:
             continue
         shared.state.textinfo = name
-
         pp = scripts_postprocessing.PostprocessedImage(image.convert("RGB"))
-
         scripts.scripts_postproc.run(pp, args)
-
         if opts.use_original_name_batch and name is not None:
             basename = os.path.splitext(os.path.basename(name))[0]
         else:
             basename = ''
-
         infotext = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in pp.info.items() if v is not None])
-
         if opts.enable_pnginfo:
             _geninfo, items = images.read_info_from_image(image)
             for k, v in items.items():
                 pp.image.info[k] = v
             pp.image.info["postprocessing"] = infotext
-
         if save_output:
-            images.save_image(pp.image, path=outpath, basename=basename, seed=None, prompt=None, extension=opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=pp.image.info, forced_filename=None)
-
+            images.save_image(pp.image, path=outpath, basename=basename, seed=None, prompt=None, extension=ext or opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=pp.image.info, forced_filename=None)
         if extras_mode != 2 or show_extras_results:
             outputs.append(pp.image)
 
     devices.torch_gc()
-
     return outputs, ui_common.plaintext_to_html(infotext), ''
 
 

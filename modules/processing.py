@@ -17,7 +17,7 @@ from blendmodes.blend import blendLayers, BlendType
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts # pylint: disable=unused-import
 from modules.sd_hijack import model_hijack
-from modules.shared import opts, cmd_opts, state, log # pylint: disable=unused-import
+from modules.shared import opts, cmd_opts, state, log
 import modules.shared as shared
 import modules.paths as paths
 import modules.face_restoration
@@ -611,8 +611,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     with torch.no_grad(), p.sd_model.ema_scope():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
-
-            # for OSX, loading the model during sampling changes the generated picture, so it is loaded here
             if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
                 sd_vae_approx.model()
 

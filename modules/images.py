@@ -473,7 +473,7 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
+def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
     """Save an image.
 
     Args:
@@ -510,16 +510,12 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     if path is None: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = opts.outdir_save
-
     if save_to_dirs is None:
         save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
-
     if save_to_dirs:
         dirname = namegen.apply(opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
         path = os.path.join(path, dirname)
-
     os.makedirs(path, exist_ok=True)
-
     if forced_filename is None:
         if short_filename or seed is None:
             file_decoration = ""
@@ -527,14 +523,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             file_decoration = opts.samples_filename_pattern or "[seed]"
         else:
             file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
-
         add_number = opts.save_images_add_number or file_decoration == ''
-
         if file_decoration != "" and add_number:
             file_decoration = "-" + file_decoration
-
         file_decoration = namegen.apply(file_decoration) + suffix
-
         if add_number:
             basecount = get_next_sequence_number(path, basename)
             fullfn = None
@@ -547,67 +539,70 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             fullfn = os.path.join(path, f"{file_decoration}.{extension}")
     else:
         fullfn = os.path.join(path, f"{forced_filename}.{extension}")
-
     pnginfo = existing_info or {}
     if info is not None:
         pnginfo[pnginfo_section_name] = info
-
     params = script_callbacks.ImageSaveParams(image, p, fullfn, pnginfo)
     script_callbacks.before_image_saved_callback(params)
     image = params.image
     fullfn = params.filename
-
     exifinfo_data = params.pnginfo.get('UserComment', '')
     if len(exifinfo_data) > 0:
         exifinfo_data = exifinfo_data + ', ' + params.pnginfo.get(pnginfo_section_name, '')
     else:
         exifinfo_data = params.pnginfo.get(pnginfo_section_name, '')
 
-    def _atomically_save_image(image_to_save, filename_without_extension, extension):
+    def atomically_save_image(image_to_save, filename_without_extension, extension):
         # save image with .tmp extension to avoid race condition when another process detects new image in the directory
         temp_file_path = filename_without_extension + ".tmp"
         image_format = Image.registered_extensions()[extension]
-        if extension.lower() == '.png':
+        if image_format == 'PNG':
             pnginfo_data = PngImagePlugin.PngInfo()
             if opts.enable_pnginfo:
                 for k, v in params.pnginfo.items():
                     pnginfo_data.add_text(k, str(v))
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
-        elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+        elif image_format == 'JPEG':
             if image_to_save.mode == 'RGBA':
+                shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
                 image_to_save = image_to_save.convert("RGB")
             elif image_to_save.mode == 'I;16':
-                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("RGB" if extension.lower() == ".webp" else "L")
+                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("L")
+            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
+            if opts.enable_pnginfo:
+                exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
+                piexif.insert(exif_bytes, temp_file_path)
+        elif image_format == 'WEBP':
+            if image_to_save.mode == 'I;16':
+                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("RGB")
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless)
             if opts.enable_pnginfo:
                 exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
                 piexif.insert(exif_bytes, temp_file_path)
         else:
+            shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
             image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
+        os.replace(temp_file_path, filename_without_extension + extension) # atomically rename the file with correct extension
 
-        # atomically rename the file with correct extension
-        os.replace(temp_file_path, filename_without_extension + extension)
-
-    fullfn_without_extension, extension = os.path.splitext(params.filename)
+    filename, extension = os.path.splitext(params.filename)
     if hasattr(os, 'statvfs'):
         max_name_len = os.statvfs(path).f_namemax
-        fullfn_without_extension = fullfn_without_extension[:max_name_len - max(4, len(extension))]
-        params.filename = fullfn_without_extension + extension
+        filename = filename[:max_name_len - max(4, len(extension))]
+        params.filename = filename + extension
         fullfn = params.filename
-    _atomically_save_image(image, fullfn_without_extension, extension)
+    atomically_save_image(image, filename, extension)
 
     image.already_saved_as = fullfn
-
     if opts.save_txt and len(exifinfo_data) > 0:
-        txt_fullfn = f"{fullfn_without_extension}.txt"
-        with open(txt_fullfn, "w", encoding="utf8") as file:
+        filename_txt = f"{filename}.txt"
+        with open(filename_txt, "w", encoding="utf8") as file:
             file.write(exifinfo_data + "\n")
     else:
         txt_fullfn = None
 
     script_callbacks.image_saved_callback(params)
-
     return fullfn, txt_fullfn
+
 
 def safe_decode_string(s: bytes):
     remove_prefix = lambda text, prefix: text[len(prefix):] if text.startswith(prefix) else text # pylint: disable=unnecessary-lambda-assignment
@@ -629,6 +624,8 @@ def safe_decode_string(s: bytes):
 def read_info_from_image(image):
     items = image.info or {}
     geninfo = items.pop('parameters', None)
+    if geninfo is not None and len(geninfo) > 0:
+        items['UserComment'] = geninfo
 
     if "exif" in items:
         exif = piexif.load(items["exif"])
@@ -662,6 +659,7 @@ Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
         except Exception as e:
             errors.display(e, 'novelai image parser')
+
     return geninfo, items
 
 

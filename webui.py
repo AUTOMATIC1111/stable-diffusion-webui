@@ -157,7 +157,8 @@ def load_model():
     if shared.sd_model is None:
         log.error("No stable diffusion model loaded")
         exit(1)
-    shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
+    else:
+        shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
     shared.state.end()
     startup_timer.record("checkpoint")

@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, create_model # pylint: disable=no-name-in
 from typing_extensions import Literal
 from inflection import underscore
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
-from modules.shared import sd_upscalers, opts, parser
+import modules.shared as shared
 
 API_NOT_ALLOWED = [
     "self",
@@ -142,8 +142,8 @@ class ExtrasBaseRequest(BaseModel):
     upscaling_resize_w: int = Field(default=512, title="Target Width", ge=1, description="Target width for the upscaler to hit. Only used when resize_mode=1.")
     upscaling_resize_h: int = Field(default=512, title="Target Height", ge=1, description="Target height for the upscaler to hit. Only used when resize_mode=1.")
     upscaling_crop: bool = Field(default=True, title="Crop to fit", description="Should the upscaler crop the image to fit in the chosen size?")
-    upscaler_1: str = Field(default="None", title="Main upscaler", description=f"The name of the main upscaler to use, it has to be one of this list: {' , '.join([x.name for x in sd_upscalers])}")
-    upscaler_2: str = Field(default="None", title="Secondary upscaler", description=f"The name of the secondary upscaler to use, it has to be one of this list: {' , '.join([x.name for x in sd_upscalers])}")
+    upscaler_1: str = Field(default="None", title="Main upscaler", description=f"The name of the main upscaler to use, it has to be one of this list: {' , '.join([x.name for x in shared.sd_upscalers])}")
+    upscaler_2: str = Field(default="None", title="Secondary upscaler", description=f"The name of the secondary upscaler to use, it has to be one of this list: {' , '.join([x.name for x in shared.sd_upscalers])}")
     extras_upscaler_2_visibility: float = Field(default=0, title="Secondary upscaler visibility", ge=0, le=1, allow_inf_nan=False, description="Sets the visibility of secondary upscaler, values should be between 0 and 1.")
     upscale_first: bool = Field(default=False, title="Upscale first", description="Should the upscaler run before restoring faces?")
 
@@ -200,9 +200,9 @@ class PreprocessResponse(BaseModel):
     info: str = Field(title="Preprocess info", description="Response string from preprocessing task.")
 
 fields = {}
-for key, metadata in opts.data_labels.items():
-    value = opts.data.get(key)
-    optType = opts.typemap.get(type(metadata.default), type(value))
+for key, metadata in shared.opts.data_labels.items():
+    value = shared.opts.data.get(key)
+    optType = shared.opts.typemap.get(type(metadata.default), type(value))
 
     if metadata is not None:
         fields.update({key: (Optional[optType], Field(
@@ -213,7 +213,7 @@ for key, metadata in opts.data_labels.items():
 OptionsModel = create_model("Options", **fields)
 
 flags = {}
-_options = vars(parser)['_option_string_actions']
+_options = vars(shared.parser)['_option_string_actions']
 for key in _options:
     if _options[key].dest != 'help':
         flag = _options[key]

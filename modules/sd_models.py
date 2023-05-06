@@ -101,10 +101,13 @@ def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
     model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
-    if shared.cmd_opts.ckpt is not None and os.path.exists(shared.cmd_opts.ckpt):
-        checkpoint_info = CheckpointInfo(shared.cmd_opts.ckpt)
-        checkpoint_info.register()
-        shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
+    if shared.cmd_opts.ckpt is not None:
+        if not os.path.exists(shared.cmd_opts.ckpt):
+            shared.log.warning(f"Requested checkpoint not found: {shared.cmd_opts.ckpt}")
+        else:
+            checkpoint_info = CheckpointInfo(shared.cmd_opts.ckpt)
+            checkpoint_info.register()
+            shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
     for filename in sorted(model_list, key=str.lower):
@@ -157,7 +160,8 @@ def select_checkpoint():
         exit(1)
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
-        shared.log.warning(f"Checkpoint {model_checkpoint} not found; loading fallback {checkpoint_info.title}")
+        shared.log.warning(f"Default checkpoint not found: {model_checkpoint}")
+        shared.log.warning(f"Loading fallback checkpoint: {checkpoint_info.title}")
     return checkpoint_info
 
 
@@ -346,6 +350,8 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     shared.debug(f'Load model: {checkpoint_info} {already_loaded_state_dict}')
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
+    if checkpoint_info is None:
+        return
     if timer is None:
         timer = Timer()
     current_checkpoint_info = None
@@ -389,7 +395,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.setup_for_low_vram(sd_model, shared.cmd_opts.medvram)
     else:
-        sd_model.to(shared.device)
+        sd_model.to(devices.device)
     timer.record("move")
     shared.debug(f'Model weights moved: {memory_stats()}')
     sd_hijack.model_hijack.hijack(sd_model)
