@@ -2402,6 +2402,15 @@ height: calc(var(--ae-container-height-gap) - 150px) !important;
 #dim_controls > div:first-child{
 	margin-bottom:max(7px, var(--ae-outside-gap-size)) !important;
 }
+input.svelte-1p9xokt.svelte-1p9xokt.svelte-1p9xokt,
+input.svelte-1qxcj04.svelte-1qxcj04.svelte-1qxcj04 {
+    background-color: var(--ae-panel-bg-color);
+}
+
+label.svelte-1p9xokt.svelte-1p9xokt.svelte-1p9xokt,
+label.svelte-1qxcj04.svelte-1qxcj04.svelte-1qxcj04{
+	pointer-events:all !important;
+}
 /*****************/
 /* Quicksettings */
 /*****************/
