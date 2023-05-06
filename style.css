@@ -534,6 +534,7 @@ div#extras_scale_to_tab div.form{
 #lightboxModal > img.modalImageFullscreen{
     object-fit: contain;
     height: 100%;
+    min-height: 0;
 }
 
 .modalPrev,
