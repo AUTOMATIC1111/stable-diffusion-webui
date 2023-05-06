@@ -114,8 +114,6 @@ Run `source ~/.bashrc` and proceed by running the same commands as you would wit
 
 It's possible that you don't need "--precision full", dropping "--no-half" however it may not work for everyone. Certain cards like the Radeon RX 6000 Series and the RX 500 Series will function normally without the option `--precision full --no-half`, saving plenty of VRAM. (noted [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/5468).)
 
-Always use this new launch-command from now on, also when restarting the web UI in following runs.
-
 # Install on AMD and Arch Linux
 
 **Install webui on Arch Linux with Arch-specific packages**  
