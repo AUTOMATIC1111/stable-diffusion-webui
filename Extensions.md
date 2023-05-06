@@ -960,3 +960,10 @@ https://github.com/jtydhr88/sd-3dmodel-loader
 A custom extension that allows you to load your local 3D model/animation inside webui, or edit pose as well, then send screenshot to txt2img or img2img as your ControlNet's reference image.
 
 ![1](https://user-images.githubusercontent.com/860985/236643711-140579dc-bb74-4a84-ba40-3a64823285ab.png)
+
+## Canvas Editor
+https://github.com/jtydhr88/sd-canvas-editor
+
+A custom extension for sd-webui that integrated a full capability canvas editor which you can use layer, text, image, elements, etc.
+
+![overall](https://user-images.githubusercontent.com/860985/236643824-946ebdef-83af-4e85-80ea-6ac7d2fb520e.png)
