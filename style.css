@@ -3359,6 +3359,7 @@ li.coffee-circle p{
         background-color: var(--ae-input-bg-color);
         border: 1px solid var(--ae-input-border-color);
 		position:relative;
+		border-radius: var(--ae-panel-border-radius);
     }
 	input[type=range]::after {
 		content: '';
