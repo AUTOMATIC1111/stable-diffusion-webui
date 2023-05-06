@@ -78,12 +78,10 @@ Execute the following inside the container:
 cd /dockerx
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui
 cd stable-diffusion-webui
-python -m venv venv
-source venv/bin/activate
 python -m pip install --upgrade pip wheel
 
 # It's possible that you don't need "--precision full", dropping "--no-half" however crashes my drivers
-TORCH_COMMAND='pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1' REQS_FILE='requirements.txt' python launch.py --precision full --no-half
+REQS_FILE='requirements.txt' python launch.py --precision full --no-half
 ```
 
 Following runs will only require you to restart the container, attach to it again and execute the following inside the
@@ -94,10 +92,9 @@ container: Find the container name from this listing: `docker container ls --all
 ```bash
 cd /dockerx/stable-diffusion-webui
 # Optional: "git pull" to update the repository
-source venv/bin/activate
 
 # It's possible that you don't need "--precision full", dropping "--no-half" however crashes my drivers
-TORCH_COMMAND='pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1' REQS_FILE='requirements.txt' python launch.py --precision full --no-half
+REQS_FILE='requirements.txt' python launch.py --precision full --no-half
 ```
 
 The `/dockerx` folder inside the container should be accessible in your home directory under the same name.
@@ -113,17 +110,9 @@ update-alternatives --install /usr/local/bin/python python /usr/bin/python3.9 1
 echo 'PATH=/usr/local/bin:$PATH' >> ~/.bashrc
 ```
 
-Then restart the container and attach again. If you check `python --version` it should now say `Python 3.9.5` or newer.
+Run `source ~/.bashrc` and proceed by running the same commands as you would with an existing container.
 
-Run `rm -rf /dockerx/stable-diffusion-webui/venv` inside the container and then follow the steps in "Running inside
-Docker" again, skipping the `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui` and using the modified
-launch-command below instead:
-
-```bash
-TORCH_COMMAND='pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.1.1' python launch.py --precision full --no-half
-```
-It's possible that you don't need "--precision full", dropping "--no-half" however it may not work for everyone.
-Certain cards like the Radeon RX 6000 Series and the RX 500 Series will function normally without the option `--precision full --no-half`, saving plenty of vram. (noted [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/5468).)
+It's possible that you don't need "--precision full", dropping "--no-half" however it may not work for everyone. Certain cards like the Radeon RX 6000 Series and the RX 500 Series will function normally without the option `--precision full --no-half`, saving plenty of VRAM. (noted [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/5468).)
 
 Always use this new launch-command from now on, also when restarting the web UI in following runs.
 
