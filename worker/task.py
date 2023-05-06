@@ -126,6 +126,7 @@ class TaskProgress:
         self._result = r
         self.status = TaskStatus.Finish
         self.task_desc = 'ok'
+        self.task_progress = 100
 
     def update_seed(self, seed, sub_seed):
         if isinstance(self.task, Task):
@@ -175,10 +176,7 @@ class TaskProgress:
     @classmethod
     def new_finish(cls, task: Task, result: typing.Any):
         p = cls(task)
-        p.status = TaskStatus.Finish
-        p.task_desc = 'ok'
-        p._result = result
-        p.task_progress = 100
+        p.set_finish_result(result)
         return p
 
 

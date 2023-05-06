@@ -84,7 +84,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  img2img_batch_inpaint_mask_dir: str = None,
                  override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337', 'sd_vae': 'None']
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
-                 embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部mbending列表
+                 embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部embedding列表
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
         image = None

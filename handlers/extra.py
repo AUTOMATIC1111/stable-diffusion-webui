@@ -6,13 +6,15 @@
 # @File    : extra.py
 # @Software: Hifive
 import os.path
+import random
 import typing
 from PIL import Image
 from enum import IntEnum
 from handlers.dumper import dumper
 from modules.postprocessing import run_extras
 from handlers.typex import ImageKeys
-from handlers.utils import get_tmp_local_path, Tmp, upload_tmp_files
+from tools.image import compress_image
+from handlers.utils import get_tmp_local_path, Tmp, upload_files
 from worker.task import Task, TaskType, TaskHandler, TaskProgress, TaskStatus
 
 
@@ -96,10 +98,16 @@ class ExtraTaskHandler(TaskHandler):
         p = TaskProgress.new_ready(task, f"ready exec upscaler, task:{task.id}")
         yield p
         result = SingleUpscalerTask.exec_task(task)
+        p = TaskProgress.new_running(task, "up scale image...")
+        p.task_progress = random.randint(30, 70)
+        yield p
         if result:
-            images = self._save_images(task, result)
-            keys = upload_tmp_files(*images)
-            image_keys = ImageKeys(keys, [])
+            high, low = self._save_images(task, result)
+            p.task_progress = random.randint(70, 90)
+            yield p
+            high_keys = upload_files(False, *high)
+            low_keys = upload_files(False, *low)
+            image_keys = ImageKeys(high_keys, low_keys)
             p.set_finish_result({
                 'all': image_keys
             })
@@ -110,15 +118,20 @@ class ExtraTaskHandler(TaskHandler):
         yield p
 
     def _save_images(self, task: Task, r: typing.List):
-        local = []
+        high, low = [], []
         if r:
-            name, _ = os.path.splitext(os.path.basename(task['image']))
             images = r[0]
             for image in images:
-                full_path = os.path.join(Tmp, name + '.png')
+                filename = task.id + '.png'
+                full_path = os.path.join(Tmp, filename)
                 image.save(full_path)
-                local.append(full_path)
-        return local
+                high.append(full_path)
+                low_file = os.path.join(Tmp, 'low-' + filename)
+                if not os.path.isfile(low_file):
+                    compress_image(full_path, low_file)
+                low.append(low_file)
+
+        return high, low
 
     def _set_task_status(self, p: TaskProgress):
         super()._set_task_status(p)

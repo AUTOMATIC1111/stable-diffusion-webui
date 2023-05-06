@@ -21,7 +21,7 @@ from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
 from tools.environment import get_file_storage_system_env, Env_BucketKey
 from filestorage import find_storage_classes_with_env, get_local_path, batch_download
-from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3Tmp, ImageOutput, OutImageType, UserModelLocation
+from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3Tmp, ImageOutput, OutImageType, UserModelLocation, S3SDWEB
 
 FileStorageCls = find_storage_classes_with_env()
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
@@ -82,19 +82,20 @@ def get_tmp_local_path(remoting_path: str):
     return get_local_path(remoting_path, dst)
 
 
-def upload_tmp_files(*files):
+def upload_files(is_tmp, *files):
     keys = []
-    date = datetime.today().strftime('%Y/%m/%d')
-    storage_env = get_file_storage_system_env()
-    bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
-    file_storage_system = FileStorageCls()
+    if files:
+        date = datetime.today().strftime('%Y/%m/%d')
+        storage_env = get_file_storage_system_env()
+        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+        file_storage_system = FileStorageCls()
+        relative = S3Tmp if is_tmp else S3SDWEB
 
-    for f in files:
-        _, ex = os.path.splitext(f)
-        id = uuid1()
-        key = os.path.join(bucket, S3Tmp, date, str(id) + ex)
-        file_storage_system.upload(f, key)
-        keys.append(key)
+        for f in files:
+            name = os.path.basename(f)
+            key = os.path.join(bucket, relative, date, name)
+            file_storage_system.upload(f, key)
+            keys.append(key)
     return keys
 
 

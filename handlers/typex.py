@@ -44,6 +44,7 @@ UserModelLocation = {
 S3ImageBucket = "xingzhe-sdplus"
 S3ImagePath = "output/{uid}/{dir}/{name}"
 S3Tmp = 'sd-tmp'
+S3SDWEB = 'sd-web'
 
 
 class ImageKeys(UserDict):
@@ -96,13 +97,19 @@ class ImageOutput:
         if file_storage_system.name() != 'default':
             low_keys, keys = [], []
             for low_file in low_files:
-                low_key = os.path.join(bucket, low_file)
+                relative_path = low_file
+                if S3SDWEB not in low_file:
+                    relative_path = os.path.join(S3SDWEB, low_file)
+                low_key = os.path.join(bucket, relative_path)
                 file_storage_system.upload(low_file, low_key)
                 low_keys.append(low_key)
 
+            relative_path = self.output_dir
+            if S3SDWEB not in self.output_dir:
+                relative_path = os.path.join(S3SDWEB, self.output_dir)
             for file_path in self.local_files:
                 filename = os.path.basename(file_path)
-                key = os.path.join(bucket, self.output_dir, filename)
+                key = os.path.join(bucket, relative_path, filename)
                 file_storage_system.upload(file_path, key)
                 keys.append(key)
 
