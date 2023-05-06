@@ -953,3 +953,10 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui-aesthetic-gradients
 Create an embedding from one or few pictures and use it to apply their style to generated images.
 
 ![firefox_FgKg9dx9eF](https://user-images.githubusercontent.com/20920490/197466300-6b042bcf-5cba-4600-97d7-ad2652875706.png)
+
+## 3D Model&Pose Loader
+https://github.com/jtydhr88/sd-3dmodel-loader
+
+A custom extension that allows you to load your local 3D model/animation inside webui, or edit pose as well, then send screenshot to txt2img or img2img as your ControlNet's reference image.
+
+![1](https://user-images.githubusercontent.com/860985/236643711-140579dc-bb74-4a84-ba40-3a64823285ab.png)
