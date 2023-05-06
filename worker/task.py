@@ -127,9 +127,10 @@ class TaskProgress:
         self.status = TaskStatus.Finish
         self.task_desc = 'ok'
 
-    def update_seed(self, seed):
+    def update_seed(self, seed, sub_seed):
         if isinstance(self.task, Task):
             self.task['seed'] = seed
+            self.task['sub_seed'] = sub_seed
 
     def to_dict(self):
         pr = {}
@@ -177,6 +178,7 @@ class TaskProgress:
         p.status = TaskStatus.Finish
         p.task_desc = 'ok'
         p._result = result
+        p.task_progress = 100
         return p
 
 

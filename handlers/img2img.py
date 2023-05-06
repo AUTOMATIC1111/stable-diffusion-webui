@@ -405,7 +405,7 @@ class Img2ImgTaskHandler(TaskHandler):
                                        process_args.outpath_scripts,
                                        task.id)
 
-        progress.update_seed(processed.seed)
+        progress.update_seed(processed.seed, processed.subseed)
         progress.set_finish_result(images)
         yield progress
 

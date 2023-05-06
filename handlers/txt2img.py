@@ -198,6 +198,8 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
                                        task.id)
+
+        progress.update_seed(processed.seed, processed.subseed)
         progress.set_finish_result(images)
         yield progress
 

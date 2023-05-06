@@ -57,9 +57,9 @@ class ImageKeys(UserDict):
         return len(self['high']) == 0
 
     def __add__(self, ik: UserDict):
-        self['high'] = self['high'] + ik['high']
-        self['low'] = self['low'] + ik['low']
-        return self
+        high = self['high'] + ik['high']
+        low = self['low'] + ik['low']
+        return ImageKeys(high, low)
 
 
 class ImageOutput:

@@ -252,12 +252,15 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
     image_keys = out_image.upload_keys(clean_upload_files)
     script_keys = out_script_image.upload_keys(clean_upload_files)
 
-    # 这里使用了__add__并返回self,因此output实际为grid_keys对象
-    output = grid_keys + image_keys + script_keys
+    output = {
+        'grids': grid_keys,
+        'samples': image_keys
+    }
+
+    all_keys = grid_keys + image_keys + script_keys
     output.update({
-        'image_start_index': proc.index_of_first_image,
-        'image_end_index': proc.index_of_end_image,
-        'has_grid': proc.index_of_first_image > 0
+        'has_grid': proc.index_of_first_image > 0,
+        'all': all_keys,
     })
 
     return output
