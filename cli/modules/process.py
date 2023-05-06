@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """
 process people images
 - check image resolution

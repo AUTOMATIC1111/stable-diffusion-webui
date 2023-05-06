@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """
 generate prompt ideas
 model from: <https://huggingface.co/FredZhang7/distilgpt2-stable-diffusion-v2>

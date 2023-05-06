@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # pylint: disable=no-member
 """generate batches of images from prompts and upscale them
 

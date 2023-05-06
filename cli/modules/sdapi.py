@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """
 helper methods that creates HTTP session with managed connection pool
 provides async HTTP get/post methods and several helper methods

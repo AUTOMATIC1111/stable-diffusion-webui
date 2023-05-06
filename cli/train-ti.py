@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # pylint: disable=no-member
 """
 simple implementation of training api: `/sdapi/v1/train`
