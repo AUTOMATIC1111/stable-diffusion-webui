@@ -50,5 +50,5 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         processed = process_images(p)
     p.close()
     generation_info_js = processed.js()
-    shared.debug(f'Processed: {len(processed.images)} Memory: {memory_stats()} txt')
+    shared.log.debug(f'Processed: {len(processed.images)} Memory: {memory_stats()} txt')
     return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments)

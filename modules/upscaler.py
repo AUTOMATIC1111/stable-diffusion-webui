@@ -30,7 +30,7 @@ class Upscaler:
         self.img = None
         self.output = None
         self.scale = 1
-        self.half = not shared.cmd_opts.no_half
+        self.half = not shared.opts.no_half
         self.pre_pad = 0
         self.mod_scale = None
 

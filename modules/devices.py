@@ -77,11 +77,13 @@ def test_fp16():
         x = torch.tensor([[1.5,.0,.0,.0]]).to(device).half()
         layerNorm = torch.nn.LayerNorm(4, eps=0.00001, elementwise_affine=True, dtype=torch.float16, device=device)
         _y = layerNorm(x)
+        return True
     except:
         shared.log.warning('Torch FP16 test failed: Forcing FP32 operations')
         shared.opts.cuda_dtype = 'FP32'
         shared.opts.no_half = True
         shared.opts.no_half_vae = True
+        return False
 
 
 def set_cuda_params():
@@ -101,22 +103,23 @@ def set_cuda_params():
                 pass
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
     # set dtype
-    test_fp16()
-    if shared.opts.cuda_dtype == 'FP16':
+    ok = test_fp16()
+    if shared.opts.cuda_dtype == 'FP16' and ok:
         dtype = torch.float16
         dtype_vae = torch.float16
         dtype_unet = torch.float16
-    if shared.opts.cuda_dtype == 'BP16':
+    if shared.opts.cuda_dtype == 'BP16' and ok:
         dtype = torch.bfloat16
         dtype_vae = torch.bfloat16
         dtype_unet = torch.bfloat16
-    if shared.opts.cuda_dtype == 'FP32' or shared.opts.no_half:
+    if shared.opts.cuda_dtype == 'FP32' or shared.opts.no_half or not ok:
         dtype = torch.float32
         dtype_vae = torch.float32
         dtype_unet = torch.float32
     if shared.opts.no_half_vae: # set dtype again as no-half-vae options take priority
         dtype_vae = torch.float32
     unet_needs_upcast = shared.opts.upcast_sampling
+    shared.log.debug(f'Setting CUDA parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet}')
 
 
 args = cmd_args.parser.parse_args()
@@ -182,11 +185,11 @@ def test_for_nans(x, where):
         return
     if where == "unet":
         message = "A tensor with all NaNs was produced in Unet."
-        if not shared.cmd_opts.no_half:
+        if not shared.opts.no_half:
             message += " This could be either because there's not enough precision to represent the picture, or because your video card does not support half type. Try setting the \"Upcast cross attention layer to float32\" option in Settings > Stable Diffusion or using the --no-half commandline argument to fix this."
     elif where == "vae":
         message = "A tensor with all NaNs was produced in VAE."
-        if not shared.cmd_opts.no_half and not shared.cmd_opts.no_half_vae:
+        if not shared.opts.no_half and not shared.opts.no_half_vae:
             message += " This could be because there's not enough precision to represent the picture. Try adding --no-half-vae commandline argument to fix this."
     else:
         message = "A tensor with all NaNs was produced."

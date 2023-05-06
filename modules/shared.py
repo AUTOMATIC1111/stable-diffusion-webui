@@ -166,11 +166,6 @@ interrogator = modules.interrogate.InterrogateModels("interrogate")
 face_restorers = []
 
 
-def debug(message):
-    if cmd_opts.debug:
-        log.debug(message)
-
-
 class OptionInfo:
     def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None):
         self.default = default
