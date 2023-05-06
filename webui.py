@@ -304,6 +304,9 @@ def webui():
 
         if not cmd_opts.no_gradio_queue:
             shared.demo.queue(64)
+        else:
+            print('Server queues disabled')
+            shared.demo.progress_tracking = False
 
         gradio_auth_creds = []
         if cmd_opts.gradio_auth:
