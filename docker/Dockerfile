@@ -24,7 +24,6 @@ ENV VIRTUAL_ENV=/stable-diffusion-webui/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 WORKDIR "/stable-diffusion-webui/"
-VOLUME /stable-diffusion-webui/models
 VOLUME /root/.cache
 
 CMD ["python3", "launch.py", "--listen"]
