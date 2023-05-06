@@ -11,6 +11,7 @@ from PIL import Image
 from enum import IntEnum
 from handlers.dumper import dumper
 from modules.postprocessing import run_extras
+from handlers.typex import ImageKeys
 from handlers.utils import get_tmp_local_path, Tmp, upload_tmp_files
 from worker.task import Task, TaskType, TaskHandler, TaskProgress, TaskStatus
 
@@ -98,7 +99,10 @@ class ExtraTaskHandler(TaskHandler):
         if result:
             images = self._save_images(task, result)
             keys = upload_tmp_files(*images)
-            p.set_finish_result(keys)
+            image_keys = ImageKeys(keys, [])
+            p.set_finish_result({
+                'all': image_keys
+            })
             p.task_desc = f'upscaler task:{task.id} finished.'
         else:
             p.status = TaskStatus.Failed
@@ -114,7 +118,6 @@ class ExtraTaskHandler(TaskHandler):
                 full_path = os.path.join(Tmp, name + '.png')
                 image.save(full_path)
                 local.append(full_path)
-
         return local
 
     def _set_task_status(self, p: TaskProgress):
