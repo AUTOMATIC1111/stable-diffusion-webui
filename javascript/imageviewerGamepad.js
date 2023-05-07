@@ -1,8 +1,9 @@
-let isWaiting = false;
 window.addEventListener('gamepadconnected', (e) => {
+    const index = e.gamepad.index;
+    let isWaiting = false;
     setInterval(async () => {
         if (!opts.js_modal_lightbox_gamepad || isWaiting) return;
-        const gamepad = navigator.getGamepads()[0];
+        const gamepad = navigator.getGamepads()[index];
         const xValue = gamepad.axes[0];
         if (xValue <= -0.3) {
             modalPrevImage(e);
@@ -13,7 +14,7 @@ window.addEventListener('gamepadconnected', (e) => {
         }
         if (isWaiting) {
             await sleepUntil(() => {
-                const xValue = navigator.getGamepads()[0].axes[0]
+                const xValue = navigator.getGamepads()[index].axes[0]
                 if (xValue < 0.3 && xValue > -0.3) {
                     return true;
                 }
