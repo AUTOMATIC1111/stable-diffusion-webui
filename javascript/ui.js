@@ -267,9 +267,10 @@ onUiLoaded(function(){
     tab_elements.forEach(function(elem, index){
         // Add a modification indicator to the toplevel tab button
         let new_indicator = document.createElement('button')
-        new_indicator.id = "modification_indicator_"+elem.id.replace("setting_", "")
+        new_indicator.id = "modification_indicator_"+elem.id
         new_indicator.className = "modification-indicator"
         new_indicator.disabled = true
+        new_indicator.onclick = () => onSettingsModificationIndicatorClicked(elem.id)
 
         // Add a modification indicator to the toplevel tab button
         tab_nav_element.insertBefore(new_indicator, tab_nav_buttons[index])
@@ -279,6 +280,7 @@ onUiLoaded(function(){
 })
 
 
+dirty_opts = {}
 function markIfModified(setting_name, value) {
     elem = gradioApp().getElementById("modification_indicator_"+setting_name)
     if(elem == null) return;
@@ -289,6 +291,29 @@ function markIfModified(setting_name, value) {
     if (is_new_value) {
         elem.title = `Changed from previous value: ${previous_value_json}`
     }
+
+    // Get parent tab element
+    let tab_element = elem.closest('[id^="settings_"]')
+    if (tab_element == null) return;
+    let tab_name = tab_element.id
+    if (dirty_opts[tab_name] == undefined) {
+        dirty_opts[tab_name] = new Set()
+    }
+    if (is_new_value) {
+        dirty_opts[tab_name].add(setting_name)
+    } else {
+        dirty_opts[tab_name].delete(setting_name)
+    }
+    let is_tab_dirty = dirty_opts[tab_name].size > 0
+
+    // Set the indicator on the tab nav element
+    let tab_nav_indicator = tab_nav_element.querySelector('#modification_indicator_'+tab_name)
+    tab_nav_indicator.disabled = !is_tab_dirty
+    if (dirty_opts[tab_name].size > 1) {
+        tab_nav_indicator.title = `Click to reset ${dirty_opts[tab_name].size} unapplied changes in this tab.`
+    } else if (dirty_opts[tab_name].size == 1) {
+        tab_nav_indicator.title = `Click to reset 1 unapplied change in this tab.`
+    }
 }
 
 function onSettingComponentChanged(setting_name, value) {
@@ -296,11 +321,15 @@ function onSettingComponentChanged(setting_name, value) {
     return []
 }
 
+function onSettingsModificationIndicatorClicked(tab_name) {
+    dirty_opts[tab_name].forEach(function(setting_name){
+        // Click each setting's modification indicator
+        gradioApp().getElementById("modification_indicator_"+setting_name).click()
+    })
+}
+
 function onModificationIndicatorClicked(setting_name) {
-    elem = gradioApp().getElementById("modification_indicator_"+setting_name)
-    if (elem) {
-        elem.disabled = true
-    }
+    markIfModified(setting_name, opts[setting_name])
     return JSON.parse(JSON.stringify(opts[setting_name]));
 }
 
