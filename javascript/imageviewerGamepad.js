@@ -1,4 +1,3 @@
-const delay = 350//ms
 let isWaiting = false;
 window.addEventListener('gamepadconnected', (e) => {
     setInterval(async () => {
@@ -18,7 +17,7 @@ window.addEventListener('gamepadconnected', (e) => {
                 if (xValue < 0.3 && xValue > -0.3) {
                     return true;
                 }
-            }, delay);
+            }, opts.js_modal_lightbox_gamepad_repeat);
             isWaiting = false;
         }
     }, 10);
@@ -41,7 +40,7 @@ window.addEventListener('wheel', (e) => {
 
     setTimeout(() => {
         isScrolling = false;
-    }, delay);
+    }, opts.js_modal_lightbox_gamepad_repeat);
 });
 
 function sleepUntil(f, timeout) {
