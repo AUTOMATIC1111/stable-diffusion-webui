@@ -259,6 +259,26 @@ onOptionsChanged(function(){
     })
 })
 
+onUiLoaded(function(){
+    tab_nav_element = gradioApp().querySelector('#settings > .tab-nav')
+    tab_nav_buttons = gradioApp().querySelectorAll('#settings > .tab-nav > button')
+    tab_elements = gradioApp().querySelectorAll('#settings > [id^="settings_"]')
+
+    tab_elements.forEach(function(elem, index){
+        // Add a modification indicator to the toplevel tab button
+        let new_indicator = document.createElement('button')
+        new_indicator.id = "modification_indicator_"+elem.id.replace("setting_", "")
+        new_indicator.className = "modification-indicator"
+        new_indicator.disabled = true
+
+        // Add a modification indicator to the toplevel tab button
+        tab_nav_element.insertBefore(new_indicator, tab_nav_buttons[index])
+    })
+    // Add the dirtyable class to the tab nav element
+    tab_nav_element.classList.add('dirtyable')
+})
+
+
 function markIfModified(setting_name, value) {
     elem = gradioApp().getElementById("modification_indicator_"+setting_name)
     if(elem == null) return;
