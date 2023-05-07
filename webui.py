@@ -340,8 +340,23 @@ def webui():
 
         modules.progress.setup_progress_api(app)
 
-        if launch_api:
-            create_api(app)
+        api_started=False
+        if launch_api and not api_started:
+            from gradio.networking import Server, get_first_available_port
+            import uvicorn
+
+            api_app = FastAPI()
+            setup_middleware(api_app)
+            api = create_api(api_app)
+            api_server = Server(config=uvicorn.Config(
+                app=api.app,
+                host=server_name if server_name else "127.0.0.1",
+                port=cmd_opts.port+1 if cmd_opts.port else get_first_available_port(7860, 8000),
+                ssl_keyfile=cmd_opts.tls_keyfile,
+                ssl_certfile=cmd_opts.tls_certfile,
+            ))
+            api_server.run_in_thread()
+            api_started = True
 
         ui_extra_networks.add_pages_to_demo(app)
 
