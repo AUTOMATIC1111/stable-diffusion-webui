@@ -1,15 +1,27 @@
-const delay = 250//ms
+const delay = 350//ms
+let isWaiting = false;
 window.addEventListener('gamepadconnected', (e) => {
-    setInterval(() => {
-        if (!opts.js_modal_lightbox_gamepad) return;
+    setInterval(async () => {
+        if (!opts.js_modal_lightbox_gamepad || isWaiting) return;
         const gamepad = navigator.getGamepads()[0];
         const xValue = gamepad.axes[0];
-        if (xValue < -0.3) {
+        if (xValue <= -0.3) {
             modalPrevImage(e);
-        } else if (xValue > 0.3) {
+            isWaiting = true;
+        } else if (xValue >= 0.3) {
             modalNextImage(e);
+            isWaiting = true;
         }
-    }, delay);
+        if (isWaiting) {
+            await sleepUntil(() => {
+                const xValue = navigator.getGamepads()[0].axes[0]
+                if (xValue < 0.3 && xValue > -0.3) {
+                    return true;
+                }
+            }, delay);
+            isWaiting = false;
+        }
+    }, 10);
 });
 
 /*
@@ -31,3 +43,15 @@ window.addEventListener('wheel', (e) => {
         isScrolling = false;
     }, delay);
 });
+
+function sleepUntil(f, timeout) {
+    return new Promise((resolve) => {
+        const timeStart = new Date();
+        const wait = setInterval(function() {
+            if (f() || new Date() - timeStart > timeout) {
+                clearInterval(wait);
+                resolve();
+            }
+        }, 20);
+    });
+}
