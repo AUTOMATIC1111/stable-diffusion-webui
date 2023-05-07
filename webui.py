@@ -290,7 +290,7 @@ def api_only():
 def webui():
     launch_api = cmd_opts.api
     initialize()
-
+    api_started=False
     while 1:
         if shared.opts.clean_temp_dir_at_start:
             ui_tempdir.cleanup_tmpdr()
@@ -340,7 +340,7 @@ def webui():
 
         modules.progress.setup_progress_api(app)
 
-        api_started=False
+        
         if launch_api and not api_started:
             from gradio.networking import Server, get_first_available_port
             import uvicorn
