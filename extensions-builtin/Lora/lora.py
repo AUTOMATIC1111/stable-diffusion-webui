@@ -93,6 +93,7 @@ class LoraOnDisk:
             self.metadata = m
 
         self.ssmd_cover_images = self.metadata.pop('ssmd_cover_images', None)  # those are cover images and they are too big to display in UI as text
+        self.alias = self.metadata.get('ss_output_name', self.name)
 
 
 class LoraModule:
@@ -199,11 +200,11 @@ def load_loras(names, multipliers=None):
 
     loaded_loras.clear()
 
-    loras_on_disk = [available_loras.get(name, None) for name in names]
+    loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
     if any([x is None for x in loras_on_disk]):
         list_available_loras()
 
-        loras_on_disk = [available_loras.get(name, None) for name in names]
+        loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
 
     for i, name in enumerate(names):
         lora = already_loaded.get(name, None)
@@ -343,6 +344,7 @@ def lora_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 def list_available_loras():
     available_loras.clear()
+    available_lora_aliases.clear()
 
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
 
@@ -356,11 +358,16 @@ def list_available_loras():
             continue
 
         name = os.path.splitext(os.path.basename(filename))[0]
+        entry = LoraOnDisk(name, filename)
 
-        available_loras[name] = LoraOnDisk(name, filename)
+        available_loras[name] = entry
+
+        available_lora_aliases[name] = entry
+        available_lora_aliases[entry.alias] = entry
 
 
 available_loras = {}
+available_lora_aliases = {}
 loaded_loras = []
 
 list_available_loras()
