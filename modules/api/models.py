@@ -252,6 +252,11 @@ class HypernetworkItem(BaseModel):
     name: str = Field(title="Name")
     path: Optional[str] = Field(title="Path")
 
+class LoRAItem(BaseModel):
+    name: str = Field(title="Name")
+    path: Optional[str] = Field(title="Path")
+    prompt: Optional[str] = Field(title="Prompt")
+
 class FaceRestorerItem(BaseModel):
     name: str = Field(title="Name")
     cmd_dir: Optional[str] = Field(title="Path")

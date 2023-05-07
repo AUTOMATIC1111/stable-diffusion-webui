@@ -95,6 +95,14 @@ def reload_hypernetworks():
 
     hypernetworks = hypernetwork.list_hypernetworks(cmd_opts.hypernetwork_dir)
 
+loras = {}
+
+def reload_loras():
+    import importlib
+    lora = importlib.import_module('extensions-builtin.Lora.lora')
+    global loras
+    lora.list_available_loras()
+    loras = lora.list_loras
 
 class State:
     skipped = False

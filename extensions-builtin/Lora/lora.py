@@ -343,6 +343,7 @@ def lora_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 def list_available_loras():
     available_loras.clear()
+    list_loras.clear()
 
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
 
@@ -357,9 +358,11 @@ def list_available_loras():
 
         name = os.path.splitext(os.path.basename(filename))[0]
 
+        list_loras[name] = filename
         available_loras[name] = LoraOnDisk(name, filename)
 
 
+list_loras = {}
 available_loras = {}
 loaded_loras = []
 
