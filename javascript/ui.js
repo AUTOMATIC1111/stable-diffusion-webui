@@ -228,11 +228,11 @@ onUiUpdate(function(){
     registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button')
     registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button')
     show_all_pages = gradioApp().getElementById('settings_show_all_pages')
-    settings_tabs = gradioApp().querySelector('#settings div')
+    settings_tabs = gradioApp().querySelector('#settings > div.tab-nav')
     if(show_all_pages && settings_tabs){
         settings_tabs.appendChild(show_all_pages)
         show_all_pages.onclick = function(){
-            gradioApp().querySelectorAll('#settings > div').forEach(function(elem){
+            gradioApp().querySelectorAll('#settings > div[id^="settings_"]').forEach(function(elem){
                 elem.style.display = "block";
             })
         }
