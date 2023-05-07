@@ -284,7 +284,6 @@ options_templates.update(options_section(('saving-images', "Image options"), {
     "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
     "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),
     "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
-    "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
     "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters"),
     "save_images_before_face_restoration": OptionInfo(True, "Save a copy of image before doing face restoration"),
     "save_images_before_highres_fix": OptionInfo(True, "Save a copy of image before applying highres fix"),

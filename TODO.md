@@ -4,24 +4,27 @@
 
 Stuff to be fixed...
 
-- Move Restart Server from WebUI to Launch and reload modules
-- Mdularize `cli` scripts
 
 ## Features
 
 Stuff to be added...
 
 - Update `README.md`
-- Add Gradio theme maker
-- Create new GitHub hooks/actions for CI/CD  
+- Update `Wiki`
+- Add `Gradio` theme maker
+- Create new `GitHub` hooks/actions for CI/CD  
 - Redo Extensions tab: <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
-- Stream-load models as option for slow storage
-- Auto-test `torch.layer_norm` for FP16
-- Monitor file changes by misbehaving extensions
+- Monitor file changes for misbehaving extensions
 - Kitchen theme: <https://github.com/canisminor1990/sd-webui-kitchen-theme>
 - Lightbox improvements
 - Check duplicate extensions
 - Reload browser on server restart
+- Gradio 3.28.4 when ready
+- Remove origin wiki
+- Import core repos
+- Improve core `Stability-AI` code: <https://github.com/vladmandic/automatic/discussions/795>
+- Improve core `k-Diffusion` code
+- Update and mdularize `cli` scripts
 
 ## Investigate
 

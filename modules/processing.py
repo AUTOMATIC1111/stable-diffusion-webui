@@ -735,8 +735,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p)
                 text = infotext(n, i)
                 infotexts.append(text)
-                if opts.enable_pnginfo:
-                    image.info["parameters"] = text
+                image.info["parameters"] = text
                 output_images.append(image)
                 if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay and any([opts.save_mask, opts.save_mask_composite, opts.return_mask, opts.return_mask_composite]):
                     image_mask = p.mask_for_overlay.convert('RGB')
@@ -761,8 +760,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if opts.return_grid:
                 text = infotext()
                 infotexts.insert(0, text)
-                if opts.enable_pnginfo:
-                    grid.info["parameters"] = text
+                grid.info["parameters"] = text
                 output_images.insert(0, grid)
                 index_of_first_image = 1
             if opts.grid_save:

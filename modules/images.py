@@ -552,37 +552,32 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
     else:
         exifinfo_data = params.pnginfo.get(pnginfo_section_name, '')
 
-    def atomically_save_image(image_to_save, filename_without_extension, extension):
+    def atomically_save_image(image_to_save: Image, filename_without_extension: str, extension: str):
         # save image with .tmp extension to avoid race condition when another process detects new image in the directory
-        temp_file_path = filename_without_extension + ".tmp"
+        fn = filename_without_extension + extension
         image_format = Image.registered_extensions()[extension]
+        log.debug(f'Saving image: {image_format} {fn}')
         if image_format == 'PNG':
             pnginfo_data = PngImagePlugin.PngInfo()
-            if opts.enable_pnginfo:
-                for k, v in params.pnginfo.items():
-                    pnginfo_data.add_text(k, str(v))
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
+            for k, v in params.pnginfo.items():
+                pnginfo_data.add_text(k, str(v))
+            image_to_save.save(fn, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
         elif image_format == 'JPEG':
             if image_to_save.mode == 'RGBA':
                 shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
                 image_to_save = image_to_save.convert("RGB")
             elif image_to_save.mode == 'I;16':
                 image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("L")
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
-            if opts.enable_pnginfo:
-                exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
-                piexif.insert(exif_bytes, temp_file_path)
+            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
+            image_to_save.save(fn, format=image_format, quality=opts.jpeg_quality, exif=exif_bytes)
         elif image_format == 'WEBP':
             if image_to_save.mode == 'I;16':
                 image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("RGB")
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless)
-            if opts.enable_pnginfo:
-                exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
-                piexif.insert(exif_bytes, temp_file_path)
+            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
+            image_to_save.save(fn, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless, exif=exif_bytes)
         else:
             shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
-        os.replace(temp_file_path, filename_without_extension + extension) # atomically rename the file with correct extension
+            image_to_save.save(fn, format=image_format, quality=opts.jpeg_quality)
 
     filename, extension = os.path.splitext(params.filename)
     if hasattr(os, 'statvfs'):
