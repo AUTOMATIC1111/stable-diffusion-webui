@@ -289,7 +289,7 @@ function markIfModified(setting_name, value) {
     let is_new_value = JSON.stringify(value) != previous_value_json
     elem.disabled = !is_new_value
     if (is_new_value) {
-        elem.title = `Changed from previous value: ${previous_value_json}`
+        elem.title = `Click to revert to previous value: ${previous_value_json}`
     }
 
     // Get parent tab element
