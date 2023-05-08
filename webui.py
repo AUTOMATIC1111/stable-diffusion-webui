@@ -280,12 +280,6 @@ def api_only():
     print(f"Startup time: {startup_timer.summary()}.")
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
-# patch in url for api docs
-def my_setup(self):
-    self.docs_url = "/docs"
-    self.redoc_url = "/redoc"
-    self.orig_setup()
-
 def webui():
     launch_api = cmd_opts.api
     initialize()
@@ -312,9 +306,16 @@ def webui():
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
-        if launch_api:
-            FastAPI.orig_setup = FastAPI.setup
-            setattr(FastAPI, "setup", my_setup)            
+        # this restores the missing /docs endpoint
+        if launch_api and not hasattr(FastAPI, 'original_setup'):
+            def fastapi_setup(self):
+                self.docs_url = "/docs"
+                self.redoc_url = "/redoc"
+                self.original_setup()
+
+            FastAPI.original_setup = FastAPI.setup
+            FastAPI.setup = fastapi_setup
+
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=server_name,
