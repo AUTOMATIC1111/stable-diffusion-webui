@@ -2,7 +2,9 @@ import glob
 import os
 import re
 import torch
-from typing import Union
+from typing import Union, List, Optional
+from fastapi import FastAPI
+import gradio as gr
 
 from modules import shared, devices, sd_models, errors, scripts
 
@@ -443,9 +445,19 @@ def infotext_pasted(infotext, params):
     if added:
         params["Prompt"] += "\n" + "".join(added)
 
+def api(_: gr.Blocks, app: FastAPI):
+    @app.get("/sdapi/v1/loras")
+    async def getloras():
+        return [{"name": name, "path": available_loras[name].filename, "prompt": ""} for name in available_loras]
+
 
 available_loras = {}
 available_lora_aliases = {}
 loaded_loras = []
 
 list_available_loras()
+try:
+    import modules.script_callbacks as script_callbacks
+    script_callbacks.on_app_started(api)
+except:
+    pass
