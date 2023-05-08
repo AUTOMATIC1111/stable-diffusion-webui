@@ -1,5 +1,3 @@
-# Xformers
-
 Xformers library is an optional way to speedup your image generation. 
 
 This optimization is only available for nvidia gpus, it speeds up image generation and lowers vram usage at the cost of producing [non-deterministic](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2705#discussioncomment-4024378) results.
