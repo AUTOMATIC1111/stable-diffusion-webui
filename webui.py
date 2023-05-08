@@ -345,6 +345,7 @@ def webui():
         setup_middleware(app)
 
         modules.progress.setup_progress_api(app)
+        modules.ui.setup_ui_api(app)
 
         if launch_api:
             create_api(app)

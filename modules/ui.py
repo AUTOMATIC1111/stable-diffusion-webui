@@ -1944,3 +1944,17 @@ gradio: {gr.__version__}
  • 
 checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 """
+
+
+def setup_ui_api(app):
+    from pydantic import BaseModel, Field
+    from typing import List
+
+    class QuicksettingsHint(BaseModel):
+        name: str = Field(title="Name of the quicksettings field")
+        label: str = Field(title="Label of the quicksettings field")
+
+    def quicksettings_hint():
+        return [QuicksettingsHint(name=k, label=v.label) for k, v in opts.data_labels.items()]
+
+    app.add_api_route("/internal/quicksettings-hint", quicksettings_hint, methods=["GET"], response_model=List[QuicksettingsHint])
