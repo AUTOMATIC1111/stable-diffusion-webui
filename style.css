@@ -246,7 +246,7 @@ button.custom-button{
     }
 }
 
-#txt2img_gallery img, #img2img_gallery img{
+#txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
     object-fit: scale-down;
 }
 #txt2img_actions_column, #img2img_actions_column {
