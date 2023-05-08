@@ -69,6 +69,7 @@ titles = {
     "Use following tags to define how filenames for images are chosen:\n" +
     "[steps]\n" +
     "[cfg]\n" +
+    "[denoising]\n" +
     "[sampler]\n" +
     "[seed]\n" +
     "[clip_skip]\n" +
@@ -99,6 +100,7 @@ titles = {
     "[sampler]\n" +
     "[seed]\n" +
     "[clip_skip]\n" +
+    "[denoising]\n" +
     "[width]\n" +
     "[height]\n" +
     "[batch_number]\n" +
