@@ -16,7 +16,7 @@ This guide is meant to provide a working installation on as many different platf
 1. The amount of required VRAM largely depends on your desired image resolution, image generation will fail and produce an out-of-memory error if you don't have enough VRAM, `--lowvram` and `--medvram` reduces VRAM requirements but sacrifice speed, if possible try replacing `--lowvram` with `--midvram` or remove it entirely. You can also give [Tiled VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111) extension a try.
 2. If you're not using a 16 series GPU, try removing `--precision full` and `--no-half`.
 3. Experiment with different cross attenuation optimization methods other than `--xformers`, see [Optimizations](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations) for more details. If you wish to measure your system's performance, try using [sd-extension-system-info](https://github.com/vladmandic/sd-extension-system-info) extension which features a benchmarking tool and a [database](https://vladmandic.github.io/sd-extension-system-info/pages/benchmark.html) of user submitted results.
-4. some combinations of model and vae are more likely to produce `NansException: A tensor with all NaNs was produced in VAE` using the option `--no-half-vae` can help to mitigate this.
+4. Some combinations of model and VAE are more likely to produce `NansException: A tensor with all NaNs was produced in VAE` resulting in a black image, using the option `--no-half-vae` can help to mitigate this.
 5. For more configurations with `COMMANDLINE_ARGS` see [Command Line Arguments and Settings
 ](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings)
 
