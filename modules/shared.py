@@ -726,3 +726,20 @@ def html(filename):
             return file.read()
 
     return ""
+
+
+def walk_files(path, allowed_extensions=None):
+    if not os.path.exists(path):
+        return
+
+    if allowed_extensions is not None:
+        allowed_extensions = set(allowed_extensions)
+
+    for root, dirs, files in os.walk(path):
+        for filename in files:
+            if allowed_extensions is not None:
+                _, ext = os.path.splitext(filename)
+                if ext not in allowed_extensions:
+                    continue
+
+            yield os.path.join(root, filename)
