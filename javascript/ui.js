@@ -348,6 +348,9 @@ onUiUpdate(function(){
         settings_tabs.appendChild(show_all_pages)
         show_all_pages.onclick = function(){
             gradioApp().querySelectorAll('#settings > div').forEach(function(elem){
+                if(elem.id == "settings_tab_licenses")
+                    return;
+
                 elem.style.display = "block";
             })
         }
