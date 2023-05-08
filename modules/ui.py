@@ -1923,7 +1923,7 @@ def versions_html():
 
     python_version = ".".join([str(x) for x in sys.version_info[0:3]])
     commit = launch.commit_hash()
-    short_commit = commit[0:8]
+    tag = launch.git_tag()
 
     if shared.xformers_available:
         import xformers
@@ -1932,6 +1932,8 @@ def versions_html():
         xformers_version = "N/A"
 
     return f"""
+version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>
+ • 
 python: <span title="{sys.version}">{python_version}</span>
  • 
 torch: {getattr(torch, '__long_version__',torch.__version__)}
@@ -1939,8 +1941,6 @@ torch: {getattr(torch, '__long_version__',torch.__version__)}
 xformers: {xformers_version}
  • 
 gradio: {gr.__version__}
- • 
-commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{short_commit}</a>
  • 
 checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 """

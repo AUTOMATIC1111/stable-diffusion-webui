@@ -458,6 +458,16 @@ def fix_seed(p):
     p.subseed = get_fixed_seed(p.subseed)
 
 
+def program_version():
+    import launch
+
+    res = launch.git_tag()
+    if res == "<none>":
+        res = None
+
+    return res
+
+
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
 
@@ -483,6 +493,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
+        "Version": program_version() if opts.add_version_to_infotext else None,
     }
 
     generation_params.update(p.extra_generation_params)
