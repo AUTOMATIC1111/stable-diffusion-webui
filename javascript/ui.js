@@ -1,7 +1,7 @@
 // various functions for interaction with ui.py not large enough to warrant putting them in separate files
 
 function set_theme(theme){
-    gradioURL = window.location.href
+    var gradioURL = window.location.href
     if (!gradioURL.includes('?__theme=')) {
       window.location.replace(gradioURL + '?__theme=' + theme);
     }
@@ -47,7 +47,7 @@ function extract_image_from_gallery(gallery){
         return [gallery[0]];
     }
 
-    index = selected_gallery_index()
+    var index = selected_gallery_index()
 
     if (index < 0 || index >= gallery.length){
         // Use the first image in the gallery as the default
@@ -58,7 +58,7 @@ function extract_image_from_gallery(gallery){
 }
 
 function args_to_array(args){
-    res = []
+    var res = []
     for(var i=0;i<args.length;i++){
         res.push(args[i])
     }
@@ -138,7 +138,7 @@ function get_img2img_tab_index() {
 }
 
 function create_submit_args(args){
-    res = []
+    var res = []
     for(var i=0;i<args.length;i++){
         res.push(args[i])
     }
@@ -159,14 +159,24 @@ function showSubmitButtons(tabname, show){
     gradioApp().getElementById(tabname+'_skip').style.display = show ? "none" : "block"
 }
 
+function showRestoreProgressButton(tabname, show){
+    var button = gradioApp().getElementById(tabname + "_restore_progress")
+    if(! button) return
+
+    button.style.display = show ? "flex" : "none"
+}
+
 function submit(){
     rememberGallerySelection('txt2img_gallery')
     showSubmitButtons('txt2img', false)
 
     var id = randomId()
+    localStorage.setItem("txt2img_task_id", id);
+
     requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
         showSubmitButtons('txt2img', true)
-
+        localStorage.removeItem("txt2img_task_id")
+        showRestoreProgressButton('txt2img', false)
     })
 
     var res = create_submit_args(arguments)
@@ -181,8 +191,12 @@ function submit_img2img(){
     showSubmitButtons('img2img', false)
 
     var id = randomId()
+    localStorage.setItem("img2img_task_id", id);
+
     requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
         showSubmitButtons('img2img', true)
+        localStorage.removeItem("img2img_task_id")
+        showRestoreProgressButton('img2img', false)
     })
 
     var res = create_submit_args(arguments)
@@ -192,6 +206,42 @@ function submit_img2img(){
 
     return res
 }
+
+function restoreProgressTxt2img(){
+    showRestoreProgressButton("txt2img", false)
+    var id = localStorage.getItem("txt2img_task_id")
+
+    id = localStorage.getItem("txt2img_task_id")
+
+    if(id) {
+        requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
+            showSubmitButtons('txt2img', true)
+        }, null, 0)
+    }
+
+    return id
+}
+
+function restoreProgressImg2img(){
+    showRestoreProgressButton("img2img", false)
+    
+    var id = localStorage.getItem("img2img_task_id")
+
+    if(id) {
+        requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
+            showSubmitButtons('img2img', true)
+        }, null, 0)
+    }
+
+    return id
+}
+
+
+onUiLoaded(function () {
+    showRestoreProgressButton('txt2img', localStorage.getItem("txt2img_task_id"))
+    showRestoreProgressButton('img2img', localStorage.getItem("img2img_task_id"))
+});
+
 
 function modelmerger(){
     var id = randomId()
@@ -204,7 +254,7 @@ function modelmerger(){
 
 
 function ask_for_style_name(_, prompt_text, negative_prompt_text) {
-    name_ = prompt('Style name:')
+    var name_ = prompt('Style name:')
     return [name_, prompt_text, negative_prompt_text]
 }
 
@@ -239,11 +289,11 @@ function recalculate_prompts_img2img(){
 }
 
 
-opts = {}
+var opts = {}
 onUiUpdate(function(){
 	if(Object.keys(opts).length != 0) return;
 
-	json_elem = gradioApp().getElementById('settings_json')
+	var json_elem = gradioApp().getElementById('settings_json')
 	if(json_elem == null) return;
 
     var textarea = json_elem.querySelector('textarea')
@@ -292,8 +342,8 @@ onUiUpdate(function(){
     registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button')
     registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button')
 
-    show_all_pages = gradioApp().getElementById('settings_show_all_pages')
-    settings_tabs = gradioApp().querySelector('#settings div')
+    var show_all_pages = gradioApp().getElementById('settings_show_all_pages')
+    var settings_tabs = gradioApp().querySelector('#settings div')
     if(show_all_pages && settings_tabs){
         settings_tabs.appendChild(show_all_pages)
         show_all_pages.onclick = function(){
@@ -305,9 +355,9 @@ onUiUpdate(function(){
 })
 
 onOptionsChanged(function(){
-    elem = gradioApp().getElementById('sd_checkpoint_hash')
-    sd_checkpoint_hash = opts.sd_checkpoint_hash || ""
-    shorthash = sd_checkpoint_hash.substr(0,10)
+    var elem = gradioApp().getElementById('sd_checkpoint_hash')
+    var sd_checkpoint_hash = opts.sd_checkpoint_hash || ""
+    var shorthash = sd_checkpoint_hash.substring(0,10)
 
 	if(elem && elem.textContent != shorthash){
 	    elem.textContent = shorthash
@@ -360,4 +410,20 @@ var desiredCheckpointName = null;
 function selectCheckpoint(name){
     desiredCheckpointName = name;
     gradioApp().getElementById('change_checkpoint').click()
+}
+
+function currentImg2imgSourceResolution(_, _, scaleBy){
+    var img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img')
+    return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy]
+}
+
+function updateImg2imgResizeToTextAfterChangingImage(){
+    // At the time this is called from gradio, the image has no yet been replaced.
+    // There may be a better solution, but this is simple and straightforward so I'm going with it.
+
+    setTimeout(function() {
+        gradioApp().getElementById('img2img_update_resize_to').click()
+    }, 500);
+
+    return []
 }

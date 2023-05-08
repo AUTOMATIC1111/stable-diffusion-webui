@@ -4,7 +4,7 @@ import re
 import torch
 from typing import Union
 
-from modules import shared, devices, sd_models, errors
+from modules import shared, devices, sd_models, errors, scripts
 
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
 
@@ -93,6 +93,7 @@ class LoraOnDisk:
             self.metadata = m
 
         self.ssmd_cover_images = self.metadata.pop('ssmd_cover_images', None)  # those are cover images and they are too big to display in UI as text
+        self.alias = self.metadata.get('ss_output_name', self.name)
 
 
 class LoraModule:
@@ -165,8 +166,10 @@ def load_lora(name, filename):
             module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
         elif type(sd_module) == torch.nn.MultiheadAttention:
             module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
-        elif type(sd_module) == torch.nn.Conv2d:
+        elif type(sd_module) == torch.nn.Conv2d and weight.shape[2:] == (1, 1):
             module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (1, 1), bias=False)
+        elif type(sd_module) == torch.nn.Conv2d and weight.shape[2:] == (3, 3):
+            module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (3, 3), bias=False)
         else:
             print(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
             continue
@@ -199,11 +202,11 @@ def load_loras(names, multipliers=None):
 
     loaded_loras.clear()
 
-    loras_on_disk = [available_loras.get(name, None) for name in names]
+    loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
     if any([x is None for x in loras_on_disk]):
         list_available_loras()
 
-        loras_on_disk = [available_loras.get(name, None) for name in names]
+        loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
 
     for i, name in enumerate(names):
         lora = already_loaded.get(name, None)
@@ -211,7 +214,11 @@ def load_loras(names, multipliers=None):
         lora_on_disk = loras_on_disk[i]
         if lora_on_disk is not None:
             if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
-                lora = load_lora(name, lora_on_disk.filename)
+                try:
+                    lora = load_lora(name, lora_on_disk.filename)
+                except Exception as e:
+                    errors.display(e, f"loading Lora {lora_on_disk.filename}")
+                    continue
 
         if lora is None:
             print(f"Couldn't find Lora with name {name}")
@@ -228,6 +235,8 @@ def lora_calc_updown(lora, module, target):
 
         if up.shape[2:] == (1, 1) and down.shape[2:] == (1, 1):
             updown = (up.squeeze(2).squeeze(2) @ down.squeeze(2).squeeze(2)).unsqueeze(2).unsqueeze(3)
+        elif up.shape[2:] == (3, 3) or down.shape[2:] == (3, 3):
+            updown = torch.nn.functional.conv2d(down.permute(1, 0, 2, 3), up).permute(1, 0, 2, 3)
         else:
             updown = up @ down
 
@@ -339,6 +348,7 @@ def lora_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 def list_available_loras():
     available_loras.clear()
+    available_lora_aliases.clear()
 
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
 
@@ -352,11 +362,50 @@ def list_available_loras():
             continue
 
         name = os.path.splitext(os.path.basename(filename))[0]
+        entry = LoraOnDisk(name, filename)
 
-        available_loras[name] = LoraOnDisk(name, filename)
+        available_loras[name] = entry
+
+        available_lora_aliases[name] = entry
+        available_lora_aliases[entry.alias] = entry
+
+
+re_lora_name = re.compile(r"(.*)\s*\([0-9a-fA-F]+\)")
+
+
+def infotext_pasted(infotext, params):
+    if "AddNet Module 1" in [x[1] for x in scripts.scripts_txt2img.infotext_fields]:
+        return  # if the other extension is active, it will handle those fields, no need to do anything
+
+    added = []
+
+    for k, v in params.items():
+        if not k.startswith("AddNet Model "):
+            continue
+
+        num = k[13:]
+
+        if params.get("AddNet Module " + num) != "LoRA":
+            continue
+
+        name = params.get("AddNet Model " + num)
+        if name is None:
+            continue
+
+        m = re_lora_name.match(name)
+        if m:
+            name = m.group(1)
+
+        multiplier = params.get("AddNet Weight A " + num, "1.0")
+
+        added.append(f"<lora:{name}:{multiplier}>")
+
+    if added:
+        params["Prompt"] += "\n" + "".join(added)
 
 
 available_loras = {}
+available_lora_aliases = {}
 loaded_loras = []
 
 list_available_loras()

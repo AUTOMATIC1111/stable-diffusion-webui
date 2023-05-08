@@ -25,6 +25,10 @@ re_emoji = /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F9B0}-\u{1F9B3}]/u
 original_lines = {}
 translated_lines = {}
 
+function hasLocalization() {
+    return window.localization && Object.keys(window.localization).length > 0;
+}
+
 function textNodesUnder(el){
     var n, a=[], walk=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null,false);
     while(n=walk.nextNode()) a.push(n);
@@ -35,11 +39,11 @@ function canBeTranslated(node, text){
     if(! text) return false;
     if(! node.parentElement) return false;
 
-    parentType = node.parentElement.nodeName
+    var parentType = node.parentElement.nodeName
     if(parentType=='SCRIPT' || parentType=='STYLE' || parentType=='TEXTAREA') return false;
 
     if (parentType=='OPTION' || parentType=='SPAN'){
-        pnode = node
+        var pnode = node
         for(var level=0; level<4; level++){
             pnode = pnode.parentElement
             if(! pnode) break;
@@ -69,7 +73,7 @@ function getTranslation(text){
 }
 
 function processTextNode(node){
-    text = node.textContent.trim()
+    var text = node.textContent.trim()
 
     if(! canBeTranslated(node, text)) return
 
@@ -105,7 +109,7 @@ function processNode(node){
 }
 
 function dumpTranslations(){
-    dumped = {}
+    var dumped = {}
     if (localization.rtl) {
         dumped.rtl = true
     }
@@ -119,39 +123,8 @@ function dumpTranslations(){
     return dumped
 }
 
-onUiUpdate(function(m){
-    m.forEach(function(mutation){
-        mutation.addedNodes.forEach(function(node){
-            processNode(node)
-        })
-    });
-})
-
-
-document.addEventListener("DOMContentLoaded", function() {
-    processNode(gradioApp())
-
-    if (localization.rtl) {  // if the language is from right to left,
-        (new MutationObserver((mutations, observer) => { // wait for the style to load
-            mutations.forEach(mutation => {
-                mutation.addedNodes.forEach(node => {
-                    if (node.tagName === 'STYLE') {
-                        observer.disconnect();
-
-                        for (const x of node.sheet.rules) {  // find all rtl media rules
-                            if (Array.from(x.media || []).includes('rtl')) {
-                                x.media.appendMedium('all');  // enable them
-                            }
-                        }
-                    }
-                })
-            });
-        })).observe(gradioApp(), { childList: true });
-    }
-})
-
 function download_localization() {
-    text = JSON.stringify(dumpTranslations(), null, 4)
+    var text = JSON.stringify(dumpTranslations(), null, 4)
 
     var element = document.createElement('a');
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
@@ -162,4 +135,37 @@ function download_localization() {
     element.click();
 
     document.body.removeChild(element);
+}
+
+if(hasLocalization()) {
+    onUiUpdate(function (m) {
+        m.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function (node) {
+                processNode(node)
+            })
+        });
+    })
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        processNode(gradioApp())
+
+        if (localization.rtl) {  // if the language is from right to left,
+            (new MutationObserver((mutations, observer) => { // wait for the style to load
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.tagName === 'STYLE') {
+                            observer.disconnect();
+
+                            for (const x of node.sheet.rules) {  // find all rtl media rules
+                                if (Array.from(x.media || []).includes('rtl')) {
+                                    x.media.appendMedium('all');  // enable them
+                                }
+                            }
+                        }
+                    })
+                });
+            })).observe(gradioApp(), { childList: true });
+        }
+    })
 }
