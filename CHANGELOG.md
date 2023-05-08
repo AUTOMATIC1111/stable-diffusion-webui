@@ -27,6 +27,7 @@
  * make the lightbox fullscreen image function properly
  * fix squished thumbnails in extras tab
  * keep "search" filter for extra networks when user refreshes the tab (previously it showed everthing after you refreshed)
+ * fix webui showing the same image if you configure the generation to always save results into same file
 
 
 ## 1.1.1
