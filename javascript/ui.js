@@ -1124,10 +1124,12 @@ onUiUpdate(function(){
 				clone_num.value = e.target.value;	
 			})
 			clone_range.addEventListener('change', function (e) {
+				e.preventDefault();
 				elem.value = clone_range.value;
 				updateInput(elem);
 			})				
-			clone_num.addEventListener('input', function (e) {								
+			clone_num.addEventListener('input', function (e) {
+				e.preventDefault();
 				clone_range.value = e.target.value;	
 			})
 			
