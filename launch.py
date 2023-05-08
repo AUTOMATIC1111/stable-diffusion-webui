@@ -222,7 +222,9 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_environment():
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==2.0.0 torchvision==0.15.1 --extra-index-url https://download.pytorch.org/whl/cu118")
+    global skip_install
+
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install -r requirements-pytorch.txt")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')

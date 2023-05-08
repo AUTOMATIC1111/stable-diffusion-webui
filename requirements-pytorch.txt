@@ -1,0 +1,12 @@
+--extra-index-url https://download.pytorch.org/whl/cu117
+# pytorch@Linux
+torch==2.0.0; platform_system == "Linux"
+torchvision==0.15.1; platform_system == "Linux"
+
+# pytorch@Darwin
+torch; platform_system == "Darwin"
+torchvision; platform_system == "Darwin"
+
+# pytorch@Windows
+torch==2.0.0; platform_system == "Windows" 
+torchvision==0.15.1; platform_system == "Windows"

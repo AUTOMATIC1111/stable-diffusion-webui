@@ -1,3 +1,4 @@
+-r requirements-pytorch.txt
 astunparse
 blendmodes
 accelerate
@@ -17,7 +18,6 @@ realesrgan
 scikit-image>=0.19
 timm==0.4.12
 transformers==4.25.1
-torch
 einops
 jsonmerge
 clean-fid
