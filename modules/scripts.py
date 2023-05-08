@@ -308,11 +308,14 @@ class ScriptRunner:
             inputs_alwayson += [script.alwayson for _ in controls]
             script.args_to = len(inputs)
 
-        for script in self.alwayson_scripts:
-            with gr.Group() as group:
-                create_script_ui(script, inputs, inputs_alwayson)
+        with gr.Group(elem_id='scripts_alwayson'):
+            for script in self.alwayson_scripts:
+                elem_id = f'script_{"txt2img" if script.is_txt2img else "img2img"}_{script.title().lower().replace(" ", "_")}'
+                print(elem_id)
+                with gr.Group(elem_id=elem_id) as group:
+                    create_script_ui(script, inputs, inputs_alwayson)
+                script.group = group
 
-            script.group = group
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
         inputs[0] = dropdown
         for script in self.selectable_scripts:

@@ -31,7 +31,7 @@ Stuff to be added...
 Stuff to be investigated...
 
 - Torch Compile
-- `Torch-DirectML`
+- TXT2IMG: <https://github.com/vladmandic/automatic/discussions/814>
 - `TensorRT`
 - [Temporal Weighing](https://github.com/comfyanonymous/ComfyUI/discussions/473)
 

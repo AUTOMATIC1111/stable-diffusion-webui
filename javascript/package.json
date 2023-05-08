@@ -1,0 +1,13 @@
+{
+  "name": "javascript",
+  "version": "0.0.1",
+  "description": "",
+  "main": "script.js",
+  "keywords": [],
+  "author": "Vladimir Mandic <mandic00@live.com>",
+  "license": "MIT",
+  "dependencies": {
+    "eslint": "^8.40.0",
+    "eslint-config-airbnb-base": "^15.0.0"
+  }
+}

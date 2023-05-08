@@ -1,5 +1,4 @@
-
-function extensions_apply(_, _, disable_all){
+function extensions_apply(_a, _b, disable_all){
     var disable = []
     var update = []
     gradioApp().querySelectorAll('#extensions input[type="checkbox"]').forEach(function(x){

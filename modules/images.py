@@ -589,8 +589,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
 
     image.already_saved_as = fullfn
     if opts.save_txt and len(exifinfo_data) > 0:
-        filename_txt = f"{filename}.txt"
-        with open(filename_txt, "w", encoding="utf8") as file:
+        txt_fullfn = f"{filename}.txt"
+        with open(txt_fullfn, "w", encoding="utf8") as file:
             file.write(exifinfo_data + "\n")
     else:
         txt_fullfn = None

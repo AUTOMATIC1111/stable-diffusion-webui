@@ -4,7 +4,6 @@ import time
 import shutil
 import errno
 import html
-from datetime import datetime
 import git
 import gradio as gr
 from modules import extensions, shared, paths, errors
