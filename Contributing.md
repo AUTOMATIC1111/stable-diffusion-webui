@@ -1,11 +1,12 @@
 # Pull requests
 To contribute, clone the repository, make your changes, commit and push to your clone, and submit a pull request.
 
-* if you are adding a lot of code, **consider making it an [extension](Extensions) instead**.
-* do not add multiple unrelated things in same PR.
-* make sure that your changes do not break anything by running [tests](Tests).
-* do not submit PRs where you just take existing lines and reformat them without changing what they do.
-* if you are submitting a bug fix, there must be a way for me to reproduce the bug.
+* If you are adding a lot of code, **consider making it an [extension](Extensions) instead**.
+* Do not add multiple unrelated things in same PR.
+* PRs should target the `dev` branch.
+* Make sure that your changes do not break anything by running [tests](Tests).
+* Do not submit PRs where you just take existing lines and reformat them without changing what they do.
+* If you are submitting a bug fix, there must be a way for me to reproduce the bug.
 
 <details><summary>There is a discord channel for development of the webui (click to expand). Join if you want to talk about a PR in real time. Don't join if you're not involved in development.</summary><blockquote>
 <details><summary>This is a discord for development only, NOT for tech support.
