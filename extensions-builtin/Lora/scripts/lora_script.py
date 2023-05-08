@@ -49,6 +49,7 @@ torch.nn.MultiheadAttention._load_from_state_dict = lora.lora_MultiheadAttention
 script_callbacks.on_model_loaded(lora.assign_lora_names_to_compvis_modules)
 script_callbacks.on_script_unloaded(unload)
 script_callbacks.on_before_ui(before_ui)
+script_callbacks.on_infotext_pasted(lora.infotext_pasted)
 
 
 shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {

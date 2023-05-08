@@ -4,7 +4,7 @@ import re
 import torch
 from typing import Union
 
-from modules import shared, devices, sd_models, errors
+from modules import shared, devices, sd_models, errors, scripts
 
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
 
@@ -364,6 +364,40 @@ def list_available_loras():
 
         available_lora_aliases[name] = entry
         available_lora_aliases[entry.alias] = entry
+
+
+re_lora_name = re.compile(r"(.*)\s*\([0-9a-fA-F]+\)")
+
+
+def infotext_pasted(infotext, params):
+    if "AddNet Module 1" in [x[1] for x in scripts.scripts_txt2img.infotext_fields]:
+        return  # if the other extension is active, it will handle those fields, no need to do anything
+
+    added = []
+
+    for k, v in params.items():
+        if not k.startswith("AddNet Model "):
+            continue
+
+        num = k[13:]
+
+        if params.get("AddNet Module " + num) != "LoRA":
+            continue
+
+        name = params.get("AddNet Model " + num)
+        if name is None:
+            continue
+
+        m = re_lora_name.match(name)
+        if m:
+            name = m.group(1)
+
+        multiplier = params.get("AddNet Weight A " + num, "1.0")
+
+        added.append(f"<lora:{name}:{multiplier}>")
+
+    if added:
+        params["Prompt"] += "\n" + "".join(added)
 
 
 available_loras = {}
