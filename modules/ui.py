@@ -890,7 +890,6 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as train_interface:
         with gr.Column(elem_id='ti_train_container'):
             with gr.Tabs(elem_id="train_tabs"):
-
                 with gr.Tab(label="Merge models") as modelmerger_interface:
                     with gr.Row().style(equal_height=False):
                         with gr.Column(variant='compact'):
@@ -1406,10 +1405,10 @@ def create_ui():
     interfaces = [
         (txt2img_interface, "From Text", "txt2img"),
         (img2img_interface, "From Image", "img2img"),
-        (extras_interface, "Process Image", "extras"),
+        (extras_interface, "Process Image", "process"),
         # (pnginfo_interface, "Image Info", "pnginfo"),
         # (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
-        (train_interface, "Train", "ti"),
+        (train_interface, "Train", "train"),
     ]
 
     interfaces += script_callbacks.ui_tabs_callback()

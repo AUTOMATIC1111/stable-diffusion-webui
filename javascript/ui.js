@@ -343,9 +343,29 @@ function create_theme_element() {
 }
 
 function sort_ui_elements() {
-  const tabs = gradioApp().getElementById('tabs');
-  const scripts = gradioApp().getElementById('scripts_alwayson');
-  console.log('HERE', opts, tabs, scripts);
+  // sort top-level tabs
+  const tabs = gradioApp().getElementById('tabs')?.children[0];
+  if (!tabs) return;
+  let tabsOrder = opts.ui_tab_reorder?.split(',').map((el) => el.trim().toLowerCase()) || [];
+  for (const el of Array.from(tabs.children)) {
+    const elIndex = tabsOrder.indexOf(el.innerText.toLowerCase());
+    el.style.order = elIndex > -1 ? elIndex : 99;
+  }
+  // sort always-on scripts
+  const find = (el, ordered) => {
+    for (const i in ordered) {
+      if (el.innerText.toLowerCase().startsWith(ordered[i])) return i;
+    }
+    return 99;
+  };
+
+  tabsOrder = opts.ui_scripts_reorder?.split(',').map((el) => el.trim().toLowerCase()) || [];
+
+  const scriptsTxt = gradioApp().getElementById('scripts_alwayson_txt2img').children;
+  for (const el of Array.from(scriptsTxt)) el.style.order = find(el, tabsOrder);
+
+  const scriptsImg = gradioApp().getElementById('scripts_alwayson_img2img');
+  for (const el of Array.from(scriptsImg)) el.style.order = find(el, tabsOrder);
 }
 
 function preview_theme() {

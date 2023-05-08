@@ -242,7 +242,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "enable_quantization": OptionInfo(True, "Enable quantization in K samplers for sharper and cleaner results"),
     "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 8, "step": 1, "visible": False}),
-    "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
+    "upcast_attn": OptionInfo(False, "Upcast cross attention layer to FP32"),
     "cross_attention_optimization": OptionInfo("Sub-quadratic" if is_device_dml else "Scaled-Dot-Product", "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
     "cross_attention_options": OptionInfo([], "Cross-attention advanced options", gr.CheckboxGroup, lambda: {"choices": ['xFormers enable flash Attention', 'SDP disable memory attention']}),
     "sub_quad_q_chunk_size": OptionInfo(512, "Sub-quadratic cross-attention query chunk size for the  layer optimization to use", gr.Slider, {"minimum": 16, "maximum": 8192, "step": 8}),
@@ -405,6 +405,8 @@ options_templates.update(options_section(('ui', "User interface"), {
     "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"), # pylint: disable=anomalous-backslash-in-string
     "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
+    "ui_tab_reorder": OptionInfo("", "UI tabs order"),
+    "ui_scripts_reorder": OptionInfo("", "UI scripts order"),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
 }))

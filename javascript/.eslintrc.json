@@ -15,6 +15,7 @@
       "camelcase":"off",
       "no-unused-vars":"off",
       "no-plusplus":"off",
-      "no-param-reassign":"off"
+      "no-param-reassign":"off",
+      "no-restricted-syntax":"off"
   }
 }
