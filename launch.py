@@ -19,7 +19,7 @@ python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
-skip_install = False
+stored_git_tag = None
 dir_repos = "repositories"
 
 if 'GRADIO_ANALYTICS_ENABLED' not in os.environ:
@@ -49,7 +49,7 @@ or any other error regarding unsuccessful package (library) installation,
 please downgrade (or upgrade) to the latest version of 3.10 Python
 and delete current Python and "venv" folder in WebUI's directory.
 
-You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3109/
+You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3106/
 
 {"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases" if is_windows else ""}
 
@@ -69,6 +69,20 @@ def commit_hash():
         stored_commit_hash = "<none>"
 
     return stored_commit_hash
+
+
+def git_tag():
+    global stored_git_tag
+
+    if stored_git_tag is not None:
+        return stored_git_tag
+
+    try:
+        stored_git_tag = run(f"{git} describe --tags").strip()
+    except Exception:
+        stored_git_tag = "<none>"
+
+    return stored_git_tag
 
 
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
@@ -121,12 +135,12 @@ def run_python(code, desc=None, errdesc=None):
     return run(f'"{python}" -c "{code}"', desc, errdesc)
 
 
-def run_pip(args, desc=None, live=False):
-    if skip_install:
+def run_pip(command, desc=None, live=False):
+    if args.skip_install:
         return
 
     index_url_line = f' --index-url {index_url}' if index_url != '' else ''
-    return run(f'"{python}" -m pip {args} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}", live=live)
+    return run(f'"{python}" -m pip {command} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}", live=live)
 
 
 def check_run_python(code):
@@ -223,9 +237,7 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_environment():
-    global skip_install
-
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==2.0.0 torchvision==0.15.1 --index-url https://download.pytorch.org/whl/cu118")
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==2.0.0 torchvision==0.15.1 --extra-index-url https://download.pytorch.org/whl/cu118")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
@@ -249,8 +261,10 @@ def prepare_environment():
         check_python_version()
 
     commit = commit_hash()
+    tag = git_tag()
 
     print(f"Python {sys.version}")
+    print(f"Version: {tag}")
     print(f"Commit hash: {commit}")
 
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):

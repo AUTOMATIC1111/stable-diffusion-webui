@@ -164,6 +164,7 @@ class StableDiffusionProcessing:
         self.all_seeds = None
         self.all_subseeds = None
         self.iteration = 0
+        self.is_hr_pass = False
         
 
     @property
@@ -457,6 +458,16 @@ def fix_seed(p):
     p.subseed = get_fixed_seed(p.subseed)
 
 
+def program_version():
+    import launch
+
+    res = launch.git_tag()
+    if res == "<none>":
+        res = None
+
+    return res
+
+
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
 
@@ -480,7 +491,9 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
         "Init image hash": getattr(p, 'init_img_hash', None),
-        "RNG": (opts.randn_source if opts.randn_source != "GPU" else None)
+        "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
+        "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
+        "Version": program_version() if opts.add_version_to_infotext else None,
     }
 
     generation_params.update(p.extra_generation_params)
@@ -496,6 +509,11 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
 
     try:
+        # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
+        if sd_models.checkpoint_alisases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+            p.override_settings.pop('sd_model_checkpoint', None)
+            sd_models.reload_model_weights()
+
         for k, v in p.override_settings.items():
             setattr(opts, k, v)
 
@@ -512,8 +530,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         if p.override_settings_restore_afterwards:
             for k, v in stored_opts.items():
                 setattr(opts, k, v)
-                if k == 'sd_model_checkpoint':
-                    sd_models.reload_model_weights()
 
                 if k == 'sd_vae':
                     sd_vae.reload_vae_weights()
@@ -681,6 +697,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
             for i, x_sample in enumerate(x_samples_ddim):
+                p.batch_index = i
+
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                 x_sample = x_sample.astype(np.uint8)
 
@@ -729,7 +747,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                     if opts.return_mask:
                         output_images.append(image_mask)
-                    
+
                     if opts.return_mask_composite:
                         output_images.append(image_mask_composite)
 
@@ -882,6 +900,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if not self.enable_hr:
             return samples
 
+        self.is_hr_pass = True
+
         target_width = self.hr_upscale_to_x
         target_height = self.hr_upscale_to_y
 
@@ -950,6 +970,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         devices.torch_gc()
 
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
+
+        self.is_hr_pass = False
 
         return samples
 

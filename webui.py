@@ -5,6 +5,9 @@ import importlib
 import signal
 import re
 import warnings
+import json
+from threading import Thread
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -40,7 +43,7 @@ if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__long_version__ = torch.__version__
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 
-from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks
+from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks, config_states
 import modules.codeformer_model as codeformer
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
@@ -150,6 +153,19 @@ def initialize():
     localization.list_localizations(cmd_opts.localizations_dir)
     startup_timer.record("list extensions")
 
+    config_state_file = shared.opts.restore_config_state_file
+    shared.opts.restore_config_state_file = ""
+    shared.opts.save(shared.config_filename)
+
+    if os.path.isfile(config_state_file):
+        print(f"*** About to restore extension state from file: {config_state_file}")
+        with open(config_state_file, "r", encoding="utf-8") as f:
+            config_state = json.load(f)
+            config_states.restore_extension_config(config_state)
+        startup_timer.record("restore extension config")
+    elif config_state_file:
+        print(f"!!! Config state backup not found: {config_state_file}")
+
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
         modules.scripts.load_scripts()
@@ -171,24 +187,19 @@ def initialize():
     modules.scripts.load_scripts()
     startup_timer.record("load scripts")
 
+    modelloader.load_upscalers()
+    #startup_timer.record("load upscalers") #Is this necessary? I don't know.
+
     modules.sd_vae.refresh_vae_list()
     startup_timer.record("refresh VAE")
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")
 
-    try:
-        modules.sd_models.load_model()
-    except Exception as e:
-        errors.display(e, "loading stable diffusion model")
-        print("", file=sys.stderr)
-        print("Stable diffusion model failed to load, exiting", file=sys.stderr)
-        exit(1)
-    startup_timer.record("load SD checkpoint")
+    # load model in parallel to other startup stuff
+    Thread(target=lambda: shared.sd_model).start()
 
-    shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
-
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
@@ -255,6 +266,8 @@ def wait_on_server(demo=None):
             time.sleep(0.5)
             demo.close()
             time.sleep(0.5)
+
+            modules.script_callbacks.app_reload_callback()
             break
 
 
@@ -269,7 +282,6 @@ def api_only():
 
     print(f"Startup time: {startup_timer.summary()}.")
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
-
 
 def webui():
     launch_api = cmd_opts.api
@@ -297,12 +309,23 @@ def webui():
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
+        # this restores the missing /docs endpoint
+        if launch_api and not hasattr(FastAPI, 'original_setup'):
+            def fastapi_setup(self):
+                self.docs_url = "/docs"
+                self.redoc_url = "/redoc"
+                self.original_setup()
+
+            FastAPI.original_setup = FastAPI.setup
+            FastAPI.setup = fastapi_setup
+
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=server_name,
             server_port=cmd_opts.port,
             ssl_keyfile=cmd_opts.tls_keyfile,
             ssl_certfile=cmd_opts.tls_certfile,
+            ssl_verify=cmd_opts.disable_tls_verify,
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
             inbrowser=cmd_opts.autolaunch,
@@ -333,6 +356,11 @@ def webui():
 
         print(f"Startup time: {startup_timer.summary()}.")
 
+        if cmd_opts.subpath:
+            redirector = FastAPI()
+            redirector.get("/")
+            mounted_app = gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
+
         wait_on_server(shared.demo)
         print('Restarting UI...')
 
@@ -343,6 +371,19 @@ def webui():
         modules.script_callbacks.script_unloaded_callback()
         extensions.list_extensions()
         startup_timer.record("list extensions")
+
+        config_state_file = shared.opts.restore_config_state_file
+        shared.opts.restore_config_state_file = ""
+        shared.opts.save(shared.config_filename)
+
+        if os.path.isfile(config_state_file):
+            print(f"*** About to restore extension state from file: {config_state_file}")
+            with open(config_state_file, "r", encoding="utf-8") as f:
+                config_state = json.load(f)
+                config_states.restore_extension_config(config_state)
+            startup_timer.record("restore extension config")
+        elif config_state_file:
+            print(f"!!! Config state backup not found: {config_state_file}")
 
         localization.list_localizations(cmd_opts.localizations_dir)
 

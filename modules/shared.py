@@ -16,6 +16,7 @@ import modules.styles
 import modules.devices as devices
 from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
+from ldm.models.diffusion.ddpm import LatentDiffusion
 
 demo = None
 
@@ -269,7 +270,6 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "use_original_name_batch": OptionInfo(True, "Use original name for output filename during batch process in extras tab"),
     "use_upscaler_name_as_suffix": OptionInfo(False, "Use upscaler name as filename suffix in the extras tab"),
     "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
-    "do_not_add_watermark": OptionInfo(False, "Do not add watermark to images"),
     "save_init_img": OptionInfo(False, "Save init images when using img2img"),
 
     "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
@@ -392,26 +392,32 @@ options_templates.update(options_section(('ui', "User interface"), {
     "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results for web"),
     "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
-    "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
-    "add_model_name_to_info": OptionInfo(True, "Add model name to generation information"),
-    "disable_weights_auto_swap": OptionInfo(True, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
     "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
+    "js_modal_lightbox_gamepad": OptionInfo(True, "Navigate image viewer with gamepad"),
+    "js_modal_lightbox_gamepad_repeat": OptionInfo(250, "Gamepad repeat period, in milliseconds"),
     "show_progress_in_title": OptionInfo(True, "Show generation progress in window title."),
     "samplers_in_dropdown": OptionInfo(True, "Use dropdown for sampler selection instead of radio group"),
     "dimensions_and_batch_together": OptionInfo(True, "Show Width/Height and Batch sliders in same row"),
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
-    "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"),
-    "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
+    "keyedit_delimiters": OptionInfo(".,\\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"),
+    "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs (requires restart)", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
     "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
     "gradio_theme": OptionInfo("Default", "Gradio theme (requires restart)", ui_components.DropdownEditable, lambda: {"choices": ["Default"] + gradio_hf_hub_themes})
+}))
+
+options_templates.update(options_section(('infotext', "Infotext"), {
+    "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
+    "add_model_name_to_info": OptionInfo(True, "Add model name to generation information"),
+    "add_version_to_infotext": OptionInfo(True, "Add program version to generation information"),
+    "disable_weights_auto_swap": OptionInfo(True, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {
@@ -450,6 +456,7 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
 options_templates.update(options_section((None, "Hidden options"), {
     "disabled_extensions": OptionInfo([], "Disable these extensions"),
     "disable_all_extensions": OptionInfo("none", "Disable all extensions (preserves the list of disabled extensions)", gr.Radio, {"choices": ["none", "extra", "all"]}),
+    "restore_config_state_file": OptionInfo("", "Config state file to restore from, under 'config-states/' folder"),
     "sd_checkpoint_hash": OptionInfo("", "SHA256 hash of the current checkpoint"),
 }))
 
@@ -600,13 +607,37 @@ class Options:
         return value
 
 
-
 opts = Options()
 if os.path.exists(config_filename):
     opts.load(config_filename)
 
+
+class Shared(sys.modules[__name__].__class__):
+    """
+    this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than
+    at program startup.
+    """
+
+    sd_model_val = None
+
+    @property
+    def sd_model(self):
+        import modules.sd_models
+
+        return modules.sd_models.model_data.get_sd_model()
+
+    @sd_model.setter
+    def sd_model(self, value):
+        import modules.sd_models
+
+        modules.sd_models.model_data.set_sd_model(value)
+
+
+sd_model: LatentDiffusion = None  # this var is here just for IDE's type checking; it cannot be accessed because the class field above will be accessed instead
+sys.modules[__name__].__class__ = Shared
+
 settings_components = None
-"""assinged from ui.py, a mapping on setting anmes to gradio components repsponsible for those settings"""
+"""assinged from ui.py, a mapping on setting names to gradio components repsponsible for those settings"""
 
 latent_upscale_default_mode = "Latent"
 latent_upscale_modes = {
@@ -619,8 +650,6 @@ latent_upscale_modes = {
 }
 
 sd_upscalers = []
-
-sd_model = None
 
 clip_model = None
 
@@ -701,3 +730,20 @@ def html(filename):
             return file.read()
 
     return ""
+
+
+def walk_files(path, allowed_extensions=None):
+    if not os.path.exists(path):
+        return
+
+    if allowed_extensions is not None:
+        allowed_extensions = set(allowed_extensions)
+
+    for root, dirs, files in os.walk(path):
+        for filename in files:
+            if allowed_extensions is not None:
+                _, ext = os.path.splitext(filename)
+                if ext not in allowed_extensions:
+                    continue
+
+            yield os.path.join(root, filename)

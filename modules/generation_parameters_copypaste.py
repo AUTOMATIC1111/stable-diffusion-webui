@@ -59,6 +59,7 @@ def image_from_url_text(filedata):
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
+        filename = filename.rsplit('?', 1)[0]
         return Image.open(filename)
 
     if type(filedata) == list:
@@ -129,6 +130,7 @@ def connect_paste_params_buttons():
                 _js=jsfunc,
                 inputs=[binding.source_image_component],
                 outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
+                show_progress=False,
             )
 
         if binding.source_text_component is not None and fields is not None:
@@ -140,6 +142,7 @@ def connect_paste_params_buttons():
                 fn=lambda *x: x,
                 inputs=[field for field, name in paste_fields[binding.source_tabname]["fields"] if name in paste_field_names],
                 outputs=[field for field, name in fields if name in paste_field_names],
+                show_progress=False,
             )
 
         binding.paste_button.click(
@@ -147,6 +150,7 @@ def connect_paste_params_buttons():
             _js=f"switch_to_{binding.tabname}",
             inputs=None,
             outputs=None,
+            show_progress=False,
         )
 
 
@@ -309,6 +313,7 @@ infotext_to_setting_name_mapping = [
     ('UniPC order', 'uni_pc_order'),
     ('UniPC lower order final', 'uni_pc_lower_order_final'),
     ('RNG', 'randn_source'),
+    ('NGMS', 's_min_uncond'),
 ]
 
 
@@ -408,12 +413,14 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         fn=paste_func,
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],
+        show_progress=False,
     )
     button.click(
         fn=None,
         _js=f"recalculate_prompts_{tabname}",
         inputs=[],
         outputs=[],
+        show_progress=False,
     )
 
 

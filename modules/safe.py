@@ -24,7 +24,11 @@ class RestrictedUnpickler(pickle.Unpickler):
 
     def persistent_load(self, saved_id):
         assert saved_id[0] == 'storage'
-        return TypedStorage(_internal=True)
+
+        try:
+            return TypedStorage(_internal=True)
+        except TypeError:
+            return TypedStorage()  # PyTorch before 2.0 does not have the _internal argument
 
     def find_class(self, module, name):
         if self.extra_handler is not None:
