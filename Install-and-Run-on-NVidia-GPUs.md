@@ -1,6 +1,6 @@
 # Automatic Installation
 ## Windows (method 1)
-> A very basic guide that's meant to get Stable Diffusion web UI up and running for Windows 10/11 NVIDIA GPU.
+> A very basic guide that's meant to get Stable Diffusion web UI up and running on Windows 10/11 NVIDIA GPU.
 1. Download the `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract the zip file.
 2. Double click the `update.bat` script to update webui to the latest version, wait till finish then close the window.
 3. Right-click and edit `sd.webui\webui\webui-user.bat` script, replace the line `set COMMANDLINE_ARGS=` with the following then save and close the file:
