@@ -120,16 +120,16 @@ onUiUpdate(function(){
 	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
 		if (span.title) return;  // already has a title
 
-		let tooltip = titles[span.textContent];
+		let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
 
-		if(!tooltip){
-		    tooltip = titles[span.value];
+    if(!tooltip){
+		    tooltip = localization[titles[span.value]] || titles[span.value];
 		}
 
 		if(!tooltip){
 			for (const c of span.classList) {
 				if (c in titles) {
-					tooltip = titles[c];
+					tooltip = localization[titles[c]] || titles[c];
 					break;
 				}
 			}
@@ -144,7 +144,7 @@ onUiUpdate(function(){
 	    if (select.onchange != null) return;
 
 	    select.onchange = function(){
-            select.title = titles[select.value] || "";
+            select.title = localization[titles[select.value]] || titles[select.value] || "";
 	    }
 	})
 })
