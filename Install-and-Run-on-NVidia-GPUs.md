@@ -6,7 +6,7 @@
 3. Double click the `run.bat` script to launch web UI, during the first launch it will download large amounts of files. After everything has been downloaded and installed correctly, you should see a message "`Running on local URL:  http://127.0.0.1:7860`", opening the link will present you with the web UI interface.
 > you should be able to start generating images
 
-### Extra configurations vai `COMMANDLINE_ARGS`
+### Extra configurations via `COMMANDLINE_ARGS`
 There are some configuration options that you may want apply to web UI, in order to configure these options you need to edit the launch script found at `sd.webui\webui\webui-user.bat`, edit the file add the selected arguments after `set COMMANDLINE_ARGS=` like so :
 ```bat
 set COMMANDLINE_ARGS=--autolaunch --update-check
