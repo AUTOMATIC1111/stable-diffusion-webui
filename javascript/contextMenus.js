@@ -4,7 +4,7 @@ contextMenuInit = function(){
   let menuSpecs = new Map();
 
   const uid = function(){
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
   }
 
   function showContextMenu(event,element,menuEntries){
@@ -16,8 +16,7 @@ contextMenuInit = function(){
       oldMenu.remove()
     }
 
-    let tabButton = uiCurrentTab
-    let baseStyle = window.getComputedStyle(tabButton)
+    let baseStyle = window.getComputedStyle(uiCurrentTab)
 
     const contextMenu = document.createElement('nav')
     contextMenu.id = "context-menu"
@@ -36,7 +35,7 @@ contextMenuInit = function(){
     menuEntries.forEach(function(entry){
       let contextMenuEntry = document.createElement('a')
       contextMenuEntry.innerHTML = entry['name']
-      contextMenuEntry.addEventListener("click", function(e) {
+      contextMenuEntry.addEventListener("click", function() {
         entry['func']();
       })
       contextMenuList.append(contextMenuEntry);
@@ -63,7 +62,7 @@ contextMenuInit = function(){
 
   function appendContextMenuOption(targetElementSelector,entryName,entryFunction){
 
-    currentItems = menuSpecs.get(targetElementSelector)
+    var currentItems = menuSpecs.get(targetElementSelector)
 
     if(!currentItems){
       currentItems = []
@@ -79,7 +78,7 @@ contextMenuInit = function(){
   }
 
   function removeContextMenuOption(uid){
-    menuSpecs.forEach(function(v,k) {
+    menuSpecs.forEach(function(v) {
       let index = -1
       v.forEach(function(e,ei){if(e['id']==uid){index=ei}})
       if(index>=0){
@@ -93,8 +92,7 @@ contextMenuInit = function(){
       return;
     }
     gradioApp().addEventListener("click", function(e) {
-      let source = e.composedPath()[0]
-      if(source.id && source.id.indexOf('check_progress')>-1){
+      if(! e.isTrusted){
         return
       }
 
@@ -112,7 +110,6 @@ contextMenuInit = function(){
         if(e.composedPath()[0].matches(k)){
           showContextMenu(e,e.composedPath()[0],v)
           e.preventDefault()
-          return
         }
       })
     });

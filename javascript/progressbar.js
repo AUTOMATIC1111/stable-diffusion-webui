@@ -1,16 +1,15 @@
 // code related to showing and updating progressbar shown as the image is being made
 
-function rememberGallerySelection(id_gallery){
+function rememberGallerySelection(){
 
 }
 
-function getGallerySelectedIndex(id_gallery){
+function getGallerySelectedIndex(){
 
 }
 
 function request(url, data, handler, errorHandler){
     var xhr = new XMLHttpRequest();
-    var url = url;
     xhr.open("POST", url, true);
     xhr.setRequestHeader("Content-Type", "application/json");
     xhr.onreadystatechange = function () {
@@ -107,7 +106,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
                 divProgress.style.width = rect.width + "px";
             }
 
-            progressText = ""
+            let progressText = ""
 
             divInner.style.width = ((res.progress || 0) * 100.0) + '%'
             divInner.style.background = res.progress ? "" : "transparent"
