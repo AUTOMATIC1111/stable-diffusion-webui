@@ -41,10 +41,8 @@ safetensors
 scipy
 tb_nightly
 toml
-torch
 torchdiffeq
 torchsde
-torchvision
 voluptuous
 yapf
 scikit-image
