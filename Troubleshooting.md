@@ -1,4 +1,4 @@
-- **The program is tested to work on Python 3.10.x. Don't use other versions unless you are looking for trouble.**
+- **The program is tested to work on Python 3.10.6. Don't use other versions unless you are looking for trouble.**
 - The program needs 16gb of regular RAM to run smoothly. If you have 8gb RAM, consider making an 8gb page file/swap file, or use the [--lowram](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings) option (if you have more gpu vram than ram).
 - The installer creates a python virtual environment, so none of the installed modules will affect existing system installations of python.
 - To use the system's python rather than creating a virtual environment, use custom parameter replacing `set VENV_DIR=-`.
@@ -6,7 +6,7 @@
 - When starting the program for the first time, the path to python interpreter is displayed. If this is not the python you installed, you can specify full path in the `webui-user` script; see [Running with custom parameters](Run-with-Custom-Parameters).
 - If the desired version of Python is not in PATH, modify the line `set PYTHON=python` in `webui-user.bat` with the full path to the python executable.
     - Example: `set PYTHON=B:\soft\Python310\python.exe`
-- Installer requirements from `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.x. If this doesn't work with other versions of Python, setting the custom parameter `set REQS_FILE=requirements.txt` may help.
+- Installer requirements from `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If this doesn't work with other versions of Python, setting the custom parameter `set REQS_FILE=requirements.txt` may help.
 
 # Low VRAM Video-cards
 When running on video cards with a low amount of VRAM (<=4GB), out of memory errors may arise.
