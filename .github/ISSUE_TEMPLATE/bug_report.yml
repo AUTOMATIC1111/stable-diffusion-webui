@@ -1,7 +1,7 @@
 name: Issue Report
 description: Something is broken
 title: "[Issue]: "
-labels: ["issue"]
+labels: []
 
 body:
   - type: textarea
