@@ -1,27 +1,37 @@
 # Automatic Installation
 ## Windows (method 1)
-> A very basic guide that's meant to get Stable Diffusion web UI up and running on Windows 10/11 NVIDIA GPU.
+> A very basic guide to get Stable Diffusion web UI up and running on Windows 10/11 NVIDIA GPU.
 1. Download the `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract the zip file.
 2. Double click the `update.bat` script to update web UI to the latest version, wait till finish then close the window.
-3. Right-click and edit `sd.webui\webui\webui-user.bat` script, replace the line `set COMMANDLINE_ARGS=` with the following then save and close the file:
+3. Double click the `run.bat` script to launch web UI, during the first launch it will download large amounts of files. After everything has been downloaded and installed correctly, you should see a message "`Running on local URL:  http://127.0.0.1:7860`", opening the link will present you with the web UI interface.
+> you should be able to start generating images
+
+### Extra configurations vai `COMMANDLINE_ARGS`
+There are some configuration options that you may want apply to web UI, in order to configure these options you need to edit the launch script found at `sd.webui\webui\webui-user.bat`, edit the file add the selected arguments after `set COMMANDLINE_ARGS=` like so :
 ```bat
-set COMMANDLINE_ARGS=--autolaunch --update-check --no-half-vae --no-half --precision full --xformers --lowvram
+set COMMANDLINE_ARGS=--autolaunch --update-check
 ```
+> Each individual argument need to separated by a space, the above example well configure web UI to auto launch the browser page after it completes loading, and also chack for new version of web UI at launch.
 
+### Troubleshooting
+The default configuration of web UI should run on most modon GPU, but in some cases you may need some extra arguments to allow it to work properly.
 
-4. Double click the `run.bat` script to launch web UI. During the first launch it will download large amounts of files, after everything has been downloaded and installed correctly, your web browser should automatically open and present you with the Web UI interface. At this point, you should be able to generate images.
+1. For GPU with less ammounts of VRAM, you may need `--medvram` or `--lowvram`, these optimizations reduces VRAM requirements but sacrifice performance. If you do not have enough VRAM, web UI may refuse to launch or fail to generate images due to an out-of-memory error. The amount of VRAM required largely depends the desired image resolution, for more details see [Troubleshooting](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Troubleshooting).
+> the [Tiled VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111) extension can help to reduce the VRAM requirement.
 
-### Optional
-This guide is meant to provide a working installation on as many different platforms as possible, but this also means using optimizations that are meant to be used with low spec systems, this will result in low performance on higher spec systems.
-1. The amount of required VRAM largely depends on your desired image resolution, image generation will fail and produce an out-of-memory error if you don't have enough VRAM, `--lowvram` and `--medvram` reduces VRAM requirements but sacrifice speed, if possible try replacing `--lowvram` with `--midvram` or remove it entirely. You can also give [Tiled VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111) extension a try.
-2. If you're not using a 16 series GPU, try removing `--precision full` and `--no-half`.
-3. Experiment with different cross attenuation optimization methods other than `--xformers`, see [Optimizations](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations) for more details. If you wish to measure your system's performance, try using [sd-extension-system-info](https://github.com/vladmandic/sd-extension-system-info) extension which features a benchmarking tool and a [database](https://vladmandic.github.io/sd-extension-system-info/pages/benchmark.html) of user submitted results.
-4. Some combinations of model and VAE are more likely to produce `NansException: A tensor with all NaNs was produced in VAE` resulting in a black image, using the option `--no-half-vae` can help to mitigate this.
-5. For more configurations with `COMMANDLINE_ARGS` see [Command Line Arguments and Settings
-](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings)
+2. If your generated results in resulting in a black or green image, try adding `--precision full` and `--no-half`. 
+
+3. Some combinations of model and VAE are prone to produce `NansException: A tensor with all NaNs was produced in VAE` resulting in a black image, using the option `--no-half-vae` may help to mitigate this issue.
+
+### Extra Options
+1. There are several cross attenuation optimization methods such as `--xformers` or `--opt-sdp-attention`, these can drastically increase performance see [Optimizations](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations) for more details, experiment with different options as different hardware are suited for different optimizations. If you wish to measure your system's performance, try using [sd-extension-system-info](https://github.com/vladmandic/sd-extension-system-info) extension which features a benchmarking tool and a [database](https://vladmandic.github.io/sd-extension-system-info/pages/benchmark.html) of user submitted results.
+2. add `--autolaunch` to heve web UI launch the web browser altomaticly after web UI has started up.
+3. add `--update-check` will notify you when theres a new version of webui.
+4. See [Command Line Arguments and Settings
+](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings) for more configuration options.
 
 ### Tip
-If you already have stable diffusion models downloaded, you can move the models into `sd.webui\webui\models\Stable-diffusion\` before running `run.bat` in step 4, This will allow it to skip downloading the vanilla [stable-diffusion-v1-5 model](https://huggingface.co/runwayml/stable-diffusion-v1-5) model.
+If you already have stable diffusion models downloaded, you can move the models into `sd.webui\webui\models\Stable-diffusion\` before running `run.bat` in step 3, this will skip auto downloading the vanilla [stable-diffusion-v1-5 model](https://huggingface.co/runwayml/stable-diffusion-v1-5) model.
 
 ## Windows (method 2)
 1. Install [Python 3.10.6](https://www.python.org/ftp/python/3.10.6/python-3.10.6-amd64.exe) (ticking **Add to PATH**), and [git](https://github.com/git-for-windows/git/releases/download/v2.39.2.windows.1/Git-2.39.2-64-bit.exe)
