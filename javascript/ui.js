@@ -290,7 +290,7 @@ function monitor_server_status() {
         <h1>Waiting for server...</h1>
         <script>
           function monitor_server_status() {
-            fetch('http://127.0.0.1:7860/sdapi/v1/progress')
+            fetch('/sdapi/v1/progress')
               .then((res) => { !res?.ok ? setTimeout(monitor_server_status, 1000) : location.reload(); })
               .catch((e) => setTimeout(monitor_server_status, 1000))
           }
@@ -305,7 +305,7 @@ function monitor_server_status() {
 function restart_reload() {
   document.body.style = 'background: #222222; font-size: 1rem; font-family:monospace; margin-top:20%; color:lightgray; text-align:center';
   document.body.innerHTML = '<h1>Server shutdown in progress...</h1>';
-  fetch('http://127.0.0.1:7860/sdapi/v1/progress')
+  fetch('/sdapi/v1/progress')
     .then((res) => setTimeout(restart_reload, 1000))
     .catch((e) => setTimeout(monitor_server_status, 500));
   return [];
