@@ -421,7 +421,7 @@ def reload_model_weights(sd_model=None, info=None):
         shared.log.debug('Reload model weights skip')
         skip_next_load = False
         return
-    shared.log.debug(f'Reload model weights: {sd_model} {info}')
+    shared.log.debug(f'Reload model weights: {sd_model is not None} {info}')
     from modules import lowvram, sd_hijack
     checkpoint_info = info or select_checkpoint()
     if not sd_model:
