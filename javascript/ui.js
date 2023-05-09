@@ -1,6 +1,7 @@
 /* global gradioApp */
 
-let opts = {};
+window.opts = {};
+let tabSelected = '';
 
 function set_theme(theme) {
   const gradioURL = window.location.href;
@@ -192,6 +193,7 @@ function recalculate_prompts_inpaint(...args) {
 }
 
 onUiUpdate(() => {
+  sort_ui_elements();
   if (Object.keys(opts).length !== 0) return;
   const json_elem = gradioApp().getElementById('settings_json');
   if (!json_elem) return;
@@ -226,7 +228,6 @@ onUiUpdate(() => {
     localTextarea.addEventListener('input', promptTokecountUpdateFuncs[id]);
   }
 
-  sort_ui_elements();
   registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button');
   registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
   registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
@@ -290,7 +291,7 @@ function monitor_server_status() {
         <h1>Waiting for server...</h1>
         <script>
           function monitor_server_status() {
-            fetch('http://127.0.0.1:7860/sdapi/v1/progress')
+            fetch('/sdapi/v1/progress')
               .then((res) => { !res?.ok ? setTimeout(monitor_server_status, 1000) : location.reload(); })
               .catch((e) => setTimeout(monitor_server_status, 1000))
           }
@@ -305,7 +306,7 @@ function monitor_server_status() {
 function restart_reload() {
   document.body.style = 'background: #222222; font-size: 1rem; font-family:monospace; margin-top:20%; color:lightgray; text-align:center';
   document.body.innerHTML = '<h1>Server shutdown in progress...</h1>';
-  fetch('http://127.0.0.1:7860/sdapi/v1/progress')
+  fetch('/sdapi/v1/progress')
     .then((res) => setTimeout(restart_reload, 1000))
     .catch((e) => setTimeout(monitor_server_status, 500));
   return [];
@@ -343,9 +344,32 @@ function create_theme_element() {
 }
 
 function sort_ui_elements() {
-  const tabs = gradioApp().getElementById('tabs');
-  const scripts = gradioApp().getElementById('scripts_alwayson');
-  console.log('HERE', opts, tabs, scripts);
+  // sort top-level tabs
+  const currSelected = gradioApp()?.querySelector('.tab-nav > .selected')?.innerText;
+  if (currSelected === tabSelected || !opts.ui_tab_reorder) return;
+  tabSelected = currSelected;
+  const tabs = gradioApp().getElementById('tabs')?.children[0];
+  if (!tabs) return;
+  let tabsOrder = opts.ui_tab_reorder?.split(',').map((el) => el.trim().toLowerCase()) || [];
+  for (const el of Array.from(tabs.children)) {
+    const elIndex = tabsOrder.indexOf(el.innerText.toLowerCase());
+    if (elIndex > -1) el.style.order = elIndex - 50; // default is 0 so setting to negative values
+  }
+  // sort always-on scripts
+  const find = (el, ordered) => {
+    for (const i in ordered) {
+      if (el.innerText.toLowerCase().startsWith(ordered[i])) return i;
+    }
+    return 99;
+  };
+
+  tabsOrder = opts.ui_scripts_reorder?.split(',').map((el) => el.trim().toLowerCase()) || [];
+
+  const scriptsTxt = gradioApp().getElementById('scripts_alwayson_txt2img').children;
+  for (const el of Array.from(scriptsTxt)) el.style.order = find(el, tabsOrder);
+
+  const scriptsImg = gradioApp().getElementById('scripts_alwayson_img2img');
+  for (const el of Array.from(scriptsImg)) el.style.order = find(el, tabsOrder);
 }
 
 function preview_theme() {

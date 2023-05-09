@@ -103,7 +103,8 @@ def list_models():
     model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.cmd_opts.ckpt is not None:
         if not os.path.exists(shared.cmd_opts.ckpt):
-            shared.log.warning(f"Requested checkpoint not found: {shared.cmd_opts.ckpt}")
+            if shared.cmd_opts.ckpt.lower() != "none":
+                shared.log.warning(f"Requested checkpoint not found: {shared.cmd_opts.ckpt}")
         else:
             checkpoint_info = CheckpointInfo(shared.cmd_opts.ckpt)
             checkpoint_info.register()
@@ -152,7 +153,7 @@ def model_hash(filename):
 def select_checkpoint():
     model_checkpoint = shared.opts.sd_model_checkpoint
     checkpoint_info = checkpoint_aliases.get(model_checkpoint, None)
-    if checkpoint_info is not None:
+    if checkpoint_info is not None or shared.cmd_opts.ckpt is not None:
         return checkpoint_info
     if len(checkpoints_list) == 0:
         shared.log.error("Cannot run without a checkpoint")
@@ -420,7 +421,7 @@ def reload_model_weights(sd_model=None, info=None):
         shared.log.debug('Reload model weights skip')
         skip_next_load = False
         return
-    shared.log.debug(f'Reload model weights: {sd_model} {info}')
+    shared.log.debug(f'Reload model weights: {sd_model is not None} {info}')
     from modules import lowvram, sd_hijack
     checkpoint_info = info or select_checkpoint()
     if not sd_model:

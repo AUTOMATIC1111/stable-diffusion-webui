@@ -1,0 +1,33 @@
+name: Extension Compatibility Report
+description: Extension is not working as expected
+title: "[Extension]: "
+labels: ["extension"]
+
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Issue Description
+      description: Tell us what happened in a very clear and simple way
+      value: Please fill this form with as much information as possible
+  - type: textarea
+    id: platform
+    attributes:
+      label: Version Platform Description
+      description: Describe your platform (program version, OS, browser)
+      value: 
+  - type: textarea
+    id: url
+    attributes:
+      label: URL link of the extension
+      description: URL link of the extension
+      value: 
+  - type: markdown
+    attributes:
+      value: |
+        Any issues without version information and actual link to extension will be closed  
+  - type: markdown
+    attributes:
+      value: |
+        If issue is extension installation or startup related, please check `setup.log` before reporting  
+        And when posting console logs, please use code blocks ( \`\`\` ) to format them insead of uploading screenshots  

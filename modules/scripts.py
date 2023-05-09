@@ -256,6 +256,7 @@ class ScriptRunner:
         self.infotext_fields = []
         self.paste_field_names = []
         self.script_load_ctr = 0
+        self.is_img2img = False
 
     def initialize_scripts(self, is_img2img):
         from modules import scripts_auto_postprocessing
@@ -267,6 +268,7 @@ class ScriptRunner:
         self.infotext_fields.clear()
         self.paste_field_names.clear()
         self.script_load_ctr = 0
+        self.is_img2img = is_img2img
 
         self.scripts.clear()
         self.alwayson_scripts.clear()
@@ -308,10 +310,9 @@ class ScriptRunner:
             inputs_alwayson += [script.alwayson for _ in controls]
             script.args_to = len(inputs)
 
-        with gr.Group(elem_id='scripts_alwayson'):
+        with gr.Group(elem_id='scripts_alwayson_img2img' if self.is_img2img else 'scripts_alwayson_txt2img'):
             for script in self.alwayson_scripts:
                 elem_id = f'script_{"txt2img" if script.is_txt2img else "img2img"}_{script.title().lower().replace(" ", "_")}'
-                print(elem_id)
                 with gr.Group(elem_id=elem_id) as group:
                     create_script_ui(script, inputs, inputs_alwayson)
                 script.group = group

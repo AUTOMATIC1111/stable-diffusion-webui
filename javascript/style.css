@@ -623,3 +623,5 @@ footer {
 .extra-network-cards .card ul a{ cursor: pointer; }
 .extra-network-cards .card ul a:hover{ color: red; }
 .theme-preview { display: none; position: fixed; border: 4px solid var(--neutral-600); box-shadow: 2px 2px 2px 2px var(--neutral-700); top: 0; bottom: 0; left: 0; right: 0; margin: auto; max-width: 75vw; z-index: 999; }
+
+#scripts_alwayson_txt2img, scripts_alwayson_img2img { display: grid }

@@ -240,7 +240,7 @@ def check_torch():
                 for i in range(0, torch_directml.device_count()):
                     log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
             except:
-                log.warning("Torch repoorts CUDA not available")
+                log.warning("Torch reports CUDA not available")
     except Exception as e:
         log.error(f'Could not load torch: {e}')
         if not args.ignore:

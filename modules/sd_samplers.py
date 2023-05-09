@@ -32,7 +32,11 @@ def set_samplers():
     global samplers, samplers_for_img2img
 
     shown_img2img = set(shared.opts.show_samplers)
-    shown = set(shared.opts.show_samplers + ['PLMS', 'UniPC'])
+
+    if len(shared.opts.show_samplers) == 0:
+        shown = {'PLMS', 'UniPC'}
+    else:
+        shown = set(shared.opts.show_samplers + ['PLMS'])
 
     samplers = [x for x in all_samplers if x.name in shown]
     samplers_for_img2img = [x for x in all_samplers if x.name in shown_img2img]

@@ -149,4 +149,3 @@ class ScriptPostprocessingRunner:
     def image_changed(self):
         for script in self.scripts_in_preferred_order():
             script.image_changed()
-
