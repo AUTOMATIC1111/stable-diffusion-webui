@@ -22,6 +22,7 @@ Stuff to be added...
 - Gradio 3.28.4 when ready
 - Remove origin wiki
 - Import core repos
+- Import rembg
 - Improve core `Stability-AI` code: <https://github.com/vladmandic/automatic/discussions/795>
 - Improve core `k-Diffusion` code
 - Update and mdularize `cli` scripts
