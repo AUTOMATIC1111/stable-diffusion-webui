@@ -117,7 +117,7 @@ class Extension:
         self.have_info_from_repo = False
 
 
-def list_extensions():
+def list_extensions(local_extensions=None):
     extensions.clear()
 
     if not os.path.isdir(extensions_dir):
@@ -139,6 +139,11 @@ def list_extensions():
                 continue
 
             extension_paths.append((extension_dirname, path, dirname == extensions_builtin_dir))
+
+    if local_extensions:
+        for extension_path in local_extensions:
+            if extension_path.is_dir():
+                extension_paths.append((extension_path.stem, str(extension_path), False))
 
     for dirname, path, is_builtin in extension_paths:
         extension = Extension(name=dirname, path=path, enabled=dirname not in shared.opts.disabled_extensions, is_builtin=is_builtin)

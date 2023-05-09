@@ -30,6 +30,7 @@ if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:
 else:
     cmd_opts, _ = parser.parse_known_args()
 
+script_loading.preload_local_extensions(parser, cmd_opts.local_extension)
 
 restricted_opts = {
     "samples_filename_pattern",

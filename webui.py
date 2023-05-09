@@ -149,7 +149,7 @@ def initialize():
 
     check_versions()
 
-    extensions.list_extensions()
+    extensions.list_extensions(local_extensions=cmd_opts.local_extension)
     localization.list_localizations(cmd_opts.localizations_dir)
     startup_timer.record("list extensions")
 
@@ -370,7 +370,7 @@ def webui():
         sd_samplers.set_samplers()
 
         modules.script_callbacks.script_unloaded_callback()
-        extensions.list_extensions()
+        extensions.list_extensions(local_extensions=cmd_opts.local_extension)
         startup_timer.record("list extensions")
 
         config_state_file = shared.opts.restore_config_state_file
