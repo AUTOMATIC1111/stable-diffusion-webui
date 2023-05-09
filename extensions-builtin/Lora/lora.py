@@ -3,7 +3,6 @@ import os
 import re
 import torch
 from typing import Union
-import scripts.api as api
 
 from modules import shared, devices, sd_models, errors, scripts
 
@@ -449,8 +448,3 @@ available_lora_aliases = {}
 loaded_loras = []
 
 list_available_loras()
-try:
-    import modules.script_callbacks as script_callbacks
-    script_callbacks.on_app_started(api.api)
-except:
-    pass
