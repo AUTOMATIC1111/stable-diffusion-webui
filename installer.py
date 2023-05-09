@@ -211,7 +211,7 @@ def check_torch():
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
         else:
             log.info('Using CPU-only Torch')
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchaudio torchvision')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if 'torch' in torch_command and not args.version:
         install(torch_command, 'torch torchvision torchaudio')
