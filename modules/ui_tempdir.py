@@ -2,7 +2,6 @@ import os
 import tempfile
 from collections import namedtuple
 from pathlib import Path
-from time import time
 
 import gradio as gr
 
@@ -35,11 +34,9 @@ def check_tmp_file(gradio, filename):
 def save_pil_to_file(pil_image, dir=None):
     already_saved_as = getattr(pil_image, 'already_saved_as', None)
     if already_saved_as and os.path.isfile(already_saved_as):
-        already_saved_as += f'?{os.path.getmtime(already_saved_as)}'
-
         register_tmp_file(shared.demo, already_saved_as)
 
-        file_obj = Savedfile(already_saved_as)
+        file_obj = Savedfile(f'{already_saved_as}?{os.path.getmtime(already_saved_as)}')
         return file_obj
 
     if shared.opts.temp_dir != "":
