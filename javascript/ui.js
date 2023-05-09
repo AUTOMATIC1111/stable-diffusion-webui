@@ -1,6 +1,7 @@
 /* global gradioApp */
 
 window.opts = {};
+let tabSelected = '';
 
 function set_theme(theme) {
   const gradioURL = window.location.href;
@@ -192,6 +193,7 @@ function recalculate_prompts_inpaint(...args) {
 }
 
 onUiUpdate(() => {
+  sort_ui_elements();
   if (Object.keys(opts).length !== 0) return;
   const json_elem = gradioApp().getElementById('settings_json');
   if (!json_elem) return;
@@ -226,7 +228,6 @@ onUiUpdate(() => {
     localTextarea.addEventListener('input', promptTokecountUpdateFuncs[id]);
   }
 
-  sort_ui_elements();
   registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button');
   registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
   registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
@@ -344,12 +345,15 @@ function create_theme_element() {
 
 function sort_ui_elements() {
   // sort top-level tabs
+  const currSelected = gradioApp()?.querySelector('.tab-nav > .selected')?.innerText;
+  if (currSelected === tabSelected || !opts.ui_tab_reorder) return;
+  tabSelected = currSelected;
   const tabs = gradioApp().getElementById('tabs')?.children[0];
   if (!tabs) return;
   let tabsOrder = opts.ui_tab_reorder?.split(',').map((el) => el.trim().toLowerCase()) || [];
   for (const el of Array.from(tabs.children)) {
     const elIndex = tabsOrder.indexOf(el.innerText.toLowerCase());
-    el.style.order = elIndex > -1 ? elIndex : 99;
+    if (elIndex > -1) el.style.order = elIndex - 50; // default is 0 so setting to negative values
   }
   // sort always-on scripts
   const find = (el, ordered) => {

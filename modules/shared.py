@@ -405,8 +405,8 @@ options_templates.update(options_section(('ui', "User interface"), {
     "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"), # pylint: disable=anomalous-backslash-in-string
     "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
-    "ui_tab_reorder": OptionInfo("", "UI tabs order"),
-    "ui_scripts_reorder": OptionInfo("", "UI scripts order"),
+    "ui_tab_reorder": OptionInfo("From Text, From Image, Process Image", "UI tabs order"),
+    "ui_scripts_reorder": OptionInfo("Enable Dynamic Thresholding, ControlNet", "UI scripts order"),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
 }))
