@@ -3,6 +3,7 @@ import os
 import re
 import torch
 from typing import Union
+import scripts.api as api
 
 from modules import shared, devices, sd_models, errors, scripts
 
@@ -443,9 +444,13 @@ def infotext_pasted(infotext, params):
     if added:
         params["Prompt"] += "\n" + "".join(added)
 
-
 available_loras = {}
 available_lora_aliases = {}
 loaded_loras = []
 
 list_available_loras()
+try:
+    import modules.script_callbacks as script_callbacks
+    script_callbacks.on_app_started(api.api)
+except:
+    pass
