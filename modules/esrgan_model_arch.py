@@ -38,7 +38,7 @@ class RRDBNet(nn.Module):
         elif upsample_mode == 'pixelshuffle':
             upsample_block = pixelshuffle_block
         else:
-            raise NotImplementedError('upsample mode [{:s}] is not found'.format(upsample_mode))
+            raise NotImplementedError(f'upsample mode [{upsample_mode}] is not found')
         if upscale == 3:
             upsampler = upsample_block(nf, nf, 3, act_type=act_type, convtype=convtype)
         else:
@@ -261,10 +261,10 @@ class Upsample(nn.Module):
 
     def extra_repr(self):
         if self.scale_factor is not None:
-            info = 'scale_factor=' + str(self.scale_factor)
+            info = f'scale_factor={self.scale_factor}'
         else:
-            info = 'size=' + str(self.size)
-        info += ', mode=' + self.mode
+            info = f'size={self.size}'
+        info += f', mode={self.mode}'
         return info
 
 
@@ -350,7 +350,7 @@ def act(act_type, inplace=True, neg_slope=0.2, n_prelu=1, beta=1.0):
     elif act_type == 'sigmoid':  # [0, 1] range output
         layer = nn.Sigmoid()
     else:
-        raise NotImplementedError('activation layer [{:s}] is not found'.format(act_type))
+        raise NotImplementedError(f'activation layer [{act_type}] is not found')
     return layer
 
 
@@ -372,7 +372,7 @@ def norm(norm_type, nc):
     elif norm_type == 'none':
         def norm_layer(x): return Identity()
     else:
-        raise NotImplementedError('normalization layer [{:s}] is not found'.format(norm_type))
+        raise NotImplementedError(f'normalization layer [{norm_type}] is not found')
     return layer
 
 
@@ -388,7 +388,7 @@ def pad(pad_type, padding):
     elif pad_type == 'zero':
         layer = nn.ZeroPad2d(padding)
     else:
-        raise NotImplementedError('padding layer [{:s}] is not implemented'.format(pad_type))
+        raise NotImplementedError(f'padding layer [{pad_type}] is not implemented')
     return layer
 
 
@@ -432,7 +432,7 @@ def conv_block(in_nc, out_nc, kernel_size, stride=1, dilation=1, groups=1, bias=
                pad_type='zero', norm_type=None, act_type='relu', mode='CNA', convtype='Conv2D',
                spectral_norm=False):
     """ Conv layer with padding, normalization, activation """
-    assert mode in ['CNA', 'NAC', 'CNAC'], 'Wrong conv mode [{:s}]'.format(mode)
+    assert mode in ['CNA', 'NAC', 'CNAC'], f'Wrong conv mode [{mode}]'
     padding = get_valid_padding(kernel_size, dilation)
     p = pad(pad_type, padding) if pad_type and pad_type != 'zero' else None
     padding = padding if pad_type == 'zero' else 0

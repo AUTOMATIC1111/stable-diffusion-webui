@@ -101,7 +101,7 @@ def visit(x, func, path=""):
         for c in x.children:
             visit(c, func, path)
     elif x.label is not None:
-        func(path + "/" + str(x.label), x)
+        func(f"{path}/{x.label}", x)
 
 
 def add_style(name: str, prompt: str, negative_prompt: str):
@@ -166,7 +166,7 @@ def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_di
             img = Image.open(image)
             filename = os.path.basename(image)
             left, _ = os.path.splitext(filename)
-            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, left + ".txt"), 'a'))
+            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, f"{left}.txt"), 'a'))
 
         return [gr.update(), None]
 
@@ -182,29 +182,29 @@ def interrogate_deepbooru(image):
 
 
 def create_seed_inputs(target_interface):
-    with FormRow(elem_id=target_interface + '_seed_row', variant="compact"):
-        seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=target_interface + '_seed')
+    with FormRow(elem_id=f"{target_interface}_seed_row", variant="compact"):
+        seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=f"{target_interface}_seed")
         seed.style(container=False)
-        random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed', label='Random seed')
-        reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed', label='Reuse seed')
+        random_seed = ToolButton(random_symbol, elem_id=f"{target_interface}_random_seed", label='Random seed')
+        reuse_seed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_seed", label='Reuse seed')
 
-        seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
+        seed_checkbox = gr.Checkbox(label='Extra', elem_id=f"{target_interface}_subseed_show", value=False)
 
     # Components to show/hide based on the 'Extra' checkbox
     seed_extras = []
 
-    with FormRow(visible=False, elem_id=target_interface + '_subseed_row') as seed_extra_row_1:
+    with FormRow(visible=False, elem_id=f"{target_interface}_subseed_row") as seed_extra_row_1:
         seed_extras.append(seed_extra_row_1)
-        subseed = gr.Number(label='Variation seed', value=-1, elem_id=target_interface + '_subseed')
+        subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{target_interface}_subseed")
         subseed.style(container=False)
-        random_subseed = ToolButton(random_symbol, elem_id=target_interface + '_random_subseed')
-        reuse_subseed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_subseed')
-        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=target_interface + '_subseed_strength')
+        random_subseed = ToolButton(random_symbol, elem_id=f"{target_interface}_random_subseed")
+        reuse_subseed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_subseed")
+        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=f"{target_interface}_subseed_strength")
 
     with FormRow(visible=False) as seed_extra_row_2:
         seed_extras.append(seed_extra_row_2)
-        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from width", value=0, elem_id=target_interface + '_seed_resize_from_w')
-        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from height", value=0, elem_id=target_interface + '_seed_resize_from_h')
+        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from width", value=0, elem_id=f"{target_interface}_seed_resize_from_w")
+        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from height", value=0, elem_id=f"{target_interface}_seed_resize_from_h")
 
     random_seed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[seed])
     random_subseed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[subseed])
@@ -765,7 +765,7 @@ def create_ui():
                     )
                     button.click(
                         fn=lambda: None,
-                        _js="switch_to_"+name.replace(" ", "_"),
+                        _js=f"switch_to_{name.replace(' ', '_')}",
                         inputs=[],
                         outputs=[],
                     )
@@ -1462,18 +1462,18 @@ def create_ui():
         elif t == bool:
             comp = gr.Checkbox
         else:
-            raise Exception(f'bad options item type: {str(t)} for key {key}')
+            raise Exception(f'bad options item type: {t} for key {key}')
 
-        elem_id = "setting_"+key
+        elem_id = f"setting_{key}"
 
         if info.refresh is not None:
             if is_quicksettings:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
             else:
                 with FormRow():
                     res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                    create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                    create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
         else:
             res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
 
@@ -1545,7 +1545,7 @@ def create_ui():
                         current_tab.__exit__()
 
                     gr.Group()
-                    current_tab = gr.TabItem(elem_id="settings_{}".format(elem_id), label=text)
+                    current_tab = gr.TabItem(elem_id=f"settings_{elem_id}", label=text)
                     current_tab.__enter__()
                     current_row = gr.Column(variant='compact')
                     current_row.__enter__()
@@ -1664,7 +1664,7 @@ def create_ui():
             for interface, label, ifid in interfaces:
                 if label in shared.opts.hidden_tabs:
                     continue
-                with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
+                with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
 
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
@@ -1771,10 +1771,10 @@ def create_ui():
 
     def loadsave(path, x):
         def apply_field(obj, field, condition=None, init_field=None):
-            key = path + "/" + field
+            key = f"{path}/{field}"
 
             if getattr(obj, 'custom_script_source', None) is not None:
-              key = 'customscript/' + obj.custom_script_source + '/' + key
+              key = f"customscript/{obj.custom_script_source}/{key}"
 
             if getattr(obj, 'do_not_save_to_config', False):
                 return

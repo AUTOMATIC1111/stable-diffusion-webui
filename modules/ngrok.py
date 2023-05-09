@@ -7,8 +7,8 @@ def connect(token, port, region):
     else:
         if ':' in token:
             # token = authtoken:username:password
-            account = token.split(':')[1] + ':' + token.split(':')[-1]
-            token = token.split(':')[0]
+            token, username, password = token.split(':', 2)
+            account = f"{username}:{password}"
 
     config = conf.PyngrokConfig(
         auth_token=token, region=region
