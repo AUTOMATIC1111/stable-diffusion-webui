@@ -549,6 +549,10 @@ class Options:
         with open(filename, "r", encoding="utf8") as file:
             self.data = json.load(file)
 
+        # 1.1.1 quicksettings list migration
+        if self.data.get('quicksettings') is not None and self.data.get('quicksettings_list') is None:
+            self.data['quicksettings_list'] = [i.strip() for i in self.data.get('quicksettings').split(',')]
+
         bad_settings = 0
         for k, v in self.data.items():
             info = self.data_labels.get(k, None)
