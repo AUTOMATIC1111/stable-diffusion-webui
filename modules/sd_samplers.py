@@ -34,11 +34,9 @@ def set_samplers():
     shown_img2img = set(shared.opts.show_samplers)
 
     if len(shared.opts.show_samplers) == 0:
-        shown = set(['UniPC'])
+        shown = {'PLMS', 'UniPC'}
     else:
-        shown = set(shared.opts.show_samplers)
-
-    shown.add('PLMS')
+        shown = set(shared.opts.show_samplers + ['PLMS'])
 
     samplers = [x for x in all_samplers if x.name in shown]
     samplers_for_img2img = [x for x in all_samplers if x.name in shown_img2img]
