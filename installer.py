@@ -201,7 +201,7 @@ def check_torch():
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     elif shutil.which('sycl-ls') is not None or os.path.exists('/opt/intel/oneapi') or args.use_ipex:
         log.info('Intel OneAPI Toolkit detected')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch==1.13.0a0+git6c9b55e torchvision==0.14.1a0 intel_extension_for_pytorch==1.13.120+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch==1.13.0a0 torchvision==0.14.1a0 intel_extension_for_pytorch==1.13.120+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
         machine = platform.machine()
