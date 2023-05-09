@@ -8,6 +8,9 @@
  * Lora: read infotext params from kohya-ss's extension parameters if they are present and if his extension is not active
  * Lora: Fix some Loras not working (ones that have 3x3 convolution layer)
  * Lora: add an option to use old method of applying loras (producing same results as with kohya-ss)
+ * add version to infotext, footer and console output when starting
+ * add links to wiki for filename pattern settings
+ * add extended info for quicksettings setting and use multiselect input instead of a text field
 
 ### Minor:
  * --subpath option for gradio for use with reverse proxy
@@ -17,9 +20,13 @@
  * print error to console when batch processing in img2img fails
  * create HTML for extra network pages only on demand
  * allow directories starting with . to still list their models for lora, checkpoints, etc
+ * put infotext options into their own category in settings tab
+ * do not show licenses page when user selects Show all pages in settings
+ * 
 
 ### Extensions:
  * Tooltip localization support
+ * Add api method to get LoRA models with prompt
 
 ### Bug Fixes:
  * re-add /docs endpoint
@@ -28,6 +35,10 @@
  * fix squished thumbnails in extras tab
  * keep "search" filter for extra networks when user refreshes the tab (previously it showed everthing after you refreshed)
  * fix webui showing the same image if you configure the generation to always save results into same file
+ * fix bug with upscalers not working properly
+ * Fix MPS on PyTorch 2.0.1, Intel Macs
+ * make it so that custom context menu from contextMenu.js only disappears after user's click, ignoring non-user click events
+ * prevent Reload UI button/link from reloading the page when it's not yet ready
 
 
 ## 1.1.1
