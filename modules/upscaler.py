@@ -50,6 +50,7 @@ class Upscaler:
         return img
 
     def upscale(self, img: PIL.Image, scale, selected_model: str = None):
+        shared.log.debug(f'upscale: {img}|{scale}|{selected_model}')
         self.scale = scale
         dest_w = int(img.width * scale)
         dest_h = int(img.height * scale)

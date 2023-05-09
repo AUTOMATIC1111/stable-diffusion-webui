@@ -8,9 +8,12 @@ from modules.memstats import memory_stats
 
 
 def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, override_settings_texts, *args): # pylint: disable=unused-argument
+
     if shared.sd_model is None:
         shared.log.warning('Model not loaded')
         return
+    shared.log.debug(f'txt2img: {id_task}|{prompt}|{negative_prompt}|{prompt_styles}|{steps}|{sampler_index}|{restore_faces}|{tiling}|{n_iter}|{batch_size}|{cfg_scale}|{seed}|{subseed}|{subseed_strength}|{seed_resize_from_h}|{seed_resize_from_w}|{seed_enable_extras}|{height}|{width}|{enable_hr}|{denoising_strength}|{hr_scale}|{hr_upscaler}|{hr_second_pass_steps}|{hr_resize_x}|{hr_resize_y}|{override_settings_texts}')
+
     override_settings = create_override_settings_dict(override_settings_texts)
     p = StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,

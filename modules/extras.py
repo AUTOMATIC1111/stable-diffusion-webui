@@ -15,18 +15,14 @@ from modules import shared, images, sd_models, sd_vae, sd_models_config
 def run_pnginfo(image):
     if image is None:
         return '', '', ''
-
     geninfo, items = images.read_info_from_image(image)
     items = {**{'parameters': geninfo}, **items}
-
     info = ''
     for key, text in items.items():
         info += f"<div><b>{html.escape(str(key))}</b>: {html.escape(str(text))}</div>"
-
     if len(info) == 0:
         message = "Nothing found in the image."
         info = f"<div><p>{message}<p></div>"
-
     return '', geninfo, info
 
 
@@ -43,13 +39,10 @@ def create_config(ckpt_result, config_source, a, b, c):
         cfg = config(c)
     else:
         cfg = None
-
     if cfg is None:
         return
-
     filename, _ = os.path.splitext(ckpt_result)
     checkpoint_filename = filename + ".yaml"
-
     shared.log.info("Copying config: {cfg} -> {checkpoint_filename}")
     shutil.copyfile(cfg, checkpoint_filename)
 
@@ -60,7 +53,6 @@ checkpoint_dict_skip_on_merge = ["cond_stage_model.transformer.text_model.embedd
 def to_half(tensor, enable):
     if enable and tensor.dtype == torch.float:
         return tensor.half()
-
     return tensor
 
 

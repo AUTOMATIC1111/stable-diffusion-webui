@@ -449,7 +449,6 @@ def fix_seed(p):
 
 def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
     index = position_in_batch + iteration * p.batch_size
-
     generation_params = {
         "Steps": p.steps,
         "Sampler": p.sampler_name,
@@ -479,11 +478,8 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Token merging stride y": None if opts.token_merging_stride_y == 2 else opts.token_merging_stride_y
     }
     generation_params.update(p.extra_generation_params)
-
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
-
     negative_prompt_text = "\nNegative prompt: " + p.all_negative_prompts[index] if p.all_negative_prompts[index] else ""
-
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
 
@@ -542,17 +538,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         assert len(p.prompt) > 0
     else:
         assert p.prompt is not None
-
     devices.torch_gc()
-
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
-
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()
-
     comments = {}
-
     if type(p.prompt) == list:
         p.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.prompt]
     else:
@@ -562,12 +553,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, p.styles) for x in p.negative_prompt]
     else:
         p.all_negative_prompts = p.batch_size * p.n_iter * [shared.prompt_styles.apply_negative_styles_to_prompt(p.negative_prompt, p.styles)]
-
     if type(seed) == list:
         p.all_seeds = seed
     else:
         p.all_seeds = [int(seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(p.all_prompts))]
-
     if type(subseed) == list:
         p.all_subseeds = subseed
     else:
@@ -578,13 +567,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     if os.path.exists(opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
-
     if p.scripts is not None:
         p.scripts.process(p)
-
     infotexts = []
     output_images = []
-
     cached_uc = [None, None]
     cached_c = [None, None]
 
@@ -598,13 +584,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         have been used before. The second element is where the previously
         computed result is stored.
         """
-
         if cache[0] is not None and (required_prompts, steps) == cache[0]:
             return cache[1]
-
         with devices.autocast():
             cache[1] = function(shared.sd_model, required_prompts, steps)
-
         cache[0] = (required_prompts, steps)
         return cache[1]
 
@@ -613,49 +596,33 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
             if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
                 sd_vae_approx.model()
-
         if state.job_count == -1:
             state.job_count = p.n_iter
-
         extra_network_data = None
         for n in range(p.n_iter):
             p.iteration = n
-
             if state.skipped:
                 state.skipped = False
-
             if state.interrupted:
                 break
-
             prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
-
             if p.scripts is not None:
                 p.scripts.before_process_batch(p, batch_number=n, prompts=prompts, seeds=seeds, subseeds=subseeds)
-
             if len(prompts) == 0:
                 break
-
             prompts, extra_network_data = extra_networks.parse_prompts(prompts)
-
             if not p.disable_extra_networks:
                 with devices.autocast():
                     extra_networks.activate(p, extra_network_data)
-
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=prompts, seeds=seeds, subseeds=subseeds)
-
-            # params.txt should be saved after scripts.process_batch, since the
-            # infotext could be modified by that callback
-            # Example: a wildcard processed by process_batch sets an extra model
-            # strength, which is saved as "Model Strength: 1.0" in the infotext
             if n == 0:
                 with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
                     processed = Processed(p, [], p.seed, "")
                     file.write(processed.infotext(p, 0))
-
             step_multiplier = 1
             if not shared.opts.dont_fix_second_order_samplers_schedule:
                 try:
@@ -664,17 +631,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     pass
             uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
             c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
-
             if len(model_hijack.comments) > 0:
                 for comment in model_hijack.comments:
                     comments[comment] = 1
-
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
-
             with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
                 samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
-
             x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
             try:
                 for x in x_samples_ddim:
@@ -690,45 +653,41 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         devices.test_for_nans(x, "vae")
                 else:
                     raise e
-
             x_samples_ddim = torch.stack(x_samples_ddim).float()
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
-
             del samples_ddim
-
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
                 lowvram.send_everything_to_cpu()
-
             devices.torch_gc()
-
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
-
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                 x_sample = x_sample.astype(np.uint8)
-
                 if p.restore_faces:
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
-                        images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-face-restoration")
-
+                        orig = p.restore_faces
+                        p.restore_faces = False
+                        info=infotext(n, i)
+                        p.restore_faces = orig
+                        images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=info, p=p, suffix="-before-face-restoration")
                     devices.torch_gc()
-
                     x_sample = modules.face_restoration.restore_faces(x_sample)
                     devices.torch_gc()
-
                 image = Image.fromarray(x_sample)
-
                 if p.scripts is not None:
                     pp = scripts.PostprocessImageArgs(image)
                     p.scripts.postprocess_image(p, pp)
                     image = pp.image
-
                 if p.color_corrections is not None and i < len(p.color_corrections):
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
+                        orig = p.color_corrections
+                        p.color_corrections = None
+                        info=infotext(n, i)
+                        p.color_corrections = orig
                         image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                        images.save_image(image_without_cc, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-before-color-correction")
+                        images.save_image(image_without_cc, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=info, p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
                 if opts.samples_save and not p.do_not_save_samples:
@@ -878,7 +837,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 return
             if not isinstance(image, Image.Image):
                 image = sd_samplers.sample_to_image(image, index, approximation=0)
+            orig1 = self.extra_generation_params
+            orig2 = self.restore_faces
+            self.extra_generation_params = {}
+            self.restore_faces = False
             info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=index)
+            self.extra_generation_params = orig1
+            self.restore_faces = orig2
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, info=info, suffix="-before-highres-fix")
 
         if latent_scale_mode is not None:

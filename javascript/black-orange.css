@@ -81,7 +81,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
 #quicksettings > div, #quicksettings > fieldset { min-width: 26em; max-width: 26em; line-height: 2em; }
 #refresh_sd_model_checkpoint { height: 48px; margin-left: -14px; background: #333333; box-shadow: none; }
-#refresh_txt2img_styles, #refresh_img2img_styles, #open_folder_txt2img, #open_folder_img2img, #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_res_switch_btn, #img2img_res_switch_btn, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h, #txt2img_tiling { display: none; }
+#refresh_txt2img_styles, #refresh_img2img_styles, #open_folder_txt2img, #open_folder_img2img, #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_res_switch_btn, #img2img_res_switch_btn, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h { display: none; }
 #save-animation { border-radius: 0 !important; margin-bottom: 16px; background-color: #111111; }
 #script_list { padding: 4px; margin-top: 20px; margin-bottom: 20px; }
 #settings > div.flex-wrap { width: 15em; }
