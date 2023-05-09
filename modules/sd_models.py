@@ -152,7 +152,7 @@ def model_hash(filename):
 def select_checkpoint():
     model_checkpoint = shared.opts.sd_model_checkpoint
     checkpoint_info = checkpoint_aliases.get(model_checkpoint, None)
-    if checkpoint_info is not None:
+    if checkpoint_info is not None or shared.cmd_opts.ckpt is not None:
         return checkpoint_info
     if len(checkpoints_list) == 0:
         shared.log.error("Cannot run without a checkpoint")
