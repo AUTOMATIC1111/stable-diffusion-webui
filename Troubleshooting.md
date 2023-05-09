@@ -1,4 +1,4 @@
-- **The program is tested to work on Python 3.10.6. Don't use other versions unless you are looking for trouble.**
+- **The program is tested to work on Python 3.10.x. Don't use other versions unless you are looking for trouble.**
 - The program needs 16gb of regular RAM to run smoothly. If you have 8gb RAM, consider making an 8gb page file/swap file, or use the [--lowram](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings) option (if you have more gpu vram than ram).
 - The installer creates a python virtual environment, so none of the installed modules will affect existing system installations of python.
 - To use the system's python rather than creating a virtual environment, use custom parameter replacing `set VENV_DIR=-`.
@@ -6,7 +6,7 @@
 - When starting the program for the first time, the path to python interpreter is displayed. If this is not the python you installed, you can specify full path in the `webui-user` script; see [Running with custom parameters](Run-with-Custom-Parameters).
 - If the desired version of Python is not in PATH, modify the line `set PYTHON=python` in `webui-user.bat` with the full path to the python executable.
     - Example: `set PYTHON=B:\soft\Python310\python.exe`
-- Installer requirements from `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.6. If this doesn't work with other versions of Python, setting the custom parameter `set REQS_FILE=requirements.txt` may help.
+- Installer requirements from `requirements_versions.txt`, which lists versions for modules specifically compatible with Python 3.10.x. If this doesn't work with other versions of Python, setting the custom parameter `set REQS_FILE=requirements.txt` may help.
 
 # Low VRAM Video-cards
 When running on video cards with a low amount of VRAM (<=4GB), out of memory errors may arise.
@@ -14,6 +14,19 @@ Various optimizations may be enabled through command line arguments, sacrificing
 - If you have 4GB VRAM and want to make 512x512 (or maybe up to 640x640) images, use `--medvram`.
 - If you have 4GB VRAM and want to make 512x512 images, but you get an out of memory error with `--medvram`, use `--lowvram --always-batch-cond-uncond` instead.
 - If you have 4GB VRAM and want to make images larger than you can with `--medvram`, use  `--lowvram`.
+
+# Torch is not able to use GPU
+This is one of the most frequently mentioned problems, but it's usually not a WebUI fault, there are many reasons for it.
+- WebUI uses GPU by default, so if you don't have suitable hardware, you need to add `--use-cpu`.
+- Make sure you configure the WebUI correctly, refer to the corresponding installation tutorial in the [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki).
+- If you encounter this issue after some component updates, try undoing the most recent actions.
+
+If you are one of the above, you should delete the `venv` folder.
+
+If you still can't solve the problem, you need to submit some additional information when reporting.
+1. Open the console under `venv\Scripts`
+2. Run `python -m torch.utils.collect_env`
+3. Copy all the output of the console and post it
 
 # Green or Black screen
 Video cards
