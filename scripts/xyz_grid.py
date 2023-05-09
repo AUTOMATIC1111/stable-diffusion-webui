@@ -439,7 +439,7 @@ class Script(scripts.Script):
         z_type.change(fn=select_axis, inputs=[z_type,z_values_dropdown], outputs=[fill_z_button,z_values,z_values_dropdown])
 
         def get_dropdown_update_from_params(axis,params):
-            val_key = axis + " Values"
+            val_key = f"{axis} Values"
             vals = params.get(val_key,"")
             valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
             return gr.update(value = valslist)

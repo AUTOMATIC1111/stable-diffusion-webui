@@ -467,7 +467,7 @@ def get_next_sequence_number(path, basename):
     """
     result = -1
     if basename != '':
-        basename = basename + "-"
+        basename = f"{basename}-"
 
     prefix_length = len(basename)
     for p in os.listdir(path):
@@ -536,7 +536,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         add_number = opts.save_images_add_number or file_decoration == ''
 
         if file_decoration != "" and add_number:
-            file_decoration = "-" + file_decoration
+            file_decoration = f"-{file_decoration}"
 
         file_decoration = namegen.apply(file_decoration) + suffix
 
@@ -566,7 +566,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     def _atomically_save_image(image_to_save, filename_without_extension, extension):
         # save image with .tmp extension to avoid race condition when another process detects new image in the directory
-        temp_file_path = filename_without_extension + ".tmp"
+        temp_file_path = f"{filename_without_extension}.tmp"
         image_format = Image.registered_extensions()[extension]
 
         if extension.lower() == '.png':
@@ -626,7 +626,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if opts.save_txt and info is not None:
         txt_fullfn = f"{fullfn_without_extension}.txt"
         with open(txt_fullfn, "w", encoding="utf8") as file:
-            file.write(info + "\n")
+            file.write(f"{info}\n")
     else:
         txt_fullfn = None
 

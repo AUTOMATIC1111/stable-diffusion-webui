@@ -69,7 +69,9 @@ class ExtraNetworksPage:
         pass
 
     def link_preview(self, filename):
-        return "./sd_extra_networks/thumb?filename=" + urllib.parse.quote(filename.replace('\\', '/')) + "&mtime=" + str(os.path.getmtime(filename))
+        quoted_filename = urllib.parse.quote(filename.replace('\\', '/'))
+        mtime = os.path.getmtime(filename)
+        return f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
 
     def search_terms_from_path(self, filename, possible_directories=None):
         abspath = os.path.abspath(filename)
