@@ -203,7 +203,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         sd_model.to(devices.cpu)
 
     sd_hijack.model_hijack.undo_hijack(sd_model)
-    if shared.cmd_opts.rollback_vae and devices.dtype_vae == torch.bfloat16:
+    if not shared.cmd_opts.disable_nan_check and devices.device != devices.cpu and devices.dtype_vae == torch.bfloat16:
         devices.dtype_vae = torch.float16
 
     load_vae(sd_model, vae_file, vae_source)
