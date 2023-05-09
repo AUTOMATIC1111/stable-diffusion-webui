@@ -1958,3 +1958,5 @@ def setup_ui_api(app):
         return [QuicksettingsHint(name=k, label=v.label) for k, v in opts.data_labels.items()]
 
     app.add_api_route("/internal/quicksettings-hint", quicksettings_hint, methods=["GET"], response_model=List[QuicksettingsHint])
+
+    app.add_api_route("/internal/ping", lambda: {}, methods=["GET"])

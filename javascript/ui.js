@@ -395,7 +395,16 @@ function update_token_counter(button_id) {
 
 function restart_reload(){
     document.body.innerHTML='<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
-    setTimeout(function(){location.reload()},2000)
+
+    var requestPing = function(){
+        requestGet("./internal/ping", {}, function(data){
+            location.reload();
+        }, function(){
+            setTimeout(requestPing, 500);
+        })
+    }
+
+    setTimeout(requestPing, 2000);
 
     return []
 }
