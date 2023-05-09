@@ -192,12 +192,12 @@ def check_python():
 def check_torch():
     if shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe')):
         log.info('nVidia CUDA toolkit detected')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
     elif shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo'):
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     elif shutil.which('sycl-ls') is not None or os.path.exists('/opt/intel/oneapi') or args.use_ipex:
         log.info('Intel OneAPI Toolkit detected')
