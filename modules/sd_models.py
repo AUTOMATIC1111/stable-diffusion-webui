@@ -103,7 +103,8 @@ def list_models():
     model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.cmd_opts.ckpt is not None:
         if not os.path.exists(shared.cmd_opts.ckpt):
-            shared.log.warning(f"Requested checkpoint not found: {shared.cmd_opts.ckpt}")
+            if shared.cmd_opts.ckpt.lower() != "none":
+                shared.log.warning(f"Requested checkpoint not found: {shared.cmd_opts.ckpt}")
         else:
             checkpoint_info = CheckpointInfo(shared.cmd_opts.ckpt)
             checkpoint_info.register()
