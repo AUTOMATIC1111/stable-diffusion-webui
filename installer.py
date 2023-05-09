@@ -330,12 +330,18 @@ def list_extensions(folder):
 # run installer for each installed and enabled extension and optionally update them
 def install_extensions():
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
+    extensions_duplicates = []
+    extensions_enabled = []
     for folder in [extensions_builtin_dir, extensions_dir]:
         if not os.path.isdir(folder):
             continue
         extensions = list_extensions(folder)
-        log.info(f'Extensions enabled: {extensions}')
+        log.debug(f'Extensions all: {extensions}')
         for ext in extensions:
+            if ext in extensions_enabled:
+                extensions_duplicates.append(ext)
+                continue
+            extensions_enabled.append(ext)
             if not args.skip_update:
                 try:
                     update(os.path.join(folder, ext))
@@ -343,6 +349,9 @@ def install_extensions():
                     log.error(f'Error updating extension: {os.path.join(folder, ext)}')
             if not args.skip_extensions:
                 run_extension_installer(os.path.join(folder, ext))
+    log.info(f'Extensions enabled: {extensions_enabled}')
+    if (len(extensions_duplicates) > 0):
+        log.warning(f'Extensions duplicates: {extensions_duplicates}')
 
 
 # initialize and optionally update submodules
