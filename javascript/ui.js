@@ -1,6 +1,6 @@
 /* global gradioApp */
 
-let opts = {};
+window.opts = {};
 
 function set_theme(theme) {
   const gradioURL = window.location.href;
