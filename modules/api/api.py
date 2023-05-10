@@ -196,6 +196,7 @@ class Api:
         self.add_api_route("/sdapi/v1/unload-checkpoint", self.unloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=ScriptsList)
+        self.add_api_route("/sdapi/v1/scripts", self.get_script_args, methods=["POST"], response_model=ScriptArgs)
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -276,6 +277,40 @@ class Api:
                         script_args[alwayson_script.args_from + idx] = request.alwayson_scripts[alwayson_script_name]["args"][idx]
         return script_args
 
+    def get_script_args(self, req: ScriptArgsRequest):
+        script_name = req.script.lower()
+        script = None
+        for idx, title in enumerate(scripts.scripts_txt2img.titles):
+            if script_name == title.lower():
+                script = scripts.scripts_txt2img.scripts[idx]
+                break
+        if script == None:
+            for idx, title in enumerate(scripts.scripts_img2img.titles):
+                if script_name == title.lower():
+                    script = scripts.scripts_img2img.scripts[idx]
+                    break
+        if script == None:
+            raise HTTPException(status_code=422, detail=f"script '{script_name}' not found")
+        
+        args = {}
+        with gr.Blocks():
+            for elem in script.ui(script.is_img2img):
+                if elem.label is None:
+                    continue
+                args[elem.label] = {
+                    "default": elem.value,
+                    "type": type(elem.value).__name__
+                }
+                if getattr(elem, "minimum", None) is not None:
+                    args[elem.label]["minimum"] = elem.minimum
+                if getattr(elem, "maximum", None) is not None:
+                    args[elem.label]["maximum"] = elem.maximum
+                if getattr(elem, "step", None) is not None:
+                    args[elem.label]["step"] = elem.step
+                if getattr(elem, "choices", None) is not None:
+                    args[elem.label]["choices"] = elem.choices
+        return ScriptArgs(args=args)
+    
     def text2imgapi(self, txt2imgreq: StableDiffusionTxt2ImgProcessingAPI):
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:

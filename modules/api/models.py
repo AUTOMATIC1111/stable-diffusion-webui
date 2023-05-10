@@ -289,3 +289,9 @@ class MemoryResponse(BaseModel):
 class ScriptsList(BaseModel):
     txt2img: list = Field(default=None,title="Txt2img", description="Titles of scripts (txt2img)")
     img2img: list = Field(default=None,title="Img2img", description="Titles of scripts (img2img)")
+
+class ScriptArgsRequest(BaseModel):
+    script: str = Field(title="Script", description="The script to get arguments for")
+
+class ScriptArgs(BaseModel):
+    args: dict = Field(title="Args", description="The arguments to pass to the script")
