@@ -848,7 +848,7 @@ class SwinIR(nn.Module):
         H, W = self.patches_resolution
         flops += H * W * 3 * self.embed_dim * 9
         flops += self.patch_embed.flops()
-        for i, layer in enumerate(self.layers):
+        for layer in self.layers:
             flops += layer.flops()
         flops += H * W * 3 * self.embed_dim * self.embed_dim
         flops += self.upsample.flops()

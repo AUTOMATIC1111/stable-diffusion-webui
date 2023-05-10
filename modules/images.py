@@ -149,7 +149,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
             return ImageFont.truetype(Roboto, fontsize)
 
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
-        for i, line in enumerate(lines):
+        for line in lines:
             fnt = initial_fnt
             fontsize = initial_fontsize
             while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:

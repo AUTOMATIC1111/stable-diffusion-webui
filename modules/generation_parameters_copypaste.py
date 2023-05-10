@@ -247,7 +247,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         lines.append(lastline)
         lastline = ''
 
-    for i, line in enumerate(lines):
+    for line in lines:
         line = line.strip()
         if line.startswith("Negative prompt:"):
             done_with_prompt = True

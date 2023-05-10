@@ -177,34 +177,34 @@ class Hypernetwork:
 
     def weights(self):
         res = []
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 res += layer.parameters()
         return res
 
     def train(self, mode=True):
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 layer.train(mode=mode)
                 for param in layer.parameters():
                     param.requires_grad = mode
 
     def to(self, device):
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 layer.to(device)
 
         return self
 
     def set_multiplier(self, multiplier):
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 layer.multiplier = multiplier
 
         return self
 
     def eval(self):
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 layer.eval()
                 for param in layer.parameters():
@@ -619,7 +619,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     try:
         sd_hijack_checkpoint.add()
 
-        for i in range((steps-initial_step) * gradient_step):
+        for _ in range((steps-initial_step) * gradient_step):
             if scheduler.finished:
                 break
             if shared.state.interrupted:

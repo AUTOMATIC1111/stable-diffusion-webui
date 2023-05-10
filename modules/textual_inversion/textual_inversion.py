@@ -29,7 +29,7 @@ textual_inversion_templates = {}
 def list_textual_inversion_templates():
     textual_inversion_templates.clear()
 
-    for root, dirs, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir):
+    for root, _, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir):
         for fn in fns:
             path = os.path.join(root, fn)
 
@@ -198,7 +198,7 @@ class EmbeddingDatabase:
         if not os.path.isdir(embdir.path):
             return
 
-        for root, dirs, fns in os.walk(embdir.path, followlinks=True):
+        for root, _, fns in os.walk(embdir.path, followlinks=True):
             for fn in fns:
                 try:
                     fullfn = os.path.join(root, fn)
@@ -215,7 +215,7 @@ class EmbeddingDatabase:
     def load_textual_inversion_embeddings(self, force_reload=False):
         if not force_reload:
             need_reload = False
-            for path, embdir in self.embedding_dirs.items():
+            for embdir in self.embedding_dirs.values():
                 if embdir.has_changed():
                     need_reload = True
                     break
@@ -228,7 +228,7 @@ class EmbeddingDatabase:
         self.skipped_embeddings.clear()
         self.expected_shape = self.get_expected_shape()
 
-        for path, embdir in self.embedding_dirs.items():
+        for embdir in self.embedding_dirs.values():
             self.load_from_dir(embdir)
             embdir.update()
 
@@ -469,7 +469,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     try:
         sd_hijack_checkpoint.add()
 
-        for i in range((steps-initial_step) * gradient_step):
+        for _ in range((steps-initial_step) * gradient_step):
             if scheduler.finished:
                 break
             if shared.state.interrupted:

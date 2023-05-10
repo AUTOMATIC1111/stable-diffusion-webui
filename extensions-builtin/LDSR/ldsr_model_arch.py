@@ -88,7 +88,7 @@ class LDSR:
 
         x_t = None
         logs = None
-        for n in range(n_runs):
+        for _ in range(n_runs):
             if custom_shape is not None:
                 x_t = torch.randn(1, custom_shape[1], custom_shape[2], custom_shape[3]).to(model.device)
                 x_t = repeat(x_t, '1 c h w -> b c h w', b=custom_shape[0])

@@ -211,7 +211,7 @@ class OptionInfo:
 
 
 def options_section(section_identifier, options_dict):
-    for k, v in options_dict.items():
+    for v in options_dict.values():
         v.section = section_identifier
 
     return options_dict
@@ -579,7 +579,7 @@ class Options:
 
         section_ids = {}
         settings_items = self.data_labels.items()
-        for k, item in settings_items:
+        for _, item in settings_items:
             if item.section not in section_ids:
                 section_ids[item.section] = len(section_ids)
 
@@ -740,7 +740,7 @@ def walk_files(path, allowed_extensions=None):
     if allowed_extensions is not None:
         allowed_extensions = set(allowed_extensions)
 
-    for root, dirs, files in os.walk(path):
+    for root, _, files in os.walk(path):
         for filename in files:
             if allowed_extensions is not None:
                 _, ext = os.path.splitext(filename)

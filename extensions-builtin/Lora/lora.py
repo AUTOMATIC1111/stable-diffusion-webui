@@ -418,7 +418,7 @@ def infotext_pasted(infotext, params):
 
     added = []
 
-    for k, v in params.items():
+    for k in params:
         if not k.startswith("AddNet Model "):
             continue
 

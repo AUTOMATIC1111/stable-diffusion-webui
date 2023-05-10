@@ -704,7 +704,7 @@ class Script(scripts.Script):
 
         if not include_sub_grids:
             # Done with sub-grids, drop all related information:
-            for sg in range(z_count):
+            for _ in range(z_count):
                 del processed.images[1]
                 del processed.all_prompts[1]
                 del processed.all_seeds[1]

@@ -12,7 +12,7 @@ class LearnScheduleIterator:
         self.it = 0
         self.maxit = 0
         try:
-            for i, pair in enumerate(pairs):
+            for pair in pairs:
                 if not pair.strip():
                     continue
                 tmp = pair.split(':')

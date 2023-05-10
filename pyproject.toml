@@ -20,7 +20,6 @@ ignore = [
 	"I001", # Import block is un-sorted or un-formatted
 	"C901", # Function is too complex
 	"C408", # Rewrite as a literal
-	"B007", # Loop control variable not used within loop body
 
 ]
 

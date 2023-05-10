@@ -207,8 +207,8 @@ class InterrogateModels:
 
                 image_features /= image_features.norm(dim=-1, keepdim=True)
 
-                for name, topn, items in self.categories():
-                    matches = self.rank(image_features, items, top_count=topn)
+                for cat in self.categories():
+                    matches = self.rank(image_features, cat.items, top_count=cat.topn)
                     for match, score in matches:
                         if shared.opts.interrogate_return_ranks:
                             res += f", ({match}:{score/100:.3f})"

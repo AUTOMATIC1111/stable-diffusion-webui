@@ -156,7 +156,7 @@ class Script(scripts.Script):
         images = []
         all_prompts = []
         infotexts = []
-        for n, args in enumerate(jobs):
+        for args in jobs:
             state.job = f"{state.job_no + 1} out of {state.job_count}"
 
             copy_p = copy.copy(p)

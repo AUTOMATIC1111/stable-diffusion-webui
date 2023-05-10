@@ -132,7 +132,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         model = net(in_nc=3, config=[4, 4, 4, 4, 4, 4, 4], dim=64)
         model.load_state_dict(torch.load(filename), strict=True)
         model.eval()
-        for k, v in model.named_parameters():
+        for _, v in model.named_parameters():
             v.requires_grad = False
         model = model.to(device)
 

@@ -72,7 +72,7 @@ def cleanup_tmpdr():
     if temp_dir == "" or not os.path.isdir(temp_dir):
         return
 
-    for root, dirs, files in os.walk(temp_dir, topdown=False):
+    for root, _, files in os.walk(temp_dir, topdown=False):
         for name in files:
             _, extension = os.path.splitext(name)
             if extension != ".png":

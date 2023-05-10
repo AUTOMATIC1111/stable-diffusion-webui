@@ -143,7 +143,7 @@ def get_learned_conditioning(model, prompts, steps):
         conds = model.get_learned_conditioning(texts)
 
         cond_schedule = []
-        for i, (end_at_step, text) in enumerate(prompt_schedule):
+        for i, (end_at_step, _) in enumerate(prompt_schedule):
             cond_schedule.append(ScheduledPromptConditioning(end_at_step, conds[i]))
 
         cache[prompt] = cond_schedule
@@ -219,8 +219,8 @@ def reconstruct_cond_batch(c: List[List[ScheduledPromptConditioning]], current_s
     res = torch.zeros((len(c),) + param.shape, device=param.device, dtype=param.dtype)
     for i, cond_schedule in enumerate(c):
         target_index = 0
-        for current, (end_at, cond) in enumerate(cond_schedule):
-            if current_step <= end_at:
+        for current, entry in enumerate(cond_schedule):
+            if current_step <= entry.end_at_step:
                 target_index = current
                 break
         res[i] = cond_schedule[target_index].cond
@@ -234,13 +234,13 @@ def reconstruct_multicond_batch(c: MulticondLearnedConditioning, current_step):
     tensors = []
     conds_list = []
 
-    for batch_no, composable_prompts in enumerate(c.batch):
+    for composable_prompts in c.batch:
         conds_for_batch = []
 
-        for cond_index, composable_prompt in enumerate(composable_prompts):
+        for composable_prompt in composable_prompts:
             target_index = 0
-            for current, (end_at, cond) in enumerate(composable_prompt.schedules):
-                if current_step <= end_at:
+            for current, entry in enumerate(composable_prompt.schedules):
+                if current_step <= entry.end_at_step:
                     target_index = current
                     break
 
