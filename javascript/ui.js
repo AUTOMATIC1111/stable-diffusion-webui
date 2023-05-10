@@ -1109,9 +1109,9 @@ onUiUpdate(function(){
 			updateInput(elem);
 		})
 		
-		//clone_num.addEventListener('focus', function (e) {				
-		//	focus_input = clone_num;					
-		//})
+		clone_num.addEventListener('focus', function (e) {				
+			focus_input = clone_num;					
+		})
 		
 		cached_clone_num = clone_num;
 		cached_clone_range = false;
@@ -1214,7 +1214,7 @@ onUiUpdate(function(){
 	}	
 	function slider_touchstart(e){
 		const gcontainer = e.target;
-		gcontainer.removeEventListener('contextmenu',  slider_contextmenu);
+		//gcontainer.removeEventListener('contextmenu',  slider_contextmenu);
 		gcontainer.removeEventListener('touchend',  slider_touchend);
 		gcontainer.removeEventListener('touchmove',  slider_touchmove);
 		gcontainer.removeEventListener('touchend',  ui_input_touchend_handler);
@@ -1222,6 +1222,7 @@ onUiUpdate(function(){
 		
 		timeoutId = setTimeout(function() {
 			timeoutId = null;
+			focus_input = false;
 			e.stopPropagation();
 			ui_input_release_handler(e);
 			ui_input_touchmove_handler(e);
@@ -1229,7 +1230,7 @@ onUiUpdate(function(){
 			gcontainer.addEventListener('touchend',  ui_input_touchend_handler);			
 		}, 500);
 		
-		gcontainer.addEventListener('contextmenu',  slider_contextmenu);			
+		//gcontainer.addEventListener('contextmenu',  slider_contextmenu);			
 		gcontainer.addEventListener('touchend',  slider_touchend);
 		gcontainer.addEventListener('touchmove',  slider_touchmove);
 	}
@@ -1242,7 +1243,7 @@ onUiUpdate(function(){
 		}else{
 			gcontainer.removeEventListener('mouseover',  ui_input_release_handler);						
 			gcontainer.removeEventListener('touchstart',  slider_touchstart);
-			gcontainer.removeEventListener('contextmenu',  slider_contextmenu);
+			//gcontainer.removeEventListener('contextmenu',  slider_contextmenu);
 			gcontainer.removeEventListener('touchend',  slider_touchend);
 			gcontainer.removeEventListener('touchmove',  slider_touchmove);
 			gcontainer.removeEventListener('touchend',  ui_input_touchend_handler);
@@ -1261,7 +1262,7 @@ onUiUpdate(function(){
 			//const range_selectors = "[id$='_clone']:is(input[type='range'])";
 			gradioApp().querySelectorAll(range_selectors).forEach(function (elem){
 				let spacing = ((elem.step / ( elem.max - elem.min )) * 100.0);	
-				let tsp = 'max(3px, calc('+spacing+'% - 2px))';
+				let tsp = 'max(3px, calc('+spacing+'% - 1px))';
 				let fsp = 'max(4px, calc('+spacing+'% + 0px))';
 				var style = elem.style;
 				style.setProperty('--ae-slider-bg-overlay', 'repeating-linear-gradient( 90deg, transparent, transparent '+tsp+', var(--ae-input-border-color) '+tsp+', var(--ae-input-border-color) '+fsp+' )');
