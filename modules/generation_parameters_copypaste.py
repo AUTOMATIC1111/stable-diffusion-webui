@@ -1,15 +1,11 @@
 import base64
-import html
 import io
-import math
 import os
 import re
-from pathlib import Path
 
 import gradio as gr
 from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks
-import tempfile
 from PIL import Image
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'

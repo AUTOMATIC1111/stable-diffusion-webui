@@ -1,10 +1,8 @@
 import cv2
 import requests
 import os
-from collections import defaultdict
-from math import log, sqrt
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import ImageDraw
 
 GREEN = "#0F0"
 BLUE = "#00F"

@@ -5,11 +5,9 @@ VQGAN code, adapted from the original created by the Unleashing Transformers aut
 https://github.com/samb-t/unleashing-transformers/blob/master/models/vqgan.py
 
 '''
-import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import copy
 from basicsr.utils import get_root_logger
 from basicsr.utils.registry import ARCH_REGISTRY
 

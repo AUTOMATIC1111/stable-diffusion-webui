@@ -1,13 +1,9 @@
 import os
 from PIL import Image, ImageOps
 import math
-import platform
-import sys
 import tqdm
-import time
 
 from modules import paths, shared, images, deepbooru
-from modules.shared import opts, cmd_opts
 from modules.textual_inversion import autocrop
 
 

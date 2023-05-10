@@ -1,6 +1,4 @@
 import copy
-import math
-import os
 import random
 import sys
 import traceback
@@ -11,8 +9,7 @@ import gradio as gr
 
 from modules import sd_samplers
 from modules.processing import Processed, process_images
-from PIL import Image
-from modules.shared import opts, cmd_opts, state
+from modules.shared import state
 
 
 def process_string_tag(tag):

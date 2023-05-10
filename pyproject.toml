@@ -1,10 +1,13 @@
 [tool.ruff]
 
+exclude = ["extensions"]
+
 ignore = [
 	"E501",
-	"E731",
-	"E402",   # Module level import not at top of file
-	"F401"    # Module imported but unused
+	
+	"F401", # Module imported but unused
 ]
 
-exclude = ["extensions"]
+
+[tool.ruff.per-file-ignores]
+"webui.py" = ["E402"]  # Module level import not at top of file

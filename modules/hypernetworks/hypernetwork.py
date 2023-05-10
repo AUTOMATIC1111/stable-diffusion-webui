@@ -1,4 +1,3 @@
-import csv
 import datetime
 import glob
 import html
@@ -18,7 +17,7 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
 from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
 
-from collections import defaultdict, deque
+from collections import deque
 from statistics import stdev, mean
 
 

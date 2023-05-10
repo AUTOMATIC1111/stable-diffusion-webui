@@ -14,7 +14,7 @@ from collections import OrderedDict
 import git
 
 from modules import shared, extensions
-from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path, config_states_dir
+from modules.paths_internal import script_path, config_states_dir
 
 
 all_config_states = OrderedDict()

@@ -2,7 +2,7 @@ import base64
 import json
 import numpy as np
 import zlib
-from PIL import Image, PngImagePlugin, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from fonts.ttf import Roboto
 import torch
 from modules.shared import opts

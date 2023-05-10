@@ -2,8 +2,6 @@ import os
 from abc import abstractmethod
 
 import PIL
-import numpy as np
-import torch
 from PIL import Image
 
 import modules.shared

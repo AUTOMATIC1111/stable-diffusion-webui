@@ -3,7 +3,6 @@ import sys
 import traceback
 
 import time
-from datetime import datetime
 import git
 
 from modules import shared

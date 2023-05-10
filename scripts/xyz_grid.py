@@ -10,15 +10,13 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, paths, sd_samplers, processing, sd_models, sd_vae
+from modules import images, sd_samplers, processing, sd_models, sd_vae
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
-from modules.shared import opts, cmd_opts, state
+from modules.shared import opts, state
 import modules.shared as shared
 import modules.sd_samplers
 import modules.sd_models
 import modules.sd_vae
-import glob
-import os
 import re
 
 from modules.ui_components import ToolButton

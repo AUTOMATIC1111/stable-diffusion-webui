@@ -13,7 +13,6 @@ import modules.upscaler
 from modules import devices, modelloader
 from scunet_model_arch import SCUNet as net
 from modules.shared import opts
-from modules import images
 
 
 class UpscalerScuNET(modules.upscaler.Upscaler):

@@ -1,12 +1,9 @@
-import math
 import os
-import sys
-import traceback
 
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
 
-from modules import devices, sd_samplers
+from modules import sd_samplers
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state

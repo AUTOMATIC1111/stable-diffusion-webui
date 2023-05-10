@@ -1,7 +1,6 @@
 from collections import deque
 import torch
 import inspect
-import einops
 import k_diffusion.sampling
 from modules import prompt_parser, devices, sd_samplers_common
 

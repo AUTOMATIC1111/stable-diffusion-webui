@@ -1,4 +1,3 @@
-import glob
 import os.path
 import urllib.parse
 from pathlib import Path

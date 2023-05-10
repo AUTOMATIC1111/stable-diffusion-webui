@@ -1,12 +1,9 @@
-import argparse
 import datetime
 import json
 import os
 import sys
 import time
-import requests
 
-from PIL import Image
 import gradio as gr
 import tqdm
 
