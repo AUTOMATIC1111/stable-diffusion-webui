@@ -659,7 +659,7 @@ def reload_gradio_theme(theme_name=None):
         except:
             log.error("Theme download error accessing HuggingFace")
             gradio_theme = gr.themes.Default(**default_font_params)
-    log.info(f'Loading theme: {theme_name}')
+    log.info(f'Loading UI theme: {theme_name}')
 
 
 class TotalTQDM:
