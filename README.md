@@ -250,11 +250,6 @@ copy these 3 bat files to desktop:
 change the path in cd there to absolute one.
 change the path to firefox or other browser to correct one
 
-todo:
-- roztáhnout na celé
-- vedle orbázku hodit jeho QR kód
-- skrýt ve výstupu negative prompt
-
 checklist at place:
 - install python & git
 - clone
@@ -265,3 +260,14 @@ checklist at place:
 - verify QR code
 - check QR code link over wifi and data from phone
   - if not working, check firewall settings
+
+if you create file `user.css` in root and place css there, it's loaded.
+
+the ui can't do txt2img batch processing, but here is some custom script:
+https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/7852
+https://github.com/Z-nonymous/sd_webui_batchscripts.git
+
+```bash
+git submodule add https://github.com/Z-nonymous/sd_webui_batchscripts.git
+```
+re-running 
