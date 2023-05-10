@@ -32,7 +32,7 @@ jobs:
       # This lets PyLint check to see if it can resolve imports
       - name: Install dependencies
         run: |
-          export COMMANDLINE_ARGS="--skip-torch-cuda-test"
+          export COMMANDLINE_ARGS=""
           python launch.py
       - name: Analysing the code with pylint
         run: |
