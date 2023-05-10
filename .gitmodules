@@ -1,6 +1,3 @@
 [submodule "DiffusionDefender"]
 	path = extensions/DiffusionDefender
 	url = https://github.com/racinmat/DiffusionDefender.git
-[submodule "sd_webui_batchscripts"]
-	path = sd_webui_batchscripts
-	url = https://github.com/Z-nonymous/sd_webui_batchscripts.git

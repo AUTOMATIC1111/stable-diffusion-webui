@@ -267,7 +267,8 @@ the ui can't do txt2img batch processing, but here is some custom script:
 https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/7852
 https://github.com/Z-nonymous/sd_webui_batchscripts.git
 
-```bash
-git submodule add https://github.com/Z-nonymous/sd_webui_batchscripts.git
-```
-re-running 
+to add the extensions: just add these urls it in the UI:
+- https://github.com/racinmat/DiffusionDefender.git
+- https://github.com/Z-nonymous/sd_webui_batchscripts.git
+
+to use the batchscript, go to txt2img tab, script, and there 
