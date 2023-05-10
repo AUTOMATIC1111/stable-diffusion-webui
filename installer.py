@@ -478,15 +478,15 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
                 try:
                     git('add .')
                     git('stash')
-                    update('.') # TODO: can fail
+                    update('.')
                     # git('git stash pop')
                     ver = git('log -1 --pretty=format:"%h %ad"')
                     log.info(f'Upgraded to version: {ver}')
                 except Exception:
                     if not reset:
-                        log.warning('Error upgrading repository')
+                        log.error('Error during repository upgrade')
                     else:
-                        log.warning('Error upgrading repository')
+                        log.warning('Retrying repository upgrade...')
                         git_reset()
                         check_version(offline=offline, reset=False)
             else:
