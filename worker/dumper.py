@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/4/4 5:25 PM
 # @Author  : wangdongming
-# @Site    : 
+# @Site    :
 # @File    : dumper.py
 # @Software: Hifive
 import abc
@@ -12,7 +12,7 @@ import typing
 from loguru import logger
 from threading import Thread
 from tools.mgo import MongoClient
-from handlers.utils import get_host_ip
+from tools.host import get_host_ip
 from worker.task import TaskProgress, TaskStatus
 
 

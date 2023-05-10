@@ -78,8 +78,19 @@ class TaskReceiver:
             return self._get_queue_task(*model_hash_list)
 
     def _search_other_ckpt(self):
+        model_hash_list = self._loaded_models()
+
+        def sort_keys(x):
+            x = str(x) if not isinstance(x, bytes) else x.decode('utf8')
+            if x in model_hash_list:
+                return -1
+            elif 'others-' in x:
+                return 0
+            return 1
+
         keys = self._search_queue_names()
-        for queue_name in keys:
+        sorted_keys = sorted(keys, key=sort_keys)
+        for queue_name in sorted_keys:
             task = self._extract_queue_task(queue_name)
             if task:
                 return task

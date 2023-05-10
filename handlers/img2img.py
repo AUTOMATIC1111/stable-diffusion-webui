@@ -14,15 +14,17 @@ from enum import IntEnum
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
 from modules import deepbooru
 from handlers.typex import ModelType
+from worker.handler import TaskHandler
 from modules.scripts import scripts_img2img
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.img2img import process_batch
-from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
+from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingImg2Img, process_images, Processed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path, batch_model_local_paths
 from handlers.extension.controlnet import exec_control_net_annotator
-from handlers.dumper import dumper
+from worker.dumper import dumper
+from tools.image import plt_show
 from modules import sd_models
 
 AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]
@@ -33,6 +35,13 @@ class Img2ImgMinorTaskType(IntEnum):
     Img2Img = 1
     Interrogate = 10
     RunControlnetAnnotator = 100
+
+
+def gen_mask(image: Image):
+    shape = list(image.size)
+    shape.append(4)  # rgba
+    mask = np.full(shape, 255)
+    return Image.fromarray(mask, mode="RGBA")
 
 
 class Img2ImgTask(StableDiffusionProcessingImg2Img):
@@ -90,7 +99,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         image = None
         mask = None
         self.is_batch = False
-        mode -= 1   # 适配GOLANG
+        mode -= 1  # 适配GOLANG
         if mode == 5:
             if not img2img_batch_input_dir \
                     or not img2img_batch_output_dir:
@@ -98,41 +107,56 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             self.is_batch = True
         elif mode == 4:
             init_img_inpaint = get_tmp_local_path(init_img_inpaint)
-            init_mask_inpaint = get_tmp_local_path(init_mask_inpaint)
-            if not init_img_inpaint or not init_mask_inpaint:
+            if not init_mask_inpaint:
                 raise ValueError('img_inpaint or mask_inpaint not found')
-            image = Image.open(init_img_inpaint)
-            mask = Image.open(init_mask_inpaint)
+            image = Image.open(init_img_inpaint).convert('RGBA')
+            if init_mask_inpaint:
+                init_mask_inpaint = get_tmp_local_path(init_mask_inpaint)
+                mask = Image.open(init_mask_inpaint).convert('RGBA')
+            else:
+                mask = gen_mask(image)
         elif mode == 3:
             inpaint_color_sketch = get_tmp_local_path(inpaint_color_sketch)
             if not inpaint_color_sketch:
                 raise Exception('inpaint_color_sketch not found')
-            image = Image.open(inpaint_color_sketch)
+            image = Image.open(inpaint_color_sketch).convert('RGBA')
 
             orig_path = inpaint_color_sketch_orig or inpaint_color_sketch
             if orig_path != inpaint_color_sketch:
                 orig_path = get_tmp_local_path(inpaint_color_sketch_orig)
-                orig = Image.open(orig_path)
+                orig = Image.open(orig_path).convert('RGBA')
             else:
                 orig = image
             pred = np.any(np.array(image) != np.array(orig), axis=-1)
+            if pred is None or not pred.any() or not pred.shape:
+                raise ValueError('mask err')
             mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
             mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
             blur = ImageFilter.GaussianBlur(mask_blur)
             image = Image.composite(image.filter(blur), orig, mask.filter(blur))
             image = image.convert("RGB")
+            # plt_show(np.array(mask), 'mask')
+            # plt_show(np.array(image), 'image')
         elif mode == 2:
             if not init_img_with_mask:
                 raise Exception('init_img_with_mask not found')
-            if 'mask' not in init_img_with_mask or 'image' not in init_img_with_mask:
-                raise Exception('mask or image not found in init_img_with_mask')
-            image_path, mask_path = init_img_with_mask["image"], init_img_with_mask["mask"]
+            if 'image' not in init_img_with_mask:
+                raise Exception('image not found in init_img_with_mask')
+            image_path = init_img_with_mask["image"]
             image_path = get_tmp_local_path(image_path)
-            mask_path = get_tmp_local_path(mask_path)
-            image = Image.open(image_path)
-            mask = Image.open(mask_path)
+            image = Image.open(image_path).convert('RGBA')
+
+            if 'mask' not in init_img_with_mask or not init_img_with_mask["mask"]:
+                mask = gen_mask(image)
+            else:
+                mask_path = init_img_with_mask["mask"]
+                mask_path = get_tmp_local_path(mask_path)
+                mask = Image.open(mask_path).convert('RGBA')
+
             alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
             mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
+            # plt_show(alpha_mask, 'alpha_mask')
+            # plt_show(mask, 'mask')
             image = image.convert("RGB")
         elif mode == 1:
             sketch = get_tmp_local_path(sketch)
@@ -148,6 +172,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             mask = None
         else:
             raise ValueError(f'mode value error, except 0~5 got {mode}')
+
         if image is not None:
             image = ImageOps.exif_transpose(image)
 
@@ -179,21 +204,21 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             batch_size=batch_size,
             n_iter=n_iter,
             steps=steps,
-            cfg_scale=cfg_scale,
+            cfg_scale=cfg_scale, # 7
             width=width,
             height=height,
-            restore_faces=restore_faces,
-            tiling=tiling,
+            restore_faces=restore_faces, # f
+            tiling=tiling,  # f
             init_images=[image],
             mask=mask,
             mask_blur=mask_blur,
-            inpainting_fill=inpainting_fill,
-            resize_mode=resize_mode,
-            denoising_strength=denoising_strength,
-            image_cfg_scale=image_cfg_scale,
-            inpaint_full_res=inpaint_full_res,
-            inpaint_full_res_padding=inpaint_full_res_padding,
-            inpainting_mask_invert=inpainting_mask_invert,
+            inpainting_fill=inpainting_fill, # 1
+            resize_mode=resize_mode, # 0
+            denoising_strength=denoising_strength, # 0.75
+            image_cfg_scale=image_cfg_scale, # 1.5
+            inpaint_full_res=inpaint_full_res, # 0
+            inpaint_full_res_padding=inpaint_full_res_padding, # 32
+            inpainting_mask_invert=inpainting_mask_invert, # 0
             override_settings=override_settings,
         )
         self.scripts = i2i_script_runner
@@ -417,8 +442,7 @@ class Img2ImgTaskHandler(TaskHandler):
         if v > 99:
             v = 99
 
-        progress = TaskProgress.new_running(task, "generate image...")
-        progress.task_progress = v
+        progress = TaskProgress.new_running(task, "generate image...", v)
         self._set_task_status(progress)
 
     def _exec_interrogate(self, task: Task):
@@ -440,7 +464,9 @@ class Img2ImgTaskHandler(TaskHandler):
                 processed = shared.interrogator.interrogate(pil_img)
             else:
                 processed = deepbooru.model.tag(pil_img)
-            progress = TaskProgress.new_finish(task, processed)
+            progress = TaskProgress.new_finish(task, {
+                'interrogate': processed
+            })
             yield progress
 
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:

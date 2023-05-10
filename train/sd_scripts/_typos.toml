@@ -1,0 +1,15 @@
+# Files for typos
+# Instruction:  https://github.com/marketplace/actions/typos-action#getting-started
+
+[default.extend-identifiers]
+
+[default.extend-words]
+NIN="NIN"
+parms="parms"
+nin="nin"
+extention="extention" # Intentionally left
+nd="nd"
+
+
+[files]
+extend-exclude = ["_typos.toml"]

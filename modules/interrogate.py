@@ -218,7 +218,10 @@ class InterrogateModels:
                             res += f", ({match}:{score/100:.3f})"
                         else:
                             res += ", " + match
-
+        except torch.cuda.OutOfMemoryError:
+            lowvram.send_everything_to_cpu()
+            devices.torch_gc()
+            raise
         except Exception:
             print("Error interrogating", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)

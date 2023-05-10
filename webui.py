@@ -347,9 +347,8 @@ def webui():
 
 
 def check_resource():
-    from scripts.pull_repo_res import pull_code_former_weights, try_find_cache_json_file
-    pull_code_former_weights()
-    try_find_cache_json_file()
+    from scripts.pull_repo_res import pull_res
+    pull_res()
 
 
 def run_worker():
@@ -360,7 +359,7 @@ def run_worker():
 
     tasks = Img2ImgTask.debug_task()
     sender = RedisSender()
-    sender.push_task(VipLevel.Level_1, *bind_debug_img_task_args(*tasks))
+    # sender.push_task(VipLevel.Level_1, *bind_debug_img_task_args(*tasks))
     initialize()
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("scripts before_ui_callback")

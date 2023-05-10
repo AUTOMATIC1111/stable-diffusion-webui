@@ -48,7 +48,7 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
                 controls = obj['controls']
                 if len(controls) > 8:
                     raise ValueError('region length err')
-                for _, ctl in controls:
+                for ctl in controls:
                     array.extend([
                         ctl['enable'],
                         ctl['x'],

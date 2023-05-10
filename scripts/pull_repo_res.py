@@ -66,3 +66,23 @@ def try_find_cache_json_file():
     file_path = "models/cache.json"
     if os.path.isfile(file_path):
         shutil.copy(file_path, "cache.json")
+
+
+def pull_clip_category():
+    interrogate = 'interrogate'
+    os.makedirs(interrogate, exist_ok=True)
+    categories = ['artists.txt', 'flavors.txt', 'mediums.txt', 'movements.txt']
+    for name in categories:
+        if not os.path.isfile(os.path.join(interrogate, name)):
+            url = 'https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/' + name
+            print(f'>> download {name}')
+            resp = requests.get(url, timeout=10)
+            if resp.ok:
+                with open(os.path.join(interrogate, name), "wb+") as f:
+                    f.write(resp.content)
+
+
+def pull_res():
+    pull_clip_category()
+    pull_code_former_weights()
+    try_find_cache_json_file()

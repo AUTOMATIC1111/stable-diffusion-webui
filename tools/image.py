@@ -53,11 +53,20 @@ def compress_image(infile, outfile, kb=300, step=15, quality=90):
         shutil.copy(infile, outfile)
 
 
-def thumbnail(infile, outfile, scale=0.2):
+def thumbnail(infile, outfile, scale=0.1, w=0, h=0, quality=70):
     img = Image.open(infile)
-    w, h = img.size
-    w, h = round(w * scale), round(h * scale)
+    if w == 0 or h == 0:
+        w, h = img.size
+        w, h = round(w * scale), round(h * scale)
 
-    img = img.resize((w, h), Image.ANTIALIAS)
-    img.save(outfile, optimize=True, quality=85)
+    img.thumbnail((w, h))
+    img.save(outfile, optimize=True, quality=quality)
+
+
+def plt_show(img, title=None):
+    import matplotlib.pyplot as plt
+    plt.title(title or 'undefined')
+    plt.imshow(img)
+    plt.show()
+
 

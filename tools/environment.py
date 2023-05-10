@@ -9,6 +9,11 @@ import os
 import typing
 from tools.wrapper import FuncResultLogWrapper
 
+S3ImageBucket = "xingzhe-sdplus"
+S3ImagePath = "output/{uid}/{dir}/{name}"
+S3Tmp = 'sd-tmp'
+S3SDWEB = 'sd-web'
+
 Env_MysqlHost = 'MysqlHost'
 Env_MysqlPass = 'MysqlPass'
 Env_MysqlPort = 'MysqlPort'

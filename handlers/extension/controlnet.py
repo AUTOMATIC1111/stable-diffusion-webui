@@ -5,7 +5,7 @@
 # @Site    :
 # @File    : controlnet.py
 # @Software: Hifive
-
+import os.path
 import time
 import traceback
 import typing
@@ -14,10 +14,29 @@ from PIL import Image
 from collections.abc import Iterable
 from modules.scripts import scripts_img2img
 from handlers.formatter import AlwaysonScriptArgsFormatter
-from handlers.utils import get_tmp_local_path
-from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
+from handlers.utils import get_tmp_local_path, Tmp, upload_files
+from worker.task import TaskProgress, Task, TaskStatus
 
 ControlNet = 'ControlNet'
+
+
+def HWC3(x):
+    assert x.dtype == np.uint8
+    if x.ndim == 2:
+        x = x[:, :, None]
+    assert x.ndim == 3
+    H, W, C = x.shape
+    assert C == 1 or C == 3 or C == 4
+    if C == 3:
+        return x
+    if C == 1:
+        return np.concatenate([x, x, x], axis=2)
+    if C == 4:
+        color = x[:, :, 0:3].astype(np.float32)
+        alpha = x[:, :, 3:4].astype(np.float32) / 255.0
+        y = color * alpha + 255.0 * (1.0 - alpha)
+        y = y.clip(0, 255).astype(np.uint8)
+        return y
 
 
 class RunAnnotatorArgs:
@@ -80,16 +99,30 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
             yield progress
             # control_net_script.run_annotator(**args.args)
 
-            img = control_net_script.HWC3(args.image)
+            img = HWC3(args.image)
             if not ((args.mask[:, :, 0] == 0).all() or (args.mask[:, :, 0] == 255).all()):
-                img = control_net_script.HWC3(args.mask[:, :, 0])
+                img = HWC3(args.mask[:, :, 0])
             preprocessor = control_net_script.preprocessor[args.module]
             if args.pres > 64:
                 result, is_image = preprocessor(img, res=args.pres, thr_a=args.pthr_a, thr_b=args.pthr_b)
             else:
                 result, is_image = preprocessor(img)
+
+            r = None
             if is_image:
-                pass
+                pli_img = Image.fromarray(result, mode='RGB')
+                filename = task.id + '.png'
+                local = os.path.join(Tmp, filename)
+                pli_img.save(local)
+                keys = upload_files(True, local)
+                r = keys[0] if keys else None
+
+            progress = TaskProgress.new_finish(task, {
+                'all': {
+                    'high': [r]
+                }
+            })
+            yield progress
 
 
 def bind_debug_img_task_args(*tasks: Task):

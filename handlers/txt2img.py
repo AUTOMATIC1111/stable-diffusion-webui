@@ -10,10 +10,9 @@ import time
 import typing
 import modules.shared as shared
 from enum import IntEnum
-from handlers.typex import ModelType
 from modules.scripts import scripts_txt2img
 from modules.generation_parameters_copypaste import create_override_settings_dict
-from worker.task import TaskHandler, TaskType, TaskProgress, Task, TaskStatus
+from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images, Processed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path

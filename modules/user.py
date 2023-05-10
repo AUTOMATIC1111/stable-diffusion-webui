@@ -16,11 +16,12 @@ from tools.mysql import get_mysql_cli
 def authorization(user, password):
     auths = {
         "wangdongming": "Admin123",
-        "admin": "Admin123"
+        "admin": "Admin123",
+        "998": "998"
     }
 
-    if user in auths:
-        return auths.get(user) == password
+    if user in auths and auths.get(user) == password:
+        return 3600 * 24 + int(time.time())
 
     return find_users_from_models(user, password)
 
@@ -45,4 +46,3 @@ def find_users_from_models(username, password) -> int:
         finally:
             cli.close()
     return -1
-

@@ -7,7 +7,7 @@ import traceback
 
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
-
+from tools.image import plt_show
 from modules import devices, sd_samplers
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
@@ -89,8 +89,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         mask = None
     elif mode == 2:  # inpaint
         image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
-        # image.save("model-2-image.png")
-        # mask.save("model-2-mask.png")
         alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
         mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
         image = image.convert("RGB")
@@ -105,8 +103,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         blur = ImageFilter.GaussianBlur(mask_blur)
         image = Image.composite(image.filter(blur), orig, mask.filter(blur))
         image = image.convert("RGB")
-        # inpaint_color_sketch.save("model-3-inpaint_color_sketch.png")
-        # inpaint_color_sketch_orig.save("model-3-inpaint_color_sketch_orig.png")
+        plt_show(np.array(mask), 'mask')
+        plt_show(np.array(image), 'image')
     elif mode == 4:  # inpaint upload mask
         image = init_img_inpaint
         mask = init_mask_inpaint

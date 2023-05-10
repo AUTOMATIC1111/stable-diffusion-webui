@@ -14,7 +14,7 @@ from tools.encryptor import des_encrypt
 from tools.image import compress_image
 from PIL.PngImagePlugin import PngInfo
 from filestorage import find_storage_classes_with_env
-from tools.environment import get_file_storage_system_env, Env_BucketKey
+from tools.environment import get_file_storage_system_env, Env_BucketKey, S3SDWEB, S3ImageBucket
 
 
 class ModelType(IntEnum):
@@ -40,11 +40,6 @@ UserModelLocation = {
     ModelType.CheckPoint: 'user-models/Stable-diffusion',
     ModelType.Lora: 'user-models/Lora'
 }
-
-S3ImageBucket = "xingzhe-sdplus"
-S3ImagePath = "output/{uid}/{dir}/{name}"
-S3Tmp = 'sd-tmp'
-S3SDWEB = 'sd-web'
 
 
 class ImageKeys(UserDict):

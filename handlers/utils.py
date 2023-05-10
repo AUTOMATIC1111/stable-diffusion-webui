@@ -6,9 +6,7 @@
 # @File    : utils.py
 # @Software: Hifive
 import os
-import socket
 import typing
-from uuid import uuid1
 from PIL import Image
 from loguru import logger
 from datetime import datetime
@@ -19,11 +17,11 @@ from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
-from tools.environment import get_file_storage_system_env, Env_BucketKey
-from filestorage import find_storage_classes_with_env, get_local_path, batch_download
-from handlers.typex import ModelLocation, ModelType, S3ImageBucket, S3Tmp, ImageOutput, OutImageType, UserModelLocation, S3SDWEB
+from tools.environment import get_file_storage_system_env, Env_BucketKey, S3ImageBucket, S3Tmp, S3SDWEB
+from filestorage import FileStorageCls, get_local_path, batch_download
+from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, UserModelLocation
 
-FileStorageCls = find_storage_classes_with_env()
+
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
 
 
@@ -97,18 +95,6 @@ def upload_files(is_tmp, *files):
             file_storage_system.upload(f, key)
             keys.append(key)
     return keys
-
-
-def get_host_ip():
-    s = None
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(('8.8.8.8', 80))
-        ip = s.getsockname()[0]
-    finally:
-        if s:
-            s.close()
-    return ip
 
 
 def init_default_script_args(script_runner):
@@ -265,5 +251,3 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
     })
 
     return output
-
-

@@ -9,8 +9,9 @@ import time
 import typing
 from queue import Queue
 from loguru import logger
-from .task import Task, TaskHandler
-from .task_recv import TaskReceiver
+from worker.task import Task
+from worker.handler import TaskHandler
+from worker.task_recv import TaskReceiver
 from threading import Thread, Condition, Lock
 from tools.model_hist import CkptLoadRecorder
 

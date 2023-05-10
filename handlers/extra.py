@@ -10,12 +10,13 @@ import random
 import typing
 from PIL import Image
 from enum import IntEnum
-from handlers.dumper import dumper
+from worker.dumper import dumper
 from modules.postprocessing import run_extras
 from handlers.typex import ImageKeys
 from tools.image import compress_image
+from worker.handler import DumpTaskHandler
 from handlers.utils import get_tmp_local_path, Tmp, upload_files
-from worker.task import Task, TaskType, TaskHandler, TaskProgress, TaskStatus
+from worker.task import Task, TaskType, TaskProgress, TaskStatus
 
 
 class ExtraTaskMinorTaskType(IntEnum):
@@ -84,7 +85,7 @@ class SingleUpscalerTask:
                           t.extras_upscaler_2, t.extras_upscaler_2_visibility, False)
 
 
-class ExtraTaskHandler(TaskHandler):
+class ExtraTaskHandler(DumpTaskHandler):
 
     def __init__(self):
         super(ExtraTaskHandler, self).__init__(TaskType.Extra)
@@ -133,6 +134,5 @@ class ExtraTaskHandler(TaskHandler):
 
         return high, low
 
-    def _set_task_status(self, p: TaskProgress):
-        super()._set_task_status(p)
-        dumper.dump_task_progress(p)
+
+

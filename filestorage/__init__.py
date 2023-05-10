@@ -60,3 +60,9 @@ def push_local_path(remoting, local, storage_cls=None):
     storage_cls = storage_cls or find_storage_classes_with_env()
     with storage_cls() as s:
         return s.upload(local, remoting)
+
+
+FileStorageCls = find_storage_classes_with_env()
+
+
+

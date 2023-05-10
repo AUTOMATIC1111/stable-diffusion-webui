@@ -1,0 +1,8 @@
+logs
+__pycache__
+wd14_tagger_model
+venv
+*.egg-info
+build
+.vscode
+wandb

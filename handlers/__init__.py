@@ -6,7 +6,7 @@
 # @File    : __init__.py.py
 # @Software: Hifive
 
-from worker.task import TaskHandler
+from worker.handler import TaskHandler, DumpTaskHandler
 from tools.reflection import find_classes
 from handlers.img2img import Img2ImgTaskHandler
 from handlers.txt2img import Txt2ImgTaskHandler
@@ -14,7 +14,7 @@ from handlers.txt2img import Txt2ImgTaskHandler
 
 def get_task_handlers():
     for cls in find_classes("handlers"):
-        if issubclass(cls, TaskHandler) and cls != TaskHandler:
+        if issubclass(cls, TaskHandler) and cls != TaskHandler and cls != DumpTaskHandler:
             yield cls()
 
 

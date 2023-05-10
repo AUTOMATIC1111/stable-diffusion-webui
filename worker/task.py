@@ -8,14 +8,10 @@
 import abc
 import json
 import time
-import traceback
 import typing
-
-from loguru import logger
 from enum import IntEnum
 from collections import UserDict
 from tools import try_deserialize_json
-from tools.encryptor import string_to_hex
 
 
 class Task(UserDict):
@@ -85,11 +81,18 @@ class Task(UserDict):
     def json(self) -> str:
         return json.dumps(dict(self.items()))
 
+    def value(self, key, default=None, requires=False):
+        if requires:
+            return self[key]
+        else:
+            return self.get(key, default=default)
+
 
 class TaskType(IntEnum):
     Txt2Image = 1
     Image2Image = 2
     Extra = 3
+    Train = 4
 
 
 class TaskStatus(IntEnum):
@@ -145,18 +148,20 @@ class TaskProgress:
         return pr
 
     @classmethod
-    def new_failed(cls, task: Task, desc: str):
+    def new_failed(cls, task: Task, desc: str, trace: str = None):
         p = cls(task)
         p.status = TaskStatus.Failed
         p.task_desc = desc
         p.task_progress = 0
+        p.trace = trace
         return p
 
     @classmethod
-    def new_running(cls, task: Task, desc: str):
+    def new_running(cls, task: Task, desc: str, progress=0):
         p = cls(task)
         p.status = TaskStatus.Running
         p.task_desc = desc
+        p.task_progress = progress
         return p
 
     @classmethod
@@ -178,45 +183,3 @@ class TaskProgress:
         p = cls(task)
         p.set_finish_result(result)
         return p
-
-
-class TaskHandler:
-
-    def __init__(self, task_type: TaskType):
-        self.task_type = task_type
-
-    def handle_task_type(self):
-        return self.task_type
-
-    @abc.abstractmethod
-    def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
-        raise NotImplementedError
-
-    def _set_task_status(self, p: TaskProgress):
-        logger.info(f">>> task:{p.task.desc()}, status:{p.status.name}, desc:{p.task_desc}")
-
-    def do(self, task: Task):
-        ok, msg = task.valid()
-        if not ok:
-            p = TaskProgress.new_failed(task, msg)
-            self._set_task_status(p)
-        else:
-            try:
-                p = TaskProgress.new_ready(task, msg)
-                self._set_task_status(p)
-                for progress in self._exec(task):
-                    self._set_task_status(progress)
-            except Exception:
-                msg = traceback.format_exc()
-                p = TaskProgress.new_failed(task, msg)
-                self._set_task_status(p)
-
-    def close(self):
-        pass
-
-    def set_failed(self, task: Task, desc: str):
-        p = TaskProgress.new_failed(task, desc)
-        self._set_task_status(p)
-
-    def __call__(self, task: Task):
-        return self.do(task)
