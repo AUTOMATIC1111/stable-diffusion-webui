@@ -48,7 +48,7 @@ class DDPMV1(pl.LightningModule):
                  beta_schedule="linear",
                  loss_type="l2",
                  ckpt_path=None,
-                 ignore_keys=[],
+                 ignore_keys=None,
                  load_only_unet=False,
                  monitor="val/loss",
                  use_ema=True,
@@ -100,7 +100,7 @@ class DDPMV1(pl.LightningModule):
         if monitor is not None:
             self.monitor = monitor
         if ckpt_path is not None:
-            self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys, only_model=load_only_unet)
+            self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys or [], only_model=load_only_unet)
 
         self.register_schedule(given_betas=given_betas, beta_schedule=beta_schedule, timesteps=timesteps,
                                linear_start=linear_start, linear_end=linear_end, cosine_s=cosine_s)
@@ -182,13 +182,13 @@ class DDPMV1(pl.LightningModule):
                 if context is not None:
                     print(f"{context}: Restored training weights")
 
-    def init_from_ckpt(self, path, ignore_keys=list(), only_model=False):
+    def init_from_ckpt(self, path, ignore_keys=None, only_model=False):
         sd = torch.load(path, map_location="cpu")
         if "state_dict" in list(sd.keys()):
             sd = sd["state_dict"]
         keys = list(sd.keys())
         for k in keys:
-            for ik in ignore_keys:
+            for ik in ignore_keys or []:
                 if k.startswith(ik):
                     print("Deleting key {} from state_dict.".format(k))
                     del sd[k]
@@ -444,7 +444,7 @@ class LatentDiffusionV1(DDPMV1):
             conditioning_key = None
         ckpt_path = kwargs.pop("ckpt_path", None)
         ignore_keys = kwargs.pop("ignore_keys", [])
-        super().__init__(conditioning_key=conditioning_key, *args, **kwargs)
+        super().__init__(*args, conditioning_key=conditioning_key, **kwargs)
         self.concat_mode = concat_mode
         self.cond_stage_trainable = cond_stage_trainable
         self.cond_stage_key = cond_stage_key
@@ -1418,10 +1418,10 @@ class Layout2ImgDiffusionV1(LatentDiffusionV1):
     # TODO: move all layout-specific hacks to this class
     def __init__(self, cond_stage_key, *args, **kwargs):
         assert cond_stage_key == 'coordinates_bbox', 'Layout2ImgDiffusion only for cond_stage_key="coordinates_bbox"'
-        super().__init__(cond_stage_key=cond_stage_key, *args, **kwargs)
+        super().__init__(*args, cond_stage_key=cond_stage_key, **kwargs)
 
     def log_images(self, batch, N=8, *args, **kwargs):
-        logs = super().log_images(batch=batch, N=N, *args, **kwargs)
+        logs = super().log_images(*args, batch=batch, N=N, **kwargs)
 
         key = 'train' if self.training else 'validation'
         dset = self.trainer.datamodule.datasets[key]

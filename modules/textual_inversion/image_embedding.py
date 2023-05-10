@@ -17,7 +17,7 @@ class EmbeddingEncoder(json.JSONEncoder):
 
 class EmbeddingDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+        json.JSONDecoder.__init__(self, *args, object_hook=self.object_hook, **kwargs)
 
     def object_hook(self, d):
         if 'TORCHTENSOR' in d:

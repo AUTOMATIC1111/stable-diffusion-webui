@@ -19,14 +19,14 @@ registered_param_bindings = []
 
 
 class ParamBinding:
-    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=[]):
+    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=None):
         self.paste_button = paste_button
         self.tabname = tabname
         self.source_text_component = source_text_component
         self.source_image_component = source_image_component
         self.source_tabname = source_tabname
         self.override_settings_component = override_settings_component
-        self.paste_field_names = paste_field_names
+        self.paste_field_names = paste_field_names or []
 
 
 def reset():

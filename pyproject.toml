@@ -24,6 +24,9 @@ ignore = [
 
 ]
 
-
 [tool.ruff.per-file-ignores]
 "webui.py" = ["E402"]  # Module level import not at top of file
+
+[tool.ruff.flake8-bugbear]
+# Allow default arguments like, e.g., `data: List[str] = fastapi.Query(None)`.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.security.HTTPBasic"]

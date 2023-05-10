@@ -34,14 +34,16 @@ import piexif.helper
 def upscaler_to_index(name: str):
     try:
         return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
-    except Exception:
-        raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be one of these: {' , '.join([x.name for x in shared.sd_upscalers])}")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be one of these: {' , '.join([x.name for x in shared.sd_upscalers])}") from e
+
 
 def script_name_to_index(name, scripts):
     try:
         return [script.title().lower() for script in scripts].index(name.lower())
-    except Exception:
-        raise HTTPException(status_code=422, detail=f"Script '{name}' not found")
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Script '{name}' not found") from e
+
 
 def validate_sampler_name(name):
     config = sd_samplers.all_samplers_map.get(name, None)
@@ -50,11 +52,13 @@ def validate_sampler_name(name):
 
     return name
 
+
 def setUpscalers(req: dict):
     reqDict = vars(req)
     reqDict['extras_upscaler_1'] = reqDict.pop('upscaler_1', None)
     reqDict['extras_upscaler_2'] = reqDict.pop('upscaler_2', None)
     return reqDict
+
 
 def decode_base64_to_image(encoding):
     if encoding.startswith("data:image/"):
@@ -62,8 +66,9 @@ def decode_base64_to_image(encoding):
     try:
         image = Image.open(BytesIO(base64.b64decode(encoding)))
         return image
-    except Exception:
-        raise HTTPException(status_code=500, detail="Invalid encoded image")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Invalid encoded image") from e
+
 
 def encode_pil_to_base64(image):
     with io.BytesIO() as output_bytes:
@@ -93,6 +98,7 @@ def encode_pil_to_base64(image):
         bytes_data = output_bytes.getvalue()
 
     return base64.b64encode(bytes_data)
+
 
 def api_middleware(app: FastAPI):
     rich_available = True

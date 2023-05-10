@@ -104,7 +104,7 @@ def check_pt(filename, extra_handler):
 
 
 def load(filename, *args, **kwargs):
-    return load_with_extra(filename, extra_handler=global_extra_handler, *args, **kwargs)
+    return load_with_extra(filename, *args, extra_handler=global_extra_handler, **kwargs)
 
 
 def load_with_extra(filename, extra_handler=None, *args, **kwargs):

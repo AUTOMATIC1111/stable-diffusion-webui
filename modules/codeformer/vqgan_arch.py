@@ -326,7 +326,7 @@ class Generator(nn.Module):
   
 @ARCH_REGISTRY.register()
 class VQAutoEncoder(nn.Module):
-    def __init__(self, img_size, nf, ch_mult, quantizer="nearest", res_blocks=2, attn_resolutions=[16], codebook_size=1024, emb_dim=256,
+    def __init__(self, img_size, nf, ch_mult, quantizer="nearest", res_blocks=2, attn_resolutions=None, codebook_size=1024, emb_dim=256,
                 beta=0.25, gumbel_straight_through=False, gumbel_kl_weight=1e-8, model_path=None):
         super().__init__()
         logger = get_root_logger()
@@ -337,7 +337,7 @@ class VQAutoEncoder(nn.Module):
         self.embed_dim = emb_dim
         self.ch_mult = ch_mult
         self.resolution = img_size
-        self.attn_resolutions = attn_resolutions
+        self.attn_resolutions = attn_resolutions or [16]
         self.quantizer_type = quantizer
         self.encoder = Encoder(
             self.in_channels,
