@@ -1,15 +1,9 @@
-import html
 import json
-import math
 import mimetypes
 import os
-import platform
-import random
 import sys
-import tempfile
-import time
 import traceback
-from functools import partial, reduce
+from functools import reduce
 import warnings
 
 import gradio as gr

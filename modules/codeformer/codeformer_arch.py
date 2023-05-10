@@ -7,7 +7,7 @@ from torch import nn, Tensor
 import torch.nn.functional as F
 from typing import Optional, List
 
-from modules.codeformer.vqgan_arch import *
+from modules.codeformer.vqgan_arch import VQAutoEncoder, ResBlock
 from basicsr.utils import get_root_logger
 from basicsr.utils.registry import ARCH_REGISTRY
 

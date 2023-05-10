@@ -472,9 +472,9 @@ def get_next_sequence_number(path, basename):
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            parts = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
-                result = max(int(l[0]), result)
+                result = max(int(parts[0]), result)
             except ValueError:
                 pass
 

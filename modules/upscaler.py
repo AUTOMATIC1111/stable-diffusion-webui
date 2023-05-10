@@ -45,7 +45,7 @@ class Upscaler:
         try:
             import cv2
             self.can_tile = True
-        except:
+        except Exception:
             pass
 
     @abstractmethod

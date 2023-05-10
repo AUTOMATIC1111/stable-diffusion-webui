@@ -13,7 +13,6 @@ from modules.shared import opts, state
 import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
-import modules.images as images
 import modules.scripts
 
 

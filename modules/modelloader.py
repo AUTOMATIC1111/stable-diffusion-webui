@@ -108,12 +108,12 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
                     print(f"Moving {file} from {src_path} to {dest_path}.")
                     try:
                         shutil.move(fullpath, dest_path)
-                    except:
+                    except Exception:
                         pass
             if len(os.listdir(src_path)) == 0:
                 print(f"Removing empty folder: {src_path}")
                 shutil.rmtree(src_path, True)
-    except:
+    except Exception:
         pass
 
 
@@ -141,7 +141,7 @@ def load_upscalers():
             full_model = f"modules.{model_name}_model"
             try:
                 importlib.import_module(full_model)
-            except:
+            except Exception:
                 pass
 
     datas = []

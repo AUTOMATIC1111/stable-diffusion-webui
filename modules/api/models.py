@@ -223,8 +223,9 @@ for key in _options:
     if(_options[key].dest != 'help'):
         flag = _options[key]
         _type = str
-        if _options[key].default is not None: _type = type(_options[key].default)
-        flags.update({flag.dest: (_type,Field(default=flag.default, description=flag.help))})
+        if _options[key].default is not None:
+            _type = type(_options[key].default)
+        flags.update({flag.dest: (_type, Field(default=flag.default, description=flag.help))})
 
 FlagsModel = create_model("Flags", **flags)
 

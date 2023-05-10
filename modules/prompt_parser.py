@@ -54,18 +54,21 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     """
 
     def collect_steps(steps, tree):
-        l = [steps]
+        res = [steps]
+
         class CollectSteps(lark.Visitor):
             def scheduled(self, tree):
                 tree.children[-1] = float(tree.children[-1])
                 if tree.children[-1] < 1:
                     tree.children[-1] *= steps
                 tree.children[-1] = min(steps, int(tree.children[-1]))
-                l.append(tree.children[-1])
+                res.append(tree.children[-1])
+
             def alternate(self, tree):
-                l.extend(range(1, steps+1))
+                res.extend(range(1, steps+1))
+
         CollectSteps().visit(tree)
-        return sorted(set(l))
+        return sorted(set(res))
 
     def at_step(step, tree):
         class AtStep(lark.Transformer):

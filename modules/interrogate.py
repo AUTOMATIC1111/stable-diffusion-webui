@@ -11,7 +11,6 @@ import torch.hub
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
-import modules.shared as shared
 from modules import devices, paths, shared, lowvram, modelloader, errors
 
 blip_image_eval_size = 384

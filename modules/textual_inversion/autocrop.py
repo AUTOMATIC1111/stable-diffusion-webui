@@ -185,7 +185,7 @@ def image_face_points(im, settings):
         try:
           faces = classifier.detectMultiScale(gray, scaleFactor=1.1,
             minNeighbors=7, minSize=(minsize, minsize), flags=cv2.CASCADE_SCALE_IMAGE)
-        except:
+        except Exception:
           continue
 
         if len(faces) > 0:
