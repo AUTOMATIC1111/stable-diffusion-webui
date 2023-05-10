@@ -15,7 +15,6 @@ import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
 
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
-from modules.paths import models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 
@@ -87,8 +86,7 @@ class CheckpointInfo:
 
 try:
     # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
-
-    from transformers import logging, CLIPModel
+    from transformers import logging, CLIPModel  # noqa: F401
 
     logging.set_verbosity_error()
 except Exception:
@@ -239,7 +237,7 @@ def read_metadata_from_safetensors(filename):
             if isinstance(v, str) and v[0:1] == '{':
                 try:
                     res[k] = json.loads(v)
-                except Exception as e:
+                except Exception:
                     pass
 
         return res
@@ -467,7 +465,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     try:
         with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
             sd_model = instantiate_from_config(sd_config.model)
-    except Exception as e:
+    except Exception:
         pass
 
     if sd_model is None:
@@ -544,7 +542,7 @@ def reload_model_weights(sd_model=None, info=None):
 
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
-    except Exception as e:
+    except Exception:
         print("Failed to load checkpoint, restoring previous")
         load_model_weights(sd_model, current_checkpoint_info, None, timer)
         raise
@@ -565,7 +563,7 @@ def reload_model_weights(sd_model=None, info=None):
 
 
 def unload_model_weights(sd_model=None, info=None):
-    from modules import lowvram, devices, sd_hijack
+    from modules import devices, sd_hijack
     timer = Timer()
 
     if model_data.sd_model:

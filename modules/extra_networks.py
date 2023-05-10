@@ -91,7 +91,7 @@ def deactivate(p, extra_network_data):
     """call deactivate for extra networks in extra_network_data in specified order, then call
     deactivate for all remaining registered networks"""
 
-    for extra_network_name, extra_network_args in extra_network_data.items():
+    for extra_network_name in extra_network_data:
         extra_network = extra_network_registry.get(extra_network_name, None)
         if extra_network is None:
             continue

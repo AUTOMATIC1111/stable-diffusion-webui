@@ -1,4 +1,3 @@
-import glob
 import os.path
 import urllib.parse
 from pathlib import Path
@@ -27,7 +26,7 @@ def register_page(page):
 def fetch_file(filename: str = ""):
     from starlette.responses import FileResponse
 
-    if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
+    if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
         raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
     ext = os.path.splitext(filename)[1].lower()
@@ -91,7 +90,7 @@ class ExtraNetworksPage:
 
         subdirs = {}
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
-            for root, dirs, files in os.walk(parentdir):
+            for root, dirs, _ in os.walk(parentdir):
                 for dirname in dirs:
                     x = os.path.join(root, dirname)
 
@@ -263,7 +262,7 @@ def create_ui(container, button, tabname):
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
-    with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
+    with gr.Tabs(elem_id=tabname+"_extra_tabs"):
         for page in ui.stored_extra_pages:
             page_id = page.title.lower().replace(" ", "_")
 
@@ -327,7 +326,7 @@ def setup_ui(ui, gallery):
 
         is_allowed = False
         for extra_page in ui.stored_extra_pages:
-            if any([path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()]):
+            if any(path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()):
                 is_allowed = True
                 break
 

@@ -231,7 +231,7 @@ def load_scripts():
     syspath = sys.path
 
     def register_scripts_from_module(module):
-        for key, script_class in module.__dict__.items():
+        for script_class in module.__dict__.values():
             if type(script_class) != type:
                 continue
 
@@ -295,9 +295,9 @@ class ScriptRunner:
 
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
-        for script_class, path, basedir, script_module in auto_processing_scripts + scripts_data:
-            script = script_class()
-            script.filename = path
+        for script_data in auto_processing_scripts + scripts_data:
+            script = script_data.script_class()
+            script.filename = script_data.path
             script.is_txt2img = not is_img2img
             script.is_img2img = is_img2img
 
@@ -492,7 +492,7 @@ class ScriptRunner:
                 module = script_loading.load_module(script.filename)
                 cache[filename] = module
 
-            for key, script_class in module.__dict__.items():
+            for script_class in module.__dict__.values():
                 if type(script_class) == type and issubclass(script_class, Script):
                     self.scripts[si] = script_class()
                     self.scripts[si].filename = filename

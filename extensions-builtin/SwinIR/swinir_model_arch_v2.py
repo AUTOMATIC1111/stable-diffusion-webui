@@ -74,7 +74,7 @@ class WindowAttention(nn.Module):
     """
 
     def __init__(self, dim, window_size, num_heads, qkv_bias=True, attn_drop=0., proj_drop=0.,
-                 pretrained_window_size=[0, 0]):
+                 pretrained_window_size=(0, 0)):
 
         super().__init__()
         self.dim = dim
@@ -698,7 +698,7 @@ class Swin2SR(nn.Module):
     """
 
     def __init__(self, img_size=64, patch_size=1, in_chans=3,
-                 embed_dim=96, depths=[6, 6, 6, 6], num_heads=[6, 6, 6, 6],
+                 embed_dim=96, depths=(6, 6, 6, 6), num_heads=(6, 6, 6, 6),
                  window_size=7, mlp_ratio=4., qkv_bias=True, 
                  drop_rate=0., attn_drop_rate=0., drop_path_rate=0.1,
                  norm_layer=nn.LayerNorm, ape=False, patch_norm=True,
@@ -994,7 +994,7 @@ class Swin2SR(nn.Module):
         H, W = self.patches_resolution
         flops += H * W * 3 * self.embed_dim * 9
         flops += self.patch_embed.flops()
-        for i, layer in enumerate(self.layers):
+        for layer in self.layers:
             flops += layer.flops()
         flops += H * W * 3 * self.embed_dim * self.embed_dim
         flops += self.upsample.flops()

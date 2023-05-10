@@ -2,7 +2,6 @@ import json
 import math
 import os
 import sys
-import warnings
 import hashlib
 
 import torch
@@ -11,10 +10,10 @@ from PIL import Image, ImageFilter, ImageOps
 import random
 import cv2
 from skimage import exposure
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -664,7 +663,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if not shared.opts.dont_fix_second_order_samplers_schedule:
                 try:
                     step_multiplier = 2 if sd_samplers.all_samplers_map.get(p.sampler_name).aliases[0] in ['k_dpmpp_2s_a', 'k_dpmpp_2s_a_ka', 'k_dpmpp_sde', 'k_dpmpp_sde_ka', 'k_dpm_2', 'k_dpm_2_a', 'k_heun'] else 1
-                except:
+                except Exception:
                     pass
             uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
             c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)

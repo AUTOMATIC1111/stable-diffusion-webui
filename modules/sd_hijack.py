@@ -3,7 +3,7 @@ from torch.nn.functional import silu
 from types import MethodType
 
 import modules.textual_inversion.textual_inversion
-from modules import devices, sd_hijack_optimizations, shared, sd_hijack_checkpoint
+from modules import devices, sd_hijack_optimizations, shared
 from modules.hypernetworks import hypernetwork
 from modules.shared import cmd_opts
 from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr
@@ -37,7 +37,7 @@ def apply_optimizations():
     
     optimization_method = None
 
-    can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(getattr(torch.nn.functional, "scaled_dot_product_attention")) # not everyone has torch 2.x to use sdp
+    can_use_sdp = hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(torch.nn.functional.scaled_dot_product_attention) # not everyone has torch 2.x to use sdp
 
     if cmd_opts.force_enable_xformers or (cmd_opts.xformers and shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0)):
         print("Applying xformers cross attention optimization.")
@@ -118,7 +118,7 @@ def weighted_forward(sd_model, x, c, w, *args, **kwargs):
         try:
             #Delete temporary weights if appended
             del sd_model._custom_loss_weight
-        except AttributeError as e:
+        except AttributeError:
             pass
             
         #If we have an old loss function, reset the loss function to the original one
@@ -133,7 +133,7 @@ def apply_weighted_forward(sd_model):
 def undo_weighted_forward(sd_model):
     try:
         del sd_model.weighted_forward
-    except AttributeError as e:
+    except AttributeError:
         pass
 
 

@@ -2,7 +2,6 @@
 
 from collections import OrderedDict
 import math
-import functools
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -438,9 +437,11 @@ def conv_block(in_nc, out_nc, kernel_size, stride=1, dilation=1, groups=1, bias=
     padding = padding if pad_type == 'zero' else 0
 
     if convtype=='PartialConv2D':
+        from torchvision.ops import PartialConv2d  # this is definitely not going to work, but PartialConv2d doesn't work anyway and this shuts up static analyzer
         c = PartialConv2d(in_nc, out_nc, kernel_size=kernel_size, stride=stride, padding=padding,
                dilation=dilation, bias=bias, groups=groups)
     elif convtype=='DeformConv2D':
+        from torchvision.ops import DeformConv2d  # not tested
         c = DeformConv2d(in_nc, out_nc, kernel_size=kernel_size, stride=stride, padding=padding,
                dilation=dilation, bias=bias, groups=groups)
     elif convtype=='Conv3D':

@@ -4,9 +4,9 @@ import modules.scripts as scripts
 import gradio as gr
 from PIL import Image
 
-from modules import processing, shared, sd_samplers, images, devices
+from modules import processing, shared, images, devices
 from modules.processing import Processed
-from modules.shared import opts, cmd_opts, state
+from modules.shared import opts, state
 
 
 class Script(scripts.Script):
@@ -56,7 +56,7 @@ class Script(scripts.Script):
 
         work = []
 
-        for y, h, row in grid.tiles:
+        for _y, _h, row in grid.tiles:
             for tiledata in row:
                 work.append(tiledata[2])
 
@@ -85,7 +85,7 @@ class Script(scripts.Script):
                 work_results += processed.images
 
             image_index = 0
-            for y, h, row in grid.tiles:
+            for _y, _h, row in grid.tiles:
                 for tiledata in row:
                     tiledata[2] = work_results[image_index] if image_index < len(work_results) else Image.new("RGB", (p.width, p.height))
                     image_index += 1

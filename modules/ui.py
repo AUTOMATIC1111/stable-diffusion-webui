@@ -1,29 +1,23 @@
-import html
 import json
-import math
 import mimetypes
 import os
-import platform
-import random
 import sys
-import tempfile
-import time
 import traceback
-from functools import partial, reduce
+from functools import reduce
 import warnings
 
 import gradio as gr
 import gradio.routes
 import gradio.utils
 import numpy as np
-from PIL import Image, PngImagePlugin
+from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing, progress
-from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress
+from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 
-from modules.shared import opts, cmd_opts, restricted_opts
+from modules.shared import opts, cmd_opts
 
 import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -34,7 +28,6 @@ import modules.shared as shared
 import modules.styles
 import modules.textual_inversion.ui
 from modules import prompt_parser
-from modules.images import save_image
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.textual_inversion import textual_inversion
@@ -246,7 +239,7 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
                 all_seeds = gen_info.get('all_seeds', [-1])
                 res = all_seeds[index if 0 <= index < len(all_seeds) else 0]
 
-        except json.decoder.JSONDecodeError as e:
+        except json.decoder.JSONDecodeError:
             if gen_info_string != '':
                 print("Error parsing JSON generation info:", file=sys.stderr)
                 print(gen_info_string, file=sys.stderr)
@@ -423,7 +416,7 @@ def create_sampler_and_steps_selection(choices, tabname):
 def ordered_ui_categories():
     user_order = {x.strip(): i * 2 + 1 for i, x in enumerate(shared.opts.ui_reorder.split(","))}
 
-    for i, category in sorted(enumerate(shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
+    for _, category in sorted(enumerate(shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category
 
 
@@ -736,8 +729,8 @@ def create_ui():
                     with gr.TabItem('Batch', id='batch', elem_id="img2img_batch_tab") as tab_batch:
                         hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
                         gr.HTML(
-                            f"<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running." +
-                            f"<br>Use an empty output directory to save pictures normally instead of writing to the output directory." +
+                            "<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running." +
+                            "<br>Use an empty output directory to save pictures normally instead of writing to the output directory." +
                             f"<br>Add inpaint batch mask directory to enable inpaint batch processing."
                             f"{hidden}</p>"
                         )
@@ -746,7 +739,6 @@ def create_ui():
                         img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
 
                     img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
-                    img2img_image_inputs = [init_img, sketch, init_img_with_mask, inpaint_color_sketch]
 
                     for i, tab in enumerate(img2img_tabs):
                         tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
@@ -1230,7 +1222,7 @@ def create_ui():
                     )
 
                 def get_textual_inversion_template_names():
-                    return sorted([x for x in textual_inversion.textual_inversion_templates])
+                    return sorted(textual_inversion.textual_inversion_templates)
 
                 with gr.Tab(label="Train", id="train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images <a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\" style=\"font-weight:bold;\">[wiki]</a></p>")
@@ -1238,8 +1230,8 @@ def create_ui():
                         train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                         create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
 
-                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=[x for x in shared.hypernetworks.keys()])
-                        create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted([x for x in shared.hypernetworks.keys()])}, "refresh_train_hypernetwork_name")
+                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=sorted(shared.hypernetworks))
+                        create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted(shared.hypernetworks)}, "refresh_train_hypernetwork_name")
 
                     with FormRow():
                         embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005", elem_id="train_embedding_learn_rate")
@@ -1290,8 +1282,8 @@ def create_ui():
 
             with gr.Column(elem_id='ti_gallery_container'):
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
-                ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(columns=4)
-                ti_progress = gr.HTML(elem_id="ti_progress", value="")
+                gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(columns=4)
+                gr.HTML(elem_id="ti_progress", value="")
                 ti_outcome = gr.HTML(elem_id="ti_error", value="")
 
         create_embedding.click(
@@ -1654,7 +1646,7 @@ def create_ui():
 
     with gr.Blocks(theme=shared.gradio_theme, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
-            for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
+            for _i, k, _item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
 
@@ -1668,7 +1660,7 @@ def create_ui():
                     interface.render()
 
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
-            audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
+            gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
         footer = shared.html("footer.html")
         footer = footer.format(versions=versions_html())
@@ -1681,7 +1673,7 @@ def create_ui():
             outputs=[text_settings, result],
         )
 
-        for i, k, item in quicksettings_list:
+        for _i, k, _item in quicksettings_list:
             component = component_dict[k]
             info = opts.data_labels[k]
 
@@ -1816,7 +1808,7 @@ def create_ui():
         if type(x) == gr.Dropdown:
             def check_dropdown(val):
                 if getattr(x, 'multiselect', False):
-                    return all([value in x.choices for value in val])
+                    return all(value in x.choices for value in val)
                 else:
                     return val in x.choices
 

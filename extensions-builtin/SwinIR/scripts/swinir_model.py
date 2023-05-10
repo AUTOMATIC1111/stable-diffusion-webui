@@ -1,4 +1,3 @@
-import contextlib
 import os
 
 import numpy as np
@@ -8,7 +7,7 @@ from basicsr.utils.download_util import load_file_from_url
 from tqdm import tqdm
 
 from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import cmd_opts, opts, state
+from modules.shared import opts, state
 from swinir_model_arch import SwinIR as net
 from swinir_model_arch_v2 import Swin2SR as net2
 from modules.upscaler import Upscaler, UpscalerData
@@ -45,7 +44,7 @@ class UpscalerSwinIR(Upscaler):
         img = upscale(img, model)
         try:
             torch.cuda.empty_cache()
-        except:
+        except Exception:
             pass
         return img
 

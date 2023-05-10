@@ -4,7 +4,7 @@ import ast
 import copy
 
 from modules.processing import Processed
-from modules.shared import opts, cmd_opts, state
+from modules.shared import cmd_opts
 
 
 def convertExpr2Expression(expr):

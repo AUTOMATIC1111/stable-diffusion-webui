@@ -1,4 +1,3 @@
-import glob
 import os
 import re
 import torch
@@ -173,7 +172,7 @@ def load_lora(name, filename):
         else:
             print(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
             continue
-            assert False, f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}'
+            raise AssertionError(f"Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}")
 
         with torch.no_grad():
             module.weight.copy_(weight)
@@ -185,7 +184,7 @@ def load_lora(name, filename):
         elif lora_key == "lora_down.weight":
             lora_module.down = module
         else:
-            assert False, f'Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha'
+            raise AssertionError(f"Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha")
 
     if len(keys_failed_to_match) > 0:
         print(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
@@ -203,7 +202,7 @@ def load_loras(names, multipliers=None):
     loaded_loras.clear()
 
     loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
-    if any([x is None for x in loras_on_disk]):
+    if any(x is None for x in loras_on_disk):
         list_available_loras()
 
         loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
@@ -310,7 +309,7 @@ def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.Mu
 
             print(f'failed to calculate lora weights for layer {lora_layer_name}')
 
-        setattr(self, "lora_current_names", wanted_names)
+        self.lora_current_names = wanted_names
 
 
 def lora_forward(module, input, original_forward):
@@ -344,8 +343,8 @@ def lora_forward(module, input, original_forward):
 
 
 def lora_reset_cached_weight(self: Union[torch.nn.Conv2d, torch.nn.Linear]):
-    setattr(self, "lora_current_names", ())
-    setattr(self, "lora_weights_backup", None)
+    self.lora_current_names = ()
+    self.lora_weights_backup = None
 
 
 def lora_Linear_forward(self, input):
@@ -419,7 +418,7 @@ def infotext_pasted(infotext, params):
 
     added = []
 
-    for k, v in params.items():
+    for k in params:
         if not k.startswith("AddNet Model "):
             continue
 

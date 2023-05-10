@@ -1,6 +1,5 @@
 import torch
 import platform
-from modules import paths
 from modules.sd_hijack_utils import CondFunc
 from packaging import version
 

@@ -88,7 +88,7 @@ class LDSR:
 
         x_t = None
         logs = None
-        for n in range(n_runs):
+        for _ in range(n_runs):
             if custom_shape is not None:
                 x_t = torch.randn(1, custom_shape[1], custom_shape[2], custom_shape[3]).to(model.device)
                 x_t = repeat(x_t, '1 c h w -> b c h w', b=custom_shape[0])
@@ -110,7 +110,6 @@ class LDSR:
         diffusion_steps = int(steps)
         eta = 1.0
 
-        down_sample_method = 'Lanczos'
 
         gc.collect()
         if torch.cuda.is_available:
@@ -158,7 +157,7 @@ class LDSR:
 
 
 def get_cond(selected_path):
-    example = dict()
+    example = {}
     up_f = 4
     c = selected_path.convert('RGB')
     c = torch.unsqueeze(torchvision.transforms.ToTensor()(c), 0)
@@ -196,7 +195,7 @@ def convsample_ddim(model, cond, steps, shape, eta=1.0, callback=None, normals_s
 @torch.no_grad()
 def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize_x0=False, custom_shape=None, temperature=1., noise_dropout=0., corrector=None,
                               corrector_kwargs=None, x_T=None, ddim_use_x0_pred=False):
-    log = dict()
+    log = {}
 
     z, c, x, xrec, xc = model.get_input(batch, model.first_stage_key,
                                         return_first_stage_outputs=True,
@@ -244,7 +243,7 @@ def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize
         x_sample_noquant = model.decode_first_stage(sample, force_not_quantize=True)
         log["sample_noquant"] = x_sample_noquant
         log["sample_diff"] = torch.abs(x_sample_noquant - x_sample)
-    except:
+    except Exception:
         pass
 
     log["sample"] = x_sample

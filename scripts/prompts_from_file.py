@@ -1,6 +1,4 @@
 import copy
-import math
-import os
 import random
 import sys
 import traceback
@@ -11,8 +9,7 @@ import gradio as gr
 
 from modules import sd_samplers
 from modules.processing import Processed, process_images
-from PIL import Image
-from modules.shared import opts, cmd_opts, state
+from modules.shared import state
 
 
 def process_string_tag(tag):
@@ -159,7 +156,7 @@ class Script(scripts.Script):
         images = []
         all_prompts = []
         infotexts = []
-        for n, args in enumerate(jobs):
+        for args in jobs:
             state.job = f"{state.job_no + 1} out of {state.job_count}"
 
             copy_p = copy.copy(p)

@@ -1,5 +1,4 @@
 import torch
-import torch.nn.functional as F
 import math
 from tqdm.auto import trange
 
@@ -179,13 +178,13 @@ def model_wrapper(
     model,
     noise_schedule,
     model_type="noise",
-    model_kwargs={},
+    model_kwargs=None,
     guidance_type="uncond",
     #condition=None,
     #unconditional_condition=None,
     guidance_scale=1.,
     classifier_fn=None,
-    classifier_kwargs={},
+    classifier_kwargs=None,
 ):
     """Create a wrapper function for the noise prediction model.
 
@@ -276,6 +275,9 @@ def model_wrapper(
         A noise prediction model that accepts the noised data and the continuous time as the inputs.
     """
 
+    model_kwargs = model_kwargs or {}
+    classifier_kwargs = classifier_kwargs or {}
+
     def get_model_input_time(t_continuous):
         """
         Convert the continuous-time `t_continuous` (in [epsilon, T]) to the model input time.
@@ -342,7 +344,7 @@ def model_wrapper(
                 t_in = torch.cat([t_continuous] * 2)
                 if isinstance(condition, dict):
                     assert isinstance(unconditional_condition, dict)
-                    c_in = dict()
+                    c_in = {}
                     for k in condition:
                         if isinstance(condition[k], list):
                             c_in[k] = [torch.cat([
@@ -353,7 +355,7 @@ def model_wrapper(
                                 unconditional_condition[k],
                                 condition[k]])
                 elif isinstance(condition, list):
-                    c_in = list()
+                    c_in = []
                     assert isinstance(unconditional_condition, list)
                     for i in range(len(condition)):
                         c_in.append(torch.cat([unconditional_condition[i], condition[i]]))

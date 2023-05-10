@@ -1,4 +1,4 @@
-from transformers import BertPreTrainedModel,BertModel,BertConfig
+from transformers import BertPreTrainedModel, BertConfig
 import torch.nn as nn
 import torch
 from transformers.models.xlm_roberta.configuration_xlm_roberta import XLMRobertaConfig

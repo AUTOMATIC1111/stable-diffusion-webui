@@ -1,12 +1,9 @@
-import argparse
 import datetime
 import json
 import os
 import sys
 import time
-import requests
 
-from PIL import Image
 import gradio as gr
 import tqdm
 
@@ -15,7 +12,7 @@ import modules.memmon
 import modules.styles
 import modules.devices as devices
 from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args
-from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir
+from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir  # noqa: F401
 from ldm.models.diffusion.ddpm import LatentDiffusion
 
 demo = None
@@ -214,7 +211,7 @@ class OptionInfo:
 
 
 def options_section(section_identifier, options_dict):
-    for k, v in options_dict.items():
+    for v in options_dict.values():
         v.section = section_identifier
 
     return options_dict
@@ -384,7 +381,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_width": OptionInfo(0, "Card width for Extra Networks (px)"),
     "extra_networks_card_height": OptionInfo(0, "Card height for Extra Networks (px)"),
     "extra_networks_add_text_separator": OptionInfo(" ", "Extra text to add before <...> when adding extra network to prompt"),
-    "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
+    "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None", hypernetworks]}, refresh=reload_hypernetworks),
 }))
 
 options_templates.update(options_section(('ui', "User interface"), {
@@ -406,7 +403,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_delimiters": OptionInfo(".,\\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"),
     "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}),
-    "hidden_tabs": OptionInfo([], "Hidden UI tabs (requires restart)", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
+    "hidden_tabs": OptionInfo([], "Hidden UI tabs (requires restart)", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
     "ui_extra_networks_tab_reorder": OptionInfo("", "Extra networks tab order"),
     "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
@@ -582,11 +579,11 @@ class Options:
 
         section_ids = {}
         settings_items = self.data_labels.items()
-        for k, item in settings_items:
+        for _, item in settings_items:
             if item.section not in section_ids:
                 section_ids[item.section] = len(section_ids)
 
-        self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
+        self.data_labels = dict(sorted(settings_items, key=lambda x: section_ids[x[1].section]))
 
     def cast_value(self, key, value):
         """casts an arbitrary to the same type as this setting's value with key
@@ -743,7 +740,7 @@ def walk_files(path, allowed_extensions=None):
     if allowed_extensions is not None:
         allowed_extensions = set(allowed_extensions)
 
-    for root, dirs, files in os.walk(path):
+    for root, _, files in os.walk(path):
         for filename in files:
             if allowed_extensions is not None:
                 _, ext = os.path.splitext(filename)

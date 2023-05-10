@@ -10,15 +10,13 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, paths, sd_samplers, processing, sd_models, sd_vae
+from modules import images, sd_samplers, processing, sd_models, sd_vae
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
-from modules.shared import opts, cmd_opts, state
+from modules.shared import opts, state
 import modules.shared as shared
 import modules.sd_samplers
 import modules.sd_models
 import modules.sd_vae
-import glob
-import os
 import re
 
 from modules.ui_components import ToolButton
@@ -316,7 +314,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         return Processed(p, [])
 
     z_count = len(zs)
-    sub_grids = [None] * z_count
+
     for i in range(z_count):
         start_index = (i * len(xs) * len(ys)) + i
         end_index = start_index + len(xs) * len(ys)
@@ -706,7 +704,7 @@ class Script(scripts.Script):
 
         if not include_sub_grids:
             # Done with sub-grids, drop all related information:
-            for sg in range(z_count):
+            for _ in range(z_count):
                 del processed.images[1]
                 del processed.all_prompts[1]
                 del processed.all_seeds[1]

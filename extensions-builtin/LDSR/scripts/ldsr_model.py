@@ -7,7 +7,8 @@ from basicsr.utils.download_util import load_file_from_url
 from modules.upscaler import Upscaler, UpscalerData
 from ldsr_model_arch import LDSR
 from modules import shared, script_callbacks
-import sd_hijack_autoencoder, sd_hijack_ddpm_v1
+import sd_hijack_autoencoder  # noqa: F401
+import sd_hijack_ddpm_v1  # noqa: F401
 
 
 class UpscalerLDSR(Upscaler):
