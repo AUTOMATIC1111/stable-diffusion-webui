@@ -4,7 +4,7 @@ import ldm.models.diffusion.ddpm
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
 
-from ldm.models.diffusion.ddim import DDIMSampler, noise_like
+from ldm.models.diffusion.ddim import noise_like
 from ldm.models.diffusion.sampling_util import norm_thresholding
 
 

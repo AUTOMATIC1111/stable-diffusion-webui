@@ -6,7 +6,7 @@ import time
 import git
 
 from modules import shared
-from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path
+from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
 extensions = []
 

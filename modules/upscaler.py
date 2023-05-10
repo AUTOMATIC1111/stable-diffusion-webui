@@ -41,7 +41,7 @@ class Upscaler:
             os.makedirs(self.model_path, exist_ok=True)
 
         try:
-            import cv2
+            import cv2  # noqa: F401
             self.can_tile = True
         except Exception:
             pass
