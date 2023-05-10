@@ -2,7 +2,10 @@
 
 target-version = "py310"
 
-exclude = ["extensions"]
+exclude = [
+	"extensions",
+	"extensions-disabled",
+]
 
 ignore = [
 	"E501", # Line too long
