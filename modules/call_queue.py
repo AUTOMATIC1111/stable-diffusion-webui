@@ -60,7 +60,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             max_debug_str_len = 131072 # (1024*1024)/8
 
             print("Error completing request", file=sys.stderr)
-            argStr = f"Arguments: {str(args)} {str(kwargs)}"
+            argStr = f"Arguments: {args} {kwargs}"
             print(argStr[:max_debug_str_len], file=sys.stderr)
             if len(argStr) > max_debug_str_len:
                 print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
@@ -73,7 +73,8 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             if extra_outputs_array is None:
                 extra_outputs_array = [None, '']
 
-            res = extra_outputs_array + [f"<div class='error'>{html.escape(type(e).__name__+': '+str(e))}</div>"]
+            error_message = f'{type(e).__name__}: {e}'
+            res = extra_outputs_array + [f"<div class='error'>{html.escape(error_message)}</div>"]
 
         shared.state.skipped = False
         shared.state.interrupted = False

@@ -61,7 +61,8 @@ def save_config_state(name):
     if not name:
         name = "Config"
     current_config_state["name"] = name
-    filename = os.path.join(config_states_dir, datetime.now().strftime("%Y_%m_%d-%H_%M_%S") + "_" + name + ".json")
+    timestamp = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+    filename = os.path.join(config_states_dir, f"{timestamp}_{name}.json")
     print(f"Saving backup of webui/extension state to {filename}.")
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(current_config_state, f)
