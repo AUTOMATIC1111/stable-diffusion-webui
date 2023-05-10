@@ -1,0 +1,8 @@
+[tool.ruff]
+
+ignore = [
+	"E501",
+	"E731"
+]
+
+exclude = ["extensions"]
