@@ -672,8 +672,8 @@ def reload_gradio_theme(theme_name=None):
     else:
         try:
             gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
-        except requests.exceptions.ConnectionError:
-            print("Can't access HuggingFace Hub, falling back to default Gradio theme")
+        except Exception as e:
+            errors.display(e, "changing gradio theme")
             gradio_theme = gr.themes.Default()
 
 
