@@ -157,7 +157,7 @@ class LDSR:
 
 
 def get_cond(selected_path):
-    example = dict()
+    example = {}
     up_f = 4
     c = selected_path.convert('RGB')
     c = torch.unsqueeze(torchvision.transforms.ToTensor()(c), 0)
@@ -195,7 +195,7 @@ def convsample_ddim(model, cond, steps, shape, eta=1.0, callback=None, normals_s
 @torch.no_grad()
 def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize_x0=False, custom_shape=None, temperature=1., noise_dropout=0., corrector=None,
                               corrector_kwargs=None, x_T=None, ddim_use_x0_pred=False):
-    log = dict()
+    log = {}
 
     z, c, x, xrec, xc = model.get_input(batch, model.first_stage_key,
                                         return_first_stage_outputs=True,

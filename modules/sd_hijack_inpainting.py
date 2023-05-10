@@ -23,7 +23,7 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
 
             if isinstance(c, dict):
                 assert isinstance(unconditional_conditioning, dict)
-                c_in = dict()
+                c_in = {}
                 for k in c:
                     if isinstance(c[k], list):
                         c_in[k] = [
