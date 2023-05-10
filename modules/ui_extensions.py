@@ -362,7 +362,7 @@ def install_extension_from_url(dirname, url, branch_name=None):
         import launch
         launch.run_extension_installer(target_dir)
 
-        extensions.list_extensions()
+        extensions.list_extensions(local_extensions=shared.cmd_opts.local_extension)
         return [extension_table(), html.escape(f"Installed into {target_dir}. Use Installed tab to restart.")]
     finally:
         shutil.rmtree(tmpdir, True)
