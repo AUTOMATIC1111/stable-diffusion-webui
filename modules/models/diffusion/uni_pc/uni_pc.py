@@ -275,8 +275,8 @@ def model_wrapper(
         A noise prediction model that accepts the noised data and the continuous time as the inputs.
     """
 
-    model_kwargs = model_kwargs or []
-    classifier_kwargs = classifier_kwargs or []
+    model_kwargs = model_kwargs or {}
+    classifier_kwargs = classifier_kwargs or {}
 
     def get_model_input_time(t_continuous):
         """

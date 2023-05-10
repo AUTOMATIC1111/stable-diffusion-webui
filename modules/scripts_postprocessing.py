@@ -124,7 +124,7 @@ class ScriptPostprocessingRunner:
             script_args = args[script.args_from:script.args_to]
 
             process_args = {}
-            for (name, component), value in zip(script.controls.items(), script_args):  # noqa B007
+            for (name, _component), value in zip(script.controls.items(), script_args):
                 process_args[name] = value
 
             script.process(pp, **process_args)
