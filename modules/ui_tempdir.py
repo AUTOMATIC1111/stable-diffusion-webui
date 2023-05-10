@@ -23,7 +23,7 @@ def register_tmp_file(gradio, filename):
 
 def check_tmp_file(gradio, filename):
     if hasattr(gradio, 'temp_file_sets'):
-        return any([filename in fileset for fileset in gradio.temp_file_sets])
+        return any(filename in fileset for fileset in gradio.temp_file_sets)
 
     if hasattr(gradio, 'temp_dirs'):
         return any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in gradio.temp_dirs)

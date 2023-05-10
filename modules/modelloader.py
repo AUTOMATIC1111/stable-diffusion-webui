@@ -39,7 +39,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                 if os.path.islink(full_path) and not os.path.exists(full_path):
                     print(f"Skipping broken symlink: {full_path}")
                     continue
-                if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
+                if ext_blacklist is not None and any(full_path.endswith(x) for x in ext_blacklist):
                     continue
                 if full_path not in output:
                     output.append(full_path)

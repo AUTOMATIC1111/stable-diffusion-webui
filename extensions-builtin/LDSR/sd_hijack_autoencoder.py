@@ -288,5 +288,5 @@ class VQModelInterface(VQModel):
         dec = self.decoder(quant)
         return dec
 
-setattr(ldm.models.autoencoder, "VQModel", VQModel)
-setattr(ldm.models.autoencoder, "VQModelInterface", VQModelInterface)
+ldm.models.autoencoder.VQModel = VQModel
+ldm.models.autoencoder.VQModelInterface = VQModelInterface

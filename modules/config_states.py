@@ -35,7 +35,7 @@ def list_config_states():
                 j["filepath"] = path
                 config_states.append(j)
 
-    config_states = list(sorted(config_states, key=lambda cs: cs["created_at"], reverse=True))
+    config_states = sorted(config_states, key=lambda cs: cs["created_at"], reverse=True)
 
     for cs in config_states:
         timestamp = time.asctime(time.gmtime(cs["created_at"]))

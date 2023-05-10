@@ -403,7 +403,7 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
     k = self.to_k(context_k)
     v = self.to_v(context_v)
 
-    q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
+    q, k, v = (rearrange(t, 'b n (h d) -> (b h) n d', h=h) for t in (q, k, v))
 
     sim = einsum('b i d, b j d -> b i j', q, k) * self.scale
 

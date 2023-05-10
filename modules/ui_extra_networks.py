@@ -26,7 +26,7 @@ def register_page(page):
 def fetch_file(filename: str = ""):
     from starlette.responses import FileResponse
 
-    if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
+    if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
         raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
     ext = os.path.splitext(filename)[1].lower()
@@ -326,7 +326,7 @@ def setup_ui(ui, gallery):
 
         is_allowed = False
         for extra_page in ui.stored_extra_pages:
-            if any([path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()]):
+            if any(path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()):
                 is_allowed = True
                 break
 
