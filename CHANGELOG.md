@@ -14,6 +14,7 @@
 
 ### Minor:
  * gradio bumped to 3.29.0
+ * torch bumped to 2.0.1
  * --subpath option for gradio for use with reverse proxy
  * linux/OSX: use existing virtualenv if already active (the VIRTUAL_ENV environment variable)
  * possible frontend optimization: do not apply localizations if there are none
@@ -23,7 +24,6 @@
  * allow directories starting with . to still list their models for lora, checkpoints, etc
  * put infotext options into their own category in settings tab
  * do not show licenses page when user selects Show all pages in settings
- * 
 
 ### Extensions:
  * Tooltip localization support
