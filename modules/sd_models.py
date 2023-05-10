@@ -1,6 +1,5 @@
 import collections
 import os.path
-import gc
 import re
 import io
 from os import mkdir
@@ -359,7 +358,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
         current_checkpoint_info = shared.sd_model.sd_checkpoint_info
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
         shared.sd_model = None
-        gc.collect()
         devices.torch_gc()
     shared.log.debug(f'Model unloaded: {memory_stats()}')
     do_inpainting_hijack()
@@ -411,7 +409,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     script_callbacks.model_loaded_callback(sd_model)
     timer.record("callbacks")
     shared.log.info(f"Model loaded in {timer.summary()}")
-    gc.collect()
+    devices.torch_gc()
     shared.log.debug(f'Model load finished: {memory_stats()}')
 
 
@@ -476,7 +474,6 @@ def unload_model_weights(sd_model=None, _info=None):
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
         shared.sd_model = None
         sd_model = None
-        gc.collect()
         devices.torch_gc()
     shared.log.info(f"Unloaded weights {timer.summary()}")
     return sd_model

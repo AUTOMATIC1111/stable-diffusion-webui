@@ -20,7 +20,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-args = Dot({ 'debug': False, 'upgrade': False, 'skip_update': False, 'skip_extensions': False, 'skip_requirements': False, 'skip_git': False, 'reset': False, 'use_directml': False, 'use_ipex': False, 'experimental': False, 'test': False, 'tls_selfsign': False })
+args = Dot({ 'debug': False, 'upgrade': False, 'skip_update': False, 'skip_extensions': False, 'skip_requirements': False, 'skip_git': False, 'reset': False, 'use_directml': False, 'use_ipex': False, 'experimental': False, 'test': False, 'tls_selfsign': False, 'reinstall': False })
 quick_allowed = True
 errors = 0
 opts = {}
@@ -90,11 +90,14 @@ def installed(package, friendly: str = None):
 
 # install package using pip if not already installed
 def install(package, friendly: str = None, ignore: bool = False):
+    if args.reinstall:
+        global quick_allowed # pylint: disable=global-statement
+        quick_allowed = False
     if args.use_ipex and package == "pytorch_lightning==1.9.4":
         package = "pytorch_lightning==1.8.6"
     def pip(arg: str):
         arg = arg.replace('>=', '==')
-        log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("  ", " ").strip()}')
+        log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("--force", "").replace("  ", " ").strip()}')
         log.debug(f"Running pip: {arg}")
         result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         txt = result.stdout.decode(encoding="utf8", errors="ignore")
@@ -110,6 +113,8 @@ def install(package, friendly: str = None, ignore: bool = False):
 
     if not installed(package, friendly):
         pip(f"install --upgrade {package}")
+    elif args.reinstall:
+        pip(f"install --upgrade --force {package}")
 
 
 # execute git command
@@ -192,7 +197,7 @@ def check_python():
 def check_torch():
     if shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe')):
         log.info('nVidia CUDA toolkit detected')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cu118')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
     elif shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo'):
         log.info('AMD ROCm toolkit detected')
@@ -444,7 +449,7 @@ def check_extensions():
 
 
 # check version of the main repo and optionally upgrade it
-def check_version(offline=False): # pylint: disable=unused-argument
+def check_version(offline=False, reset=True): # pylint: disable=unused-argument
     if not os.path.exists('.git'):
         log.error('Not a git repository')
         if not args.ignore:
@@ -477,8 +482,13 @@ def check_version(offline=False): # pylint: disable=unused-argument
                     # git('git stash pop')
                     ver = git('log -1 --pretty=format:"%h %ad"')
                     log.info(f'Upgraded to version: {ver}')
-                except:
-                    log.error('Error upgrading repository')
+                except Exception:
+                    if not reset:
+                        log.warning('Error upgrading repository')
+                    else:
+                        log.warning('Error upgrading repository')
+                        git_reset()
+                        check_version(offline=offline, reset=False)
             else:
                 log.info(f'Latest published version: {commits["commit"]["sha"]} {commits["commit"]["commit"]["author"]["date"]}')
     except Exception as e:
@@ -540,6 +550,7 @@ def add_args():
     group.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     group.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
     group.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
+    group.add_argument('--reinstall', default = False, action='store_true', help = "Force reinstallation of all requirements, default: %(default)s")
     group.add_argument('--test', default = False, action='store_true', help = "Run test only and exit")
     group.add_argument('--version', default = False, action='store_true', help = "Print version information")
     group.add_argument('--ignore', default = False, action='store_true', help = "Ignore any errors and attempt to continue")
@@ -597,6 +608,8 @@ def run_setup():
         log.info('Skipping GIT operations')
     check_version()
     set_environment()
+    if args.reinstall:
+        log.info('Forcing reinstall of all packages')
     check_torch()
     install_requirements()
     if check_timestamp():

@@ -1,3 +1,4 @@
+import gc
 import sys
 import contextlib
 import torch
@@ -63,13 +64,20 @@ def get_device_for(task):
 
 
 def torch_gc():
+    gc.collect()
     if shared.cmd_opts.use_ipex:
-        with torch.xpu.device("xpu"):
-            torch.xpu.empty_cache()
+        try:
+            with torch.xpu.device("xpu"):
+                torch.xpu.empty_cache()
+        except:
+            pass
     elif torch.cuda.is_available():
-        with torch.cuda.device(get_cuda_device_string()):
-            torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
+        try:
+            with torch.cuda.device(get_cuda_device_string()):
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+        except:
+            pass
 
 
 def test_fp16():
