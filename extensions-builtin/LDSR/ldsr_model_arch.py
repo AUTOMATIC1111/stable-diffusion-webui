@@ -110,7 +110,6 @@ class LDSR:
         diffusion_steps = int(steps)
         eta = 1.0
 
-        down_sample_method = 'Lanczos'
 
         gc.collect()
         if torch.cuda.is_available:

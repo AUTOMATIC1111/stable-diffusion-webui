@@ -134,6 +134,6 @@ def get_realesrgan_models(scaler):
             ),
         ]
         return models
-    except Exception as e:
+    except Exception:
         print("Error making Real-ESRGAN models list:", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)

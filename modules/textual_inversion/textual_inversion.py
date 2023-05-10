@@ -603,7 +603,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
                         try:
                             vectorSize = list(data['string_to_param'].values())[0].shape[0]
-                        except Exception as e:
+                        except Exception:
                             vectorSize = '?'
 
                         checkpoint = sd_models.select_checkpoint()

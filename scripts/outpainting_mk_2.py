@@ -72,7 +72,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
     height = _np_src_image.shape[1]
     num_channels = _np_src_image.shape[2]
 
-    np_src_image = _np_src_image[:] * (1. - np_mask_rgb)
+    _np_src_image[:] * (1. - np_mask_rgb)
     np_mask_grey = (np.sum(np_mask_rgb, axis=2) / 3.)
     img_mask = np_mask_grey > 1e-6
     ref_mask = np_mask_grey < 1e-3

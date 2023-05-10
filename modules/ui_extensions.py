@@ -490,7 +490,7 @@ def create_ui():
     config_states.list_config_states()
 
     with gr.Blocks(analytics_enabled=False) as ui:
-        with gr.Tabs(elem_id="tabs_extensions") as tabs:
+        with gr.Tabs(elem_id="tabs_extensions"):
             with gr.TabItem("Installed", id="installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):

@@ -118,7 +118,7 @@ def weighted_forward(sd_model, x, c, w, *args, **kwargs):
         try:
             #Delete temporary weights if appended
             del sd_model._custom_loss_weight
-        except AttributeError as e:
+        except AttributeError:
             pass
             
         #If we have an old loss function, reset the loss function to the original one
@@ -133,7 +133,7 @@ def apply_weighted_forward(sd_model):
 def undo_weighted_forward(sd_model):
     try:
         del sd_model.weighted_forward
-    except AttributeError as e:
+    except AttributeError:
         pass
 
 

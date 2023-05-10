@@ -360,7 +360,7 @@ def webui():
         if cmd_opts.subpath:
             redirector = FastAPI()
             redirector.get("/")
-            mounted_app = gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
+            gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
 
         wait_on_server(shared.demo)
         print('Restarting UI...')

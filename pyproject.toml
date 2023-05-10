@@ -2,7 +2,9 @@
 
 ignore = [
 	"E501",
-	"E731"
+	"E731",
+	"E402",   # Module level import not at top of file
+	"F401"    # Module imported but unused
 ]
 
 exclude = ["extensions"]

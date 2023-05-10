@@ -263,7 +263,7 @@ def create_ui(container, button, tabname):
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
-    with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
+    with gr.Tabs(elem_id=tabname+"_extra_tabs"):
         for page in ui.stored_extra_pages:
             page_id = page.title.lower().replace(" ", "_")
 
