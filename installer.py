@@ -318,8 +318,9 @@ def run_extension_installer(folder):
 
 # get list of all enabled extensions
 def list_extensions(folder):
-    if opts.get('disable_all_extensions', 'none') != 'none':
-        log.debug('Disabled extensions: all')
+    disabled_extensions = opts.get('disable_all_extensions', 'none')
+    if disabled_extensions != 'none':
+        log.debug(f'Disabled extensions: {disabled_extensions}')
         return []
     disabled_extensions = set(opts.get('disabled_extensions', []))
     if len(disabled_extensions) > 0:
@@ -350,7 +351,7 @@ def install_extensions():
             if not args.skip_extensions:
                 run_extension_installer(os.path.join(folder, ext))
     log.info(f'Extensions enabled: {extensions_enabled}')
-    if (len(extensions_duplicates) > 0):
+    if len(extensions_duplicates) > 0:
         log.warning(f'Extensions duplicates: {extensions_duplicates}')
 
 

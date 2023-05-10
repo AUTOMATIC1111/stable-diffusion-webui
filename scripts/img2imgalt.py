@@ -119,13 +119,13 @@ class Script(scripts.Script):
         return [
             info,
             override_sampler,
-            override_prompt, original_prompt, original_negative_prompt, 
+            override_prompt, original_prompt, original_negative_prompt,
             override_steps, st,
             override_strength,
             cfg, randomness, sigma_adjustment,
         ]
 
-    def run(self, p, _, override_sampler, override_prompt, original_prompt, original_negative_prompt, override_steps, st, override_strength, cfg, randomness, sigma_adjustment):
+    def run(self, p, _, override_sampler, override_prompt, original_prompt, original_negative_prompt, override_steps, st, override_strength, cfg, randomness, sigma_adjustment): # pylint: disable=arguments-differ
         # Override
         if override_sampler:
             p.sampler_name = "Euler"
@@ -137,7 +137,7 @@ class Script(scripts.Script):
         if override_strength:
             p.denoising_strength = 1.0
 
-        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+        def sample_extra(conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts): # pylint: disable=unused-argument
             lat = (p.init_latent.cpu().numpy() * 10).astype(int)
             same_params = self.cache is not None and self.cache.cfg_scale == cfg and self.cache.steps == st \
                                 and self.cache.original_prompt == original_prompt \

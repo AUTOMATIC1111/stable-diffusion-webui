@@ -1,14 +1,9 @@
 import math
-from collections import namedtuple
-from copy import copy
-import random
-
-import modules.scripts as scripts
 import gradio as gr
-
+import modules.scripts as scripts
 from modules import images
-from modules.processing import process_images, Processed
-from modules.shared import opts, cmd_opts, state
+from modules.processing import process_images
+from modules.shared import opts, state
 import modules.sd_samplers
 
 
@@ -99,7 +94,7 @@ class Script(scripts.Script):
         p.prompt_for_display = positive_prompt
         processed = process_images(p)
 
-        grid = images.image_grid(processed.images, p.batch_size, rows=1 << ((len(prompt_matrix_parts) - 1) // 2)) 
+        grid = images.image_grid(processed.images, p.batch_size, rows=1 << ((len(prompt_matrix_parts) - 1) // 2))
         grid = images.draw_prompt_matrix(grid, processed.images[0].width, processed.images[0].height, prompt_matrix_parts, margin_size)
         processed.images.insert(0, grid)
         processed.index_of_first_image = 1

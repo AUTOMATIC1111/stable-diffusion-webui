@@ -3,8 +3,8 @@ function keyupEditAttention(event) {
   if (!target.matches("[id*='_toprow'] [id*='_prompt'] textarea")) return;
   if (!(event.metaKey || event.ctrlKey)) return;
 
-  const isPlus = event.key == 'ArrowUp';
-  const isMinus = event.key == 'ArrowDown';
+  const isPlus = event.key === 'ArrowUp';
+  const isMinus = event.key === 'ArrowDown';
   if (!isPlus && !isMinus) return;
 
   let { selectionStart } = target;
@@ -17,7 +17,7 @@ function keyupEditAttention(event) {
     // Find opening parenthesis around current cursor
     const before = text.substring(0, selectionStart);
     let beforeParen = before.lastIndexOf(OPEN);
-    if (beforeParen == -1) return false;
+    if (beforeParen === -1) return false;
     let beforeParenClose = before.lastIndexOf(CLOSE);
     while (beforeParenClose !== -1 && beforeParenClose > beforeParen) {
       beforeParen = before.lastIndexOf(OPEN, beforeParen - 1);
@@ -27,7 +27,7 @@ function keyupEditAttention(event) {
     // Find closing parenthesis around current cursor
     const after = text.substring(selectionStart);
     let afterParen = after.indexOf(CLOSE);
-    if (afterParen == -1) return false;
+    if (afterParen === -1) return false;
     let afterParenOpen = after.indexOf(OPEN);
     while (afterParenOpen !== -1 && afterParen > afterParenOpen) {
       afterParen = after.indexOf(CLOSE, afterParen + 1);
@@ -72,15 +72,15 @@ function keyupEditAttention(event) {
   closeCharacter = ')';
   delta = opts.keyedit_precision_attention;
 
-  if (selectionStart > 0 && text[selectionStart - 1] == '<') {
+  if (selectionStart > 0 && text[selectionStart - 1] === '<') {
     closeCharacter = '>';
     delta = opts.keyedit_precision_extra;
-  } else if (selectionStart == 0 || text[selectionStart - 1] != '(') {
+  } else if (selectionStart === 0 || text[selectionStart - 1] != '(') {
     // do not include spaces at the end
-    while (selectionEnd > selectionStart && text[selectionEnd - 1] == ' ') {
+    while (selectionEnd > selectionStart && text[selectionEnd - 1] === ' ') {
       selectionEnd -= 1;
     }
-    if (selectionStart == selectionEnd) {
+    if (selectionStart === selectionEnd) {
       return;
     }
 
@@ -96,9 +96,9 @@ function keyupEditAttention(event) {
 
   weight += isPlus ? delta : -delta;
   weight = parseFloat(weight.toPrecision(12));
-  if (String(weight).length == 1) weight += '.0';
+  if (String(weight).length === 1) weight += '.0';
 
-  if (closeCharacter == ')' && weight == 1) {
+  if (closeCharacter === ')' && weight === 1) {
     text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + 5);
     selectionStart--;
     selectionEnd--;

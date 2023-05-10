@@ -1,14 +1,15 @@
 # defaults
 __pycache__
-/params.txt
 /cache.json
 /config.json
-/ui-config.json
+/params.txt
 /setup.log
 /styles.csv
+/ui-config.json
 /user.css
 /webui-user.bat
 /webui-user.sh
+/html/extensions.json
 /javascript/themes.json
 node_modules
 pnpm-lock.yaml

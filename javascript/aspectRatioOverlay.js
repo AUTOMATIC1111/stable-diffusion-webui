@@ -10,7 +10,7 @@ function dimensionChange(e, is_width, is_height) {
     currentHeight = e.target.value * 1.0;
   }
 
-  const inImg2img = gradioApp().querySelector('#tab_img2img').style.display == 'block';
+  const inImg2img = gradioApp().querySelector('#tab_img2img').style.display === 'block';
 
   if (!inImg2img) {
     return;
@@ -19,22 +19,22 @@ function dimensionChange(e, is_width, is_height) {
   let targetElement = null;
 
   const tabIndex = get_tab_index('mode_img2img');
-  if (tabIndex == 0) { // img2img
+  if (tabIndex === 0) { // img2img
     targetElement = gradioApp().querySelector('#img2img_image div[data-testid=image] img');
-  } else if (tabIndex == 1) { // Sketch
+  } else if (tabIndex === 1) { // Sketch
     targetElement = gradioApp().querySelector('#img2img_sketch div[data-testid=image] img');
-  } else if (tabIndex == 2) { // Inpaint
+  } else if (tabIndex === 2) { // Inpaint
     targetElement = gradioApp().querySelector('#img2maskimg div[data-testid=image] img');
-  } else if (tabIndex == 3) { // Inpaint sketch
+  } else if (tabIndex === 3) { // Inpaint sketch
     targetElement = gradioApp().querySelector('#inpaint_sketch div[data-testid=image] img');
   }
 
   if (targetElement) {
     let arPreviewRect = gradioApp().querySelector('#imageARPreview');
     if (!arPreviewRect) {
-		    arPreviewRect = document.createElement('div');
-		    arPreviewRect.id = 'imageARPreview';
-		    gradioApp().appendChild(arPreviewRect);
+      arPreviewRect = document.createElement('div');
+      arPreviewRect.id = 'imageARPreview';
+      gradioApp().appendChild(arPreviewRect);
     }
 
     const viewportOffset = targetElement.getBoundingClientRect();
@@ -63,17 +63,16 @@ function dimensionChange(e, is_width, is_height) {
     arRectWidth = arscaledx;
     arRectHeight = arscaledy;
 
-	    arPreviewRect.style.top = `${arRectTop}px`;
-	    arPreviewRect.style.left = `${arRectLeft}px`;
-	    arPreviewRect.style.width = `${arRectWidth}px`;
-	    arPreviewRect.style.height = `${arRectHeight}px`;
+    arPreviewRect.style.top = `${arRectTop}px`;
+    arPreviewRect.style.left = `${arRectLeft}px`;
+    arPreviewRect.style.width = `${arRectWidth}px`;
+    arPreviewRect.style.height = `${arRectHeight}px`;
 
-	    clearTimeout(arFrameTimeout);
-	    arFrameTimeout = setTimeout(() => {
-	    	arPreviewRect.style.display = 'none';
-	    }, 2000);
-
-	    arPreviewRect.style.display = 'block';
+    clearTimeout(arFrameTimeout);
+    arFrameTimeout = setTimeout(() => {
+      arPreviewRect.style.display = 'none';
+    }, 2000);
+    arPreviewRect.style.display = 'block';
   }
 }
 
@@ -84,12 +83,12 @@ onUiUpdate(() => {
   }
   const tabImg2img = gradioApp().querySelector('#tab_img2img');
   if (tabImg2img) {
-    const inImg2img = tabImg2img.style.display == 'block';
+    const inImg2img = tabImg2img.style.display === 'block';
     if (inImg2img) {
       const inputs = gradioApp().querySelectorAll('input');
       inputs.forEach((e) => {
-        const is_width = e.parentElement.id == 'img2img_width';
-        const is_height = e.parentElement.id == 'img2img_height';
+        const is_width = e.parentElement.id === 'img2img_width';
+        const is_height = e.parentElement.id === 'img2img_height';
 
         if ((is_width || is_height) && !e.classList.contains('scrollwatch')) {
           e.addEventListener('input', (e) => { dimensionChange(e, is_width, is_height); });

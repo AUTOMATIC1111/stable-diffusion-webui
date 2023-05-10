@@ -77,7 +77,7 @@ contextMenuInit = function () {
   function removeContextMenuOption(uid) {
     menuSpecs.forEach((v, k) => {
       let index = -1;
-      v.forEach((e, ei) => { if (e.id == uid) { index = ei; } });
+      v.forEach((e, ei) => { if (e.id === uid) { index = ei; } });
       if (index >= 0) {
         v.splice(index, 1);
       }
@@ -126,14 +126,14 @@ addContextMenuEventListener = initResponse[2];
   // Start example Context Menu Items
   const generateOnRepeat = function (genbuttonid, interruptbuttonid) {
     const genbutton = gradioApp().querySelector(genbuttonid);
-    const busy = document.getElementById('progressbar')?.style.display == 'block';
+    const busy = document.getElementById('progressbar')?.style.display === 'block';
     if (!busy) {
       genbutton.click();
     }
     clearInterval(window.generateOnRepeatInterval);
     window.generateOnRepeatInterval = setInterval(
       () => {
-        const busy = document.getElementById('progressbar')?.style.display == 'block';
+        const busy = document.getElementById('progressbar')?.style.display === 'block';
         if (!busy) {
           genbutton.click();
         }

@@ -14,9 +14,7 @@ def wrap_queued_call(func):
     def f(*args, **kwargs):
         with queue_lock:
             res = func(*args, **kwargs)
-
         return res
-
     return f
 
 
@@ -38,8 +36,8 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
                 progress.finish_task(id_task)
             shared.state.end()
         return res
-
     return wrap_gradio_call(f, extra_outputs=extra_outputs, add_stats=True)
+
 
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
@@ -73,21 +71,17 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             if extra_outputs_array is None:
                 extra_outputs_array = [None, '']
             res = extra_outputs_array + [f"<div class='error'>{html.escape(type(e).__name__+': '+str(e))}</div>"]
-
         shared.state.skipped = False
         shared.state.interrupted = False
         shared.state.job_count = 0
-
         if not add_stats:
             return tuple(res)
-
         elapsed = time.perf_counter() - t
         elapsed_m = int(elapsed // 60)
         elapsed_s = elapsed % 60
         elapsed_text = f"{elapsed_s:.2f}s"
         if elapsed_m > 0:
             elapsed_text = f"{elapsed_m}m "+elapsed_text
-
         if run_memmon:
             mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.stop().items()}
             active_peak = mem_stats['active_peak']
@@ -97,9 +91,6 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             vram_html = f" | <p class='vram'>GPU active {active_peak} MB reserved {reserved_peak} MB | System peak {sys_peak} MB total {sys_total} MB</p>"
         else:
             vram_html = ''
-
         res[-1] += f"<div class='performance'><p class='time'>Time taken: {elapsed_text}</p>{vram_html}</div>"
-
         return tuple(res)
-
     return f

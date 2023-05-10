@@ -505,11 +505,25 @@ div#extras_scale_to_tab div.form{
     font-size: 95%;
 }
 
-#available_extensions .info{
+#extensions .name{
+  font-size: 1.1rem
+}
+
+#extensions .type{
+  opacity: 0.5;
+  font-size: 90%;
+  text-align: center;
+}
+
+#extensions .version{
+  opacity: 0.7;
+}
+
+#extensions .info{
     margin: 0;
 }
 
-#available_extensions .date_added{
+#extensions .date{
     opacity: 0.85;
     font-size: 90%;
 }
