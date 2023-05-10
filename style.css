@@ -414,6 +414,10 @@ table.settings-value-table td{
     max-width: 36em;
 }
 
+.ui-defaults-none{
+    color: #aaa !important;
+}
+
 /* live preview */
 .progressDiv{
     position: relative;

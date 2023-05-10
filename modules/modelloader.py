@@ -116,20 +116,6 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
         pass
 
 
-builtin_upscaler_classes = []
-forbidden_upscaler_classes = set()
-
-
-def list_builtin_upscalers():
-    builtin_upscaler_classes.clear()
-    builtin_upscaler_classes.extend(Upscaler.__subclasses__())
-
-def forbid_loaded_nonbuiltin_upscalers():
-    for cls in Upscaler.__subclasses__():
-        if cls not in builtin_upscaler_classes:
-            forbidden_upscaler_classes.add(cls)
-
-
 def load_upscalers():
     # We can only do this 'magic' method to dynamically load upscalers if they are referenced,
     # so we'll try to import any _model.py files before looking in __subclasses__
@@ -145,10 +131,17 @@ def load_upscalers():
 
     datas = []
     commandline_options = vars(shared.cmd_opts)
-    for cls in Upscaler.__subclasses__():
-        if cls in forbidden_upscaler_classes:
-            continue
 
+    # some of upscaler classes will not go away after reloading their modules, and we'll end
+    # up with two copies of those classes. The newest copy will always be the last in the list,
+    # so we go from end to beginning and ignore duplicates
+    used_classes = {}
+    for cls in reversed(Upscaler.__subclasses__()):
+        classname = str(cls)
+        if classname not in used_classes:
+            used_classes[classname] = cls
+
+    for cls in reversed(used_classes.values()):
         name = cls.__name__
         cmd_name = f"{name.lower().replace('upscaler', '')}_models_path"
         scaler = cls(commandline_options.get(cmd_name, None))
