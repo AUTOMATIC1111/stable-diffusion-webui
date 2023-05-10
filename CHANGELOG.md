@@ -13,6 +13,7 @@
  * add extended info for quicksettings setting and use multiselect input instead of a text field
 
 ### Minor:
+ * gradio bumped to 3.29.0
  * --subpath option for gradio for use with reverse proxy
  * linux/OSX: use existing virtualenv if already active (the VIRTUAL_ENV environment variable)
  * possible frontend optimization: do not apply localizations if there are none
