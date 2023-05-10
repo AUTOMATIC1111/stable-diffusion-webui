@@ -1,0 +1,10 @@
+target-version = "py310"
+
+select = [
+    "E999",  # syntax error
+]
+
+extend-exclude = [
+    "extensions",
+    "extensions-disabled",
+]
