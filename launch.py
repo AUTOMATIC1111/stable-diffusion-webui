@@ -5,6 +5,7 @@ import sys
 import importlib.util
 import platform
 import json
+from functools import lru_cache
 
 from modules import cmd_args
 from modules.paths_internal import script_path, extensions_dir
@@ -14,8 +15,6 @@ args, _ = cmd_args.parser.parse_known_args()
 python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
-stored_commit_hash = None
-stored_git_tag = None
 dir_repos = "repositories"
 
 # Whether to default to printing command output
@@ -56,32 +55,20 @@ Use --skip-python-version-check to suppress this warning.
 """)
 
 
+@lru_cache()
 def commit_hash():
-    global stored_commit_hash
-
-    if stored_commit_hash is not None:
-        return stored_commit_hash
-
     try:
-        stored_commit_hash = run(f"{git} rev-parse HEAD").strip()
+        return subprocess.check_output(f"{git} rev-parse HEAD", encoding='utf8').strip()
     except Exception:
-        stored_commit_hash = "<none>"
-
-    return stored_commit_hash
+        return "<none>"
 
 
+@lru_cache()
 def git_tag():
-    global stored_git_tag
-
-    if stored_git_tag is not None:
-        return stored_git_tag
-
     try:
-        stored_git_tag = run(f"{git} describe --tags").strip()
+        return subprocess.check_output(f"{git} describe --tags", encoding='utf8').strip()
     except Exception:
-        stored_git_tag = "<none>"
-
-    return stored_git_tag
+        return "<none>"
 
 
 def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live) -> str:
