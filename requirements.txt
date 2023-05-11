@@ -34,7 +34,6 @@ Pillow
 psutil
 pyyaml
 realesrgan
-requests
 resize-right
 rich
 safetensors
@@ -46,6 +45,7 @@ torchsde
 voluptuous
 yapf
 scikit-image
+requests==2.30.0
 tqdm==4.65.0
 accelerate==0.18.0
 opencv-python==4.7.0.72
@@ -60,4 +60,4 @@ transformers==4.26.1
 timm==0.6.13
 tomesd==0.1.2
 urllib3==1.26.15
-jaxlib==0.4.9
+jaxlib==0.4.7
