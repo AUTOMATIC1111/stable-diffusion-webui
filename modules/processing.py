@@ -1150,7 +1150,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.75, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, **kwargs):
+    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.75, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = None, mask_blur_x: int = 4, mask_blur_y: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, **kwargs):
         super().__init__(**kwargs)
 
         self.init_images = init_images
@@ -1161,7 +1161,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_mask = mask
         self.latent_mask = None
         self.mask_for_overlay = None
-        self.mask_blur = mask_blur
+        if mask_blur is not None:
+            mask_blur_x = mask_blur
+            mask_blur_y = mask_blur
+        self.mask_blur_x = mask_blur_x
+        self.mask_blur_y = mask_blur_y
         self.inpainting_fill = inpainting_fill
         self.inpaint_full_res = inpaint_full_res
         self.inpaint_full_res_padding = inpaint_full_res_padding
@@ -1183,8 +1187,17 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if self.inpainting_mask_invert:
                 image_mask = ImageOps.invert(image_mask)
 
-            if self.mask_blur > 0:
-                image_mask = image_mask.filter(ImageFilter.GaussianBlur(self.mask_blur))
+            if self.mask_blur_x > 0:
+                np_mask = np.array(image_mask)
+                kernel_size = 2 * int(4 * self.mask_blur_x + 0.5) + 1
+                np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), self.mask_blur_x)
+                image_mask = Image.fromarray(np_mask)
+
+            if self.mask_blur_y > 0:
+                np_mask = np.array(image_mask)
+                kernel_size = 2 * int(4 * self.mask_blur_y + 0.5) + 1
+                np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur_y)
+                image_mask = Image.fromarray(np_mask)
 
             if self.inpaint_full_res:
                 self.mask_for_overlay = image_mask
