@@ -127,11 +127,8 @@ def install(package, friendly: str = None, ignore: bool = False):
             log.error(f'Error running pip: {arg}')
             log.debug(f'Pip output: {txt}')
         return txt
-
-    if not installed(package, friendly):
+    if args.reinstall or not installed(package, friendly):
         pip(f"install --upgrade {package}")
-    elif args.reinstall:
-        pip(f"install --upgrade --force {package}")
 
 
 # execute git command

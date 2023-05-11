@@ -12,7 +12,6 @@ function setupExtraNetworksForTab(tabname) {
   tabs.appendChild(descriptInput);
   search.addEventListener('input', (evt) => {
     searchTerm = search.value.toLowerCase();
-    console.log('HERE', searchTerm)
     gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`).forEach((elem) => {
       text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent.toLowerCase()}`;
       elem.style.display = text.indexOf(searchTerm) == -1 ? 'none' : '';
@@ -63,7 +62,6 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
 }
 
 function refreshExtraNetworks(tabname) {
-  console.log('HERE2', tabname);
   gradioApp().querySelector(`#${tabname}_extra_networks textarea`)?.dispatchEvent(new Event('input'));
 }
 

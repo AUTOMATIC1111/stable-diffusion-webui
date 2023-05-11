@@ -4,7 +4,6 @@ aiohttp
 anyio
 appdirs
 astunparse
-basicsr
 bitsandbytes
 blendmodes
 clean-fid
@@ -45,6 +44,7 @@ torchsde
 voluptuous
 yapf
 scikit-image
+basicsr
 requests==2.30.0
 tqdm==4.65.0
 accelerate==0.18.0
