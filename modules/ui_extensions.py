@@ -200,12 +200,12 @@ def refresh_extensions_list_from_data(search_text, sort_column):
     code = """
         <table id="extensions">
             <colgroup>
-                <col style="width: 1%; background: var(--neutral-900)">
-                <col style="width: 20%; background: var(--neutral-900)">
+                <col style="width: 1%; background: var(--table-border-color)">
+                <col style="width: 20%; background: var(--table-border-color)">
                 <col style="width: 59%;">
-                <col style="width: 5%; background: var(--neutral-800)">
-                <col style="width: 10%; background: var(--neutral-800)">
-                <col style="width: 5%; background: var(--neutral-800)">
+                <col style="width: 5%; background: var(--panel-background-fill)">
+                <col style="width: 10%; background: var(--panel-background-fill)">
+                <col style="width: 5%; background: var(--panel-background-fill)">
             </colgroup>
             <thead>
             <tr>
@@ -280,7 +280,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         enabled_code = ''
         if installed:
             type_code = f"""<div class="type">{"SYSTEM" if ext['is_builtin'] else 'USER'}</div>"""
-            version_code = f"""<div class="version" style="background: {"var(--neutral-900)" if update_available else "var(--neutral-800)"}">{ext['version']}</div>"""
+            version_code = f"""<div class="version" style="background: {"--input-border-color-focus" if update_available else "inherit"}">{ext['version']}</div>"""
             enabled_code = f"""<input class="gr-check-radio gr-checkbox" name="enable_{html.escape(name)}" type="checkbox" {'checked="checked"' if enabled else ''}>"""
             if not ext['is_builtin']:
                 install_code = f"""<button onclick="uninstall_extension(this, '{html.escape(path)}')" class="lg secondary gradio-button custom-button">Uninstall</button>"""
