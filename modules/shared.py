@@ -741,7 +741,7 @@ def walk_files(path, allowed_extensions=None):
     if allowed_extensions is not None:
         allowed_extensions = set(allowed_extensions)
 
-    for root, _, files in os.walk(path):
+    for root, _, files in os.walk(path, followlinks=True):
         for filename in files:
             if allowed_extensions is not None:
                 _, ext = os.path.splitext(filename)
