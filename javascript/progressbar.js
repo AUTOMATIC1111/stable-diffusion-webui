@@ -47,7 +47,7 @@ function formatTime(secs){
 }
 
 function setTitle(progress){
-    var title = 'Stable Diffusion'
+    var title = opts.ui_window_title;
 
     if(opts.show_progress_in_title && progress){
         title = '[' + progress.trim() + '] ' + title;
