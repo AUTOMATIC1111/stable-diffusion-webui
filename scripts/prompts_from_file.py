@@ -103,8 +103,6 @@ def load_prompt_file(file):
         return None, "\n".join(lines), gr.update(lines=7)
 
 
-
-
 class Script(scripts.Script):
     def title(self):
         return "Prompts from file or textbox"

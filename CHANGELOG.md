@@ -40,6 +40,7 @@
  * Fix MPS on PyTorch 2.0.1, Intel Macs
  * make it so that custom context menu from contextMenu.js only disappears after user's click, ignoring non-user click events
  * prevent Reload UI button/link from reloading the page when it's not yet ready
+ * fix prompts from file script failing to read contents from a drag/drop file
 
 
 ## 1.1.1
