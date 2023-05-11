@@ -47,21 +47,21 @@ Extra networks provides a set of cards, each corresponding to a file with a part
 ## Textual Inversion
 A method to fine tune weights for a token in CLIP, the language model used by Stable Diffusion, from summer 2021. [Author's site](https://textual-inversion.github.io/). Long explanation: [Textual Inversion](Textual-Inversion)
 
-## Lora
-A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, published in 2021. [Paper](https://arxiv.org/abs/2106.09685). A good way to train Lora is to use [kohya-ss](https://github.com/kohya-ss/sd-scripts).
+## LoRA
+A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, published in 2021. [Paper](https://arxiv.org/abs/2106.09685). A good way to train LoRA is to use [kohya-ss](https://github.com/kohya-ss/sd-scripts).
 
-Support for Lora is built-in into the Web UI, but there is an [extension](https://github.com/kohya-ss/sd-webui-additional-networks) with original implementation by kohyaa-ss.
+Support for LoRA is built-in into the Web UI, but there is an [extension](https://github.com/kohya-ss/sd-webui-additional-networks) with original implementation by kohya-ss.
 
-Currently, Lora networks for Stable Diffusion 2.0+ models are not supported by Web UI.
+Currently, LoRA networks for Stable Diffusion 2.0+ models are not supported by Web UI.
 
-Lora is added to the prompt by putting the following text into any location: `<lora:filename:multiplier>`, where `filename` is the name of file with Lora on disk, excluding extension, and `multiplier` is a number, generally from 0 to 1, that lets you choose how strongly Lora will affect the output. Lora cannot be added to the negative prompt.
+LoRA is added to the prompt by putting the following text into any location: `<lora:filename:multiplier>`, where `filename` is the name of file with LoRA on disk, excluding extension, and `multiplier` is a number, generally from 0 to 1, that lets you choose how strongly LoRA will affect the output. LoRA cannot be added to the negative prompt.
 
-The text for adding Lora to the prompt, `<lora:filename:multiplier>`, is only used to enable Lora, and is erased from prompt afterwards, so you can't do tricks with prompt editing like `[<lora:one:1.0>|<lora:two:1.0>]`. A batch with multiple different prompts will only use the Lora from the first prompt.
+The text for adding LoRA to the prompt, `<lora:filename:multiplier>`, is only used to enable LoRA, and is erased from prompt afterwards, so you can't do tricks with prompt editing like `[<lora:one:1.0>|<lora:two:1.0>]`. A batch with multiple different prompts will only use the LoRA from the first prompt.
 
 ## Hypernetworks
-A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, generously donated to the world by our friends at Novel AI in autumn 2022. Works in the same way as Lora except for sharing weights for some layers. Multiplier can be used to choose how strongly the hypernetwork will affect the output.
+A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, generously donated to the world by our friends at Novel AI in autumn 2022. Works in the same way as LoRA except for sharing weights for some layers. Multiplier can be used to choose how strongly the hypernetwork will affect the output.
 
-Same rules for adding hypernetworks to the prompt apply as for Lora: `<hypernet:filename:multiplier>`.
+Same rules for adding hypernetworks to the prompt apply as for LoRA: `<hypernet:filename:multiplier>`.
 
 # Alt-Diffusion
 A model trained to accept inputs in different languages.
