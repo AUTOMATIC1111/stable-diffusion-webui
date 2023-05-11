@@ -17,6 +17,7 @@ jobs:
           cache: pip
           cache-dependency-path: |
             **/requirements*txt
+            launch.py
       - name: Run tests
         run: python launch.py --tests test --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
         env:
