@@ -652,7 +652,7 @@ You can change parameters for UI elements in `ui-config.json`, it is created aut
 Checkboxes that would usually expand a hidden section will not initially do so when set as UI config entries.
 
 # ESRGAN
-It's possible to use ESRGAN models on the Extras tab, as well as in SD upscale.
+It's possible to use ESRGAN models on the Extras tab, as well as in SD upscale. [Paper](https://arxiv.org/abs/1809.00219) here.
 
 To use ESRGAN models, put them into ESRGAN directory in the same location as webui.py.
 A file will be loaded as a model if it has .pth extension. Grab models from the [Model Database](https://upscale.wiki/wiki/Model_Database).
