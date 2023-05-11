@@ -155,8 +155,6 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
 
             alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
             mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
-            plt_show(alpha_mask, 'alpha_mask')
-            plt_show(mask, 'mask')
             image = image.convert("RGB")
         elif mode == 1:
             sketch = get_tmp_local_path(sketch)
@@ -380,14 +378,10 @@ class Img2ImgTaskHandler(TaskHandler):
         return [p for p in loras if p and os.path.isfile(p)]
 
     def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
+
         base_model_path = self._get_local_checkpoint(task)
-        progress = TaskProgress.new_prepare(task, 'model found')
-        progress.task_desc = f'model loaded:{os.path.basename(base_model_path)}, run i2i...'
-        progress.status = TaskStatus.Prepare
-        yield progress
         load_sd_model_weights(base_model_path)
-        progress.task_desc = f'model loaded:{os.path.basename(base_model_path)}, run i2i...'
-        progress.status = TaskStatus.Ready
+        progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run i2i...')
         yield progress
         # 参数有使用到sd_model因此在切换模型后再构造参数。
         process_args = self._build_img2img_arg(task)

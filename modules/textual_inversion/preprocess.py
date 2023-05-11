@@ -11,7 +11,8 @@ from modules.shared import opts, cmd_opts
 from modules.textual_inversion import autocrop
 
 
-def preprocess(id_task, process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip,
+def preprocess(id_task, process_src, process_dst, process_width, process_height, preprocess_txt_action,
+               process_keep_original_size, process_flip,
                process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2,
                process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3,
                process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None,
@@ -24,7 +25,8 @@ def preprocess(id_task, process_src, process_dst, process_width, process_height,
         if process_caption_deepbooru:
             deepbooru.model.start()
 
-        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip,
+        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action,
+                        process_keep_original_size, process_flip,
                         process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio,
                         process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight,
                         process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop,
@@ -159,8 +161,8 @@ def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, thr
     return wh and center_crop(image, *wh)
 
 
-def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_flip,
-                    process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
+def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size,
+                    process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
                     overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
@@ -195,7 +197,9 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         params.subindex = 0
         filename = os.path.join(src, imagefile)
         try:
-            img = Image.open(filename).convert("RGB")
+            img = Image.open(filename)
+            img = ImageOps.exif_transpose(img)
+            img = img.convert("RGB")
         except Exception:
             continue
 
@@ -259,6 +263,10 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
             else:
                 print(
                     f"skipped {img.width}x{img.height} image {filename} (can't find suitable size within error threshold)")
+            process_default_resize = False
+
+        if process_keep_original_size:
+            save_pic(img, index, params, existing_caption=existing_caption)
             process_default_resize = False
 
         if process_default_resize:

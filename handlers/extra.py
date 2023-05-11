@@ -96,10 +96,9 @@ class ExtraTaskHandler(DumpTaskHandler):
             yield from self.__exec_single_upscaler_task(task)
 
     def __exec_single_upscaler_task(self, task: Task):
-        p = TaskProgress.new_ready(task, f"ready exec upscaler, task:{task.id}")
+        p = TaskProgress.new_running(task, "up scale image...")
         yield p
         result = SingleUpscalerTask.exec_task(task)
-        p = TaskProgress.new_running(task, "up scale image...")
         p.task_progress = random.randint(30, 70)
         yield p
         if result:

@@ -109,7 +109,9 @@ class TaskDumper(Thread):
         self.queue.put(info)
         if not self._dump_now:
             # 如果dump_now 已经是True,就不要覆盖
-            self._dump_now = task_progress.task_progress > 0 or task_progress.completed
+            self._dump_now = task_progress.status == TaskStatus.Prepare \
+                             or task_progress.task_progress > 0 \
+                             or task_progress.completed
 
     @abc.abstractmethod
     def progress_to_info(self, task_progress: TaskProgress) -> DumpInfo:

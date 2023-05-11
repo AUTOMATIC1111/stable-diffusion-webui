@@ -211,7 +211,11 @@ def load_loras(names, multipliers=None):
         lora_on_disk = loras_on_disk[i]
         if lora_on_disk is not None:
             if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
-                lora = load_lora(name, lora_on_disk.filename)
+                try:
+                    lora = load_lora(name, lora_on_disk.filename)
+                except Exception as e:
+                    errors.display(e, f"loading Lora {lora_on_disk.filename}")
+                    continue
 
         if lora is None:
             print(f"Couldn't find Lora with name {name}")
