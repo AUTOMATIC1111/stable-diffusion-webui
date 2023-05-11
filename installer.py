@@ -20,10 +20,27 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-args = Dot({ 'debug': False, 'upgrade': False, 'skip_update': False, 'skip_extensions': False, 'skip_requirements': False, 'skip_git': False, 'reset': False, 'use_directml': False, 'use_ipex': False, 'experimental': False, 'test': False, 'tls_selfsign': False, 'reinstall': False })
 quick_allowed = True
 errors = 0
 opts = {}
+args = Dot({
+    'debug': False,
+    'reset': False,
+    'upgrade': False,
+    'skip_update': False,
+    'skip_extensions': False,
+    'skip_requirements': False,
+    'skip_git': False,
+    'skip_torch': False,
+    'use_directml': False,
+    'use_ipex': False,
+    'experimental': False,
+    'test': False,
+    'tls_selfsign': False,
+    'reinstall': False,
+    'version': False,
+    'ignore': False,
+})
 
 
 # setup console and file logging
@@ -220,36 +237,39 @@ def check_torch():
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if 'torch' in torch_command and not args.version:
         install(torch_command, 'torch torchvision torchaudio')
-    try:
-        import torch
-        log.info(f'Torch {torch.__version__}')
-        if args.use_ipex:
-            import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-            log.info(f'Torch backend: Intel OneAPI {torch.__version__}')
-            log.info(f'Torch detected GPU: {torch.xpu.get_device_name("xpu")} VRAM {round(torch.xpu.get_device_properties("xpu").total_memory / 1024 / 1024)}')
-        elif torch.cuda.is_available():
-            if torch.version.cuda:
-                log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else "N/A"}')
-            elif torch.version.hip:
-                log.info(f'Torch backend: AMD ROCm HIP {torch.version.hip}')
+    if args.skip_torch:
+        log.info('Skipping Torch tests')
+    else:
+        try:
+            import torch
+            log.info(f'Torch {torch.__version__}')
+            if args.use_ipex:
+                import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+                log.info(f'Torch backend: Intel OneAPI {torch.__version__}')
+                log.info(f'Torch detected GPU: {torch.xpu.get_device_name("xpu")} VRAM {round(torch.xpu.get_device_properties("xpu").total_memory / 1024 / 1024)}')
+            elif torch.cuda.is_available():
+                if torch.version.cuda:
+                    log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else "N/A"}')
+                elif torch.version.hip:
+                    log.info(f'Torch backend: AMD ROCm HIP {torch.version.hip}')
+                else:
+                    log.warning('Unknown Torch backend')
+                for device in [torch.cuda.device(i) for i in range(torch.cuda.device_count())]:
+                    log.info(f'Torch detected GPU: {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
             else:
-                log.warning('Unknown Torch backend')
-            for device in [torch.cuda.device(i) for i in range(torch.cuda.device_count())]:
-                log.info(f'Torch detected GPU: {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
-        else:
-            try:
-                import torch_directml # pylint: disable=import-error
-                import pkg_resources
-                version = pkg_resources.get_distribution("torch-directml")
-                log.info(f'Torch backend: DirectML ({version})')
-                for i in range(0, torch_directml.device_count()):
-                    log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
-            except:
-                log.warning("Torch reports CUDA not available")
-    except Exception as e:
-        log.error(f'Could not load torch: {e}')
-        if not args.ignore:
-            exit(1)
+                try:
+                    import torch_directml # pylint: disable=import-error
+                    import pkg_resources
+                    version = pkg_resources.get_distribution("torch-directml")
+                    log.info(f'Torch backend: DirectML ({version})')
+                    for i in range(0, torch_directml.device_count()):
+                        log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
+                except:
+                    log.warning("Torch reports CUDA not available")
+        except Exception as e:
+            log.error(f'Could not load torch: {e}')
+            if not args.ignore:
+                exit(1)
     if args.version:
         return
     try:
@@ -549,6 +569,7 @@ def add_args():
     group.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     group.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     group.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
+    group.add_argument('--skip-torch', default = False, action='store_true', help = "Skips running Torch checks, default: %(default)s")
     group.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
     group.add_argument('--reinstall', default = False, action='store_true', help = "Force reinstallation of all requirements, default: %(default)s")
     group.add_argument('--test', default = False, action='store_true', help = "Run test only and exit")
