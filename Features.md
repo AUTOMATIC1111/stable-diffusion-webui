@@ -567,7 +567,7 @@ unconditional denoising in the same batch.
 This implementation of optimization does not require any modification to the original Stable Diffusion code.
 
 # Face restoration
-Lets you improve faces in pictures using either GFPGAN or CodeFormer. There is a checkbox in every tab to use face restoration,
+Lets you improve faces in pictures using either [GFPGAN](https://github.com/TencentARC/GFPGAN) or [CodeFormer](https://github.com/sczhou/CodeFormer). There is a checkbox in every tab to use face restoration,
 and also a separate tab that just allows you to use face restoration on any picture, with a slider that controls how visible
 the effect is. You can choose between the two methods in settings.
 
