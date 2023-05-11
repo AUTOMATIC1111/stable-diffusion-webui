@@ -88,32 +88,36 @@ def git_tag():
     return stored_git_tag
 
 
-def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live):
+def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live) -> str:
     if desc is not None:
         print(desc)
 
-    if live:
-        result = subprocess.run(command, shell=True, env=os.environ if custom_env is None else custom_env)
-        if result.returncode != 0:
-            raise RuntimeError(f"""{errdesc or 'Error running command'}.
-Command: {command}
-Error code: {result.returncode}""")
+    run_kwargs = {
+        "args": command,
+        "shell": True,
+        "env": os.environ if custom_env is None else custom_env,
+        "encoding": 'utf8',
+        "errors": 'ignore',
+    }
 
-        return ""
+    if not live:
+        run_kwargs["stdout"] = run_kwargs["stderr"] = subprocess.PIPE
 
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ if custom_env is None else custom_env)
+    result = subprocess.run(**run_kwargs)
 
     if result.returncode != 0:
+        error_bits = [
+            f"{errdesc or 'Error running command'}.",
+            f"Command: {command}",
+            f"Error code: {result.returncode}",
+        ]
+        if result.stdout:
+            error_bits.append(f"stdout: {result.stdout}")
+        if result.stderr:
+            error_bits.append(f"stderr: {result.stderr}")
+        raise RuntimeError("\n".join(error_bits))
 
-        message = f"""{errdesc or 'Error running command'}.
-Command: {command}
-Error code: {result.returncode}
-stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'}
-stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'}
-"""
-        raise RuntimeError(message)
-
-    return result.stdout.decode(encoding="utf8", errors="ignore")
+    return (result.stdout or "")
 
 
 def check_run(command):
