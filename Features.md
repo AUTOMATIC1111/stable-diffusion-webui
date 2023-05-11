@@ -40,7 +40,7 @@ Extra networks provides a set of cards, each corresponding to a file with a part
 | Extra network     | Directory     | File types                        | How to use in prompt     |
 |-------------------|---------------|-----------------------------------|--------------------------|
 | Textual Inversion | `embeddings`  | `*.pt`, images                    | embedding's filename     |
-| Lora              | `models/Lora` | `*.pt`, `*.safetensors`           | `<lora:filename:multiplier>` |
+| LoRA              | `models/Lora` | `*.pt`, `*.safetensors`           | `<lora:filename:multiplier>` |
 | Hypernetworks     | `models/hypernetworks`     | `*.pt`, `*.ckpt`, `*.safetensors` | `<hypernet:filename:multiplier>`                         |
 
 
