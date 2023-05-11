@@ -88,10 +88,9 @@ def refresh_vae_list():
 
 
 def find_vae_near_checkpoint(checkpoint_file):
-    checkpoint_path = os.path.basename(checkpoint_file).split('.', 1)[0]
+    checkpoint_path = os.path.basename(checkpoint_file).rsplit('.', 1)[0]
     for vae_file in vae_dict.values():
-        vae_path = os.path.basename(vae_file).split('.', 1)[0]
-        if vae_path == checkpoint_path:
+        if os.path.basename(vae_file).startswith(checkpoint_path):
             return vae_file
 
     return None
