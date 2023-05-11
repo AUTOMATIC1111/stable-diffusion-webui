@@ -103,11 +103,6 @@ def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_
     return (result.stdout or "")
 
 
-def check_run(command):
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    return result.returncode == 0
-
-
 def is_installed(package):
     try:
         spec = importlib.util.find_spec(package)
@@ -121,10 +116,6 @@ def repo_dir(name):
     return os.path.join(script_path, dir_repos, name)
 
 
-def run_python(code, desc=None, errdesc=None):
-    return run(f'"{python}" -c "{code}"', desc, errdesc)
-
-
 def run_pip(command, desc=None, live=default_command_live):
     if args.skip_install:
         return
@@ -133,8 +124,9 @@ def run_pip(command, desc=None, live=default_command_live):
     return run(f'"{python}" -m pip {command} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}", live=live)
 
 
-def check_run_python(code):
-    return check_run(f'"{python}" -c "{code}"')
+def check_run_python(code: str) -> bool:
+    result = subprocess.run([python, "-c", code], capture_output=True, shell=True)
+    return result.returncode == 0
 
 
 def git_clone(url, dir, name, commithash=None):
@@ -261,8 +253,11 @@ def prepare_environment():
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
 
-    if not args.skip_torch_cuda_test:
-        run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
+    if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
+        raise RuntimeError(
+            'Torch is not able to use GPU; '
+            'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
+        )
 
     if not is_installed("gfpgan"):
         run_pip(f"install {gfpgan_package}", "gfpgan")
