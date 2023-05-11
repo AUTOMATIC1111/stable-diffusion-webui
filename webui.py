@@ -366,7 +366,7 @@ def run_worker():
 
     shared.demo = modules.ui.create_ui()
 
-    run_executor(shared.sd_model_recorder)
+    run_executor(shared.sd_model_recorder, train_only=cmd_opts.train_only)
 
 
 if __name__ == "__main__":

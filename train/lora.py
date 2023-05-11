@@ -9,7 +9,7 @@ import os.path
 import typing
 
 from worker.task import Task, TaskProgress
-from train.sd_scripts.train_network import train, setup_parser
+from sd_scripts.train_network_ly import train, setup_parser
 from train.typex import TrainLoraTask
 from train.utils import upload_files
 
@@ -50,7 +50,7 @@ def get_train_models(train_lora_task: TrainLoraTask):
 
 def exec_train_lora_task(task: Task, callback: typing.Callable = None):
     train_lora_task = TrainLoraTask(task)
-    p = TaskProgress.new_prepare(task, 'ready')
+    p = TaskProgress.new_prepare(task, 'prepare')
     yield p
     args = train_lora_task.build_command_args()
     p = TaskProgress.new_ready(task, 'ready')

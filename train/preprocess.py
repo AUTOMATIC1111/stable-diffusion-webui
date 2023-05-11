@@ -22,18 +22,18 @@ def exec_preprocess_task(job: Task):
     tmp_zip = get_tmp_local_path(task.zip)
 
     if os.path.isfile(tmp_zip):
-        target_dir = os.path.join(Tmp, task.id)
+        target_dir = os.path.join(Tmp, job.id)
         os.makedirs(target_dir, exist_ok=True)
         zip_uncompress(tmp_zip, target_dir)
-        p = TaskProgress.new_ready(task, 'ready preprocess')
+        p = TaskProgress.new_ready(job, 'ready preprocess')
         yield p
-        processed_dir = os.path.join(Tmp, task.id + '-preprocessed')
+        processed_dir = os.path.join(Tmp, job.id + '-preprocessed')
         params = copy.copy(task.params)
 
         def progress_callback(progress):
             if progress > 95:
                 return
-            p = TaskProgress.new_running(task, 'run preprocess', progress)
+            p = TaskProgress.new_running(job, 'run preprocess', progress)
             dumper.dump_task_progress(p)
 
         params.update(
@@ -41,11 +41,15 @@ def exec_preprocess_task(job: Task):
                 'progress_cb': progress_callback
             }
         )
-        preprocess_sub_dir(
-            target_dir,
-            processed_dir,
-            **params
-        )
+
+        if not task.ignore:
+            preprocess_sub_dir(
+                target_dir,
+                processed_dir,
+                **params
+            )
+        else:
+            processed_dir = target_dir
 
         images = build_thumbnail_tag(processed_dir)
         new_zip = build_zip(processed_dir)
@@ -54,16 +58,16 @@ def exec_preprocess_task(job: Task):
             'images': images,
             'processed_key': keys[0] if keys else None
         }
-        p = TaskProgress.new_finish(task, task_result)
+        p = TaskProgress.new_finish(job, task_result)
         yield p
 
     else:
-        p = TaskProgress.new_failed(task, f'failed preprocess: cannot found zip:{task.zip}')
+        p = TaskProgress.new_failed(job, f'failed preprocess: cannot found zip:{task.zip}')
         yield p
 
 
 def build_zip(target_dir):
-    dirname = os.path.dirname(target_dir)
+    dirname = os.path.dirname(Tmp)
     filename = os.path.basename(target_dir) + '.zip'
     dst = os.path.join(dirname, filename)
 

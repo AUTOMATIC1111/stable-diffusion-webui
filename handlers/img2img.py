@@ -155,8 +155,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
 
             alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
             mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
-            # plt_show(alpha_mask, 'alpha_mask')
-            # plt_show(mask, 'mask')
+            plt_show(alpha_mask, 'alpha_mask')
+            plt_show(mask, 'mask')
             image = image.convert("RGB")
         elif mode == 1:
             sketch = get_tmp_local_path(sketch)
@@ -207,19 +207,20 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             cfg_scale=cfg_scale, # 7
             width=width,
             height=height,
-            restore_faces=restore_faces, # f
-            tiling=tiling,  # f
+            restore_faces=restore_faces,
+            tiling=tiling,
             init_images=[image],
             mask=mask,
             mask_blur=mask_blur,
-            inpainting_fill=inpainting_fill, # 1
-            resize_mode=resize_mode, # 0
-            denoising_strength=denoising_strength, # 0.75
+            inpainting_fill=inpainting_fill,
+            resize_mode=resize_mode,
+            denoising_strength=denoising_strength,
             image_cfg_scale=image_cfg_scale, # 1.5
             inpaint_full_res=inpaint_full_res, # 0
             inpaint_full_res_padding=inpaint_full_res_padding, # 32
             inpainting_mask_invert=inpainting_mask_invert, # 0
             override_settings=override_settings,
+            do_not_save_samples=False
         )
         self.scripts = i2i_script_runner
         self.script_name = select_script_name

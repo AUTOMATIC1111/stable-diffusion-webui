@@ -19,8 +19,8 @@ from tools.model_hist import CkptLoadRecorder
 class TaskExecutor(Thread):
 
     def __init__(self, ckpt_recorder: CkptLoadRecorder, timeout=3600, group=None, target=None, name=None,
-                 args=(), kwargs=None, *, daemon=None):
-        self.receiver = TaskReceiver(ckpt_recorder)
+                 args=(), kwargs=None, *, daemon=None, train_only=False):
+        self.receiver = TaskReceiver(ckpt_recorder, train_only)
         self.recorder = ckpt_recorder
         self._handlers = {}
         self.timeout = timeout

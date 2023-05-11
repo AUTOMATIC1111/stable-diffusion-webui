@@ -21,8 +21,10 @@ except:
     from collections import Iterable  # <=py3.9
 
 TaskQueuePrefix = "task_"
+OtherTaskQueueToken = 'others-'
+TrainTaskQueueToken = 'train'
 UpscaleCoeff = 100 * 1000
-TaskScoreRange = (0, 100*UpscaleCoeff)
+TaskScoreRange = (0, 100 * UpscaleCoeff)
 TaskTimeout = 24 * 3600
 Tmp = 'tmp'
 
@@ -57,10 +59,11 @@ def clean_tmp(expired_days=1):
 
 class TaskReceiver:
 
-    def __init__(self, recoder: CkptLoadRecorder):
+    def __init__(self, recoder: CkptLoadRecorder, train_only: bool = False):
         self.model_recoder = recoder
         self.redis_pool = RedisPool()
         self.clean_tmp_time = 0
+        self.train_only = train_only
 
     def _clean_tmp_files(self):
         now = time.time()
@@ -73,27 +76,41 @@ class TaskReceiver:
             return self.model_recoder.history()
 
     def _search_history_ckpt_task(self):
-        model_hash_list = self._loaded_models()
-        if model_hash_list:
-            return self._get_queue_task(*model_hash_list)
+        if not self.train_only:
+            model_hash_list = self._loaded_models()
+            if model_hash_list:
+                return self._get_queue_task(*model_hash_list)
 
     def _search_other_ckpt(self):
-        model_hash_list = self._loaded_models()
+        if not self.train_only:
+            model_hash_list = self._loaded_models()
 
-        def sort_keys(x):
-            x = str(x) if not isinstance(x, bytes) else x.decode('utf8')
-            if x in model_hash_list:
-                return -1
-            elif 'others-' in x:
-                return 0
-            return 1
+            def sort_keys(x):
+                x = str(x) if not isinstance(x, bytes) else x.decode('utf8')
+                if x in model_hash_list:
+                    return -1
+                elif OtherTaskQueueToken in x:
+                    return 0
+                return 1
 
-        keys = self._search_queue_names()
-        sorted_keys = sorted(keys, key=sort_keys)
-        for queue_name in sorted_keys:
-            task = self._extract_queue_task(queue_name)
-            if task:
-                return task
+            keys = self._search_queue_names()
+            sorted_keys = sorted(keys, key=sort_keys)
+            for queue_name in sorted_keys:
+                if TrainTaskQueueToken in queue_name:
+                    continue
+
+                task = self._extract_queue_task(queue_name)
+                if task:
+                    return task
+
+    def _search_train_task(self):
+        if self.train_only:
+            keys = self._search_queue_names()
+            for queue_name in keys:
+                if TrainTaskQueueToken in queue_name:
+                    task = self._extract_queue_task(queue_name)
+                    if task:
+                        return task
 
     def search_task_with_id(self, rds, task_id) -> typing.Any:
         # redis > 6.2.0
@@ -143,17 +160,25 @@ class TaskReceiver:
     def _search_queue_names(self):
         rds = self.redis_pool.get_connection()
         keys = rds.keys(TaskQueuePrefix + '*')
-        return keys
+        return [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
+
+    def _search_norm_task(self):
+        t = self._search_history_ckpt_task()
+        if t:
+            return t
+        t = self._search_other_ckpt()
+        if t:
+            return t
 
     def get_one_task(self, block: bool = True, sleep_time: float = 4) -> typing.Optional[Task]:
         while 1:
             st = time.time()
-            t = self._search_history_ckpt_task()
-            if t:
-                return t
-            t = self._search_other_ckpt()
-            if t:
-                return t
+            if self.train_only:
+                task = self._search_train_task()
+            else:
+                task = self._search_norm_task()
+            if task:
+                return task
             if not block:
                 return None
             wait = sleep_time - time.time() + st
@@ -164,12 +189,12 @@ class TaskReceiver:
         while 1:
             try:
                 st = time.time()
-                t = self._search_history_ckpt_task()
-                if t:
-                    yield t
-                t = self._search_other_ckpt()
-                if t:
-                    yield t
+                if self.train_only:
+                    task = self._search_train_task()
+                else:
+                    task = self._search_norm_task()
+                if task:
+                    yield task
                 wait = sleep_time - time.time() + st
                 if wait > 0:
                     self._clean_tmp_files()

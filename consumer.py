@@ -10,9 +10,9 @@ from worker.executor import TaskExecutor, TaskHandler
 from handlers import get_task_handlers
 
 
-def run_executor(ckpt_recorder: CkptLoadRecorder, *handlers: TaskHandler):
+def run_executor(ckpt_recorder: CkptLoadRecorder, *handlers: TaskHandler, train_only=False):
     handlers = handlers or get_task_handlers()
-    executor = TaskExecutor(ckpt_recorder)
+    executor = TaskExecutor(ckpt_recorder, train_only=train_only)
     executor.add_handler(*handlers)
     executor.start()
     return executor

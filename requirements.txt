@@ -37,7 +37,7 @@ redis
 pymysql
 aiofiles
 aiohttp
-altair>=4.2.0
+altair>=4.2.2
 fastapi
 ffmpy
 gradio_client>=0.0.4

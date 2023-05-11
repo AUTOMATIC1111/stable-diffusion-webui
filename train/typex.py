@@ -23,6 +23,10 @@ class PreprocessTask(UserDict):
         return self.get('zip_key')
 
     @property
+    def ignore(self):
+        return self.get('ignore')
+
+    @property
     def params(self):
         interrogate_model = self['interrogate_model']
         process_caption_deepbooru = interrogate_model == 'deepbooru'
@@ -39,16 +43,16 @@ class PreprocessTask(UserDict):
             'overlap_ratio': self.get('overlap_ratio', 0.2),
             'process_focal_crop': self.get('process_focal_crop', False),
             'process_focal_crop_face_weight': self.get('process_focal_crop_face_weight', 0.9),
-            'process_focal_crop_entropy_weight': self.get('process_focal_crop_entropy_weight', 0.3),
+            'process_focal_crop_entropy_weight': self.get('process_focal_crop_entropy_weight', 0.15),
             'process_focal_crop_edges_weight': self.get('process_focal_crop_edges_weight', 0.5),
             'process_focal_crop_debug': self.get('process_focal_crop_debug', False),
-            'process_multicrop': self.get('process_multicrop'),
-            'process_multicrop_mindim': self.get('process_multicrop_mindim'),
-            'process_multicrop_maxdim': self.get('process_multicrop_maxdim'),
-            'process_multicrop_minarea': self.get('process_multicrop_minarea'),
-            'process_multicrop_maxarea': self.get('process_multicrop_maxarea'),
-            'process_multicrop_objective': self.get('process_multicrop_objective'),
-            'process_multicrop_threshold': self.get('process_multicrop_threshold'),
+            'process_multicrop': self.get('process_multicrop', False),
+            'process_multicrop_mindim': self.get('process_multicrop_mindim', 384),
+            'process_multicrop_maxdim': self.get('process_multicrop_maxdim', 768),
+            'process_multicrop_minarea': self.get('process_multicrop_minarea', 4096),
+            'process_multicrop_maxarea': self.get('process_multicrop_maxarea', 409600),
+            'process_multicrop_objective': self.get('process_multicrop_objective', "Maximize area"),
+            'process_multicrop_threshold': self.get('process_multicrop_threshold', 0.1),
         }
 
     def __init__(self, task: Task):
@@ -113,7 +117,6 @@ class TrainLoraNetConfig(SerializationObj):
         self.unet_lr = task.value('unet_lr', default=0.0001)
         self.text_encoder_lr = task.value('text_encoder_lr', default=0.0001)
         self.learning_rate = task.value('learning_rate', default=0.0001)
-        self.seed = task.value('seed', default=None)
         self.lr_scheduler = task.value('lr_scheduler', default='constant')
         self.lr_scheduler_num_cycles = task.value('lr_scheduler_num_cycles', default=1)
         train_module = task.value('train_module', default='')
@@ -226,9 +229,11 @@ class TrainLoraTask(UserDict):
         self.rewrite_caption(image_dir)
         toml = self.create_toml(image_dir)
         params = self.train_param()
+        base_model = get_tmp_local_path(params.base.base_model)
+        base_lora = get_tmp_local_path(params.base.base_lora)
 
         args = [
-            f'--pretrained_model_name_or_path="{params.base.base_model}"',
+            f'--pretrained_model_name_or_path="{base_model}"',
             f'--dataset_config="{toml}"',
             f'--output_dir="{self.output_dir}"',
             f'--output_name={params.base.model_name}',
@@ -248,8 +253,9 @@ class TrainLoraTask(UserDict):
             f'--optimizer_type="{params.net.optimizer_type}"',
             f'--network_alpha={params.net.network_alpha}',
             f'--lr_scheduler_num_cycles={params.net.lr_scheduler_num_cycles}',
-            f'--seed={params.net.seed}',
+            f'--seed={params.train.seed}',
             f'--clip_skip={params.train.clip_skip}',
+            f'--network_weights={base_lora}'
         ]
 
         if params.net.network_train_text_encoder_only:

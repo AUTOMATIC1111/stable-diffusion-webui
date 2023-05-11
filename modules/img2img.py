@@ -103,8 +103,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         blur = ImageFilter.GaussianBlur(mask_blur)
         image = Image.composite(image.filter(blur), orig, mask.filter(blur))
         image = image.convert("RGB")
-        plt_show(np.array(mask), 'mask')
-        plt_show(np.array(image), 'image')
+        # plt_show(np.array(mask), 'mask')
+        # plt_show(np.array(image), 'image')
     elif mode == 4:  # inpaint upload mask
         image = init_img_inpaint
         mask = init_mask_inpaint

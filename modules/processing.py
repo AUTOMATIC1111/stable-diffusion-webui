@@ -601,8 +601,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     # 加载自定义的embedding
     if sd_models.user_embedding_dirs:
         model_hijack.embedding_db.clear_embedding_dirs()
-        for p in sd_models.user_embedding_dirs:
-            model_hijack.embedding_db.add_embedding_dir(p)
+        for embedding_dir in sd_models.user_embedding_dirs:
+            model_hijack.embedding_db.add_embedding_dir(embedding_dir)
         sd_models.user_embedding_dirs.clear()
 
     if sd_models.user_embedding_dirs or (os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings):
