@@ -164,7 +164,7 @@ class StableDiffusionProcessing:
         self.all_subseeds = None
         self.iteration = 0
         self.is_hr_pass = False
-        
+
 
     @property
     def sd_model(self):

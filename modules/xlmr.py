@@ -28,7 +28,7 @@ class BertSeriesModelWithTransformation(BertPreTrainedModel):
     config_class = BertSeriesConfig
 
     def __init__(self, config=None, **kargs):
-        # modify initialization for autoloading 
+        # modify initialization for autoloading
         if config is None:
             config = XLMRobertaConfig()
             config.attention_probs_dropout_prob= 0.1
@@ -74,7 +74,7 @@ class BertSeriesModelWithTransformation(BertPreTrainedModel):
         text["attention_mask"] = torch.tensor(
             text['attention_mask']).to(device)
         features = self(**text)
-        return features['projection_state'] 
+        return features['projection_state']
 
     def forward(
         self,

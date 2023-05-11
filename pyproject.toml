@@ -6,6 +6,7 @@ extend-select = [
   "B",
   "C",
   "I",
+  "W",
 ]
 
 exclude = [
@@ -20,7 +21,7 @@ ignore = [
 	"I001", # Import block is un-sorted or un-formatted
 	"C901", # Function is too complex
 	"C408", # Rewrite as a literal
-
+	"W605", # invalid escape sequence, messes with some docstrings
 ]
 
 [tool.ruff.per-file-ignores]
