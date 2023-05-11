@@ -97,11 +97,12 @@ def cmdargs(line):
 
 def load_prompt_file(file):
     if file is None:
-        lines = []
+        return None, gr.update(), gr.update(lines=7)
     else:
         lines = [x.strip() for x in file.decode('utf8', errors='ignore').split("\n")]
+        return None, "\n".join(lines), gr.update(lines=7)
 
-    return None, "\n".join(lines), gr.update(lines=7)
+
 
 
 class Script(scripts.Script):
@@ -115,12 +116,12 @@ class Script(scripts.Script):
         prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1, elem_id=self.elem_id("prompt_txt"))
         file = gr.File(label="Upload prompt inputs", type='binary', elem_id=self.elem_id("file"))
 
-        file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt])
+        file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt], show_progress=False)
 
         # We start at one line. When the text changes, we jump to seven lines, or two lines if no \n.
         # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
         # be unclear to the user that shift-enter is needed.
-        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt])
+        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt], show_progress=False)
         return [checkbox_iterate, checkbox_iterate_batch, prompt_txt]
 
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str):
