@@ -356,10 +356,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     current_checkpoint_info = None
     if shared.sd_model:
         current_checkpoint_info = shared.sd_model.sd_checkpoint_info
-        sd_hijack.model_hijack.undo_hijack(shared.sd_model)
-        shared.sd_model = None
-        devices.torch_gc()
-    shared.log.debug(f'Model unloaded: {memory_stats()}')
+        unload_model_weights()
     do_inpainting_hijack()
     devices.set_cuda_params()
     if already_loaded_state_dict is not None:
@@ -374,18 +371,19 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
             load_model(current_checkpoint_info, None)
         return
     shared.log.debug(f'Model dict loaded: {memory_stats()}')
-    clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
     sd_config = OmegaConf.load(checkpoint_config)
     repair_config(sd_config)
     timer.record("config")
     shared.log.debug(f'Model config loaded: {memory_stats()}')
-    shared.log.info(f"Creating model from config: {checkpoint_config}")
     sd_model = None
+    shared.log.debug(f'Model config: {sd_config.model.get("params", dict())}')
     try:
+        clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
         with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
             sd_model = instantiate_from_config(sd_config.model)
     except Exception:
         sd_model = instantiate_from_config(sd_config.model)
+    shared.log.info(f"Model created from config: {checkpoint_config}")
     sd_model.used_config = checkpoint_config
     timer.record("create")
     load_model_weights(sd_model, checkpoint_info, state_dict, timer)
@@ -409,6 +407,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     script_callbacks.model_loaded_callback(sd_model)
     timer.record("callbacks")
     shared.log.info(f"Model loaded in {timer.summary()}")
+    current_checkpoint_info = None
     devices.torch_gc()
     shared.log.debug(f'Model load finished: {memory_stats()}')
 
@@ -424,10 +423,6 @@ def reload_model_weights(sd_model=None, info=None):
     checkpoint_info = info or select_checkpoint()
     if not sd_model:
         sd_model = shared.sd_model
-    if shared.opts.model_reuse_dict and sd_model is not None:
-        shared.log.info('Reusing previous model dictionary')
-    else:
-        sd_model = None
     if sd_model is None:  # previous model load failed
         current_checkpoint_info = None
     else:
@@ -439,6 +434,12 @@ def reload_model_weights(sd_model=None, info=None):
         else:
             sd_model.to(devices.cpu)
         sd_hijack.model_hijack.undo_hijack(sd_model)
+    if shared.opts.model_reuse_dict and sd_model is not None:
+        shared.log.info('Reusing previous model dictionary')
+    else:
+        unload_model_weights()
+        sd_model = None
+        shared.sd_model = None
     timer = Timer()
     state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
@@ -466,7 +467,6 @@ def reload_model_weights(sd_model=None, info=None):
 
 def unload_model_weights(sd_model=None, _info=None):
     from modules import sd_hijack
-    timer = Timer()
     if shared.sd_model:
         # shared.sd_model.cond_stage_model.to(devices.cpu)
         # shared.sd_model.first_stage_model.to(devices.cpu)
@@ -474,8 +474,8 @@ def unload_model_weights(sd_model=None, _info=None):
         sd_hijack.model_hijack.undo_hijack(shared.sd_model)
         shared.sd_model = None
         sd_model = None
-        devices.torch_gc()
-    shared.log.info(f"Unloaded weights {timer.summary()}")
+    devices.torch_gc()
+    shared.log.debug(f'Model weights unloaded: {memory_stats()}')
     return sd_model
 
 

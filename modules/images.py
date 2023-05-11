@@ -552,32 +552,36 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
     else:
         exifinfo_data = params.pnginfo.get(pnginfo_section_name, '')
 
-    def atomically_save_image(image_to_save: Image, filename_without_extension: str, extension: str):
-        # save image with .tmp extension to avoid race condition when another process detects new image in the directory
-        fn = filename_without_extension + extension
+    def atomically_save_image(image: Image, basename: str, extension: str):
+        Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
+        mp = round(image.width * image.height / 1000000)
+        if mp > shared.opts.img_max_size_mp:
+            shared.log.warning(f'Image size: {image.size} excedes {shared.opts.img_max_size_mp} MPixels')
+        fn = basename + extension
         image_format = Image.registered_extensions()[extension]
-        log.debug(f'Saving image: {image_format} {fn}')
+        log.debug(f'Saving image: {image_format} {fn} {image.size}')
+
         if image_format == 'PNG':
             pnginfo_data = PngImagePlugin.PngInfo()
             for k, v in params.pnginfo.items():
                 pnginfo_data.add_text(k, str(v))
-            image_to_save.save(fn, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
+            image.save(fn, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
         elif image_format == 'JPEG':
-            if image_to_save.mode == 'RGBA':
+            if image.mode == 'RGBA':
                 shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
-                image_to_save = image_to_save.convert("RGB")
-            elif image_to_save.mode == 'I;16':
-                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("L")
+                image = image.convert("RGB")
+            elif image.mode == 'I;16':
+                image = image.point(lambda p: p * 0.0038910505836576).convert("L")
             exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
-            image_to_save.save(fn, format=image_format, quality=opts.jpeg_quality, exif=exif_bytes)
+            image.save(fn, format=image_format, quality=opts.jpeg_quality, exif=exif_bytes)
         elif image_format == 'WEBP':
-            if image_to_save.mode == 'I;16':
-                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("RGB")
+            if image.mode == 'I;16':
+                image = image.point(lambda p: p * 0.0038910505836576).convert("RGB")
             exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
-            image_to_save.save(fn, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless, exif=exif_bytes)
+            image.save(fn, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless, exif=exif_bytes)
         else:
             shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
-            image_to_save.save(fn, format=image_format, quality=opts.jpeg_quality)
+            image.save(fn, format=image_format, quality=opts.jpeg_quality)
 
     filename, extension = os.path.splitext(params.filename)
     if hasattr(os, 'statvfs'):
@@ -660,31 +664,25 @@ Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}
 
 def image_data(data):
     import gradio as gr
-
     try:
         image = Image.open(io.BytesIO(data))
         textinfo, _ = read_info_from_image(image)
         return textinfo, None
     except Exception:
         pass
-
     try:
         text = data.decode('utf8')
         assert len(text) < 10000
         return text, None
-
     except Exception:
         pass
-
     return gr.update(), None
 
 
 def flatten(img, bgcolor):
     """replaces transparency with bgcolor (example: "#ffffff"), returning an RGB mode image with no transparency"""
-
     if img.mode == "RGBA":
         background = Image.new('RGBA', img.size, bgcolor)
         background.paste(img, mask=img)
         img = background
-
     return img.convert('RGB')

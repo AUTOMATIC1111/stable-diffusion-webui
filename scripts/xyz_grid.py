@@ -534,7 +534,9 @@ class Script(scripts.Script):
         zs = process_axis(z_opt, z_values, z_values_dropdown)
         Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
         grid_mp = round(len(xs) * len(ys) * len(zs) * p.width * p.height / 1000000)
-        assert grid_mp < shared.opts.img_max_size_mp, f'Error: Resulting grid would be too large ({grid_mp} MPixels) (max configured size is {shared.opts.img_max_size_mp} MPixels)'
+        if grid_mp > shared.opts.img_max_size_mp:
+            shared.log.warning(f'Grid size: {grid_mp} excedes {shared.opts.img_max_size_mp} MPixels')
+            return
 
         def fix_axis_seeds(axis_opt, axis_list):
             if axis_opt.label in ['Seed', 'Var. seed']:
