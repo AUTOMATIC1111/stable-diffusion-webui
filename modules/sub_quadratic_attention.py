@@ -206,7 +206,7 @@ def efficient_dot_product_attention(
     # to the slices will affect the original tensor.
     # if output of compute_query_chunk_attn function has same number of
     # dimensions as input query tensor, we initialize tensor like this:
-    num_query_chunks = int(np.ceil(q_tokens / query_chunk_size))
+    num_query_chunks = int(math.ceil(q_tokens / query_chunk_size))
     query_shape = get_query_chunk(0).shape
     res_shape = (query_shape[0], query_shape[1] * num_query_chunks, *query_shape[2:])
     res_dtype = get_query_chunk(0).dtype
