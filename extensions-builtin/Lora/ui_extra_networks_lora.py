@@ -23,6 +23,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 "search_term": self.search_terms_from_path(lora_on_disk.filename),
                 "prompt": json.dumps(f"<lora:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
                 "local_preview": f"{path}.{shared.opts.samples_format}",
+                "metadata": json.dumps(lora_on_disk.metadata, indent=4) if lora_on_disk.metadata else None,
             }
 
     def allowed_directories_for_previews(self):

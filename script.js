@@ -1,11 +1,13 @@
 function gradioApp() {
     const elems = document.getElementsByTagName('gradio-app')
-    const gradioShadowRoot = elems.length == 0 ? null : elems[0].shadowRoot
-    return !!gradioShadowRoot ? gradioShadowRoot : document;
+    const elem = elems.length == 0 ? document : elems[0]
+
+    if (elem !== document) elem.getElementById = function(id){ return document.getElementById(id) }
+    return elem.shadowRoot ? elem.shadowRoot : elem
 }
 
 function get_uiCurrentTab() {
-    return gradioApp().querySelector('#tabs button:not(.border-transparent)')
+    return gradioApp().querySelector('#tabs button.selected')
 }
 
 function get_uiCurrentTabContent() {

@@ -7,6 +7,28 @@ function set_theme(theme){
     }
 }
 
+function all_gallery_buttons() {
+    var allGalleryButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnails > .thumbnail-item.thumbnail-small');
+    var visibleGalleryButtons = [];
+    allGalleryButtons.forEach(function(elem) {
+        if (elem.parentElement.offsetParent) {
+            visibleGalleryButtons.push(elem);
+        }
+    })
+    return visibleGalleryButtons;
+}
+
+function selected_gallery_button() {
+    var allCurrentButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnail-item.thumbnail-small.selected');
+    var visibleCurrentButton = null;
+    allCurrentButtons.forEach(function(elem) {
+        if (elem.parentElement.offsetParent) {
+            visibleCurrentButton = elem;
+        }
+    })
+    return visibleCurrentButton;
+}
+
 function selected_gallery_index(){
     var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item')
     var button = gradioApp().querySelector('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item.\\!ring-2')
@@ -18,14 +40,18 @@ function selected_gallery_index(){
 }
 
 function extract_image_from_gallery(gallery){
-    if(gallery.length == 1){
-        return [gallery[0]]
+    if (gallery.length == 0){
+        return [null];
+    }
+    if (gallery.length == 1){
+        return [gallery[0]];
     }
 
     index = selected_gallery_index()
 
     if (index < 0 || index >= gallery.length){
-        return [null]
+        // Use the first image in the gallery as the default
+        index = 0;
     }
 
     return [gallery[index]];
@@ -86,7 +112,7 @@ function get_tab_index(tabId){
     var res = 0
 
     gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i){
-        if(button.className.indexOf('bg-white') != -1)
+        if(button.className.indexOf('selected') != -1)
             res = i
     })
 
@@ -133,16 +159,24 @@ function showSubmitButtons(tabname, show){
     gradioApp().getElementById(tabname+'_skip').style.display = show ? "none" : "block"
 }
 
+function showRestoreProgressButton(tabname, show){
+    button = gradioApp().getElementById(tabname + "_restore_progress")
+    if(! button) return
 
+    button.style.display = show ? "flex" : "none"
+}
 
 function submit(){
     rememberGallerySelection('txt2img_gallery')
     showSubmitButtons('txt2img', false)
 
     var id = randomId()
+    localStorage.setItem("txt2img_task_id", id);
+
     requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
         showSubmitButtons('txt2img', true)
-
+        localStorage.removeItem("txt2img_task_id")
+        showRestoreProgressButton('txt2img', false)
     })
 
     var res = create_submit_args(arguments)
@@ -157,8 +191,12 @@ function submit_img2img(){
     showSubmitButtons('img2img', false)
 
     var id = randomId()
+    localStorage.setItem("img2img_task_id", id);
+
     requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
         showSubmitButtons('img2img', true)
+        localStorage.removeItem("img2img_task_id")
+        showRestoreProgressButton('img2img', false)
     })
 
     var res = create_submit_args(arguments)
@@ -168,6 +206,40 @@ function submit_img2img(){
 
     return res
 }
+
+function restoreProgressTxt2img(x){
+    showRestoreProgressButton("txt2img", false)
+
+    id = localStorage.getItem("txt2img_task_id")
+
+    if(id) {
+        requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function(){
+            showSubmitButtons('txt2img', true)
+        }, null, 0)
+    }
+
+    return id
+}
+function restoreProgressImg2img(x){
+    showRestoreProgressButton("img2img", false)
+
+    id = localStorage.getItem("img2img_task_id")
+
+    if(id) {
+        requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function(){
+            showSubmitButtons('img2img', true)
+        }, null, 0)
+    }
+
+    return id
+}
+
+
+onUiLoaded(function () {
+    showRestoreProgressButton('txt2img', localStorage.getItem("txt2img_task_id"))
+    showRestoreProgressButton('img2img', localStorage.getItem("img2img_task_id"))
+});
+
 
 function modelmerger(){
     var id = randomId()
@@ -257,7 +329,6 @@ onUiUpdate(function(){
         }
 
         prompt.parentElement.insertBefore(counter, prompt)
-        counter.classList.add("token-counter")
         prompt.parentElement.style.position = "relative"
 
 		promptTokecountUpdateFuncs[id] = function(){ update_token_counter(id_button); }
@@ -337,4 +408,20 @@ var desiredCheckpointName = null;
 function selectCheckpoint(name){
     desiredCheckpointName = name;
     gradioApp().getElementById('change_checkpoint').click()
+}
+
+function currentImg2imgSourceResolution(_, _, scaleBy){
+    var img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img')
+    return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy]
+}
+
+function updateImg2imgResizeToTextAfterChangingImage(){
+    // At the time this is called from gradio, the image has no yet been replaced.
+    // There may be a better solution, but this is simple and straightforward so I'm going with it.
+
+    setTimeout(function() {
+        gradioApp().getElementById('img2img_update_resize_to').click()
+    }, 500);
+
+    return []
 }

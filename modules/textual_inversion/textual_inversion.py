@@ -152,7 +152,11 @@ class EmbeddingDatabase:
                 name = data.get('name', name)
             else:
                 data = extract_image_data_embed(embed_image)
-                name = data.get('name', name)
+                if data:
+                    name = data.get('name', name)
+                else:
+                    # if data is None, means this is not an embeding, just a preview image
+                    return
         elif ext in ['.BIN', '.PT']:
             data = torch.load(path, map_location="cpu")
         elif ext in ['.SAFETENSORS']:
@@ -228,6 +232,12 @@ class EmbeddingDatabase:
         for path, embdir in self.embedding_dirs.items():
             self.load_from_dir(embdir)
             embdir.update()
+
+        # re-sort word_embeddings because load_from_dir may not load in alphabetic order.
+        # using a temporary copy so we don't reinitialize self.word_embeddings in case other objects have a reference to it.
+        sorted_word_embeddings = {e.name: e for e in sorted(self.word_embeddings.values(), key=lambda e: e.name.lower())}
+        self.word_embeddings.clear()
+        self.word_embeddings.update(sorted_word_embeddings)
 
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:

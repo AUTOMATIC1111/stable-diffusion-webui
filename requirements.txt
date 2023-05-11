@@ -1,3 +1,4 @@
+astunparse
 blendmodes
 accelerate
 basicsr
@@ -31,3 +32,4 @@ torchsde
 safetensors
 psutil
 pymysql
+rich
