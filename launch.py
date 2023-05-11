@@ -22,6 +22,9 @@ stored_commit_hash = None
 stored_git_tag = None
 dir_repos = "repositories"
 
+# Whether to default to printing command output
+default_command_live = (os.environ.get('WEBUI_LAUNCH_LIVE_OUTPUT') == "1")
+
 if 'GRADIO_ANALYTICS_ENABLED' not in os.environ:
     os.environ['GRADIO_ANALYTICS_ENABLED'] = 'False'
 
@@ -85,7 +88,7 @@ def git_tag():
     return stored_git_tag
 
 
-def run(command, desc=None, errdesc=None, custom_env=None, live=False):
+def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live):
     if desc is not None:
         print(desc)
 
@@ -135,7 +138,7 @@ def run_python(code, desc=None, errdesc=None):
     return run(f'"{python}" -c "{code}"', desc, errdesc)
 
 
-def run_pip(command, desc=None, live=False):
+def run_pip(command, desc=None, live=default_command_live):
     if args.skip_install:
         return
 
