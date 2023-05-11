@@ -3,7 +3,8 @@
 import argparse
 import os
 
-script_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+modules_path = os.path.dirname(os.path.realpath(__file__))
+script_path = os.path.dirname(modules_path)
 
 sd_configs_path = os.path.join(script_path, "configs")
 sd_default_config = os.path.join(sd_configs_path, "v1-inference.yaml")
@@ -12,7 +13,7 @@ default_sd_model_file = sd_model_file
 
 # Parse the --data-dir flag first so we can use it as a base for our other argument default values
 parser_pre = argparse.ArgumentParser(add_help=False)
-parser_pre.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="base path where all user data is stored",)
+parser_pre.add_argument("--data-dir", type=str, default=os.path.dirname(modules_path), help="base path where all user data is stored", )
 cmd_opts_pre = parser_pre.parse_known_args()[0]
 
 data_path = cmd_opts_pre.data_dir
