@@ -3,9 +3,7 @@ import json
 import numpy as np
 import zlib
 from PIL import Image, ImageDraw, ImageFont
-from fonts.ttf import Roboto
 import torch
-from modules.shared import opts
 
 
 class EmbeddingEncoder(json.JSONEncoder):
@@ -136,11 +134,8 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
     image = srcimage.copy()
     fontsize = 32
     if textfont is None:
-        try:
-            textfont = ImageFont.truetype(opts.font or Roboto, fontsize)
-            textfont = opts.font or Roboto
-        except Exception:
-            textfont = Roboto
+        from modules.images import get_font
+        textfont = get_font(fontsize)
 
     factor = 1.5
     gradient = Image.new('RGBA', (1, image.size[1]), color=(0, 0, 0, 0))

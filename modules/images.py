@@ -24,6 +24,13 @@ from modules.shared import opts
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
+def get_font(fontsize: int):
+    try:
+        return ImageFont.truetype(opts.font or Roboto, fontsize)
+    except Exception:
+        return ImageFont.truetype(Roboto, fontsize)
+
+
 def image_grid(imgs, batch_size=1, rows=None):
     if rows is None:
         if opts.n_rows > 0:
@@ -141,12 +148,6 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
             else:
                 lines.append(word)
         return lines
-
-    def get_font(fontsize):
-        try:
-            return ImageFont.truetype(opts.font or Roboto, fontsize)
-        except Exception:
-            return ImageFont.truetype(Roboto, fontsize)
 
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for line in lines:
