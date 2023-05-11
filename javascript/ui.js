@@ -1323,12 +1323,12 @@ onUiUpdate(function () {
       cached_clone_range = clone_range;
     }
   }
-  function ui_input_focus_handler(e) {
+  /*   function ui_input_focus_handler(e) {
     if (e.target != focus_input) {
       focus_input = false;
       ui_input_release_handler(e);
     }
-  }
+  } */
 
   function ui_input_release_handler(e) {
     const len = active_clone_input.length;
@@ -1413,20 +1413,26 @@ onUiUpdate(function () {
       e.stopPropagation();
       ui_input_release_handler(e);
       ui_input_touchmove_handler(e);
-      gcontainer.addEventListener("touchmove", ui_input_touchmove_handler);
+      gcontainer.addEventListener("touchmove", ui_input_touchmove_handler, {
+        passive: false,
+      });
       gcontainer.addEventListener("touchend", ui_input_touchend_handler);
     }, 500);
 
     //gcontainer.addEventListener('contextmenu',  slider_contextmenu);
     gcontainer.addEventListener("touchend", slider_touchend);
-    gcontainer.addEventListener("touchmove", slider_touchmove);
+    gcontainer.addEventListener("touchmove", slider_touchmove, {
+      passive: false,
+    });
   }
 
   function ui_dispatch_input_release(value) {
     const gcontainer = gradioApp().querySelector(".gradio-container");
     if (value) {
       gcontainer.addEventListener("mouseover", ui_input_release_handler);
-      gcontainer.addEventListener("touchstart", slider_touchstart);
+      gcontainer.addEventListener("touchstart", slider_touchstart, {
+        passive: false,
+      });
     } else {
       gcontainer.removeEventListener("mouseover", ui_input_release_handler);
       gcontainer.removeEventListener("touchstart", slider_touchstart);
