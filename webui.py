@@ -234,7 +234,10 @@ def initialize():
         print(f'Interrupted with signal {sig} in {frame}')
         os._exit(0)
 
-    signal.signal(signal.SIGINT, sigint_handler)
+    if not os.environ.get("COVERAGE_RUN"):
+        # Don't install the immediate-quit handler when running under coverage,
+        # as then the coverage report won't be generated.
+        signal.signal(signal.SIGINT, sigint_handler)
 
 
 def setup_middleware(app):
@@ -253,19 +256,6 @@ def create_api(app):
     from modules.api.api import Api
     api = Api(app, queue_lock)
     return api
-
-
-def wait_on_server(demo=None):
-    while 1:
-        time.sleep(0.5)
-        if shared.state.need_restart:
-            shared.state.need_restart = False
-            time.sleep(0.5)
-            demo.close()
-            time.sleep(0.5)
-
-            modules.script_callbacks.app_reload_callback()
-            break
 
 
 def api_only():
@@ -328,6 +318,7 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
+
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
 
@@ -359,8 +350,26 @@ def webui():
             redirector.get("/")
             gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
 
-        wait_on_server(shared.demo)
+        try:
+            while True:
+                server_command = shared.state.wait_for_server_command(timeout=5)
+                if server_command:
+                    if server_command in ("stop", "restart"):
+                        break
+                    else:
+                        print(f"Unknown server command: {server_command}")
+        except KeyboardInterrupt:
+            server_command = "stop"
+
+        if server_command == "stop":
+            # If we catch a keyboard interrupt, we want to stop the server and exit.
+            print('Caught KeyboardInterrupt, stopping...')
+            shared.demo.close()
+            break
         print('Restarting UI...')
+        shared.demo.close()
+        time.sleep(0.5)
+        modules.script_callbacks.app_reload_callback()
 
         startup_timer.reset()
 
