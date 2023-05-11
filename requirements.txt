@@ -60,4 +60,3 @@ transformers==4.26.1
 timm==0.6.13
 tomesd==0.1.2
 urllib3==1.26.15
-jaxlib==0.4.7
