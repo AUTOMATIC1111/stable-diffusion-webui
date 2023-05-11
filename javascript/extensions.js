@@ -1,4 +1,4 @@
-function extensions_apply(_a, _b, disable_all) {
+function extensions_apply(extensions_disabled_list, extensions_update_list, disable_all) {
   const disable = [];
   const update = [];
   gradioApp().querySelectorAll('#extensions input[type="checkbox"]').forEach((x) => {
@@ -9,7 +9,7 @@ function extensions_apply(_a, _b, disable_all) {
   return [JSON.stringify(disable), JSON.stringify(update), disable_all];
 }
 
-function extensions_check(_a, _b) {
+function extensions_check(info, extensions_disabled_list, search_text, sort_column) {
   const disable = [];
   gradioApp().querySelectorAll('#extensions input[type="checkbox"]').forEach((x) => {
     if (x.name.startsWith('enable_') && !x.checked) disable.push(x.name.substr(7));
@@ -19,7 +19,7 @@ function extensions_check(_a, _b) {
   });
   const id = randomId();
   // requestProgress(id, gradioApp().getElementById('extensions_installed_top'), null, null, null, false);
-  return [id, JSON.stringify(disable)];
+  return [id, JSON.stringify(disable), search_text, sort_column];
 }
 
 function install_extension(button, url) {
