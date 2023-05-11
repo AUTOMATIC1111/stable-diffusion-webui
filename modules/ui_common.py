@@ -62,7 +62,6 @@ def save_files(js_data, images, do_make_zip, index):
         writer = csv.writer(file)
         if at_start:
             writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
-
         for image_index, filedata in enumerate(images, start_index):
             image = image_from_url_text(filedata)
             is_grid = image_index < p.index_of_first_image # pylint: disable=no-member
@@ -85,14 +84,12 @@ def save_files(js_data, images, do_make_zip, index):
     # Make Zip
     if do_make_zip:
         zip_filepath = os.path.join(path, "images.zip")
-
         from zipfile import ZipFile
         with ZipFile(zip_filepath, "w") as zip_file:
             for i in range(len(fullfns)):
                 with open(fullfns[i], mode="rb") as f:
                     zip_file.writestr(filenames[i], f.read())
         fullfns.insert(0, zip_filepath)
-
     return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
 
 

@@ -4,7 +4,6 @@ import time
 import cProfile
 import pstats
 import io
-
 from modules import shared, progress, errors
 
 queue_lock = threading.Lock()
@@ -29,9 +28,12 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
         with queue_lock:
             shared.state.begin()
             progress.start_task(id_task)
+            res = None
             try:
                 res = func(*args, **kwargs)
                 progress.record_results(id_task, res)
+            except Exception as e:
+                shared.log.error(f"Exception: {e}")
             finally:
                 progress.finish_task(id_task)
             shared.state.end()
