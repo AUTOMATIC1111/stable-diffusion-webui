@@ -179,7 +179,7 @@ def efficient_dot_product_attention(
             chunk_idx,
             min(query_chunk_size, q_tokens)
         )
-    
+
     summarize_chunk: SummarizeChunk = partial(_summarize_chunk, scale=scale)
     summarize_chunk: SummarizeChunk = partial(checkpoint, summarize_chunk) if use_checkpoint else summarize_chunk
     compute_query_chunk_attn: ComputeQueryChunkAttn = partial(

@@ -460,7 +460,7 @@ class LatentDiffusionV1(DDPMV1):
         self.instantiate_cond_stage(cond_stage_config)
         self.cond_stage_forward = cond_stage_forward
         self.clip_denoised = False
-        self.bbox_tokenizer = None  
+        self.bbox_tokenizer = None
 
         self.restarted_from_ckpt = False
         if ckpt_path is not None:
@@ -792,7 +792,7 @@ class LatentDiffusionV1(DDPMV1):
                 z = z.view((z.shape[0], -1, ks[0], ks[1], z.shape[-1]))  # (bn, nc, ks[0], ks[1], L )
 
                 # 2. apply model loop over last dim
-                if isinstance(self.first_stage_model, VQModelInterface):  
+                if isinstance(self.first_stage_model, VQModelInterface):
                     output_list = [self.first_stage_model.decode(z[:, :, :, :, i],
                                                                  force_not_quantize=predict_cids or force_not_quantize)
                                    for i in range(z.shape[-1])]
@@ -890,7 +890,7 @@ class LatentDiffusionV1(DDPMV1):
 
         if hasattr(self, "split_input_params"):
             assert len(cond) == 1  # todo can only deal with one conditioning atm
-            assert not return_ids  
+            assert not return_ids
             ks = self.split_input_params["ks"]  # eg. (128, 128)
             stride = self.split_input_params["stride"]  # eg. (64, 64)
 

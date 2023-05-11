@@ -1171,7 +1171,7 @@ def create_ui():
                         process_focal_crop_entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_entropy_weight")
                         process_focal_crop_edges_weight = gr.Slider(label='Focal point edges weight', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_edges_weight")
                         process_focal_crop_debug = gr.Checkbox(label='Create debug image', elem_id="train_process_focal_crop_debug")
-                    
+
                     with gr.Column(visible=False) as process_multicrop_col:
                         gr.Markdown('Each image is center-cropped with an automatically chosen width and height.')
                         with gr.Row():
@@ -1183,7 +1183,7 @@ def create_ui():
                         with gr.Row():
                             process_multicrop_objective = gr.Radio(["Maximize area", "Minimize error"], value="Maximize area", label="Resizing objective", elem_id="train_process_multicrop_objective")
                             process_multicrop_threshold = gr.Slider(minimum=0, maximum=1, step=0.01, label="Error threshold", value=0.1, elem_id="train_process_multicrop_threshold")
-   
+
                     with gr.Row():
                         with gr.Column(scale=3):
                             gr.HTML(value="")
@@ -1226,7 +1226,7 @@ def create_ui():
                     with FormRow():
                         embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005", elem_id="train_embedding_learn_rate")
                         hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001", elem_id="train_hypernetwork_learn_rate")
-                    
+
                     with FormRow():
                         clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
                         clip_grad_value = gr.Textbox(placeholder="Gradient clip value", value="0.1", show_label=False)
@@ -1565,7 +1565,7 @@ def create_ui():
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
             gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
-            
+
 
         def unload_sd_weights():
             modules.sd_models.unload_model_weights()
@@ -1841,15 +1841,15 @@ def versions_html():
 
     return f"""
 version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>
- • 
+ •
 python: <span title="{sys.version}">{python_version}</span>
- • 
+ •
 torch: {getattr(torch, '__long_version__',torch.__version__)}
- • 
+ •
 xformers: {xformers_version}
- • 
+ •
 gradio: {gr.__version__}
- • 
+ •
 checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 """
 

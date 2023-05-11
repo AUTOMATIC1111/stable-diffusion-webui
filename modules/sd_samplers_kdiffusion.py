@@ -93,10 +93,10 @@ class CFGDenoiser(torch.nn.Module):
 
         if shared.sd_model.model.conditioning_key == "crossattn-adm":
             image_uncond = torch.zeros_like(image_cond)
-            make_condition_dict = lambda c_crossattn, c_adm: {"c_crossattn": c_crossattn, "c_adm": c_adm} 
+            make_condition_dict = lambda c_crossattn, c_adm: {"c_crossattn": c_crossattn, "c_adm": c_adm}
         else:
             image_uncond = image_cond
-            make_condition_dict = lambda c_crossattn, c_concat: {"c_crossattn": c_crossattn, "c_concat": [c_concat]} 
+            make_condition_dict = lambda c_crossattn, c_concat: {"c_crossattn": c_crossattn, "c_concat": [c_concat]}
 
         if not is_edit_model:
             x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
@@ -316,7 +316,7 @@ class KDiffusionSampler:
 
         sigma_sched = sigmas[steps - t_enc - 1:]
         xi = x + noise * sigma_sched[0]
-        
+
         extra_params_kwargs = self.initialize(p)
         parameters = inspect.signature(self.func).parameters
 
@@ -339,9 +339,9 @@ class KDiffusionSampler:
         self.model_wrap_cfg.init_latent = x
         self.last_latent = x
         extra_args={
-            'cond': conditioning, 
-            'image_cond': image_conditioning, 
-            'uncond': unconditional_conditioning, 
+            'cond': conditioning,
+            'image_cond': image_conditioning,
+            'uncond': unconditional_conditioning,
             'cond_scale': p.cfg_scale,
             's_min_uncond': self.s_min_uncond
         }
@@ -374,9 +374,9 @@ class KDiffusionSampler:
 
         self.last_latent = x
         samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args={
-            'cond': conditioning, 
-            'image_cond': image_conditioning, 
-            'uncond': unconditional_conditioning, 
+            'cond': conditioning,
+            'image_cond': image_conditioning,
+            'uncond': unconditional_conditioning,
             'cond_scale': p.cfg_scale,
             's_min_uncond': self.s_min_uncond
         }, disable=False, callback=self.callback_state, **extra_params_kwargs))

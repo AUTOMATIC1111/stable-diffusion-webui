@@ -540,7 +540,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
         return hypernetwork, filename
 
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
-    
+
     clip_grad = torch.nn.utils.clip_grad_value_ if clip_grad_mode == "value" else torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else None
     if clip_grad:
         clip_grad_sched = LearnRateScheduler(clip_grad_value, steps, initial_step, verbose=False)
@@ -593,7 +593,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
             print(e)
 
     scaler = torch.cuda.amp.GradScaler()
-    
+
     batch_size = ds.batch_size
     gradient_step = ds.gradient_step
     # n steps = batch_size * gradient_step * n image processed
@@ -636,7 +636,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                 if clip_grad:
                     clip_grad_sched.step(hypernetwork.step)
-                
+
                 with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
                     if use_weight:
@@ -657,14 +657,14 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                     _loss_step += loss.item()
                 scaler.scale(loss).backward()
-                
+
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
                 loss_logging.append(_loss_step)
                 if clip_grad:
                     clip_grad(weights, clip_grad_sched.learn_rate)
-                
+
                 scaler.step(optimizer)
                 scaler.update()
                 hypernetwork.step += 1
@@ -674,7 +674,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                 _loss_step = 0
 
                 steps_done = hypernetwork.step + 1
-                
+
                 epoch_num = hypernetwork.step // steps_per_epoch
                 epoch_step = hypernetwork.step % steps_per_epoch
 

@@ -467,7 +467,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
                 <td>{html.escape(description)}<p class="info"><span class="date_added">Added: {html.escape(added)}</span></p></td>
                 <td>{install_code}</td>
             </tr>
-        
+
         """
 
         for tag in [x for x in extension_tags if x not in tags]:
@@ -535,9 +535,9 @@ def create_ui():
                     hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
                     sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", ], type="index")
 
-                with gr.Row(): 
+                with gr.Row():
                     search_extensions_text = gr.Text(label="Search").style(container=False)
-                   
+
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
 

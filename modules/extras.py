@@ -199,7 +199,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
                     result_is_inpainting_model = True
             else:
                 theta_0[key] = theta_func2(a, b, multiplier)
-            
+
             theta_0[key] = to_half(theta_0[key], save_as_half)
 
         shared.state.sampling_step += 1

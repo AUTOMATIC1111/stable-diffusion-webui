@@ -109,7 +109,7 @@ class Script(scripts.Script):
     def title(self):
         return "Prompts from file or textbox"
 
-    def ui(self, is_img2img):       
+    def ui(self, is_img2img):
         checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))
         checkbox_iterate_batch = gr.Checkbox(label="Use same random seed for all lines", value=False, elem_id=self.elem_id("checkbox_iterate_batch"))
 
@@ -166,7 +166,7 @@ class Script(scripts.Script):
 
             proc = process_images(copy_p)
             images += proc.images
-            
+
             if checkbox_iterate:
                 p.seed = p.seed + (p.batch_size * p.n_iter)
             all_prompts += proc.all_prompts
