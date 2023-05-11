@@ -310,12 +310,8 @@ def prepare_environment():
         print("Exiting because of --exit argument")
         exit(0)
 
-    if args.tests and not args.no_tests:
-        exitcode = tests(args.tests)
-        exit(exitcode)
 
-
-def tests(test_dir):
+def configure_for_tests():
     if "--api" not in sys.argv:
         sys.argv.append("--api")
     if "--ckpt" not in sys.argv:
@@ -325,21 +321,8 @@ def tests(test_dir):
         sys.argv.append("--skip-torch-cuda-test")
     if "--disable-nan-check" not in sys.argv:
         sys.argv.append("--disable-nan-check")
-    if "--no-tests" not in sys.argv:
-        sys.argv.append("--no-tests")
-
-    print(f"Launching Web UI in another process for testing with arguments: {' '.join(sys.argv[1:])}")
 
     os.environ['COMMANDLINE_ARGS'] = ""
-    with open(os.path.join(script_path, 'test/stdout.txt'), "w", encoding="utf8") as stdout, open(os.path.join(script_path, 'test/stderr.txt'), "w", encoding="utf8") as stderr:
-        proc = subprocess.Popen([sys.executable, *sys.argv], stdout=stdout, stderr=stderr)
-
-    import test.server_poll
-    exitcode = test.server_poll.run_tests(proc, test_dir)
-
-    print(f"Stopping Web UI process with id {proc.pid}")
-    proc.kill()
-    return exitcode
 
 
 def start():
@@ -351,6 +334,15 @@ def start():
         webui.webui()
 
 
-if __name__ == "__main__":
-    prepare_environment()
+def main():
+    if not args.skip_prepare_environment:
+        prepare_environment()
+
+    if args.test_server:
+        configure_for_tests()
+
     start()
+
+
+if __name__ == "__main__":
+    main()
