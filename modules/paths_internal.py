@@ -22,3 +22,5 @@ models_path = os.path.join(data_path, "models")
 extensions_dir = os.path.join(data_path, "extensions")
 extensions_builtin_dir = os.path.join(script_path, "extensions-builtin")
 config_states_dir = os.path.join(script_path, "config_states")
+
+roboto_ttf_file = os.path.join(modules_path, 'Roboto-Regular.ttf')

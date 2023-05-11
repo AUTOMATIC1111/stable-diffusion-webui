@@ -2,8 +2,6 @@ astunparse
 blendmodes
 accelerate
 basicsr
-fonts
-font-roboto
 gfpgan
 gradio==3.29.0
 numpy

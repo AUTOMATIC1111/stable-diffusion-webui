@@ -11,8 +11,6 @@ torch
 omegaconf==2.2.3
 pytorch_lightning==1.9.4
 scikit-image==0.19.2
-fonts
-font-roboto
 timm==0.6.7
 piexif==1.1.3
 einops==0.4.1
