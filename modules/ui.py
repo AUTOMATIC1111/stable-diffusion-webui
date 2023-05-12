@@ -1304,7 +1304,9 @@ def create_ui():
                 changed.append(key)
         try:
             opts.save(shared.config_filename)
+            shared.log.info(f'Settings changed: {len(changed)} {changed}')
         except RuntimeError:
+            shared.log.error(f'Settings change failed: {len(changed)} {changed}')
             return opts.dumpjson(), f'{len(changed)} Settings changed without save: {", ".join(changed)}'
         return opts.dumpjson(), f'{len(changed)} Settings changed{": " if len(changed) > 0 else ""}{", ".join(changed)}'
 
@@ -1314,6 +1316,7 @@ def create_ui():
         if not opts.set(key, value):
             return gr.update(value=getattr(opts, key)), opts.dumpjson()
         opts.save(shared.config_filename)
+        shared.log.debug(f'Setting changed: key={key}, value={value}')
         return get_value_for_setting(key), opts.dumpjson()
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:

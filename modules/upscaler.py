@@ -79,7 +79,7 @@ class Upscaler:
         return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path)
 
     def update_status(self, prompt):
-        print(f"\nextras: {prompt}", file=shared.progress_print_out)
+        print(f"\nextras: {prompt}")
 
 
 class UpscalerData:

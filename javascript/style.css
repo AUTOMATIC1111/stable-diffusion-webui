@@ -528,6 +528,11 @@ div#extras_scale_to_tab div.form{
     font-size: 90%;
 }
 
+.extension-button {
+  font-size: 95% !important;
+  width: 6em;
+}
+
 /* replace original footer with ours */
 
 footer {

@@ -91,7 +91,7 @@ def check_updates(_id_task, disable_list, search_text, sort_column):
         except Exception:
             errors.display(e, f'extensions check update: {ext.name}')
         shared.state.nextjob()
-    return refresh_extensions_list_from_data(search_text, sort_column), "Update complete, please restart the server"
+    return refresh_extensions_list_from_data(search_text, sort_column), "Extension update complete | Restart required"
 
 
 def make_commit_link(commit_hash, remote, text=None):
@@ -147,7 +147,7 @@ def install_extension_from_url(dirname, url, branch_name, search_text, sort_colu
         from launch import run_extension_installer
         run_extension_installer(target_dir)
         extensions.list_extensions()
-        return [refresh_extensions_list_from_data(search_text, sort_column), html.escape(f"Extension {url} installed into {target_dir}")]
+        return [refresh_extensions_list_from_data(search_text, sort_column), html.escape(f"Extension installed: {target_dir} | Restart required")]
     finally:
         shutil.rmtree(tmpdir, True)
 
@@ -170,7 +170,25 @@ def uninstall_extension(extension_path, search_text, sort_column):
         update_extension_list()
     code = refresh_extensions_list_from_data(search_text, sort_column)
     # return code, ext_table, message
-    return code, f"Uninstalled {extension_path}"
+    return code, f"Extension uninstalled: {extension_path} | Restart required"
+
+
+def update_extension(extension_path, search_text, sort_column):
+    exts = [extension for extension in extensions.extensions if extension.path == extension_path]
+    shared.log.info(f'Extension update: {extension_path}')
+    shared.state.job_count = len(exts)
+    for ext in exts:
+        shared.log.debug(f'Extensions update: {ext.name}')
+        shared.state.textinfo = ext.name
+        try:
+            ext.check_updates()
+        except FileNotFoundError as e:
+            if 'FETCH_HEAD' not in str(e):
+                raise
+        except Exception:
+            errors.display(e, f'extensions check update: {ext.name}')
+        shared.state.nextjob()
+    return refresh_extensions_list_from_data(search_text, sort_column), f"Extension updated: {extension_path} | Restart required"
 
 
 def refresh_extensions_list(search_text, sort_column):
@@ -187,7 +205,7 @@ def refresh_extensions_list(search_text, sort_column):
     except Exception as e:
         shared.log.warning(f'Updated extensions list failed: {extensions_index} {e}')
     code = refresh_extensions_list_from_data(search_text, sort_column)
-    return code, f'Extensions list: {len(extensions.extensions)} registered | {len(extensions_list)} available'
+    return code, f'Extensions | {len(extensions.extensions)} registered | {len(extensions_list)} available'
 
 
 def search_extensions(search_text, sort_column):
@@ -205,9 +223,9 @@ def refresh_extensions_list_from_data(search_text, sort_column):
                 <col style="width: 59%;">
                 <col style="width: 5%; background: var(--panel-background-fill)">
                 <col style="width: 10%; background: var(--panel-background-fill)">
-                <col style="width: 5%; background: var(--panel-background-fill)">
+                <col style="width: 5%; background: var(--table-border-color)">
             </colgroup>
-            <thead>
+            <thead style="font-size: 110%; border-style: solid; border-bottom: 1px var(--button-primary-border-color) solid">
             <tr>
                 <th>Enabled</th>
                 <th>Extension</th>
@@ -254,6 +272,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         name = ext.get("name", "unknown")
         added = dt('added')
         created = dt('created')
+        pushed = dt('pushed')
         updated = dt('updated')
         url = ext.get('url', None)
         size = ext.get('size', 0)
@@ -283,17 +302,18 @@ def refresh_extensions_list_from_data(search_text, sort_column):
             version_code = f"""<div class="version" style="background: {"--input-border-color-focus" if update_available else "inherit"}">{ext['version']}</div>"""
             enabled_code = f"""<input class="gr-check-radio gr-checkbox" name="enable_{html.escape(name)}" type="checkbox" {'checked="checked"' if enabled else ''}>"""
             if not ext['is_builtin']:
-                install_code = f"""<button onclick="uninstall_extension(this, '{html.escape(path)}')" class="lg secondary gradio-button custom-button">Uninstall</button>"""
+                install_code = f"""<button onclick="uninstall_extension(this, '{html.escape(path)}')" class="lg secondary gradio-button custom-button extension-button">uninstall</button>"""
+            if update_available:
+                install_code += f"""<button onclick="update_extension(this, '{html.escape(path)}')" class="lg secondary gradio-button custom-button extension-button">update</button>"""
         else:
-            install_code = f"""<button onclick="install_extension(this, '{html.escape(url)}')" class="lg secondary gradio-button custom-button">Install</button>"""
+            install_code = f"""<button onclick="install_extension(this, '{html.escape(url)}')" class="lg secondary gradio-button custom-button extension-button">install</button>"""
         tags_text = ", ".join([f"<span class='extension-tag'>{x}</span>" for x in tags])
-
         code += f"""
             <tr>
                 <td{' class="extension_status"' if ext['installed'] else ''}>{enabled_code}</td>
                 <td><a href="{html.escape(url)}" target="_blank" class="name">{html.escape(name)}</a><br>{tags_text}</td>
                 <td>{html.escape(description)}
-                    <p class="info"><span class="date">Created {html.escape(created)} | Added {html.escape(added)} | Updated {html.escape(updated)}</span></p>
+                    <p class="info"><span class="date">Created {html.escape(created)} | Added {html.escape(added)} | Pushed {html.escape(pushed)} | Updated {html.escape(updated)}</span></p>
                     <p class="info"><span class="date">Stars {html.escape(str(stars))} | Size {html.escape(str(size))} | Commits {html.escape(str(commits))} | Issues {html.escape(str(issues))}</span></p>
                 </td>
                 <td>{type_code}</td>
@@ -316,6 +336,7 @@ def create_ui():
                     extension_to_install = gr.Text(elem_id="extension_to_install", visible=False)
                     install_extension_button = gr.Button(elem_id="install_extension_button", visible=False)
                     uninstall_extension_button = gr.Button(elem_id="uninstall_extension_button", visible=False)
+                    update_extension_button = gr.Button(elem_id="update_extension_button", visible=False)
                     with gr.Column(scale=4):
                         search_text = gr.Text(label="Search")
                         info = gr.HTML('Note: After any operation such as install/uninstall or enable/disable, please restart the server')
@@ -351,6 +372,11 @@ def create_ui():
                 )
                 uninstall_extension_button.click(
                     fn=modules.ui.wrap_gradio_call(uninstall_extension, extra_outputs=[gr.update(), gr.update(), gr.update()]),
+                    inputs=[extension_to_install, search_text, sort_column],
+                    outputs=[extensions_table, info],
+                )
+                update_extension_button.click(
+                    fn=modules.ui.wrap_gradio_call(update_extension, extra_outputs=[gr.update(), gr.update(), gr.update()]),
                     inputs=[extension_to_install, search_text, sort_column],
                     outputs=[extensions_table, info],
                 )
