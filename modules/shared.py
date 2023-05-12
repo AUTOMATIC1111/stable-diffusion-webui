@@ -666,13 +666,19 @@ def reload_gradio_theme(theme_name=None):
         theme_name = opts.gradio_theme
 
     if theme_name == "Default":
-        gradio_theme = gr.themes.Default()
+        gradio_theme = gr.themes.Default(
+            font=['Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            font_mono=['IBM Plex Mono', 'ui-monospace', 'Consolas', 'monospace'],
+        )
     else:
         try:
             gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
         except Exception as e:
             errors.display(e, "changing gradio theme")
-            gradio_theme = gr.themes.Default()
+            gradio_theme = gr.themes.Default(
+                font=['Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                font_mono=['IBM Plex Mono', 'ui-monospace', 'Consolas', 'monospace'],
+            )
 
 
 
