@@ -7,8 +7,8 @@ img { background-color: black; }
 input[type=range] { height: 18px; appearance: none; margin-top: 0; min-width: 160px; background-color: black; width: 100%; background: transparent; }
 input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 18px; cursor: pointer; box-shadow: 2px 2px 3px #111111; background: #50555C; border-radius: 2px; border: 0px solid #222222; }
 input[type=range]::-moz-range-track { width: 100%; height: 18px; cursor: pointer; box-shadow: 2px 2px 3px #111111; background: #50555C; border-radius: 2px; border: 0px solid #222222; }
-input[type=range]::-webkit-slider-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: 18px; width: 40px; border-radius: 2px; background: var(--highlight-color); cursor: pointer; -webkit-appearance: none; margin-top: 0px; }
-input[type=range]::-moz-range-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: 18px; width: 40px; border-radius: 2px; background: var(--highlight-color); cursor: pointer; -webkit-appearance: none; margin-top: 0px; }
+input[type=range]::-webkit-slider-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: 18px; width: 40px; border-radius: 2px; background: var(--highlight-color); cursor: pointer; appearance: none; margin-top: 0px; }
+input[type=range]::-moz-range-thumb { box-shadow: 2px 2px 3px #111111; border: 0px solid #000000; height: 18px; width: 40px; border-radius: 2px; background: var(--highlight-color); cursor: pointer; appearance: none; margin-top: 0px; }
 ::-webkit-scrollbar { width: 12px; }
 ::-webkit-scrollbar-track { background: #333333; }
 ::-webkit-scrollbar-thumb { background-color: var(--highlight-color); border-radius: 2px; border-width: 0; box-shadow: 2px 2px 3px #111111; }
@@ -79,7 +79,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #interrogate, #deepbooru { margin: 16px 0px 16px 0px; max-width: 100px; max-height: 74px; font-weight: normal; font-size: 14px; }
 #lightboxModal { background-color: rgba(20, 20, 20, 0.8) }
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
-#quicksettings > div, #quicksettings > fieldset { min-width: 26em; max-width: 26em; line-height: 2em; }
+#quicksettings > div, #quicksettings > fieldset { min-width: 24em; max-width: 26em; line-height: 2em; }
 #refresh_sd_model_checkpoint { height: 48px; margin-left: -14px; background: #333333; box-shadow: none; }
 #refresh_txt2img_styles, #refresh_img2img_styles, #open_folder_txt2img, #open_folder_img2img, #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h { display: none; }
 #save-animation { border-radius: 0 !important; margin-bottom: 16px; background-color: #111111; }

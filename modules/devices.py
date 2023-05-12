@@ -120,7 +120,7 @@ def set_cuda_params():
     # set dtype
     ok = test_fp16()
     if ok and shared.opts.cuda_dtype == 'FP32':
-        shared.log.info('CUDA FP16 test passed but desired mode is set to FP32: Enable FP16 for higher performance')
+        shared.log.info('CUDA FP16 test passed but desired mode is set to FP32')
     if shared.opts.cuda_dtype == 'FP16' and ok:
         dtype = torch.float16
         dtype_vae = torch.float16

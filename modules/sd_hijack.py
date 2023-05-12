@@ -175,7 +175,9 @@ class StableDiffusionModelHijack:
 
         if opts.cuda_compile and opts.cuda_compile_mode != 'none':
             try:
+                import logging
                 import torch._dynamo as dynamo # pylint: disable=unused-import
+                torch._dynamo.config.log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                 torch._dynamo.config.verbose = opts.cuda_compile_verbose # pylint: disable=protected-access
                 torch._dynamo.config.suppress_errors = opts.cuda_compile_errors # pylint: disable=protected-access
                 torch.backends.cudnn.benchmark = True
