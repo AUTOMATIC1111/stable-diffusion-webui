@@ -7,7 +7,6 @@ import uvicorn
 import gradio as gr
 from threading import Lock
 from io import BytesIO
-from gradio.processing_utils import decode_base64_to_file
 from fastapi import APIRouter, Depends, FastAPI, Request, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException

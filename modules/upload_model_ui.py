@@ -16,7 +16,6 @@ import shutil
 import os
 import random
 import gradio as gr
-from modules import sd_models
 from typing import Tuple
 
 USER_AGENTS = [
@@ -41,16 +40,12 @@ USER_AGENTS = [
 
 
 def upload_asset(file_obj, model_type):
-    model = 'models'
-    if not os.path.exists(model):
-        os.mkdir(model)
+    model = 'user-models'
     target_dir = os.path.join(model, model_type)
-    if not os.path.exists(target_dir):
-        os.mkdir(target_dir)
-    upload_path = os.path.join(target_dir, file_obj.orig_name)
+    os.makedirs(target_dir, exist_ok=True)
+    upload_path = os.path.join(target_dir, os.path.basename(file_obj.orig_name))
     shutil.move(file_obj.name, upload_path)
     if os.path.exists(upload_path):
-        sd_models.list_models()
         return "ok"
     return "upload falied"
 
@@ -200,10 +195,10 @@ def create_upload_model_ui():
                          value="Lora",
                          label="选择模型类型:")
     with gr.Tabs(elem_id="tabs") as tabs:
-        # with gr.TabItem('模型文件上传', elem_id='tab_upload_file'):
-        #     gr.Label(None, label="通过模型文件上传:")
-        #     upload_ctl = gr.File(label="本地上传模型文件:")
-        #     upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
+        with gr.TabItem('模型文件上传', elem_id='tab_upload_file'):
+            gr.Label(None, label="通过模型文件上传:")
+            upload_ctl = gr.File(label="本地上传模型文件:")
+            upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
         with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
             url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai,samba页面地址直接解析")
             model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
@@ -211,19 +206,19 @@ def create_upload_model_ui():
             btn = gr.Button(value="开始下载")
 
     result = gr.Label(label="上传结果:")
-    # upload_ctl.upload(fn=upload_asset,
-    #                   inputs=[upload_ctl, radio_ctl],
-    #                   outputs=[result],
-    #                   show_progress=True)
+    upload_ctl.upload(fn=upload_asset,
+                      inputs=[upload_ctl, radio_ctl],
+                      outputs=[result],
+                      show_progress=True)
     # upload_ctl.change(
     #     inputs=[upload_ctl, radio_ctl],
     #     outputs=[result],
     #     show_progress=True)
-    #
-    # upload_img_ctl.upload(fn=upload_asset,
-    #                       inputs=[upload_img_ctl, radio_ctl],
-    #                       outputs=[result],
-    #                       show_progress=True)
+
+    upload_img_ctl.upload(fn=upload_asset,
+                          inputs=[upload_img_ctl, radio_ctl],
+                          outputs=[result],
+                          show_progress=True)
     btn.click(request_model_url,
               inputs=[url_txt_ctl, radio_ctl, model_name_ctl, url_img_ctl],
               outputs=[result],

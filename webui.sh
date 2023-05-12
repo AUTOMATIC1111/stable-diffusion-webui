@@ -4,8 +4,6 @@
 # change the variables in webui-user.sh instead #
 #################################################
 
-
-
 # If run from macOS, load defaults from webui-macos-env.sh
 if [[ "$OSTYPE" == "darwin"* ]]; then
     if [[ -f webui-macos-env.sh ]]

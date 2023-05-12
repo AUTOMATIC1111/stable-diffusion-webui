@@ -1529,7 +1529,7 @@ def create_ui():
             with gr.Column(scale=6):
                 settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
             with gr.Column():
-                restart_gradio = gr.Button(value='Reload UI', variant='primary', elem_id="settings_restart_gradio", visible=False)
+                restart_gradio = gr.Button(value='Reload UI', variant='primary', elem_id="settings_restart_gradio")
 
         result = gr.HTML(elem_id="settings_result")
 

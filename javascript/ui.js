@@ -30,8 +30,8 @@ function selected_gallery_button() {
 }
 
 function selected_gallery_index(){
-    var buttons = all_gallery_buttons();
-    var button = selected_gallery_button();
+    var buttons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item')
+    var button = gradioApp().querySelector('[style="display: block;"].tabitem div[id$=_gallery] .gallery-item.\\!ring-2')
 
     var result = -1
     buttons.forEach(function(v, i){ if(v==button) { result = i } })
@@ -159,7 +159,12 @@ function showSubmitButtons(tabname, show){
     gradioApp().getElementById(tabname+'_skip').style.display = show ? "none" : "block"
 }
 
+function showRestoreProgressButton(tabname, show){
+    button = gradioApp().getElementById(tabname + "_restore_progress")
+    if(! button) return
 
+    button.style.display = show ? "flex" : "none"
+}
 
 function showRestoreProgressButton(tabname, show){
     button = gradioApp().getElementById(tabname + "_restore_progress")

@@ -205,6 +205,10 @@ def list_extensions(settings_file):
         print(e, file=sys.stderr)
 
     disabled_extensions = set(settings.get('disabled_extensions', []))
+    disable_all_extensions = settings.get('disable_all_extensions', 'none')
+
+    if disable_all_extensions != 'none':
+        return []
 
     return [x for x in os.listdir(extensions_dir) if x not in disabled_extensions]
 
@@ -246,7 +250,7 @@ def prepare_environment():
     print(f"Python {sys.version}")
     print(f"Commit hash: {commit}")
 
-    if reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
+    if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command} -i https://pypi.tuna.tsinghua.edu.cn/simple', "Installing torch and torchvision", "Couldn't install torch", live=True)
 
     if not args.skip_torch_cuda_test:

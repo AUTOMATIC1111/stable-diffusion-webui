@@ -92,6 +92,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  prompt_styles: typing.List[str] = None,  # 提示风格（模板风格也就是TAG模板）
                  img2img_batch_inpaint_mask_dir: str = None,
                  override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337', 'sd_vae': 'None']
+                 scale_by=-1,  # 图形放大，大于0生效。
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部embedding列表
                  **kwargs):
@@ -173,6 +174,12 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
 
         if image is not None:
             image = ImageOps.exif_transpose(image)
+
+        if scale_by > 0:
+            assert image, "Can't scale by because no image is selected"
+
+            width = int(image.width * scale_by)
+            height = int(image.height * scale_by)
 
         assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 
