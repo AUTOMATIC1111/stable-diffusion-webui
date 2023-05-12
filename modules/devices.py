@@ -119,6 +119,8 @@ def set_cuda_params():
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
     # set dtype
     ok = test_fp16()
+    if ok and shared.opts.cuda_dtype == 'FP32':
+        shared.log.info('CUDA FP16 test passed but desired mode is set to FP32: Enable FP16 for higher performance')
     if shared.opts.cuda_dtype == 'FP16' and ok:
         dtype = torch.float16
         dtype_vae = torch.float16
@@ -134,8 +136,8 @@ def set_cuda_params():
     if shared.opts.no_half_vae: # set dtype again as no-half-vae options take priority
         dtype_vae = torch.float32
     unet_needs_upcast = shared.opts.upcast_sampling
-    shared.log.debug(f'Desired CUDA parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
-    shared.log.debug(f'Setting CUDA parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet}')
+    shared.log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
+    shared.log.info(f'Setting Torch parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet}')
 
 
 args = cmd_args.parser.parse_args()
