@@ -34,6 +34,8 @@ args = Dot({
     'skip_torch': False,
     'use_directml': False,
     'use_ipex': False,
+    'use_cuda': False,
+    'use_rocm': False,
     'experimental': False,
     'test': False,
     'tls_selfsign': False,
@@ -209,22 +211,28 @@ def check_python():
 
 # check torch version
 def check_torch():
-    if shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe')):
+    allow_cuda = not (args.use_rocm or args.use_directml or args.use_ipex)
+    allow_rocm = not (args.use_cuda or args.use_directml or args.use_ipex)
+    allow_ipex = not (args.use_cuda or args.use_rocm or args.use_directml)
+    allow_directml = not (args.use_cuda or args.use_rocm or args.use_ipex)
+    log.debug(f'Torch overrides: cuda={args.use_cuda} rocm={args.use_rocm} ipex={args.use_ipex} diml={args.use_directml}')
+    log.debug(f'Torch allowed: cuda={allow_cuda} rocm={allow_rocm} ipex={allow_ipex} diml={allow_directml}')
+    if allow_cuda and (shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe'))):
         log.info('nVidia CUDA toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision==0.15.1 --index-url https://download.pytorch.org/whl/cu118')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
-    elif shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo'):
+    elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo')):
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision==0.15.1 torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
-    elif shutil.which('sycl-ls') is not None or os.path.exists('/opt/intel/oneapi') or args.use_ipex:
+    elif allow_ipex and (shutil.which('sycl-ls') is not None or os.path.exists('/opt/intel/oneapi') or args.use_ipex):
         log.info('Intel OneAPI Toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==1.13.0a0 torchvision==0.14.1a0 intel_extension_for_pytorch==1.13.120+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
         machine = platform.machine()
-        if 'arm' not in machine and 'aarch' not in machine and args.use_directml: # torch-directml is available on AMD64
+        if allow_directml and ('arm' not in machine and 'aarch' not in machine and args.use_directml):
             log.info('Using DirectML Backend')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision==0.15.1 torch-directml')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
@@ -561,6 +569,9 @@ def add_args():
     group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
     group.add_argument("--use-ipex", action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s", default=False)
+    group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
+    group.add_argument("--use-cuda", action='store_true', help="Force use nVidia CUDA backend, default: %(default)s", default=False)
+    group.add_argument("--use-rocm", action='store_true', help="Force use AMD ROCm backend, default: %(default)s", default=False)
     group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
     group.add_argument('--skip-update', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
     group.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")

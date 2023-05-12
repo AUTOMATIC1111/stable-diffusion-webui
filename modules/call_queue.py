@@ -28,12 +28,13 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
         with queue_lock:
             shared.state.begin()
             progress.start_task(id_task)
-            res = None
+            res = [None, '', '', '']
             try:
                 res = func(*args, **kwargs)
                 progress.record_results(id_task, res)
             except Exception as e:
                 shared.log.error(f"Exception: {e}")
+                res[-1] = f"<div class='error'>{html.escape(str(e))}</div>"
             finally:
                 progress.finish_task(id_task)
             shared.state.end()
