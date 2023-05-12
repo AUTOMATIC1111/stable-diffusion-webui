@@ -97,6 +97,14 @@ def upload_files(is_tmp, *files):
     return keys
 
 
+def strip_model_hash(model_name: str):
+    if '[' not in model_name:
+        return model_name
+    start = model_name.rindex('[')
+    if model_name[-1] == ']':
+        return model_name[:start].strip()
+
+
 def init_default_script_args(script_runner):
     # find max idx from the scripts in runner and generate a none array to init script_args
     last_arg_index = 1

@@ -42,6 +42,7 @@ class TaskHandler:
             except Exception as ex:
                 trace = traceback.format_exc()
                 msg = str(ex)
+                logger.exception('unhandle err')
                 p = TaskProgress.new_failed(task, msg, trace)
                 self._set_task_status(p)
 

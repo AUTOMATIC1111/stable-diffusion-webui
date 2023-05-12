@@ -14,7 +14,7 @@ from PIL import Image
 from collections.abc import Iterable
 from modules.scripts import scripts_img2img
 from handlers.formatter import AlwaysonScriptArgsFormatter
-from handlers.utils import get_tmp_local_path, Tmp, upload_files
+from handlers.utils import get_tmp_local_path, Tmp, upload_files, strip_model_hash
 from worker.task import TaskProgress, Task, TaskStatus
 
 ControlNet = 'ControlNet'
@@ -164,18 +164,18 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                 image, mask = None, None
                 if item.get('enabled', False):
                     image = get_tmp_local_path(item['image']['image'])
-                    image = np.array(Image.open(image))
+                    image = Image.open(image).convert('RGBA')
+                    size = image.size
+                    image = np.array(image)
                     mask = item['image'].get('mask')
                     if not mask:
-                        shape = list(image.shape)
-                        if shape[-1] == 3:
-                            shape[-1] = 4  # rgba
-                        mask = np.zeros(image.shape)
-                        mask[:, :, -1] = 255
+                        shape = list(size)
+                        shape.append(4)  # rgba
+                        mask = np.full(shape, 255)
                     else:
                         mask = get_tmp_local_path(item['image']['mask'])
-                        mask = np.array(mask)
-                new_args.append({
+                        mask = np.array(Image.open(mask))
+                control_unit = {
                     'enabled': item.get('enabled', False),
                     'guess_mode': item.get('guess_mode', False),
                     'guidance_start': item.get('guidance_start', 0),
@@ -186,7 +186,7 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                     },
                     'invert_image': item.get('invert_image', False),
                     'low_vram': item.get('low_vram', False),
-                    'model': item.get('model', 'None'),
+                    'model': item.get('model', 'none'),
                     'module': item.get('module', 'none'),
                     'processor_res': item.get('processor_res', 64),
                     'resize_mode': item.get('resize_mode', 'Crop and Resize'),
@@ -196,7 +196,15 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                     'weight': item.get('weight', 1),
                     'pixel_perfect': item.get('pixel_perfect', False),
                     'control_mode': item.get('control_mode', 'Balanced')
-                })
+                }
+                control_unit['module'] = strip_model_hash(control_unit['module'])
+                control_unit['model'] = strip_model_hash(control_unit['model'])
+                if control_unit['model'] == 'None':
+                    control_unit['model'] = 'none'
+                if control_unit['module'] == 'None':
+                    control_unit['module'] = 'none'
+
+                new_args.append(control_unit)
 
             if isinstance(control_net_script_args, Iterable):
                 for item in control_net_script_args:

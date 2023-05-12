@@ -6,16 +6,12 @@
 # @File    : mixtureofdiff.py
 # @Software: Hifive
 import torch
-import k_diffusion as K
 
-from tqdm import trange
 from modules import devices, shared, extra_networks
 from modules.shared import state
-
 from tile_methods.absdiff import TiledDiffusion
 from tile_utils.utils import *
 from tile_utils.typex import *
-
 
 class MixtureOfDiffusers(TiledDiffusion):
     """

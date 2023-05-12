@@ -25,12 +25,7 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
                 array = [
                     obj['enabled'],
                     obj['method'],
-                    obj['noise_inverse'],
-                    obj['noise_inverse_steps'],
-                    obj['noise_inverse_retouch'],
-                    obj['noise_inverse_renoise_strength'],
-                    obj['noise_inverse_renoise_kernel'],
-                    obj['overwrite_image_size'],
+                    obj.get('overwrite_size', False),
                     obj['keep_input_size'],
                     obj['image_width'],
                     obj['image_height'],
@@ -38,8 +33,13 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
                     obj['tile_height'],
                     obj['overlap'],
                     obj['batch_size'],
-                    obj['upscaler'],
+                    obj.get('upscaler') or obj.get('upscaler_name'),
                     obj['scale_factor'],
+                    obj['noise_inverse'],
+                    obj['noise_inverse_steps'],
+                    obj['noise_inverse_retouch'],
+                    obj['noise_inverse_renoise_strength'],
+                    obj['noise_inverse_renoise_kernel'],
                     obj['control_tensor_cpu'],
                     obj['enable_bbox_control'],
                     obj['draw_background'],
@@ -61,6 +61,7 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
                         ctl['feather_ratio'],
                         ctl['seed'],
                     ])
+                return array
 
             return obj
 
@@ -68,7 +69,9 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
             if isinstance(args, dict):
                 posex_script_args = obj_to_array(args)
             else:
-                posex_script_args = [obj_to_array(x) for x in args]
+                posex_script_args = []
+                for x in args:
+                    posex_script_args.extend(obj_to_array(x))
         else:
             posex_script_args = obj_to_array(args)
         return posex_script_args
@@ -82,15 +85,17 @@ class MultiVAEFormatter(AlwaysonScriptArgsFormatter):
     def format(self, is_img2img: bool, args: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
             -> typing.Sequence[typing.Any]:
         def obj_to_array(obj: typing.Mapping) -> typing.Sequence:
-            # 如果是[OBJ1, OBJ2]形式的，需要转换为ARRAY
+            #          enabled,
+            #             encoder_tile_size, decoder_tile_size,
+            #             vae_to_gpu, fast_decoder, fast_encoder, color_fix,
             if isinstance(obj, dict):
-                return [args['enabled'],
-                        args['vae_to_gpu'],
-                        args['fast_decoder'],
-                        args['fast_encoder'],
-                        args['color_fix'],
-                        args['encoder_tile_size'],
-                        args['decoder_tile_size'],
+                return [obj['enabled'],
+                        obj['encoder_tile_size'],
+                        obj['decoder_tile_size'],
+                        obj['vae_to_gpu'],
+                        obj['fast_decoder'],
+                        obj['fast_encoder'],
+                        obj['color_fix'],
                 ]
 
             return obj
@@ -99,7 +104,9 @@ class MultiVAEFormatter(AlwaysonScriptArgsFormatter):
             if isinstance(args, dict):
                 posex_script_args = obj_to_array(args)
             else:
-                posex_script_args = [obj_to_array(x) for x in args]
+                posex_script_args = []
+                for x in args:
+                    posex_script_args.extend(obj_to_array(x))
         else:
             posex_script_args = obj_to_array(args)
         return posex_script_args

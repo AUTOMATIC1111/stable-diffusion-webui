@@ -11,10 +11,8 @@ import torch
 from modules import devices, extra_networks
 from modules.shared import state
 from tile_methods.absdiff import TiledDiffusion
-
-from tile_utils.typex import *
 from tile_utils.utils import *
-from modules.processing import StableDiffusionProcessing
+from tile_utils.typex import *
 
 
 class MultiDiffusion(TiledDiffusion):
@@ -23,7 +21,7 @@ class MultiDiffusion(TiledDiffusion):
         https://arxiv.org/abs/2302.08113
     """
 
-    def __init__(self, p: StableDiffusionProcessing, *args, **kwargs):
+    def __init__(self, p: Processing, *args, **kwargs):
         super().__init__(p, *args, **kwargs)
         assert p.sampler_name != 'UniPC', 'MultiDiffusion is not compatible with UniPC!'
 
