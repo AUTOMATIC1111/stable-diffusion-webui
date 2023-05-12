@@ -286,6 +286,7 @@ options_templates.update(options_section(('saving-images', "Image options"), {
     "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),
     "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
     "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters"),
+    "save_log_fn": OptionInfo("", "Create a log file with image information for each saved image", component_args=hide_dirs),
     "save_images_before_face_restoration": OptionInfo(False, "Save a copy of image before doing face restoration"),
     "save_images_before_highres_fix": OptionInfo(False, "Save a copy of image before applying highres fix"),
     "save_images_before_color_correction": OptionInfo(False, "Save a copy of image before applying color correction to img2img results"),
@@ -334,6 +335,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_mode": OptionInfo("none", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet']}),
     "cuda_compile_verbose": OptionInfo(True, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
+    "disable_gc": OptionInfo(False, "Disable Torch memory garbage collection (experimental)"),
 }))
 
 options_templates.update(options_section(('upscaling', "Upscaling"), {
@@ -594,10 +596,10 @@ class Options:
 
 
 opts = Options()
-cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
 config_filename = cmd_opts.config
 if os.path.exists(config_filename):
     opts.load(config_filename)
+cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
 
 os.makedirs(opts.hypernetwork_dir, exist_ok=True)
 prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)

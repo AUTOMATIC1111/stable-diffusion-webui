@@ -11,18 +11,28 @@ Savedfile = namedtuple("Savedfile", ["name"])
 
 
 def register_tmp_file(gradio, filename):
-    if hasattr(gradio, 'temp_file_sets'):  # gradio 3.15
+    if hasattr(gradio, 'temp_file_sets'):
         gradio.temp_file_sets[0] = gradio.temp_file_sets[0] | {os.path.abspath(filename)}
-    if hasattr(gradio, 'temp_dirs'):  # gradio 3.9
-        gradio.temp_dirs = gradio.temp_dirs | {os.path.abspath(os.path.dirname(filename))}
 
 
 def check_tmp_file(gradio, filename):
+    ok = False
     if hasattr(gradio, 'temp_file_sets'):
-        return any([filename in fileset for fileset in gradio.temp_file_sets])
-    if hasattr(gradio, 'temp_dirs'):
-        return any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in gradio.temp_dirs)
-    return False
+        ok = ok or any([filename in fileset for fileset in gradio.temp_file_sets])
+    if shared.opts.outdir_samples != '':
+        ok = ok or Path(shared.opts.outdir_samples).resolve() in Path(filename).resolve().parents
+    else:
+        ok = ok or Path(shared.opts.outdir_txt2img_samples).resolve() in Path(filename).resolve().parents
+        ok = ok or Path(shared.opts.outdir_img2img_samples).resolve() in Path(filename).resolve().parents
+        ok = ok or Path(shared.opts.outdir_extras_samples).resolve() in Path(filename).resolve().parents
+    if shared.opts.outdir_grids != '':
+        ok = ok or Path(shared.opts.outdir_grids).resolve() in Path(filename).resolve().parents
+    else:
+        ok = ok or Path(shared.opts.outdir_txt2img_grids).resolve() in Path(filename).resolve().parents
+        ok = ok or Path(shared.opts.outdir_img2img_grids).resolve() in Path(filename).resolve().parents
+    ok = ok or Path(shared.opts.outdir_save).resolve() in Path(filename).resolve().parents
+    ok = ok or Path(shared.opts.outdir_init_images).resolve() in Path(filename).resolve().parents
+    return ok
 
 
 def save_pil_to_file(pil_image, dir=None): # pylint: disable=redefined-builtin

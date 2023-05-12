@@ -102,5 +102,4 @@ def compatibility_args(opts, args):
     opts.dimensions_and_batch_together = True
 
     args = parser.parse_args()
-
     return args

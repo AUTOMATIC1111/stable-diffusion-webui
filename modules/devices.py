@@ -64,6 +64,8 @@ def get_device_for(task):
 
 
 def torch_gc():
+    if shared.opts.disable_gc:
+        return
     gc.collect()
     if shared.cmd_opts.use_ipex:
         try:
@@ -86,6 +88,7 @@ def test_fp16():
         x = torch.tensor([[1.5,.0,.0,.0]]).to(device).half()
         layerNorm = torch.nn.LayerNorm(4, eps=0.00001, elementwise_affine=True, dtype=torch.float16, device=device)
         _y = layerNorm(x)
+        shared.log.debug('Torch FP16 test passed')
         return True
     except:
         shared.log.warning('Torch FP16 test failed: Forcing FP32 operations')
@@ -131,6 +134,7 @@ def set_cuda_params():
     if shared.opts.no_half_vae: # set dtype again as no-half-vae options take priority
         dtype_vae = torch.float32
     unet_needs_upcast = shared.opts.upcast_sampling
+    shared.log.debug(f'Desired CUDA parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
     shared.log.debug(f'Setting CUDA parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet}')
 
 

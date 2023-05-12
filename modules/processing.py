@@ -538,7 +538,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         assert len(p.prompt) > 0
     else:
         assert p.prompt is not None
-    # devices.torch_gc() # TODO: gc
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)

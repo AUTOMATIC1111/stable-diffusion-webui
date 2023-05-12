@@ -36,7 +36,6 @@ def reset():
 def quote(text):
     if ',' not in str(text):
         return text
-
     text = str(text)
     text = text.replace('\\', '\\\\')
     text = text.replace('"', '\\"')
@@ -46,27 +45,29 @@ def quote(text):
 def image_from_url_text(filedata):
     if filedata is None:
         return None
-
     if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
         filedata = filedata[0]
-
     if type(filedata) == dict and filedata.get("is_file", False):
         filename = filedata["name"]
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         if is_in_right_dir:
             return Image.open(filename)
         else:
-            shared.log.warning(f'Attempted to open file outside of allowed directories: {filename}')
-
+            shared.log.warning(f'File access denied: {filename}')
+            return None
     if type(filedata) == list:
         if len(filedata) == 0:
             return None
-
         filedata = filedata[0]
-
+    if type(filedata) == dict:
+        shared.log.warning('Incorrect filedata received')
+        return None
     if filedata.startswith("data:image/png;base64,"):
         filedata = filedata[len("data:image/png;base64,"):]
-
+    if filedata.startswith("data:image/webp;base64,"):
+        filedata = filedata[len("data:image/webp;base64,"):]
+    if filedata.startswith("data:image/jpeg;base64,"):
+        filedata = filedata[len("data:image/jpeg;base64,"):]
     filedata = base64.decodebytes(filedata.encode('utf-8'))
     image = Image.open(io.BytesIO(filedata))
     return image

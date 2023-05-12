@@ -2,10 +2,8 @@ import json
 import html
 import os
 import platform
-import subprocess as sp
-
+import subprocess
 import gradio as gr
-
 from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.images
@@ -31,7 +29,8 @@ def plaintext_to_html(text):
 
 
 def save_files(js_data, images, do_make_zip, index):
-    import csv
+    if js_data is None or len(js_data) == 0:
+        return
     filenames = []
     fullfns = []
 
@@ -43,45 +42,32 @@ def save_files(js_data, images, do_make_zip, index):
                     setattr(self, key, value)
 
     data = json.loads(js_data)
-
     p = MyObject(data)
     path = shared.opts.outdir_save
     save_to_dirs = shared.opts.use_save_to_dirs_for_ui
     extension: str = shared.opts.samples_format
     start_index = 0
-
     if index > -1 and shared.opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
-
         images = [images[index]]
         start_index = index
-
     os.makedirs(shared.opts.outdir_save, exist_ok=True)
-
-    with open(os.path.join(shared.opts.outdir_save, "log.csv"), "a", encoding="utf8", newline='') as file:
-        at_start = file.tell() == 0
-        writer = csv.writer(file)
-        if at_start:
-            writer.writerow(["prompt", "seed", "width", "height", "sampler", "cfgs", "steps", "filename", "negative_prompt"])
-        for image_index, filedata in enumerate(images, start_index):
-            image = image_from_url_text(filedata)
-            is_grid = image_index < p.index_of_first_image # pylint: disable=no-member
-            i = 0 if is_grid else (image_index - p.index_of_first_image) # pylint: disable=no-member
-            if len(p.all_seeds) <= i: # pylint: disable=no-member
-                p.all_seeds.append(p.seed) # pylint: disable=no-member
-            if len(p.all_prompts) <= i: # pylint: disable=no-member
-                p.all_prompts.append(p.prompt) # pylint: disable=no-member
-            fullfn, txt_fullfn = modules.images.save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs) # pylint: disable=no-member
-
-            filename = os.path.relpath(fullfn, path)
-            filenames.append(filename)
-            fullfns.append(fullfn)
-            if txt_fullfn:
-                filenames.append(os.path.basename(txt_fullfn))
-                fullfns.append(txt_fullfn)
-
-        writer.writerow([data["prompt"], data["seed"], data["width"], data["height"], data["sampler_name"], data["cfg_scale"], data["steps"], filenames[0], data["negative_prompt"]])
-
-    # Make Zip
+    for image_index, filedata in enumerate(images, start_index):
+        image = image_from_url_text(filedata)
+        is_grid = image_index < p.index_of_first_image # pylint: disable=no-member
+        i = 0 if is_grid else (image_index - p.index_of_first_image) # pylint: disable=no-member
+        if len(p.all_seeds) <= i: # pylint: disable=no-member
+            p.all_seeds.append(p.seed) # pylint: disable=no-member
+        if len(p.all_prompts) <= i: # pylint: disable=no-member
+            p.all_prompts.append(p.prompt) # pylint: disable=no-member
+        fullfn, txt_fullfn = modules.images.save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs) # pylint: disable=no-member
+        if fullfn is None:
+            continue
+        filename = os.path.relpath(fullfn, path)
+        filenames.append(filename)
+        fullfns.append(fullfn)
+        if txt_fullfn:
+            filenames.append(os.path.basename(txt_fullfn))
+            fullfns.append(txt_fullfn)
     if do_make_zip:
         zip_filepath = os.path.join(path, "images.zip")
         from zipfile import ZipFile
@@ -90,7 +76,7 @@ def save_files(js_data, images, do_make_zip, index):
                 with open(fullfns[i], mode="rb") as f:
                     zip_file.writestr(filenames[i], f.read())
         fullfns.insert(0, zip_filepath)
-    return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0]}")
+    return gr.File.update(value=fullfns, visible=True), plaintext_to_html(f"Saved: {filenames[0] if len(filenames) > 0 else 'none'}")
 
 
 def create_output_panel(tabname, outdir):
@@ -109,11 +95,11 @@ def create_output_panel(tabname, outdir):
             if platform.system() == "Windows":
                 os.startfile(path) # pylint: disable=no-member
             elif platform.system() == "Darwin":
-                sp.Popen(["open", path])
+                subprocess.Popen(["open", path])
             elif "microsoft-standard-WSL2" in platform.uname().release:
-                sp.Popen(["wsl-open", path])
+                subprocess.Popen(["wsl-open", path])
             else:
-                sp.Popen(["xdg-open", path])
+                subprocess.Popen(["xdg-open", path])
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):

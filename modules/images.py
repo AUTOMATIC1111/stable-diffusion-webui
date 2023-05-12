@@ -6,26 +6,26 @@ import math
 import json
 import string
 import hashlib
+import queue
+import threading
 from collections import namedtuple
 import pytz
 import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
-
 from modules import sd_samplers, shared, script_callbacks, errors
-from modules.shared import opts, log
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
 def image_grid(imgs, batch_size=1, rows=None):
     if rows is None:
-        if opts.n_rows > 0:
-            rows = opts.n_rows
-        elif opts.n_rows == 0:
+        if shared.opts.n_rows > 0:
+            rows = shared.opts.n_rows
+        elif shared.opts.n_rows == 0:
             rows = batch_size
-        elif opts.grid_prevent_empty_spots:
+        elif shared.opts.grid_prevent_empty_spots:
             rows = math.floor(math.sqrt(len(imgs)))
             while len(imgs) % rows != 0:
                 rows -= 1
@@ -34,18 +34,13 @@ def image_grid(imgs, batch_size=1, rows=None):
             rows = round(rows)
     if rows > len(imgs):
         rows = len(imgs)
-
     cols = math.ceil(len(imgs) / rows)
-
     params = script_callbacks.ImageGridLoopParams(imgs, cols, rows)
     script_callbacks.image_grid_callback(params)
-
     w, h = imgs[0].size
     grid = Image.new('RGB', size=(params.cols * w, params.rows * h), color='black')
-
     for i, img in enumerate(params.imgs):
         grid.paste(img, box=(i % params.cols * w, i // params.cols * h))
-
     return grid
 
 
@@ -139,7 +134,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
     def get_font(fontsize):
         try:
-            return ImageFont.truetype(opts.font or 'javascript/roboto.ttf', fontsize)
+            return ImageFont.truetype(shared.opts.font or 'javascript/roboto.ttf', fontsize)
         except Exception:
             return ImageFont.truetype('javascript/roboto.ttf', fontsize)
 
@@ -151,90 +146,65 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
                 fontsize -= 1
                 fnt = get_font(fontsize)
             drawing.multiline_text((draw_x, draw_y + line.size[1] / 2), line.text, font=fnt, fill=color_active if line.is_active else color_inactive, anchor="mm", align="center")
-
             if not line.is_active:
                 drawing.line((draw_x - line.size[0] // 2, draw_y + line.size[1] // 2, draw_x + line.size[0] // 2, draw_y + line.size[1] // 2), fill=color_inactive, width=4)
-
             draw_y += line.size[1] + line_spacing
 
     fontsize = (width + height) // 25
     line_spacing = fontsize // 2
-
     fnt = get_font(fontsize)
-
     color_active = (0, 0, 0)
     color_inactive = (153, 153, 153)
-
     pad_left = 0 if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0 else width * 3 // 4
-
     cols = im.width // width
     rows = im.height // height
-
     assert cols == len(hor_texts), f'bad number of horizontal texts: {len(hor_texts)}; must be {cols}'
     assert rows == len(ver_texts), f'bad number of vertical texts: {len(ver_texts)}; must be {rows}'
-
     calc_img = Image.new("RGB", (1, 1), "white")
     calc_d = ImageDraw.Draw(calc_img)
-
     for texts, allowed_width in zip(hor_texts + ver_texts, [width] * len(hor_texts) + [pad_left] * len(ver_texts)):
         items = [] + texts
         texts.clear()
-
         for line in items:
             wrapped = wrap(calc_d, line.text, fnt, allowed_width)
             texts += [GridAnnotation(x, line.is_active) for x in wrapped]
-
         for line in texts:
             bbox = calc_d.multiline_textbbox((0, 0), line.text, font=fnt)
             line.size = (bbox[2] - bbox[0], bbox[3] - bbox[1])
             line.allowed_width = allowed_width
-
     hor_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing for lines in hor_texts]
     ver_text_heights = [sum([line.size[1] + line_spacing for line in lines]) - line_spacing * len(lines) for lines in ver_texts]
-
     pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
-
     result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + margin * (rows-1)), "white")
-
     for row in range(rows):
         for col in range(cols):
             cell = im.crop((width * col, height * row, width * (col+1), height * (row+1)))
             result.paste(cell, (pad_left + (width + margin) * col, pad_top + (height + margin) * row))
-
     d = ImageDraw.Draw(result)
-
     for col in range(cols):
         x = pad_left + (width + margin) * col + width / 2
         y = pad_top / 2 - hor_text_heights[col] / 2
-
         draw_texts(d, x, y, hor_texts[col], fnt, fontsize)
-
     for row in range(rows):
         x = pad_left / 2
         y = pad_top + (height + margin) * row + height / 2 - ver_text_heights[row] / 2
-
         draw_texts(d, x, y, ver_texts[row], fnt, fontsize)
-
     return result
 
 
 def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
     prompts = all_prompts[1:]
     boundary = math.ceil(len(prompts) / 2)
-
     prompts_horiz = prompts[:boundary]
     prompts_vert = prompts[boundary:]
-
     hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in range(1 << len(prompts_horiz))]
     ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in range(1 << len(prompts_vert))]
-
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin)
 
 
 def resize_image(resize_mode, im, width, height, upscaler_name=None):
     """
     Resizes an image with the specified resize_mode, width, and height.
-
     Args:
         resize_mode: The mode to use when resizing the image.
             0: Resize the image to the specified width and height.
@@ -245,55 +215,42 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
         height: The height to resize the image to.
         upscaler_name: The name of the upscaler to use. If not provided, defaults to opts.upscaler_for_img2img.
     """
-
-    upscaler_name = upscaler_name or opts.upscaler_for_img2img
+    upscaler_name = upscaler_name or shared.opts.upscaler_for_img2img
 
     def resize(im, w, h):
         if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
             return im.resize((w, h), resample=LANCZOS)
-
         scale = max(w / im.width, h / im.height)
-
         if scale > 1.0:
             upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
             if len(upscalers) == 0:
                 upscaler = shared.sd_upscalers[0]
-                log.warning(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
+                shared.log.warning(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
             else:
                 upscaler = upscalers[0]
-
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
-
         if im.width != w or im.height != h:
             im = im.resize((w, h), resample=LANCZOS)
-
         return im
 
     if resize_mode == 0:
         res = resize(im, width, height)
-
     elif resize_mode == 1:
         ratio = width / height
         src_ratio = im.width / im.height
-
         src_w = width if ratio > src_ratio else im.width * height // im.height
         src_h = height if ratio <= src_ratio else im.height * width // im.width
-
         resized = resize(im, src_w, src_h)
         res = Image.new("RGB", (width, height))
         res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
-
     else:
         ratio = width / height
         src_ratio = im.width / im.height
-
         src_w = width if ratio < src_ratio else im.width * height // im.height
         src_h = height if ratio >= src_ratio else im.height * width // im.width
-
         resized = resize(im, src_w, src_h)
         res = Image.new("RGB", (width, height))
         res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
-
         if ratio < src_ratio:
             fill_height = height // 2 - src_h // 2
             res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
@@ -302,7 +259,6 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
             fill_width = width // 2 - src_w // 2
             res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
             res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
-
     return res
 
 
@@ -351,7 +307,7 @@ class FilenameGenerator:
         'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.batch_index + 1,
         'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
-        'clip_skip': lambda self: opts.data["CLIP_stop_at_last_layers"],
+        'clip_skip': lambda self: shared.opts.data["CLIP_stop_at_last_layers"],
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -380,7 +336,6 @@ class FilenameGenerator:
     def prompt_no_style(self):
         if self.p is None or self.prompt is None:
             return None
-
         prompt_no_style = self.prompt
         for style in shared.prompt_styles.get_style_prompts(self.p.styles):
             if len(style) > 0:
@@ -388,50 +343,42 @@ class FilenameGenerator:
                     prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')
 
                 prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
-
         return sanitize_filename_part(prompt_no_style, replace_spaces=False)
 
     def prompt_words(self):
         words = [x for x in re_nonletters.split(self.prompt or "") if len(x) > 0]
         if len(words) == 0:
             words = ["empty"]
-        return sanitize_filename_part(" ".join(words[0:opts.directories_max_prompt_words]), replace_spaces=False)
+        return sanitize_filename_part(" ".join(words[0:shared.opts.directories_max_prompt_words]), replace_spaces=False)
 
     def datetime(self, *args):
         time_datetime = datetime.datetime.now()
-
         time_format = args[0] if len(args) > 0 and args[0] != "" else self.default_time_format
         try:
             time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
         except pytz.exceptions.UnknownTimeZoneError as _:
             time_zone = None
-
         time_zone_time = time_datetime.astimezone(time_zone)
         try:
             formatted_time = time_zone_time.strftime(time_format)
         except (ValueError, TypeError) as _:
             formatted_time = time_zone_time.strftime(self.default_time_format)
-
         return sanitize_filename_part(formatted_time, replace_spaces=False)
 
     def apply(self, x):
         res = ''
-
         for m in re_pattern.finditer(x):
             text, pattern = m.groups()
             if pattern is None:
                 res += text
                 continue
-
             pattern_args = []
             while True:
                 m = re_pattern_arg.match(pattern)
                 if m is None:
                     break
-
                 pattern, arg = m.groups()
                 pattern_args.insert(0, arg)
-
             fun = self.replacements.get(pattern.lower())
             if fun is not None:
                 try:
@@ -439,28 +386,22 @@ class FilenameGenerator:
                 except Exception as e:
                     replacement = None
                     errors.display(e, 'filename pattern')
-
                 if replacement == NOTHING_AND_SKIP_PREVIOUS_TEXT:
                     continue
                 elif replacement is not None:
                     res += text + str(replacement)
                     continue
-
             res += f'{text}[{pattern}]'
-
         return res
 
 
 def get_next_sequence_number(path, basename):
     """
     Determines and returns the next sequence number to use when saving an image in the specified directory.
-
-    The sequence starts at 0.
     """
     result = -1
     if basename != '':
         basename = basename + "-"
-
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
@@ -469,13 +410,68 @@ def get_next_sequence_number(path, basename):
                 result = max(int(l[0]), result)
             except ValueError:
                 pass
-
     return result + 1
+
+
+def atomically_save_image():
+    Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
+    while True:
+        image, filename, extension, params, exifinfo_data, txt_fullfn = save_queue.get()
+        mp = round(image.width * image.height / 1000000)
+        if mp > shared.opts.img_max_size_mp:
+            shared.log.warning(f'Image size: {image.size} excedes {shared.opts.img_max_size_mp} MPixels')
+        fn = filename + extension
+        image_format = Image.registered_extensions()[extension]
+        shared.log.debug(f'Saving image: {image_format} {fn} {image.size}')
+        # actual save
+        if image_format == 'PNG':
+            pnginfo_data = PngImagePlugin.PngInfo()
+            for k, v in params.pnginfo.items():
+                pnginfo_data.add_text(k, str(v))
+            image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, pnginfo=pnginfo_data)
+        elif image_format == 'JPEG':
+            if image.mode == 'RGBA':
+                shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
+                image = image.convert("RGB")
+            elif image.mode == 'I;16':
+                image = image.point(lambda p: p * 0.0038910505836576).convert("L")
+            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
+            image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, exif=exif_bytes)
+        elif image_format == 'WEBP':
+            if image.mode == 'I;16':
+                image = image.point(lambda p: p * 0.0038910505836576).convert("RGB")
+            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
+            image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, lossless=shared.opts.webp_lossless, exif=exif_bytes)
+        else:
+            shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
+            image.save(fn, format=image_format, quality=shared.opts.jpeg_quality)
+        # additional metadata saved in files
+        if shared.opts.save_txt and len(exifinfo_data) > 0:
+            with open(txt_fullfn, "w", encoding="utf8") as file:
+                file.write(exifinfo_data + "\n")
+        if shared.opts.save_log_fn != '' and len(exifinfo_data) > 0:
+            try:
+                with open(shared.opts.save_log_fn, mode='a+', encoding='utf-8') as f:
+                    try:
+                        entries = json.load(f)
+                    except:
+                        entries = []
+                    f.seek(0)
+                    entries.append({ 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo_data })
+                    json.dump(entries, f, indent=4)
+                    del entries
+            except Exception as e:
+                shared.log.warning(f'Failed to save log file: {shared.opts.save_log_fn} {e}')
+        save_queue.task_done()
+
+
+save_queue = queue.Queue()
+save_thread = threading.Thread(target=atomically_save_image, daemon=True)
+save_thread.start()
 
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
     """Save an image.
-
     Args:
         image (`PIL.Image`):
             The image to be saved.
@@ -499,7 +495,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
             If specified, `basename` and filename pattern will be ignored.
         save_to_dirs (bool):
             If true, the image will be saved into a subdirectory of `path`.
-
     Returns: (fullfn, txt_fullfn)
         fullfn (`str`):
             The full path of the saved imaged.
@@ -507,23 +502,25 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
             If a text file is saved for this image, this will be its full path. Otherwise None.
     """
     namegen = FilenameGenerator(p, seed, prompt, image)
-
+    if image is None:
+        shared.log.warning('Image is none')
+        return None, None
     if path is None: # set default path to avoid errors when functions are triggered manually or via api and param is not set
-        path = opts.outdir_save
+        path = shared.opts.outdir_save
     if save_to_dirs is None:
-        save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)
+        save_to_dirs = (grid and shared.opts.grid_save_to_dirs) or (not grid and shared.opts.save_to_dirs and not no_prompt)
     if save_to_dirs:
-        dirname = namegen.apply(opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
+        dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
         path = os.path.join(path, dirname)
     os.makedirs(path, exist_ok=True)
     if forced_filename is None:
         if short_filename or seed is None:
             file_decoration = ""
-        elif opts.save_to_dirs:
-            file_decoration = opts.samples_filename_pattern or "[seed]"
+        elif shared.opts.save_to_dirs:
+            file_decoration = shared.opts.samples_filename_pattern or "[seed]"
         else:
-            file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
-        add_number = opts.save_images_add_number or file_decoration == ''
+            file_decoration = shared.opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
+        add_number = shared.opts.save_images_add_number or file_decoration == ''
         if file_decoration != "" and add_number:
             file_decoration = "-" + file_decoration
         file_decoration = namegen.apply(file_decoration) + suffix
@@ -544,63 +541,25 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
         pnginfo[pnginfo_section_name] = info
     params = script_callbacks.ImageSaveParams(image, p, fullfn, pnginfo)
     script_callbacks.before_image_saved_callback(params)
-    image = params.image
-    fullfn = params.filename
     exifinfo_data = params.pnginfo.get('UserComment', '')
     if len(exifinfo_data) > 0:
         exifinfo_data = exifinfo_data + ', ' + params.pnginfo.get(pnginfo_section_name, '')
     else:
         exifinfo_data = params.pnginfo.get(pnginfo_section_name, '')
-
-    def atomically_save_image(image: Image, basename: str, extension: str):
-        Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
-        mp = round(image.width * image.height / 1000000)
-        if mp > shared.opts.img_max_size_mp:
-            shared.log.warning(f'Image size: {image.size} excedes {shared.opts.img_max_size_mp} MPixels')
-        fn = basename + extension
-        image_format = Image.registered_extensions()[extension]
-        log.debug(f'Saving image: {image_format} {fn} {image.size}')
-
-        if image_format == 'PNG':
-            pnginfo_data = PngImagePlugin.PngInfo()
-            for k, v in params.pnginfo.items():
-                pnginfo_data.add_text(k, str(v))
-            image.save(fn, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
-        elif image_format == 'JPEG':
-            if image.mode == 'RGBA':
-                shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
-                image = image.convert("RGB")
-            elif image.mode == 'I;16':
-                image = image.point(lambda p: p * 0.0038910505836576).convert("L")
-            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
-            image.save(fn, format=image_format, quality=opts.jpeg_quality, exif=exif_bytes)
-        elif image_format == 'WEBP':
-            if image.mode == 'I;16':
-                image = image.point(lambda p: p * 0.0038910505836576).convert("RGB")
-            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
-            image.save(fn, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless, exif=exif_bytes)
-        else:
-            shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
-            image.save(fn, format=image_format, quality=opts.jpeg_quality)
-
     filename, extension = os.path.splitext(params.filename)
     if hasattr(os, 'statvfs'):
         max_name_len = os.statvfs(path).f_namemax
         filename = filename[:max_name_len - max(4, len(extension))]
         params.filename = filename + extension
-        fullfn = params.filename
-    atomically_save_image(image, filename, extension)
+    txt_fullfn = f"{filename}.txt" if shared.opts.save_txt and len(exifinfo_data) > 0 else None
 
-    image.already_saved_as = fullfn
-    if opts.save_txt and len(exifinfo_data) > 0:
-        txt_fullfn = f"{filename}.txt"
-        with open(txt_fullfn, "w", encoding="utf8") as file:
-            file.write(exifinfo_data + "\n")
-    else:
-        txt_fullfn = None
+    save_queue.put((params.image, filename, extension, params, exifinfo_data, txt_fullfn))
+    save_queue.join()
+    # atomically_save_image(params.image, filename, extension, params, exifinfo_data, txt_fullfn)
 
+    params.image.already_saved_as = params.filename
     script_callbacks.image_saved_callback(params)
-    return fullfn, txt_fullfn
+    return params.filename, txt_fullfn
 
 
 def safe_decode_string(s: bytes):
