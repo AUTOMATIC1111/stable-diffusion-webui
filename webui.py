@@ -28,7 +28,16 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvisi
 
 startup_timer.record("import torch")
 
+import requests
+def gradio_get(url, **kwargs):
+    kwargs.setdefault('allow_redirects', True)
+    return requests.api.request('get', 'http://127.0.0.1/', **kwargs)
+
+original_get = requests.get
+requests.get = gradio_get
 import gradio
+requests.get = original_get
+
 startup_timer.record("import gradio")
 
 import ldm.modules.encoders.modules  # noqa: F401
