@@ -1,8 +1,5 @@
-import torch
-import safetensors.torch
 import os
 import collections
-from collections import namedtuple
 from modules import paths, shared, devices, script_callbacks, sd_models
 import glob
 from copy import deepcopy
@@ -89,7 +86,7 @@ def refresh_vae_list():
 
 def find_vae_near_checkpoint(checkpoint_file):
     checkpoint_path = os.path.splitext(checkpoint_file)[0]
-    for vae_location in [checkpoint_path + ".vae.pt", checkpoint_path + ".vae.ckpt", checkpoint_path + ".vae.safetensors"]:
+    for vae_location in [f"{checkpoint_path}.vae.pt", f"{checkpoint_path}.vae.ckpt", f"{checkpoint_path}.vae.safetensors"]:
         if os.path.isfile(vae_location):
             return vae_location
 

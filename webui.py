@@ -16,12 +16,12 @@ from packaging import version
 import logging
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
-from modules import paths, timer, import_hook, errors
+from modules import paths, timer, import_hook, errors  # noqa: F401
 
 startup_timer = timer.Timer()
 
 import torch
-import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
+import pytorch_lightning   # noqa: F401 # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 
@@ -31,19 +31,19 @@ startup_timer.record("import torch")
 import gradio
 startup_timer.record("import gradio")
 
-import ldm.modules.encoders.modules
+import ldm.modules.encoders.modules  # noqa: F401
 startup_timer.record("import ldm")
 
 from modules import extra_networks, ui_extra_networks_checkpoints
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
-from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
+from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, queue_lock  # noqa: F401
 
 # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
 if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__long_version__ = torch.__version__
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 
-from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks, config_states
+from modules import shared, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks, config_states
 import modules.codeformer_model as codeformer
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
@@ -181,11 +181,11 @@ def initialize():
     gfpgan.setup_model(cmd_opts.gfpgan_models_path)
     startup_timer.record("setup gfpgan")
 
-    modelloader.list_builtin_upscalers()
-    startup_timer.record("list builtin upscalers")
-
     modules.scripts.load_scripts()
     startup_timer.record("load scripts")
+
+    modelloader.load_upscalers()
+    startup_timer.record("load upscalers")
 
     modules.sd_vae.refresh_vae_list()
     startup_timer.record("refresh VAE")
@@ -280,7 +280,6 @@ def api_only():
     print(f"Startup time: {startup_timer.summary()}.")
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
-
 def webui():
     launch_api = cmd_opts.api
     initialize()
@@ -306,6 +305,16 @@ def webui():
             with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
+
+        # this restores the missing /docs endpoint
+        if launch_api and not hasattr(FastAPI, 'original_setup'):
+            def fastapi_setup(self):
+                self.docs_url = "/docs"
+                self.redoc_url = "/redoc"
+                self.original_setup()
+
+            FastAPI.original_setup = FastAPI.setup
+            FastAPI.setup = fastapi_setup
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
@@ -333,6 +342,7 @@ def webui():
         setup_middleware(app)
 
         modules.progress.setup_progress_api(app)
+        modules.ui.setup_ui_api(app)
 
         if launch_api:
             create_api(app)
@@ -347,7 +357,7 @@ def webui():
         if cmd_opts.subpath:
             redirector = FastAPI()
             redirector.get("/")
-            mounted_app = gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
+            gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
 
         wait_on_server(shared.demo)
         print('Restarting UI...')
@@ -375,7 +385,6 @@ def webui():
 
         localization.list_localizations(cmd_opts.localizations_dir)
 
-        modelloader.forbid_loaded_nonbuiltin_upscalers()
         modules.scripts.reload_scripts()
         startup_timer.record("load scripts")
 

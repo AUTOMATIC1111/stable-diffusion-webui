@@ -17,8 +17,14 @@ jobs:
           cache: pip
           cache-dependency-path: |
             **/requirements*txt
+            launch.py
       - name: Run tests
         run: python launch.py --tests test --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+          PIP_PROGRESS_BAR: "off"
+          TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
+          WEBUI_LAUNCH_LIVE_OUTPUT: "1"
       - name: Upload main app stdout-stderr
         uses: actions/upload-artifact@v3
         if: always()

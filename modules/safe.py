@@ -95,16 +95,16 @@ def check_pt(filename, extra_handler):
 
     except zipfile.BadZipfile:
 
-        # if it's not a zip file, it's an olf pytorch format, with five objects written to pickle
+        # if it's not a zip file, it's an old pytorch format, with five objects written to pickle
         with open(filename, "rb") as file:
             unpickler = RestrictedUnpickler(file)
             unpickler.extra_handler = extra_handler
-            for i in range(5):
+            for _ in range(5):
                 unpickler.load()
 
 
 def load(filename, *args, **kwargs):
-    return load_with_extra(filename, extra_handler=global_extra_handler, *args, **kwargs)
+    return load_with_extra(filename, *args, extra_handler=global_extra_handler, **kwargs)
 
 
 def load_with_extra(filename, extra_handler=None, *args, **kwargs):

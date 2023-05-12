@@ -1,10 +1,8 @@
 import cv2
 import requests
 import os
-from collections import defaultdict
-from math import log, sqrt
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import ImageDraw
 
 GREEN = "#0F0"
 BLUE = "#00F"
@@ -12,63 +10,64 @@ RED = "#F00"
 
 
 def crop_image(im, settings):
-  """ Intelligently crop an image to the subject matter """
+    """ Intelligently crop an image to the subject matter """
 
-  scale_by = 1
-  if is_landscape(im.width, im.height):
-    scale_by = settings.crop_height / im.height
-  elif is_portrait(im.width, im.height):
-    scale_by = settings.crop_width / im.width
-  elif is_square(im.width, im.height):
-    if is_square(settings.crop_width, settings.crop_height):
-      scale_by = settings.crop_width / im.width
-    elif is_landscape(settings.crop_width, settings.crop_height):
-      scale_by = settings.crop_width / im.width
-    elif is_portrait(settings.crop_width, settings.crop_height):
-      scale_by = settings.crop_height / im.height
+    scale_by = 1
+    if is_landscape(im.width, im.height):
+        scale_by = settings.crop_height / im.height
+    elif is_portrait(im.width, im.height):
+        scale_by = settings.crop_width / im.width
+    elif is_square(im.width, im.height):
+        if is_square(settings.crop_width, settings.crop_height):
+            scale_by = settings.crop_width / im.width
+        elif is_landscape(settings.crop_width, settings.crop_height):
+            scale_by = settings.crop_width / im.width
+        elif is_portrait(settings.crop_width, settings.crop_height):
+            scale_by = settings.crop_height / im.height
 
-  im = im.resize((int(im.width * scale_by), int(im.height * scale_by)))
-  im_debug = im.copy()
 
-  focus = focal_point(im_debug, settings)
+    im = im.resize((int(im.width * scale_by), int(im.height * scale_by)))
+    im_debug = im.copy()
 
-  # take the focal point and turn it into crop coordinates that try to center over the focal
-  # point but then get adjusted back into the frame
-  y_half = int(settings.crop_height / 2)
-  x_half = int(settings.crop_width / 2)
+    focus = focal_point(im_debug, settings)
 
-  x1 = focus.x - x_half
-  if x1 < 0:
-      x1 = 0
-  elif x1 + settings.crop_width > im.width:
-      x1 = im.width - settings.crop_width
+    # take the focal point and turn it into crop coordinates that try to center over the focal
+    # point but then get adjusted back into the frame
+    y_half = int(settings.crop_height / 2)
+    x_half = int(settings.crop_width / 2)
 
-  y1 = focus.y - y_half
-  if y1 < 0:
-      y1 = 0
-  elif y1 + settings.crop_height > im.height:
-      y1 = im.height - settings.crop_height
+    x1 = focus.x - x_half
+    if x1 < 0:
+        x1 = 0
+    elif x1 + settings.crop_width > im.width:
+        x1 = im.width - settings.crop_width
 
-  x2 = x1 + settings.crop_width
-  y2 = y1 + settings.crop_height
+    y1 = focus.y - y_half
+    if y1 < 0:
+        y1 = 0
+    elif y1 + settings.crop_height > im.height:
+        y1 = im.height - settings.crop_height
 
-  crop = [x1, y1, x2, y2]
+    x2 = x1 + settings.crop_width
+    y2 = y1 + settings.crop_height
 
-  results = []
+    crop = [x1, y1, x2, y2]
 
-  results.append(im.crop(tuple(crop)))
+    results = []
 
-  if settings.annotate_image:
-    d = ImageDraw.Draw(im_debug)
-    rect = list(crop)
-    rect[2] -= 1
-    rect[3] -= 1
-    d.rectangle(rect, outline=GREEN)
-    results.append(im_debug)
-    if settings.destop_view_image:
-      im_debug.show()
+    results.append(im.crop(tuple(crop)))
 
-  return results
+    if settings.annotate_image:
+        d = ImageDraw.Draw(im_debug)
+        rect = list(crop)
+        rect[2] -= 1
+        rect[3] -= 1
+        d.rectangle(rect, outline=GREEN)
+        results.append(im_debug)
+        if settings.destop_view_image:
+            im_debug.show()
+
+    return results
 
 def focal_point(im, settings):
     corner_points = image_corner_points(im, settings) if settings.corner_points_weight > 0 else []
@@ -88,7 +87,7 @@ def focal_point(im, settings):
     corner_centroid = None
     if len(corner_points) > 0:
       corner_centroid = centroid(corner_points)
-      corner_centroid.weight = settings.corner_points_weight / weight_pref_total 
+      corner_centroid.weight = settings.corner_points_weight / weight_pref_total
       pois.append(corner_centroid)
 
     entropy_centroid = None
@@ -100,7 +99,7 @@ def focal_point(im, settings):
     face_centroid = None
     if len(face_points) > 0:
       face_centroid = centroid(face_points)
-      face_centroid.weight = settings.face_points_weight / weight_pref_total 
+      face_centroid.weight = settings.face_points_weight / weight_pref_total
       pois.append(face_centroid)
 
     average_point = poi_average(pois, settings)
@@ -111,7 +110,7 @@ def focal_point(im, settings):
       if corner_centroid is not None:
         color = BLUE
         box = corner_centroid.bounding(max_size * corner_centroid.weight)
-        d.text((box[0], box[1]-15), "Edge: %.02f" % corner_centroid.weight, fill=color)
+        d.text((box[0], box[1]-15), f"Edge: {corner_centroid.weight:.02f}", fill=color)
         d.ellipse(box, outline=color)
         if len(corner_points) > 1:
           for f in corner_points:
@@ -119,7 +118,7 @@ def focal_point(im, settings):
       if entropy_centroid is not None:
         color = "#ff0"
         box = entropy_centroid.bounding(max_size * entropy_centroid.weight)
-        d.text((box[0], box[1]-15), "Entropy: %.02f" % entropy_centroid.weight, fill=color)
+        d.text((box[0], box[1]-15), f"Entropy: {entropy_centroid.weight:.02f}", fill=color)
         d.ellipse(box, outline=color)
         if len(entropy_points) > 1:
           for f in entropy_points:
@@ -127,14 +126,14 @@ def focal_point(im, settings):
       if face_centroid is not None:
         color = RED
         box = face_centroid.bounding(max_size * face_centroid.weight)
-        d.text((box[0], box[1]-15), "Face: %.02f" % face_centroid.weight, fill=color)
+        d.text((box[0], box[1]-15), f"Face: {face_centroid.weight:.02f}", fill=color)
         d.ellipse(box, outline=color)
         if len(face_points) > 1:
           for f in face_points:
             d.rectangle(f.bounding(4), outline=color)
 
       d.ellipse(average_point.bounding(max_size), outline=GREEN)
-      
+
     return average_point
 
 
@@ -185,7 +184,7 @@ def image_face_points(im, settings):
         try:
           faces = classifier.detectMultiScale(gray, scaleFactor=1.1,
             minNeighbors=7, minSize=(minsize, minsize), flags=cv2.CASCADE_SCALE_IMAGE)
-        except:
+        except Exception:
           continue
 
         if len(faces) > 0:
@@ -262,10 +261,11 @@ def image_entropy(im):
     hist = hist[hist > 0]
     return -np.log2(hist / hist.sum()).sum()
 
+
 def centroid(pois):
-  x = [poi.x for poi in pois]
-  y = [poi.y for poi in pois]
-  return PointOfInterest(sum(x)/len(pois), sum(y)/len(pois))
+    x = [poi.x for poi in pois]
+    y = [poi.y for poi in pois]
+    return PointOfInterest(sum(x) / len(pois), sum(y) / len(pois))
 
 
 def poi_average(pois, settings):
@@ -283,59 +283,59 @@ def poi_average(pois, settings):
 
 
 def is_landscape(w, h):
-  return w > h
+    return w > h
 
 
 def is_portrait(w, h):
-  return h > w
+    return h > w
 
 
 def is_square(w, h):
-  return w == h
+    return w == h
 
 
 def download_and_cache_models(dirname):
-  download_url = 'https://github.com/opencv/opencv_zoo/blob/91fb0290f50896f38a0ab1e558b74b16bc009428/models/face_detection_yunet/face_detection_yunet_2022mar.onnx?raw=true'
-  model_file_name = 'face_detection_yunet.onnx'
+    download_url = 'https://github.com/opencv/opencv_zoo/blob/91fb0290f50896f38a0ab1e558b74b16bc009428/models/face_detection_yunet/face_detection_yunet_2022mar.onnx?raw=true'
+    model_file_name = 'face_detection_yunet.onnx'
 
-  if not os.path.exists(dirname):
-    os.makedirs(dirname)
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
 
-  cache_file = os.path.join(dirname, model_file_name)
-  if not os.path.exists(cache_file):
-    print(f"downloading face detection model from '{download_url}' to '{cache_file}'")
-    response = requests.get(download_url)
-    with open(cache_file, "wb") as f:
-      f.write(response.content)
+    cache_file = os.path.join(dirname, model_file_name)
+    if not os.path.exists(cache_file):
+        print(f"downloading face detection model from '{download_url}' to '{cache_file}'")
+        response = requests.get(download_url)
+        with open(cache_file, "wb") as f:
+            f.write(response.content)
 
-  if os.path.exists(cache_file):
-    return cache_file
-  return None
+    if os.path.exists(cache_file):
+        return cache_file
+    return None
 
 
 class PointOfInterest:
-  def __init__(self, x, y, weight=1.0, size=10):
-    self.x = x
-    self.y = y
-    self.weight = weight
-    self.size = size
+    def __init__(self, x, y, weight=1.0, size=10):
+        self.x = x
+        self.y = y
+        self.weight = weight
+        self.size = size
 
-  def bounding(self, size):
-    return [
-      self.x - size//2,
-      self.y - size//2,
-      self.x + size//2,
-      self.y + size//2
-    ]
+    def bounding(self, size):
+        return [
+            self.x - size // 2,
+            self.y - size // 2,
+            self.x + size // 2,
+            self.y + size // 2
+        ]
 
 
 class Settings:
-  def __init__(self, crop_width=512, crop_height=512, corner_points_weight=0.5, entropy_points_weight=0.5, face_points_weight=0.5, annotate_image=False, dnn_model_path=None):
-    self.crop_width = crop_width
-    self.crop_height = crop_height
-    self.corner_points_weight = corner_points_weight
-    self.entropy_points_weight = entropy_points_weight
-    self.face_points_weight = face_points_weight
-    self.annotate_image = annotate_image
-    self.destop_view_image = False
-    self.dnn_model_path = dnn_model_path
+    def __init__(self, crop_width=512, crop_height=512, corner_points_weight=0.5, entropy_points_weight=0.5, face_points_weight=0.5, annotate_image=False, dnn_model_path=None):
+        self.crop_width = crop_width
+        self.crop_height = crop_height
+        self.corner_points_weight = corner_points_weight
+        self.entropy_points_weight = entropy_points_weight
+        self.face_points_weight = face_points_weight
+        self.annotate_image = annotate_image
+        self.destop_view_image = False
+        self.dnn_model_path = dnn_model_path

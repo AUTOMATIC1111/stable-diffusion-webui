@@ -92,8 +92,7 @@ contextMenuInit = function(){
       return;
     }
     gradioApp().addEventListener("click", function(e) {
-      let source = e.composedPath()[0]
-      if(source.id && source.id.indexOf('check_progress')>-1){
+      if(! e.isTrusted){
         return
       }
 

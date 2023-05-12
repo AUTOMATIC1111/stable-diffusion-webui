@@ -163,7 +163,8 @@ class Script:
         """helper function to generate id for a HTML element, constructs final id out of script name, tab and user-supplied item_id"""
 
         need_tabname = self.show(True) == self.show(False)
-        tabname = ('img2img' if self.is_img2img else 'txt2txt') + "_" if need_tabname else ""
+        tabkind = 'img2img' if self.is_img2img else 'txt2txt'
+        tabname = f"{tabkind}_" if need_tabname else ""
         title = re.sub(r'[^a-z_0-9]', '', re.sub(r'\s', '_', self.title().lower()))
 
         return f'script_{tabname}{title}_{item_id}'
@@ -230,7 +231,7 @@ def load_scripts():
     syspath = sys.path
 
     def register_scripts_from_module(module):
-        for key, script_class in module.__dict__.items():
+        for script_class in module.__dict__.values():
             if type(script_class) != type:
                 continue
 
@@ -294,9 +295,9 @@ class ScriptRunner:
 
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
-        for script_class, path, basedir, script_module in auto_processing_scripts + scripts_data:
-            script = script_class()
-            script.filename = path
+        for script_data in auto_processing_scripts + scripts_data:
+            script = script_data.script_class()
+            script.filename = script_data.path
             script.is_txt2img = not is_img2img
             script.is_img2img = is_img2img
 
@@ -491,7 +492,7 @@ class ScriptRunner:
                 module = script_loading.load_module(script.filename)
                 cache[filename] = module
 
-            for key, script_class in module.__dict__.items():
+            for script_class in module.__dict__.values():
                 if type(script_class) == type and issubclass(script_class, Script):
                     self.scripts[si] = script_class()
                     self.scripts[si].filename = filename
@@ -526,7 +527,7 @@ def add_classes_to_gradio_component(comp):
     this adds gradio-* to the component for css styling (ie gradio-button to gr.Button), as well as some others
     """
 
-    comp.elem_classes = ["gradio-" + comp.get_block_name(), *(comp.elem_classes or [])]
+    comp.elem_classes = [f"gradio-{comp.get_block_name()}", *(comp.elem_classes or [])]
 
     if getattr(comp, 'multiselect', False):
         comp.elem_classes.append('multiselect')
