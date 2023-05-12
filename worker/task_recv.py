@@ -25,7 +25,7 @@ OtherTaskQueueToken = 'others-'
 TrainTaskQueueToken = 'train'
 UpscaleCoeff = 100 * 1000
 TaskScoreRange = (0, 100 * UpscaleCoeff)
-TaskTimeout = 24 * 3600
+TaskTimeout = 20 * 3600
 Tmp = 'tmp'
 
 

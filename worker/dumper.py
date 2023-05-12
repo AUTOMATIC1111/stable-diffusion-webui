@@ -57,10 +57,10 @@ class TaskDumper(Thread):
         self.db = db
         self.ip = get_host_ip()
         self.send_delay = 10
-        self._last_dump_time = 0
         self.queue = queue.Queue(maxsize=100)
         self._stop = False
         self._dump_now = False
+        self._last_dump_time = 0
 
     def _get_queue_all(self):
         infos = {}
@@ -84,6 +84,7 @@ class TaskDumper(Thread):
                         info.update_db(self.db)
                 self._dump_now = False
             time.sleep(1)
+            self.do_others()
 
     def dump_task_progress(self, task_progress: TaskProgress):
         # try:
@@ -117,6 +118,9 @@ class TaskDumper(Thread):
     def progress_to_info(self, task_progress: TaskProgress) -> DumpInfo:
         raise NotImplementedError
 
+    def do_others(self):
+        pass
+
     def stop(self):
         self._stop = True
 
@@ -126,7 +130,9 @@ class MongoTaskDumper(TaskDumper):
     def __init__(self):
         mgo = MongoClient()
         mgo.collect.create_index('task_id', unique=True)
+        mgo.collect.create_index('status')
         mgo.collect.create_index('task.user_id')
+        self.clean_time = 0
         super(MongoTaskDumper, self).__init__(mgo)
 
     def progress_to_info(self, task_progress: TaskProgress) -> DumpInfo:
@@ -145,6 +151,28 @@ class MongoTaskDumper(TaskDumper):
             multi=False
         )
         return info
+
+    def do_others(self):
+        self.clean_timeout()
+
+    def clean_timeout(self):
+        now = int(time.time())
+        if now - self.clean_time > 3600:
+            tasks = self.db.collect.find({
+                'status': 0,
+                'task.create_at': {'$lt': now - 3600*12},
+            })
+            tasks = list(tasks)
+            for task in tasks:
+                task['status'] = -1
+                task['task_desc'] = 'task timeout(auto clean).'
+                self.db.update(
+                    {"task_id": task['task_id']},
+                    {'$set': task},
+                    multi=False
+                )
+
+            self.clean_time = now
 
 
 dumper = MongoTaskDumper()

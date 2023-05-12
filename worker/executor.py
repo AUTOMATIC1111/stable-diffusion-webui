@@ -11,19 +11,19 @@ from queue import Queue
 from loguru import logger
 from worker.task import Task
 from worker.handler import TaskHandler
-from worker.task_recv import TaskReceiver
+from worker.task_recv import TaskReceiver, TaskTimeout
 from threading import Thread, Condition, Lock
 from tools.model_hist import CkptLoadRecorder
 
 
 class TaskExecutor(Thread):
 
-    def __init__(self, ckpt_recorder: CkptLoadRecorder, timeout=3600, group=None, target=None, name=None,
+    def __init__(self, ckpt_recorder: CkptLoadRecorder, timeout=0, group=None, target=None, name=None,
                  args=(), kwargs=None, *, daemon=None, train_only=False):
         self.receiver = TaskReceiver(ckpt_recorder, train_only)
         self.recorder = ckpt_recorder
         self._handlers = {}
-        self.timeout = timeout
+        self.timeout = timeout if timeout > 0 else TaskTimeout
         self.stop = False
         self.mutex = Lock()
         self.not_busy = Condition(self.mutex)
