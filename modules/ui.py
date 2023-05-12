@@ -560,7 +560,7 @@ def create_ui():
                         elif category == "batch":
                             if not opts.dimensions_and_batch_together:
                                 #with FormRow(elem_id="txt2img_column_batch"):
-                                with gr.Row(id="txt2img_column_batch"):
+                                with gr.Row(elem_id="txt2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
                                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
              
