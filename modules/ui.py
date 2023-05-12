@@ -132,7 +132,7 @@ def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resiz
     with devices.autocast():
         p.init([""], [0], [0])
 
-    return f"resize: from <span class='resolution'>{p.width}x{p.height}</span> to <span class='resolution'>{p.hr_resize_x or p.hr_upscale_to_x}x{p.hr_resize_y or p.hr_upscale_to_y}</span>"
+    return f"from <span class='resolution'>{p.width}x{p.height}</span> to <span class='resolution'>{p.hr_resize_x or p.hr_upscale_to_x}x{p.hr_resize_y or p.hr_upscale_to_y}</span>"
 
 
 def resize_from_to_html(width, height, scale_by):
@@ -142,7 +142,7 @@ def resize_from_to_html(width, height, scale_by):
     if not target_width or not target_height:
         return "no image selected"
 
-    return f"resize: from <span class='resolution'>{width}x{height}</span> to <span class='resolution'>{target_width}x{target_height}</span>"
+    return f"from <span class='resolution'>{width}x{height}</span> to <span class='resolution'>{target_width}x{target_height}</span>"
 
 
 def apply_styles(prompt, prompt_neg, styles):
@@ -523,9 +523,7 @@ def create_ui():
                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn")
                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
 
-
-                            if opts.dimensions_and_batch_together:
-                            
+                            if opts.dimensions_and_batch_together:                           
                                 with gr.Row(elem_id="txt2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
                                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
@@ -538,7 +536,7 @@ def create_ui():
 
                         elif category == "checkboxes":
                             #with FormRow(elem_id="txt2img_checkboxes", variant="compact"):
-                            with gr.Row():
+                            with gr.Row(elem_id="txt2img_checkboxes"):
                                 restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                                 tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
                                 enable_hr = gr.Checkbox(label='Hires. fix', value=False, elem_id="txt2img_enable_hr")
@@ -562,7 +560,7 @@ def create_ui():
                         elif category == "batch":
                             if not opts.dimensions_and_batch_together:
                                 #with FormRow(elem_id="txt2img_column_batch"):
-                                with gr.Row():
+                                with gr.Row(id="txt2img_column_batch"):
                                     batch_count = gr.Slider(minimum=1, step=1, label='Batch count', value=1, elem_id="txt2img_batch_count")
                                     batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
              

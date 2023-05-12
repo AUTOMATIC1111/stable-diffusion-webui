@@ -426,6 +426,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_output_image_fit": OptionInfo("Scale-down", "Generated image fit method", gr.Radio, {"choices": ["Scale-down", "Contain"]}),
     "ui_show_range_ticks": OptionInfo(True, "Show ticks for range sliders"),
     "ui_dispatch_input_release": OptionInfo(True, "Dispatch event change on release, for slider and input number components"), 
+    "ui_no_slider_layout": OptionInfo(False, "No sliders compact layout mode"), 
     "localization": OptionInfo("None", "Localization (requires restart)", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)),
     "gradio_theme": OptionInfo("Default", "Gradio theme (requires restart)", ui_components.DropdownEditable, lambda: {"choices": ["Default"] + gradio_hf_hub_themes})
 }))

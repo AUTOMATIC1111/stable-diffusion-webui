@@ -1489,6 +1489,21 @@ onUiUpdate(function () {
     });
   ui_show_range_ticks(opts.ui_show_range_ticks);
 
+  const gradio_main = gradioApp().querySelector(".gradio-container > div.main");
+  function ui_no_slider_layout(value) {
+    if (value) {
+      gradio_main.classList.add("no-slider-layout");
+    } else {
+      gradio_main.classList.remove("no-slider-layout");
+    }
+  }
+  gradioApp()
+    .querySelector("#setting_ui_no_slider_layout input")
+    .addEventListener("click", function (e) {
+      ui_no_slider_layout(e.target.checked, true);
+    });
+  ui_no_slider_layout(opts.ui_no_slider_layout);
+
   // draggable reordable quicksettings
   const container = gradioApp().querySelector(
     "#quicksettings_overflow_container"
