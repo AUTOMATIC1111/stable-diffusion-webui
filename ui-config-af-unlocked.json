@@ -696,5 +696,11 @@
     "customscript/batchimagesB.py/txt2img/Append text instead/visible": true,
     "customscript/batchimagesB.py/txt2img/Append text instead/value": false,
     "customscript/batchimagesB.py/txt2img/List of prompt inputs/visible": true,
-    "customscript/batchimagesB.py/txt2img/List of prompt inputs/value": ""
+    "customscript/batchimagesB.py/txt2img/List of prompt inputs/value": "",
+    "txt2img/Text to prepend/visible": true,
+    "txt2img/Text to prepend/value": "",
+    "txt2img/Append text instead/visible": true,
+    "txt2img/Append text instead/value": false,
+    "txt2img/List of prompt inputs/visible": true,
+    "txt2img/List of prompt inputs/value": ""
 }
