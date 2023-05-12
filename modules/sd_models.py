@@ -409,7 +409,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     shared.log.info(f"Model loaded in {timer.summary()}")
     current_checkpoint_info = None
     devices.torch_gc()
-    shared.log.debug(f'Model load finished: {memory_stats()}')
+    shared.log.info(f'Model load finished: {memory_stats()}')
 
 
 def reload_model_weights(sd_model=None, info=None):

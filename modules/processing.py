@@ -538,7 +538,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         assert len(p.prompt) > 0
     else:
         assert p.prompt is not None
-    devices.torch_gc()
+    # devices.torch_gc() # TODO: gc
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
@@ -672,9 +672,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         info=infotext(n, i)
                         p.restore_faces = orig
                         images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=info, p=p, suffix="-before-face-restoration")
-                    devices.torch_gc()
                     x_sample = modules.face_restoration.restore_faces(x_sample)
-                    devices.torch_gc()
                 image = Image.fromarray(x_sample)
                 if p.scripts is not None:
                     pp = scripts.PostprocessImageArgs(image)

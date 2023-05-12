@@ -224,6 +224,7 @@ def check_torch():
     elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo')):
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
+        os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.9,max_split_size_mb:512')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision==0.15.1 torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     elif allow_ipex and (shutil.which('sycl-ls') is not None or os.path.exists('/opt/intel/oneapi') or args.use_ipex):

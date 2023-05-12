@@ -2,7 +2,7 @@ import gc
 import sys
 import contextlib
 import torch
-from modules import cmd_args, shared
+from modules import cmd_args, shared, memstats
 
 if sys.platform == "darwin":
     from modules import mac_specific # pylint: disable=ungrouped-imports
@@ -78,6 +78,7 @@ def torch_gc():
                 torch.cuda.ipc_collect()
         except:
             pass
+    shared.log.debug(f'gc: {memstats.memory_stats()}')
 
 
 def test_fp16():
@@ -104,7 +105,10 @@ def set_cuda_params():
             pass
         if torch.backends.cudnn.is_available():
             try:
-                torch.backends.cudnn.benchmark = shared.opts.cudnn_benchmark
+                if any([torch.cuda.get_device_capability(devid) == (7, 5) for devid in range(0, torch.cuda.device_count())]): # monkey-patch for old nvidia cards
+                    torch.backends.cudnn.benchmark = True
+                else:
+                    torch.backends.cudnn.benchmark = shared.opts.cudnn_benchmark
                 torch.backends.cudnn.benchmark_limit = 0
                 torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
             except:
