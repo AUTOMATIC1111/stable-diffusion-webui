@@ -1,0 +1,13 @@
+/*.md
+/.*cache
+/.github
+/cache.json
+/config.json
+/configs
+/extensions
+/extensions-disabled
+/html/licenses.html
+/models
+/repositories
+/style.css
+/venv

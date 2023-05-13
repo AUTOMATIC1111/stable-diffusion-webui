@@ -1,0 +1,15 @@
+{
+    "devDependencies": {
+        "prettier": "^2.8.8"
+    },
+    "scripts": {
+        "check-prettier": "prettier --check .",
+        "prettify": "prettier --write ."
+    },
+    "prettier": {
+        "printWidth": 9001,
+        "quoteProps": "consistent",
+        "tabWidth": 4,
+        "trailingComma": "all"
+    }
+}
