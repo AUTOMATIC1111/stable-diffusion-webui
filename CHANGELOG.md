@@ -8,6 +8,7 @@
  * fix upscalers disappearing after the user reloads UI
  * allow bf16 in safe unpickler (resolves problems with loading some loras)
  * allow web UI to be ran fully offline
+ * fix localizations not working
 
 ## 1.2.0
 
