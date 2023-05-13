@@ -596,11 +596,8 @@ def apply_token_merging(sd_model, hr: bool):
     tomesd.apply_patch(
         sd_model,
         ratio=ratio,
-        max_downsample=shared.opts.token_merging_maximum_down_sampling,
-        sx=shared.opts.token_merging_stride_x,
-        sy=shared.opts.token_merging_stride_y,
-        use_rand=shared.opts.token_merging_random,
-        merge_attn=shared.opts.token_merging_merge_attention,
-        merge_crossattn=shared.opts.token_merging_merge_cross_attention,
-        merge_mlp=shared.opts.token_merging_merge_mlp
+        use_rand=False,  # can cause issues with some samplers
+        merge_attn=True,
+        merge_crossattn=False,
+        merge_mlp=False
     )
