@@ -39,7 +39,10 @@ group.add_argument("--no-download", action='store_true', help="Disable download 
 group.add_argument("--profile", action='store_true', help="Run profiler, default: %(default)s")
 group.add_argument("--disable-queue", action='store_true', help="Disable queues, default: %(default)s")
 group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
-group.add_argument("--use-ipex", action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s", default=False)
+group.add_argument("--use-ipex", default = False, action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s")
+group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
+group.add_argument("--use-cuda", default=False, action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")
+group.add_argument("--use-rocm", default=False, action='store_true', help="Force use AMD ROCm backend, default: %(default)s")
 
 # removed args are added here as hidden in fixed format for compatbility reasons
 group.add_argument("-f", action='store_true', help=argparse.SUPPRESS)  # allows running as root; implemented outside of webui

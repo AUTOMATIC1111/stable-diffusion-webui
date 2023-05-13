@@ -65,3 +65,4 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
+- Ability to save JSON log of all generated images with metadata
