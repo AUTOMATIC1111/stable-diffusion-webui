@@ -19,6 +19,7 @@ python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
+stored_git_tag = None
 dir_repos = "repositories"
 
 if 'GRADIO_ANALYTICS_ENABLED' not in os.environ:
@@ -68,6 +69,20 @@ def commit_hash():
         stored_commit_hash = "<none>"
 
     return stored_commit_hash
+
+
+def git_tag():
+    global stored_git_tag
+
+    if stored_git_tag is not None:
+        return stored_git_tag
+
+    try:
+        stored_git_tag = run(f"{git} describe --tags").strip()
+    except Exception:
+        stored_git_tag = "<none>"
+
+    return stored_git_tag
 
 
 def run(command, desc=None, errdesc=None, custom_env=None, live=False):
@@ -222,7 +237,7 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_environment():
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==2.0.0 torchvision==0.15.1 --extra-index-url https://download.pytorch.org/whl/cu118")
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url https://download.pytorch.org/whl/cu118")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
@@ -246,8 +261,10 @@ def prepare_environment():
         check_python_version()
 
     commit = commit_hash()
+    tag = git_tag()
 
     print(f"Python {sys.version}")
+    print(f"Version: {tag}")
     print(f"Commit hash: {commit}")
 
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):

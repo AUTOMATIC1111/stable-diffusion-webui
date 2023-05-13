@@ -69,7 +69,9 @@ class ExtraNetworksPage:
         pass
 
     def link_preview(self, filename):
-        return "./sd_extra_networks/thumb?filename=" + urllib.parse.quote(filename.replace('\\', '/')) + "&mtime=" + str(os.path.getmtime(filename))
+        quoted_filename = urllib.parse.quote(filename.replace('\\', '/'))
+        mtime = os.path.getmtime(filename)
+        return f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
 
     def search_terms_from_path(self, filename, possible_directories=None):
         abspath = os.path.abspath(filename)
@@ -89,19 +91,22 @@ class ExtraNetworksPage:
 
         subdirs = {}
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
-            for x in glob.glob(os.path.join(parentdir, '**/*'), recursive=True):
-                if not os.path.isdir(x):
-                    continue
+            for root, dirs, files in os.walk(parentdir):
+                for dirname in dirs:
+                    x = os.path.join(root, dirname)
 
-                subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
-                while subdir.startswith("/"):
-                    subdir = subdir[1:]
+                    if not os.path.isdir(x):
+                        continue
 
-                is_empty = len(os.listdir(x)) == 0
-                if not is_empty and not subdir.endswith("/"):
-                    subdir = subdir + "/"
+                    subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
+                    while subdir.startswith("/"):
+                        subdir = subdir[1:]
 
-                subdirs[subdir] = 1
+                    is_empty = len(os.listdir(x)) == 0
+                    if not is_empty and not subdir.endswith("/"):
+                        subdir = subdir + "/"
+
+                    subdirs[subdir] = 1
 
         if subdirs:
             subdirs = {"": 1, **subdirs}
@@ -157,8 +162,20 @@ class ExtraNetworksPage:
         if metadata:
             metadata_button = f"<div class='metadata-button' title='Show metadata' onclick='extraNetworksRequestMetadata(event, {json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
 
+        local_path = ""
+        filename = item.get("filename", "")
+        for reldir in self.allowed_directories_for_previews():
+            absdir = os.path.abspath(reldir)
+
+            if filename.startswith(absdir):
+                local_path = filename[len(absdir):]
+
+        # if this is true, the item must not be show in the default view, and must instead only be
+        # shown when searching for it
+        serach_only = "/." in local_path or "\\." in local_path
+
         args = {
-            "style": f"'{height}{width}{background_image}'",
+            "style": f"'display: none; {height}{width}{background_image}'",
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
@@ -168,6 +185,7 @@ class ExtraNetworksPage:
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
+            "serach_only": " search_only" if serach_only else "",
         }
 
         return self.card_page.format(**args)
@@ -209,6 +227,11 @@ def intialize():
 class ExtraNetworksUi:
     def __init__(self):
         self.pages = None
+        """gradio HTML components related to extra networks' pages"""
+
+        self.page_contents = None
+        """HTML content of the above; empty initially, filled when extra pages have to be shown"""
+
         self.stored_extra_pages = None
 
         self.button_save_preview = None
@@ -236,17 +259,22 @@ def pages_in_preferred_order(pages):
 def create_ui(container, button, tabname):
     ui = ExtraNetworksUi()
     ui.pages = []
+    ui.pages_contents = []
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
         for page in ui.stored_extra_pages:
-            with gr.Tab(page.title, id=page.title.lower().replace(" ", "_")):
+            page_id = page.title.lower().replace(" ", "_")
 
-                page_elem = gr.HTML(page.create_html(ui.tabname))
+            with gr.Tab(page.title, id=page_id):
+                elem_id = f"{tabname}_{page_id}_cards_html"
+                page_elem = gr.HTML('', elem_id=elem_id)
                 ui.pages.append(page_elem)
 
-    filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
+                page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + json.dumps(tabname) + '); return []}', inputs=[], outputs=[])
+
+    gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
@@ -254,19 +282,22 @@ def create_ui(container, button, tabname):
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
-        return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
+
+        if is_visible and not ui.pages_contents:
+            refresh()
+
+        return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary")), *ui.pages_contents
 
     state_visible = gr.State(value=False)
-    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button])
+    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button, *ui.pages])
 
     def refresh():
-        res = []
-
         for pg in ui.stored_extra_pages:
             pg.refresh()
-            res.append(pg.create_html(ui.tabname))
 
-        return res
+        ui.pages_contents = [pg.create_html(ui.tabname) for pg in ui.stored_extra_pages]
+
+        return ui.pages_contents
 
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 

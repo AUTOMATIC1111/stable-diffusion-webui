@@ -63,9 +63,9 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
     image.save(os.path.join(params.dstdir, f"{basename}.png"))
 
     if params.preprocess_txt_action == 'prepend' and existing_caption:
-        caption = existing_caption + ' ' + caption
+        caption = f"{existing_caption} {caption}"
     elif params.preprocess_txt_action == 'append' and existing_caption:
-        caption = caption + ' ' + existing_caption
+        caption = f"{caption} {existing_caption}"
     elif params.preprocess_txt_action == 'copy' and existing_caption:
         caption = existing_caption
 
@@ -174,7 +174,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         params.src = filename
 
         existing_caption = None
-        existing_caption_filename = os.path.splitext(filename)[0] + '.txt'
+        existing_caption_filename = f"{os.path.splitext(filename)[0]}.txt"
         if os.path.exists(existing_caption_filename):
             with open(existing_caption_filename, 'r', encoding="utf8") as file:
                 existing_caption = file.read()

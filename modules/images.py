@@ -357,6 +357,7 @@ class FilenameGenerator:
         'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
         'clip_skip': lambda self: opts.data["CLIP_stop_at_last_layers"],
+        'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -466,7 +467,7 @@ def get_next_sequence_number(path, basename):
     """
     result = -1
     if basename != '':
-        basename = basename + "-"
+        basename = f"{basename}-"
 
     prefix_length = len(basename)
     for p in os.listdir(path):
@@ -535,7 +536,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         add_number = opts.save_images_add_number or file_decoration == ''
 
         if file_decoration != "" and add_number:
-            file_decoration = "-" + file_decoration
+            file_decoration = f"-{file_decoration}"
 
         file_decoration = namegen.apply(file_decoration) + suffix
 
@@ -565,7 +566,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     def _atomically_save_image(image_to_save, filename_without_extension, extension):
         # save image with .tmp extension to avoid race condition when another process detects new image in the directory
-        temp_file_path = filename_without_extension + ".tmp"
+        temp_file_path = f"{filename_without_extension}.tmp"
         image_format = Image.registered_extensions()[extension]
 
         if extension.lower() == '.png':
@@ -625,7 +626,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if opts.save_txt and info is not None:
         txt_fullfn = f"{fullfn_without_extension}.txt"
         with open(txt_fullfn, "w", encoding="utf8") as file:
-            file.write(info + "\n")
+            file.write(f"{info}\n")
     else:
         txt_fullfn = None
 
