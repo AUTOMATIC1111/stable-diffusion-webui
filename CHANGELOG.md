@@ -1,7 +1,7 @@
-## Upcoming 1.2.0
+## 1.2.0
 
 ### Features:
- * do not load wait for stable diffusion model to load at startup
+ * do not wait for stable diffusion model to load at startup
  * add filename patterns: [denoising]
  * directory hiding for extra networks: dirs starting with . will hide their cards on extra network tabs unless specifically searched for
  * Lora: for the `<...>` text in prompt, use name of Lora that is in the metdata of the file, if present, instead of filename (both can be used to activate lora)
