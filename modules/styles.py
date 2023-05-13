@@ -74,7 +74,7 @@ class StyleDatabase:
     def save_styles(self, path: str) -> None:
         # Always keep a backup file around
         if os.path.exists(path):
-            shutil.copy(path, path + ".bak")
+            shutil.copy(path, f"{path}.bak")
 
         fd = os.open(path, os.O_RDWR|os.O_CREAT)
         with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:

@@ -515,6 +515,7 @@ onUiUpdate(function () {
           //window.dispatchEvent(resizeEvent);
         }
 
+
         function mouseUpHandler() {
           resizer.style.removeProperty("cursor");
           container.style.removeProperty("cursor");
@@ -525,6 +526,30 @@ onUiUpdate(function () {
           container.removeEventListener("mousemove", mouseMoveHandler);
           container.removeEventListener("mouseup", mouseUpHandler);
           //window.dispatchEvent(resizeEvent);
+      
+		prompt.parentElement.insertBefore(counter, prompt)
+        prompt.parentElement.style.position = "relative"
+
+		promptTokecountUpdateFuncs[id] = function(){ update_token_counter(id_button); }
+		textarea.addEventListener("input", promptTokecountUpdateFuncs[id]);
+    }
+
+    registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button')
+    registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button')
+    registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button')
+    registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button')
+
+    var show_all_pages = gradioApp().getElementById('settings_show_all_pages')
+    var settings_tabs = gradioApp().querySelector('#settings div')
+    if(show_all_pages && settings_tabs){
+        settings_tabs.appendChild(show_all_pages)
+        show_all_pages.onclick = function(){
+            gradioApp().querySelectorAll('#settings > div').forEach(function(elem){
+                if(elem.id == "settings_tab_licenses")
+                    return;
+
+                elem.style.display = "block";
+            })
         }
 
         container.addEventListener("mousemove", mouseMoveHandler);
@@ -1911,6 +1936,7 @@ function update_token_counter(button_id) {
   );
 }
 
+
 function restart_reload() {
   let bg_color = window
     .getComputedStyle(gradioApp().querySelector("#header-top"))
@@ -1921,6 +1947,8 @@ function restart_reload() {
   let panel_color = window
     .getComputedStyle(gradioApp().querySelector(".gradio-box"))
     .getPropertyValue("--ae-panel-bg-color");
+
+
 
   localStorage.setItem("bg_color", bg_color);
   localStorage.setItem("primary_color", primary_color);
@@ -1949,9 +1977,15 @@ function restart_reload() {
   document.body.innerHTML =
     '<div class="loader"><div class="circles"><span class="one"></span><span class="two"></span><span class="three"></span></div><div class="pacman"><span class="top"></span><span class="bottom"></span><span class="left"></span><div class="eye"></div></div></div>';
 
-  setTimeout(function () {
-    location.reload();
-  }, 2000);
+    var requestPing = function(){
+        requestGet("./internal/ping", {}, function(data){
+            location.reload();
+        }, function(){
+            setTimeout(requestPing, 500);
+        })
+    }
+	
+	setTimeout(requestPing, 2000);
 
   return [];
 }

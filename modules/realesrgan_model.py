@@ -28,9 +28,9 @@ class UpscalerRealESRGAN(Upscaler):
             for scaler in scalers:
                 if scaler.local_data_path.startswith("http"):
                     filename = modelloader.friendly_name(scaler.local_data_path)
-                    local = next(iter([local_model for local_model in local_model_paths if local_model.endswith(filename + '.pth')]), None)
-                    if local:
-                        scaler.local_data_path = local
+                    local_model_candidates = [local_model for local_model in local_model_paths if local_model.endswith(f"{filename}.pth")]
+                    if local_model_candidates:
+                        scaler.local_data_path = local_model_candidates[0]
 
                 if scaler.name in opts.realesrgan_enabled_models:
                     self.scalers.append(scaler)
@@ -47,7 +47,7 @@ class UpscalerRealESRGAN(Upscaler):
 
         info = self.load_model(path)
         if not os.path.exists(info.local_data_path):
-            print("Unable to load RealESRGAN model: %s" % info.name)
+            print(f"Unable to load RealESRGAN model: {info.name}")
             return img
 
         upsampler = RealESRGANer(

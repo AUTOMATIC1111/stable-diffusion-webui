@@ -3,11 +3,11 @@ function setupExtraNetworksForTab(tabname) {
     .querySelector("#" + tabname + "_extra_tabs")
     .classList.add("extra-networks");
 
-  var tabs = gradioApp().querySelector("#" + tabname + "_extra_tabs > div");
-  var search = gradioApp().querySelector(
+  let tabs = gradioApp().querySelector("#" + tabname + "_extra_tabs > div");
+  let search = gradioApp().querySelector(
     "#" + tabname + "_extra_search textarea"
   );
-  var refresh = gradioApp().getElementById(tabname + "_extra_refresh");
+  let refresh = gradioApp().getElementById(tabname + "_extra_refresh");
 
   let clear = document.createElement("div");
   clear.id = tabname + "_extra_clear";
@@ -33,7 +33,7 @@ function setupExtraNetworksForTab(tabname) {
     gradioApp()
       .querySelectorAll("#" + tabname + "_extra_tabs div.card")
       .forEach(function (elem) {
-        var text =
+        let text =
           elem.querySelector(".name").textContent.toLowerCase() +
           " " +
           elem.querySelector(".search_term").textContent.toLowerCase();
@@ -43,6 +43,11 @@ function setupExtraNetworksForTab(tabname) {
   });
 }
 
+function applyExtraNetworkFilter(tabname){
+    setTimeout(extraNetworksApplyFilter[tabname], 1);
+}
+
+var extraNetworksApplyFilter = {}
 var activePromptTextarea = {};
 
 function setupExtraNetworks() {

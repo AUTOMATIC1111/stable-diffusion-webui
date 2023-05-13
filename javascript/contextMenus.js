@@ -97,42 +97,39 @@ contextMenuInit = function () {
     });
   }
 
-  function addContextMenuEventListener() {
-    if (eventListenerApplied) {
+  function addContextMenuEventListener(){
+    if(eventListenerApplied){
       return;
     }
-    gradioApp().addEventListener("click", function (e) {
-      let source = e.composedPath()[0];
-      if (source.id && source.id.indexOf("check_progress") > -1) {
-        return;
+    gradioApp().addEventListener("click", function(e) {
+      if(! e.isTrusted){
+        return
       }
 
-      let oldMenu = gradioApp().querySelector("#context-menu");
-      if (oldMenu) {
-        oldMenu.remove();
+      let oldMenu = gradioApp().querySelector('#context-menu')
+      if(oldMenu){
+        oldMenu.remove()
       }
     });
-    gradioApp().addEventListener("contextmenu", function (e) {
-      let oldMenu = gradioApp().querySelector("#context-menu");
-      if (oldMenu) {
-        oldMenu.remove();
+    gradioApp().addEventListener("contextmenu", function(e) {
+      let oldMenu = gradioApp().querySelector('#context-menu')
+      if(oldMenu){
+        oldMenu.remove()
       }
-      menuSpecs.forEach(function (v, k) {
-        if (e.composedPath()[0].matches(k)) {
-          showContextMenu(e, e.composedPath()[0], v);
-          e.preventDefault();
+      menuSpecs.forEach(function(v,k) {
+        if(e.composedPath()[0].matches(k)){
+          showContextMenu(e,e.composedPath()[0],v)
+          e.preventDefault()
         }
-      });
+      })
     });
-    eventListenerApplied = true;
+    eventListenerApplied=true
+
   }
 
-  return [
-    appendContextMenuOption,
-    removeContextMenuOption,
-    addContextMenuEventListener,
-  ];
-};
+  return [appendContextMenuOption, removeContextMenuOption, addContextMenuEventListener]
+}
+
 
 initResponse = contextMenuInit();
 appendContextMenuOption = initResponse[0];
