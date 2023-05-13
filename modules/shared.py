@@ -712,7 +712,7 @@ def restore_defaults(restart=True):
     if os.path.exists(cmd_opts.ui_config):
         log.info('Restoring UI defaults')
         os.remove(cmd_opts.ui_config)
-    restart_server(True)
+    restart_server(restart)
 
 
 def listfiles(dirname):

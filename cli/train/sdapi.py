@@ -1,7 +1,5 @@
-import sys
-import json
-import aiohttp
 import asyncio
+import aiohttp
 import requests
 from util import Map
 
@@ -89,9 +87,9 @@ def progress():
 
 
 def options():
-    options = getsync('/sdapi/v1/options')
+    opt = getsync('/sdapi/v1/options')
     flags = getsync('/sdapi/v1/cmd-flags')
-    return { 'options': options, 'flags': flags }
+    return { 'options': opt, 'flags': flags }
 
 
 def shutdown():

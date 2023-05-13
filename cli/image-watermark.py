@@ -44,31 +44,31 @@ def set_exif(d: dict):
         ifd[_TAGS[k]] = v
     exif_stream = io.BytesIO()
     ifd.save(exif_stream)
-    bytes = b'Exif\x00\x00' + exif_stream.getvalue()
-    return bytes
+    encoded = b'Exif\x00\x00' + exif_stream.getvalue()
+    return encoded
 
 
-def get_watermark(image, args):
+def get_watermark(image, params):
     data = np.asarray(image)
-    decoder = WatermarkDecoder(options.type, args.length)
-    bytes = decoder.decode(data, options.method)
+    decoder = WatermarkDecoder(options.type, params.length)
+    decoded = decoder.decode(data, options.method)
     try:
-        watermark = str(bytes, 'UTF-8').replace('\x00', '')
+        s = str(decoded, 'UTF-8').replace('\x00', '')
     except:
-        watermark = ''
-    return watermark
+        s = ''
+    return s
 
 
-def set_watermark(image, args):
+def set_watermark(image, params):
     data = np.asarray(image)
     encoder = WatermarkEncoder()
-    encoder.set_watermark(options.type, args.wm.encode('utf-8'))
+    encoder.set_watermark(options.type, params.wm.encode('utf-8'))
     encoded = encoder.encode(data, options.method)
     image = Image.fromarray(encoded)
     return image
 
 
-def watermark(args, file):
+def watermark(params, file):
     if not os.path.exists(file):
         log.error({ 'watermark': 'file not found' })
         return
@@ -82,30 +82,30 @@ def watermark(args, file):
 
     exif = get_exif(image)
 
-    if args.command == 'read':
-        watermark = get_watermark(image, args)
-        log.info({ 'file': file, 'watermark': watermark, 'exif': exif, 'resolution': f'{image.width}x{image.height}' })
+    if params.command == 'read':
+        wm = get_watermark(image, params)
+        log.info({ 'file': file, 'watermark': wm, 'exif': exif, 'resolution': f'{image.width}x{image.height}' })
 
-    elif args.command == 'write':
-        metadata = b'' if args.strip else set_exif(exif)
-        if args.output != '':
-            pathlib.Path(args.output).mkdir(parents = True, exist_ok = True)
-        image=set_watermark(image, args)
-        fn = os.path.join(args.output, file)
+    elif params.command == 'write':
+        metadata = b'' if params.strip else set_exif(exif)
+        if params.output != '':
+            pathlib.Path(params.output).mkdir(parents = True, exist_ok = True)
+        image=set_watermark(image, params)
+        fn = os.path.join(params.output, file)
         image.save(fn, exif=metadata)
 
-        if args.verify:
+        if params.verify:
             data = np.asarray(image)
-            decoder = WatermarkDecoder(options.type, args.length)
-            bytes = decoder.decode(data, options.method)
-            if bytes.startswith(b'\xff'):
-                watermark = ''
+            decoder = WatermarkDecoder(options.type, params.length)
+            decoded = decoder.decode(data, options.method)
+            if decoded.startswith(b'\xff'):
+                wm = ''
             else:
-                watermark = str(bytes, 'UTF-8').replace('\x00', '')
+                wm = str(decoded, 'UTF-8').replace('\x00', '')
         else:
-            watermark = args.wm
+            wm = params.wm
 
-        log.info({ 'file': fn, 'watermark': watermark, 'exif': None if args.strip else exif, 'resolution': f'{image.width}x{image.height}' })
+        log.info({ 'file': fn, 'watermark': wm, 'exif': None if params.strip else exif, 'resolution': f'{image.width}x{image.height}' })
 
 
 if __name__ == '__main__':

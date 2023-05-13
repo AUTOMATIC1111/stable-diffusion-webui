@@ -46,8 +46,6 @@ lycoris_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir
 sys.path.append(lycoris_path)
 import train_network
 
-print('HERE6')
-
 # globals
 args = None
 valid_steps = ['original', 'face', 'body', 'blur', 'range', 'upscale', 'restore', 'interrogate', 'resize', 'square', 'segment']
@@ -69,26 +67,29 @@ def mem_stats():
 
 def parse_args():
     global args # pylint: disable=global-statement
-    parser = argparse.ArgumentParser(description = 'train')
-    # basic section
-    parser.add_argument('--type', type=str, choices=['embedding', 'lora', 'lycoris', 'dreambooth'], default=None, required=True, help='training type')
-    parser.add_argument('--name', type=str, default=None, required=True, help='output filename')
-    parser.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing training, default: %(default)s")
-    parser.add_argument('--tag', type=str, default='person', required=False, help='primary tags, default: %(default)s')
-    parser.add_argument('--input', type=str, default=None, required=True, help='input folder with training images')
-    parser.add_argument('--output', type=str, default='', required=False, help='where to store processed images, default is system temp/train')
-    parser.add_argument('--process', type=str, default='original,interrogate,resize,square', required=False, help=f'list of possible processing steps: {valid_steps}, default: %(default)s')
+    parser = argparse.ArgumentParser(description = 'Train')
 
-    # global params
-    parser.add_argument('--gradient', type=int, default=1, required=False, help='gradient accumulation steps, default: %(default)s')
-    parser.add_argument('--steps', type=int, default=2500, required=False, help='training steps, default: %(default)s')
-    parser.add_argument('--batch', type=int, default=1, required=False, help='batch size, default: %(default)s')
-    parser.add_argument('--lr', type=float, default=1e-04, required=False, help='model learning rate, default: %(default)s')
-    parser.add_argument('--dim', type=int, default=40, required=False, help='network dimension or number of vectors, default: %(default)s')
+    group_main = parser.add_argument_group('Main')
+    group_main.add_argument('--type', type=str, choices=['embedding', 'lora', 'lycoris', 'dreambooth'], default=None, required=True, help='training type')
+    group_main.add_argument('--name', type=str, default=None, required=True, help='output filename')
+    group_main.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing training, default: %(default)s")
+    group_main.add_argument('--tag', type=str, default='person', required=False, help='primary tags, default: %(default)s')
+
+    group_data = parser.add_argument_group('Dataset')
+    group_data.add_argument('--input', type=str, default=None, required=True, help='input folder with training images')
+    group_data.add_argument('--output', type=str, default='', required=False, help='where to store processed images, default is system temp/train')
+    group_data.add_argument('--process', type=str, default='original,interrogate,resize,square', required=False, help=f'list of possible processing steps: {valid_steps}, default: %(default)s')
+
+    group_train = parser.add_argument_group('Train')
+    group_train.add_argument('--gradient', type=int, default=1, required=False, help='gradient accumulation steps, default: %(default)s')
+    group_train.add_argument('--steps', type=int, default=2500, required=False, help='training steps, default: %(default)s')
+    group_train.add_argument('--batch', type=int, default=1, required=False, help='batch size, default: %(default)s')
+    group_train.add_argument('--lr', type=float, default=1e-04, required=False, help='model learning rate, default: %(default)s')
+    group_train.add_argument('--dim', type=int, default=40, required=False, help='network dimension or number of vectors, default: %(default)s')
 
     # lora params
-    parser.add_argument('--repeats', type=int, default=10, required=False, help='number of repeats per image, default: %(default)s')
-    parser.add_argument('--alpha', type=float, default=0, required=False, help='alpha for weights scaling, default: dim/2')
+    group_train.add_argument('--repeats', type=int, default=10, required=False, help='number of repeats per image, default: %(default)s')
+    group_train.add_argument('--alpha', type=float, default=0, required=False, help='alpha for weights scaling, default: dim/2')
 
     args = parser.parse_args()
 

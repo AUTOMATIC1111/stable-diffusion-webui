@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 import os
-import sys
 import json
 import time
+import importlib
 import asyncio
 import argparse
 from pathlib import Path
 from util import Map, log
 from sdapi import get, post, close
-from grid import grid
-
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from generate import generate # pylint: disable=import-error
+grid = importlib.import_module('image-grid').grid
 
 
 default = 'sd-v15-runwayml.ckpt [cc6cb27103]'
@@ -63,7 +61,7 @@ options = Map({
         "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
     },
     'lora': {
-        'strength': 0.9,
+        'strength': 1.0,
     },
     'hypernetwork': {
         'keyword': 'beautiful sexy woman',
@@ -115,6 +113,8 @@ async def preview_models(params):
         log.info({ 'model load': model })
 
         opt['sd_model_checkpoint'] = model
+        del opt['sd_lora']
+        del opt['sd_lyco']
         await post('/sdapi/v1/options', opt)
         opt = await get('/sdapi/v1/options')
         images = []
@@ -142,6 +142,8 @@ async def preview_models(params):
     if opt['sd_model_checkpoint'] != default and not params.fixed:
         log.info({ 'model set default': default })
         opt['sd_model_checkpoint'] = default
+        del opt['sd_lora']
+        del opt['sd_lyco']
         await post('/sdapi/v1/options', opt)
 
 
@@ -263,11 +265,49 @@ async def hypernetwork(params):
         log.info({ 'hypernetwork preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
 
 
+async def embedding(params):
+    opt = await get('/sdapi/v1/options')
+    folder = opt['embeddings_dir']
+    if not os.path.exists(folder):
+        log.error({ 'embeddings directory not found': folder })
+        return
+    models = [f.stem for f in Path(folder).glob('*.pt')]
+    log.info({ 'embeddings': len(models) })
+    for model in models:
+        fn = os.path.join(folder, model + '.preview' + options.format)
+        if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
+            log.info({ 'embedding preview exists': model })
+            continue
+        images = []
+        labels = []
+        t0 = time.time()
+        import re
+        keyword = '\"' + re.sub(r'\d', '', model) + '\"'
+        options.generate.batch_size = 4
+        options.generate.prompt = prompt.replace('<keyword>', keyword)
+        options.generate.prompt = options.generate.prompt.replace('<embedding>', '')
+        log.info({ 'embedding generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
+        data = await generate(options = options, quiet=True)
+        if 'image' in data:
+            for img in data['image']:
+                images.append(img)
+                labels.append(keyword)
+        else:
+            log.error({ 'lyco': model, 'keyword': keyword, 'error': data })
+        t1 = time.time()
+        image = grid(images = images, labels = labels, border = 8)
+        image.save(fn)
+        t = t1 - t0
+        its = 1.0 * options.generate.steps * len(images) / t
+        log.info({ 'embeding preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
+
+
 async def create_previews(params):
     await preview_models(params)
     await lora(params)
     await lyco(params)
     await hypernetwork(params)
+    await embedding(params)
     await close()
 
 

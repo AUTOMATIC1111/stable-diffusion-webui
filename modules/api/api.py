@@ -398,13 +398,15 @@ class Api:
                 options.update({k: shared.opts.data.get(k, shared.opts.data_labels.get(k).default)})
             else:
                 options.update({k: shared.opts.data.get(k, None)})
-
+        if 'sd_lyco' in options:
+            del options['sd_lyco']
+        if 'sd_lora' in options:
+            del options['sd_lora']
         return options
 
     def set_config(self, req: Dict[str, Any]):
         for k, v in req.items():
             shared.opts.set(k, v)
-
         shared.opts.save(shared.config_filename)
         return
 
@@ -573,7 +575,7 @@ class Api:
             ram = { 'error': f'{err}' }
         try:
             import torch
-            if shared.cmd_opts.use_ipex():
+            if shared.cmd_opts.use_ipex:
                 system = { 'free': (torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated()), 'used': torch.xpu.memory_allocated(), 'total': torch.xpu.get_device_properties("xpu").total_memory }
                 s = dict(torch.xpu.memory_stats("xpu"))
                 allocated = { 'current': s['allocated_bytes.all.current'], 'peak': s['allocated_bytes.all.peak'] }

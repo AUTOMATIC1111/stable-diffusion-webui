@@ -5,23 +5,23 @@ import os
 import io
 import pathlib
 import argparse
+import importlib
 import pandas as pd
 import numpy as np
 import extcolors
 import filetype
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-import matplotlib.image as mpimg
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from colormap import rgb2hex
 from PIL import Image
 from util import log
-from grid import grid
+grid = importlib.import_module('image-grid').grid
 
-def color_to_df(input):
-    colors_pre_list = str(input).replace('([(','').split(', (')[0:-1]
+def color_to_df(param):
+    colors_pre_list = str(param).replace('([(','').split(', (')[0:-1]
     df_rgb = [i.split('), ')[0] + ')' for i in colors_pre_list]
-    df_percent = [i.split('), ')[1].replace(')','') for i in colors_pre_list]  
+    df_percent = [i.split('), ')[1].replace(')','') for i in colors_pre_list]
     #convert RGB to HEX code
     df_color_up = [rgb2hex(int(i.split(", ")[0].replace("(","")),
                            int(i.split(", ")[1]),
@@ -30,14 +30,14 @@ def color_to_df(input):
     return df
 
 
-def palette(img, args, output):
+def palette(img, params, output):
     size = 1024
     img.thumbnail((size, size), Image.HAMMING)
-    
+
     #crate dataframe
-    colors_x = extcolors.extract_from_image(img, tolerance = args.color, limit = 13)
+    colors_x = extcolors.extract_from_image(img, tolerance = params.color, limit = 13)
     df_color = color_to_df(colors_x)
-    
+
     #annotate text
     list_color = list(df_color['c_code'])
     list_precent = [int(i) for i in list(df_color['occurence'])]
@@ -54,7 +54,7 @@ def palette(img, args, output):
     imagebox = OffsetImage(data, zoom=2.5)
     ab = AnnotationBbox(imagebox, (0, 0))
     ax1.add_artist(ab)
-    
+
     #color palette
     x_posi, y_posi, y_posi2 = 160, -260, -260
     for c in list_color:
@@ -100,20 +100,20 @@ if __name__ == '__main__':
     args = parser.parse_args()
     log.info({ 'palette args': vars(args) })
     if args.output != '':
-       pathlib.Path(args.output).mkdir(parents = True, exist_ok = True)
+        pathlib.Path(args.output).mkdir(parents = True, exist_ok = True)
     if not args.grid:
         for arg in args.input:
             if os.path.isfile(arg) and filetype.is_image(arg):
-                img = Image.open(arg)
-                output = os.path.join(args.output, pathlib.Path(arg).stem + '-' + args.suffix + '.jpg')
-                palette(img, args, output)
+                image = Image.open(arg)
+                fn = os.path.join(args.output, pathlib.Path(arg).stem + '-' + args.suffix + '.jpg')
+                palette(image, args, fn)
             elif os.path.isdir(arg):
                 for root, _dirs, files in os.walk(arg):
                     for f in files:
                         if filetype.is_image(os.path.join(root, f)):
-                            img = Image.open(os.path.join(root, f))
-                            output = os.path.join(args.output, pathlib.Path(f).stem + '-' + args.suffix + '.jpg')
-                            palette(img, args, output)
+                            image = Image.open(os.path.join(root, f))
+                            fn = os.path.join(args.output, pathlib.Path(f).stem + '-' + args.suffix + '.jpg')
+                            palette(image, args, fn)
     else:
         images = []
         for arg in args.input:
@@ -124,6 +124,6 @@ if __name__ == '__main__':
                     for f in files:
                         if filetype.is_image(os.path.join(root, f)):
                             images.append(Image.open(os.path.join(root, f)))
-        img = grid(images)
-        output = os.path.join(args.output, args.suffix + '.jpg')
-        palette(img, args, output)
+        image = grid(images)
+        fn = os.path.join(args.output, args.suffix + '.jpg')
+        palette(image, args, fn)

@@ -1,15 +1,13 @@
+ # pylint: disable=global-statement
 import os
-import sys
 import io
 import math
 import base64
-import pathlib
 import numpy as np
 import mediapipe as mp
 from PIL import Image, ImageOps
 from skimage.metrics import structural_similarity as ssim
 from scipy.stats import beta
-sys.path.append(os.path.join(os.path.dirname(__file__)))
 
 import util
 import sdapi
@@ -23,9 +21,9 @@ all_images_by_type = {}
 
 
 class Result(object):
-    def __init__(self, type: str, input: str, tag: str = None, requested: list = []):
-        self.type = type
-        self.input = input
+    def __init__(self, typ: str, fn: str, tag: str = None, requested: list = []):
+        self.type = typ
+        self.input = fn
         self.output = ''
         self.basename = ''
         self.message = ''
@@ -56,8 +54,8 @@ def detect_dynamicrange(image: Image):
     data = np.asarray(image)
     image = np.float32(data)
     RGB = [0.299, 0.587, 0.114]
-    height, width = image.shape[:2]
-    brightness_image = np.sqrt(image[..., 0] ** 2 * RGB[0] + image[..., 1] ** 2 * RGB[1] + image[..., 2] ** 2 * RGB[2])
+    height, width = image.shape[:2] # pylint: disable=unsubscriptable-object
+    brightness_image = np.sqrt(image[..., 0] ** 2 * RGB[0] + image[..., 1] ** 2 * RGB[1] + image[..., 2] ** 2 * RGB[2]) # pylint: disable=unsubscriptable-object
     hist, _ = np.histogram(brightness_image, bins=256, range=(0, 255))
     img_brightness_pmf = hist / (height * width)
     dist = beta(2, 2)
@@ -264,7 +262,7 @@ def save_image(res: Result, folder: str):
 
 def file(filename: str, folder: str, tag = None, requested = []):
     # initialize result dict
-    res = Result(input = filename, type='unknown', tag=tag, requested = requested)
+    res = Result(fn = filename, typ='unknown', tag=tag, requested = requested)
     # open image
     try:
         res.image = Image.open(filename)

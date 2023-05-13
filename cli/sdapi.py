@@ -1,14 +1,14 @@
 #!/usr/bin/env python
+#pylint: disable=redefined-outer-name
 """
 helper methods that creates HTTP session with managed connection pool
 provides async HTTP get/post methods and several helper methods
 """
 
 import sys
-import json
-import aiohttp
 import asyncio
 import logging
+import aiohttp
 import requests
 from util import Map, log
 
@@ -76,7 +76,6 @@ def getsync(endpoint: str, json: dict = None):
     except Exception as err:
         log.error({ 'session': err })
         return {}
-    
 
 
 async def post(endpoint: str, json: dict = None):
@@ -136,9 +135,9 @@ def progresssync():
 
 
 def options():
-    options = getsync('/sdapi/v1/options')
+    opts = getsync('/sdapi/v1/options')
     flags = getsync('/sdapi/v1/cmd-flags')
-    return { 'options': options, 'flags': flags }
+    return { 'options': opts, 'flags': flags }
 
 
 def shutdown():
@@ -184,6 +183,7 @@ if __name__ == "__main__":
     if 'options' in sys.argv:
         opt = options()
         log.debug({ 'options' })
+        import json
         print(json.dumps(opt['options'], indent = 2))
         log.debug({ 'cmd-flags' })
         print(json.dumps(opt['flags'], indent = 2))

@@ -10,18 +10,13 @@ from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from util import log
 
 
-tokenizer = None
-model = None
-
-
 def prompt(text: str, temp: float = 0.9, top: int = 8, penalty: float = 1.2, alpha: float = 0.6, num: int = 5, length: int = 80):
-    global tokenizer, model # pylint: disable=global-statement
-    if tokenizer is None:
-        tokenizer = GPT2Tokenizer.from_pretrained('distilgpt2')
-        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
-    if model is None:
-        model = GPT2LMHeadModel.from_pretrained('FredZhang7/distilgpt2-stable-diffusion-v2')
+    log.info({ 'loading': 'tokenizer' })
+    tokenizer = GPT2Tokenizer.from_pretrained('distilgpt2')
+    tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     input_ids = tokenizer(text, return_tensors='pt').input_ids
+    log.info({ 'loading': 'model' })
+    model = GPT2LMHeadModel.from_pretrained('FredZhang7/distilgpt2-stable-diffusion-v2')
     output = model.generate(input_ids,
         do_sample = True,
         temperature = temp,

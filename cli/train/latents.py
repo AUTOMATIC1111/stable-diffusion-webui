@@ -44,13 +44,13 @@ options = Map({
 vae = None
 
 
-def get_latents(vae, images, weight_dtype):
+def get_latents(local_vae, images, weight_dtype):
     image_transforms = transforms.Compose([ transforms.ToTensor(), transforms.Normalize([0.5], [0.5]) ])
     img_tensors = [image_transforms(image) for image in images]
     img_tensors = torch.stack(img_tensors)
     img_tensors = img_tensors.to(device, weight_dtype)
     with torch.no_grad():
-        latents = vae.encode(img_tensors).latent_dist.sample().float().to('cpu').numpy()
+        latents = local_vae.encode(img_tensors).latent_dist.sample().float().to('cpu').numpy()
     return latents
 
 
@@ -58,8 +58,8 @@ def get_npz_filename_wo_ext(data_dir, image_key):
     return os.path.join(data_dir, os.path.splitext(os.path.basename(image_key))[0])
 
 
-def create_vae_latents(params):
-    args = Map({**options, **params})
+def create_vae_latents(local_params):
+    args = Map({**options, **local_params})
     console.log(f'create vae latents args: {args}')
     image_paths = train_util.glob_images(args.input)
     if os.path.exists(args.json):
@@ -73,7 +73,7 @@ def create_vae_latents(params):
         weight_dtype = torch.bfloat16
     else:
         weight_dtype = torch.float32
-    global vae
+    global vae # pylint: disable=global-statement
     if vae is None:
         vae = model_util.load_vae(args.vae, weight_dtype)
         vae.eval()
@@ -142,7 +142,7 @@ def create_vae_latents(params):
 
 
 def unload_vae():
-    global vae
+    global vae # pylint: disable=global-statement
     vae = None
 
 

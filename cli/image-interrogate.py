@@ -11,7 +11,7 @@ import asyncio
 import filetype
 from PIL import Image
 from util import log, Map
-import sdapi as sdapi
+import sdapi
 
 
 stats = { 'captions': {}, 'keywords': {} }
@@ -96,7 +96,7 @@ async def main():
             elif os.path.isdir(arg):
                 for root, _dirs, files in os.walk(arg):
                     for f in files:
-                        caption, keywords, _style = await interrogate(os.path.join(root, f))
+                        _caption, _keywords, _style = await interrogate(os.path.join(root, f))
             else:
                 log.error({ 'interrogate unknown file type': arg })
         else:

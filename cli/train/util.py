@@ -42,8 +42,8 @@ def get_memory():
     return Map(mem)
 
 
-class Map(dict):
-    __slots__ = ('__dict__')
+class Map(dict): # pylint: disable=C0205
+    __slots__ = ('__dict__') # pylint: disable=C0325
     def __init__(self, *args, **kwargs):
         super(Map, self).__init__(*args, **kwargs)
         for arg in args:
