@@ -86,11 +86,14 @@ class ExtraNetworksPage:
         """
         Find exclude for a given path (without extension).
         """
-        for parent_path in list(Path(path).parents)[:-1]:
-            for file in [f"{parent_path}.exclude", f"{parent_path}.exclude.txt"]:
-                if os.path.isfile(file):
-                    return str(parent_path).replace("\\", "/")
-        
+        dirs =  list(Path(path).parents)
+        for dir in self.allowed_directories_for_previews():
+            if Path(dir) in dirs:
+                for parent_path in dirs[0:dirs.index(Path(dir))]:
+                    for file in [f"{parent_path}.exclude", f"{parent_path}.exclude.txt"]:
+                        if os.path.isfile(file):
+                            return str(parent_path).replace("\\", "/")
+
         return ""
 
     def create_html(self, tabname):

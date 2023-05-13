@@ -18,14 +18,16 @@ function setupExtraNetworksForTab(tabname){
             var exclude = elem.querySelector('.exclude_term').textContent.toLowerCase()
 
             var visible = text.indexOf(searchTerm) != -1
-            if (elem.style.display == "" && exclude != "")
-                elem.style.display = exclude.indexOf(searchTerm) == -1 ? "" : "none"
 
             if(searchOnly && searchTerm.length < 4){
                 visible = false
             }
 
             elem.style.display = visible ? "" : "none"
+
+            if (elem.style.display == "" && exclude != "")
+                elem.style.display = exclude.indexOf(searchTerm) == -1 ? "" : "none"
+
         })
     }
 
