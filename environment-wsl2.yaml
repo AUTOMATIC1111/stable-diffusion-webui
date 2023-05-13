@@ -1,11 +1,11 @@
 name: automatic
 channels:
-  - pytorch
-  - defaults
+    - pytorch
+    - defaults
 dependencies:
-  - python=3.10
-  - pip=23.0
-  - cudatoolkit=11.8
-  - pytorch=2.0
-  - torchvision=0.15
-  - numpy=1.23
+    - python=3.10
+    - pip=23.0
+    - cudatoolkit=11.8
+    - pytorch=2.0
+    - torchvision=0.15
+    - numpy=1.23
