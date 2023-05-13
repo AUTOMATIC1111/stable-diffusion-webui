@@ -11,7 +11,7 @@ from sdapi import get, post, close
 from grid import grid
 
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from generate import sd, generate
+from generate import generate # pylint: disable=import-error
 
 
 default = 'sd-v15-runwayml.ckpt [cc6cb27103]'
@@ -72,13 +72,12 @@ options = Map({
 })
 
 
-async def models(params):
-    global sd
+async def preview_models(params):
     data = await get('/sdapi/v1/sd-models')
-    all = [m['title'] for m in data]
+    allmodels = [m['title'] for m in data]
     models = []
     excluded = []
-    for m in all: # loop through all registered models
+    for m in allmodels: # loop through all registered models
         ok = True
         for e in exclude: # check if model is excluded
             if e in m:
@@ -100,17 +99,16 @@ async def models(params):
         models = filtered
     log.info({ 'models preview' })
     log.info({ 'models': len(models), 'excluded': len(excluded) })
-    cmdflags = await get('/sdapi/v1/cmd-flags')
     opt = await get('/sdapi/v1/options')
     if params.output != '':
-        dir = params.output
+        folder = params.output
     else:
-        dir = os.path.abspath(os.path.join(cmdflags['hypernetwork_dir'], '..', 'Stable-diffusion'))
-    log.info({ 'output directory': dir })
+        folder = os.path.abspath(os.path.join(opt['hypernetwork_dir'], '..', 'Stable-diffusion'))
+    log.info({ 'output directory': folder })
     log.info({ 'total jobs': len(models) * options.generate.batch_size, 'per-model': options.generate.batch_size })
     log.info(json.dumps(options, indent=2))
     for model in models:
-        fn = os.path.join(dir, os.path.basename(model) + options.format)
+        fn = os.path.join(folder, os.path.basename(model) + options.format)
         if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'model preview exists': model })
             continue
@@ -122,8 +120,8 @@ async def models(params):
         images = []
         labels = []
         t0 = time.time()
-        for label, prompt in prompts:
-            options.generate.prompt = prompt
+        for label, p in prompts:
+            options.generate.prompt = p
             log.info({ 'model generating': model, 'label': label, 'prompt': options.generate.prompt })
             data = await generate(options = options, quiet=True)
             if 'image' in data:
@@ -139,7 +137,7 @@ async def models(params):
         t = t1 - t0
         its = 1.0 * options.generate.steps * len(images) / t
         log.info({ 'model preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
-    
+
     opt = await get('/sdapi/v1/options')
     if opt['sd_model_checkpoint'] != default and not params.fixed:
         log.info({ 'model set default': default })
@@ -148,17 +146,17 @@ async def models(params):
 
 
 async def lora(params):
-    cmdflags = await get('/sdapi/v1/cmd-flags')
-    dir = cmdflags['lora_dir']
-    if not os.path.exists(dir):
-        log.error({ 'lora directory not found': dir })
+    opt = await get('/sdapi/v1/options')
+    folder = opt['lora_dir']
+    if not os.path.exists(folder):
+        log.error({ 'lora directory not found': folder })
         return
-    models1 = [f for f in Path(dir).glob('*.safetensors')]
-    models2 = [f for f in Path(dir).glob('*.ckpt')]
+    models1 = [f for f in Path(folder).glob('*.safetensors')]
+    models2 = [f for f in Path(folder).glob('*.ckpt')]
     models = [f.stem for f in models1 + models2]
     log.info({ 'loras': len(models) })
     for model in models:
-        fn = os.path.join(dir, model + options.format)
+        fn = os.path.join(folder, model + options.format)
         if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'lora preview exists': model })
             continue
@@ -166,7 +164,7 @@ async def lora(params):
         labels = []
         t0 = time.time()
         import re
-        keywords = re.sub('\d', '', model)
+        keywords = re.sub(r'\d', '', model)
         keywords = keywords.replace('-v', ' ').replace('-', ' ').strip().split(' ')
         keyword = '\"' + '\" \"'.join(keywords) + '\"'
         options.generate.prompt = prompt.replace('<keyword>', keyword)
@@ -188,16 +186,57 @@ async def lora(params):
         log.info({ 'lora preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
 
 
-async def hypernetwork(params):
-    cmdflags = await get('/sdapi/v1/cmd-flags')
-    dir = cmdflags['hypernetwork_dir']
-    if not os.path.exists(dir):
-        log.error({ 'hypernetwork directory not found': dir })
+async def lyco(params):
+    opt = await get('/sdapi/v1/options')
+    folder = opt['lyco_dir']
+    if not os.path.exists(folder):
+        log.error({ 'lyco directory not found': folder })
         return
-    models = [f.stem for f in Path(dir).glob('*.pt')]
-    log.info({ 'loras': len(models) })
+    models1 = [f for f in Path(folder).glob('*.safetensors')]
+    models2 = [f for f in Path(folder).glob('*.ckpt')]
+    models = [f.stem for f in models1 + models2]
+    log.info({ 'lycos': len(models) })
     for model in models:
-        fn = os.path.join(dir, model + options.format)
+        fn = os.path.join(folder, model + options.format)
+        if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
+            log.info({ 'lyco preview exists': model })
+            continue
+        images = []
+        labels = []
+        t0 = time.time()
+        import re
+        keywords = re.sub(r'\d', '', model)
+        keywords = keywords.replace('-v', ' ').replace('-', ' ').strip().split(' ')
+        keyword = '\"' + '\" \"'.join(keywords) + '\"'
+        options.generate.prompt = prompt.replace('<keyword>', keyword)
+        options.generate.prompt = options.generate.prompt.replace('<embedding>', '')
+        options.generate.prompt += f' <lyco:{model}:{options.lora.strength}>'
+        log.info({ 'lyco generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
+        data = await generate(options = options, quiet=True)
+        if 'image' in data:
+            for img in data['image']:
+                images.append(img)
+                labels.append(keyword)
+        else:
+            log.error({ 'lyco': model, 'keyword': keyword, 'error': data })
+        t1 = time.time()
+        image = grid(images = images, labels = labels, border = 8)
+        image.save(fn)
+        t = t1 - t0
+        its = 1.0 * options.generate.steps * len(images) / t
+        log.info({ 'lyco preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
+
+
+async def hypernetwork(params):
+    opt = await get('/sdapi/v1/options')
+    folder = opt['hypernetwork_dir']
+    if not os.path.exists(folder):
+        log.error({ 'hypernetwork directory not found': folder })
+        return
+    models = [f.stem for f in Path(folder).glob('*.pt')]
+    log.info({ 'hypernetworks': len(models) })
+    for model in models:
+        fn = os.path.join(folder, model + options.format)
         if os.path.exists(fn) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'hypernetwork preview exists': model })
             continue
@@ -225,8 +264,9 @@ async def hypernetwork(params):
 
 
 async def create_previews(params):
-    await models(params)
+    await preview_models(params)
     await lora(params)
+    await lyco(params)
     await hypernetwork(params)
     await close()
 
@@ -236,5 +276,5 @@ if __name__ == '__main__':
     parser.add_argument('--output', type = str, default = '', required = False, help = 'output directory')
     parser.add_argument('--fixed', default = False, action='store_true', help = "do not change model")
     parser.add_argument('input', type = str, nargs = '*')
-    params = parser.parse_args()
-    asyncio.run(create_previews(params))
+    args = parser.parse_args()
+    asyncio.run(create_previews(args))

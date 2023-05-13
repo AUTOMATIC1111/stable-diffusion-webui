@@ -1322,6 +1322,7 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         with gr.Row():
             settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
+            defaults_submit = gr.Button(value="Restore defaults", variant='primary', elem_id="defaults_submit")
             restart_submit = gr.Button(value="Restart server", variant='primary', elem_id="restart_submit")
             shutdown_submit = gr.Button(value="Shutdown server", variant='primary', elem_id="shutdown_submit")
             preview_theme = gr.Button(value="Preview theme", variant='primary', elem_id="settings_preview_theme")
@@ -1453,6 +1454,7 @@ def create_ui():
             inputs=components,
             outputs=[text_settings, result],
         )
+        defaults_submit.click(fn=lambda x: shared.restore_defaults(restart=True), _js="restart_reload")
         restart_submit.click(fn=lambda x: shared.restart_server(restart=True), _js="restart_reload")
         shutdown_submit.click(fn=lambda x: shared.restart_server(restart=False), _js="restart_reload")
 
@@ -1531,7 +1533,7 @@ def create_ui():
             ]
         )
 
-    ui_config_file = cmd_opts.ui_config_file
+    ui_config_file = cmd_opts.ui_config
     ui_settings = {}
     settings_count = len(ui_settings)
     error_loading = False

@@ -34,6 +34,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
                 progress.record_results(id_task, res)
             except Exception as e:
                 shared.log.error(f"Exception: {e}")
+                errors.display(e, 'gradio call')
                 res[-1] = f"<div class='error'>{html.escape(str(e))}</div>"
             finally:
                 progress.finish_task(id_task)

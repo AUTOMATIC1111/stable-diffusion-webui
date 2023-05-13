@@ -705,6 +705,16 @@ def restart_server(restart=True):
         log.info('Server will restart')
 
 
+def restore_defaults(restart=True):
+    if os.path.exists(cmd_opts.config):
+        log.info('Restoring server defaults')
+        os.remove(cmd_opts.config)
+    if os.path.exists(cmd_opts.ui_config):
+        log.info('Restoring UI defaults')
+        os.remove(cmd_opts.ui_config)
+    restart_server(True)
+
+
 def listfiles(dirname):
     filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=str.lower) if not x.startswith(".")]
     return [file for file in filenames if os.path.isfile(file)]

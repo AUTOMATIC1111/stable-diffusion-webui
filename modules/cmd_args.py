@@ -7,7 +7,8 @@ parser._optionals = parser.add_argument_group('Other options') # pylint: disable
 group = parser.add_argument_group('Server options')
 
 # main server args
-group.add_argument("--config", type=str, default=os.path.join(data_path, 'config.json'), help="Use specific configuration file, default: %(default)s")
+group.add_argument("--config", type=str, default=os.path.join(data_path, 'config.json'), help="Use specific server configuration file, default: %(default)s")
+group.add_argument("--ui-config", type=str, default=os.path.join(data_path, 'ui-config.json'), help="Use specific UI configuration file, default: %(default)s")
 group.add_argument("--medvram", action='store_true', help="Split model stages and keep only active part in VRAM, default: %(default)s")
 group.add_argument("--lowvram", action='store_true', help="Split model components and keep only active part in VRAM, default: %(default)s")
 group.add_argument("--ckpt", type=str, default=None, help="Path to model checkpoint to load immediately, default: %(default)s")

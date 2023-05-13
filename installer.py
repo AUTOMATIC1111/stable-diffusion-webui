@@ -219,13 +219,13 @@ def check_torch():
     log.debug(f'Torch allowed: cuda={allow_cuda} rocm={allow_rocm} ipex={allow_ipex} diml={allow_directml}')
     if allow_cuda and (shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe'))):
         log.info('nVidia CUDA toolkit detected')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision==0.15.1 --index-url https://download.pytorch.org/whl/cu118')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision==0.15.1 --index-url https://download.pytorch.org/whl/cu118')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
-    elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo')):
+    elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo') or os.path.exists('/dev/kfd')):
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
         os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.9,max_split_size_mb:512')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision==0.15.1 torchaudio --index-url https://download.pytorch.org/whl/rocm5.4.2')
+        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision==0.15.1 --index-url https://download.pytorch.org/whl/rocm5.4.2')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     elif allow_ipex and (shutil.which('sycl-ls') is not None or os.path.exists('/opt/intel/oneapi') or args.use_ipex):
         log.info('Intel OneAPI Toolkit detected')
@@ -235,30 +235,30 @@ def check_torch():
         machine = platform.machine()
         if allow_directml and ('arm' not in machine and 'aarch' not in machine and args.use_directml):
             log.info('Using DirectML Backend')
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchaudio torchvision==0.15.1 torch-directml')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch-directml')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
             if 'torch' in torch_command and not args.version:
-                install(torch_command, 'torch torchvision torchaudio')
+                install(torch_command, 'torch torchvision')
         else:
             log.info('Using CPU-only Torch')
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision==0.15.1')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision==0.15.1')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if 'torch' in torch_command and not args.version:
-        install(torch_command, 'torch torchvision torchaudio')
+        install(torch_command, 'torch torchvision')
     if args.skip_torch:
         log.info('Skipping Torch tests')
     else:
         try:
             import torch
             log.info(f'Torch {torch.__version__}')
-            if args.use_ipex:
+            if args.use_ipex and allow_ipex:
                 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
                 log.info(f'Torch backend: Intel OneAPI {torch.__version__}')
                 log.info(f'Torch detected GPU: {torch.xpu.get_device_name("xpu")} VRAM {round(torch.xpu.get_device_properties("xpu").total_memory / 1024 / 1024)}')
-            elif torch.cuda.is_available():
-                if torch.version.cuda:
+            elif torch.cuda.is_available() and (allow_cuda or allow_rocm):
+                if torch.version.cuda and allow_cuda:
                     log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else "N/A"}')
-                elif torch.version.hip:
+                elif torch.version.hip and allow_rocm:
                     log.info(f'Torch backend: AMD ROCm HIP {torch.version.hip}')
                 else:
                     log.warning('Unknown Torch backend')
@@ -266,12 +266,13 @@ def check_torch():
                     log.info(f'Torch detected GPU: {torch.cuda.get_device_name(device)} VRAM {round(torch.cuda.get_device_properties(device).total_memory / 1024 / 1024)} Arch {torch.cuda.get_device_capability(device)} Cores {torch.cuda.get_device_properties(device).multi_processor_count}')
             else:
                 try:
-                    import torch_directml # pylint: disable=import-error
-                    import pkg_resources
-                    version = pkg_resources.get_distribution("torch-directml")
-                    log.info(f'Torch backend: DirectML ({version})')
-                    for i in range(0, torch_directml.device_count()):
-                        log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
+                    if args.use_directml and allow_directml:
+                        import torch_directml # pylint: disable=import-error
+                        import pkg_resources
+                        version = pkg_resources.get_distribution("torch-directml")
+                        log.info(f'Torch backend: DirectML ({version})')
+                        for i in range(0, torch_directml.device_count()):
+                            log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
                 except:
                     log.warning("Torch reports CUDA not available")
         except Exception as e:

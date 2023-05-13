@@ -191,7 +191,8 @@ def load_lora(name, filename):
             warnings += 1
 
     if len(keys_failed_to_match) > 0:
-        shared.log.warning(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
+        shared.log.warning(f"Lora failed to match keys when: {filename} {len(keys_failed_to_match)}")
+        shared.log.info(f"Try using LyCORIS instead")
         warnings += 1
 
     return lora

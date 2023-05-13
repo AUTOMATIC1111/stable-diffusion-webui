@@ -30,27 +30,22 @@ def get_cuda_device_string():
         return "cuda"
 
 
-def get_dml_device_string():
-    if shared.cmd_opts.device_id is not None:
-        return f"privateuseone:{shared.cmd_opts.device_id}"
-    return "privateuseone:0"
-
-
 def get_optimal_device_name():
     if shared.cmd_opts.use_ipex:
         return "xpu"
-    elif torch.cuda.is_available():
+    elif torch.cuda.is_available() and not shared.cmd_opts.use_directml:
         return get_cuda_device_string()
     if has_mps():
         return "mps"
-    try:
-        import torch_directml # pylint: disable=import-error
+    if shared.cmd_opts.use_directml:
+        import torch_directml
         if torch_directml.is_available():
-            return get_dml_device_string()
+            torch.cuda.is_available = lambda: False
+            if shared.cmd_opts.device_id is not None:
+                return f"privateuseone:{shared.cmd_opts.device_id}"
+            return torch_directml.device()
         else:
             return "cpu"
-    except:
-        return "cpu"
 
 
 def get_optimal_device():
@@ -120,6 +115,8 @@ def set_cuda_params():
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
     # set dtype
     ok = test_fp16()
+    if shared.cmd_opts.use_directml:
+        shared.opts.no_half = True
     if ok and shared.opts.cuda_dtype == 'FP32':
         shared.log.info('CUDA FP16 test passed but desired mode is set to FP32')
     if shared.opts.cuda_dtype == 'FP16' and ok:
@@ -187,10 +184,12 @@ def autocast(disable=False):
 
 
 def without_autocast(disable=False):
+    if disable:
+        return contextlib.nullcontext()
     if shared.cmd_opts.use_ipex:
-        return torch.autocast("xpu", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
+        return torch.autocast("xpu", enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
     else:
-        return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() and not disable else contextlib.nullcontext()
+        return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
 
 
 class NansException(Exception):

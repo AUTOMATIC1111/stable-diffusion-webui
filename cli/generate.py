@@ -121,7 +121,7 @@ def sampler(params, options): # find sampler
 
 
 async def generate(prompt = None, options = None, quiet = False): # pylint: disable=redefined-outer-name
-    global sd
+    global sd # pylint: disable=global-statement
     if options:
         sd = Map(options)
     if prompt is not None:
