@@ -393,6 +393,8 @@ def lora_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 def list_available_loras():
     available_loras.clear()
     available_lora_aliases.clear()
+    forbidden_lora_aliases.clear()
+    forbidden_lora_aliases.update({"none": 1})
 
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
 
@@ -405,6 +407,9 @@ def list_available_loras():
         entry = LoraOnDisk(name, filename)
 
         available_loras[name] = entry
+
+        if entry.alias in available_lora_aliases:
+            forbidden_lora_aliases[entry.alias.lower()] = 1
 
         available_lora_aliases[name] = entry
         available_lora_aliases[entry.alias] = entry
@@ -445,6 +450,7 @@ def infotext_pasted(infotext, params):
 
 available_loras = {}
 available_lora_aliases = {}
+forbidden_lora_aliases = {}
 loaded_loras = []
 
 list_available_loras()
