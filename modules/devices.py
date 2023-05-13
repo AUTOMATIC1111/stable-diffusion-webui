@@ -38,7 +38,7 @@ def get_optimal_device_name():
     if has_mps():
         return "mps"
     if shared.cmd_opts.use_directml:
-        import torch_directml
+        import torch_directml # pylint: disable=import-error
         if torch_directml.is_available():
             torch.cuda.is_available = lambda: False
             if shared.cmd_opts.device_id is not None:
@@ -46,6 +46,7 @@ def get_optimal_device_name():
             return torch_directml.device()
         else:
             return "cpu"
+    return "cpu"
 
 
 def get_optimal_device():

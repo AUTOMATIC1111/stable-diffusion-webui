@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylint: disable=cell-var-from-loop
 """
 Test Torch Dynamo functionality and backends
 """
@@ -12,13 +13,14 @@ from torchvision.models import resnet18
 
 print('torch:', torch.__version__)
 try:
-    import torch._dynamo as dynamo # must be imported explicitly or namespace is not found
+    # must be imported explicitly or namespace is not found
+    import torch._dynamo as dynamo # pylint: disable=ungrouped-imports
 except Exception as err:
     print('torch without dynamo support', err)
 
 
 N_ITERS = 20
-torch._dynamo.config.verbose=True
+torch._dynamo.config.verbose=True # pylint: disable=protected-access
 warnings.filterwarnings('ignore', category=UserWarning) # disable those for now as many backends reports tons
 # torch.set_float32_matmul_precision('high') # enable to test in fp32
 
@@ -44,8 +46,8 @@ def init_model():
     return resnet18().to(torch.float32).cuda()
 
 
-def eval(mod, inp):
-    return mod(inp)
+def evaluate(mod, val):
+    return mod(val)
 
 
 if __name__ == '__main__':
@@ -56,18 +58,19 @@ if __name__ == '__main__':
     # repeat test
     results = {}
     times = []
-    print('eager initial eval:', timed(lambda: eval(model, inp))[1])
+    print('eager initial eval:', timed(lambda: evaluate(model, inp))[1])
     for i in range(N_ITERS):
         inp = generate_data(16)[0]
-        _res, time = timed(lambda: eval(model, inp))
+        _res, time = timed(lambda: evaluate(model, inp))
         times.append(time)
     results['default'] = np.median(times)
 
     print('dynamo available backends:', dynamo.list_backends())
     for backend in dynamo.list_backends():
         try:
-            torch._dynamo.reset() # required before changing backends
-            eval_dyn = dynamo.optimize(backend)(eval)
+            # required before changing backends
+            torch._dynamo.reset() # pylint: disable=protected-access
+            eval_dyn = dynamo.optimize(backend)(evaluate)
             print('dynamo initial eval:', backend, timed(lambda: eval_dyn(model, inp))[1])
             times = []
             for i in range(N_ITERS):
