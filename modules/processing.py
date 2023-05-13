@@ -496,8 +496,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
-        "Token merging ratio": None if not (opts.token_merging or cmd_opts.token_merging) or opts.token_merging_hr_only else opts.token_merging_ratio,
-        "Token merging ratio hr": None if not (opts.token_merging or cmd_opts.token_merging) else opts.token_merging_ratio_hr,
+        "Token merging ratio": None if not opts.token_merging or opts.token_merging_hr_only else opts.token_merging_ratio,
+        "Token merging ratio hr": None if not opts.token_merging else opts.token_merging_ratio_hr,
         "Token merging random": None if opts.token_merging_random is False else opts.token_merging_random,
         "Token merging merge attention": None if opts.token_merging_merge_attention is True else opts.token_merging_merge_attention,
         "Token merging merge cross attention": None if opts.token_merging_merge_cross_attention is False else opts.token_merging_merge_cross_attention,
@@ -538,7 +538,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()
 
-        if (opts.token_merging or cmd_opts.token_merging) and not opts.token_merging_hr_only:
+        if opts.token_merging and not opts.token_merging_hr_only:
             sd_models.apply_token_merging(sd_model=p.sd_model, hr=False)
             logger.debug('Token merging applied')
 
@@ -546,7 +546,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
     finally:
         # undo model optimizations made by tomesd
-        if opts.token_merging or cmd_opts.token_merging:
+        if opts.token_merging:
             tomesd.remove_patch(p.sd_model)
             logger.debug('Token merging model optimizations removed')
 
@@ -1004,7 +1004,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         # apply token merging optimizations from tomesd for high-res pass
         # check if hr_only so we are not redundantly patching
-        if (cmd_opts.token_merging or opts.token_merging) and (opts.token_merging_hr_only or opts.token_merging_ratio_hr != opts.token_merging_ratio):
+        if opts.token_merging and (opts.token_merging_hr_only or opts.token_merging_ratio_hr != opts.token_merging_ratio):
             # case where user wants to use separate merge ratios
             if not opts.token_merging_hr_only:
                 # clean patch done by first pass. (clobbering the first patch might be fine? this might be excessive)
