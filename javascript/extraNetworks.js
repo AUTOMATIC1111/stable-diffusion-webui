@@ -15,8 +15,11 @@ function setupExtraNetworksForTab(tabname){
         gradioApp().querySelectorAll('#'+tabname+'_extra_tabs div.card').forEach(function(elem){
             var searchOnly = elem.querySelector('.search_only')
             var text = elem.querySelector('.name').textContent.toLowerCase() + " " + elem.querySelector('.search_term').textContent.toLowerCase()
+            var exclude = elem.querySelector('.exclude_term').textContent.toLowerCase()
 
             var visible = text.indexOf(searchTerm) != -1
+            if (elem.style.display == "" && exclude != "")
+                elem.style.display = exclude.indexOf(searchTerm) == -1 ? "" : "none"
 
             if(searchOnly && searchTerm.length < 4){
                 visible = false
