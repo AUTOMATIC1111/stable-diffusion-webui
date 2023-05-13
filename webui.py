@@ -181,14 +181,11 @@ def initialize():
     gfpgan.setup_model(cmd_opts.gfpgan_models_path)
     startup_timer.record("setup gfpgan")
 
-    modelloader.list_builtin_upscalers()
-    startup_timer.record("list builtin upscalers")
-
     modules.scripts.load_scripts()
     startup_timer.record("load scripts")
 
     modelloader.load_upscalers()
-    #startup_timer.record("load upscalers") #Is this necessary? I don't know.
+    startup_timer.record("load upscalers") #Is this necessary? I don't know.
 
     modules.sd_vae.refresh_vae_list()
     startup_timer.record("refresh VAE")
@@ -388,7 +385,6 @@ def webui():
 
         localization.list_localizations(cmd_opts.localizations_dir)
 
-        modelloader.forbid_loaded_nonbuiltin_upscalers()
         modules.scripts.reload_scripts()
         startup_timer.record("load scripts")
 
