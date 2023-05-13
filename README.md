@@ -272,10 +272,3 @@ to add the extensions: just add these urls it in the UI:
 - https://github.com/Z-nonymous/sd_webui_batchscripts.git
 
 to use the batchscript, go to txt2img tab, script, and there select the script.
-
-Debugging and tuning materials after AF.
-THere have been 1814 images from AF, I selected a subset to cover
-- borderline porn
-- shiny ballsy stuff
-- weird and broken faces
-- some nice images to make sure they stay nice

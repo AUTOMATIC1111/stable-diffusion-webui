@@ -28,7 +28,7 @@
     "txt2img/Batch count/maximum": 100,
     "txt2img/Batch count/step": 1,
     "txt2img/Batch size/visible": true,
-    "txt2img/Batch size/value": 2,
+    "txt2img/Batch size/value": 1,
     "txt2img/Batch size/minimum": 1,
     "txt2img/Batch size/maximum": 8,
     "txt2img/Batch size/step": 1,
