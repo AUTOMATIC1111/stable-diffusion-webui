@@ -103,12 +103,8 @@ def set_cuda_params():
             pass
         if torch.backends.cudnn.is_available():
             try:
-                if any([torch.cuda.get_device_capability(devid) == (7, 5) for devid in range(0, torch.cuda.device_count())]): # monkey-patch for old nvidia cards
-                    torch.backends.cudnn.benchmark = True
-                    torch.backends.cudnn.benchmark_limit = 1
-                else:
-                    torch.backends.cudnn.benchmark = shared.opts.cudnn_benchmark
-                    torch.backends.cudnn.benchmark_limit = 0
+                torch.backends.cudnn.benchmark = True
+                torch.backends.cudnn.benchmark_limit = 0 if shared.opts.cudnn_benchmark else 1
                 torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
             except:
                 pass
