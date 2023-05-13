@@ -31,8 +31,6 @@ startup_timer.record("import torch")
 import gradio
 startup_timer.record("import gradio")
 
-startup_timer.record("import gradio")
-
 import ldm.modules.encoders.modules  # noqa: F401
 startup_timer.record("import ldm")
 
