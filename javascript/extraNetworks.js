@@ -26,6 +26,13 @@ function setupExtraNetworksForTab(tabname) {
     search.value = "";
     updateInput(search);
   });
+  
+  setTimeout(function () {
+    refresh.click();
+  }, 500);
+  
+  
+  setTimeout(extraNetworksApplyFilter[tabname], 1);
 
   search.addEventListener("input", function (evt) {
     searchTerm = search.value.toLowerCase();

@@ -69,12 +69,12 @@ License: GNU General Public License
       (
         var(--ae-top-header-height) + var(--ae-footer-height) +
           var(--ae-accordion-header-height) + var(--ae-outside-gap-size) * 4 +
-          34px
+          36px
       )
   );
 }
 
-@media only screen and (max-width: 680px) {
+@media only screen and (max-width: 860px) {
   :root {
     --ae-outside-gap-size: var(--ae-mobile-outside-gap-size);
     --ae-inside-padding-size: var(--ae-mobile-inside-padding-size);
@@ -2947,7 +2947,7 @@ pre {
   opacity: 0.98;
 }
 
-@media only screen and (max-width: 680px) {
+@media only screen and (max-width: 860px) {
   /* For tablets: */
   [id$="_splitter"] {
     display: none !important;
