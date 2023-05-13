@@ -235,8 +235,10 @@ def check_torch():
         machine = platform.machine()
         if allow_directml and ('arm' not in machine and 'aarch' not in machine and args.use_directml):
             log.info('Using DirectML Backend')
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision==0.15.1 torch-directml')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchaudio torchvision==0.15.1 torch-directml')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
+            if 'torch' in torch_command and not args.version:
+                install(torch_command, 'torch torchvision torchaudio')
         else:
             log.info('Using CPU-only Torch')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchaudio torchvision==0.15.1')
@@ -480,7 +482,7 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
         log.error('Not a git repository')
         if not args.ignore:
             exit(1)
-    _status = git('status')
+    # status = git('status')
     # if 'branch' not in status:
     #    log.error('Cannot get git repository status')
     #    exit(1)
