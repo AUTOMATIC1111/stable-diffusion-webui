@@ -109,18 +109,23 @@ function processNode(node){
 }
 
 function dumpTranslations(){
+    if(!hasLocalization()) {
+        // If we don't have any localization,
+        // we will not have traversed the app to find
+        // original_lines, so do that now.
+        processNode(gradioApp());
+    }
     var dumped = {}
     if (localization.rtl) {
-        dumped.rtl = true
+        dumped.rtl = true;
     }
 
-    Object.keys(original_lines).forEach(function(text){
-        if(dumped[text] !== undefined)  return
+    for (const text in original_lines) {
+        if(dumped[text] !== undefined) continue;
+        dumped[text] = localization[text] || text;
+    }
 
-        dumped[text] = localization[text] || text
-    })
-
-    return dumped
+    return dumped;
 }
 
 function download_localization() {
