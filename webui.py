@@ -21,7 +21,8 @@ if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 logging.getLogger("pytorch_lightning").disabled = True
-warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
+warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+warnings.filterwarnings(action="ignore", category=FutureWarning)
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 startup_timer.record("torch")
 

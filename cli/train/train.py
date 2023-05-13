@@ -6,14 +6,22 @@ import re
 import gc
 import sys
 import json
+import http
 import shutil
 import pathlib
 import asyncio
 import tempfile
 import argparse
+import warnings
+warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+warnings.filterwarnings(action="ignore", category=UserWarning)
+warnings.filterwarnings(action="ignore", category=FutureWarning)
 
 # 3rd party imports
 import filetype
+import torch
+import requests
+import urllib3
 from tqdm.rich import tqdm
 
 # local imports
@@ -29,8 +37,7 @@ from rich.traceback import install as traceback_install
 from rich.console import Console
 console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
 pretty_install(console=console)
-import torch, accelerate, diffusers, requests, urllib3, http
-traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[torch,accelerate,diffusers,asyncio,http,urllib3,requests])
+traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[torch,asyncio,http,urllib3,requests])
 
 # lora imports
 lora_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lora'))
@@ -39,6 +46,7 @@ lycoris_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir
 sys.path.append(lycoris_path)
 import train_network
 
+print('HERE6')
 
 # globals
 args = None
@@ -60,27 +68,27 @@ def mem_stats():
 
 
 def parse_args():
-    global args
-    parser = argparse.ArgumentParser(description = 'train lora')
+    global args # pylint: disable=global-statement
+    parser = argparse.ArgumentParser(description = 'train')
     # basic section
-    parser.add_argument('--output', '--name', type=str, default=None, required=True, help='output filename')
     parser.add_argument('--type', type=str, choices=['embedding', 'lora', 'lycoris', 'dreambooth'], default=None, required=True, help='training type')
-    parser.add_argument('--tag', type=str, default='person', required=False, help='primary tag, default: %(default)s')
-    parser.add_argument('--process', type=str, default='original,interrogate,resize,square', required=False, help=f'list of possible processing steps: {valid_steps}, default: %(default)s')
-    parser.add_argument('--dir', type=str, default='', required=False, help='where to store processed images, default is system temp/train')
-    parser.add_argument('--input', '--dataset', type=str, default=None, required=True, help='input folder with training images')
+    parser.add_argument('--name', type=str, default=None, required=True, help='output filename')
     parser.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing training, default: %(default)s")
+    parser.add_argument('--tag', type=str, default='person', required=False, help='primary tags, default: %(default)s')
+    parser.add_argument('--input', type=str, default=None, required=True, help='input folder with training images')
+    parser.add_argument('--output', type=str, default='', required=False, help='where to store processed images, default is system temp/train')
+    parser.add_argument('--process', type=str, default='original,interrogate,resize,square', required=False, help=f'list of possible processing steps: {valid_steps}, default: %(default)s')
 
     # global params
     parser.add_argument('--gradient', type=int, default=1, required=False, help='gradient accumulation steps, default: %(default)s')
     parser.add_argument('--steps', type=int, default=2500, required=False, help='training steps, default: %(default)s')
     parser.add_argument('--batch', type=int, default=1, required=False, help='batch size, default: %(default)s')
     parser.add_argument('--lr', type=float, default=1e-04, required=False, help='model learning rate, default: %(default)s')
-    parser.add_argument('--dim', '--vectors', type=int, default=40, required=False, help='network dimension, default: %(default)s')
+    parser.add_argument('--dim', type=int, default=40, required=False, help='network dimension or number of vectors, default: %(default)s')
 
     # lora params
     parser.add_argument('--repeats', type=int, default=10, required=False, help='number of repeats per image, default: %(default)s')
-    parser.add_argument('--alpha', type=float, default=0, required=False, help='alpha for weights scaling, default: half of dim')
+    parser.add_argument('--alpha', type=float, default=0, required=False, help='alpha for weights scaling, default: dim/2')
 
     args = parser.parse_args()
 
@@ -105,14 +113,13 @@ def prepare_server():
     server_options.options.training_image_repeats_per_epoch = args.repeats
     server_options.options.training_write_csv_every = 0
     sdapi.postsync('/sdapi/v1/options', server_options.options)
-    console.log(f'updated server options')
+    console.log('updated server options')
 
 
 def verify_args():
-    global args
     server_options = util.Map(sdapi.options())
-    args.model = server_options.options['sd_model_checkpoint'].split(' [')[0]
-    args.lora_dir = server_options.flags['lora_dir']
+    args.model = server_options.options.sd_model_checkpoint.split(' [')[0]
+    args.lora_dir = server_options.options.lora_dir
     if not os.path.isabs(args.model) and not os.path.exists(args.model):
         args.model = os.path.abspath(os.path.join(args.lora_dir, os.pardir, 'Stable-diffusion', args.model))
 
@@ -123,12 +130,12 @@ def verify_args():
         console.log('cannot find training folder:', args.input)
         exit(1)
     if not os.path.exists(args.lora_dir) or not os.path.isdir(args.lora_dir):
-        console.log('cannot find lora folder:', args.dir)
+        console.log('cannot find lora folder:', args.lora_dir)
         exit(1)
-    if args.dir != '':
-        args.process_dir = args.dir
+    if args.output != '':
+        args.process_dir = args.output
     else:
-        args.process_dir = os.path.join(tempfile.gettempdir(), 'train', args.output)
+        args.process_dir = os.path.join(tempfile.gettempdir(), 'train', args.name)
     console.log(f'args: {vars(args)}')
 
 
@@ -158,13 +165,13 @@ async def training_loop():
 def train_embedding():
     console.log(f'{args.type} options: {options.embedding}')
     create_options = util.Map({
-        "name": args.output,
+        "name": args.name,
         "num_vectors_per_token": args.dim,
         "overwrite_old": False,
         "init_text": args.tag,
     })
     server_options = util.Map(sdapi.options())
-    fn = os.path.join(server_options.flags.embeddings_dir, args.output) + '.pt'
+    fn = os.path.join(server_options.options.embeddings_dir, args.name) + '.pt'
     if os.path.exists(fn) and args.overwrite:
         console.log(f'delete existing embedding {fn}')
         os.remove(fn)
@@ -182,7 +189,7 @@ def train_embedding():
 
 
 def train_lora():
-    fn = os.path.join(args.lora_dir, args.output)
+    fn = os.path.join(args.lora_dir, args.name)
     for ext in ['.ckpt', '.pt', '.safetensors']:
         if os.path.exists(fn + ext):
             if args.overwrite:
@@ -199,7 +206,7 @@ def prepare_options():
     # lora specific
     options.lora.pretrained_model_name_or_path = args.model
     options.lora.output_dir = args.lora_dir
-    options.lora.output_name = args.output
+    options.lora.output_name = args.name
     options.lora.max_train_steps = args.steps
     options.lora.network_dim = args.dim
     options.lora.network_alpha = args.dim // 2 if args.alpha == 0 else args.alpha
@@ -211,19 +218,18 @@ def prepare_options():
     if args.type == 'lycoris':
         console.log('train using lycoris network')
         options.lora.network_module = 'lycoris.kohya'
-        options.lora.in_json = os.path.join(args.process_dir, args.output + '.json')
+        options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
     if args.type == 'dreambooth':
         console.log('train using dreambooth style training')
         options.lora.in_json = None
     if args.type == 'lora':
         console.log('train using lora style training')
-        options.lora.in_json = os.path.join(args.process_dir, args.output + '.json')
+        options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
     if args.type == 'embedding':
         console.log('train embedding')
         options.lora.in_json = None
-        pass
     # embedding specific
-    options.embedding.embedding_name = args.output
+    options.embedding.embedding_name = args.name
     options.embedding.learn_rate = str(args.lr)
     options.embedding.batch_size = args.batch
     options.embedding.steps = args.steps
@@ -264,32 +270,33 @@ def process_inputs():
         else:
             concept = step
         if args.type in ['lora', 'lycoris', 'dreambooth']:
-            dir = os.path.join(args.process_dir, str(args.repeats) + '_' + concept) # separate concepts per folder
+            folder = os.path.join(args.process_dir, str(args.repeats) + '_' + concept) # separate concepts per folder
         if args.type in ['embedding']:
-            dir = os.path.join(args.process_dir) # everything into same folder
+            folder = os.path.join(args.process_dir) # everything into same folder
         console.log('processing concept:', concept)
-        console.log('processing output folder:', dir)
-        pathlib.Path(dir).mkdir(parents=True, exist_ok=True)
+        console.log('processing output folder:', folder)
+        pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
         results = {}
         for f in files:
-            res = process.file(filename = f, folder = dir, tag = args.tag, requested = opts)
+            res = process.file(filename = f, folder = folder, tag = args.tag, requested = opts)
             if res.image: # valid result
                 results[res.type] = results.get(res.type, 0) + 1
                 results['total'] = results.get('total', 0) + 1
                 rel_path = res.basename.replace(os.path.commonpath([res.basename, args.process_dir]), '')
-                if rel_path.startswith(os.path.sep): rel_path = rel_path[1:]
+                if rel_path.startswith(os.path.sep):
+                    rel_path = rel_path[1:]
                 metadata[rel_path] = { 'caption': res.caption, 'tags': ','.join(res.tags) }
                 if options.lora.in_json is None:
-                    with open(res.output.replace(options.process.format, '.txt'), "w") as outfile:
+                    with open(res.output.replace(options.process.format, '.txt'), "w", encoding='utf-8') as outfile:
                         outfile.write(res.caption)
             console.log(f"processing {'saved' if res.image is not None else 'skipped'}: {f} => {res.output} {res.ops} {res.message}")
-    dirs = [os.path.join(args.process_dir, dir) for dir in os.listdir(args.process_dir) if os.path.isdir(os.path.join(args.process_dir, dir))]
-    console.log(f'input datasets {dirs}')
+    folders = [os.path.join(args.process_dir, folder) for folder in os.listdir(args.process_dir) if os.path.isdir(os.path.join(args.process_dir, folder))]
+    console.log(f'input datasets {folders}')
     if options.lora.in_json is not None:
-        with open(options.lora.in_json, "w") as outfile: # write json at the end only
+        with open(options.lora.in_json, "w", encoding='utf-8') as outfile: # write json at the end only
             outfile.write(json.dumps(metadata, indent=2))
-        for dir in dirs: # create latents
-            latents.create_vae_latents(util.Map({ 'input': dir, 'json': options.lora.in_json }))
+        for folder in folders: # create latents
+            latents.create_vae_latents(util.Map({ 'input': folder, 'json': options.lora.in_json }))
             latents.unload_vae()
     r = { 'inputs': len(files), 'outputs': results, 'metadata': options.lora.in_json }
     console.log(f'processing steps result: {r}')
