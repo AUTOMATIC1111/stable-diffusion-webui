@@ -6,6 +6,8 @@ import signal
 import re
 import warnings
 import json
+from threading import Thread
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
@@ -185,24 +187,19 @@ def initialize():
     modules.scripts.load_scripts()
     startup_timer.record("load scripts")
 
+    modelloader.load_upscalers()
+    #startup_timer.record("load upscalers") #Is this necessary? I don't know.
+
     modules.sd_vae.refresh_vae_list()
     startup_timer.record("refresh VAE")
 
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")
 
-    try:
-        modules.sd_models.load_model()
-    except Exception as e:
-        errors.display(e, "loading stable diffusion model")
-        print("", file=sys.stderr)
-        print("Stable diffusion model failed to load, exiting", file=sys.stderr)
-        exit(1)
-    startup_timer.record("load SD checkpoint")
+    # load model in parallel to other startup stuff
+    Thread(target=lambda: shared.sd_model).start()
 
-    shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
-
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
@@ -286,7 +283,6 @@ def api_only():
     print(f"Startup time: {startup_timer.summary()}.")
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
-
 def webui():
     launch_api = cmd_opts.api
     initialize()
@@ -312,6 +308,16 @@ def webui():
             with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
+
+        # this restores the missing /docs endpoint
+        if launch_api and not hasattr(FastAPI, 'original_setup'):
+            def fastapi_setup(self):
+                self.docs_url = "/docs"
+                self.redoc_url = "/redoc"
+                self.original_setup()
+
+            FastAPI.original_setup = FastAPI.setup
+            FastAPI.setup = fastapi_setup
 
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
@@ -339,6 +345,7 @@ def webui():
         setup_middleware(app)
 
         modules.progress.setup_progress_api(app)
+        modules.ui.setup_ui_api(app)
 
         if launch_api:
             create_api(app)
@@ -349,6 +356,11 @@ def webui():
         startup_timer.record("scripts app_started_callback")
 
         print(f"Startup time: {startup_timer.summary()}.")
+
+        if cmd_opts.subpath:
+            redirector = FastAPI()
+            redirector.get("/")
+            mounted_app = gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
 
         wait_on_server(shared.demo)
         print('Restarting UI...')

@@ -570,20 +570,20 @@ class Api:
             filename = create_embedding(**args) # create empty embedding
             sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings() # reload embeddings so new one can be immediately used
             shared.state.end()
-            return CreateResponse(info = "create embedding filename: {filename}".format(filename = filename))
+            return CreateResponse(info=f"create embedding filename: {filename}")
         except AssertionError as e:
             shared.state.end()
-            return TrainResponse(info = "create embedding error: {error}".format(error = e))
+            return TrainResponse(info=f"create embedding error: {e}")
 
     def create_hypernetwork(self, args: dict):
         try:
             shared.state.begin()
             filename = create_hypernetwork(**args) # create empty embedding
             shared.state.end()
-            return CreateResponse(info = "create hypernetwork filename: {filename}".format(filename = filename))
+            return CreateResponse(info=f"create hypernetwork filename: {filename}")
         except AssertionError as e:
             shared.state.end()
-            return TrainResponse(info = "create hypernetwork error: {error}".format(error = e))
+            return TrainResponse(info=f"create hypernetwork error: {e}")
 
     def preprocess(self, args: dict):
         try:
@@ -593,13 +593,13 @@ class Api:
             return PreprocessResponse(info = 'preprocess complete')
         except KeyError as e:
             shared.state.end()
-            return PreprocessResponse(info = "preprocess error: invalid token: {error}".format(error = e))
+            return PreprocessResponse(info=f"preprocess error: invalid token: {e}")
         except AssertionError as e:
             shared.state.end()
-            return PreprocessResponse(info = "preprocess error: {error}".format(error = e))
+            return PreprocessResponse(info=f"preprocess error: {e}")
         except FileNotFoundError as e:
             shared.state.end()
-            return PreprocessResponse(info = 'preprocess error: {error}'.format(error = e))
+            return PreprocessResponse(info=f'preprocess error: {e}')
 
     def train_embedding(self, args: dict):
         try:
@@ -617,10 +617,10 @@ class Api:
                 if not apply_optimizations:
                     sd_hijack.apply_optimizations()
                 shared.state.end()
-            return TrainResponse(info = "train embedding complete: filename: {filename} error: {error}".format(filename = filename, error = error))
+            return TrainResponse(info=f"train embedding complete: filename: {filename} error: {error}")
         except AssertionError as msg:
             shared.state.end()
-            return TrainResponse(info = "train embedding error: {msg}".format(msg = msg))
+            return TrainResponse(info=f"train embedding error: {msg}")
 
     def train_hypernetwork(self, args: dict):
         try:
@@ -641,10 +641,10 @@ class Api:
                 if not apply_optimizations:
                     sd_hijack.apply_optimizations()
                 shared.state.end()
-            return TrainResponse(info="train embedding complete: filename: {filename} error: {error}".format(filename=filename, error=error))
+            return TrainResponse(info=f"train embedding complete: filename: {filename} error: {error}")
         except AssertionError as msg:
             shared.state.end()
-            return TrainResponse(info="train embedding error: {error}".format(error=error))
+            return TrainResponse(info=f"train embedding error: {error}")
 
     def get_memory(self):
         try:

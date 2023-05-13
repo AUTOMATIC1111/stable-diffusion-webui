@@ -22,9 +22,6 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     """
     output = []
 
-    if ext_filter is None:
-        ext_filter = []
-
     try:
         places = []
 
@@ -39,22 +36,14 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
         places.append(model_path)
 
         for place in places:
-            if os.path.exists(place):
-                for file in glob.iglob(place + '**/**', recursive=True):
-                    full_path = file
-                    if os.path.isdir(full_path):
-                        continue
-                    if os.path.islink(full_path) and not os.path.exists(full_path):
-                        print(f"Skipping broken symlink: {full_path}")
-                        continue
-                    if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
-                        continue
-                    if len(ext_filter) != 0:
-                        model_name, extension = os.path.splitext(file)
-                        if extension not in ext_filter:
-                            continue
-                    if file not in output:
-                        output.append(full_path)
+            for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
+                if os.path.islink(full_path) and not os.path.exists(full_path):
+                    print(f"Skipping broken symlink: {full_path}")
+                    continue
+                if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
+                    continue
+                if full_path not in output:
+                    output.append(full_path)
 
         if model_url is not None and len(output) == 0:
             if download_name is not None:
@@ -133,11 +122,8 @@ forbidden_upscaler_classes = set()
 
 
 def list_builtin_upscalers():
-    load_upscalers()
-
     builtin_upscaler_classes.clear()
     builtin_upscaler_classes.extend(Upscaler.__subclasses__())
-
 
 def forbid_loaded_nonbuiltin_upscalers():
     for cls in Upscaler.__subclasses__():
