@@ -34,7 +34,7 @@ import tomesd
 # add a logger for the processing module
 logger = logging.getLogger(__name__)
 # manually set output level here since there is no option to do so yet through launch options
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(message)s')
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(message)s')
 
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
@@ -478,6 +478,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     index = position_in_batch + iteration * p.batch_size
 
     clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
+    enable_hr = getattr(p, 'enable_hr', False)
 
     generation_params = {
         "Steps": p.steps,
@@ -497,7 +498,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Clip skip": None if clip_skip <= 1 else clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
         "Token merging ratio": None if opts.token_merging_ratio == 0 else opts.token_merging_ratio,
-        "Token merging ratio hr": None if not p.enable_hr or opts.token_merging_ratio_hr == 0 else opts.token_merging_ratio_hr,
+        "Token merging ratio hr": None if not enable_hr or opts.token_merging_ratio_hr == 0 else opts.token_merging_ratio_hr,
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
