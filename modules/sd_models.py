@@ -17,6 +17,7 @@ from ldm.util import instantiate_from_config
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
+import tomesd
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
@@ -578,3 +579,25 @@ def unload_model_weights(sd_model=None, info=None):
     print(f"Unloaded weights {timer.summary()}.")
 
     return sd_model
+
+
+def apply_token_merging(sd_model, hr: bool):
+    """
+    Applies speed and memory optimizations from tomesd.
+
+    Args:
+        hr (bool): True if called in the context of a high-res pass
+    """
+
+    ratio = shared.opts.token_merging_ratio
+    if hr:
+        ratio = shared.opts.token_merging_ratio_hr
+
+    tomesd.apply_patch(
+        sd_model,
+        ratio=ratio,
+        use_rand=False,  # can cause issues with some samplers
+        merge_attn=True,
+        merge_crossattn=False,
+        merge_mlp=False
+    )

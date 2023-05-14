@@ -308,8 +308,10 @@ infotext_to_setting_name_mapping = [
     ('UniPC skip type', 'uni_pc_skip_type'),
     ('UniPC order', 'uni_pc_order'),
     ('UniPC lower order final', 'uni_pc_lower_order_final'),
+    ('Token merging ratio', 'token_merging_ratio'),
+    ('Token merging ratio hr', 'token_merging_ratio_hr'),
     ('RNG', 'randn_source'),
-    ('NGMS', 's_min_uncond'),
+    ('NGMS', 's_min_uncond')
 ]
 
 
