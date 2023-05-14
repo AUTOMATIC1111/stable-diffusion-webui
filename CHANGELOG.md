@@ -1,4 +1,4 @@
-## Upcoming 1.2.1
+## 1.2.1
 
 ### Features:
  * add an option to always refer to lora by filenames
