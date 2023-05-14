@@ -1,3 +1,16 @@
+## 1.2.1
+
+### Features:
+ * add an option to always refer to lora by filenames
+
+### Bug Fixes:
+ * never refer to lora by an alias if multiple loras have same alias or the alias is called none
+ * fix upscalers disappearing after the user reloads UI
+ * allow bf16 in safe unpickler (resolves problems with loading some loras)
+ * allow web UI to be ran fully offline
+ * fix localizations not working
+ * fix error for loras: 'LatentDiffusion' object has no attribute 'lora_layer_mapping'
+
 ## 1.2.0
 
 ### Features:
