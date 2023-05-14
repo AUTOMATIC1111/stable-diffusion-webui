@@ -24,7 +24,7 @@ set COMMANDLINE_ARGS=--allow-code --xformers --skip-torch-cuda-test --no-half-va
 
 ## Command Line Arguments
 ### Running online
-Use the `--share` option to run online. You will get a xxx.app.gradio link. This is the intended way to use the program in collabs. You may set up authentication for said gradio shared instance with the flag `--gradio-auth username:password`, optionally providing multiple sets of usernames and passwords separated by commas.
+Use the `--share` option to run online. You will get a xxx.app.gradio link. This is the intended way to use the program in colabs. You may set up authentication for said gradio shared instance with the flag `--gradio-auth username:password`, optionally providing multiple sets of usernames and passwords separated by commas.
 
 Use `--listen` to make the server listen to network connections. This will allow computers on the local network to access the UI, and if you configure port forwarding, also computers on the internet.
 
