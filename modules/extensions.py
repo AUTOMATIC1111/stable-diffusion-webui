@@ -84,7 +84,11 @@ class Extension:
         return res
 
     def check_updates(self):
-        repo = git.Repo(self.path)
+        try:
+            repo = git.Repo(self.path)
+        except:
+            self.can_update = False
+            return
         for fetch in repo.remote().fetch(dry_run=True):
             if fetch.flags != fetch.HEAD_UPTODATE:
                 self.can_update = True

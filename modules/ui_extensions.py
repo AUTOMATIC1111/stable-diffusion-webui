@@ -85,7 +85,6 @@ def check_updates(_id_task, disable_list, search_text, sort_column):
     shared.log.info(f'Extensions update check: update={len(exts)} disabled={len(disable_list)}')
     shared.state.job_count = len(exts)
     for ext in exts:
-        shared.log.debug(f'Extensions update: {ext.name}')
         shared.state.textinfo = ext.name
         try:
             ext.check_updates()
@@ -94,6 +93,7 @@ def check_updates(_id_task, disable_list, search_text, sort_column):
                 raise
         except Exception:
             errors.display(e, f'extensions check update: {ext.name}')
+        shared.log.debug(f'Extensions update check: {ext.name} {ext.commit_hash} {ext.commit_date} update={ext.can_update}')
         shared.state.nextjob()
     return refresh_extensions_list_from_data(search_text, sort_column), "Extension update complete | Restart required"
 
@@ -179,18 +179,24 @@ def uninstall_extension(extension_path, search_text, sort_column):
 
 def update_extension(extension_path, search_text, sort_column):
     exts = [extension for extension in extensions.extensions if extension.path == extension_path]
-    shared.log.info(f'Extension update: {extension_path}')
     shared.state.job_count = len(exts)
     for ext in exts:
-        shared.log.debug(f'Extensions update: {ext.name}')
+        shared.log.debug(f'Extensions update start: {ext.name} {ext.commit_hash} {ext.commit_date}')
         shared.state.textinfo = ext.name
         try:
             ext.check_updates()
+            if ext.can_update:
+                ext.fetch_and_reset_hard()
+                ext.read_info_from_repo()
+                shared.log.debug(f'Extensions updated: {ext.name} {ext.commit_hash} {ext.commit_date}')
+            shared.log.debug('Extensions no updated available')
         except FileNotFoundError as e:
             if 'FETCH_HEAD' not in str(e):
                 raise
-        except Exception:
+        except Exception as e:
+            shared.log.error(f'Extensions update failed: {ext.name}')
             errors.display(e, f'extensions check update: {ext.name}')
+        shared.log.debug(f'Extensions update finish: {ext.name} {ext.commit_hash} {ext.commit_date}')
         shared.state.nextjob()
     return refresh_extensions_list_from_data(search_text, sort_column), f"Extension updated: {extension_path} | Restart required"
 
@@ -208,6 +214,7 @@ def refresh_extensions_list(search_text, sort_column):
             shared.log.debug(f'Updated extensions list: {len(extensions_list)} {extensions_index} {outfile}')
     except Exception as e:
         shared.log.warning(f'Updated extensions list failed: {extensions_index} {e}')
+    update_extension_list()
     code = refresh_extensions_list_from_data(search_text, sort_column)
     return code, f'Extensions | {len(extensions.extensions)} registered | {len(extensions_list)} available'
 
@@ -260,6 +267,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         ext['is_builtin'] = extension[0].is_builtin if len(extension) > 0 else False
         ext['version'] = extension[0].version if len(extension) > 0 else ''
         ext['enabled'] = extension[0].enabled if len(extension) > 0 else ''
+        ext['remote'] = extension[0].remote if len(extension) > 0 else None
         ext['path'] = extension[0].path if len(extension) > 0 else ''
         ext['sort_string'] = f"{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
         ext['sort_enabled'] = f"{'1' if ext['enabled'] else '0'}{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
@@ -287,8 +295,9 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         installed = ext.get("installed", False)
         enabled = ext.get("enabled", False)
         path = ext.get("path", "")
+        remote = ext.get("remote", None)
         commit_date = ext.get('commit_date', 1577836800) or 1577836800
-        update_available = installed & (datetime.utcfromtimestamp(commit_date + 60 * 60) < datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z')[:-1]))
+        update_available = (remote is not None) & (installed) & (datetime.utcfromtimestamp(commit_date + 60 * 60) < datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z')[:-1]))
         tags = ext.get("tags", [])
         tags_string = ' '.join(tags)
         tags = tags + ["installed"] if installed else tags

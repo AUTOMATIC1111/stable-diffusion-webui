@@ -86,6 +86,7 @@ def compatibility_args(opts, args):
     group.add_argument("--sub-quad-chunk-threshold", help=argparse.SUPPRESS, default=opts.sub_quad_chunk_threshold)
     group.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     group.add_argument("--lyco-dir", help=argparse.SUPPRESS, default=opts.lyco_dir)
+    group.add_argument("--enable-console-prompts", help=argparse.SUPPRESS, default=False)
 
     # removed opts are added here with fixed values for compatibility reasons
     opts.use_old_emphasis_implementation = False
