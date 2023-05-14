@@ -30,7 +30,7 @@ def fetch_file(filename: str = ""):
         raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
     ext = os.path.splitext(filename)[1].lower()
-    if ext not in (".png", ".jpg", ".webp"):
+    if ext not in (".png", ".jpg", ".jpeg", ".webp"):
         raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
 
     # would profit from returning 304
@@ -194,7 +194,7 @@ class ExtraNetworksPage:
         Find a preview PNG for a given path (without extension) and call link_preview on it.
         """
 
-        preview_extensions = ["png", "jpg", "webp"]
+        preview_extensions = ["png", "jpg", "jpeg", "webp"]
         if shared.opts.samples_format not in preview_extensions:
             preview_extensions.append(shared.opts.samples_format)
 
