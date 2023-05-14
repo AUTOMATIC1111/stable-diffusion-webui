@@ -967,3 +967,12 @@ https://github.com/jtydhr88/sd-canvas-editor
 A custom extension for sd-webui that integrated a full capability canvas editor which you can use layer, text, image, elements, etc.
 
 ![overall](https://user-images.githubusercontent.com/860985/236643824-946ebdef-83af-4e85-80ea-6ac7d2fb520e.png)
+
+
+## One Button Prompt
+https://github.com/AIrjen/OneButtonPrompt
+
+One Button Prompt is a tool/script for automatic1111 for beginners who have problems writing a good prompt, or advanced users who want to get inspired.
+
+It generates an entire prompt from scratch. It is random, but controlled. You simply load up the script and press generate, and let it surprise you.
+![One Button Prompt](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/9491d781-c0ad-4f22-93c4-b361635fc265)
