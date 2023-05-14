@@ -26,4 +26,4 @@ torchsde==0.2.5
 safetensors==0.3.1
 httpcore<=0.15
 fastapi==0.94.0
-tomesd>=0.1.2
+tomesd==0.1.2

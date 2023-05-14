@@ -311,7 +311,7 @@ infotext_to_setting_name_mapping = [
     ('Token merging ratio', 'token_merging_ratio'),
     ('Token merging ratio hr', 'token_merging_ratio_hr'),
     ('RNG', 'randn_source'),
-    ('NGMS', 's_min_uncond')
+    ('NGMS', 's_min_uncond'),
 ]
 
 

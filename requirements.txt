@@ -29,3 +29,4 @@ torchsde
 safetensors
 psutil
 rich
+tomesd
