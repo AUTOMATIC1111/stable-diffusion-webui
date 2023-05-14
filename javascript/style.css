@@ -134,7 +134,7 @@ button.custom-button{
     position: absolute;
     width: 50%;
     height: 100%;
-    display: block;
+    display: none;
     background: #b4c0cc;
 }
 .gradio-button.generate-box-skip:hover, .gradio-button.generate-box-interrupt:hover{
