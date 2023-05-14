@@ -54,6 +54,7 @@ class PreprocessTask(UserDict):
             'process_multicrop_maxarea': self.get('process_multicrop_maxarea', 409600),
             'process_multicrop_objective': self.get('process_multicrop_objective', "Maximize area"),
             'process_multicrop_threshold': self.get('process_multicrop_threshold', 0.1),
+            'process_keep_original_size': self.get('process_keep_original_size', False)
         }
 
     def __init__(self, task: Task):
@@ -65,6 +66,7 @@ class PreprocessTask(UserDict):
             'task_id': 'test_preprocess',
             'user_id': 'test_user',
             'task_type': TaskType.Train,
+            'minor_type': TrainMinorTaskType.Preprocess,
             'model_hash':  'train',
             'create_at': int(time.time()),
             'interrogate_model': 'deepbooru',
@@ -87,8 +89,9 @@ class PreprocessTask(UserDict):
             'process_multicrop_maxarea': 409600,
             'process_multicrop_objective': "Maximize area",
             'process_multicrop_threshold': 0.1,
-            'zip_key': '/data/wdm/lora_train_data.zip',
+            'zip_key': 'xingzheaidraw/sd-web/resources/lora_train_data.zip',
             'ignore': False,
+            'process_keep_original_size': False,
         }
         return Task(**t)
 

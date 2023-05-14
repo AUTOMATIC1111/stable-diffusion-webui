@@ -280,18 +280,23 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
                 progress_cb(current_progress)
 
 
-def preprocess_sub_dir(process_src, process_dst, process_width, process_height, preprocess_txt_action,
-                                process_flip,
-                                process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
-                                overlap_ratio=0.2,
-                                process_focal_crop=False, process_focal_crop_face_weight=0.9,
-                                process_focal_crop_entropy_weight=0.3,
-                                process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False,
-                                process_multicrop=None,
-                                process_multicrop_mindim=None, process_multicrop_maxdim=None,
-                                process_multicrop_minarea=None,
-                                process_multicrop_maxarea=None, process_multicrop_objective=None,
-                                process_multicrop_threshold=None, progress_cb=None):
+def preprocess_sub_dir(process_src,
+                       process_dst,
+                       process_width,
+                       process_height,
+                       preprocess_txt_action,
+                       process_keep_original_size,
+                       process_flip,
+                       process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
+                       overlap_ratio=0.2,
+                       process_focal_crop=False, process_focal_crop_face_weight=0.9,
+                       process_focal_crop_entropy_weight=0.3,
+                       process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False,
+                       process_multicrop=None,
+                       process_multicrop_mindim=None, process_multicrop_maxdim=None,
+                       process_multicrop_minarea=None,
+                       process_multicrop_maxarea=None, process_multicrop_objective=None,
+                       process_multicrop_threshold=None, progress_cb=None):
     try:
         if process_caption:
             shared.interrogator.load()
@@ -302,20 +307,23 @@ def preprocess_sub_dir(process_src, process_dst, process_width, process_height, 
         sub_dirs = list(os.scandir(process_src))
 
         for i, dirname in enumerate(sub_dirs):
-            dst_dir = os.path.join(process_dst, os.path.basename(dirname))
+            basename = os.path.basename(dirname)
+            dst_dir = os.path.join(process_dst, basename)
+            if basename.startswith('.') or 'MACOSX' in basename:
+                continue
 
             def work_progress(p):
                 task_progress = (i + 1) / len(sub_dirs) * p
                 if callable(progress_cb):
                     progress_cb(task_progress)
 
-            preprocess_work(dirname, dst_dir, process_width, process_height, preprocess_txt_action, process_flip,
-                            process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio,
-                            process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight,
-                            process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop,
-                            process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea,
-                            process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold,
-                            work_progress)
+            preprocess_work(dirname, dst_dir, process_width, process_height, preprocess_txt_action, process_keep_original_size,
+                            process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold,
+                            overlap_ratio, process_focal_crop, process_focal_crop_face_weight,
+                            process_focal_crop_entropy_weight, process_focal_crop_edges_weight,
+                            process_focal_crop_debug, process_multicrop, process_multicrop_mindim,
+                            process_multicrop_maxdim, process_multicrop_minarea, process_multicrop_maxarea,
+                            process_multicrop_objective, process_multicrop_threshold, work_progress)
     finally:
 
         if process_caption:

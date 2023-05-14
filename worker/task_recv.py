@@ -134,19 +134,14 @@ class TaskReceiver:
                     queue_name, min, max, start=0, num=1)
                 task = None
                 if values:
-                    if isinstance(values, Iterable):
-                        for v in values:
-                            task = self.search_task_with_id(rds, v)
-                            if task:
-                                rds.zrem(queue_name, v)
-                                break
-                    else:
+                    for v in values:
                         task = self.search_task_with_id(rds, v)
                         if task:
-                            rds.zrem(queue_name, values)
+                            break
+                    rds.zrem(queue_name, *values)
                 if task:
                     return task
-                else:
+                elif not values:
                     rand = random.randint(0, 5) * 0.1
                     time.sleep(rand)
 

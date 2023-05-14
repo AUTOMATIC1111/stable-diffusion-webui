@@ -5,4 +5,8 @@
 # @Site    : 
 # @File    : __init__.py
 # @Software: Hifive
+from trainx.handler import TrainTaskHandler
 
+train_task_handlers = [
+    TrainTaskHandler()
+]

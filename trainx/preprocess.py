@@ -31,9 +31,7 @@ def exec_preprocess_task(job: Task):
         params = copy.copy(task.params)
 
         def progress_callback(progress):
-            if progress > 95:
-                return
-            p = TaskProgress.new_running(job, 'run preprocess', progress)
+            p = TaskProgress.new_running(job, 'run preprocess', int(progress*0.7))
             dumper.dump_task_progress(p)
 
         params.update(
@@ -52,6 +50,8 @@ def exec_preprocess_task(job: Task):
             processed_dir = target_dir
 
         images = build_thumbnail_tag(processed_dir)
+        p = TaskProgress.new_running(job, 'upload thumbnail', 90)
+        yield p
         new_zip = build_zip(processed_dir)
         keys = upload_files(True, new_zip)
         task_result = {
@@ -94,7 +94,7 @@ def build_thumbnail_tag(target_dir):
 
     for file in tag_files:
         basename, ex = os.path.splitext(os.path.basename(file))
-        with open(file, "w") as f:
+        with open(file) as f:
             lines = f.readlines()
             images[basename]['tag'] = ' '.join(lines)
 
@@ -103,7 +103,7 @@ def build_thumbnail_tag(target_dir):
 
 def create_thumbnail(image_path):
     dirname = os.path.dirname(image_path)
-    basename = os.path.dirname(image_path)
+    basename = os.path.basename(image_path)
     dst = os.path.join(dirname, 'thumb-' + basename)
     thumbnail(image_path, dst)
     return dst

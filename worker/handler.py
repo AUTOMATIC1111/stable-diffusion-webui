@@ -58,6 +58,9 @@ class TaskHandler:
 
 
 class DumpTaskHandler(TaskHandler, abc.ABC):
+    
+    def __init__(self, task_type: TaskType):
+        super(DumpTaskHandler, self).__init__(task_type)
 
     def _set_task_status(self, p: TaskProgress):
         super()._set_task_status(p)
