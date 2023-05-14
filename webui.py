@@ -151,7 +151,7 @@ def check_taesd():
     model_path = os.path.join(models_path, "VAE-approx", "taesd_decoder.pth")
     if not os.path.exists(model_path):
         print('download taesd model')
-        torch.hub.download_url_to_file(model_url, os.path.dirname(model_path))
+        torch.hub.download_url_to_file(model_url, model_path)
 
 
 def initialize():

@@ -71,6 +71,6 @@ def decode():
             sd_vae_taesd.eval()
             sd_vae_taesd.to(devices.device, devices.dtype)
         else:
-            raise FileNotFoundError('Tiny AE mdoel not found')
+            raise FileNotFoundError('Tiny AE model not found')
 
     return sd_vae_taesd.decoder
