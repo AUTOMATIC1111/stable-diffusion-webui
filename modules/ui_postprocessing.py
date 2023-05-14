@@ -33,11 +33,19 @@ def create_ui():
             with gr.Row():
                 buttons = parameters_copypaste.create_buttons(["txt2img", "img2img", "inpaint"])
 
-            submit = gr.Button('Generate', elem_id="extras_generate", variant='primary')
+            # submit = gr.Button('Generate', elem_id="extras_generate", variant='primary') # TODO: add all
 
             script_inputs = scripts.scripts_postproc.setup_ui()
 
         with gr.Column():
+            id_part = 'extras'
+            with gr.Row(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
+                submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+                interrupt = gr.Button('Stop', elem_id=f"{id_part}_interrupt", variant='secondary')
+                skip = gr.Button('Skip', elem_id=f"{id_part}_skip", variant='secondary')
+                skip.click(fn=lambda: shared.state.skip(), inputs=[], outputs=[])
+                interrupt.click(fn=lambda: shared.state.interrupt(), inputs=[], outputs=[])
+
             result_images, html_info_x, html_info, _html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
             html_info = gr.HTML(elem_id="pnginfo_html_info")
             generation_info = gr.Textbox(elem_id="pnginfo_generation_info", label="Parameters", visible=False)

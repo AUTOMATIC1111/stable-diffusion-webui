@@ -248,6 +248,7 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
 
 
 def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, state_dict, timer):
+    shared.log.debug(f'Model weights loading: {memory_stats()}')
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("hash")
     shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title

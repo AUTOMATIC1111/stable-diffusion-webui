@@ -50,6 +50,9 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
         outpath = opts.outdir_samples or opts.outdir_extras_samples
     infotext = ''
     for image, name, ext in zip(image_data, image_names, image_ext):
+        if shared.state.interrupted:
+            shared.log.debug('Postprocess interrupted')
+            break
         if image is None:
             continue
         shared.state.textinfo = name

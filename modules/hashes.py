@@ -25,57 +25,43 @@ def cache(subsection):
             else:
                 with open(cache_filename, "r", encoding="utf8") as file:
                     cache_data = json.load(file)
-
     s = cache_data.get(subsection, {})
     cache_data[subsection] = s
-
     return s
 
 
 def calculate_sha256(filename):
     hash_sha256 = hashlib.sha256()
     blksize = 1024 * 1024
-
     with progress.open(filename, 'rb', description=f'Calculating model hash: [cyan]{filename}', auto_refresh=True) as f:
         for chunk in iter(lambda: f.read(blksize), b""):
             hash_sha256.update(chunk)
-
     return hash_sha256.hexdigest()
 
 
 def sha256_from_cache(filename, title):
     hashes = cache("hashes")
     ondisk_mtime = os.path.getmtime(filename)
-
     if title not in hashes:
         return None
-
     cached_sha256 = hashes[title].get("sha256", None)
     cached_mtime = hashes[title].get("mtime", 0)
-
     if ondisk_mtime > cached_mtime or cached_sha256 is None:
         return None
-
     return cached_sha256
 
 
 def sha256(filename, title):
     hashes = cache("hashes")
-
     sha256_value = sha256_from_cache(filename, title)
     if sha256_value is not None:
         return sha256_value
-
     if shared.cmd_opts.no_hashing:
         return None
-
     sha256_value = calculate_sha256(filename)
-
     hashes[title] = {
         "mtime": os.path.getmtime(filename),
         "sha256": sha256_value,
     }
-
     dump_cache()
-
     return sha256_value

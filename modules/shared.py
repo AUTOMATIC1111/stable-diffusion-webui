@@ -98,9 +98,11 @@ class State:
     server_start = None
 
     def skip(self):
+        log.debug('Skip requested')
         self.skipped = True
 
     def interrupt(self):
+        log.debug('Interrupt requested')
         self.interrupted = True
 
     def nextjob(self):

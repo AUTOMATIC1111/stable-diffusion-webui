@@ -603,6 +603,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if state.skipped:
                 state.skipped = False
             if state.interrupted:
+                shared.log.debug(f'Process interrupted: {n}/{p.n_iter}')
                 break
             prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
