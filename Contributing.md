@@ -1,6 +1,9 @@
 # Pull requests
 To contribute, clone the repository, make your changes, commit and push to your clone, and submit a pull request.
 
+> **Note**
+If you're not a contributor to this repository, you need to fork and clone the repository before pushing your changes. For more information, check out [Contributing to Projects](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) in the GitHub documentation.
+
 * If you are adding a lot of code, **consider making it an [extension](Extensions) instead**.
 * Do not add multiple unrelated things in same PR.
 * PRs should target the `dev` branch.
