@@ -133,6 +133,10 @@ def load_lora(name, filename):
 
     sd = sd_models.read_state_dict(filename)
 
+    # this should not be needed but is here as an emergency fix for an unknown error people are experiencing in 1.2.0
+    if not hasattr(shared.sd_model, 'lora_layer_mapping'):
+        assign_lora_names_to_compvis_modules(shared.sd_model)
+
     keys_failed_to_match = {}
     is_sd2 = 'model_transformer_resblocks' in shared.sd_model.lora_layer_mapping
 
