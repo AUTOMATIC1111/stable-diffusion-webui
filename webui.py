@@ -427,7 +427,7 @@ def run_worker():
     from consumer import run_executor
     from worker.task_send import RedisSender, VipLevel
     from handlers.img2img import Img2ImgTask
-    from train.typex import PreprocessTask
+    from trainx.typex import PreprocessTask
     from handlers.extension.controlnet import bind_debug_img_task_args
 
     if cmd_opts.train_only:

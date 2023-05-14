@@ -9,10 +9,10 @@ import copy
 import os.path
 from worker.dumper import dumper
 from worker.task import Task
-from train.typex import PreprocessTask
+from .typex import PreprocessTask
 from worker.task import TaskProgress
 from tools.image import thumbnail
-from train.utils import get_tmp_local_path, Tmp, upload_files
+from .utils import get_tmp_local_path, Tmp, upload_files
 from tools.file import zip_compress, zip_uncompress, find_files_from_dir
 from modules.textual_inversion.preprocess import preprocess_sub_dir
 

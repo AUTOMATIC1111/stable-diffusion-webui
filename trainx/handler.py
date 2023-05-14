@@ -8,8 +8,8 @@
 from enum import IntEnum
 from worker.handler import DumpTaskHandler
 from worker.task import Task, TaskType
-from train.preprocess import exec_preprocess_task
-from train.lora import exec_train_lora_task
+from .preprocess import exec_preprocess_task
+from .lora import exec_train_lora_task
 
 
 class TrainTaskMinorType(IntEnum):

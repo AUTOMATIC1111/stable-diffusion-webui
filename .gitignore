@@ -29,7 +29,7 @@ notification.mp3
 /SwinIR
 /textual_inversion
 .vscode
-
+/extensions
 /test/stdout.txt
 /test/stderr.txt
 /cache.json*

@@ -10,8 +10,8 @@ import typing
 
 from worker.task import Task, TaskProgress
 from sd_scripts.train_network_ly import train, setup_parser
-from train.typex import TrainLoraTask
-from train.utils import upload_files
+from .typex import TrainLoraTask
+from .utils import upload_files
 
 
 def direct_train(task: TrainLoraTask):

@@ -12,7 +12,7 @@ import typing
 from enum import IntEnum
 from collections import UserDict
 from worker.task import Task, TaskType
-from train.utils import get_tmp_local_path, Tmp
+from .utils import get_tmp_local_path, Tmp
 from tools.file import zip_uncompress, getdirsize, zip_compress
 from modules.textual_inversion.preprocess import PreprocessTxtAction
 
