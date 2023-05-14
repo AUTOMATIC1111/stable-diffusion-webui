@@ -7,6 +7,7 @@ from modules import cmd_args, shared, memstats
 if sys.platform == "darwin":
     from modules import mac_specific # pylint: disable=ungrouped-imports
 
+cuda_ok = torch.cuda.is_available()
 
 def has_mps() -> bool:
     if sys.platform != "darwin":
@@ -33,7 +34,7 @@ def get_cuda_device_string():
 def get_optimal_device_name():
     if shared.cmd_opts.use_ipex:
         return "xpu"
-    elif torch.cuda.is_available() and not shared.cmd_opts.use_directml:
+    elif cuda_ok and not shared.cmd_opts.use_directml:
         return get_cuda_device_string()
     if has_mps():
         return "mps"
@@ -69,14 +70,14 @@ def torch_gc():
                 torch.xpu.empty_cache()
         except:
             pass
-    elif torch.cuda.is_available():
+    elif cuda_ok:
         try:
             with torch.cuda.device(get_cuda_device_string()):
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()
         except:
             pass
-    shared.log.debug(f'gc: {memstats.memory_stats()}')
+    shared.log.debug(f'gc: {torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
 
 
 def test_fp16():
@@ -96,7 +97,7 @@ def test_fp16():
 
 def set_cuda_params():
     shared.log.debug('Verifying Torch settings')
-    if torch.cuda.is_available():
+    if cuda_ok:
         try:
             torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
             torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
@@ -112,10 +113,9 @@ def set_cuda_params():
             except:
                 pass
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
-    # set dtype
     ok = test_fp16()
-    if shared.cmd_opts.use_directml:
-        shared.opts.no_half = True
+    # if shared.cmd_opts.use_directml: # TODO
+    #    shared.opts.no_half = True
     if ok and shared.opts.cuda_dtype == 'FP32':
         shared.log.info('CUDA FP16 test passed but desired mode is set to FP32')
     if shared.opts.cuda_dtype == 'FP16' and ok:
@@ -135,12 +135,12 @@ def set_cuda_params():
     unet_needs_upcast = shared.opts.upcast_sampling
     shared.log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
     shared.log.info(f'Setting Torch parameters: dtype={dtype} vae={dtype_vae} unet={dtype_unet}')
+    shared.log.debug(f'Torch default device: {torch.device(get_optimal_device_name())}')
 
 
 args = cmd_args.parser.parse_args()
 if args.use_ipex:
     cpu = torch.device("xpu") #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
-    print("Using XPU instead of CPU.")
 else:
     cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
@@ -176,19 +176,27 @@ def autocast(disable=False):
         return contextlib.nullcontext()
     if dtype == torch.float32 or shared.cmd_opts.precision == "Full":
         return contextlib.nullcontext()
+    if shared.cmd_opts.use_directml:
+        return torch.dml.amp.autocast(dtype)
     if shared.cmd_opts.use_ipex:
         return torch.xpu.amp.autocast(enabled=True, dtype=dtype, cache_enabled=False)
-    else:
+    if cuda_ok:
         return torch.autocast("cuda")
+    else:
+        return torch.autocast("cpu")
 
 
 def without_autocast(disable=False):
     if disable:
         return contextlib.nullcontext()
+    if shared.cmd_opts.use_directml:
+        return torch.dml.amp.autocast(enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
     if shared.cmd_opts.use_ipex:
-        return torch.autocast("xpu", enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
-    else:
+        return torch.xpu.amp.autocast(enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
+    if cuda_ok:
         return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
+    else:
+        return torch.autocast("cpu", enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
 
 
 class NansException(Exception):
