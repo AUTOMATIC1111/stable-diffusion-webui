@@ -1,5 +1,5 @@
 {
-    "about": "This file is used by Web UI to show the index of available extensions. It's in JSON format and is not meant to be viewed by users directly. If you edit the file you must ensure that it's still a valid JSON.",
+    "about": "This file is Deprecated any changes will be forcibly removed, submit your extension to the index via https://github.com/AUTOMATIC1111/stable-diffusion-webui-extensions. This file is used by Web UI to show the index of available extensions. It's in JSON format and is not meant to be viewed by users directly. If you edit the file you must ensure that it's still a valid JSON.",
     "tags": {
         "script": "a general extension that adds functionality",
         "localization": "a localization extension that translates web ui into another language",
