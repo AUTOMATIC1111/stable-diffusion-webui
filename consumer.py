@@ -8,10 +8,13 @@
 from tools.model_hist import CkptLoadRecorder
 from worker.executor import TaskExecutor, TaskHandler
 from handlers import get_task_handlers
+from trainx.handler import TrainTaskHandler
 
 
 def run_executor(ckpt_recorder: CkptLoadRecorder, *handlers: TaskHandler, train_only=False):
     handlers = handlers or get_task_handlers()
+    handlers = list(handlers)
+    handlers.extend([TrainTaskHandler])
     executor = TaskExecutor(ckpt_recorder, train_only=train_only)
     executor.add_handler(*handlers)
     executor.start()

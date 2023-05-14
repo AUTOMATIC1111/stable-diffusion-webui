@@ -431,7 +431,7 @@ def run_worker():
     from handlers.extension.controlnet import bind_debug_img_task_args
 
     if cmd_opts.train_only:
-        tasks = PreprocessTask.debug_task()
+        tasks = [PreprocessTask.debug_task()]
     else:
         tasks = Img2ImgTask.debug_task()
         tasks = bind_debug_img_task_args(*tasks)
