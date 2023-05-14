@@ -5,7 +5,7 @@ import os
 import torch
 from diffusers import StableDiffusionPipeline
 
-import library.model_util as model_util
+import sd_scripts.library.model_util as model_util
 
 
 def convert(args):

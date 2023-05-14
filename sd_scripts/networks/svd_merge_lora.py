@@ -5,7 +5,7 @@ import os
 import torch
 from safetensors.torch import load_file, save_file
 from tqdm import tqdm
-import library.model_util as model_util
+import sd_scripts.library.model_util as model_util
 import lora
 
 

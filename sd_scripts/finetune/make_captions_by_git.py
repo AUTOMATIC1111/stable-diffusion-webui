@@ -9,7 +9,7 @@ import torch
 from transformers import AutoProcessor, AutoModelForCausalLM
 from transformers.generation.utils import GenerationMixin
 
-import library.train_util as train_util
+import sd_scripts.library.train_util as train_util
 
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

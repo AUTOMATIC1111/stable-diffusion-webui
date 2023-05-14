@@ -6,7 +6,7 @@ import argparse
 import torch
 from safetensors.torch import load_file, save_file, safe_open
 from tqdm import tqdm
-from library import train_util, model_util
+from sd_scripts.library import train_util, model_util
 import numpy as np
 
 MIN_SV = 1e-6

@@ -7,7 +7,7 @@ from safetensors.torch import load_file
 from diffusers import UNet2DConditionModel
 from diffusers.models.unet_2d_condition import UNet2DConditionOutput
 
-import library.model_util as model_util
+import sd_scripts.library.model_util as model_util
 
 
 class ControlNetInfo(NamedTuple):

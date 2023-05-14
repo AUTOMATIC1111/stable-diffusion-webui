@@ -60,9 +60,9 @@ import cv2
 from einops import rearrange
 from torch import einsum
 import safetensors.torch
-from library.lpw_stable_diffusion import StableDiffusionLongPromptWeightingPipeline
-import library.model_util as model_util
-import library.huggingface_util as huggingface_util
+from sd_scripts.library.lpw_stable_diffusion import StableDiffusionLongPromptWeightingPipeline
+import sd_scripts.library.model_util as model_util
+import sd_scripts.library.huggingface_util as huggingface_util
 
 # Tokenizer: checkpointから読み込むのではなくあらかじめ提供されているものを使う
 TOKENIZER_PATH = "openai/clip-vit-large-patch14"

@@ -15,18 +15,18 @@ import torch
 from accelerate.utils import set_seed
 from diffusers import DDPMScheduler
 
-import library.train_util as train_util
-from library.train_util import (
+import sd_scripts.library.train_util as train_util
+from sd_scripts.library.train_util import (
     DreamBoothDataset,
 )
-import library.config_util as config_util
-from library.config_util import (
+import sd_scripts.library.config_util as config_util
+from sd_scripts.library.config_util import (
     ConfigSanitizer,
     BlueprintGenerator,
 )
-import library.huggingface_util as huggingface_util
-import library.custom_train_functions as custom_train_functions
-from library.custom_train_functions import apply_snr_weight, get_weighted_text_embeddings, pyramid_noise_like, \
+import sd_scripts.library.huggingface_util as huggingface_util
+import sd_scripts.library.custom_train_functions as custom_train_functions
+from sd_scripts.library.custom_train_functions import apply_snr_weight, get_weighted_text_embeddings, pyramid_noise_like, \
     apply_noise_offset
 
 

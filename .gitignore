@@ -37,3 +37,5 @@ notification.mp3
 /cache.json
 cache.json.lock
 gradio/launches.json
+models/
+stable-diffusion-webui/

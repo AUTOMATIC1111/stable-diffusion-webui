@@ -90,13 +90,13 @@ import PIL
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
-import library.model_util as model_util
-import library.train_util as train_util
-from networks.lora import LoRANetwork
-import tools.original_control_net as original_control_net
-from tools.original_control_net import ControlNetInfo
+import sd_scripts.library.model_util as model_util
+import sd_scripts.library.train_util as train_util
+from sd_scripts.networks.lora import LoRANetwork
+import sd_scripts.tools.original_control_net as original_control_net
+from sd_scripts.tools.original_control_net import ControlNetInfo
 
-from XTI_hijack import unet_forward_XTI, downblock_forward_XTI, upblock_forward_XTI
+from sd_scripts.XTI_hijack import unet_forward_XTI, downblock_forward_XTI, upblock_forward_XTI
 
 # Tokenizer: checkpointから読み込むのではなくあらかじめ提供されているものを使う
 TOKENIZER_PATH = "openai/clip-vit-large-patch14"

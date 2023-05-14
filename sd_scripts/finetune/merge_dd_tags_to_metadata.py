@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from typing import List
 from tqdm import tqdm
-import library.train_util as train_util
+import sd_scripts.library.train_util as train_util
 import os
 
 def main(args):
