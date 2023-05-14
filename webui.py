@@ -144,10 +144,21 @@ Use --skip-version-check commandline argument to disable this check.
             """.strip())
 
 
+def check_taesd():
+    from modules.paths_internal import models_path
+
+    model_url = 'https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth'
+    model_path = os.path.join(models_path, "VAE-approx", "taesd_decoder.pth")
+    if not os.path.exists(model_path):
+        print('download taesd model')
+        torch.hub.download_url_to_file(model_url, os.path.dirname(model_path))
+
+
 def initialize():
     fix_asyncio_event_loop_policy()
 
     check_versions()
+    check_taesd()
 
     extensions.list_extensions()
     localization.list_localizations(cmd_opts.localizations_dir)
