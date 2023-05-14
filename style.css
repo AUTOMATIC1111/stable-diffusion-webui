@@ -3403,8 +3403,8 @@ li.coffee-circle {
 }
 
 .coffee-circle .tooltip-html .top {
-  width: 320px;
-  max-width: 320px;
+  width: 220px;
+  max-width: 220px;
   text-align: left;
   padding: 16px;
 }
@@ -3424,10 +3424,8 @@ li.coffee-circle p b {
 }
 .coffee-circle .tooltip-html .top > svg,
 .coffee-circle .tooltip-html .top > img {
-  /*float: left;
-  margin-right: 5px;*/
+  margin: auto;
   margin-bottom: 8px;
-  width: 60%;
 }
 .coffee-circle .tooltip-html .top blockquote {
   background: var(--ae-frame-bg-color);
