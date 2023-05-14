@@ -445,7 +445,7 @@ options_templates.update(options_section(('infotext', "Infotext"), {
 options_templates.update(options_section(('ui', "Live previews"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
-    "live_previews_format": OptionInfo("auto", "Live preview file format", gr.Radio, {"choices": ["auto", "jpeg", "png", "webp"]}),
+    "live_previews_image_format": OptionInfo("png", "Live preview file format", gr.Radio, {"choices": ["jpeg", "png", "webp"]}),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "show_progress_every_n_steps": OptionInfo(10, "Live preview display period", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}).info("in sampling steps - show new live preview image every N sampling steps; -1 = only show after completion of batch"),
     "show_progress_type": OptionInfo("Approx NN", "Live preview method", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}).info("Full = slow but pretty; Approx NN = fast but low quality; Approx cheap = super fast but terrible otherwise"),
