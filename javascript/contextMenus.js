@@ -130,6 +130,10 @@ addContextMenuEventListener = initResponse[2];
   let generateOnRepeat = function(genbuttonid,interruptbuttonid){
     let genbutton = gradioApp().querySelector(genbuttonid);
     let interruptbutton = gradioApp().querySelector(interruptbuttonid);
+    let seedinput = get_uiCurrentTabContent().querySelector('[id$="_settings"] [id$="_seed"] input')?.value || -1;
+    if (parseInt(seedinput) !== -1 && !confirm('Seed not set to -1. Are you sure you want to continue?')) {
+      return;
+    }
     if(!interruptbutton.offsetParent){
       genbutton.click();
     }
