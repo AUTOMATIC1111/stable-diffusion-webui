@@ -29,6 +29,8 @@ class TaskExecutor(Thread):
         self.not_busy = Condition(self.mutex)
         self.queue = Queue(1)  # 也可直接使用变量进行消息传递。。
         name = name or 'task-executor'
+        if train_only:
+            logger.info("[executor] >>> run on train mode.")
         super(TaskExecutor, self).__init__(group, target, name, args, kwargs, daemon=daemon)
 
     def _close(self):

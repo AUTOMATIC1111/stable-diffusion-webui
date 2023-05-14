@@ -65,6 +65,7 @@ class PreprocessTask(UserDict):
             'task_id': 'test_preprocess',
             'user_id': 'test_user',
             'task_type': TaskType.Train,
+            'model_hash':  'train',
             'create_at': int(time.time()),
             'interrogate_model': 'deepbooru',
             'process_width': 512,
