@@ -427,17 +427,22 @@ def run_worker():
     from consumer import run_executor
     from worker.task_send import RedisSender, VipLevel
     from handlers.img2img import Img2ImgTask
+    from train.typex import PreprocessTask
     from handlers.extension.controlnet import bind_debug_img_task_args
 
-    tasks = Img2ImgTask.debug_task()
+    if cmd_opts.train_only:
+        tasks = PreprocessTask.debug_task()
+    else:
+        tasks = Img2ImgTask.debug_task()
+        tasks = bind_debug_img_task_args(*tasks)
     sender = RedisSender()
-    # sender.push_task(VipLevel.Level_1, *bind_debug_img_task_args(*tasks))
+    sender.push_task(VipLevel.Level_1, *tasks)
+
     initialize()
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("scripts before_ui_callback")
 
     shared.demo = modules.ui.create_ui()
-
     run_executor(shared.sd_model_recorder, train_only=cmd_opts.train_only)
 
 

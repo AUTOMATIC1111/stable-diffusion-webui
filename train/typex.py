@@ -7,10 +7,11 @@
 # @Software: Hifive
 import json
 import os.path
+import time
 import typing
 from enum import IntEnum
 from collections import UserDict
-from worker.task import Task
+from worker.task import Task, TaskType
 from train.utils import get_tmp_local_path, Tmp
 from tools.file import zip_uncompress, getdirsize, zip_compress
 from modules.textual_inversion.preprocess import PreprocessTxtAction
@@ -58,6 +59,38 @@ class PreprocessTask(UserDict):
     def __init__(self, task: Task):
         super(PreprocessTask, self).__init__(task)
 
+    @classmethod
+    def debug_task(self):
+        t = {
+            'task_id': 'test_preprocess',
+            'user_id': 'test_user',
+            'task_type': TaskType.Train,
+            'create_at': int(time.time()),
+            'interrogate_model': 'deepbooru',
+            'process_width': 512,
+            'process_height': 512,
+            'preprocess_txt_action': 'ignore',
+            'process_split': False,
+            'process_flip': False,
+            'split_threshold': 0.5,
+            'overlap_ratio': 0.2,
+            'process_focal_crop': False,
+            'process_focal_crop_face_weight': 0.9,
+            'process_focal_crop_entropy_weight': 0.15,
+            'process_focal_crop_edges_weight': 0.5,
+            'process_focal_crop_debug': False,
+            'process_multicrop': False,
+            'process_multicrop_mindim': 384,
+            'process_multicrop_maxdim': 768,
+            'process_multicrop_minarea': 4096,
+            'process_multicrop_maxarea': 409600,
+            'process_multicrop_objective': "Maximize area",
+            'process_multicrop_threshold': 0.1,
+            'zip_key': '/data/wdm/lora_train_data.zip',
+            'ignore': False,
+        }
+        return Task(**t)
+
 
 class TrainMinorTaskType(IntEnum):
     Preprocess = 1
@@ -65,7 +98,7 @@ class TrainMinorTaskType(IntEnum):
 
 
 # ===================================================================
-# ============================== lora  ==============================
+# ============================== lora ===============================
 # ===================================================================
 
 class SerializationObj:
@@ -270,4 +303,3 @@ class TrainLoraTask(UserDict):
         dst = os.path.join(Tmp, f'train-material-{self.id}.zip')
         zip_compress(image_dir, dst)
         return dst
-
