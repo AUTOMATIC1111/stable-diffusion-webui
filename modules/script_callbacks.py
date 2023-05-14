@@ -64,7 +64,7 @@ class CFGDenoisedParams:
         """Total number of sampling steps planned"""
 
         self.inner_model = inner_model
-        """Inner model reference that is being used for denoising"""
+        """Inner model reference used for denoising"""
 
 
 class AfterCFGCallbackParams:
@@ -79,7 +79,7 @@ class AfterCFGCallbackParams:
         """Total number of sampling steps planned"""
 
         self.output_altered = False
-        """A flag for CFGDenoiser that indicates whether the output has been altered by the callback"""
+        """A flag for CFGDenoiser indicating whether the output has been altered by the callback"""
 
 
 class UiTrainTabParams:
@@ -360,9 +360,9 @@ def on_cfg_denoised(callback):
 
 
 def on_cfg_after_cfg(callback):
-    """register a function to be called in the kdiffussion cfg_denoiser method after cfg calculations has completed.
+    """register a function to be called in the kdiffussion cfg_denoiser method after cfg calculations are completed.
     The callback is called with one argument:
-        - params: CFGDenoisedParams - parameters to be passed to the inner model and sampling state details.
+        - params: AfterCFGCallbackParams - parameters to be passed to the script for post-processing after cfg calculation.
     """
     add_callback(callback_map['callbacks_cfg_after_cfg'], callback)
 
