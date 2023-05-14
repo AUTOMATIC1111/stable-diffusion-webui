@@ -564,6 +564,8 @@ def check_timestamp():
     if setup_time < extension_time:
         ok = False
     log.debug(f'Timestamps: version:{version_time} setup:{setup_time} extension:{extension_time}')
+    if args.reinstall:
+        ok = False
     return ok
 
 
@@ -644,12 +646,12 @@ def run_setup():
         log.info('Forcing reinstall of all packages')
     check_torch()
     install_requirements()
+    install_packages()
     if check_timestamp():
         log.info('No changes detected: Quick launch active')
         return
     log.info("Running setup")
     log.debug(f"Args: {vars(args)}")
-    install_packages()
     install_repositories()
     install_submodules()
     install_extensions()

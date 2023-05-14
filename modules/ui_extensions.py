@@ -24,13 +24,17 @@ def update_extension_list():
     except:
         shared.log.debug(f'Extensions list failed to load: {os.path.join(paths.script_path, "html", "extensions.json")}')
     found = []
+    for ext in extensions.extensions:
+        ext.read_info_from_repo()
     for ext in extensions_list:
-        installed = [extension for extension in extensions.extensions if extension.git_name == ext['name'] or extension.name == ext['name']]
+        installed = [extension for extension in extensions.extensions
+                     if extension.git_name == ext['name']
+                     or extension.name == ext['name']
+                     or (extension.remote or '').startswith(ext['url'].replace('.git', ''))]
         if len(installed) > 0:
             found.append(installed[0])
     not_matched = [extension for extension in extensions.extensions if extension not in found]
     for ext in not_matched:
-        ext.read_info_from_repo()
         entry = {
             "name": ext.name or "",
             "description": ext.description or "",
