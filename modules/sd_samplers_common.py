@@ -26,8 +26,8 @@ approximation_indexes = {"Full": 0, "Tiny AE": 1, "Approx NN": 2, "Approx cheap"
 
 
 def single_sample_to_image(sample, approximation=None):
-    if approximation is None:
-        approximation = approximation_indexes.get(opts.show_progress_type, 0)
+    if approximation is None or approximation not in approximation_indexes.keys():
+        approximation = approximation_indexes.get(opts.show_progress_type, 1)
 
     if approximation == 1:
         x_sample = sd_vae_taesd.decode()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
