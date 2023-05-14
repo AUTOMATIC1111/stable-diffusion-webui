@@ -3,11 +3,10 @@ import sys
 import traceback
 
 import time
-from datetime import datetime
 import git
 
 from modules import shared
-from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path
+from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
 extensions = []
 

@@ -1,8 +1,5 @@
-import torch
-import safetensors.torch
 import os
 import collections
-from collections import namedtuple
 from modules import paths, shared, devices, script_callbacks, sd_models
 import glob
 from copy import deepcopy

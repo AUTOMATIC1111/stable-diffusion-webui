@@ -13,15 +13,22 @@ import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
-from fonts.ttf import Roboto
 import string
 import json
 import hashlib
 
 from modules import sd_samplers, shared, script_callbacks, errors
-from modules.shared import opts, cmd_opts
+from modules.paths_internal import roboto_ttf_file
+from modules.shared import opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+
+
+def get_font(fontsize: int):
+    try:
+        return ImageFont.truetype(opts.font or roboto_ttf_file, fontsize)
+    except Exception:
+        return ImageFont.truetype(roboto_ttf_file, fontsize)
 
 
 def image_grid(imgs, batch_size=1, rows=None):
@@ -142,14 +149,8 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
                 lines.append(word)
         return lines
 
-    def get_font(fontsize):
-        try:
-            return ImageFont.truetype(opts.font or Roboto, fontsize)
-        except Exception:
-            return ImageFont.truetype(Roboto, fontsize)
-
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
-        for i, line in enumerate(lines):
+        for line in lines:
             fnt = initial_fnt
             fontsize = initial_fontsize
             while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
@@ -357,6 +358,7 @@ class FilenameGenerator:
         'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
         'clip_skip': lambda self: opts.data["CLIP_stop_at_last_layers"],
+        'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -365,7 +367,7 @@ class FilenameGenerator:
         self.seed = seed
         self.prompt = prompt
         self.image = image
-        
+
     def hasprompt(self, *args):
         lower = self.prompt.lower()
         if self.p is None or self.prompt is None:
@@ -408,13 +410,13 @@ class FilenameGenerator:
         time_format = args[0] if len(args) > 0 and args[0] != "" else self.default_time_format
         try:
             time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
-        except pytz.exceptions.UnknownTimeZoneError as _:
+        except pytz.exceptions.UnknownTimeZoneError:
             time_zone = None
 
         time_zone_time = time_datetime.astimezone(time_zone)
         try:
             formatted_time = time_zone_time.strftime(time_format)
-        except (ValueError, TypeError) as _:
+        except (ValueError, TypeError):
             formatted_time = time_zone_time.strftime(self.default_time_format)
 
         return sanitize_filename_part(formatted_time, replace_spaces=False)
@@ -466,14 +468,14 @@ def get_next_sequence_number(path, basename):
     """
     result = -1
     if basename != '':
-        basename = basename + "-"
+        basename = f"{basename}-"
 
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            parts = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
-                result = max(int(l[0]), result)
+                result = max(int(parts[0]), result)
             except ValueError:
                 pass
 
@@ -535,7 +537,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         add_number = opts.save_images_add_number or file_decoration == ''
 
         if file_decoration != "" and add_number:
-            file_decoration = "-" + file_decoration
+            file_decoration = f"-{file_decoration}"
 
         file_decoration = namegen.apply(file_decoration) + suffix
 
@@ -565,7 +567,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     def _atomically_save_image(image_to_save, filename_without_extension, extension):
         # save image with .tmp extension to avoid race condition when another process detects new image in the directory
-        temp_file_path = filename_without_extension + ".tmp"
+        temp_file_path = f"{filename_without_extension}.tmp"
         image_format = Image.registered_extensions()[extension]
 
         if extension.lower() == '.png':
@@ -625,7 +627,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     if opts.save_txt and info is not None:
         txt_fullfn = f"{fullfn_without_extension}.txt"
         with open(txt_fullfn, "w", encoding="utf8") as file:
-            file.write(info + "\n")
+            file.write(f"{info}\n")
     else:
         txt_fullfn = None
 

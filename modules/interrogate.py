@@ -11,7 +11,6 @@ import torch.hub
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
-import modules.shared as shared
 from modules import devices, paths, shared, lowvram, modelloader, errors
 
 blip_image_eval_size = 384
@@ -28,7 +27,7 @@ def category_types():
 def download_default_clip_interrogate_categories(content_dir):
     print("Downloading CLIP categories...")
 
-    tmpdir = content_dir + "_tmp"
+    tmpdir = f"{content_dir}_tmp"
     category_types = ["artists", "flavors", "mediums", "movements"]
 
     try:
@@ -160,7 +159,7 @@ class InterrogateModels:
             text_array = text_array[0:int(shared.opts.interrogate_clip_dict_limit)]
 
         top_count = min(top_count, len(text_array))
-        text_tokens = clip.tokenize([text for text in text_array], truncate=True).to(devices.device_interrogate)
+        text_tokens = clip.tokenize(list(text_array), truncate=True).to(devices.device_interrogate)
         text_features = self.clip_model.encode_text(text_tokens).type(self.dtype)
         text_features /= text_features.norm(dim=-1, keepdim=True)
 
@@ -208,13 +207,13 @@ class InterrogateModels:
 
                 image_features /= image_features.norm(dim=-1, keepdim=True)
 
-                for name, topn, items in self.categories():
-                    matches = self.rank(image_features, items, top_count=topn)
+                for cat in self.categories():
+                    matches = self.rank(image_features, cat.items, top_count=cat.topn)
                     for match, score in matches:
                         if shared.opts.interrogate_return_ranks:
                             res += f", ({match}:{score/100:.3f})"
                         else:
-                            res += ", " + match
+                            res += f", {match}"
 
         except Exception:
             print("Error interrogating", file=sys.stderr)

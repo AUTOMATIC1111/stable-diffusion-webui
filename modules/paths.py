@@ -1,8 +1,8 @@
 import os
 import sys
-from modules.paths_internal import models_path, script_path, data_path, extensions_dir, extensions_builtin_dir
+from modules.paths_internal import models_path, script_path, data_path, extensions_dir, extensions_builtin_dir  # noqa: F401
 
-import modules.safe
+import modules.safe  # noqa: F401
 
 
 # data_path = cmd_opts_pre.data
@@ -16,7 +16,7 @@ for possible_sd_path in possible_sd_paths:
         sd_path = os.path.abspath(possible_sd_path)
         break
 
-assert sd_path is not None, "Couldn't find Stable Diffusion in any of: " + str(possible_sd_paths)
+assert sd_path is not None, f"Couldn't find Stable Diffusion in any of: {possible_sd_paths}"
 
 path_dirs = [
     (sd_path, 'ldm', 'Stable Diffusion', []),

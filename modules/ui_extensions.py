@@ -61,7 +61,8 @@ def save_config_state(name):
     if not name:
         name = "Config"
     current_config_state["name"] = name
-    filename = os.path.join(config_states_dir, datetime.now().strftime("%Y_%m_%d-%H_%M_%S") + "_" + name + ".json")
+    timestamp = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+    filename = os.path.join(config_states_dir, f"{timestamp}_{name}.json")
     print(f"Saving backup of webui/extension state to {filename}.")
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(current_config_state, f)
@@ -466,7 +467,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
                 <td>{html.escape(description)}<p class="info"><span class="date_added">Added: {html.escape(added)}</span></p></td>
                 <td>{install_code}</td>
             </tr>
-        
+
         """
 
         for tag in [x for x in extension_tags if x not in tags]:
@@ -489,7 +490,7 @@ def create_ui():
     config_states.list_config_states()
 
     with gr.Blocks(analytics_enabled=False) as ui:
-        with gr.Tabs(elem_id="tabs_extensions") as tabs:
+        with gr.Tabs(elem_id="tabs_extensions"):
             with gr.TabItem("Installed", id="installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):
@@ -534,9 +535,9 @@ def create_ui():
                     hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
                     sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", ], type="index")
 
-                with gr.Row(): 
+                with gr.Row():
                     search_extensions_text = gr.Text(label="Search").style(container=False)
-                   
+
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
 

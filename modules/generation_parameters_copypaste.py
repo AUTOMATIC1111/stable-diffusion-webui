@@ -1,15 +1,11 @@
 import base64
-import html
 import io
-import math
 import os
 import re
-from pathlib import Path
 
 import gradio as gr
 from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks
-import tempfile
 from PIL import Image
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
@@ -23,14 +19,14 @@ registered_param_bindings = []
 
 
 class ParamBinding:
-    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=[]):
+    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=None):
         self.paste_button = paste_button
         self.tabname = tabname
         self.source_text_component = source_text_component
         self.source_image_component = source_image_component
         self.source_tabname = source_tabname
         self.override_settings_component = override_settings_component
-        self.paste_field_names = paste_field_names
+        self.paste_field_names = paste_field_names or []
 
 
 def reset():
@@ -59,6 +55,7 @@ def image_from_url_text(filedata):
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         assert is_in_right_dir, 'trying to open image file outside of allowed directories'
 
+        filename = filename.rsplit('?', 1)[0]
         return Image.open(filename)
 
     if type(filedata) == list:
@@ -129,6 +126,7 @@ def connect_paste_params_buttons():
                 _js=jsfunc,
                 inputs=[binding.source_image_component],
                 outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
+                show_progress=False,
             )
 
         if binding.source_text_component is not None and fields is not None:
@@ -140,6 +138,7 @@ def connect_paste_params_buttons():
                 fn=lambda *x: x,
                 inputs=[field for field, name in paste_fields[binding.source_tabname]["fields"] if name in paste_field_names],
                 outputs=[field for field, name in fields if name in paste_field_names],
+                show_progress=False,
             )
 
         binding.paste_button.click(
@@ -147,6 +146,7 @@ def connect_paste_params_buttons():
             _js=f"switch_to_{binding.tabname}",
             inputs=None,
             outputs=None,
+            show_progress=False,
         )
 
 
@@ -247,7 +247,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         lines.append(lastline)
         lastline = ''
 
-    for i, line in enumerate(lines):
+    for line in lines:
         line = line.strip()
         if line.startswith("Negative prompt:"):
             done_with_prompt = True
@@ -265,8 +265,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         v = v[1:-1] if v[0] == '"' and v[-1] == '"' else v
         m = re_imagesize.match(v)
         if m is not None:
-            res[k+"-1"] = m.group(1)
-            res[k+"-2"] = m.group(2)
+            res[f"{k}-1"] = m.group(1)
+            res[f"{k}-2"] = m.group(2)
         else:
             res[k] = v
 
@@ -308,6 +308,8 @@ infotext_to_setting_name_mapping = [
     ('UniPC skip type', 'uni_pc_skip_type'),
     ('UniPC order', 'uni_pc_order'),
     ('UniPC lower order final', 'uni_pc_lower_order_final'),
+    ('Token merging ratio', 'token_merging_ratio'),
+    ('Token merging ratio hr', 'token_merging_ratio_hr'),
     ('RNG', 'randn_source'),
     ('NGMS', 's_min_uncond'),
 ]
@@ -409,12 +411,14 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         fn=paste_func,
         inputs=[input_comp],
         outputs=[x[0] for x in paste_fields],
+        show_progress=False,
     )
     button.click(
         fn=None,
         _js=f"recalculate_prompts_{tabname}",
         inputs=[],
         outputs=[],
+        show_progress=False,
     )
 
 
