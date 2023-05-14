@@ -26,8 +26,13 @@ function attachGalleryListeners(tab_name) {
 	var gallery = gradioApp().querySelector('#'+tab_name+'_gallery')
 	gallery?.addEventListener('click', () => gradioApp().getElementById(tab_name+"_generation_info_button").click());
 	gallery?.addEventListener('keydown', (e) => {
-		if (e.keyCode == 37 || e.keyCode == 39) // left or right arrow
-			gradioApp().getElementById(tab_name+"_generation_info_button").click()
+		if (e.key !== undefined) {
+			if (e.key == "←" || e.key == "→")
+				gradioApp().getElementById(tab_name + "_generation_info_button").click()
+		} else if (e.keyCode !== undefined) {
+			if (e.keyCode == 37 || e.keyCode == 39)
+				gradioApp().getElementById(tab_name + "_generation_info_button").click()
+		}
 	});
 	return gallery;
 }
