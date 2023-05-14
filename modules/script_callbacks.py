@@ -78,9 +78,6 @@ class AfterCFGCallbackParams:
         self.total_sampling_steps = total_sampling_steps
         """Total number of sampling steps planned"""
 
-        self.output_altered = False
-        """A flag for CFGDenoiser indicating whether the output has been altered by the callback"""
-
 
 class UiTrainTabParams:
     def __init__(self, txt2img_preview_params):
