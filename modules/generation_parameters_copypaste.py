@@ -6,7 +6,7 @@ import re
 from PIL import Image
 import gradio as gr
 from modules.paths import data_path
-from modules import shared, ui_tempdir, script_callbacks
+from modules import shared, ui_tempdir, script_callbacks, images
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
 re_param = re.compile(re_param_code)
@@ -51,7 +51,10 @@ def image_from_url_text(filedata):
         filename = filedata["name"]
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         if is_in_right_dir:
-            return Image.open(filename)
+            image = Image.open(filename)
+            geninfo, _items = images.read_info_from_image(image)
+            image.info['parameters'] = geninfo
+            return image
         else:
             shared.log.warning(f'File access denied: {filename}')
             return None
@@ -70,6 +73,7 @@ def image_from_url_text(filedata):
         filedata = filedata[len("data:image/jpeg;base64,"):]
     filedata = base64.decodebytes(filedata.encode('utf-8'))
     image = Image.open(io.BytesIO(filedata))
+    images.read_info_from_image(image)
     return image
 
 

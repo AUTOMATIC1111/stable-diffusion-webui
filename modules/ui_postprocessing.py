@@ -4,6 +4,14 @@ import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call # pylint: disable=unused-import
 from modules.extras import run_pnginfo
 
+
+def submit_click(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs):
+    result_images, html_info_x, html_info = postprocessing.run_postprocessing(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs)
+    if result_images is not None and len(result_images) > 0:
+        _html_info, _generation_info, html_info_x = run_pnginfo(result_images[0])
+    return result_images, html_info_x, html_info
+
+
 def create_ui():
     tab_index = gr.State(value=0) # pylint: disable=abstract-class-instantiated
 
@@ -63,7 +71,7 @@ def create_ui():
     )
 
     submit.click(
-        fn=call_queue.wrap_gradio_gpu_call(postprocessing.run_postprocessing, extra_outputs=[None, '']),
+        fn=call_queue.wrap_gradio_gpu_call(submit_click, extra_outputs=[None, '']),
         inputs=[
             tab_index,
             extras_image,

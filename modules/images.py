@@ -14,7 +14,7 @@ import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin, ExifTags
-from modules import sd_samplers, shared, script_callbacks, errors
+from modules import sd_samplers, shared, script_callbacks, errors, paths
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
@@ -449,9 +449,11 @@ def atomically_save_image():
         if shared.opts.save_txt and len(exifinfo_data) > 0:
             with open(txt_fullfn, "w", encoding="utf8") as file:
                 file.write(exifinfo_data + "\n")
+        with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
+            file.write(exifinfo_data)
         if shared.opts.save_log_fn != '' and len(exifinfo_data) > 0:
             try:
-                with open(shared.opts.save_log_fn, mode='a+', encoding='utf-8') as f:
+                with open(os.path.join(paths.data_path, shared.opts.save_log_fn), mode='a+', encoding='utf-8') as f:
                     try:
                         entries = json.load(f)
                     except:
@@ -582,7 +584,11 @@ def safe_decode_string(s: bytes):
 def read_info_from_image(image):
     items = image.info or {}
     geninfo = items.pop('parameters', None)
+    if geninfo is None:
+        geninfo = items.pop('UserComment', None)
     if geninfo is not None and len(geninfo) > 0:
+        if 'UserComment' in geninfo:
+            geninfo = geninfo['UserComment']
         items['UserComment'] = geninfo
 
     if "exif" in items:
@@ -595,9 +601,11 @@ def read_info_from_image(image):
                     if isinstance(val, tuple) and isinstance(val[0], int) and isinstance(val[1], int): # convert camera ratios
                         val = round(val[0] / val[1], 2)
                     if val is not None and key in ExifTags.TAGS: # add known tags
-                        items[ExifTags.TAGS[key]] = val
                         if ExifTags.TAGS[key] == 'UserComment': # add geninfo from UserComment
                             geninfo = val
+                            items['parameters'] = val
+                        else:
+                            items[ExifTags.TAGS[key]] = val
                     elif val is not None and key in ExifTags.GPSTAGS:
                         items[ExifTags.GPSTAGS[key]] = val
 
@@ -617,7 +625,6 @@ Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
         except Exception as e:
             errors.display(e, 'novelai image parser')
-
     return geninfo, items
 
 

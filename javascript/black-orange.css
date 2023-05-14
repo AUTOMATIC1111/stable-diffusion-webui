@@ -90,7 +90,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_cfg_scale { min-width: 200px; }
 #txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
 #txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }
-#txt2img_gallery, #img2img_gallery, #extras_gallery { background: black !important; padding: 0; margin: 0; object-fit: contain; box-shadow: none; min-height: 0; height: 45vh; }
+#txt2img_gallery, #img2img_gallery, #extras_gallery { background: black !important; padding: 0; margin: 0; object-fit: contain; box-shadow: none; min-height: 0; }
 #txt2img_generate, #img2img_generate { height: 36px; border: none; border-radius: 0; min-height: 36px; padding: 0; }
 #txt2img_interrupt, #img2img_interrupt, #txt2img_skip, #img2img_skip { height: 36px; min-width: 116px; max-width: 116px; border: none; border-radius: 0; background-color: var(--inactive-color); margin-top: 46px; display: block !important; padding: 0; }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }

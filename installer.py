@@ -659,7 +659,7 @@ def run_setup():
     if errors == 0:
         log.debug(f'Setup complete without errors: {round(time.time())}')
     else:
-        log.warning(f'Setup complete with errors ({errors})')
+        log.warning(f'Setup complete with errors: {errors}')
         log.warning('See log file for more details: setup.log')
 
 
