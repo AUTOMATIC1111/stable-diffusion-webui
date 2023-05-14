@@ -414,6 +414,9 @@ class SdModelData:
     def get_sd_model(self):
         if self.sd_model is None:
             with self.lock:
+                if self.sd_model is not None:
+                    return self.sd_model
+
                 try:
                     load_model()
                 except Exception as e:
