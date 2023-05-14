@@ -95,6 +95,7 @@ def test_fp16():
 
 
 def set_cuda_params():
+    shared.log.debug('Verifying Torch settings')
     if torch.cuda.is_available():
         try:
             torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32

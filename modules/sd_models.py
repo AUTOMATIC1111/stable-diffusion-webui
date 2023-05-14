@@ -153,6 +153,7 @@ def select_checkpoint():
     model_checkpoint = shared.opts.sd_model_checkpoint
     checkpoint_info = checkpoint_aliases.get(model_checkpoint, None)
     if checkpoint_info is not None or shared.cmd_opts.ckpt is not None:
+        shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
         return checkpoint_info
     if len(checkpoints_list) == 0:
         shared.log.error("Cannot run without a checkpoint")
@@ -162,6 +163,7 @@ def select_checkpoint():
     if model_checkpoint is not None:
         shared.log.warning(f"Default checkpoint not found: {model_checkpoint}")
         shared.log.warning(f"Loading fallback checkpoint: {checkpoint_info.title}")
+    shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
     return checkpoint_info
 
 
