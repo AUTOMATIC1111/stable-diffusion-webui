@@ -60,17 +60,17 @@ body:
         - Android
         - Other/Cloud
   - type: dropdown
-  id: device
-  attributes:
-      label: What device are you running WebUI on?
-      multiple: true
-      options:
-      - Nvidia GPUs (RTX 20 above)
-      - Nvidia GPUs (GTX 16 below)
-      - AMD GPUs (RX 6000 above)
-      - AMD GPUs (RX 5000 below)
-      - CPU
-      - Other GPUs
+    id: device
+    attributes:
+        label: What device are you running WebUI on?
+        multiple: true
+        options:
+        - Nvidia GPUs (RTX 20 above)
+        - Nvidia GPUs (GTX 16 below)
+        - AMD GPUs (RX 6000 above)
+        - AMD GPUs (RX 5000 below)
+        - CPU
+        - Other GPUs
   - type: dropdown
     id: browsers
     attributes:
