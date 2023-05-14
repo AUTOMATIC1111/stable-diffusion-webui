@@ -425,11 +425,11 @@ table.settings-value-table td{
     color: var(--body-text-color);
 }
 
-#settings .gradio-textbox, #settings .gradio-slider, #settings .gradio-number, #settings .gradio-dropdown, #settings .gradio-checkboxgroup{
+#settings .gradio-textbox, #settings .gradio-slider, #settings .gradio-number, #settings .gradio-dropdown, #settings .gradio-checkboxgroup, #settings .gradio-radio{
     margin-top: 0.75em;
 }
 
-.gradio-textbox .settings-comment, .gradio-slider .settings-comment, .gradio-number .settings-comment, .gradio-dropdown .settings-comment, .gradio-checkboxgroup .settings-comment {
+#settings span .settings-comment {
     display: inline
 }
 

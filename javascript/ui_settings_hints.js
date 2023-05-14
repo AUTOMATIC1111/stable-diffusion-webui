@@ -15,7 +15,8 @@ onOptionsChanged(function(){
 
         var span = null
         if(div.classList.contains('gradio-checkbox')) span = div.querySelector('label span')
-        else if(div.classList.contains('gradio-checkboxgroup')) span = div.querySelector('span')
+        else if(div.classList.contains('gradio-checkboxgroup')) span = div.querySelector('span').firstChild
+        else if(div.classList.contains('gradio-radio')) span = div.querySelector('span').firstChild
         else span = div.querySelector('label span').firstChild
 
         if(!span) return
