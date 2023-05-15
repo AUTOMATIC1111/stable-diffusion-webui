@@ -995,7 +995,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         devices.torch_gc()
 
         # apply token merging optimizations from tomesd for high-res pass
-        if opts.token_merging_ratio_hr > 0:
+        if opts.token_merging_ratio_hr > 0 and opts.token_merging_ratio_hr != opts.token_merging_ratio:
             sd_models.apply_token_merging(sd_model=self.sd_model, hr=True)
             logger.debug(f"Applied token merging for high-res pass. Ratio: '{opts.token_merging_ratio_hr}'")
 
