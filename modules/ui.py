@@ -1624,7 +1624,8 @@ def create_ui():
 
         result = gr.HTML(elem_id="settings_result")
 
-        quicksettings_names = opts.quicksettings_list
+        #quicksettings_names = opts.quicksettings_list
+        quicksettings_names = [x.strip() for x in opts.quicksettings.split(",")]
         quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
 
         quicksettings_list = []
@@ -1678,7 +1679,6 @@ def create_ui():
 
             gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
             
-
         def unload_sd_weights():
             modules.sd_models.unload_model_weights()
 
