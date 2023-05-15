@@ -1,6 +1,6 @@
 // various hints and extra info for the settings tab
 
-onUiLoaded(function(){
+/* onUiLoaded(function(){
     createLink = function(elem_id, text, href){
         var a = document.createElement('A')
         a.textContent = text
@@ -36,6 +36,6 @@ onUiLoaded(function(){
             popup(table);
         })
     });
-})
+}) */
 
 

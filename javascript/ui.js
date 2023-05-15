@@ -798,7 +798,7 @@ onUiLoaded(function () {
       elem.addEventListener("click", toggleAccordion);
     });
   }
-  function toggleAccordion(e) {
+/*   function toggleAccordion(e) {
     //e.preventDefault();
     //e.stopPropagation();
     //e.stopImmediatePropagation();
@@ -835,6 +835,7 @@ onUiLoaded(function () {
   }
 
   attachAccordionListeners(gradioApp());
+  */
   // additional ui styles
   let styleobj = {};
   const r = gradioApp();
@@ -1228,7 +1229,7 @@ onUiLoaded(function () {
     setting_quicksettings.value = field_settings;
     //addModelCheckpoint();
     saveQuickSettings();
-    //console.log(section + " - "+ id + " - " + checked);
+    console.log(section + " - "+ id + " - " + checked);
   }
   gradioApp()
     .querySelectorAll('[id*="add2quick_"]')
