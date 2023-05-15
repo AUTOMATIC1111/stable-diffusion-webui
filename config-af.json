@@ -145,5 +145,8 @@
     "lora_apply_to_outputs": false,
     "add_qr_code": true,
     "static_server_uri": "https://ai.animefest.cz",
-    "hide_negative_prompt": true
+    "quicksettings_list": [
+        "sd_model_checkpoint"
+    ],
+    "restore_config_state_file": ""
 }

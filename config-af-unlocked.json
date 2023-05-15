@@ -149,5 +149,9 @@
     "hide_footer": false,
     "additional_css": "",
     "disable_all_extensions": "none",
-    "uni_pc_order": 3
+    "uni_pc_order": 3,
+    "quicksettings_list": [
+        "sd_model_checkpoint"
+    ],
+    "restore_config_state_file": ""
 }
