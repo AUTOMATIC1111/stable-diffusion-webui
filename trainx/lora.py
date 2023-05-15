@@ -50,8 +50,6 @@ def get_train_models(train_lora_task: TrainLoraTask):
 
 def exec_train_lora_task(task: Task, callback: typing.Callable = None):
     train_lora_task = TrainLoraTask(task)
-    p = TaskProgress.new_prepare(task, 'prepare')
-    yield p
     args = train_lora_task.build_command_args()
     p = TaskProgress.new_ready(task, 'ready')
     yield p
@@ -74,5 +72,8 @@ def exec_train_lora_task(task: Task, callback: typing.Callable = None):
         key = upload_files(False, m)
         result['models'].append(key)
 
-    p = TaskProgress.new_finish(task, result)
+    p = TaskProgress.new_finish(task, {
+        'train': result
+    })
+
     yield p

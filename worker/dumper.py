@@ -141,7 +141,6 @@ class MongoTaskDumper(TaskDumper):
             {
                 "task_id": task_progress.task.id,
                 "ip": self.ip,
-                "latency": int(time.time()) - task_progress.task.create_at,
             }
         )
 

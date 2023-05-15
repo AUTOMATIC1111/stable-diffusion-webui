@@ -55,7 +55,7 @@ def exec_preprocess_task(job: Task):
         new_zip = build_zip(processed_dir)
         keys = upload_files(True, new_zip)
         task_result = {
-            'images': images,
+            'images': list(images),
             'processed_key': keys[0] if keys else None
         }
         p = TaskProgress.new_finish(job, task_result)
@@ -98,7 +98,7 @@ def build_thumbnail_tag(target_dir):
             lines = f.readlines()
             images[basename]['tag'] = ' '.join(lines)
 
-    return images
+    return images.values()
 
 
 def create_thumbnail(image_path):

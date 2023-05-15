@@ -10,8 +10,26 @@ import json
 import time
 import typing
 from enum import IntEnum
-from collections import UserDict
+from collections import UserDict, UserList
 from tools import try_deserialize_json
+
+
+class SerializationObj:
+
+    def to_dict(self):
+        pr = {}
+        for name in dir(self):
+            value = getattr(self, name)
+            try:
+                if not name.startswith('_') and not callable(value):
+                    if hasattr(value, 'to_dict'):
+                        to_dict_func = getattr(value, 'to_dict')
+                        if callable(to_dict_func):
+                            value = value.to_dict()
+                    pr[name] = value
+            except:
+                pass
+        return pr
 
 
 class Task(UserDict):
@@ -104,7 +122,45 @@ class TaskStatus(IntEnum):
     Failed = -1
 
 
-class TaskProgress:
+class TrainEpoch(SerializationObj):
+
+    def __init__(self, epoch, loss):
+        self.epoch = epoch
+        self.loss = loss
+
+
+class TrainEpochLog(UserList, SerializationObj):
+
+    def append(self, item):
+        if not isinstance(item, TrainEpoch):
+            raise TypeError
+        self.data.append(item.to_dict())
+
+    def insert(self, i, item):
+        if not isinstance(item, TrainEpoch):
+            raise TypeError
+        self.data.insert(i, item.to_dict())
+
+    def extend(self, other):
+        if isinstance(other, TrainEpochLog):
+            self.data.extend(other.data)
+        else:
+            self.data.extend(other)
+
+    def to_dict(self):
+        return self.data
+
+
+class TrainTaskInfo(SerializationObj):
+
+    def __init__(self):
+        self.epoch = TrainEpochLog()
+
+    def add_epoch_log(self, epoch: TrainEpoch):
+        self.epoch.append(epoch)
+
+
+class TaskProgress(SerializationObj):
 
     def __init__(self, task: Task):
         self.status = TaskStatus.Waiting
@@ -112,6 +168,7 @@ class TaskProgress:
         self.task = task
         self._result = None
         self.task_progress = 0
+        self.train = TrainTaskInfo()
 
     @property
     def completed(self):
@@ -136,19 +193,13 @@ class TaskProgress:
             self.task['seed'] = seed
             self.task['sub_seed'] = sub_seed
 
-    def to_dict(self):
-        pr = {}
-        for name in dir(self):
-            value = getattr(self, name)
-            try:
-                if not name.startswith('_') and not callable(value):
-                    pr[name] = value
-            except:
-                pass
-        return pr
-
     @classmethod
     def new_failed(cls, task: Task, desc: str, trace: str = None):
+        task.update(
+            {
+                "end_at": int(time.time()) - task.create_at,
+            }
+        )
         p = cls(task)
         p.status = TaskStatus.Failed
         p.task_desc = desc
@@ -173,6 +224,11 @@ class TaskProgress:
 
     @classmethod
     def new_prepare(cls, task: Task, desc: str):
+        task.update(
+            {
+                "latency": int(time.time()) - task.create_at,
+            }
+        )
         p = cls(task)
         p.status = TaskStatus.Prepare
         p.task_desc = desc
@@ -180,6 +236,11 @@ class TaskProgress:
 
     @classmethod
     def new_finish(cls, task: Task, result: typing.Any):
+        task.update(
+            {
+                "end_at": int(time.time())
+            }
+        )
         p = cls(task)
         p.set_finish_result(result)
         return p

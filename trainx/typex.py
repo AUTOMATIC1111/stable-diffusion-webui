@@ -141,6 +141,7 @@ class TrainLoraTrainConfig(SerializationObj):
         self.batch_size = task.value('batch_size', default=4)
         self.epoch = task.value('epoch', default=20)
         self.save_every_n_epochs = task.value('save_every_n_epochs', default=5)
+        self.save_last_n_epochs = task.value('save_every_n_epochs', default=10)
         self.clip_skip = task.value('clip_skip', default=1)
         self.seed = task.value('seed', default=None)
 
@@ -179,7 +180,8 @@ class TrainLoraTask(UserDict):
 
     @property
     def images(self):
-        for item in self['images']:
+        images = self.get('images') or []
+        for item in images :
             yield {
                 'filename': item['filename'],
                 'tag': item['tag'],
@@ -268,12 +270,13 @@ class TrainLoraTask(UserDict):
         params = self.train_param()
         base_model = get_tmp_local_path(params.base.base_model)
         base_lora = get_tmp_local_path(params.base.base_lora)
+        save_last_n_epochs = params.train.save_last_n_epochs
 
         args = [
             f'--pretrained_model_name_or_path="{base_model}"',
             f'--dataset_config="{toml}"',
             f'--output_dir="{self.output_dir}"',
-            f'--output_name={params.base.model_name}',
+            f'--output_name={self.id}',
             '--save_model_as=safetensors',
             '--prior_loss_weight=1.0',
             '--network_module=networks.lora',
@@ -292,7 +295,8 @@ class TrainLoraTask(UserDict):
             f'--lr_scheduler_num_cycles={params.net.lr_scheduler_num_cycles}',
             f'--seed={params.train.seed}',
             f'--clip_skip={params.train.clip_skip}',
-            f'--network_weights={base_lora}'
+            f'--network_weights={base_lora}',
+            f'--save_last_n_epochs={save_last_n_epochs}'
         ]
 
         if params.net.network_train_text_encoder_only:
@@ -307,3 +311,24 @@ class TrainLoraTask(UserDict):
         dst = os.path.join(Tmp, f'train-material-{self.id}.zip')
         zip_compress(image_dir, dst)
         return dst
+
+    @classmethod
+    def debug_task(cls):
+        t = {
+            'resolution': '512,512',
+            'processed_key': 'xingzheaidraw/sd-tmp/2023/05/14/test_preprocess-preprocessed.zip',
+            'model_name': 'test_train(lora)',
+            'group_id': 'xxx',
+            'model_desc': 'test only',
+            'base_model': 'xingzheaidraw/models/system/Stable-diffusion/2023/05/06/0389907e714c9239261269f21eb511a9585e4884c75d17ecafabc74b7c9baad8.ckpt',
+            'num_repeats': 1,
+            'batch_size': 4,
+            'epoch': 20,
+            'save_last_n_epochs': 10,
+            'save_every_n_epochs': 2,
+            'clip_skip': 1,
+            'seed': 100001,
+            'network_dim': 32,
+            'network_alpha': 1,
+            
+        }
