@@ -178,9 +178,8 @@ class ExtraNetworksPage:
         # if this is true, the item must not be show in the default view, and must instead only be
         # shown when searching for it
         serach_only = "/." in local_path or "\\." in local_path
-
+        
         args = {
-
             #"style": f"'{height}{width}{background_image}'",
             "preview_html": "style='background-image: url(\"" + html.escape(preview) + "\")'" if preview else '',
             "preview_image": html.escape(preview) if preview else './file=html/card-no-preview.png',
@@ -277,16 +276,11 @@ def create_ui(container, button, tabname):
         
         with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
             for page in ui.stored_extra_pages:
-                page_id = page.title.lower().replace(" ", "_")
-
-                with gr.Tab(page.title, id=page_id):
-                    elem_id = f"{tabname}_{page_id}_cards_html"
-                    page_elem = gr.HTML('', elem_id=elem_id)
+                with gr.Tab(page.title, id=page.title.lower().replace(" ", "_")):
+                    page_elem = gr.HTML(page.create_html(ui.tabname))
                     ui.pages.append(page_elem)
 
-                    page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + json.dumps(tabname) + '); return []}', inputs=[], outputs=[])
-
-        gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)       
+        filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)       
         button_refresh = ToolButton(value=refresh_symbol, elem_id=tabname+"_extra_refresh")
 
         ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
