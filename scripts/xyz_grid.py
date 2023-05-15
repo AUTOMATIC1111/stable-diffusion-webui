@@ -350,7 +350,7 @@ class SharedSettingsStackHelper(object):
         self.token_merging_random = shared.opts.token_merging_random
         self.sd_model_checkpoint = shared.opts.sd_model_checkpoint
         self.sd_vae_checkpoint = shared.opts.sd_vae
-        self.xyz_fallback_sampler = shared.opts.data["xyz_fallback_sampler"]
+        self.xyz_fallback_sampler = shared.opts.xyz_fallback_sampler
 
     def __exit__(self, exc_type, exc_value, tb):
         #Restore overriden settings after plot generation.

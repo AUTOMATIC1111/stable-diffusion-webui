@@ -91,10 +91,10 @@ def check_updates(_id_task, disable_list, search_text, sort_column):
             if ext.can_update:
                 ext.fetch_and_reset_hard()
                 ext.read_info_from_repo()
-                commit_date = ext.get('commit_date', 1577836800) or 1577836800
+                commit_date = ext.commit_date or 1577836800
                 shared.log.info(f'Extensions updated: {ext.name} {ext.commit_hash[:8]} {datetime.utcfromtimestamp(commit_date)}')
             else:
-                commit_date = ext.get('commit_date', 1577836800) or 1577836800
+                commit_date = ext.commit_date or 1577836800
                 shared.log.debug(f'Extensions no update available: {ext.name} {ext.commit_hash[:8]} {datetime.utcfromtimestamp(commit_date)}')
         except FileNotFoundError as e:
             if 'FETCH_HEAD' not in str(e):
@@ -195,10 +195,10 @@ def update_extension(extension_path, search_text, sort_column):
             if ext.can_update:
                 ext.fetch_and_reset_hard()
                 ext.read_info_from_repo()
-                commit_date = ext.get('commit_date', 1577836800) or 1577836800
+                commit_date = ext.commit_date or 1577836800
                 shared.log.info(f'Extensions updated: {ext.name} {ext.commit_hash[:8]} {datetime.utcfromtimestamp(commit_date)}')
             else:
-                commit_date = ext.get('commit_date', 1577836800) or 1577836800
+                commit_date = ext.commit_date or 1577836800
                 shared.log.info(f'Extensions no update available: {ext.name} {ext.commit_hash[:8]} {datetime.utcfromtimestamp(commit_date)}')
         except FileNotFoundError as e:
             if 'FETCH_HEAD' not in str(e):
@@ -306,7 +306,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         enabled = ext.get("enabled", False)
         path = ext.get("path", "")
         remote = ext.get("remote", None)
-        commit_date = ext.get('commit_date', 1577836800) or 1577836800
+        commit_date = ext.get("commit_date", 1577836800) or 1577836800
         update_available = (remote is not None) & (installed) & (datetime.utcfromtimestamp(commit_date + 60 * 60) < datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z')[:-1]))
         tags = ext.get("tags", [])
         tags_string = ' '.join(tags)
