@@ -79,7 +79,6 @@ def image_from_url_text(filedata):
 
 def add_paste_fields(tabname, init_img, fields, override_settings_component=None):
     paste_fields[tabname] = {"init_img": init_img, "fields": fields, "override_settings_component": override_settings_component}
-
     # backwards compatibility for existing extensions
     import modules.ui
     if tabname == 'txt2img':
@@ -124,6 +123,7 @@ def connect_paste_params_buttons():
         destination_height_component = next(iter([field for field, name in fields if name == "Size-2"] if fields else []), None)
 
         if binding.source_image_component and destination_image_component:
+            # print('HERE')
             if isinstance(binding.source_image_component, gr.Gallery):
                 func = send_image_and_dimensions if destination_width_component else image_from_url_text
                 jsfunc = "extract_image_from_gallery"

@@ -32,6 +32,7 @@ plain: /([^\\\[\]():|]|\\.)+/
 %import common.SIGNED_NUMBER -> NUMBER
 """)
 re_clean = re.compile(r"^\W+", re.S)
+re_whitespace = re.compile(r"\s+", re.S)
 re_break = re.compile(r"\s*\bBREAK\b\s*", re.S)
 re_attention = re.compile(r"""
 \(|\[|\\\(|\\\[|\\|\\\\|
@@ -294,7 +295,8 @@ def parse_prompt_attention(text):
         else:
             parts = re.split(re_break, text)
             for i, part in enumerate(parts):
-                part = re.sub(re_clean, "", part)
+                part = re_clean.sub("", part)
+                part = re_whitespace.sub(" ", part).strip()
                 if len(part) == 0:
                     continue
                 if i > 0:
