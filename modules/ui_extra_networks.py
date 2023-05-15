@@ -268,7 +268,7 @@ def create_ui(container, button, tabname):
 
             with gr.Tab(page.title, id=page_id):
                 elem_id = f"{tabname}_{page_id}_cards_html"
-                page_elem = gr.HTML('', elem_id=elem_id)
+                page_elem = gr.HTML('Loading...', elem_id=elem_id)
                 ui.pages.append(page_elem)
 
                 page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + json.dumps(tabname) + '); return []}', inputs=[], outputs=[])
@@ -282,13 +282,24 @@ def create_ui(container, button, tabname):
     def toggle_visibility(is_visible):
         is_visible = not is_visible
 
-        if is_visible and not ui.pages_contents:
+        return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
+
+    def fill_tabs(is_empty):
+        """Creates HTML for extra networks' tabs when the extra networks button is clicked for the first time."""
+
+        if not ui.pages_contents:
             refresh()
 
-        return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary")), *ui.pages_contents
+        if is_empty:
+            return True, *ui.pages_contents
+
+        return True, *[gr.update() for _ in ui.pages_contents]
 
     state_visible = gr.State(value=False)
-    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button, *ui.pages])
+    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button], show_progress=False)
+
+    state_empty = gr.State(value=True)
+    button.click(fn=fill_tabs, inputs=[state_empty], outputs=[state_empty, *ui.pages], show_progress=False)
 
     def refresh():
         for pg in ui.stored_extra_pages:
