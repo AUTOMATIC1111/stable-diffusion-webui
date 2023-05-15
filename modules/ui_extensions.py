@@ -141,7 +141,9 @@ def extension_table():
             <tr>
                 <th><abbr title="Use checkbox to enable the extension; it will be enabled or disabled when you click apply button">Extension</abbr></th>
                 <th>URL</th>
-                <th><abbr title="Extension version">Version</abbr></th>
+                <th>Branch</th>
+                <th>Version</th>
+                <th>Date</th>
                 <th><abbr title="Use checkbox to mark the extension for update; it will be updated when you click apply button">Update</abbr></th>
             </tr>
         </thead>
@@ -149,6 +151,7 @@ def extension_table():
     """
 
     for ext in extensions.extensions:
+        ext: extensions.Extension
         ext.read_info_from_repo()
 
         remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
@@ -170,7 +173,9 @@ def extension_table():
             <tr>
                 <td><label{style}><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
                 <td>{remote}</td>
+                <td>{ext.branch}</td>
                 <td>{version_link}</td>
+                <td>{time.asctime(time.gmtime(ext.commit_date))}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
             </tr>
     """
