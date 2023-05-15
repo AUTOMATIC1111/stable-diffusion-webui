@@ -998,11 +998,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         # apply token merging optimizations from tomesd for high-res pass
         if opts.token_merging_ratio_hr > 0:
-            # in case the user has used separate merge ratios
-            if opts.token_merging_ratio > 0:
-                tomesd.remove_patch(self.sd_model)
-                logger.debug('Adjusting token merging ratio for high-res pass')
-
             sd_models.apply_token_merging(sd_model=self.sd_model, hr=True)
             logger.debug(f"Applied token merging for high-res pass. Ratio: '{opts.token_merging_ratio_hr}'")
 
