@@ -164,7 +164,7 @@ def update(folder):
         branch = 'master'
     else:
         branch = branch.split('\n')[0].replace('*', '').strip()
-    log.debug(f'Setting branch: {folder} / {branch}')
+    # log.debug(f'Setting branch: {folder} / {branch}')
     git(f'checkout {branch}', folder)
     if branch is None:
         git('pull --autostash --rebase --force', folder)
@@ -405,11 +405,12 @@ def install_submodules():
         git('fetch --all')
         git('reset --hard origin/master')
         git('checkout master')
+        txt = git('submodule')
         log.info('Continuing setup')
-    txt = git('submodule --quiet update --init --recursive')
+    git('submodule --quiet update --init --recursive')
     if not args.skip_update:
         log.info('Updating submodules')
-        submodules = git('submodule').splitlines()
+        submodules = txt.splitlines()
         for submodule in submodules:
             try:
                 name = submodule.split()[1].strip()
@@ -507,6 +508,7 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
             if args.upgrade:
                 global quick_allowed # pylint: disable=global-statement
                 quick_allowed = False
+                log.info('Updating main repository')
                 try:
                     git('add .')
                     git('stash')

@@ -91,14 +91,16 @@ def check_updates(_id_task, disable_list, search_text, sort_column):
             if ext.can_update:
                 ext.fetch_and_reset_hard()
                 ext.read_info_from_repo()
-                shared.log.debug(f'Extensions updated: {ext.name} {ext.commit_hash} {ext.commit_date}')
-            shared.log.debug(f'Extensions no updated available: {ext.name} {ext.commit_hash} {ext.commit_date}')
+                commit_date = ext.get('commit_date', 1577836800) or 1577836800
+                shared.log.info(f'Extensions updated: {ext.name} {ext.commit_hash[:8]} {datetime.utcfromtimestamp(commit_date)}')
+            else:
+                commit_date = ext.get('commit_date', 1577836800) or 1577836800
+                shared.log.debug(f'Extensions no update available: {ext.name} {ext.commit_hash[:8]} {datetime.utcfromtimestamp(commit_date)}')
         except FileNotFoundError as e:
             if 'FETCH_HEAD' not in str(e):
                 raise
         except Exception:
             errors.display(e, f'extensions check update: {ext.name}')
-        shared.log.debug(f'Extensions update check: {ext.name} {ext.commit_hash} {ext.commit_date} update={ext.can_update}')
         shared.state.nextjob()
     return refresh_extensions_list_from_data(search_text, sort_column), "Extension update complete | Restart required"
 
@@ -193,8 +195,11 @@ def update_extension(extension_path, search_text, sort_column):
             if ext.can_update:
                 ext.fetch_and_reset_hard()
                 ext.read_info_from_repo()
-                shared.log.debug(f'Extensions updated: {ext.name} {ext.commit_hash} {ext.commit_date}')
-            shared.log.debug(f'Extensions no updated available: {ext.name} {ext.commit_hash} {ext.commit_date}')
+                commit_date = ext.get('commit_date', 1577836800) or 1577836800
+                shared.log.info(f'Extensions updated: {ext.name} {ext.commit_hash[:8]} {datetime.utcfromtimestamp(commit_date)}')
+            else:
+                commit_date = ext.get('commit_date', 1577836800) or 1577836800
+                shared.log.info(f'Extensions no update available: {ext.name} {ext.commit_hash[:8]} {datetime.utcfromtimestamp(commit_date)}')
         except FileNotFoundError as e:
             if 'FETCH_HEAD' not in str(e):
                 raise

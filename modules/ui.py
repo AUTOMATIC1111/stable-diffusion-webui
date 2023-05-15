@@ -1395,11 +1395,11 @@ def create_ui():
             _js='function(){}'
         )
 
+        """
         def reload_scripts():
             modules.scripts.reload_script_body_only()
             reload_javascript()  # need to refresh the html page
 
-        """
         reload_script_bodies.click(
             fn=reload_scripts,
             inputs=[],
@@ -1640,13 +1640,17 @@ def webpath(fn):
 def html_head():
     script_js = os.path.join(script_path, "javascript", "script.js")
     head = f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
+    added = []
     for script in modules.scripts.list_scripts("javascript", ".js"):
         if script.path == script_js:
             continue
-        shared.log.debug(f'Loading JS script: {script.path}')
         head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
+        added.append(script.path)
     for script in modules.scripts.list_scripts("javascript", ".mjs"):
         head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
+        added.append(script.path)
+    added = [a.replace(script_path, '').replace('\\', '/') for a in added]
+    shared.log.debug(f'Adding JS scripts: {added}')
     return head
 
 
@@ -1663,8 +1667,9 @@ def html_body():
 
 
 def html_css():
+    added = []
     def stylesheet(fn):
-        shared.log.debug(f'Adding stylesheet: {fn}')
+        added.append(fn)
         return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
     head = stylesheet('javascript/style.css')
     for cssfile in modules.scripts.list_files_with_name("style.css"):
@@ -1675,6 +1680,8 @@ def html_css():
         head += stylesheet(os.path.join(script_path, "javascript", "black-orange.css"))
     if os.path.exists(os.path.join(data_path, "user.css")):
         head += stylesheet(os.path.join(data_path, "user.css"))
+    added = [a.replace(script_path, '').replace('\\', '/') for a in added]
+    shared.log.debug(f'Adding CSS stylesheets: {added}')
     return head
 
 
