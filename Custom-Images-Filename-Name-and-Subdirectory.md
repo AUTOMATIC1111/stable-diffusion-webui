@@ -1,5 +1,5 @@
-> the following information is about the image filename and subdirectory name, not the `Paths for saving \ Output directorys`
-### By default, the Wub UI save images in the output directorys with a filename structure of
+> the following information is about the image filename and subdirectory name, not the `Paths for saving \ Output directories`
+### By default, the Web UI saves images in the output directories with a filename structure of
 
 `number`-`seed`-`[prompt_spaces]`
 
@@ -19,7 +19,7 @@ Subdirectory can be configured under settings.
 
 # Patterns
 Web-Ui provides several patterns that can be used as placeholders for inserting information into the filename or subdirectory,
-user can chain these patterns togetherm forming a filename that suits their use case.
+user can chain these patterns together, forming a filename that suits their use case.
 
 | Pattern                        | Description                                          | Example                                                                                                                               |
 |--------------------------------|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
@@ -27,27 +27,27 @@ user can chain these patterns togetherm forming a filename that suits their use 
 | `[steps]`                      | Steps                                                | 20                                                                                                                                    |
 | `[cfg]`                        | CFG scale                                            | 7                                                                                                                                     |
 | `[sampler]`                    | Sampling method                                      | Euler a                                                                                                                               |
-| `[model_name]`                 | name of the model                                    | sd-v1-4
-| `[model_hash]`                 | Hash of the model                                    | 7460a6fa                                                                                                                              |
+| `[model_name]`                 | Name of the model                                    | sd-v1-4
+| `[model_hash]`                 | The first 8 characters of the prompt's SHA-256 hash  | 7460a6fa                                                                                                                              |
 | `[width]`                      | Image width                                          | 512                                                                                                                                   |
-| `[height]`                     | Image hight                                          | 512                                                                                                                                   |
+| `[height]`                     | Image height                                          | 512                                                                                                                                   |
 | `[styles]`                     | Name of the chosen Styles                            | my style name                                                                                                                         |
 | `[date]`                       | Date of the computer in ISO format                   | 2022-10-24                                                                                                                            |
 | `[datetime]`                   | Datetime in "%Y%m%d%H%M%S"                           | 20221025013106                                                                                                                        |
 | `[datetime<Format>]`           | Datetime in specified \<Format\>                       | \[datetime<%Y%m%d_%H%M%S_%f>]<br>20221025_014350_733877                                                                                   |
 | `[datetime<Format><TimeZone>]` | Datetime at specific \<Time Zone\> in specified \<Format\> | \[datetime<%Y%m%d_%H%M%S_%f><Asia/Tokyo>]`<br>20221025_014350_733877                                                                                       |
-| `[prompt_no_styles]`           | Prompt without Styles                                | 1gir,   white space, ((very   important)), [not important], (some value_1.5), (whatever), the end<br>                                     |
-| `[prompt_spaces]`              | Prompt with Styles                                   | 1gir,   white space, ((very   important)), [not important], (some value_1.5), (whatever), the end<br>,   (((crystals texture Hair)))，((( |
-| `[prompt]`                     | Prompt with Styles, `Space bar` replaced with`_`       | 1gir,\_\_\_white_space,\_((very\_important)),\_[not\_important],\_(some\_value\_1.5),\_(whatever),\_the\_end,\_(((crystals_texture_Hair)))，(((     |
+| `[prompt_no_styles]`           | Prompt without Styles                                | 1girl,   white space, ((very important)), [not important], (some value:1.5), (whatever), the end<br>                                     |
+| `[prompt_spaces]`              | Prompt with Styles                                   | 1girl,   white space, ((very important)), [not important], (some value:1.5), (whatever), the end<br>,   (((crystals texture Hair)))，((( |
+| `[prompt]`                     | Prompt with Styles, `Space bar` replaced with`_`       | 1girl,\_\_\_white_space,\_((very\_important)),\_[not\_important],\_(some\_value\_1.5),\_(whatever),\_the\_end,\_(((crystals_texture_Hair)))，(((     |
 | `[prompt_words]`               | Prompt   with Styles, Bracket and Comma removed      | 1gir white space very important not important some value 1 5 whatever the   end crystals texture Hair ， extremely detailed           |
 | `[prompt_hash]` | The first 8 characters of the prompt's SHA-256 hash | 1girl -> 6362d0d2<br>(1girl:1.1) -> 0102e068 |
 | `[clip_skip]` | CLIP stop at last layers | 1 |
-| `[batch_number]` | the NO. N-th image in a singel batch job | BatchNo_[batch_number] -> BatchNo_3
-| `[generation_number]` | the NO. N-th image in a entire job | GenNo_[generation_number] -> GenNo_9
+| `[batch_number]` | the Nth image in a single batch job | BatchNo_[batch_number] -> BatchNo_3
+| `[generation_number]` | the Nth image in an entire job | GenNo_[generation_number] -> GenNo_9
 | `[hasprompt<prompt1\|default><prompt2>...]` | if specified `prompt` is found in prompts then `prompt` will be added to filename, else `default` will be added to filename (`default` can be blank) | [hasprompt<girl><boy>] -> girl<br>[hasprompt<girl\|no girl><boy\|no boy>] -> girlno boy
 
 ### Datetime Formatting details
-Reference python documentation for more details on [Format Codes](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes)
+Reference python documentation for more details on [Format Codes](https://docs.python.org/3.10/library/datetime.html#strftime-and-strptime-format-codes)
 
 ### Datetime Time Zone details
 Reference [List of Time Zones](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/List-of-Time-Zones) for a list of valid time zones
@@ -74,14 +74,14 @@ Selected Styles:
 
 note: the `Styles` mentioned above is referring to the two drop down menu below the generate button
 
-### if the Prompts is too long, it will be cutoff
+### if the prompt is too long, it will be cutoff
 this is due to your computer having a maximum file length
 
 # Add / Remove number to filename when saving
 you can remove the prefix number 
 by unchecking the checkbox under
 
-`Setting` > `Saving images/grids` > `Add number to filename when saving`
+`Settings` > `Saving images/grids` > `Add number to filename when saving`
 
 with prefix number
 ```
@@ -95,11 +95,9 @@ without prefix number
 
 ### Caution
 The purpose of the prefix number is to ensure that the saved image file name is **Unique**.
-If you decide to not use the prefix number, make sure that your pattern will generate a unique file name,
+If you decide to not use the prefix number, make sure that your pattern will generate a unique file name, **otherwise files may be overwritten**.
 
-**Otherwise files might be Overwritten**.
-
-Generally datetime down to seconds should be able to guarantee that file name is unique.
+Generally, datetime down to seconds should be able to guarantee that file name is unique.
 
 ```
 [datetime<%Y%m%d_%H%M%S>]-[seed]
