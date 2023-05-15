@@ -6,22 +6,22 @@ import re
 import gc
 import sys
 import json
-import http
+import time
 import shutil
 import pathlib
 import asyncio
+import logging
 import tempfile
 import argparse
 import warnings
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 warnings.filterwarnings(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=FutureWarning)
+sys.path.append('.')
 
 # 3rd party imports
 import filetype
 import torch
-import requests
-import urllib3
 from tqdm.rich import tqdm
 
 # local imports
@@ -31,26 +31,38 @@ import process
 import latents
 import options
 
-# console handler
-from rich.pretty import install as pretty_install
-from rich.traceback import install as traceback_install
-from rich.console import Console
-console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
-pretty_install(console=console)
-traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[torch,asyncio,http,urllib3,requests])
-
-# lora imports
-lora_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lora'))
-sys.path.append(lora_path)
-lycoris_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lycoris'))
-sys.path.append(lycoris_path)
-import train_network
 
 # globals
 args = None
+log = logging.getLogger(__name__)
 valid_steps = ['original', 'face', 'body', 'blur', 'range', 'upscale', 'restore', 'interrogate', 'resize', 'square', 'segment']
 
 # methods
+
+def setup_logging(clean=False):
+    try:
+        if clean and os.path.isfile('setup.log'):
+            os.remove('setup.log')
+        time.sleep(0.1) # prevent race condition
+    except:
+        pass
+    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', filename='setup.log', filemode='a', encoding='utf-8', force=True)
+    from rich.theme import Theme
+    from rich.logging import RichHandler
+    from rich.console import Console
+    from rich.pretty import install as pretty_install
+    from rich.traceback import install as traceback_install
+    console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
+        "traceback.border": "black",
+        "traceback.border.syntax_error": "black",
+        "inspect.value.border": "black",
+    }))
+    pretty_install(console=console)
+    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
+    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
+    rh.set_name(logging.DEBUG if args.debug else logging.INFO)
+    log.addHandler(rh)
+
 
 def mem_stats():
     gc.collect()
@@ -62,7 +74,7 @@ def mem_stats():
             torch.cuda.ipc_collect()
     mem = util.get_memory()
     peak = { 'active': mem['gpu-active']['peak'], 'allocated': mem['gpu-allocated']['peak'], 'reserved': mem['gpu-reserved']['peak'] }
-    console.log(f"memory cpu: {mem.ram} gpu current: {mem.gpu} gpu peak: {peak}")
+    log.debug(f"memory cpu: {mem.ram} gpu current: {mem.gpu} gpu peak: {peak}")
 
 
 def parse_args():
@@ -71,8 +83,8 @@ def parse_args():
 
     group_main = parser.add_argument_group('Main')
     group_main.add_argument('--type', type=str, choices=['embedding', 'lora', 'lycoris', 'dreambooth'], default=None, required=True, help='training type')
+    group_main.add_argument('--model', type=str, default='', required=False, help='base model to use for training, default: current loaded model')
     group_main.add_argument('--name', type=str, default=None, required=True, help='output filename')
-    group_main.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing training, default: %(default)s")
     group_main.add_argument('--tag', type=str, default='person', required=False, help='primary tags, default: %(default)s')
 
     group_data = parser.add_argument_group('Dataset')
@@ -91,6 +103,10 @@ def parse_args():
     group_train.add_argument('--repeats', type=int, default=10, required=False, help='number of repeats per image, default: %(default)s')
     group_train.add_argument('--alpha', type=float, default=0, required=False, help='alpha for weights scaling, default: dim/2')
 
+    group_other = parser.add_argument_group('Other')
+    group_other.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing training, default: %(default)s")
+    group_other.add_argument('--debug', default = False, action='store_true', help = "enable debug level logging, default: %(default)s")
+
     args = parser.parse_args()
 
 
@@ -99,10 +115,10 @@ def prepare_server():
         server_status = util.Map(sdapi.progress())
         server_state = server_status['state']
     except:
-        console.log('server error:', server_status)
+        log.error(f'server error: {server_status}')
         exit(1)
     if server_state['job_count'] > 0:
-        console.log('server not idle:', server_state)
+        log.error(f'server not idle: {server_state}')
         exit(1)
 
     server_options = util.Map(sdapi.options())
@@ -114,36 +130,57 @@ def prepare_server():
     server_options.options.training_image_repeats_per_epoch = args.repeats
     server_options.options.training_write_csv_every = 0
     sdapi.postsync('/sdapi/v1/options', server_options.options)
-    console.log('updated server options')
+    log.info('updated server options')
 
 
 def verify_args():
     server_options = util.Map(sdapi.options())
-    args.model = server_options.options.sd_model_checkpoint.split(' [')[0]
+    if args.model != '':
+        if not os.path.isfile(args.model):
+            log.error(f'cannot find loaded model: {args.model}')
+            exit(1)
+        server_options.options.sd_model_checkpoint = args.model
+        sdapi.postsync('/sdapi/v1/options', server_options.options)
+    else:
+        args.model = server_options.options.sd_model_checkpoint.split(' [')[0]
     args.lora_dir = server_options.options.lora_dir
-    if not os.path.isabs(args.model) and not os.path.exists(args.model):
-        args.model = os.path.abspath(os.path.join(args.lora_dir, os.pardir, 'Stable-diffusion', args.model))
-
-    if not os.path.exists(args.model) or not os.path.isfile(args.model):
-        console.log('cannot find model:', args.model)
+    args.lyco_dir = server_options.options.lyco_dir
+    args.ckpt_dir = server_options.options.ckpt_dir
+    args.embeddings_dir = server_options.options.embeddings_dir
+    if not os.path.isfile(args.model):
+        attempt = os.path.abspath(os.path.join(args.ckpt_dir, args.model))
+        args.model = attempt if os.path.isfile(attempt) else args.model
+    if not os.path.isfile(args.model):
+        attempt = os.path.abspath(os.path.join(args.ckpt_dir, '..', args.model))
+        args.model = attempt if os.path.isfile(attempt) else args.model
+    if not os.path.isfile(args.model):
+        log.error(f'cannot find loaded model: {args.model}')
+        exit(1)
+    if not os.path.exists(args.ckpt_dir) or not os.path.isdir(args.ckpt_dir):
+        log.error(f'cannot find models folder: {args.ckpt_dir}')
         exit(1)
     if not os.path.exists(args.input) or not os.path.isdir(args.input):
-        console.log('cannot find training folder:', args.input)
+        log.error(f'cannot find training folder: {args.input}')
         exit(1)
     if not os.path.exists(args.lora_dir) or not os.path.isdir(args.lora_dir):
-        console.log('cannot find lora folder:', args.lora_dir)
+        log.error(f'cannot find lora folder: {args.lora_dir}')
+        exit(1)
+    if not os.path.exists(args.lyco_dir) or not os.path.isdir(args.lyco_dir):
+        log.error(f'cannot find lyco folder: {args.lyco_dir}')
         exit(1)
     if args.output != '':
         args.process_dir = args.output
     else:
         args.process_dir = os.path.join(tempfile.gettempdir(), 'train', args.name)
-    console.log(f'args: {vars(args)}')
+    log.debug(f'args: {vars(args)}')
+    log.debug(f'server flags: {server_options.flags}')
+    log.debug(f'server options: {server_options.options}')
 
 
 async def training_loop():
     async def async_train():
         res = await sdapi.post('/sdapi/v1/train/embedding', options.embedding)
-        console.log(f'train embedding result: {res}')
+        log.info(f'train embedding result: {res}')
 
     async def async_monitor():
         await asyncio.sleep(3)
@@ -164,49 +201,74 @@ async def training_loop():
 
 
 def train_embedding():
-    console.log(f'{args.type} options: {options.embedding}')
+    log.info(f'{args.type} options: {options.embedding}')
     create_options = util.Map({
         "name": args.name,
         "num_vectors_per_token": args.dim,
         "overwrite_old": False,
         "init_text": args.tag,
     })
-    server_options = util.Map(sdapi.options())
-    fn = os.path.join(server_options.options.embeddings_dir, args.name) + '.pt'
+    fn = os.path.join(args.embeddings_dir, args.name) + '.pt'
     if os.path.exists(fn) and args.overwrite:
-        console.log(f'delete existing embedding {fn}')
+        log.warning(f'delete existing embedding {fn}')
         os.remove(fn)
     else:
-        console.log(f'embedding exists {fn}')
+        log.error(f'embedding exists {fn}')
         return
-    console.log(f'create embedding {create_options}')
+    log.info(f'create embedding {create_options}')
     res = sdapi.postsync('/sdapi/v1/create/embedding', create_options)
     if 'info' in res and 'error' in res['info']: # formatted error
-        console.log(res.info)
+        log.error(res.info)
     elif 'info' in res: # no error
         asyncio.run(training_loop())
     else: # unknown error
-        console.log(f'create embedding error {res}')
+        log.error(f'create embedding error {res}')
 
 
 def train_lora():
-    fn = os.path.join(args.lora_dir, args.name)
+    fn = os.path.join(options.lora.output_dir, args.name)
     for ext in ['.ckpt', '.pt', '.safetensors']:
         if os.path.exists(fn + ext):
             if args.overwrite:
-                console.log(f'delete existing lora: {fn + ext}')
+                log.warning(f'delete existing lora: {fn + ext}')
                 os.remove(fn + ext)
             else:
-                console.log(f'lora exists: {fn + ext}')
+                log.error(f'lora exists: {fn + ext}')
                 return
-    console.log(f'{args.type} options: {options.lora}')
+    log.info(f'{args.type} options: {options.lora}')
+    # lora imports
+    lora_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lora'))
+    sys.path.append(lora_path)
+    if args.type == 'lycoris':
+        lycoris_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'modules', 'lycoris'))
+        sys.path.append(lycoris_path)
+    log.debug('importing lora lib')
+    import train_network
     train_network.train(options.lora)
+    if args.type == 'lycoris':
+        log.debug('importing lycoris lib')
+        import importlib
+        _network_module = importlib.import_module(options.lora.network_module)
 
 
 def prepare_options():
+    if args.type == 'embedding':
+        log.info('train embedding')
+        options.lora.in_json = None
+    if args.type == 'dreambooth':
+        log.info('train using dreambooth style training')
+        options.lora.in_json = None
+    if args.type == 'lora':
+        log.info('train using lora style training')
+        options.lora.output_dir = args.lora_dir
+        options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
+    if args.type == 'lycoris':
+        log.info('train using lycoris network')
+        options.lora.output_dir = args.lyco_dir
+        options.lora.network_module = 'lycoris.kohya'
+        options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
     # lora specific
     options.lora.pretrained_model_name_or_path = args.model
-    options.lora.output_dir = args.lora_dir
     options.lora.output_name = args.name
     options.lora.max_train_steps = args.steps
     options.lora.network_dim = args.dim
@@ -216,19 +278,6 @@ def prepare_options():
     options.lora.train_batch_size = args.batch
     options.lora.network_alpha = args.dim // 2 if args.alpha == 0 else args.alpha
     options.lora.train_data_dir = args.process_dir
-    if args.type == 'lycoris':
-        console.log('train using lycoris network')
-        options.lora.network_module = 'lycoris.kohya'
-        options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
-    if args.type == 'dreambooth':
-        console.log('train using dreambooth style training')
-        options.lora.in_json = None
-    if args.type == 'lora':
-        console.log('train using lora style training')
-        options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
-    if args.type == 'embedding':
-        console.log('train embedding')
-        options.lora.in_json = None
     # embedding specific
     options.embedding.embedding_name = args.name
     options.embedding.learn_rate = str(args.lr)
@@ -243,17 +292,20 @@ def process_inputs():
     pathlib.Path(args.process_dir).mkdir(parents=True, exist_ok=True)
     processing_options = args.process.split(',') if isinstance(args.process, str) else args.process
     processing_options = [opt.strip() for opt in re.split(',| ', args.process)]
-    console.log(f'processing steps: {processing_options}')
+    log.info(f'processing steps: {processing_options}')
     for step in processing_options:
         if step not in valid_steps:
-            console.log(f'invalid processing step: {[step]}')
+            log.error(f'invalid processing step: {[step]}')
             exit(1)
     for root, _sub_dirs, folder in os.walk(args.input):
         files = [os.path.join(root, f) for f in folder if filetype.is_image(os.path.join(root, f))]
-    console.log(f'processing input images: {len(files)}')
+    log.info(f'processing input images: {len(files)}')
     if os.path.exists(args.process_dir):
-        console.log('removing existing processed folder:', args.process_dir)
-        shutil.rmtree(args.process_dir, ignore_errors=True)
+        if args.overwrite:
+            log.warning(f'removing existing processed folder: {args.process_dir}')
+            shutil.rmtree(args.process_dir, ignore_errors=True)
+        else:
+            log.info(f'processed folder exists: {args.process_dir}')
     steps = [step for step in processing_options if step in ['face', 'body', 'original']]
     process.reset()
     metadata = {}
@@ -264,7 +316,7 @@ def process_inputs():
             opts = [step for step in processing_options if step not in ['face', 'original', 'upscale', 'restore']] # body does not perform upscale or restore
         if step == 'original':
             opts = [step for step in processing_options if step not in ['face', 'body', 'upscale', 'restore', 'blur', 'range', 'segment']] # original does not perform most steps
-        console.log(f'processing current step: {opts}')
+        log.info(f'processing current step: {opts}')
         tag = step
         if tag == 'original' and args.tag is not None:
             concept = args.tag.split(',')[0].strip()
@@ -274,8 +326,8 @@ def process_inputs():
             folder = os.path.join(args.process_dir, str(args.repeats) + '_' + concept) # separate concepts per folder
         if args.type in ['embedding']:
             folder = os.path.join(args.process_dir) # everything into same folder
-        console.log('processing concept:', concept)
-        console.log('processing output folder:', folder)
+        log.info(f'processing concept: {concept}')
+        log.info(f'processing output folder: {folder}')
         pathlib.Path(folder).mkdir(parents=True, exist_ok=True)
         results = {}
         for f in files:
@@ -290,9 +342,9 @@ def process_inputs():
                 if options.lora.in_json is None:
                     with open(res.output.replace(options.process.format, '.txt'), "w", encoding='utf-8') as outfile:
                         outfile.write(res.caption)
-            console.log(f"processing {'saved' if res.image is not None else 'skipped'}: {f} => {res.output} {res.ops} {res.message}")
+            log.info(f"processing {'saved' if res.image is not None else 'skipped'}: {f} => {res.output} {res.ops} {res.message}")
     folders = [os.path.join(args.process_dir, folder) for folder in os.listdir(args.process_dir) if os.path.isdir(os.path.join(args.process_dir, folder))]
-    console.log(f'input datasets {folders}')
+    log.info(f'input datasets {folders}')
     if options.lora.in_json is not None:
         with open(options.lora.in_json, "w", encoding='utf-8') as outfile: # write json at the end only
             outfile.write(json.dumps(metadata, indent=2))
@@ -300,17 +352,18 @@ def process_inputs():
             latents.create_vae_latents(util.Map({ 'input': folder, 'json': options.lora.in_json }))
             latents.unload_vae()
     r = { 'inputs': len(files), 'outputs': results, 'metadata': options.lora.in_json }
-    console.log(f'processing steps result: {r}')
+    log.info(f'processing steps result: {r}')
     if args.gradient < 0:
-        console.log(f"setting gradient accumulation to number of images: {results['total']}")
+        log.info(f"setting gradient accumulation to number of images: {results['total']}")
         options.lora.gradient_accumulation_steps = results['total']
         options.embedding.gradient_step = results['total']
     process.unload()
 
 
 if __name__ == '__main__':
-    console.log('train script for stable diffusion')
+    log.info('train script for stable diffusion')
     parse_args()
+    setup_logging()
     prepare_server()
     verify_args()
     prepare_options()
@@ -323,7 +376,7 @@ if __name__ == '__main__':
         if args.type == 'lora' or args.type == 'lycoris' or args.type == 'dreambooth':
             train_lora()
     except KeyboardInterrupt as e:
-        console.log('interrupt requested')
+        log.error('interrupt requested')
         sdapi.interrupt()
     mem_stats()
-    console.log('done')
+    log.info('done')

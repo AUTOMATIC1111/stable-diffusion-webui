@@ -182,7 +182,6 @@ class Api:
         script_args = default_script_args.copy()
         # position 0 in script_arg is the idx+1 of the selectable script that is going to be run when using scripts.scripts_*2img.run()
         if selectable_scripts:
-            # TODO this can corrupt values for other scripts
             script_args[selectable_scripts.args_from:selectable_scripts.args_to] = request.script_args
             script_args[0] = selectable_script_idx + 1
         # Now check for always on scripts
@@ -194,7 +193,6 @@ class Api:
                 if not alwayson_script.alwayson:
                     raise HTTPException(status_code=422, detail=f"Selectable script cannot be in always on params: {alwayson_script_name}")
                 if "args" in request.alwayson_scripts[alwayson_script_name]:
-                    # TODO this can corrupt values for other scripts
                     # min between arg length in scriptrunner and arg length in the request
                     for idx in range(0, min((alwayson_script.args_to - alwayson_script.args_from), len(request.alwayson_scripts[alwayson_script_name]["args"]))):
                         script_args[alwayson_script.args_from + idx] = request.alwayson_scripts[alwayson_script_name]["args"][idx]
