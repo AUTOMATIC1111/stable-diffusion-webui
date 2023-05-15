@@ -1,6 +1,7 @@
 import json
 import os.path
 import sys
+import threading
 import time
 from datetime import datetime
 import traceback
@@ -484,10 +485,17 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
     return code, list(tags)
 
 
+def preload_extensions_git_metadata():
+    for extension in extensions.extensions:
+        extension.read_info_from_repo()
+
+
 def create_ui():
     import modules.ui
 
     config_states.list_config_states()
+
+    threading.Thread(target=preload_extensions_git_metadata).start()
 
     with gr.Blocks(analytics_enabled=False) as ui:
         with gr.Tabs(elem_id="tabs_extensions"):
@@ -508,7 +516,8 @@ def create_ui():
 </span>
                     """
                 info = gr.HTML(html)
-                extensions_table = gr.HTML(lambda: extension_table())
+                extensions_table = gr.HTML('Loading...')
+                ui.load(fn=extension_table, inputs=[], outputs=[extensions_table])
 
                 apply.click(
                     fn=apply_and_restart,
@@ -595,7 +604,8 @@ def create_ui():
                     config_save_button = gr.Button(value="Save Current Config")
 
                 config_states_info = gr.HTML("")
-                config_states_table = gr.HTML(lambda: update_config_states_table("Current"))
+                config_states_table = gr.HTML("Loading...")
+                ui.load(fn=update_config_states_table, inputs=[config_states_list], outputs=[config_states_table])
 
                 config_save_button.click(fn=save_config_state, inputs=[config_save_name], outputs=[config_states_list, config_states_info])
 
@@ -607,5 +617,6 @@ def create_ui():
                     inputs=[config_states_list],
                     outputs=[config_states_table],
                 )
+
 
     return ui
