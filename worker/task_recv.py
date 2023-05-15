@@ -50,7 +50,7 @@ def clean_tmp(expired_days=1):
         now = time.time()
         for file in find_files_from_dir(Tmp):
             mtime = os.path.getmtime(file)
-            if now < mtime + expired_days * 24 * 3600:
+            if now > mtime + expired_days * 24 * 3600:
                 try:
                     os.remove(file)
                 except:

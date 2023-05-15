@@ -27,10 +27,10 @@ class TrainTaskHandler(DumpTaskHandler):
         if task.minor_type == TrainTaskMinorType.Preprocess:
             yield from exec_preprocess_task(task)
         elif task.minor_type == TrainTaskMinorType.Lora:
-            def progress_callback(epoch, loss_total, num_train_epochs):
+            def progress_callback(epoch, loss, num_train_epochs):
                 progress = epoch / num_train_epochs * 100 * 0.9
                 p = TaskProgress.new_running(task, 'running', progress)
-                p.train.add_epoch_log(TrainEpoch(epoch, loss_total))
+                p.train.add_epoch_log(TrainEpoch(epoch, loss))
                 self._set_task_status(p)
 
             yield from exec_train_lora_task(task, progress_callback)

@@ -1,3 +1,916 @@
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100
+101
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112
+113
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126
+127
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143
+144
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157
+158
+159
+160
+161
+162
+163
+164
+165
+166
+167
+168
+169
+170
+171
+172
+173
+174
+175
+176
+177
+178
+179
+180
+181
+182
+183
+184
+185
+186
+187
+188
+189
+190
+191
+192
+193
+194
+195
+196
+197
+198
+199
+200
+201
+202
+203
+204
+205
+206
+207
+208
+209
+210
+211
+212
+213
+214
+215
+216
+217
+218
+219
+220
+221
+222
+223
+224
+225
+226
+227
+228
+229
+230
+231
+232
+233
+234
+235
+236
+237
+238
+239
+240
+241
+242
+243
+244
+245
+246
+247
+248
+249
+250
+251
+252
+253
+254
+255
+256
+257
+258
+259
+260
+261
+262
+263
+264
+265
+266
+267
+268
+269
+270
+271
+272
+273
+274
+275
+276
+277
+278
+279
+280
+281
+282
+283
+284
+285
+286
+287
+288
+289
+290
+291
+292
+293
+294
+295
+296
+297
+298
+299
+300
+301
+302
+303
+304
+305
+306
+307
+308
+309
+310
+311
+312
+313
+314
+315
+316
+317
+318
+319
+320
+321
+322
+323
+324
+325
+326
+327
+328
+329
+330
+331
+332
+333
+334
+335
+336
+337
+338
+339
+340
+341
+342
+343
+344
+345
+346
+347
+348
+349
+350
+351
+352
+353
+354
+355
+356
+357
+358
+359
+360
+361
+362
+363
+364
+365
+366
+367
+368
+369
+370
+371
+372
+373
+374
+375
+376
+377
+378
+379
+380
+381
+382
+383
+384
+385
+386
+387
+388
+389
+390
+391
+392
+393
+394
+395
+396
+397
+398
+399
+400
+401
+402
+403
+404
+405
+406
+407
+408
+409
+410
+411
+412
+413
+414
+415
+416
+417
+418
+419
+420
+421
+422
+423
+424
+425
+426
+427
+428
+429
+430
+431
+432
+433
+434
+435
+436
+437
+438
+439
+440
+441
+442
+443
+444
+445
+446
+447
+448
+449
+450
+451
+452
+453
+454
+455
+456
+457
+458
+459
+460
+461
+462
+463
+464
+465
+466
+467
+468
+469
+470
+471
+472
+473
+474
+475
+476
+477
+478
+479
+480
+481
+482
+483
+484
+485
+486
+487
+488
+489
+490
+491
+492
+493
+494
+495
+496
+497
+498
+499
+500
+501
+502
+503
+504
+505
+506
+507
+508
+509
+510
+511
+512
+513
+514
+515
+516
+517
+518
+519
+520
+521
+522
+523
+524
+525
+526
+527
+528
+529
+530
+531
+532
+533
+534
+535
+536
+537
+538
+539
+540
+541
+542
+543
+544
+545
+546
+547
+548
+549
+550
+551
+552
+553
+554
+555
+556
+557
+558
+559
+560
+561
+562
+563
+564
+565
+566
+567
+568
+569
+570
+571
+572
+573
+574
+575
+576
+577
+578
+579
+580
+581
+582
+583
+584
+585
+586
+587
+588
+589
+590
+591
+592
+593
+594
+595
+596
+597
+598
+599
+600
+601
+602
+603
+604
+605
+606
+607
+608
+609
+610
+611
+612
+613
+614
+615
+616
+617
+618
+619
+620
+621
+622
+623
+624
+625
+626
+627
+628
+629
+630
+631
+632
+633
+634
+635
+636
+637
+638
+639
+640
+641
+642
+643
+644
+645
+646
+647
+648
+649
+650
+651
+652
+653
+654
+655
+656
+657
+658
+659
+660
+661
+662
+663
+664
+665
+666
+667
+668
+669
+670
+671
+672
+673
+674
+675
+676
+677
+678
+679
+680
+681
+682
+683
+684
+685
+686
+687
+688
+689
+690
+691
+692
+693
+694
+695
+696
+697
+698
+699
+700
+701
+702
+703
+704
+705
+706
+707
+708
+709
+710
+711
+712
+713
+714
+715
+716
+717
+718
+719
+720
+721
+722
+723
+724
+725
+726
+727
+728
+729
+730
+731
+732
+733
+734
+735
+736
+737
+738
+739
+740
+741
+742
+743
+744
+745
+746
+747
+748
+749
+750
+751
+752
+753
+754
+755
+756
+757
+758
+759
+760
+761
+762
+763
+764
+765
+766
+767
+768
+769
+770
+771
+772
+773
+774
+775
+776
+777
+778
+779
+780
+781
+782
+783
+784
+785
+786
+787
+788
+789
+790
+791
+792
+793
+794
+795
+796
+797
+798
+799
+800
+801
+802
+803
+804
+805
+806
+807
+808
+809
+810
+811
+812
+813
+814
+815
+816
+817
+818
+819
+820
+821
+822
+823
+824
+825
+826
+827
+828
+829
+830
+831
+832
+833
+834
+835
+836
+837
+838
+839
+840
+841
+842
+843
+844
+845
+846
+847
+848
+849
+850
+851
+852
+853
+854
+855
+856
+857
+858
+859
+860
+861
+862
+863
+864
+865
+866
+867
+868
+869
+870
+871
+872
+873
+874
+875
+876
+877
+878
+879
+880
+881
+882
+883
+884
+885
+886
+887
+888
+889
+890
+891
+892
+893
+894
+895
+896
+897
+898
+899
+900
+901
+902
+903
+904
+905
+906
+907
+908
+909
+910
+911
+912
+913
 from torch.nn.parallel import DistributedDataParallel as DDP
 import importlib
 import argparse
@@ -58,14 +971,15 @@ def generate_step_logs(args: argparse.Namespace, current_loss, avr_loss, lr_sche
             logs[f"lr/group{i}"] = float(lrs[i])
             if args.optimizer_type.lower().startswith("DAdapt".lower()):
                 logs[f"lr/d*lr/group{i}"] = (
-                    lr_scheduler.optimizers[-1].param_groups[i]["d"] * lr_scheduler.optimizers[-1].param_groups[i]["lr"]
+                        lr_scheduler.optimizers[-1].param_groups[i]["d"] * lr_scheduler.optimizers[-1].param_groups[i][
+                    "lr"]
                 )
 
     return logs
 
 
 def train(args, train_epoch_callback=None):
-    session_id = random.randint(0, 2**32)
+    session_id = random.randint(0, 2 ** 32)
     training_started_at = time.time()
     train_util.verify_training_args(args)
     train_util.prepare_dataset_args(args, True)
@@ -75,7 +989,7 @@ def train(args, train_epoch_callback=None):
     use_user_config = args.dataset_config is not None
 
     if args.seed is None:
-        args.seed = random.randint(0, 2**32)
+        args.seed = random.randint(0, 2 ** 32)
     set_seed(args.seed)
 
     tokenizer = train_util.load_tokenizer(args)
@@ -95,20 +1009,20 @@ def train(args, train_epoch_callback=None):
     else:
         if use_dreambooth_method:
             print("Use DreamBooth method.")
-            list_repeats = args.repeats_times.split(",")
-            class_tokens = args.class_tokens.split(",")
+            list_repeats = args.repeats_times
+            class_tokens = args.trigger_words
             reg_tokens = []
-            list_train_data_dirs = args.list_train_data_dir.split(",")
+            list_train_data_dirs = args.list_train_data_dir
             list_reg_data_dirs = []
             if args.reg_data_dir is not None:
-                list_reg_data_dirs = args.list_reg_data_dir.split(",")
-                reg_tokens = args.reg_tokens.split(",")
-            print("111",list_repeats,class_tokens,reg_tokens)
+                list_reg_data_dirs = args.list_reg_data_dir
+                reg_tokens = args.reg_tokens
+            # print("111",list_repeats,class_tokens,reg_tokens)
             user_config = {
                 "datasets": [
-                    #{"subsets": config_util.generate_dreambooth_subsets_config_by_subdirs(args.train_data_dir, args.reg_data_dir)}
+                    # {"subsets": config_util.generate_dreambooth_subsets_config_by_subdirs(args.train_data_dir, args.reg_data_dir)}
                     {"subsets": config_util.generate_dreambooth_subsets_config_by_args(
-                        list_repeats,class_tokens,list_train_data_dirs,reg_tokens,list_reg_data_dirs)}
+                        list_repeats, class_tokens, list_train_data_dirs, reg_tokens, list_reg_data_dirs)}
                 ]
             }
         else:
@@ -168,7 +1082,8 @@ def train(args, train_epoch_callback=None):
         vae.requires_grad_(False)
         vae.eval()
         with torch.no_grad():
-            train_dataset_group.cache_latents(vae, args.vae_batch_size, args.cache_latents_to_disk, accelerator.is_main_process)
+            train_dataset_group.cache_latents(vae, args.vae_batch_size, args.cache_latents_to_disk,
+                                              accelerator.is_main_process)
         vae.to("cpu")
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
@@ -190,7 +1105,8 @@ def train(args, train_epoch_callback=None):
             net_kwargs[key] = value
 
     # if a new network is added in future, add if ~ then blocks for each network (;'∀')
-    network = network_module.create_network(1.0, args.network_dim, args.network_alpha, vae, text_encoder, unet, **net_kwargs)
+    network = network_module.create_network(1.0, args.network_dim, args.network_alpha, vae, text_encoder, unet,
+                                            **net_kwargs)
     if network is None:
         return
 
@@ -243,7 +1159,8 @@ def train(args, train_epoch_callback=None):
             len(train_dataloader) / accelerator.num_processes / args.gradient_accumulation_steps
         )
         if is_main_process:
-            print(f"override steps. steps for {args.max_train_epochs} epochs is / 指定エポックまでのステップ数: {args.max_train_steps}")
+            print(
+                f"override steps. steps for {args.max_train_epochs} epochs is / 指定エポックまでのステップ数: {args.max_train_steps}")
 
     # データセット側にも学習ステップを送信
     train_dataset_group.set_max_train_steps(args.max_train_steps)
@@ -254,7 +1171,7 @@ def train(args, train_epoch_callback=None):
     # 実験的機能：勾配も含めたfp16学習を行う　モデル全体をfp16にする
     if args.full_fp16:
         assert (
-            args.mixed_precision == "fp16"
+                args.mixed_precision == "fp16"
         ), "full_fp16 requires mixed precision='fp16' / full_fp16を使う場合はmixed_precision='fp16'を指定してください。"
         print("enable full fp16 training.")
         network.to(weight_dtype)
@@ -273,7 +1190,8 @@ def train(args, train_epoch_callback=None):
             text_encoder, network, optimizer, train_dataloader, lr_scheduler
         )
     else:
-        network, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(network, optimizer, train_dataloader, lr_scheduler)
+        network, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(network, optimizer, train_dataloader,
+                                                                                 lr_scheduler)
 
     # transform DDP after prepare (train_network here only)
     text_encoder, unet, network = train_util.transform_if_model_is_DDP(text_encoder, unet, network)
@@ -322,7 +1240,8 @@ def train(args, train_epoch_callback=None):
         print(f"  num reg images / 正則化画像の数: {train_dataset_group.num_reg_images}")
         print(f"  num batches per epoch / 1epochのバッチ数: {len(train_dataloader)}")
         print(f"  num epochs / epoch数: {num_train_epochs}")
-        print(f"  batch size per device / バッチサイズ: {', '.join([str(d.batch_size) for d in train_dataset_group.datasets])}")
+        print(
+            f"  batch size per device / バッチサイズ: {', '.join([str(d.batch_size) for d in train_dataset_group.datasets])}")
         # print(f"  total train batch size (with parallel & distributed & accumulation) / 総バッチサイズ（並列学習、勾配合計含む）: {total_batch_size}")
         print(f"  gradient accumulation steps / 勾配を合計するステップ数 = {args.gradient_accumulation_steps}")
         print(f"  total optimization steps / 学習ステップ数: {args.max_train_steps}")
@@ -345,7 +1264,8 @@ def train(args, train_epoch_callback=None):
         "ss_lr_warmup_steps": args.lr_warmup_steps,
         "ss_lr_scheduler": args.lr_scheduler,
         "ss_network_module": args.network_module,
-        "ss_network_dim": args.network_dim,  # None means default because another network than LoRA may have another default dim
+        "ss_network_dim": args.network_dim,
+        # None means default because another network than LoRA may have another default dim
         "ss_network_alpha": args.network_alpha,  # some networks may not use this value
         "ss_mixed_precision": args.mixed_precision,
         "ss_full_fp16": bool(args.full_fp16),
@@ -434,7 +1354,8 @@ def train(args, train_epoch_callback=None):
                         i += 1
                     image_dir_or_metadata_file = v
 
-                    dataset_dirs_info[image_dir_or_metadata_file] = {"n_repeats": subset.num_repeats, "img_count": subset.img_count}
+                    dataset_dirs_info[image_dir_or_metadata_file] = {"n_repeats": subset.num_repeats,
+                                                                     "img_count": subset.img_count}
 
             dataset_metadata["subsets"] = subsets_metadata
             datasets_metadata.append(dataset_metadata)
@@ -454,7 +1375,7 @@ def train(args, train_epoch_callback=None):
     else:
         # conserving backward compatibility when using train_dataset_dir and reg_dataset_dir
         assert (
-            len(train_dataset_group.datasets) == 1
+                len(train_dataset_group.datasets) == 1
         ), f"There should be a single dataset but {len(train_dataset_group.datasets)} found. This seems to be a bug. / データセットは1個だけ存在するはずですが、実際には{len(train_dataset_group.datasets)}個でした。プログラムのバグかもしれません。"
 
         dataset = train_dataset_group.datasets[0]
@@ -464,7 +1385,8 @@ def train(args, train_epoch_callback=None):
         if use_dreambooth_method:
             for subset in dataset.subsets:
                 info = reg_dataset_dirs_info if subset.is_reg else dataset_dirs_info
-                info[os.path.basename(subset.image_dir)] = {"n_repeats": subset.num_repeats, "img_count": subset.img_count}
+                info[os.path.basename(subset.image_dir)] = {"n_repeats": subset.num_repeats,
+                                                            "img_count": subset.img_count}
         else:
             for subset in dataset.subsets:
                 dataset_dirs_info[os.path.basename(subset.metadata_file)] = {
@@ -523,7 +1445,8 @@ def train(args, train_epoch_callback=None):
         if key in metadata:
             minimum_metadata[key] = metadata[key]
 
-    progress_bar = tqdm(range(args.max_train_steps), smoothing=0, disable=not accelerator.is_local_main_process, desc="steps")
+    progress_bar = tqdm(range(args.max_train_steps), smoothing=0, disable=not accelerator.is_local_main_process,
+                        desc="steps")
     global_step = 0
 
     noise_scheduler = DDPMScheduler(
@@ -564,7 +1487,7 @@ def train(args, train_epoch_callback=None):
     # training loop
     for epoch in range(num_train_epochs):
         if is_main_process:
-            print(f"epoch {epoch+1}/{num_train_epochs}")
+            print(f"epoch {epoch + 1}/{num_train_epochs}")
         current_epoch.value = epoch + 1
 
         metadata["ss_epoch"] = str(epoch + 1)
@@ -598,7 +1521,8 @@ def train(args, train_epoch_callback=None):
                         )
                     else:
                         input_ids = batch["input_ids"].to(accelerator.device)
-                        encoder_hidden_states = train_util.get_hidden_states(args, input_ids, tokenizer, text_encoder, weight_dtype)
+                        encoder_hidden_states = train_util.get_hidden_states(args, input_ids, tokenizer, text_encoder,
+                                                                             weight_dtype)
 
                 # Sample noise that we'll add to the latents
                 noise = torch.randn_like(latents, device=latents.device)
@@ -609,7 +1533,8 @@ def train(args, train_epoch_callback=None):
                                                args.multires_noise_discount)
 
                 # Sample a random timestep for each image
-                timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (b_size,), device=latents.device)
+                timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (b_size,),
+                                          device=latents.device)
                 timesteps = timesteps.long()
                 # Add noise to the latents according to the noise magnitude at each timestep
                 # (this is the forward diffusion process)
@@ -666,7 +1591,8 @@ def train(args, train_epoch_callback=None):
 
                         remove_step_no = train_util.get_remove_step_no(args, global_step)
                         if remove_step_no is not None:
-                            remove_ckpt_name = train_util.get_step_ckpt_name(args, "." + args.save_model_as, remove_step_no)
+                            remove_ckpt_name = train_util.get_step_ckpt_name(args, "." + args.save_model_as,
+                                                                             remove_step_no)
                             remove_model(remove_ckpt_name)
 
             current_loss = loss.detach().item()
@@ -708,9 +1634,10 @@ def train(args, train_epoch_callback=None):
                 if args.save_state:
                     train_util.save_and_remove_state_on_epoch_end(args, accelerator, epoch + 1)
 
-        train_util.sample_images(accelerator, args, epoch + 1, global_step, accelerator.device, vae, tokenizer, text_encoder, unet)
+        train_util.sample_images(accelerator, args, epoch + 1, global_step, accelerator.device, vae, tokenizer,
+                                 text_encoder, unet)
         if callable(train_epoch_callback):
-            train_epoch_callback(epoch + 1, loss_total, num_train_epochs)
+            train_epoch_callback(epoch, loss_total / len(loss_list), num_train_epochs)
         # end of epoch
 
     # metadata["ss_epoch"] = str(num_train_epochs)
@@ -729,7 +1656,7 @@ def train(args, train_epoch_callback=None):
     if is_main_process:
         ckpt_name = train_util.get_last_ckpt_name(args, "." + args.save_model_as)
         save_model(ckpt_name, network, global_step, num_train_epochs, force_sync_upload=True)
-        
+
         print("model saved.")
 
 
@@ -782,36 +1709,109 @@ def setup_parser() -> argparse.ArgumentParser:
         "--training_comment", type=str, default=None, help="arbitrary comment string stored in metadata"
     )
     parser.add_argument(
-        "--repeats_times", type=str, default="",
+        "--repeats_times", type=list, default="",
         help="repeat times of source images for traing"
     )
     parser.add_argument(
-        "--class_tokens", type=str, default="",
+        "--trigger_words", type=list, default="",
         help="unique token(trigger word) for lora"
     )
     parser.add_argument(
-        "--reg_tokens", type=str, default="",
+        "--reg_tokens", type=list, default="",
         help="lora class type,for example, a ly2 dog,ly2 is class_token and dog is reg_token"
     )
     parser.add_argument(
-        "--list_train_data_dir", type=str, default="",
+        "--list_train_data_dir", type=list, default="",
         help="list for train_data folder name"
     )
     parser.add_argument(
-        "--list_reg_data_dir", type=str, default="",
+        "--list_reg_data_dir", type=list, default="",
         help="list for reg_data folder name"
     )
 
     return parser
 
 
-if __name__ == "__main__":
+def train_callback(epoch, avg_loss):
+    print(epoch, avg_loss)
+
+
+# 训练函数接口
+def train_with_params(pretrained_model_name_or_path, network_weights, train_data_dir, reg_data_dir, output_name,
+                      save_model_as, num_repeats, save_every_n_epochs=2, trigger_words=None, reg_tokens=None,
+                      list_train_data_dir=None, list_reg_data_dir=None, batch_size=1, epoch=20, resolution="512",
+                      clip_skip=1, network_dim=32, network_alpha=32, learning_rate=0.0001, unet_lr=0.0001,
+                      text_encoder_lr=0.00001, optimizer_type="AdamW8bit", network_train_unet_only=False,
+                      network_train_text_encoder_only=False, seed=1, network_module="networks.lora",
+                      caption_extension=".txt", output_dir="./output", logging_dir="./logs", save_last_n_epochs=10,
+                      lr_scheduler_num_cycles=1, lr_scheduler="cosine_with_restarts", callback=None):
+    # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
+    args = parser.parse_args(['--save_model_as=safetensors', '--enable_bucket'])
+    # args = train_util.read_config_from_file(args, parser)
 
-    args = parser.parse_args()
-    args = train_util.read_config_from_file(args, parser)
+    args.pretrained_model_name_or_path = pretrained_model_name_or_path
+    if network_weights:
+        args.network_weights = network_weights
 
-    train(args)
+    args.train_data_dir = train_data_dir
+    if reg_data_dir is not None and reg_data_dir != "":
+        args.reg_data_dir = reg_data_dir
+        args.reg_tokens = reg_tokens or []
+        args.list_reg_data_dir = list_reg_data_dir or []
+    args.output_name = output_name
+    args.save_model_as = save_model_as
+    args.trigger_words = trigger_words or []
+    args.save_every_n_epochs = save_every_n_epochs
+    args.list_train_data_dir = list_train_data_dir or []
+    args.repeats_times = num_repeats
+    args.batch_size = batch_size
+    args.max_train_epochs = epoch
+    args.resolution = resolution
+    args.clip_skip = clip_skip
+    args.network_dim = network_dim
+    args.network_alpha = network_alpha
+    args.learning_rate = learning_rate
+    args.unet_lr = unet_lr
+    args.text_encoder_lr = text_encoder_lr
+    args.optimizer_type = optimizer_type
+    args.network_train_unet_only = network_train_unet_only
+    args.network_train_text_encoder_only = network_train_text_encoder_only
+    args.seed = seed
+    args.network_module = network_module
+    args.caption_extension = caption_extension
+    args.output_dir = output_dir
+    args.logging_dir = logging_dir
+    args.save_last_n_epochs = save_last_n_epochs
+    args.lr_scheduler_num_cycles = lr_scheduler_num_cycles
+    args.lr_scheduler = lr_scheduler
+
+    #####默认设置
+    args.enable_bucket = True
+
+    train(args, callback)
 
 
-#
+if __name__ == "__main__":
+    # parser = setup_parser()
+    #
+    # args = parser.parse_args()
+    # args = train_util.read_config_from_file(args, parser)
+    #
+    # train(args)
+
+    train_with_params(pretrained_model_name_or_path="/data/qll/anything-v4.5-pruned.ckpt",
+                      network_weights="",  # "output/y1s1_100v3.safetensors",
+                      train_data_dir="/data/qll/pics/y1s1_512_wd",
+                      reg_data_dir="",
+                      output_name="y1s1_512wd", save_model_as="safetensors",
+                      trigger_words=["y1s1"], save_every_n_epochs=2,
+                      reg_tokens=[""], list_train_data_dir=["/data/qll/pics/y1s1_512_wd/tag"],
+                      list_reg_data_dir=[""],
+                      num_repeats=["5"], batch_size=4, epoch=20, resolution="512", clip_skip=2, network_dim=32,
+                      network_alpha=16,
+                      learning_rate=0.0001, unet_lr=0.0001, text_encoder_lr=0.00005, optimizer_type="Lion",
+                      network_train_text_encoder_only=False,
+                      network_train_unet_only=False, seed=1, network_module="networks.lora")
+
+# python train_network_qll.py --pretrained_model_name_or_path "/data/qll/qianzai_ai_draw/v1-5-pruned-emaonly.ckpt" --train_data_dir "/data/qll/lora_pictures/train_ironman" --output_name im2 --resolution 512 --network_module "networks.lora" --network_dim 32 --xformers  --caption_extension ".txt" --prior_loss_weight 1 --output_dir "./output" --logging_dir "./logs" --repeats_times "20" --class_tokens iiiiimqll --output_name iiiiimqll --list_train_data_dir "/data/qll/lora_pictures/train_ironman/10_immmmmman"

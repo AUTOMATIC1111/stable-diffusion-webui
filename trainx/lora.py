@@ -7,9 +7,9 @@
 # @Software: Hifive
 import os.path
 import typing
-
+from loguru import logger
 from worker.task import Task, TaskProgress
-from sd_scripts.train_network_ly import train, setup_parser
+from sd_scripts.train_network_ly import train_with_params
 from .typex import TrainLoraTask
 from .utils import upload_files
 
@@ -50,14 +50,15 @@ def get_train_models(train_lora_task: TrainLoraTask):
 
 def exec_train_lora_task(task: Task, callback: typing.Callable = None):
     train_lora_task = TrainLoraTask(task)
-    args = train_lora_task.build_command_args()
+    args, kwargs = train_lora_task.build_command_args()
     p = TaskProgress.new_ready(task, 'ready')
     yield p
-    parser = setup_parser()
-    parser.parse_args(args)
-    p = TaskProgress.new_running(task, 'running')
-    yield p
-    train(args, callback)
+    logger.info("=============>>>> start train lora <<<<=============")
+    logger.info(">>> command args:")
+    for arg in args:
+        logger.info(arg)
+
+    train_with_params(callback=callback, **kwargs)
     material = train_lora_task.compress_train_material()
     result = {
         'material': None,

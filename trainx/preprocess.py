@@ -87,8 +87,9 @@ def build_thumbnail_tag(target_dir):
             images[basename] = {
                 'filename': os.path.basename(file),
                 'dirname': os.path.dirname(file).replace(target_dir, '').lstrip('/'),
-                'thumbnail': thumbnail_key
+                'thumbnail': thumbnail_key[0] if thumbnail_key else ''
             }
+            os.remove(thumbnail)
         else:
             tag_files.append(file)
 

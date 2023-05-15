@@ -11,6 +11,7 @@ import time
 import typing
 from enum import IntEnum
 from collections import UserDict
+from Crypto.Hash import SHA256
 from worker.task import Task, TaskType
 from .utils import get_tmp_local_path, Tmp
 from tools.file import zip_uncompress, getdirsize, zip_compress
@@ -67,7 +68,7 @@ class PreprocessTask(UserDict):
             'user_id': 'test_user',
             'task_type': TaskType.Train,
             'minor_type': TrainMinorTaskType.Preprocess,
-            'model_hash':  'train',
+            'model_hash': 'train',
             'create_at': int(time.time()),
             'interrogate_model': 'deepbooru',
             'process_width': 512,
@@ -77,7 +78,7 @@ class PreprocessTask(UserDict):
             'process_flip': False,
             'split_threshold': 0.5,
             'overlap_ratio': 0.2,
-            'process_focal_crop': False,
+            'process_focal_crop': True,
             'process_focal_crop_face_weight': 0.9,
             'process_focal_crop_entropy_weight': 0.15,
             'process_focal_crop_edges_weight': 0.5,
@@ -89,7 +90,7 @@ class PreprocessTask(UserDict):
             'process_multicrop_maxarea': 409600,
             'process_multicrop_objective': "Maximize area",
             'process_multicrop_threshold': 0.1,
-            'zip_key': 'xingzheaidraw/sd-web/resources/lora_train_data.zip',
+            'zip_key': 'xingzheaidraw/sd-web/resources/train-lora-data.zip',
             'ignore': False,
             'process_keep_original_size': False,
         }
@@ -131,19 +132,28 @@ class TrainLoraBaseConfig(SerializationObj):
         self.model_desc = task.value('model_desc', '')
         self.base_model = task.value('base_model', requires=True)
         self.base_lora = task.value('base_lora', '')
+        self.class_tokens = task.value('class_tokens', requires=True) or []
 
 
 class TrainLoraTrainConfig(SerializationObj):
 
     def __init__(self, task: Task):
         self.resolution = task.value('resolution', requires=True)
-        self.num_repeats = task.value('num_repeats', default=1)
+        num_repeats = task.value('num_repeats', requires=True)
         self.batch_size = task.value('batch_size', default=4)
         self.epoch = task.value('epoch', default=20)
         self.save_every_n_epochs = task.value('save_every_n_epochs', default=5)
         self.save_last_n_epochs = task.value('save_every_n_epochs', default=10)
         self.clip_skip = task.value('clip_skip', default=1)
         self.seed = task.value('seed', default=None)
+        if isinstance(num_repeats, list):
+            self.num_repeats = {}
+            for item in num_repeats:
+                self.num_repeats[item['sub_folder']] = item['num']
+        elif isinstance(num_repeats, int):
+            self.num_repeats = num_repeats
+        else:
+            raise TypeError('num_repeats type error')
 
 
 class TrainLoraNetConfig(SerializationObj):
@@ -181,7 +191,7 @@ class TrainLoraTask(UserDict):
     @property
     def images(self):
         images = self.get('images') or []
-        for item in images :
+        for item in images:
             yield {
                 'filename': item['filename'],
                 'tag': item['tag'],
@@ -191,7 +201,7 @@ class TrainLoraTask(UserDict):
     @property
     def resolution(self):
         '''
-        512 或者 [512,512]格式
+        512 或者 512,512格式
         '''
         res = self['resolution']
         if isinstance(res, (list, tuple)):
@@ -204,7 +214,7 @@ class TrainLoraTask(UserDict):
                 res = res.decode('utf8')
             if ',' in res:
                 array = res.split(',')
-                return f'[{array[0]},{array[1]}]'
+                return f'{array[0].strip()},{array[1].strip()}'
         return str(res)
 
     @property
@@ -220,6 +230,7 @@ class TrainLoraTask(UserDict):
         image_dir = os.path.join(Tmp, self.id)
         if not os.path.isdir(image_dir) and getdirsize(image_dir) == 0:
             zip_uncompress(zip_file, image_dir)
+
         return image_dir
 
     def rewrite_caption(self, image_dir):
@@ -269,7 +280,7 @@ class TrainLoraTask(UserDict):
         toml = self.create_toml(image_dir)
         params = self.train_param()
         base_model = get_tmp_local_path(params.base.base_model)
-        base_lora = get_tmp_local_path(params.base.base_lora)
+        base_lora = get_tmp_local_path(params.base.base_lora) if params.base.base_lora else ''
         save_last_n_epochs = params.train.save_last_n_epochs
 
         args = [
@@ -280,7 +291,7 @@ class TrainLoraTask(UserDict):
             '--save_model_as=safetensors',
             '--prior_loss_weight=1.0',
             '--network_module=networks.lora',
-            '--mixed_precision="fp16"',
+            '--mixed_precision=fp16',
             '--xformers',
             f'--max_train_epochs={params.train.epoch}',
             f'--save_every_n_epochs={params.train.save_every_n_epochs}',
@@ -295,15 +306,58 @@ class TrainLoraTask(UserDict):
             f'--lr_scheduler_num_cycles={params.net.lr_scheduler_num_cycles}',
             f'--seed={params.train.seed}',
             f'--clip_skip={params.train.clip_skip}',
-            f'--network_weights={base_lora}',
             f'--save_last_n_epochs={save_last_n_epochs}'
         ]
+
+        # save_last_n_epochs , lr_scheduler_num_cycles, lr_scheduler
 
         if params.net.network_train_text_encoder_only:
             args.append('--network_train_text_encoder_only')
         if params.net.network_train_unet_only:
             args.append('--network_train_unet_only')
-        return args
+        if base_lora:
+            args.append(f'--network_weights={base_lora}')
+
+        class_tokens, list_train_data_dir, num_repeats = [], [], []
+        for i, item in enumerate(self.train_params.base.class_tokens):
+            sub_folder = item['sub_folder'].replace(' ', "")
+            tokens = item['trigger']
+            list_train_data_dir.append(os.path.join(image_dir, sub_folder))
+            class_tokens.append(tokens)
+            if isinstance(params.train.num_repeats, dict):
+                num_repeats.append(params.train.num_repeats[sub_folder])
+            else:
+                num_repeats.append(params.train.num_repeats)
+
+        key = SHA256.new(self.id.encode()).hexdigest()
+        kwargs = {
+            'output_dir': self.output_dir,
+            'pretrained_model_name_or_path': base_model,
+            'network_weights': base_lora,
+            'train_data_dir': image_dir,
+            'list_train_data_dir': list_train_data_dir,
+            'trigger_words': class_tokens,
+            'output_name': key,
+            'save_model_as': 'safetensors',
+            'save_every_n_epochs': params.train.save_every_n_epochs,
+            'batch_size': params.train.batch_size,
+            'epoch': params.train.epoch,
+            'resolution': self.resolution,
+            'num_repeats': num_repeats,
+            'clip_skip': params.train.clip_skip,
+            'seed': params.train.seed if params.train.seed >= 1 else 1,
+            'network_dim': params.net.network_dim,
+            'network_alpha': params.net.network_alpha,
+            'learning_rate': params.net.learning_rate,
+            'unet_lr': params.net.unet_lr,
+            'text_encoder_lr': params.net.text_encoder_lr,
+            'optimizer_type': params.net.optimizer_type,
+            'network_train_unet_only': params.net.network_train_text_encoder_only,
+            'network_train_text_encoder_only': params.net.network_train_unet_only,
+            'reg_data_dir': ''
+        }
+
+        return args, kwargs
 
     def compress_train_material(self):
         image_dir = self.image_dir()
@@ -316,17 +370,18 @@ class TrainLoraTask(UserDict):
     def debug_task(cls):
         t = {
             'resolution': '512,512',
-            'processed_key': 'xingzheaidraw/sd-tmp/2023/05/14/test_preprocess-preprocessed.zip',
+            'processed_key': 'xingzheaidraw/sd-web/resources/TrainLoraSamples.zip',
             'model_name': 'test_train(lora)',
             'group_id': 'xxx',
             'model_desc': 'test only',
             'base_model': 'xingzheaidraw/models/system/Stable-diffusion/2023/05/06/0389907e714c9239261269f21eb511a9585e4884c75d17ecafabc74b7c9baad8.ckpt',
-            'num_repeats': 1,
+            'num_repeats': [{'sub_folder': 'jpg2', "num": 1}],
             'batch_size': 4,
             'epoch': 20,
             'save_last_n_epochs': 10,
             'save_every_n_epochs': 2,
             'clip_skip': 1,
+            'model_space': 'xxxxx',
             'seed': 100001,
             'network_dim': 32,
             'network_alpha': 1,
@@ -338,7 +393,12 @@ class TrainLoraTask(UserDict):
             'minor_type': TrainMinorTaskType.Lora,
             'model_hash': 'train',
             'create_at': int(time.time()),
+            'class_tokens': [
+                {
+                    'sub_folder': 'jpg2',
+                    'trigger': 'liuxiang'
+                }
+            ]
         }
 
         return Task(**t)
-
