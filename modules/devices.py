@@ -77,7 +77,7 @@ def torch_gc():
                 torch.cuda.ipc_collect()
         except:
             pass
-    shared.log.debug(f'gc: {torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
+    shared.log.debug(f'gc: device={torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
 
 
 def test_fp16():

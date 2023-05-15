@@ -350,6 +350,7 @@ class SharedSettingsStackHelper(object):
         self.token_merging_random = shared.opts.token_merging_random
         self.sd_model_checkpoint = shared.opts.sd_model_checkpoint
         self.sd_vae_checkpoint = shared.opts.sd_vae
+        self.xyz_fallback_sampler = shared.opts.data["xyz_fallback_sampler"]
 
     def __exit__(self, exc_type, exc_value, tb):
         #Restore overriden settings after plot generation.
@@ -359,6 +360,7 @@ class SharedSettingsStackHelper(object):
         shared.opts.data["token_merging_ratio_hr"] = self.token_merging_ratio_hr
         shared.opts.data["token_merging_ratio"] = self.token_merging_ratio
         shared.opts.data["token_merging_random"] = self.token_merging_random
+        shared.opts.data["xyz_fallback_sampler"] = self.xyz_fallback_sampler
         if self.sd_model_checkpoint != shared.opts.sd_model_checkpoint:
             shared.opts.data["sd_model_checkpoint"] = self.sd_model_checkpoint
             sd_models.reload_model_weights()
@@ -512,7 +514,7 @@ class Script(scripts.Script):
                     else:
                         valslist_ext.append(val)
                 valslist = valslist_ext
-            elif opt.type == str_permutations:
+            elif opt.type == str_permutations: # pylint: disable=comparison-with-callable
                 valslist = list(permutations(valslist))
             valslist = [opt.type(x) for x in valslist]
             # Confirm options are valid before starting

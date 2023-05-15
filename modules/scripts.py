@@ -367,55 +367,55 @@ class ScriptRunner:
         return processed
 
     def process(self, p, **kwargs):
+        log.debug(f'Script process: {[s.title() for s in self.alwayson_scripts]}')
         for script in self.alwayson_scripts:
             try:
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
-                log.debug(f'Script process: {script.title()}')
                 script.process(p, *args, **kwargs)
             except Exception as e:
                 errors.display(e, f'Running script process: {script.filename}')
 
     def before_process_batch(self, p, **kwargs):
+        log.debug(f'Script before-process-batch: {[s.title() for s in self.alwayson_scripts]}')
         for script in self.alwayson_scripts:
             try:
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
-                log.debug(f'Script before-process-batch: {script.title()}')
                 script.before_process_batch(p, *args, **kwargs)
             except Exception as e:
                 errors.display(e, f'Running script before process batch: {script.filename}')
 
     def process_batch(self, p, **kwargs):
+        log.debug(f'Script process-batch: {[s.title() for s in self.alwayson_scripts]}')
         for script in self.alwayson_scripts:
             try:
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
-                log.debug(f'Script process-batch: {script.title()}')
                 script.process_batch(p, *args, **kwargs)
             except Exception as e:
                 errors.display(e, f'Running script process batch: {script.filename}')
 
     def postprocess(self, p, processed):
+        log.debug(f'Script postprocess: {[s.title() for s in self.alwayson_scripts]}')
         for script in self.alwayson_scripts:
             try:
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
-                log.debug(f'Script postprocess: {script.title()}')
                 script.postprocess(p, processed, *args)
             except Exception as e:
                 errors.display(e, f'Running script postprocess: {script.filename}')
 
     def postprocess_batch(self, p, images, **kwargs):
+        log.debug(f'Script postprocess-batch: {[s.title() for s in self.alwayson_scripts]}')
         for script in self.alwayson_scripts:
             try:
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
-                log.debug(f'Script postprocess-batch: {script.title()}')
                 script.postprocess_batch(p, *args, images=images, **kwargs)
             except Exception as e:
                 errors.display(e, f'Running script before postprocess batch: {script.filename}')
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
+        log.debug(f'Script postprocess-image: {[s.title() for s in self.alwayson_scripts]}')
         for script in self.alwayson_scripts:
             try:
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
-                log.debug(f'Script postprocess-image: {script.title()}')
                 script.postprocess_image(p, pp, *args)
             except Exception as e:
                 errors.display(e, f'Running script postprocess image: {script.filename}')
