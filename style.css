@@ -2875,6 +2875,8 @@ pre {
   min-height: unset;
 }
 
+#row_setting_hidden_tabs,
+#row_setting_quicksettings_list,
 #settings_sd #row_setting_sd_model_checkpoint {
   display: none;
 }
