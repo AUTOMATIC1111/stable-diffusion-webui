@@ -374,7 +374,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
     "randn_source": OptionInfo("GPU", "Random number generator source.", gr.Radio, {"choices": ["GPU", "CPU"]}).info("changes seeds drastically; use CPU to produce the same picture across different vidocard vendors"),
     "token_merging_ratio": OptionInfo(0.0, "Token merging ratio", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}).link("PR", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9256").info("0=disable, higher=faster"),
-    "token_merging_ratio_hr": OptionInfo(0.0, "Togen merging ratio for high-res pass", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for high-res pass", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}),
 }))
 
 options_templates.update(options_section(('compatibility', "Compatibility"), {
