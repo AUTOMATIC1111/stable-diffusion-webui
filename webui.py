@@ -12,6 +12,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from packaging import version
 
 import logging
+
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
 from modules import paths, timer, import_hook, errors
@@ -19,17 +20,20 @@ from modules import paths, timer, import_hook, errors
 startup_timer = timer.Timer()
 
 import torch
-import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
+import \
+    pytorch_lightning  # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
+
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
-
 
 startup_timer.record("import torch")
 
 import gradio
+
 startup_timer.record("import gradio")
 
 import ldm.modules.encoders.modules
+
 startup_timer.record("import ldm")
 
 from modules import extra_networks, ui_extra_networks_checkpoints
@@ -41,7 +45,8 @@ if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__long_version__ = torch.__version__
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 
-from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks, config_states
+from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks, \
+    config_states
 import modules.codeformer_model as codeformer
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
@@ -63,7 +68,6 @@ from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
 startup_timer.record("other imports")
-
 
 if cmd_opts.server_name:
     server_name = cmd_opts.server_name
@@ -244,15 +248,19 @@ def initialize():
 
 
 def setup_middleware(app):
-    app.middleware_stack = None # reset current middleware to allow modifying user provided list
+    app.middleware_stack = None  # reset current middleware to allow modifying user provided list
     app.add_middleware(GZipMiddleware, minimum_size=1000)
     if cmd_opts.cors_allow_origins and cmd_opts.cors_allow_origins_regex:
-        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
+        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','),
+                           allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'],
+                           allow_credentials=True, allow_headers=['*'])
     elif cmd_opts.cors_allow_origins:
-        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
+        app.add_middleware(CORSMiddleware, allow_origins=cmd_opts.cors_allow_origins.split(','), allow_methods=['*'],
+                           allow_credentials=True, allow_headers=['*'])
     elif cmd_opts.cors_allow_origins_regex:
-        app.add_middleware(CORSMiddleware, allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'], allow_credentials=True, allow_headers=['*'])
-    app.build_middleware_stack() # rebuild middleware stack on-the-fly
+        app.add_middleware(CORSMiddleware, allow_origin_regex=cmd_opts.cors_allow_origins_regex, allow_methods=['*'],
+                           allow_credentials=True, allow_headers=['*'])
+    app.build_middleware_stack()  # rebuild middleware stack on-the-fly
 
 
 def create_api(app):
@@ -307,7 +315,8 @@ def webui():
 
         gradio_auth_creds = []
         if cmd_opts.gradio_auth:
-            gradio_auth_creds += [x.strip() for x in cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',') if x.strip()]
+            gradio_auth_creds += [x.strip() for x in cmd_opts.gradio_auth.strip('"').replace('\n', '').split(',') if
+                                  x.strip()]
         if cmd_opts.gradio_auth_path:
             with open(cmd_opts.gradio_auth_path, 'r', encoding="utf8") as file:
                 for line in file.readlines():
@@ -425,18 +434,24 @@ def check_resource():
 
 def run_worker():
     from consumer import run_executor
-    from worker.task_send import RedisSender, VipLevel
-    from handlers.img2img import Img2ImgTask
-    from trainx.typex import PreprocessTask
-    from handlers.extension.controlnet import bind_debug_img_task_args
 
-    if cmd_opts.train_only:
-        tasks = [PreprocessTask.debug_task()]
-    else:
-        tasks = Img2ImgTask.debug_task()
-        tasks = bind_debug_img_task_args(*tasks)
-    sender = RedisSender()
-    sender.push_task(VipLevel.Level_1, *tasks)
+    if cmd_opts.debug_task:
+        from worker.task_send import RedisSender, VipLevel
+
+        if cmd_opts.train_only:
+            from trainx.typex import PreprocessTask, TrainLoraTask
+            tasks = [
+                PreprocessTask.debug_task(),
+                TrainLoraTask.debug_task()
+            ]
+        else:
+            from handlers.img2img import Img2ImgTask
+            from handlers.extension.controlnet import bind_debug_img_task_args
+
+            tasks = Img2ImgTask.debug_task()
+            tasks = bind_debug_img_task_args(*tasks)
+        sender = RedisSender()
+        sender.push_task(VipLevel.Level_1, *tasks)
 
     initialize()
     modules.script_callbacks.before_ui_callback()
@@ -449,6 +464,7 @@ def run_worker():
 if __name__ == "__main__":
     import sys
     from tools.mysql import dispose
+
     print(sys.argv)
     check_resource()
 

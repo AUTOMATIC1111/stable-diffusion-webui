@@ -98,7 +98,7 @@ class PreprocessTask(UserDict):
 
 class TrainMinorTaskType(IntEnum):
     Preprocess = 1
-    Train = 2
+    Lora = 2
 
 
 # ===================================================================
@@ -330,5 +330,15 @@ class TrainLoraTask(UserDict):
             'seed': 100001,
             'network_dim': 32,
             'network_alpha': 1,
-            
+            'optimizer_type': 'AdamW8bit',
+            'train_module': 'all',
+            'task_id': 'test_train_lora',
+            'user_id': 'test_user',
+            'task_type': TaskType.Train,
+            'minor_type': TrainMinorTaskType.Lora,
+            'model_hash': 'train',
+            'create_at': int(time.time()),
         }
+
+        return Task(**t)
+
