@@ -535,15 +535,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
         if opts.token_merging_ratio > 0:
             sd_models.apply_token_merging(sd_model=p.sd_model, hr=False)
             logger.debug(f"Token merging applied to first pass. Ratio: '{opts.token_merging_ratio}'")
+        else:
+            tomesd.remove_patch(p.sd_model)
+            logger.debug('Token merging model optimizations removed')
 
         res = process_images_inner(p)
 
     finally:
-        # undo model optimizations made by tomesd
-        if opts.token_merging_ratio > 0:
-            tomesd.remove_patch(p.sd_model)
-            logger.debug('Token merging model optimizations removed')
-
         # restore opts to original state
         if p.override_settings_restore_afterwards:
             for k, v in stored_opts.items():
@@ -1002,10 +1000,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             logger.debug(f"Applied token merging for high-res pass. Ratio: '{opts.token_merging_ratio_hr}'")
 
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
-
-        if opts.token_merging_ratio_hr > 0 or opts.token_merging_ratio > 0:
-            tomesd.remove_patch(self.sd_model)
-            logger.debug('Removed token merging optimizations from model')
 
         self.is_hr_pass = False
 
