@@ -58,7 +58,7 @@ class TaskDumper(Thread):
         self.ip = get_host_ip()
         self.send_delay = 10
         self.queue = queue.Queue(maxsize=100)
-        self._stop = False
+        self._stop_flag = False
         self._dump_now = False
         self._last_dump_time = 0
 
@@ -74,7 +74,7 @@ class TaskDumper(Thread):
         return infos
 
     def run(self) -> None:
-        while not self._stop:
+        while not self._stop_flag:
             now = time.time()
             if self._dump_now or self._last_dump_time + self.send_delay > now:
                 self._last_dump_time = now
@@ -122,7 +122,7 @@ class TaskDumper(Thread):
         pass
 
     def stop(self):
-        self._stop = True
+        self._stop_flag = True
 
 
 class MongoTaskDumper(TaskDumper):

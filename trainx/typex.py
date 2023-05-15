@@ -161,7 +161,7 @@ class TrainLoraNetConfig(SerializationObj):
     def __init__(self, task: Task):
         self.network_dim = task.value('network_dim', default=32)
         self.network_alpha = task.value('network_alpha', default=1)
-        self.optimizer_type = task.value('optimizer_type', default='AdamW8bit')
+        self.optimizer_type = task.value('optimizer_type', default='Lion')
         self.unet_lr = task.value('unet_lr', default=0.0001)
         self.text_encoder_lr = task.value('text_encoder_lr', default=0.0001)
         self.learning_rate = task.value('learning_rate', default=0.0001)
@@ -385,7 +385,7 @@ class TrainLoraTask(UserDict):
             'seed': 100001,
             'network_dim': 32,
             'network_alpha': 1,
-            'optimizer_type': 'AdamW8bit',
+            'optimizer_type': 'Lion',
             'train_module': 'all',
             'task_id': 'test_train_lora',
             'user_id': 'test_user',
