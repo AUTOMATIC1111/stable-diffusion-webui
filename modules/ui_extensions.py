@@ -88,6 +88,11 @@ def check_updates(_id_task, disable_list, search_text, sort_column):
         shared.state.textinfo = ext.name
         try:
             ext.check_updates()
+            if ext.can_update:
+                ext.fetch_and_reset_hard()
+                ext.read_info_from_repo()
+                shared.log.debug(f'Extensions updated: {ext.name} {ext.commit_hash} {ext.commit_date}')
+            shared.log.debug(f'Extensions no updated available: {ext.name} {ext.commit_hash} {ext.commit_date}')
         except FileNotFoundError as e:
             if 'FETCH_HEAD' not in str(e):
                 raise
@@ -189,7 +194,7 @@ def update_extension(extension_path, search_text, sort_column):
                 ext.fetch_and_reset_hard()
                 ext.read_info_from_repo()
                 shared.log.debug(f'Extensions updated: {ext.name} {ext.commit_hash} {ext.commit_date}')
-            shared.log.debug('Extensions no updated available')
+            shared.log.debug(f'Extensions no updated available: {ext.name} {ext.commit_hash} {ext.commit_date}')
         except FileNotFoundError as e:
             if 'FETCH_HEAD' not in str(e):
                 raise
@@ -198,7 +203,7 @@ def update_extension(extension_path, search_text, sort_column):
             errors.display(e, f'extensions check update: {ext.name}')
         shared.log.debug(f'Extensions update finish: {ext.name} {ext.commit_hash} {ext.commit_date}')
         shared.state.nextjob()
-    return refresh_extensions_list_from_data(search_text, sort_column), f"Extension updated: {extension_path} | Restart required"
+    return refresh_extensions_list_from_data(search_text, sort_column), f"Extension updated | {extension_path} | Restart required"
 
 
 def refresh_extensions_list(search_text, sort_column):
@@ -221,7 +226,7 @@ def refresh_extensions_list(search_text, sort_column):
 
 def search_extensions(search_text, sort_column):
     code = refresh_extensions_list_from_data(search_text, sort_column)
-    return code, f'Search complete: {search_text} {sort_column}'
+    return code, f'Search | {search_text} | {sort_column}'
 
 
 def refresh_extensions_list_from_data(search_text, sort_column):

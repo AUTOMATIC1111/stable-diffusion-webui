@@ -141,12 +141,13 @@ def model_hash(filename):
         with open(filename, "rb") as file:
             import hashlib
             m = hashlib.sha256()
-
             file.seek(0x100000)
             m.update(file.read(0x10000))
             return m.hexdigest()[0:8]
     except FileNotFoundError:
         return 'NOFILE'
+    except:
+        return 'NOHASH'
 
 
 def select_checkpoint():

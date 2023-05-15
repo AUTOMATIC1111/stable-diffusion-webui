@@ -1328,7 +1328,7 @@ def create_ui():
             preview_theme = gr.Button(value="Preview theme", variant='primary', elem_id="settings_preview_theme")
             unload_sd_model = gr.Button(value='Unload checkpoint', variant='primary', elem_id="sett_unload_sd_model")
             reload_sd_model = gr.Button(value='Reload checkpoint', variant='primary', elem_id="sett_reload_sd_model")
-            reload_script_bodies = gr.Button(value='Reload scripts', variant='primary', elem_id="settings_reload_script_bodies")
+            # reload_script_bodies = gr.Button(value='Reload scripts', variant='primary', elem_id="settings_reload_script_bodies")
 
         result = gr.HTML(elem_id="settings_result")
 
@@ -1399,11 +1399,13 @@ def create_ui():
             modules.scripts.reload_script_body_only()
             reload_javascript()  # need to refresh the html page
 
+        """
         reload_script_bodies.click(
             fn=reload_scripts,
             inputs=[],
             outputs=[]
         )
+        """
 
         preview_theme.click(
             fn=None,
