@@ -71,6 +71,9 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         return
     shared.log.debug(f'img2img: {id_task}|{mode}|{prompt}|{negative_prompt}|{prompt_styles}|{init_img}|{sketch}|{init_img_with_mask}|{inpaint_color_sketch}|{inpaint_color_sketch_orig}|{init_img_inpaint}|{init_mask_inpaint}|{steps}|{sampler_index}|{mask_blur}|{mask_alpha}|{inpainting_fill}|{restore_faces}|{tiling}|{n_iter}|{batch_size}|{cfg_scale}|{image_cfg_scale}|{denoising_strength}|{seed}|{subseed}|{subseed_strength}|{seed_resize_from_h}|{seed_resize_from_w}|{seed_enable_extras}|{selected_scale_tab}|{height}|{width}|{scale_by}|{resize_mode}|{inpaint_full_res}|{inpaint_full_res_padding}|{inpainting_mask_invert}|{img2img_batch_input_dir}|{img2img_batch_output_dir}|{img2img_batch_inpaint_mask_dir}|{override_settings_texts}')
 
+    if sampler_index is None:
+        shared.log.warning('Selected sampler is not enabled')
+        sampler_index = 0
     override_settings = create_override_settings_dict(override_settings_texts)
 
     is_batch = mode == 5

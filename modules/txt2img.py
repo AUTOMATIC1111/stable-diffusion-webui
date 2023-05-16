@@ -13,8 +13,11 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         shared.log.warning('Model not loaded')
         return
     shared.log.debug(f'txt2img: {id_task}|{prompt}|{negative_prompt}|{prompt_styles}|{steps}|{sampler_index}|{restore_faces}|{tiling}|{n_iter}|{batch_size}|{cfg_scale}|{seed}|{subseed}|{subseed_strength}|{seed_resize_from_h}|{seed_resize_from_w}|{seed_enable_extras}|{height}|{width}|{enable_hr}|{denoising_strength}|{hr_scale}|{hr_upscaler}|{hr_second_pass_steps}|{hr_resize_x}|{hr_resize_y}|{override_settings_texts}')
-
+    if sampler_index is None:
+        shared.log.warning('Selected sampler is not enabled')
+        sampler_index = 0
     override_settings = create_override_settings_dict(override_settings_texts)
+
     p = StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
         outpath_samples=shared.opts.outdir_samples or shared.opts.outdir_txt2img_samples,
