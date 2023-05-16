@@ -68,7 +68,8 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     }
 
     if os.path.isfile(material):
-        result['material'] = upload_files(False, material)
+        material_keys = upload_files(False, material)
+        result['material'] = material_keys[0] if material_keys else ''
 
     local_models = get_train_models(train_lora_task, kwargs['output_name'])
     cover = train_lora_task.get_model_cover_key()
