@@ -276,6 +276,8 @@ re_attention = re.compile(r"""
 
 re_break = re.compile(r"\s*\bBREAK\b\s*", re.S)
 
+re_comment = re.compile(r"\r?\n(\/\/.*)")
+
 def parse_prompt_attention(text):
     """
     Parses a string with attention tokens and returns a list of pairs: text and its associated weight.
@@ -326,6 +328,9 @@ def parse_prompt_attention(text):
     for m in re_attention.finditer(text):
         text = m.group(0)
         weight = m.group(1)
+
+        # ignore commented lines
+        text = re_comment.sub('', text)
 
         if text.startswith('\\'):
             res.append([text[1:], 1.0])
