@@ -17,10 +17,11 @@ from .utils import upload_files
 def get_train_models(train_lora_task: TrainLoraTask, model_name: str):
     models = []
     for file in os.listdir(train_lora_task.output_dir):
-        if os.path.isfile(file) and file.startswith(model_name):
+        full = os.path.join(train_lora_task.output_dir, file)
+        if os.path.isfile(full) and file.startswith(model_name):
             _, ex = os.path.splitext(file)
             if ex.lower() == '.safetensors':
-                models.append(os.path.join(train_lora_task.output_dir, file))
+                models.append(full)
 
     def sort_model(module_path):
         basename, _ = os.path.splitext(os.path.basename(module_path))
