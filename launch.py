@@ -253,7 +253,11 @@ def prepare_environment():
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
 
-    if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
+    if (
+        sys.platform != "darwin" and  # Macs don't tend to have CUDA
+        not args.skip_torch_cuda_test and   # User specified to skip the test
+        not check_run_python("import torch; assert torch.cuda.is_available()")  # Test fails?
+    ):
         raise RuntimeError(
             'Torch is not able to use GPU; '
             'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
