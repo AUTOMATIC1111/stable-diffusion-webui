@@ -59,7 +59,7 @@ if cmd_opts.ngrok is not None:
     ngrok.connect(
         cmd_opts.ngrok,
         cmd_opts.port if cmd_opts.port is not None else 7860,
-        cmd_opts.ngrok_region
+        cmd_opts.ngrok_options
         )
 
 
