@@ -11,7 +11,7 @@ import modules.models.diffusion.uni_pc
 
 
 samplers_data_compvis = [
-    sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {}),
+    sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {"default_eta_is_0": True, "uses_ensd": True}),
     sd_samplers_common.SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), [], {}),
     sd_samplers_common.SamplerData('UniPC', lambda model: VanillaStableDiffusionSampler(modules.models.diffusion.uni_pc.UniPCSampler, model), [], {}),
 ]
@@ -134,7 +134,11 @@ class VanillaStableDiffusionSampler:
         self.update_step(x)
 
     def initialize(self, p):
-        self.eta = p.eta if p.eta is not None else shared.opts.eta_ddim
+        if self.is_ddim:
+            self.eta = p.eta if p.eta is not None else shared.opts.eta_ddim
+        else:
+            self.eta = 0.0
+
         if self.eta != 0.0:
             p.extra_generation_params["Eta DDIM"] = self.eta
 

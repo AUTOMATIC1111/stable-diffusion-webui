@@ -13,7 +13,7 @@ from skimage import exposure
 from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -480,6 +480,10 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
     enable_hr = getattr(p, 'enable_hr', False)
 
+    uses_ensd = opts.eta_noise_seed_delta != 0
+    if uses_ensd:
+        uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
+
     generation_params = {
         "Steps": p.steps,
         "Sampler": p.sampler_name,
@@ -496,16 +500,15 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
-        "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "ENSD": opts.eta_noise_seed_delta if uses_ensd else None,
         "Token merging ratio": None if opts.token_merging_ratio == 0 else opts.token_merging_ratio,
         "Token merging ratio hr": None if not enable_hr or opts.token_merging_ratio_hr == 0 else opts.token_merging_ratio_hr,
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
+        **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
     }
-
-    generation_params.update(p.extra_generation_params)
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
 
