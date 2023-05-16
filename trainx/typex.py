@@ -343,7 +343,7 @@ class TrainLoraTask(UserDict):
                 key = upload_files(True, file)
                 setattr(self, 'model_cover', key)
                 if key:
-                    return key
+                    return key[0]
         return getattr(self, 'model_cover')
 
     @classmethod

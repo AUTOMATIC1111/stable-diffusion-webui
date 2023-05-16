@@ -65,7 +65,7 @@ def exec_train_lora_task(task: Task, callback: typing.Callable = None):
     for m in local_models:
         key = upload_files(False, m)
         result['models'].append({
-            'key': key,
+            'key': key[0] if key else '',
             'thumbnail_path': cover,
             'hash': train_lora_task.hash_id
         })

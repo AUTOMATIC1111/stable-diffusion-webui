@@ -30,6 +30,7 @@ class TrainTaskHandler(DumpTaskHandler):
             p = TaskProgress.new_running(task, 'running', 0)
 
             def progress_callback(epoch, loss, num_train_epochs):
+                print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
                 progress = epoch / num_train_epochs * 100 * 0.9
                 p.train.add_epoch_log(TrainEpoch(epoch, loss))
                 p.task_progress = progress
