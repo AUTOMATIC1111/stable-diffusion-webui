@@ -283,41 +283,6 @@ class TrainLoraTask(UserDict):
         base_lora = get_tmp_local_path(params.base.base_lora) if params.base.base_lora else ''
         save_last_n_epochs = params.train.save_last_n_epochs
 
-        args = [
-            f'--pretrained_model_name_or_path="{base_model}"',
-            f'--dataset_config="{toml}"',
-            f'--output_dir="{self.output_dir}"',
-            f'--output_name={self.id}',
-            '--save_model_as=safetensors',
-            '--prior_loss_weight=1.0',
-            '--network_module=networks.lora',
-            '--mixed_precision=fp16',
-            '--xformers',
-            f'--max_train_epochs={params.train.epoch}',
-            f'--save_every_n_epochs={params.train.save_every_n_epochs}',
-            f'--train_batch_size={params.train.batch_size}',
-            f'--learning_rate={params.net.learning_rate}',
-            f'--text_encoder_lr={params.net.text_encoder_lr}',
-            f'--lr_scheduler={params.net.lr_scheduler}',
-            f'--network_dim={params.net.network_dim}',
-            f'--network_alpha={params.net.network_alpha}',
-            f'--optimizer_type="{params.net.optimizer_type}"',
-            f'--network_alpha={params.net.network_alpha}',
-            f'--lr_scheduler_num_cycles={params.net.lr_scheduler_num_cycles}',
-            f'--seed={params.train.seed}',
-            f'--clip_skip={params.train.clip_skip}',
-            f'--save_last_n_epochs={save_last_n_epochs}'
-        ]
-
-        # save_last_n_epochs , lr_scheduler_num_cycles, lr_scheduler
-
-        if params.net.network_train_text_encoder_only:
-            args.append('--network_train_text_encoder_only')
-        if params.net.network_train_unet_only:
-            args.append('--network_train_unet_only')
-        if base_lora:
-            args.append(f'--network_weights={base_lora}')
-
         class_tokens, list_train_data_dir, num_repeats = [], [], []
         for i, item in enumerate(self.train_params.base.class_tokens):
             sub_folder = item['sub_folder'].replace(' ', "")
@@ -357,7 +322,7 @@ class TrainLoraTask(UserDict):
             'reg_data_dir': ''
         }
 
-        return args, kwargs
+        return kwargs
 
     def compress_train_material(self):
         image_dir = self.image_dir()

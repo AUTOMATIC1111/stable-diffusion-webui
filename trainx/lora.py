@@ -14,28 +14,19 @@ from .typex import TrainLoraTask
 from .utils import upload_files
 
 
-def direct_train(task: TrainLoraTask):
-    def progress_callback(epoch, loss):
-        print(f"> task:{task.id}, epoch:{epoch}, loss:{loss}")
-
-    args = task.build_command_args()
-    parser = setup_parser()
-    parser.parse_args(args)
-    train(args, progress_callback)
-
-
-def get_train_models(train_lora_task: TrainLoraTask):
+def get_train_models(train_lora_task: TrainLoraTask, model_name: str):
     models = []
     for file in os.listdir(train_lora_task.output_dir):
-        if os.path.isfile(file):
+        if os.path.isfile(file) and file.startswith(model_name):
             _, ex = os.path.splitext(file)
             if ex.lower() == '.safetensors':
-                models.append(file)
+                models.append(os.path.join(train_lora_task.output_dir, file))
 
     def sort_model(module_path):
         basename, _ = os.path.splitext(os.path.basename(module_path))
+
         if '-' not in basename:
-            return -1
+            return 10000001
         seg = basename.split('-')[-1]
         if seg == 'last':
             return 10000000
@@ -50,13 +41,13 @@ def get_train_models(train_lora_task: TrainLoraTask):
 
 def exec_train_lora_task(task: Task, callback: typing.Callable = None):
     train_lora_task = TrainLoraTask(task)
-    args, kwargs = train_lora_task.build_command_args()
+    kwargs = train_lora_task.build_command_args()
     p = TaskProgress.new_ready(task, 'ready')
     yield p
     logger.info("=============>>>> start train lora <<<<=============")
     logger.info(">>> command args:")
-    for arg in args:
-        logger.info(arg)
+    for k, v in kwargs.items():
+        logger.info(f"> args: {k}: {v}")
 
     train_with_params(callback=callback, **kwargs)
     material = train_lora_task.compress_train_material()
@@ -68,7 +59,7 @@ def exec_train_lora_task(task: Task, callback: typing.Callable = None):
     if os.path.isfile(material):
         result['material'] = upload_files(False, material)
 
-    local_models = get_train_models(train_lora_task)
+    local_models = get_train_models(train_lora_task, kwargs['output_name'])
     for m in local_models:
         key = upload_files(False, m)
         result['models'].append(key)
