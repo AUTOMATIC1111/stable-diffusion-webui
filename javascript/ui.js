@@ -672,6 +672,8 @@ onUiLoaded(function () {
     }
   }
 
+
+
   // close aside views
   function closeAsideViews(menu) {
     if (quick_menu != menu && quick_menu_open) quick_menu.click();
@@ -742,12 +744,18 @@ onUiLoaded(function () {
   quick_menu.addEventListener("click", toggleQuickMenu);
 
   // extra networks nav menu
+  function clickedOutside(e) {
+    //console.log(e.target.getAttribute('data-testid'));
+    if(e.target.getAttribute('data-testid') != "textbox" && e.target.getAttribute('data-testid')){
+      if (net_menu_open && e.target.closest('[id$="2img_settings_scroll"]')) net_menu.click();
+    }
+  }
   function toggleNetMenu(e) {
     closeAsideViews(net_menu);
     net_menu_open = !net_menu_open;
     e.preventDefault();
     e.stopPropagation();
-    toggleMenu(net_menu_open, net_menu, net_container, null);
+    toggleMenu(net_menu_open, net_menu, net_container, clickedOutside);
   }
   net_menu.addEventListener("click", toggleNetMenu);
   gradioApp()

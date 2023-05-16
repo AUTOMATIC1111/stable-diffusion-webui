@@ -30,8 +30,8 @@ def fetch_file(filename: str = ""):
 
     if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
         raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
-
-    ext = os.path.splitext(filename)[1].lower()
+    extbase = os.path.basename(filename)
+    ext = os.path.splitext(extbase).lower()
     if ext not in (".png", ".jpg", ".webp"):
         raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
 
