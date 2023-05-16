@@ -57,6 +57,7 @@ def decode_base64_to_image(encoding):
         image = Image.open(BytesIO(base64.b64decode(encoding)))
         return image
     except Exception as e:
+        shared.log.warning(f'API cannot decode image: {e}')
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
 
 def encode_pil_to_base64(image):

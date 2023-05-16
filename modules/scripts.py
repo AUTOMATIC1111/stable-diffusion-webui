@@ -370,8 +370,10 @@ class ScriptRunner:
         log.debug(f'Script process: {[s.title() for s in self.alwayson_scripts]}')
         for script in self.alwayson_scripts:
             try:
+                # log.debug(f'Script process start: {script.title()}')
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.process(p, *args, **kwargs)
+                # log.debug(f'Script process end  : {script.title()}')
             except Exception as e:
                 errors.display(e, f'Running script process: {script.filename}')
 
