@@ -125,7 +125,8 @@ def list_extensions():
         shared.log.warning(f"Option set: Disable extensions: {shared.opts.disable_all_extensions}")
     extension_paths = []
     extension_names = []
-    for dirname in [extensions_builtin_dir, extensions_dir]:
+    extension_folders = [extensions_builtin_dir] if shared.cmd_opts.safe else [extensions_builtin_dir, extensions_dir]
+    for dirname in extension_folders:
         if not os.path.isdir(dirname):
             return
         for extension_dirname in sorted(os.listdir(dirname)):

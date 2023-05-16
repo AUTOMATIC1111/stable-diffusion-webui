@@ -58,6 +58,7 @@ Tech that can be integrated as part of the core workflow...
 - [Null-text inversion](https://github.com/ouhenio/null-text-inversion-colab)
 - [Custom diffusion](https://github.com/guaneec/custom-diffusion-webui), [Custom diffusion](https://www.cs.cmu.edu/~custom-diffusion/)
 - [Dream artist](https://github.com/7eu7d7/DreamArtist-sd-webui-extension)
+- [QuickEmbedding](https://github.com/ethansmith2000/QuickEmbedding)
 
 ## Random
 

@@ -72,6 +72,7 @@ ui_reorder_categories = [
     "scripts",
 ]
 
+
 def reload_hypernetworks():
     from modules.hypernetworks import hypernetwork
     global hypernetworks # pylint: disable=W0603
@@ -202,6 +203,7 @@ def refresh_checkpoints():
 
 def list_samplers():
     import modules.sd_samplers # pylint: disable=W0621
+    modules.sd_samplers.set_samplers()
     return modules.sd_samplers.all_samplers
 
 def list_themes():

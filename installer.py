@@ -244,7 +244,7 @@ def check_torch():
                 install(torch_command, 'torch torchvision')
         else:
             log.info('Using CPU-only Torch')
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision==0.15.1')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if 'torch' in torch_command and not args.version:
         install(torch_command, 'torch torchvision')
@@ -370,7 +370,8 @@ def install_extensions():
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
     extensions_duplicates = []
     extensions_enabled = []
-    for folder in [extensions_builtin_dir, extensions_dir]:
+    extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+    for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
         extensions = list_extensions(folder)
@@ -461,7 +462,8 @@ def set_environment():
 def check_extensions():
     newest_all = os.path.getmtime('requirements.txt')
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
-    for folder in [extensions_builtin_dir, extensions_dir]:
+    extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+    for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
         extensions = list_extensions(folder)
@@ -593,6 +595,7 @@ def add_args():
     group.add_argument('--test', default = False, action='store_true', help = "Run test only and exit")
     group.add_argument('--version', default = False, action='store_true', help = "Print version information")
     group.add_argument('--ignore', default = False, action='store_true', help = "Ignore any errors and attempt to continue")
+    group.add_argument('--safe', default = False, action='store_true', help = "Run in safe mode with no user extensions")
 
 
 def parse_args():
@@ -611,9 +614,12 @@ def extensions_preload(force = False):
                     setup_time = int(line.split(' ')[-1])
     if setup_time > 0 or force:
         log.info('Running extension preloading')
+        if args.safe:
+            log.info('Running in safe mode without user extensions')
         from modules.script_loading import preload_extensions
         from modules.paths_internal import extensions_builtin_dir, extensions_dir
-        for ext_dir in [extensions_builtin_dir, extensions_dir]:
+        extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+        for ext_dir in extension_folders:
             preload_extensions(ext_dir, parser)
 
 
