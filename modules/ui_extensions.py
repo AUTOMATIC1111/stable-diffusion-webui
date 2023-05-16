@@ -13,6 +13,19 @@ from modules.call_queue import wrap_gradio_gpu_call
 extensions_index = "https://vladmandic.github.io/sd-data/pages/extensions.json"
 hide_tags = ["localization"]
 extensions_list = []
+sort_ordering = {
+    "default": (True, lambda x: x.get('sort_string', '')),
+    "user extensions": (True, lambda x: x.get('sort_user', '')),
+    "update avilable": (True, lambda x: x.get('sort_update', '')),
+    "updated date": (True, lambda x: x.get('updated', '2000-01-01T00:00')),
+    "created date": (False, lambda x: x.get('created', '2000-01-01T00:00')),
+    "name": (False, lambda x: x.get('name', '').lower()),
+    "enabled": (False, lambda x: x.get('sort_enabled', '').lower()),
+    "size": (True, lambda x: x.get('size', 0)),
+    "stars": (True, lambda x: x.get('stars', 0)),
+    "commits": (True, lambda x: x.get('commits', 0)),
+    "issues": (True, lambda x: x.get('issues', 0)),
+}
 
 
 def update_extension_list():
@@ -257,17 +270,6 @@ def refresh_extensions_list_from_data(search_text, sort_column):
             </tr>
         </thead>
         <tbody>"""
-    sort_ordering = {
-        "default": (True, lambda x: x.get('sort_string', '')),
-        "updated": (True, lambda x: x.get('updated', '2000-01-01T00:00')),
-        "created": (False, lambda x: x.get('created', '2000-01-01T00:00')),
-        "name": (False, lambda x: x.get('name', '').lower()),
-        "enabled": (False, lambda x: x.get('sort_enabled', '').lower()),
-        "size": (True, lambda x: x.get('size', 0)),
-        "stars": (True, lambda x: x.get('stars', 0)),
-        "commits": (True, lambda x: x.get('commits', 0)),
-        "issues": (True, lambda x: x.get('issues', 0)),
-    }
     for ext in extensions_list:
         extension = [extension for extension in extensions.extensions if extension.git_name == ext['name'] or extension.name == ext['name']]
         if len(extension) > 0:
@@ -279,8 +281,6 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         ext['enabled'] = extension[0].enabled if len(extension) > 0 else ''
         ext['remote'] = extension[0].remote if len(extension) > 0 else None
         ext['path'] = extension[0].path if len(extension) > 0 else ''
-        ext['sort_string'] = f"{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
-        ext['sort_enabled'] = f"{'1' if ext['enabled'] else '0'}{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
     sort_reverse, sort_function = sort_ordering[sort_column]
 
     def dt(x: str):
@@ -308,6 +308,10 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         remote = ext.get("remote", None)
         commit_date = ext.get("commit_date", 1577836800) or 1577836800
         update_available = (remote is not None) & (installed) & (datetime.utcfromtimestamp(commit_date + 60 * 60) < datetime.fromisoformat(ext.get('updated', '2000-01-01T00:00:00.000Z')[:-1]))
+        ext['sort_string'] = f"{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
+        ext['sort_user'] = f"{'0' if ext['is_builtin'] else '1'}{'1' if ext['installed'] else '0'}{ext.get('name', '')}"
+        ext['sort_enabled'] = f"{'1' if ext['enabled'] else '0'}{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
+        ext['sort_update'] = f"{'1' if update_available else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
         tags = ext.get("tags", [])
         tags_string = ' '.join(tags)
         tags = tags + ["installed"] if installed else tags
@@ -364,7 +368,10 @@ def create_ui():
                         search_text = gr.Text(label="Search")
                         info = gr.HTML('Note: After any operation such as install/uninstall or enable/disable, please restart the server')
                     with gr.Column(scale=1):
-                        sort_column = gr.Dropdown(value="default", label="Sort by", choices=["default", "updated", "created", "name", "size", "stars", "commits", "issues"], multiselect=False)
+                        print('HERE1', sort_ordering)
+                        print('HERE2', list(sort_ordering.keys()))
+                        print('HERE2', sort_ordering.items())
+                        sort_column = gr.Dropdown(value="default", label="Sort by", choices=list(sort_ordering.keys()), multiselect=False)
                     with gr.Column(scale=1):
                         refresh_extensions_button = gr.Button(value="Refresh extension list", variant="primary")
                         check = gr.Button(value="Update installed extensions", variant="primary")

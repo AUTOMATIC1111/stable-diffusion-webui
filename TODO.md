@@ -13,7 +13,6 @@ Stuff to be added...
 - Update `Wiki`
 - Add `Gradio` theme maker
 - Create new `GitHub` hooks/actions for CI/CD  
-- Redo Extensions tab: <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
 - Monitor file changes for misbehaving extensions
 - Kitchen theme: <https://github.com/canisminor1990/sd-webui-kitchen-theme>
 - Lightbox improvements
@@ -40,7 +39,7 @@ Stuff to be investigated...
 
 Pick & merge PRs from main repo...
 
-- Merge backlog: <https://github.com/vladmandic/automatic/compare/master...AUTOMATIC1111:stable-diffusion-webui:master>
+- Merge backlog: <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/5ab7f213bec2f816f9c5644becb32eb72c8ffb89..89f9faa63388756314e8a1d96cf86bf5e0663045>
 
 ## Models
 
@@ -66,4 +65,5 @@ Tech that can be integrated as part of the core workflow...
 
 ### Pending Code Updates
 
-- Ability to save JSON log of all generated images with metadata
+- add `--safe` mode which skips loading user extensions  
+  please try to use it before opening new issue  
