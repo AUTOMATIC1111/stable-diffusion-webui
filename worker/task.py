@@ -118,6 +118,7 @@ class TaskStatus(IntEnum):
     Prepare = 1
     Ready = 2
     Running = 3
+    TrainCompleted = 9
     Finish = 10
     Failed = -1
 
@@ -182,9 +183,9 @@ class TaskProgress(SerializationObj):
         self.task_desc = desc
         self.status = status
 
-    def set_finish_result(self, r: typing.Any):
+    def set_finish_result(self, r: typing.Any, is_train_task=False):
         self._result = r
-        self.status = TaskStatus.Finish
+        self.status = TaskStatus.Finish if not is_train_task else TaskStatus.TrainCompleted
         self.task_desc = 'ok'
         self.task_progress = 100
 
@@ -235,12 +236,12 @@ class TaskProgress(SerializationObj):
         return p
 
     @classmethod
-    def new_finish(cls, task: Task, result: typing.Any):
+    def new_finish(cls, task: Task, result: typing.Any, is_train_task=False):
         task.update(
             {
                 "end_at": int(time.time())
             }
         )
         p = cls(task)
-        p.set_finish_result(result)
+        p.set_finish_result(result, is_train_task)
         return p

@@ -13,8 +13,8 @@ from enum import IntEnum
 from collections import UserDict
 from Crypto.Hash import SHA256
 from worker.task import Task, TaskType
-from .utils import get_tmp_local_path, Tmp
-from tools.file import zip_uncompress, getdirsize, zip_compress
+from .utils import get_tmp_local_path, Tmp, upload_files
+from tools.file import zip_uncompress, getdirsize, zip_compress, find_files_from_dir
 from modules.textual_inversion.preprocess import PreprocessTxtAction
 
 
@@ -31,8 +31,8 @@ class PreprocessTask(UserDict):
     @property
     def params(self):
         interrogate_model = self['interrogate_model']
-        process_caption_deepbooru = interrogate_model == 'deepbooru'
-        process_caption = interrogate_model == 'clip'
+        process_caption_deepbooru = 'deepbooru' in interrogate_model
+        process_caption = 'clip' in interrogate_model
         return {
             'process_width': self['process_width'],
             'process_height': self['process_height'],
@@ -189,6 +189,10 @@ class TrainLoraTask(UserDict):
         self.orig_task = task
 
     @property
+    def hash_id(self):
+        return SHA256.new(self.id.encode()).hexdigest()
+
+    @property
     def images(self):
         images = self.get('images') or []
         for item in images:
@@ -294,7 +298,7 @@ class TrainLoraTask(UserDict):
             else:
                 num_repeats.append(params.train.num_repeats)
 
-        key = SHA256.new(self.id.encode()).hexdigest()
+        key = self.hash_id[:32]
         kwargs = {
             'output_dir': self.output_dir,
             'pretrained_model_name_or_path': base_model,
@@ -319,7 +323,8 @@ class TrainLoraTask(UserDict):
             'optimizer_type': params.net.optimizer_type,
             'network_train_unet_only': params.net.network_train_text_encoder_only,
             'network_train_text_encoder_only': params.net.network_train_unet_only,
-            'reg_data_dir': ''
+            'reg_data_dir': '',
+            'save_last_n_epochs': save_last_n_epochs,
         }
 
         return kwargs
@@ -330,6 +335,16 @@ class TrainLoraTask(UserDict):
         dst = os.path.join(Tmp, f'train-material-{self.id}.zip')
         zip_compress(image_dir, dst)
         return dst
+
+    def get_model_cover_key(self):
+        image_dir = self.image_dir()
+        if not hasattr(self, 'model_cover'):
+            for file in find_files_from_dir(image_dir, 'png', 'jpg', 'jpeg'):
+                key = upload_files(True, file)
+                setattr(self, 'model_cover', key)
+                if key:
+                    return key
+        return getattr(self, 'model_cover')
 
     @classmethod
     def debug_task(cls):

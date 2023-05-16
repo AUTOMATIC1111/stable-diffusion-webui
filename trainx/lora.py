@@ -61,12 +61,17 @@ def exec_train_lora_task(task: Task, callback: typing.Callable = None):
         result['material'] = upload_files(False, material)
 
     local_models = get_train_models(train_lora_task, kwargs['output_name'])
+    cover = train_lora_task.get_model_cover_key()
     for m in local_models:
         key = upload_files(False, m)
-        result['models'].append(key)
+        result['models'].append({
+            'key': key,
+            'thumbnail_path': cover,
+            'hash': train_lora_task.hash_id
+        })
 
     p = TaskProgress.new_finish(task, {
         'train': result
-    })
+    }, True)
 
     yield p
