@@ -323,7 +323,8 @@ if __name__ == "__main__":
     # import os
     # import sys
     # sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-    input_text = "(upzero) (upone:1.1), ((uptwo:1.2)), [downzero], [downone:0.9], [[downtwo:0.8]], this is a test"
+    # input_text = "(upzero) (upone:1.1), ((uptwo:1.2)), [downzero], [downone:0.9], [[downtwo:0.8]], this is a test"
+    input_text = 'a (white (lion:1.4)), cat [mouse] [tiger:0.8], (high) in a jungle'
     output_list = parse_prompt_attention(input_text)
     print('INPUT', input_text)
     print('OUTPUT', output_list)

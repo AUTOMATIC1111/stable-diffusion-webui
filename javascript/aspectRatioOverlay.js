@@ -3,31 +3,16 @@ let currentHeight = null;
 let arFrameTimeout = setTimeout(() => {}, 0);
 
 function dimensionChange(e, is_width, is_height) {
-  if (is_width) {
-    currentWidth = e.target.value * 1.0;
-  }
-  if (is_height) {
-    currentHeight = e.target.value * 1.0;
-  }
-
+  if (is_width) currentWidth = e.target.value * 1.0;
+  if (is_height) currentHeight = e.target.value * 1.0;
   const inImg2img = gradioApp().querySelector('#tab_img2img').style.display === 'block';
-
-  if (!inImg2img) {
-    return;
-  }
-
+  if (!inImg2img) return;
   let targetElement = null;
-
   const tabIndex = get_tab_index('mode_img2img');
-  if (tabIndex === 0) { // img2img
-    targetElement = gradioApp().querySelector('#img2img_image div[data-testid=image] img');
-  } else if (tabIndex === 1) { // Sketch
-    targetElement = gradioApp().querySelector('#img2img_sketch div[data-testid=image] img');
-  } else if (tabIndex === 2) { // Inpaint
-    targetElement = gradioApp().querySelector('#img2maskimg div[data-testid=image] img');
-  } else if (tabIndex === 3) { // Inpaint sketch
-    targetElement = gradioApp().querySelector('#inpaint_sketch div[data-testid=image] img');
-  }
+  if (tabIndex === 0) targetElement = gradioApp().querySelector('#img2img_image div[data-testid=image] img'); // img2img 
+  else if (tabIndex === 1) targetElement = gradioApp().querySelector('#img2img_sketch div[data-testid=image] img'); // Sketch
+  else if (tabIndex === 2) targetElement = gradioApp().querySelector('#img2maskimg div[data-testid=image] img'); // Inpaint
+  else if (tabIndex === 3) targetElement = gradioApp().querySelector('#inpaint_sketch div[data-testid=image] img'); // Inpaint sketch
 
   if (targetElement) {
     let arPreviewRect = gradioApp().querySelector('#imageARPreview');
@@ -39,29 +24,24 @@ function dimensionChange(e, is_width, is_height) {
 
     const viewportOffset = targetElement.getBoundingClientRect();
 
-    viewportscale = Math.min(targetElement.clientWidth / targetElement.naturalWidth, targetElement.clientHeight / targetElement.naturalHeight);
+    const viewportscale = Math.min(targetElement.clientWidth / targetElement.naturalWidth, targetElement.clientHeight / targetElement.naturalHeight);
 
-    scaledx = targetElement.naturalWidth * viewportscale;
-    scaledy = targetElement.naturalHeight * viewportscale;
+    const scaledx = targetElement.naturalWidth * viewportscale;
+    const scaledy = targetElement.naturalHeight * viewportscale;
 
-    cleintRectTop = (viewportOffset.top + window.scrollY);
-    cleintRectLeft = (viewportOffset.left + window.scrollX);
-    cleintRectCentreY = cleintRectTop + (targetElement.clientHeight / 2);
-    cleintRectCentreX = cleintRectLeft + (targetElement.clientWidth / 2);
+    const cleintRectTop = (viewportOffset.top + window.scrollY);
+    const cleintRectLeft = (viewportOffset.left + window.scrollX);
+    const cleintRectCentreY = cleintRectTop + (targetElement.clientHeight / 2);
+    const cleintRectCentreX = cleintRectLeft + (targetElement.clientWidth / 2);
 
-    viewRectTop = cleintRectCentreY - (scaledy / 2);
-    viewRectLeft = cleintRectCentreX - (scaledx / 2);
-    arRectWidth = scaledx;
-    arRectHeight = scaledy;
+    const arscale = Math.min(scaledx / currentWidth, scaledy / currentHeight);
+    const arscaledx = currentWidth * arscale;
+    const arscaledy = currentHeight * arscale;
 
-    arscale = Math.min(arRectWidth / currentWidth, arRectHeight / currentHeight);
-    arscaledx = currentWidth * arscale;
-    arscaledy = currentHeight * arscale;
-
-    arRectTop = cleintRectCentreY - (arscaledy / 2);
-    arRectLeft = cleintRectCentreX - (arscaledx / 2);
-    arRectWidth = arscaledx;
-    arRectHeight = arscaledy;
+    const arRectTop = cleintRectCentreY - (arscaledy / 2);
+    const arRectLeft = cleintRectCentreX - (arscaledx / 2);
+    const arRectWidth = arscaledx;
+    const arRectHeight = arscaledy;
 
     arPreviewRect.style.top = `${arRectTop}px`;
     arPreviewRect.style.left = `${arRectLeft}px`;

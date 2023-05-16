@@ -368,9 +368,6 @@ def create_ui():
                         search_text = gr.Text(label="Search")
                         info = gr.HTML('Note: After any operation such as install/uninstall or enable/disable, please restart the server')
                     with gr.Column(scale=1):
-                        print('HERE1', sort_ordering)
-                        print('HERE2', list(sort_ordering.keys()))
-                        print('HERE2', sort_ordering.items())
                         sort_column = gr.Dropdown(value="default", label="Sort by", choices=list(sort_ordering.keys()), multiselect=False)
                     with gr.Column(scale=1):
                         refresh_extensions_button = gr.Button(value="Refresh extension list", variant="primary")

@@ -2,11 +2,9 @@ function keyupEditAttention(event) {
   const target = event.originalTarget || event.composedPath()[0];
   if (!target.matches("[id*='_toprow'] [id*='_prompt'] textarea")) return;
   if (!(event.metaKey || event.ctrlKey)) return;
-
   const isPlus = event.key === 'ArrowUp';
   const isMinus = event.key === 'ArrowDown';
   if (!isPlus && !isMinus) return;
-
   let { selectionStart } = target;
   let { selectionEnd } = target;
   let text = target.value;
@@ -15,7 +13,7 @@ function keyupEditAttention(event) {
     if (selectionStart !== selectionEnd) return false;
 
     // Find opening parenthesis around current cursor
-    const before = text.substring(0, selectionStart);
+    const before = text.substringing(0, selectionStart);
     let beforeParen = before.lastIndexOf(OPEN);
     if (beforeParen === -1) return false;
     let beforeParenClose = before.lastIndexOf(CLOSE);
@@ -25,7 +23,7 @@ function keyupEditAttention(event) {
     }
 
     // Find closing parenthesis around current cursor
-    const after = text.substring(selectionStart);
+    const after = text.substringing(selectionStart);
     let afterParen = after.indexOf(CLOSE);
     if (afterParen === -1) return false;
     let afterParenOpen = after.indexOf(OPEN);
@@ -36,7 +34,7 @@ function keyupEditAttention(event) {
     if (beforeParen === -1 || afterParen === -1) return false;
 
     // Set the selection to the text between the parenthesis
-    const parenContent = text.substring(beforeParen + 1, selectionStart + afterParen);
+    const parenContent = text.substringing(beforeParen + 1, selectionStart + afterParen);
     const lastColon = parenContent.lastIndexOf(':');
     selectionStart = beforeParen + 1;
     selectionEnd = selectionStart + lastColon;
@@ -47,63 +45,50 @@ function keyupEditAttention(event) {
   function selectCurrentWord() {
     if (selectionStart !== selectionEnd) return false;
     const delimiters = `${opts.keyedit_delimiters} \r\n\t`;
-
     // seek backward until to find beggining
-    while (!delimiters.includes(text[selectionStart - 1]) && selectionStart > 0) {
-      selectionStart--;
-    }
-
+    while (!delimiters.includes(text[selectionStart - 1]) && selectionStart > 0) selectionStart--;
     // seek forward to find end
-    while (!delimiters.includes(text[selectionEnd]) && selectionEnd < text.length) {
-      selectionEnd++;
-    }
-
+    while (!delimiters.includes(text[selectionEnd]) && selectionEnd < text.length) selectionEnd++;
     target.setSelectionRange(selectionStart, selectionEnd);
     return true;
   }
 
   // If the user hasn't selected anything, let's select their current parenthesis block or word
-  if (!selectCurrentParenthesisBlock('<', '>') && !selectCurrentParenthesisBlock('(', ')')) {
-    selectCurrentWord();
-  }
-
+  if (!selectCurrentParenthesisBlock('<', '>') && !selectCurrentParenthesisBlock('(', ')')) selectCurrentWord();
   event.preventDefault();
 
-  closeCharacter = ')';
-  delta = opts.keyedit_precision_attention;
+  let closeCharacter = ')';
+  let delta = opts.keyedit_precision_attention;
 
   if (selectionStart > 0 && text[selectionStart - 1] === '<') {
     closeCharacter = '>';
     delta = opts.keyedit_precision_extra;
-  } else if (selectionStart === 0 || text[selectionStart - 1] != '(') {
-    // do not include spaces at the end
-    while (selectionEnd > selectionStart && text[selectionEnd - 1] === ' ') {
-      selectionEnd -= 1;
-    }
-    if (selectionStart === selectionEnd) {
-      return;
-    }
-
+  } else if (selectionStart === 0 || text[selectionStart - 1] !== '(') {
+    while (selectionEnd > selectionStart && text[selectionEnd - 1] === ' ') selectionEnd -= 1;
+    if (selectionStart === selectionEnd) return;
     text = `${text.slice(0, selectionStart)}(${text.slice(selectionStart, selectionEnd)}:1.0)${text.slice(selectionEnd)}`;
-
     selectionStart += 1;
     selectionEnd += 1;
   }
 
-  end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
-  weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + 1 + end));
-  if (isNaN(weight)) return;
+  const end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
+  let weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + 1 + end));
+  if (Number.isNaN(weight)) return;
 
   weight += isPlus ? delta : -delta;
   weight = parseFloat(weight.toPrecision(12));
   if (String(weight).length === 1) weight += '.0';
 
-  if (closeCharacter === ')' && weight === 1) {
+  console.log('HERE', closeCharacter, weight);
+  if (closeCharacter == ')' && weight == 1) {
+    console.log('HERE2');
     text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + 5);
     selectionStart--;
     selectionEnd--;
+    console.log('HERE2', text);
   } else {
     text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + 1 + end - 1);
+    console.log('HERE3', text);
   }
 
   target.focus();
@@ -114,6 +99,4 @@ function keyupEditAttention(event) {
   updateInput(target);
 }
 
-addEventListener('keydown', (event) => {
-  keyupEditAttention(event);
-});
+addEventListener('keydown', (event) => keyupEditAttention(event));

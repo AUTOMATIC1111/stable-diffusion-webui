@@ -3,7 +3,7 @@ contextMenuInit = function () {
   const menuSpecs = new Map();
 
   const uid = function () {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
   };
 
   function showContextMenu(event, element, menuEntries) {
@@ -85,15 +85,9 @@ contextMenuInit = function () {
   }
 
   function addContextMenuEventListener() {
-    if (eventListenerApplied) {
-      return;
-    }
+    if (eventListenerApplied) return;
     gradioApp().addEventListener('click', (e) => {
-      const source = e.composedPath()[0];
-      if (source.id && source.id.indexOf('check_progress') > -1) {
-        return;
-      }
-
+      if (!e.isTrusted) return;
       const oldMenu = gradioApp().querySelector('#context-menu');
       if (oldMenu) {
         oldMenu.remove();
