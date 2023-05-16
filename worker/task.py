@@ -10,6 +10,7 @@ import json
 import time
 import typing
 from enum import IntEnum
+from datetime import datetime
 from collections import UserDict, UserList
 from tools import try_deserialize_json
 
@@ -128,6 +129,7 @@ class TrainEpoch(SerializationObj):
     def __init__(self, epoch, loss):
         self.epoch = epoch
         self.loss = loss
+        self.time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 class TrainEpochLog(UserList, SerializationObj):
@@ -165,7 +167,8 @@ class TrainTaskInfo(SerializationObj):
         for item in self.epoch:
             loss = item['loss']
             epoch = item['epoch']
-            lines.append(f'epoch:{epoch}, loss:{loss}')
+            time = item['time']
+            lines.append(f'[{time}] > epoch:{epoch}, loss:{loss}')
         return '\n'.join(lines)
 
 
