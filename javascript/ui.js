@@ -793,12 +793,13 @@ onUiLoaded(function () {
   disabled_extensions(theme_ext.checked);
 
   //
+  /*
   function attachAccordionListeners(elem) {
     elem.querySelectorAll(".gradio-accordion > div.wrap").forEach((elem) => {
       elem.addEventListener("click", toggleAccordion);
     });
   }
-/*   function toggleAccordion(e) {
+   function toggleAccordion(e) {
     //e.preventDefault();
     //e.stopPropagation();
     //e.stopImmediatePropagation();

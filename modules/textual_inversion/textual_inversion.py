@@ -30,7 +30,7 @@ textual_inversion_templates = {}
 def list_textual_inversion_templates():
     textual_inversion_templates.clear()
 
-    for root, dirs, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir):
+    for root, dirs, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir, followlinks=True):
         for fn in fns:
             path = os.path.join(root, fn)
 
