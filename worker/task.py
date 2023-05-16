@@ -160,6 +160,12 @@ class TrainTaskInfo(SerializationObj):
     def add_epoch_log(self, epoch: TrainEpoch):
         self.epoch.append(epoch)
 
+    def format_epoch_log(self):
+        lines = []
+        for epoch in self.epoch:
+            lines.append(f'epoch:{epoch.epoch}, loss:{epoch.loss}')
+        return '\n'.join(lines)
+
 
 class TaskProgress(SerializationObj):
 

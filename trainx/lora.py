@@ -61,7 +61,7 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
             dump_func(p)
 
     train_with_params(callback=progress_callback, **kwargs)
-    material = train_lora_task.compress_train_material()
+    material = train_lora_task.compress_train_material(p.train.format_epoch_log())
     result = {
         'material': None,
         'models': []

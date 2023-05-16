@@ -143,7 +143,7 @@ class TrainLoraTrainConfig(SerializationObj):
         self.batch_size = task.value('batch_size', default=4)
         self.epoch = task.value('epoch', default=20)
         self.save_every_n_epochs = task.value('save_every_n_epochs', default=5)
-        self.save_last_n_epochs = task.value('save_every_n_epochs', default=10)
+        self.save_last_n_epochs = task.value('save_last_n_epochs', default=2)
         self.clip_skip = task.value('clip_skip', default=1)
         self.seed = task.value('seed', default=None)
         if isinstance(num_repeats, list):
@@ -329,9 +329,12 @@ class TrainLoraTask(UserDict):
 
         return kwargs
 
-    def compress_train_material(self):
+    def compress_train_material(self, train_log: str):
         image_dir = self.image_dir()
         self.dump_train_config(image_dir)
+        with open('train_log', 'w+') as f:
+            f.write(train_log)
+
         dst = os.path.join(Tmp, f'train-material-{self.id}.zip')
         zip_compress(image_dir, dst)
         return dst

@@ -441,8 +441,8 @@ def run_worker():
         if cmd_opts.train_only:
             from trainx.typex import PreprocessTask, TrainLoraTask
             tasks = [
-                PreprocessTask.debug_task(),
-                # TrainLoraTask.debug_task()
+                # PreprocessTask.debug_task(),
+                TrainLoraTask.debug_task()
             ]
         else:
             from handlers.img2img import Img2ImgTask
