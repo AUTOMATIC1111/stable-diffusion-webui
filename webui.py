@@ -283,6 +283,16 @@ def api_only():
 def webui():
     launch_api = cmd_opts.api
     initialize()
+    
+    try:
+        paths_allowed = open('paths_allowed.txt').read().split()
+    except:
+        paths_allowed = []
+
+    try:
+        paths_blocked = open('paths_blocked.txt').read().split()
+    except:
+        paths_blocked = []
 
     while 1:
         if shared.opts.clean_temp_dir_at_start:
@@ -326,7 +336,9 @@ def webui():
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
             inbrowser=cmd_opts.autolaunch,
-            prevent_thread_lock=True
+            prevent_thread_lock=True,
+            allowed_paths=paths_allowed, 
+            blocked_paths=paths_blocked
         )
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
