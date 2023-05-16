@@ -64,7 +64,7 @@ class PreprocessTask(UserDict):
     @classmethod
     def debug_task(self):
         t = {
-            'task_id': 'test_preprocess',
+            'task_id': 'test_preprocess-1',
             'user_id': 'test_user',
             'task_type': TaskType.Train,
             'minor_type': TrainMinorTaskType.Preprocess,
@@ -90,7 +90,7 @@ class PreprocessTask(UserDict):
             'process_multicrop_maxarea': 409600,
             'process_multicrop_objective': "Maximize area",
             'process_multicrop_threshold': 0.1,
-            'zip_key': 'xingzheaidraw/sd-web/resources/train-lora-data.zip',
+            'zip_key': 'xingzheaidraw/sd-tmp/2023/05/16/file-qq6prnwx92kj51.zip',
             'ignore': False,
             'process_keep_original_size': False,
         }

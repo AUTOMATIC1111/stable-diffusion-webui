@@ -80,11 +80,12 @@ def build_thumbnail_tag(target_dir):
     tag_files = []
     for file in find_files_from_dir(target_dir, "txt", "png"):
         basename, ex = os.path.splitext(os.path.basename(file))
+        dirname = os.path.dirname(file)
         ex = str(ex).lstrip('.').lower()
         if ex == 'png':
             thumbnail = create_thumbnail(file)
             thumbnail_key = upload_files(True, thumbnail)
-            images[basename] = {
+            images[os.path.join(dirname, basename)] = {
                 'filename': os.path.basename(file),
                 'dirname': os.path.dirname(file).replace(target_dir, '').lstrip('/'),
                 'thumbnail': thumbnail_key[0] if thumbnail_key else ''
@@ -94,10 +95,11 @@ def build_thumbnail_tag(target_dir):
             tag_files.append(file)
 
     for file in tag_files:
+        dirname = os.path.dirname(file)
         basename, ex = os.path.splitext(os.path.basename(file))
         with open(file) as f:
             lines = f.readlines()
-            images[basename]['tag'] = ' '.join(lines)
+            images[os.path.join(dirname, basename)]['tag'] = ' '.join(lines)
 
     return images.values()
 

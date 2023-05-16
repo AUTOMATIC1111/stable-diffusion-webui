@@ -21,12 +21,19 @@ def getdirsize(dir):
 def zip_uncompress(src, dst):
     zip_file = zipfile.ZipFile(src)
     zip_list = zip_file.namelist()
-
-    try:
-        for f in zip_list:
-            zip_file.extract(f, dst)
-    finally:
-        zip_file.close()
+    # for f in zip_list:
+    #     zip_file.extract(f, dst)
+    #     right_file = f.encode('cp437').decode('utf-8')
+    #     os.rename(f, right_file)
+    zip_file.extractall(path=dst)
+    # 判断时需需要重复解包  并且针对zipfile解包的中文乱码问题进行修正
+    for f in zip_list:
+        # 常见的有两种编码，使用异常处理语句
+        try:
+            new_zip_file = f.encode('cp437').decode('gbk')
+        except:
+            new_zip_file = f.encode('cp437').decode('utf-8')
+        os.rename(os.path.join(dst, f), os.path.join(dst, new_zip_file))
 
 
 def zip_compress(src, dst):

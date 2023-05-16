@@ -8,7 +8,7 @@
 import os.path
 import typing
 from loguru import logger
-from worker.task import Task, TaskProgress
+from worker.task import Task, TaskType, TaskProgress, TrainEpoch
 from sd_scripts.train_network_ly import train_with_params
 from .typex import TrainLoraTask
 from .utils import upload_files
@@ -40,7 +40,7 @@ def get_train_models(train_lora_task: TrainLoraTask, model_name: str):
     return sorted(models, key=sort_model)
 
 
-def exec_train_lora_task(task: Task, callback: typing.Callable = None):
+def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     train_lora_task = TrainLoraTask(task)
     kwargs = train_lora_task.build_command_args()
     p = TaskProgress.new_ready(task, 'ready')
@@ -50,7 +50,17 @@ def exec_train_lora_task(task: Task, callback: typing.Callable = None):
     for k, v in kwargs.items():
         logger.info(f"> args: {k}: {v}")
 
-    train_with_params(callback=callback, **kwargs)
+    p = TaskProgress.new_running(task, 'running', 0)
+
+    def progress_callback(epoch, loss, num_train_epochs):
+        print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
+        progress = epoch / num_train_epochs * 100 * 0.9
+        p.train.add_epoch_log(TrainEpoch(epoch, loss))
+        p.task_progress = progress
+        if callable(dump_func):
+            dump_func(p)
+
+    train_with_params(callback=progress_callback, **kwargs)
     material = train_lora_task.compress_train_material()
     result = {
         'material': None,
@@ -70,8 +80,9 @@ def exec_train_lora_task(task: Task, callback: typing.Callable = None):
             'hash': train_lora_task.hash_id
         })
 
-    p = TaskProgress.new_finish(task, {
+    fp = TaskProgress.new_finish(task, {
         'train': result
     }, True)
+    fp.train = p.train
 
-    yield p
+    yield fp
