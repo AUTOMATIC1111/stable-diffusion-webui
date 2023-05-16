@@ -162,8 +162,10 @@ class TrainTaskInfo(SerializationObj):
 
     def format_epoch_log(self):
         lines = []
-        for epoch in self.epoch:
-            lines.append(f'epoch:{epoch.epoch}, loss:{epoch.loss}')
+        for item in self.epoch:
+            loss = item['loss']
+            epoch = item['epoch']
+            lines.append(f'epoch:{epoch}, loss:{loss}')
         return '\n'.join(lines)
 
 
