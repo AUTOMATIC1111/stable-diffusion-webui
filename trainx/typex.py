@@ -245,10 +245,10 @@ class TrainLoraTask(UserDict):
                 caption_path = os.path.join(image_dir, item['dirname'], name + '.txt')
                 caption = item['tag']
                 caption = str(caption) if not isinstance(caption, bytes) else caption.decode('utf8')
-                caption = caption.strip().replace('\n', ' ')
+                caption = set((x for x in caption.strip().replace('\n', ' ').split(',')))
                 if caption:
                     with open(caption_path, 'w+') as f:
-                        f.write(caption)
+                        f.write(','.join(caption))
 
     def create_toml(self, image_dir):
         params = self.train_param()
