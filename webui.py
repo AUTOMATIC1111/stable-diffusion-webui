@@ -150,7 +150,7 @@ def check_taesd():
     model_url = 'https://github.com/madebyollin/taesd/raw/main/taesd_decoder.pth'
     model_path = os.path.join(models_path, "VAE-approx", "taesd_decoder.pth")
     if not os.path.exists(model_path):
-        print('download taesd model')
+        print('From taesd repo download decoder model')
         torch.hub.download_url_to_file(model_url, model_path)
 
 
