@@ -593,9 +593,9 @@ def create_ui():
                 install_result = gr.HTML(elem_id="extension_install_result")
 
                 install_button.click(
-                    fn=modules.ui.wrap_gradio_call(install_extension_from_url, extra_outputs=[gr.update()]),
+                    fn=modules.ui.wrap_gradio_call(lambda *args: [gr.update(), *install_extension_from_url(*args)], extra_outputs=[gr.update(), gr.update()]),
                     inputs=[install_dirname, install_url, install_branch],
-                    outputs=[extensions_table, install_result],
+                    outputs=[install_url, extensions_table, install_result],
                 )
 
             with gr.TabItem("Backup/Restore"):

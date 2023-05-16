@@ -3,7 +3,6 @@ import sys
 import threading
 import traceback
 
-import time
 import git
 
 from modules import shared
