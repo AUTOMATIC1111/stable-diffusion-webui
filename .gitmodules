@@ -4,19 +4,9 @@
 [submodule "extensions-builtin/sd-extension-system-info"]
   path = extensions-builtin/sd-extension-system-info
   url = https://github.com/vladmandic/sd-extension-system-info
-[submodule "extensions-builtin/sd-extension-aesthetic-scorer"]
-  path = extensions-builtin/sd-extension-aesthetic-scorer
-  url = https://github.com/vladmandic/sd-extension-aesthetic-scorer
-[submodule "extensions-builtin/sd-extension-steps-animation"]
-  path = extensions-builtin/sd-extension-steps-animation
-  url = https://github.com/vladmandic/sd-extension-steps-animation
 [submodule "extensions-builtin/stable-diffusion-webui-images-browser"]
   path = extensions-builtin/stable-diffusion-webui-images-browser
   url = https://github.com/AlUlkesh/stable-diffusion-webui-images-browser
-  ignore = dirty
-[submodule "extensions-builtin/seed_travel"]
-  path = extensions-builtin/seed_travel
-  url = https://github.com/yownas/seed_travel
   ignore = dirty
 [submodule "extensions-builtin/sd-webui-model-converter"]
   path = extensions-builtin/sd-webui-model-converter
