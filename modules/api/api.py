@@ -4,7 +4,7 @@ import time
 import datetime
 import uvicorn
 import gradio as gr
-from threading import Lock
+from threading import Semaphore
 from io import BytesIO
 from fastapi import APIRouter, Depends, FastAPI, Request, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
@@ -163,7 +163,7 @@ def api_middleware(app: FastAPI):
 
 
 class Api:
-    def __init__(self, app: FastAPI, queue_lock: Lock):
+    def __init__(self, app: FastAPI, queue_lock: Semaphore):
         if shared.cmd_opts.api_auth:
             self.credentials = {}
             for auth in shared.cmd_opts.api_auth.split(","):

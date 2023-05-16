@@ -6,7 +6,7 @@ import time
 
 from modules import shared, progress
 
-queue_lock = threading.Lock()
+queue_lock = threading.Semaphore(shared.cmd_opts.call_queue_concurrency)
 
 
 def wrap_queued_call(func):
