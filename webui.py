@@ -450,14 +450,13 @@ def run_worker():
 
             tasks = Img2ImgTask.debug_task()
             tasks = bind_debug_img_task_args(*tasks)
+            initialize()
+            modules.script_callbacks.before_ui_callback()
+            startup_timer.record("scripts before_ui_callback")
+
+            shared.demo = modules.ui.create_ui()
         sender = RedisSender()
         sender.push_task(VipLevel.Level_1, *tasks)
-
-    initialize()
-    modules.script_callbacks.before_ui_callback()
-    startup_timer.record("scripts before_ui_callback")
-
-    shared.demo = modules.ui.create_ui()
     run_executor(shared.sd_model_recorder, train_only=cmd_opts.train_only)
 
 
