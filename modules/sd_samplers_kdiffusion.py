@@ -198,7 +198,7 @@ class TorchHijack:
         if hasattr(torch, item):
             return getattr(torch, item)
 
-        raise AttributeError("'{}' object has no attribute '{}'".format(type(self).__name__, item))
+        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
 
     def randn_like(self, x):
         if self.sampler_noises:

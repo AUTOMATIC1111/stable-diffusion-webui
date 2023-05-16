@@ -1,3 +1,6 @@
+/* temporary fix to load default gradio font in frontend instead of backend */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap');
 
 /* general gradio fixes */
 
@@ -125,6 +128,10 @@ div.gradio-html.min{
     text-decoration: none;
 }
 
+a{
+    font-weight: bold;
+    cursor: pointer;
+}
 
 
 /* general styled components */
@@ -246,7 +253,7 @@ button.custom-button{
     }
 }
 
-#txt2img_gallery img, #img2img_gallery img{
+#txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
     object-fit: scale-down;
 }
 #txt2img_actions_column, #img2img_actions_column {
@@ -397,6 +404,18 @@ div#extras_scale_to_tab div.form{
     margin: 0 1.2em;
 }
 
+table.settings-value-table{
+    background: white;
+    border-collapse: collapse;
+    margin: 1em;
+    border: 4px solid white;
+}
+
+table.settings-value-table td{
+    padding: 0.4em;
+    border: 1px solid #ccc;
+    max-width: 36em;
+}
 
 /* live preview */
 .progressDiv{
@@ -534,6 +553,8 @@ div#extras_scale_to_tab div.form{
 #lightboxModal > img.modalImageFullscreen{
     object-fit: contain;
     height: 100%;
+    width: 100%;
+    min-height: 0;
 }
 
 .modalPrev,

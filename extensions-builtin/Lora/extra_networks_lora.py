@@ -1,6 +1,7 @@
 from modules import extra_networks, shared
 import lora
 
+
 class ExtraNetworkLora(extra_networks.ExtraNetwork):
     def __init__(self):
         super().__init__('lora')

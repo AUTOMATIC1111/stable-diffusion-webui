@@ -84,7 +84,7 @@ class Script(scripts.Script):
                     p.color_corrections = initial_color_corrections
 
                 if append_interrogation != "None":
-                    p.prompt = original_prompt + ", " if original_prompt != "" else ""
+                    p.prompt = f"{original_prompt}, " if original_prompt else ""
                     if append_interrogation == "CLIP":
                         p.prompt += shared.interrogator.interrogate(p.init_images[0])
                     elif append_interrogation == "DeepBooru":

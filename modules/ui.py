@@ -101,7 +101,7 @@ def visit(x, func, path=""):
         for c in x.children:
             visit(c, func, path)
     elif x.label is not None:
-        func(path + "/" + str(x.label), x)
+        func(f"{path}/{x.label}", x)
 
 
 def add_style(name: str, prompt: str, negative_prompt: str):
@@ -166,7 +166,7 @@ def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_di
             img = Image.open(image)
             filename = os.path.basename(image)
             left, _ = os.path.splitext(filename)
-            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, left + ".txt"), 'a'))
+            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, f"{left}.txt"), 'a'))
 
         return [gr.update(), None]
 
@@ -182,29 +182,29 @@ def interrogate_deepbooru(image):
 
 
 def create_seed_inputs(target_interface):
-    with FormRow(elem_id=target_interface + '_seed_row', variant="compact"):
-        seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=target_interface + '_seed')
+    with FormRow(elem_id=f"{target_interface}_seed_row", variant="compact"):
+        seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=f"{target_interface}_seed")
         seed.style(container=False)
-        random_seed = ToolButton(random_symbol, elem_id=target_interface + '_random_seed', label='Random seed')
-        reuse_seed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_seed', label='Reuse seed')
+        random_seed = ToolButton(random_symbol, elem_id=f"{target_interface}_random_seed", label='Random seed')
+        reuse_seed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_seed", label='Reuse seed')
 
-        seed_checkbox = gr.Checkbox(label='Extra', elem_id=target_interface + '_subseed_show', value=False)
+        seed_checkbox = gr.Checkbox(label='Extra', elem_id=f"{target_interface}_subseed_show", value=False)
 
     # Components to show/hide based on the 'Extra' checkbox
     seed_extras = []
 
-    with FormRow(visible=False, elem_id=target_interface + '_subseed_row') as seed_extra_row_1:
+    with FormRow(visible=False, elem_id=f"{target_interface}_subseed_row") as seed_extra_row_1:
         seed_extras.append(seed_extra_row_1)
-        subseed = gr.Number(label='Variation seed', value=-1, elem_id=target_interface + '_subseed')
+        subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{target_interface}_subseed")
         subseed.style(container=False)
-        random_subseed = ToolButton(random_symbol, elem_id=target_interface + '_random_subseed')
-        reuse_subseed = ToolButton(reuse_symbol, elem_id=target_interface + '_reuse_subseed')
-        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=target_interface + '_subseed_strength')
+        random_subseed = ToolButton(random_symbol, elem_id=f"{target_interface}_random_subseed")
+        reuse_subseed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_subseed")
+        subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=f"{target_interface}_subseed_strength")
 
     with FormRow(visible=False) as seed_extra_row_2:
         seed_extras.append(seed_extra_row_2)
-        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from width", value=0, elem_id=target_interface + '_seed_resize_from_w')
-        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from height", value=0, elem_id=target_interface + '_seed_resize_from_h')
+        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from width", value=0, elem_id=f"{target_interface}_seed_resize_from_w")
+        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from height", value=0, elem_id=f"{target_interface}_seed_resize_from_h")
 
     random_seed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[seed])
     random_subseed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[subseed])
@@ -765,7 +765,7 @@ def create_ui():
                     )
                     button.click(
                         fn=lambda: None,
-                        _js="switch_to_"+name.replace(" ", "_"),
+                        _js=f"switch_to_{name.replace(' ', '_')}",
                         inputs=[],
                         outputs=[],
                     )
@@ -828,7 +828,7 @@ def create_ui():
                         with FormGroup():
                             with FormRow():
                                 cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=7.0, elem_id="img2img_cfg_scale")
-                                image_cfg_scale = gr.Slider(minimum=0, maximum=3.0, step=0.05, label='Image CFG Scale', value=1.5, elem_id="img2img_image_cfg_scale", visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
+                                image_cfg_scale = gr.Slider(minimum=0, maximum=3.0, step=0.05, label='Image CFG Scale', value=1.5, elem_id="img2img_image_cfg_scale", visible=False)
                             denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
 
                     elif category == "seed":
@@ -1462,18 +1462,18 @@ def create_ui():
         elif t == bool:
             comp = gr.Checkbox
         else:
-            raise Exception(f'bad options item type: {str(t)} for key {key}')
+            raise Exception(f'bad options item type: {t} for key {key}')
 
-        elem_id = "setting_"+key
+        elem_id = f"setting_{key}"
 
         if info.refresh is not None:
             if is_quicksettings:
                 res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
             else:
                 with FormRow():
                     res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                    create_refresh_button(res, info.refresh, info.component_args, "refresh_" + key)
+                    create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
         else:
             res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
 
@@ -1525,7 +1525,7 @@ def create_ui():
 
         result = gr.HTML(elem_id="settings_result")
 
-        quicksettings_names = [x.strip() for x in opts.quicksettings.split(",")]
+        quicksettings_names = opts.quicksettings_list
         quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
 
         quicksettings_list = []
@@ -1545,7 +1545,7 @@ def create_ui():
                         current_tab.__exit__()
 
                     gr.Group()
-                    current_tab = gr.TabItem(elem_id="settings_{}".format(elem_id), label=text)
+                    current_tab = gr.TabItem(elem_id=f"settings_{elem_id}", label=text)
                     current_tab.__enter__()
                     current_row = gr.Column(variant='compact')
                     current_row.__enter__()
@@ -1566,7 +1566,7 @@ def create_ui():
                 current_row.__exit__()
                 current_tab.__exit__()
 
-            with gr.TabItem("Actions", id="actions"):
+            with gr.TabItem("Actions", id="actions", elem_id="settings_tab_actions"):
                 request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
                 download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
                 reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
@@ -1574,7 +1574,7 @@ def create_ui():
                     unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
                     reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
 
-            with gr.TabItem("Licenses", id="licenses"):
+            with gr.TabItem("Licenses", id="licenses", elem_id="settings_tab_licenses"):
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
             gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
@@ -1664,7 +1664,7 @@ def create_ui():
             for interface, label, ifid in interfaces:
                 if label in shared.opts.hidden_tabs:
                     continue
-                with gr.TabItem(label, id=ifid, elem_id='tab_' + ifid):
+                with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
 
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
@@ -1693,11 +1693,9 @@ def create_ui():
                 show_progress=info.refresh is not None,
             )
 
-        text_settings.change(
-            fn=lambda: gr.update(visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit"),
-            inputs=[],
-            outputs=[image_cfg_scale],
-        )
+        update_image_cfg_scale_visibility = lambda: gr.update(visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
+        text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
+        demo.load(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
 
         button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
         button_set_checkpoint.click(
@@ -1773,10 +1771,10 @@ def create_ui():
 
     def loadsave(path, x):
         def apply_field(obj, field, condition=None, init_field=None):
-            key = path + "/" + field
+            key = f"{path}/{field}"
 
             if getattr(obj, 'custom_script_source', None) is not None:
-              key = 'customscript/' + obj.custom_script_source + '/' + key
+              key = f"customscript/{obj.custom_script_source}/{key}"
 
             if getattr(obj, 'do_not_save_to_config', False):
                 return
@@ -1865,12 +1863,11 @@ def webpath(fn):
 
 
 def javascript_html():
-    script_js = os.path.join(script_path, "script.js")
-    head = f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
+    # Ensure localization is in `window` before scripts
+    head = f'<script type="text/javascript">{localization.localization_js(shared.opts.localization)}</script>\n'
 
-    inline = f"{localization.localization_js(shared.opts.localization)};"
-    if cmd_opts.theme is not None:
-        inline += f"set_theme('{cmd_opts.theme}');"
+    script_js = os.path.join(script_path, "script.js")
+    head += f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
         head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
@@ -1878,7 +1875,8 @@ def javascript_html():
     for script in modules.scripts.list_scripts("javascript", ".mjs"):
         head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
 
-    head += f'<script type="text/javascript">{inline}</script>\n'
+    if cmd_opts.theme:
+        head += f'<script type="text/javascript">set_theme(\"{cmd_opts.theme}\");</script>\n'
 
     return head
 
@@ -1925,7 +1923,7 @@ def versions_html():
 
     python_version = ".".join([str(x) for x in sys.version_info[0:3]])
     commit = launch.commit_hash()
-    short_commit = commit[0:8]
+    tag = launch.git_tag()
 
     if shared.xformers_available:
         import xformers
@@ -1934,6 +1932,8 @@ def versions_html():
         xformers_version = "N/A"
 
     return f"""
+version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>
+ • 
 python: <span title="{sys.version}">{python_version}</span>
  • 
 torch: {getattr(torch, '__long_version__',torch.__version__)}
@@ -1942,7 +1942,21 @@ xformers: {xformers_version}
  • 
 gradio: {gr.__version__}
  • 
-commit: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{short_commit}</a>
- • 
 checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 """
+
+
+def setup_ui_api(app):
+    from pydantic import BaseModel, Field
+    from typing import List
+
+    class QuicksettingsHint(BaseModel):
+        name: str = Field(title="Name of the quicksettings field")
+        label: str = Field(title="Label of the quicksettings field")
+
+    def quicksettings_hint():
+        return [QuicksettingsHint(name=k, label=v.label) for k, v in opts.data_labels.items()]
+
+    app.add_api_route("/internal/quicksettings-hint", quicksettings_hint, methods=["GET"], response_model=List[QuicksettingsHint])
+
+    app.add_api_route("/internal/ping", lambda: {}, methods=["GET"])
