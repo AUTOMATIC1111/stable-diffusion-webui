@@ -81,9 +81,11 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
         # rename
         dirname = os.path.dirname(m)
         basename = os.path.basename(m)
-        _, ex = os.path.splitext(basename)
+        without, ex = os.path.splitext(basename)
         sha256 = SHA256.new(basename.encode()).hexdigest()
-        hash_file_path = os.path.join(dirname, sha256[:32]+ex)
+        array = without.split('-')
+        epoch = '-' + array[-1] if array else ''
+        hash_file_path = os.path.join(dirname, sha256[:32]+epoch+ex)
 
         shutil.move(m, hash_file_path)
         key = upload_files(False, hash_file_path)
