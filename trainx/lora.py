@@ -64,45 +64,50 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
         if callable(dump_func):
             dump_func(p)
 
-    train_with_params(callback=progress_callback, **kwargs)
-    material = train_lora_task.compress_train_material(p.train.format_epoch_log())
-    result = {
-        'material': None,
-        'models': []
-    }
+    ok = train_with_params(callback=progress_callback, **kwargs)
+    if ok:
+        logger.info("=============>>>> end of train <<<<=============")
+        material = train_lora_task.compress_train_material(p.train.format_epoch_log())
+        result = {
+            'material': None,
+            'models': []
+        }
 
-    if os.path.isfile(material):
-        material_keys = upload_files(False, material)
-        result['material'] = material_keys[0] if material_keys else ''
+        if os.path.isfile(material):
+            material_keys = upload_files(False, material)
+            result['material'] = material_keys[0] if material_keys else ''
 
-    local_models = get_train_models(train_lora_task, kwargs['output_name'])
-    cover = train_lora_task.get_model_cover_key()
-    for m in local_models:
-        # rename
-        dirname = os.path.dirname(m)
-        basename = os.path.basename(m)
-        without, ex = os.path.splitext(basename)
-        sha256 = SHA256.new(basename.encode()).hexdigest()
-        array = without.split('-')
-        epoch = array[-1] if array else ''
-        hash_file_path = os.path.join(dirname, sha256+ex)
+        local_models = get_train_models(train_lora_task, kwargs['output_name'])
+        cover = train_lora_task.get_model_cover_key()
+        for m in local_models:
+            # rename
+            dirname = os.path.dirname(m)
+            basename = os.path.basename(m)
+            without, ex = os.path.splitext(basename)
+            sha256 = SHA256.new(basename.encode()).hexdigest()
+            array = without.split('-')
+            epoch = array[-1] if array else ''
+            hash_file_path = os.path.join(dirname, sha256+ex)
 
-        shutil.move(m, hash_file_path)
-        key = upload_files(False, hash_file_path)
-        result['models'].append({
-            'key': key[0] if key else '',
-            'thumbnail_path': cover,
-            'hash': sha256,
-            'epoch': epoch
-        })
+            shutil.move(m, hash_file_path)
+            key = upload_files(False, hash_file_path)
+            result['models'].append({
+                'key': key[0] if key else '',
+                'thumbnail_path': cover,
+                'hash': sha256,
+                'epoch': epoch
+            })
 
-    # notify web server
-    sender = RedisSender()
-    sender.notify_train_task(task)
+        # notify web server
+        sender = RedisSender()
+        sender.notify_train_task(task)
 
-    fp = TaskProgress.new_finish(task, {
-        'train': result
-    }, True)
-    fp.train = p.train
+        fp = TaskProgress.new_finish(task, {
+            'train': result
+        }, True)
+        fp.train = p.train
 
-    yield fp
+        yield fp
+    else:
+        p = TaskProgress.new_failed(task, 'train failed(unknown errors)')
+        yield p

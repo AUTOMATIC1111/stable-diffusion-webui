@@ -28,6 +28,7 @@ from tools.image import plt_show
 from modules import sd_models
 
 AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]
+PixelDeviation = 2
 
 
 class Img2ImgMinorTaskType(IntEnum):
@@ -120,24 +121,31 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             inpaint_color_sketch = get_tmp_local_path(inpaint_color_sketch)
             if not inpaint_color_sketch:
                 raise Exception('inpaint_color_sketch not found')
-            image = Image.open(inpaint_color_sketch).convert('RGBA')
+            image = Image.open(inpaint_color_sketch).convert('RGB')
+            Image.open(inpaint_color_sketch).save('tmp.png')
 
             orig_path = inpaint_color_sketch_orig or inpaint_color_sketch
             if orig_path != inpaint_color_sketch:
                 orig_path = get_tmp_local_path(inpaint_color_sketch_orig)
-                orig = Image.open(orig_path).convert('RGBA')
+                orig = Image.open(orig_path).convert('RGB')
             else:
                 orig = image
+            Image.open(orig_path).save('tmp-1.png')
+            # np.diff(np.sum(np.array(orig), axis=-1), np.sum(np.array(image), axis=-1))
+            # relative_err_value = np.abs(np.sum(np.array(orig), axis=-1) - np.sum(np.array(image), axis=-1))
             pred = np.any(np.array(image) != np.array(orig), axis=-1)
+            # pred = np.abs(
+            #     np.sum(np.array(image, np.int), axis=-1) - np.sum(np.array(orig, np.int), axis=-1)
+            # ) > PixelDeviation
             if pred is None or not pred.any() or not pred.shape:
                 raise ValueError('mask err')
             mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
+            plt_show(np.array(mask), 'mask')
             mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
             blur = ImageFilter.GaussianBlur(mask_blur)
             image = Image.composite(image.filter(blur), orig, mask.filter(blur))
             image = image.convert("RGB")
-            # plt_show(np.array(mask), 'mask')
-            # plt_show(np.array(image), 'image')
+
         elif mode == 2:
             if not init_img_with_mask:
                 raise Exception('init_img_with_mask not found')

@@ -1658,6 +1658,7 @@ def train(args, train_epoch_callback=None):
         save_model(ckpt_name, network, global_step, num_train_epochs, force_sync_upload=True)
 
         print("model saved.")
+        return True
 
 
 def setup_parser() -> argparse.ArgumentParser:
@@ -1789,7 +1790,7 @@ def train_with_params(pretrained_model_name_or_path, network_weights, train_data
     #####默认设置
     args.enable_bucket = True
 
-    train(args, callback)
+    return train(args, callback)
 
 
 if __name__ == "__main__":

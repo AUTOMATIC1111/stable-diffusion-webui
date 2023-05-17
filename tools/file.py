@@ -5,6 +5,7 @@
 # @Site    : 
 # @File    : file.py
 # @Software: Hifive
+import shutil
 import zipfile
 import os
 
@@ -21,6 +22,10 @@ def getdirsize(dir):
 def zip_uncompress(src, dst):
     zip_file = zipfile.ZipFile(src)
     zip_list = zip_file.namelist()
+
+    if os.path.isdir(dst):
+        shutil.rmtree(dst)
+    os.makedirs(dst, exist_ok=True)
     # for f in zip_list:
     #     zip_file.extract(f, dst)
     #     right_file = f.encode('cp437').decode('utf-8')
@@ -35,12 +40,16 @@ def zip_uncompress(src, dst):
             new_zip_file = f.encode('cp437').decode('utf-8')
         try:
             os.rename(os.path.join(dst, f), os.path.join(dst, new_zip_file))
-        except:
+        except Exception as ex:
+            print(f"cannot rename {os.path.join(dst, f)} to {os.path.join(dst, new_zip_file)}")
             pass
 
 
 def zip_compress(src, dst):
     filelist = []
+    if os.path.isfile(dst):
+        os.remove(dst)
+
     if os.path.isfile(src):
         filelist.append(src)
     else:
