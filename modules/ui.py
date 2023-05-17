@@ -954,6 +954,14 @@ def create_ui():
 
             res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('img2img')}", inputs=None, outputs=None, show_progress=False)
 
+            detect_image_size_btn.click(
+                fn=lambda w, h, _: (w or gr.update(), h or gr.update()),
+                _js="currentImg2imgSourceResolution",
+                inputs=[dummy_component, dummy_component, dummy_component],
+                outputs=[width, height],
+                show_progress=False,
+            )
+
             restore_progress_button.click(
                 fn=progress.restore_progress,
                 _js="restoreProgressImg2img",
@@ -967,8 +975,6 @@ def create_ui():
                 show_progress=False,
             )
             
-            detect_image_size_btn.click(lambda i, w, h : i.size if i is not None else (w, h), inputs=[init_img, width, height], outputs=[width, height])
-
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
                 **interrogate_args,

@@ -320,8 +320,8 @@ button.custom-button{
 div.dimensions-tools{
     min-width: 0 !important;
     max-width: fit-content;
-    flex-direction: row;
-    align-content: center;
+    flex-direction: column;
+    place-content: center;
 }
 
 div#extras_scale_to_tab div.form{
