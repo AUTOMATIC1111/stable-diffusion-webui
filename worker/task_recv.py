@@ -62,7 +62,7 @@ class TaskReceiver:
     def __init__(self, recoder: CkptLoadRecorder, train_only: bool = False):
         self.model_recoder = recoder
         self.redis_pool = RedisPool()
-        self.clean_tmp_time = 0
+        self.clean_tmp_time = time.time()
         self.train_only = train_only
 
     def _clean_tmp_files(self):
