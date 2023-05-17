@@ -67,3 +67,5 @@ Tech that can be integrated as part of the core workflow...
 
 - add `--safe` mode which skips loading user extensions  
   please try to use it before opening new issue  
+- add option in settings: **Prompt attention parser**
+  to allow for backward compatibility with a1111 (broken) parser

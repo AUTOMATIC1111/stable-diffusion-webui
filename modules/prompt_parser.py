@@ -4,7 +4,7 @@ from collections import namedtuple
 from typing import List
 import lark
 import torch
-from installer import log
+from modules.shared import log, opts
 
 # a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
 # will be represented with prompt_schedule like this (assuming steps=100):
@@ -34,13 +34,29 @@ plain: /([^\\\[\]():|]|\\.)+/
 re_clean = re.compile(r"^\W+", re.S)
 re_whitespace = re.compile(r"\s+", re.S)
 re_break = re.compile(r"\s*\bBREAK\b\s*", re.S)
-re_attention = re.compile(r"""
+re_attention_v2 = re.compile(r"""
 \(|\[|\\\(|\\\[|\\|\\\\|
 :([+-]?[.\d]+)|
 \)|\]|\\\)|\\\]|
 [^\(\)\[\]:]+|
 :
 """, re.X)
+re_attention_v1 = re.compile(r"""
+\\\(|
+\\\)|
+\\\[|
+\\]|
+\\\\|
+\\|
+\(|
+\[|
+:([+-]?[.\d]+)\)|
+\)|
+]|
+[^\\()\[\]:]+|
+:
+""", re.X)
+
 
 
 def get_learned_conditioning_prompt_schedules(prompts, steps):
@@ -272,9 +288,20 @@ def parse_prompt_attention(text):
     res = []
     round_brackets = []
     square_brackets = []
+    if opts.prompt_attention == 'Fixed attention':
+        return [[text, 1.0]]
+    elif opts.prompt_attention == 'Original parser':
+        re_attention = re_attention_v1
+        whitespace = ''
+    else:
+        re_attention = re_attention_v2
+        text = text.replace('\\n', ' ')
+        whitespace = ' '
+
     def multiply_range(start_position, multiplier):
         for p in range(start_position, len(res)):
             res[p][1] *= multiplier
+
     for m in re_attention.finditer(text):
         text = m.group(0)
         weight = m.group(1)
@@ -295,8 +322,9 @@ def parse_prompt_attention(text):
         else:
             parts = re.split(re_break, text)
             for i, part in enumerate(parts):
-                part = re_clean.sub("", part)
-                part = re_whitespace.sub(" ", part).strip()
+                if opts.prompt_attention == 'Full parser':
+                    part = re_clean.sub("", part)
+                    part = re_whitespace.sub(" ", part).strip()
                 if len(part) == 0:
                     continue
                 if i > 0:
@@ -312,7 +340,7 @@ def parse_prompt_attention(text):
     i = 0
     while i + 1 < len(res):
         if res[i][1] == res[i + 1][1]:
-            res[i][0] += res[i + 1][0]
+            res[i][0] += whitespace + res[i + 1][0]
             res.pop(i + 1)
         else:
             i += 1
