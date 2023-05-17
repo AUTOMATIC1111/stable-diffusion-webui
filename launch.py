@@ -11,8 +11,8 @@ sys.argv += shlex.split(commandline_args)
 import installer
 installer.add_args()
 installer.ensure_base_requirements()
-installer.extensions_preload(force=False)
 installer.parse_args()
+installer.extensions_preload(force=False)
 
 import modules.cmd_args
 args, _ = modules.cmd_args.parser.parse_known_args()

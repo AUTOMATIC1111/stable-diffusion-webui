@@ -236,7 +236,9 @@ def check_torch():
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
         machine = platform.machine()
-        if allow_directml and ('arm' not in machine and 'aarch' not in machine and args.use_directml):
+        if sys.platform == 'darwin':
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision==0.15.1')
+        elif allow_directml and args.use_directml and ('arm' not in machine and 'aarch' not in machine):
             log.info('Using DirectML Backend')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch-directml')
             xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
