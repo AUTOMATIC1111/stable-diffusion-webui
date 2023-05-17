@@ -198,7 +198,7 @@ class TaskProgress(SerializationObj):
         self._result = r
         self.status = TaskStatus.Finish if not is_train_task else TaskStatus.TrainCompleted
         self.task_desc = 'ok'
-        self.task_progress = 100
+        self.task_progress = 100 if not is_train_task else 99
 
     def update_seed(self, seed, sub_seed):
         if isinstance(self.task, Task):

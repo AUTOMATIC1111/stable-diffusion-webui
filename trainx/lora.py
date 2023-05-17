@@ -12,6 +12,7 @@ from worker.task import Task, TaskType, TaskProgress, TrainEpoch
 from sd_scripts.train_network_ly import train_with_params
 from .typex import TrainLoraTask
 from .utils import upload_files
+from worker.task_send import RedisSender
 
 
 def get_train_models(train_lora_task: TrainLoraTask, model_name: str):
@@ -49,7 +50,7 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     logger.info(">>> command args:")
     for k, v in kwargs.items():
         logger.info(f"> args: {k}: {v}")
-
+    logger.info("====================================================")
     p = TaskProgress.new_running(task, 'running', 0)
 
     def progress_callback(epoch, loss, num_train_epochs):
@@ -80,6 +81,10 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
             'thumbnail_path': cover,
             'hash': train_lora_task.hash_id
         })
+
+    # notify web server
+    sender = RedisSender()
+    sender.notify_train_task(task)
 
     fp = TaskProgress.new_finish(task, {
         'train': result

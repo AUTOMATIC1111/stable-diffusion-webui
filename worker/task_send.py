@@ -35,3 +35,9 @@ class RedisSender:
                 task.id: int(level) * -100000 + now
             })
 
+    def notify_train_task(self, task: Task):
+        queue = 'checkpoint:train'
+        rds = self.redis_pool.get_connection()
+        rds.xadd(queue, {
+            task.id: task
+        })
