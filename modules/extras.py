@@ -12,6 +12,9 @@ import safetensors.torch
 from modules import shared, images, sd_models, sd_vae, sd_models_config
 
 
+checkpoint_dict_skip_on_merge = ["cond_stage_model.transformer.text_model.embeddings.position_ids"]
+
+
 def run_pnginfo(image):
     if image is None:
         return '', '', ''
@@ -31,7 +34,6 @@ def create_config(ckpt_result, config_source, a, b, c):
     def config(x):
         res = sd_models_config.find_checkpoint_config_near_filename(x) if x else None
         return res if res != shared.sd_default_config else None
-
     if config_source == 0:
         cfg = config(a) or config(b) or config(c)
     elif config_source == 1:
@@ -46,9 +48,6 @@ def create_config(ckpt_result, config_source, a, b, c):
     checkpoint_filename = filename + ".yaml"
     shared.log.info("Copying config: {cfg} -> {checkpoint_filename}")
     shutil.copyfile(cfg, checkpoint_filename)
-
-
-checkpoint_dict_skip_on_merge = ["cond_stage_model.transformer.text_model.embeddings.position_ids"]
 
 
 def to_half(tensor, enable):
@@ -80,7 +79,6 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         b = secondary_model_info.model_name
         Ma = round(1 - multiplier, 2)
         Mb = round(multiplier, 2)
-
         return f"{Ma}({a}) + {Mb}({b})"
 
     def filename_add_difference():
@@ -88,7 +86,6 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         b = secondary_model_info.model_name
         c = tertiary_model_info.model_name
         M = round(multiplier, 2)
-
         return f"{a} + {M}({b} - {c})"
 
     def filename_nothing():
@@ -101,71 +98,53 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     }
     filename_generator, theta_func1, theta_func2 = theta_funcs[interp_method]
     shared.state.job_count = (1 if theta_func1 else 0) + (1 if theta_func2 else 0)
-
     if not primary_model_name:
         return fail("Failed: Merging requires a primary model.")
-
     primary_model_info = sd_models.checkpoints_list[primary_model_name]
-
     if theta_func2 and not secondary_model_name:
         return fail("Failed: Merging requires a secondary model.")
-
     secondary_model_info = sd_models.checkpoints_list[secondary_model_name] if theta_func2 else None
-
     if theta_func1 and not tertiary_model_name:
         return fail(f"Failed: Interpolation method ({interp_method}) requires a tertiary model.")
-
     tertiary_model_info = sd_models.checkpoints_list[tertiary_model_name] if theta_func1 else None
-
     result_is_inpainting_model = False
     result_is_instruct_pix2pix_model = False
-
     if theta_func2:
         shared.state.textinfo = "Loading B"
         shared.log.info(f"Loading {secondary_model_info.filename}...")
         theta_1 = sd_models.read_state_dict(secondary_model_info.filename)
     else:
         theta_1 = None
-
     if theta_func1:
         shared.state.textinfo = "Loading C"
         shared.log.info(f"Loading {tertiary_model_info.filename}...")
         theta_2 = sd_models.read_state_dict(tertiary_model_info.filename)
-
         shared.state.textinfo = 'Merging B and C'
         shared.state.sampling_steps = len(theta_1.keys())
         for key in tqdm.tqdm(theta_1.keys()):
             if key in checkpoint_dict_skip_on_merge:
                 continue
-
             if 'model' in key:
                 if key in theta_2:
                     t2 = theta_2.get(key, torch.zeros_like(theta_1[key]))
                     theta_1[key] = theta_func1(theta_1[key], t2)
                 else:
                     theta_1[key] = torch.zeros_like(theta_1[key])
-
             shared.state.sampling_step += 1
         del theta_2
-
         shared.state.nextjob()
-
     shared.state.textinfo = f"Loading {primary_model_info.filename}..."
     shared.log.info(f"Loading {primary_model_info.filename}...")
     theta_0 = sd_models.read_state_dict(primary_model_info.filename)
-
     shared.log.info("Merging...")
     shared.state.textinfo = 'Merging A and B'
     shared.state.sampling_steps = len(theta_0.keys())
     for key in tqdm.tqdm(theta_0.keys()):
         if theta_1 and 'model' in key and key in theta_1:
-
             if key in checkpoint_dict_skip_on_merge:
                 continue
-
             a = theta_0[key]
             b = theta_1[key]
-
             # this enables merging an inpainting model (A) with another one (B);
             # where normal model would have 4 channels, for latenst space, inpainting model would
             # have another 4 channels for unmasked picture's latent space, plus one channel for mask, for a total of 9
@@ -174,7 +153,6 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
                     raise RuntimeError("When merging inpainting model with a normal one, A must be the inpainting model.")
                 if a.shape[1] == 4 and b.shape[1] == 8:
                     raise RuntimeError("When merging instruct-pix2pix model with a normal one, A must be the instruct-pix2pix model.")
-
                 if a.shape[1] == 8 and b.shape[1] == 4:#If we have an Instruct-Pix2Pix model...
                     theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)#Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.
                     result_is_instruct_pix2pix_model = True
@@ -184,50 +162,36 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
                     result_is_inpainting_model = True
             else:
                 theta_0[key] = theta_func2(a, b, multiplier)
-
             theta_0[key] = to_half(theta_0[key], save_as_half)
-
         shared.state.sampling_step += 1
-
     del theta_1
-
     bake_in_vae_filename = sd_vae.vae_dict.get(bake_in_vae, None)
     if bake_in_vae_filename is not None:
         shared.log.info(f"Baking in VAE from {bake_in_vae_filename}")
         shared.state.textinfo = 'Baking in VAE'
         vae_dict = sd_vae.load_vae_dict(bake_in_vae_filename)
-
         for key in vae_dict.keys():
             theta_0_key = 'first_stage_model.' + key
             if theta_0_key in theta_0:
                 theta_0[theta_0_key] = to_half(vae_dict[key], save_as_half)
-
         del vae_dict
-
     if save_as_half and not theta_func2:
         for key in theta_0.keys():
             theta_0[key] = to_half(theta_0[key], save_as_half)
-
     if discard_weights:
         regex = re.compile(discard_weights)
         for key in list(theta_0):
             if re.search(regex, key):
                 theta_0.pop(key, None)
-
     ckpt_dir = shared.opts.ckpt_dir or sd_models.model_path
-
     filename = filename_generator() if custom_name == '' else custom_name
     filename += ".inpainting" if result_is_inpainting_model else ""
     filename += ".instruct-pix2pix" if result_is_instruct_pix2pix_model else ""
     filename += "." + checkpoint_format
-
     output_modelname = os.path.join(ckpt_dir, filename)
-
     shared.state.nextjob()
     shared.state.textinfo = "Saving"
-
     metadata = {"format": "pt", "sd_merge_models": {}, "sd_merge_recipe": None}
-
     if save_metadata:
         merge_recipe = {
             "type": "webui", # indicate this model was merged with webui's built-in merger
@@ -253,7 +217,6 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
                 "legacy_hash": checkpoint_info.hash,
                 "sd_merge_recipe": checkpoint_info.metadata.get("sd_merge_recipe", None)
             }
-
             metadata["sd_merge_models"].update(checkpoint_info.metadata.get("sd_merge_models", {}))
 
         add_model_metadata(primary_model_info)
@@ -261,7 +224,6 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
             add_model_metadata(secondary_model_info)
         if tertiary_model_info:
             add_model_metadata(tertiary_model_info)
-
         metadata["sd_merge_models"] = json.dumps(metadata["sd_merge_models"])
 
     _, extension = os.path.splitext(output_modelname)
@@ -269,16 +231,12 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         safetensors.torch.save_file(theta_0, output_modelname, metadata=metadata)
     else:
         torch.save(theta_0, output_modelname)
-
     sd_models.list_models()
     created_model = next((ckpt for ckpt in sd_models.checkpoints_list.values() if ckpt.name == filename), None)
     if created_model:
         created_model.calculate_shorthash()
-
     create_config(output_modelname, config_source, primary_model_info, secondary_model_info, tertiary_model_info)
-
     shared.log.info(f"Checkpoint saved to {output_modelname}.")
     shared.state.textinfo = "Checkpoint saved"
     shared.state.end()
-
     return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], "Checkpoint saved to " + output_modelname]

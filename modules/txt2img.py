@@ -12,7 +12,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
     if shared.sd_model is None:
         shared.log.warning('Model not loaded')
         return
-    shared.log.debug(f'txt2img: {id_task}|{prompt}|{negative_prompt}|{prompt_styles}|{steps}|{sampler_index}|{restore_faces}|{tiling}|{n_iter}|{batch_size}|{cfg_scale}|{seed}|{subseed}|{subseed_strength}|{seed_resize_from_h}|{seed_resize_from_w}|{seed_enable_extras}|{height}|{width}|{enable_hr}|{denoising_strength}|{hr_scale}|{hr_upscaler}|{hr_second_pass_steps}|{hr_resize_x}|{hr_resize_y}|{override_settings_texts}')
+    shared.log.debug(f'txt2img: id_task={id_task}|prompt={prompt}|negative_prompt={negative_prompt}|prompt_styles={prompt_styles}|steps={steps}|sampler_index={sampler_index}|restore_faces={restore_faces}|tiling={tiling}|n_iter={n_iter}|batch_size={batch_size}|cfg_scale={cfg_scale}|seed={seed}|subseed={subseed}|subseed_strength={subseed_strength}|seed_resize_from_h={seed_resize_from_h}|seed_resize_from_w={seed_resize_from_w}|seed_enable_extras={seed_enable_extras}|height={height}|width={width}|enable_hr={enable_hr}|denoising_strength={denoising_strength}|hr_scale={hr_scale}|hr_upscaler={hr_upscaler}|hr_second_pass_steps={hr_second_pass_steps}|hr_resize_x={hr_resize_x}|hr_resize_y={hr_resize_y}|override_settings_texts={override_settings_texts}')
     if sampler_index is None:
         shared.log.warning('Selected sampler is not enabled')
         sampler_index = 0
