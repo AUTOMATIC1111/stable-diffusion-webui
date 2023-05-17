@@ -6,8 +6,8 @@ all_samplers = [
     *sd_samplers_compvis.samplers_data_compvis,
 ]
 all_samplers_map = {x.name: x for x in all_samplers}
-samplers = ['PLMS', 'UniPC'] # set default to keep some extensions happy
-samplers_for_img2img = []
+samplers = all_samplers
+samplers_for_img2img = all_samplers
 samplers_map = {}
 
 
