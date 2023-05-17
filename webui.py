@@ -88,6 +88,9 @@ def initialize():
     log.debug('Entering Initialize')
     check_rollback_vae()
 
+    modules.sd_vae.refresh_vae_list()
+    startup_timer.record("vae")
+
     extensions.list_extensions()
     startup_timer.record("extensions")
 
@@ -106,9 +109,6 @@ def initialize():
 
     modelloader.load_upscalers()
     startup_timer.record("upscalers")
-
-    modules.sd_vae.refresh_vae_list()
-    startup_timer.record("vae")
 
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     # shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
