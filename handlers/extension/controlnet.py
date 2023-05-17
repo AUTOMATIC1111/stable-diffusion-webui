@@ -18,6 +18,11 @@ from handlers.utils import get_tmp_local_path, Tmp, upload_files, strip_model_ha
 from worker.task import TaskProgress, Task, TaskStatus
 
 ControlNet = 'ControlNet'
+FreePreprocessors = [
+    "reference_only",
+    "reference_adain",
+    "reference_adain+attn"
+]
 
 
 def HWC3(x):
@@ -203,6 +208,8 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                     control_unit['model'] = 'none'
                 if control_unit['module'] == 'None':
                     control_unit['module'] = 'none'
+                if control_unit['module'] in FreePreprocessors:
+                    control_unit['model'] = 'none'
 
                 new_args.append(control_unit)
 

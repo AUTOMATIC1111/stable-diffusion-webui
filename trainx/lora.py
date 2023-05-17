@@ -6,7 +6,10 @@
 # @File    : train_lora.py
 # @Software: Hifive
 import os.path
+import shutil
 import typing
+
+from Crypto.Hash import SHA256
 from loguru import logger
 from worker.task import Task, TaskType, TaskProgress, TrainEpoch
 from sd_scripts.train_network_ly import train_with_params
@@ -75,11 +78,19 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     local_models = get_train_models(train_lora_task, kwargs['output_name'])
     cover = train_lora_task.get_model_cover_key()
     for m in local_models:
-        key = upload_files(False, m)
+        # rename
+        dirname = os.path.dirname(m)
+        basename = os.path.basename(m)
+        _, ex = os.path.splitext(basename)
+        sha256 = SHA256.new(basename.encode()).hexdigest()
+        hash_file_path = os.path.join(dirname, sha256[:32]+ex)
+        
+        shutil.move(m, hash_file_path)
+        key = upload_files(False, hash_file_path)
         result['models'].append({
             'key': key[0] if key else '',
             'thumbnail_path': cover,
-            'hash': train_lora_task.hash_id
+            'hash': sha256
         })
 
     # notify web server
