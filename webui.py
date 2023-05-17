@@ -144,16 +144,11 @@ Use --skip-version-check commandline argument to disable this check.
             """.strip())
 
 
-def initialize():
-    fix_asyncio_event_loop_policy()
-
-    check_versions()
-
-    extensions.list_extensions()
-    localization.list_localizations(cmd_opts.localizations_dir)
-    startup_timer.record("list extensions")
-
+def restore_config_state_file():
     config_state_file = shared.opts.restore_config_state_file
+    if config_state_file == "":
+        return
+
     shared.opts.restore_config_state_file = ""
     shared.opts.save(shared.config_filename)
 
@@ -165,6 +160,18 @@ def initialize():
         startup_timer.record("restore extension config")
     elif config_state_file:
         print(f"!!! Config state backup not found: {config_state_file}")
+
+
+def initialize():
+    fix_asyncio_event_loop_policy()
+
+    check_versions()
+
+    extensions.list_extensions()
+    localization.list_localizations(cmd_opts.localizations_dir)
+    startup_timer.record("list extensions")
+
+    restore_config_state_file()
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
@@ -370,18 +377,7 @@ def webui():
         extensions.list_extensions()
         startup_timer.record("list extensions")
 
-        config_state_file = shared.opts.restore_config_state_file
-        shared.opts.restore_config_state_file = ""
-        shared.opts.save(shared.config_filename)
-
-        if os.path.isfile(config_state_file):
-            print(f"*** About to restore extension state from file: {config_state_file}")
-            with open(config_state_file, "r", encoding="utf-8") as f:
-                config_state = json.load(f)
-                config_states.restore_extension_config(config_state)
-            startup_timer.record("restore extension config")
-        elif config_state_file:
-            print(f"!!! Config state backup not found: {config_state_file}")
+        restore_config_state_file()
 
         localization.list_localizations(cmd_opts.localizations_dir)
 
