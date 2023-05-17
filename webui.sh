@@ -119,7 +119,7 @@ esac
 if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
 then
     # Apparently now this works
-    export TORCH_COMMAND="pip install torch-2.0.1+rocm5.4.2 torchvision-0.15.2+rocm5.4.2 --index-url https://download.pytorch.org/whl/rocm5.4.2"
+    export TORCH_COMMAND="pip install torch==2.0.1+rocm5.4.2 torchvision==0.15.2+rocm5.4.2 --index-url https://download.pytorch.org/whl/rocm5.4.2"
 fi  
 
 for preq in "${GIT}" "${python_cmd}"
