@@ -540,7 +540,6 @@ def reload_model_weights(sd_model=None, info=None):
 
     if sd_model is None or checkpoint_config != sd_model.used_config:
         del sd_model
-        checkpoints_loaded.clear()
         load_model(checkpoint_info, already_loaded_state_dict=state_dict)
         return model_data.sd_model
 
