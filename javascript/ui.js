@@ -438,4 +438,54 @@ function updateImg2imgResizeToTextAfterChangingImage(){
     }, 500);
 
     return []
+
 }
+
+function setRandomSeed(target_interface) {
+    let seed = gradioApp().querySelector(`#${target_interface}_seed input`);
+    if (!seed) {
+        return [];
+    }
+    seed.value = "-1";
+    seed.dispatchEvent(new Event("input"));
+    return [];
+}
+
+function setRandomSubseed(target_interface) {
+    let subseed = gradioApp().querySelector(`#${target_interface}_subseed input`);
+    if (!subseed) {
+        return [];
+    }
+    subseed.value = "-1";
+    subseed.dispatchEvent(new Event("input"));
+    return [];
+}
+
+function switchWidthHeightTxt2Img() {
+    let width = gradioApp().querySelector("#txt2img_width input[type=number]");
+    let height = gradioApp().querySelector("#txt2img_height input[type=number]");
+    if (!width || !height) {
+        return [];
+    }
+    let tmp = width.value;
+    width.value = height.value;
+    height.value = tmp;
+    width.dispatchEvent(new Event("input"));
+    height.dispatchEvent(new Event("input"));
+    return [];
+}
+
+function switchWidthHeightImg2Img() {
+    let width = gradioApp().querySelector("#img2img_width input[type=number]");
+    let height = gradioApp().querySelector("#img2img_height input[type=number]");
+    if (!width || !height) {
+        return [];
+    }
+    let tmp = width.value;
+    width.value = height.value;
+    height.value = tmp;
+    width.dispatchEvent(new Event("input"));
+    height.dispatchEvent(new Event("input"));
+    return [];
+}
+
