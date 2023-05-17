@@ -117,7 +117,9 @@ titles = {
 
 
 onUiUpdate(function(){
-	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
+	gradioApp()
+	.querySelectorAll('span:not(.name, .description, .search_term), button:not([onclick^="extraNetworksSearchButton("]), select, p')
+	.forEach(function(span){
 		if (span.title) return;  // already has a title
 
 		let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
