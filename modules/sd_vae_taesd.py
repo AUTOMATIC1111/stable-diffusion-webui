@@ -45,7 +45,7 @@ def decoder():
 
 
 class TAESD(nn.Module):
-    latent_magnitude = 2
+    latent_magnitude = 3
     latent_shift = 0.5
 
     def __init__(self, decoder_path="taesd_decoder.pth"):
