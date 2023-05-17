@@ -75,6 +75,7 @@ clear_prompt_symbol = '\U0001f5d1\ufe0f'  # 🗑️
 extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 restore_progress_symbol = '\U0001F300' # 🌀
+detect_image_size_symbol = '\U0001F4D0'  # 📐
 
 
 def plaintext_to_html(text):
@@ -772,6 +773,7 @@ def create_ui():
                                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
                                             with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                                detect_image_size_btn = ToolButton(value=detect_image_size_symbol, elem_id="img2img_detect_image_size_btn")
 
                                     with gr.Tab(label="Resize by") as tab_scale_by:
                                         scale_by = gr.Slider(minimum=0.05, maximum=4.0, step=0.05, label="Scale", value=1.0, elem_id="img2img_scale")
@@ -964,6 +966,8 @@ def create_ui():
                 ],
                 show_progress=False,
             )
+            
+            detect_image_size_btn.click(lambda i, w, h : i.size if i is not None else (w, h), inputs=[init_img, width, height], outputs=[width, height])
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
