@@ -242,9 +242,10 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     shared.state.textinfo = "Saving"
     print(f"Saving to {output_modelname}...")
 
-    metadata = {"format": "pt", "sd_merge_models": {}, "sd_merge_recipe": None}
+    metadata = None
 
     if save_metadata:
+        metadata = {"format": "pt", "sd_merge_models": {}}
         merge_recipe = {
             "type": "webui", # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
