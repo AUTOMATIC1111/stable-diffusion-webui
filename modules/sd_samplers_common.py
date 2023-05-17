@@ -26,22 +26,19 @@ approximation_indexes = {"Full": 0, "Approx NN": 1, "Approx cheap": 2, "TAESD": 
 
 
 def single_sample_to_image(sample, approximation=None):
-
     if approximation is None:
         approximation = approximation_indexes.get(opts.show_progress_type, 0)
 
     if approximation == 2:
-        x_sample = sd_vae_approx.cheap_approximation(sample)
+        x_sample = sd_vae_approx.cheap_approximation(sample) * 0.5 + 0.5
     elif approximation == 1:
-        x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
+        x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach() * 0.5 + 0.5
     elif approximation == 3:
         x_sample = sample * 1.5
         x_sample = sd_vae_taesd.model()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
     else:
-        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
+        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
 
-    if approximation != 3:
-        x_sample = (x_sample + 1.0) / 2.0
     x_sample = torch.clamp(x_sample, min=0.0, max=1.0)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)
