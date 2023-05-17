@@ -98,7 +98,11 @@ def progressapi(req: ProgressRequest):
 
             if opts.live_previews_image_format == "png":
                 # using optimize for large images takes an enormous amount of time
-                save_kwargs = {"optimize": max(*image.size) > 256}
+                if max(*image.size) <= 256:
+                    save_kwargs = {"optimize": True}
+                else:
+                    save_kwargs = {"optimize": False, "compress_level": 1}
+
             else:
                 save_kwargs = {}
 
