@@ -39,5 +39,5 @@ class RedisSender:
         queue = 'checkpoint:train'
         rds = self.redis_pool.get_connection()
         rds.xadd(queue, {
-            task.id: task.id
+            'task_id': task.id
         })
