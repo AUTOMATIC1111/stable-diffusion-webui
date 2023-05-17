@@ -115,36 +115,53 @@ titles = {
     "Negative Guidance minimum sigma": "Skip negative prompt for steps where image is already mostly denoised; the higher this value, the more skips there will be; provides increased performance in exchange for minor quality reduction."
 }
 
+function updateTooltipForSpan(span){
+    if (span.title) return;  // already has a title
 
-onUiUpdate(function(){
-	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
-		if (span.title) return;  // already has a title
-
-		let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
+    let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
 
     if(!tooltip){
-		    tooltip = localization[titles[span.value]] || titles[span.value];
-		}
+        tooltip = localization[titles[span.value]] || titles[span.value];
+    }
 
-		if(!tooltip){
-			for (const c of span.classList) {
-				if (c in titles) {
-					tooltip = localization[titles[c]] || titles[c];
-					break;
-				}
+    if(!tooltip){
+		for (const c of span.classList) {
+			if (c in titles) {
+				tooltip = localization[titles[c]] || titles[c];
+				break;
 			}
 		}
+	}
 
-		if(tooltip){
-			span.title = tooltip;
-		}
-	})
+	if(tooltip){
+		span.title = tooltip;
+	}
+}
 
-	gradioApp().querySelectorAll('select').forEach(function(select){
-	    if (select.onchange != null) return;
+function updateTooltipForSelect(select){
+    if (select.onchange != null) return;
 
-	    select.onchange = function(){
-            select.title = localization[titles[select.value]] || titles[select.value] || "";
-	    }
-	})
+    select.onchange = function(){
+        select.title = localization[titles[select.value]] || titles[select.value] || "";
+    }
+}
+
+observedTooltipElements = {"SPAN": 1, "BUTTON": 1, "SELECT": 1, "P": 1}
+
+onUiUpdate(function(m){
+    m.forEach(function(record){
+        record.addedNodes.forEach(function(node){
+            if(observedTooltipElements[node.tagName]){
+                updateTooltipForSpan(node)
+            }
+            if(node.tagName == "SELECT"){
+                updateTooltipForSelect(node)
+            }
+
+            if(node.querySelectorAll){
+                node.querySelectorAll('span, button, select, p').forEach(updateTooltipForSpan)
+    	        node.querySelectorAll('select').forEach(updateTooltipForSelect)
+            }
+        })
+    })
 })
