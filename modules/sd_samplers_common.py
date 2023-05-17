@@ -22,28 +22,29 @@ def setup_img2img_steps(p, steps=None):
     return steps, t_enc
 
 
-approximation_indexes = {"Full": 0, "Tiny AE": 1, "Approx NN": 2, "Approx cheap": 3}
+approximation_indexes = {"Full": 0, "Approx NN": 1, "Approx cheap": 2, "TAESD": 3}
 
 
 def single_sample_to_image(sample, approximation=None):
-    if approximation is None or approximation not in approximation_indexes.keys():
-        approximation = approximation_indexes.get(opts.show_progress_type, 1)
 
-    if approximation == 1:
-        x_sample = sd_vae_taesd.decode()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
-        x_sample = sd_vae_taesd.TAESD.unscale_latents(x_sample)
-        x_sample = torch.clamp((x_sample * 0.25) + 0.5, 0, 1)
+    if approximation is None:
+        approximation = approximation_indexes.get(opts.show_progress_type, 0)
+
+    if approximation == 2:
+        x_sample = sd_vae_approx.cheap_approximation(sample)
+    elif approximation == 1:
+        x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
+    elif approximation == 3:
+        x_sample = sd_vae_taesd.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
+        x_sample = sd_vae_taesd.TAESD.unscale_latents(x_sample)  # returns value in [-2, 2]
+        x_sample = x_sample * 0.5
     else:
-        if approximation == 3:
-            x_sample = sd_vae_approx.cheap_approximation(sample)
-        elif approximation == 2:
-            x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
-        else:
-            x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
-        x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
+        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
 
+    x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)
+
     return Image.fromarray(x_sample)
 
 
