@@ -2,7 +2,7 @@ from collections import namedtuple
 import numpy as np
 import torch
 from PIL import Image
-from modules import devices, processing, images, sd_vae_approx, sd_vae_taesd
+from modules import devices, processing, images, sd_vae_approx, sd_samplers, sd_vae_taesd
 
 from modules.shared import opts, state
 import modules.shared as shared
@@ -62,6 +62,25 @@ def store_latent(decoded):
     if opts.live_previews_enable and opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
         if not shared.parallel_processing_allowed:
             shared.state.assign_current_image(sample_to_image(decoded))
+
+
+def is_sampler_using_eta_noise_seed_delta(p):
+    """returns whether sampler from config will use eta noise seed delta for image creation"""
+
+    sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
+
+    eta = p.eta
+
+    if eta is None and p.sampler is not None:
+        eta = p.sampler.eta
+
+    if eta is None and sampler_config is not None:
+        eta = 0 if sampler_config.options.get("default_eta_is_0", False) else 1.0
+
+    if eta == 0:
+        return False
+
+    return sampler_config.options.get("uses_ensd", False)
 
 
 class InterruptedException(BaseException):

@@ -1,15 +1,11 @@
 import base64
-import html
 import io
-import math
 import os
 import re
-from pathlib import Path
 
 import gradio as gr
 from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks
-import tempfile
 from PIL import Image
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
@@ -23,14 +19,14 @@ registered_param_bindings = []
 
 
 class ParamBinding:
-    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=[]):
+    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=None):
         self.paste_button = paste_button
         self.tabname = tabname
         self.source_text_component = source_text_component
         self.source_image_component = source_image_component
         self.source_tabname = source_tabname
         self.override_settings_component = override_settings_component
-        self.paste_field_names = paste_field_names
+        self.paste_field_names = paste_field_names or []
 
 
 def reset():
@@ -251,7 +247,7 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         lines.append(lastline)
         lastline = ''
 
-    for i, line in enumerate(lines):
+    for line in lines:
         line = line.strip()
         if line.startswith("Negative prompt:"):
             done_with_prompt = True
@@ -312,6 +308,8 @@ infotext_to_setting_name_mapping = [
     ('UniPC skip type', 'uni_pc_skip_type'),
     ('UniPC order', 'uni_pc_order'),
     ('UniPC lower order final', 'uni_pc_lower_order_final'),
+    ('Token merging ratio', 'token_merging_ratio'),
+    ('Token merging ratio hr', 'token_merging_ratio_hr'),
     ('RNG', 'randn_source'),
     ('NGMS', 's_min_uncond'),
 ]

@@ -1,4 +1,3 @@
-import glob
 import os.path
 import urllib.parse
 from pathlib import Path
@@ -27,11 +26,11 @@ def register_page(page):
 def fetch_file(filename: str = ""):
     from starlette.responses import FileResponse
 
-    if not any([Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs]):
+    if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
         raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
     ext = os.path.splitext(filename)[1].lower()
-    if ext not in (".png", ".jpg", ".webp"):
+    if ext not in (".png", ".jpg", ".jpeg", ".webp"):
         raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
 
     # would profit from returning 304
@@ -91,7 +90,7 @@ class ExtraNetworksPage:
 
         subdirs = {}
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
-            for root, dirs, files in os.walk(parentdir):
+            for root, dirs, _ in os.walk(parentdir, followlinks=True):
                 for dirname in dirs:
                     x = os.path.join(root, dirname)
 
@@ -195,7 +194,7 @@ class ExtraNetworksPage:
         Find a preview PNG for a given path (without extension) and call link_preview on it.
         """
 
-        preview_extensions = ["png", "jpg", "webp"]
+        preview_extensions = ["png", "jpg", "jpeg", "webp"]
         if shared.opts.samples_format not in preview_extensions:
             preview_extensions.append(shared.opts.samples_format)
 
@@ -263,13 +262,13 @@ def create_ui(container, button, tabname):
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
-    with gr.Tabs(elem_id=tabname+"_extra_tabs") as tabs:
+    with gr.Tabs(elem_id=tabname+"_extra_tabs"):
         for page in ui.stored_extra_pages:
             page_id = page.title.lower().replace(" ", "_")
 
             with gr.Tab(page.title, id=page_id):
                 elem_id = f"{tabname}_{page_id}_cards_html"
-                page_elem = gr.HTML('', elem_id=elem_id)
+                page_elem = gr.HTML('Loading...', elem_id=elem_id)
                 ui.pages.append(page_elem)
 
                 page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + json.dumps(tabname) + '); return []}', inputs=[], outputs=[])
@@ -283,13 +282,24 @@ def create_ui(container, button, tabname):
     def toggle_visibility(is_visible):
         is_visible = not is_visible
 
-        if is_visible and not ui.pages_contents:
+        return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
+
+    def fill_tabs(is_empty):
+        """Creates HTML for extra networks' tabs when the extra networks button is clicked for the first time."""
+
+        if not ui.pages_contents:
             refresh()
 
-        return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary")), *ui.pages_contents
+        if is_empty:
+            return True, *ui.pages_contents
+
+        return True, *[gr.update() for _ in ui.pages_contents]
 
     state_visible = gr.State(value=False)
-    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button, *ui.pages])
+    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button], show_progress=False)
+
+    state_empty = gr.State(value=True)
+    button.click(fn=fill_tabs, inputs=[state_empty], outputs=[state_empty, *ui.pages], show_progress=False)
 
     def refresh():
         for pg in ui.stored_extra_pages:
@@ -327,7 +337,7 @@ def setup_ui(ui, gallery):
 
         is_allowed = False
         for extra_page in ui.stored_extra_pages:
-            if any([path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()]):
+            if any(path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()):
                 is_allowed = True
                 break
 

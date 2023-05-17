@@ -136,14 +136,14 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     result_is_instruct_pix2pix_model = False
 
     if theta_func2:
-        shared.state.textinfo = f"Loading B"
+        shared.state.textinfo = "Loading B"
         print(f"Loading {secondary_model_info.filename}...")
         theta_1 = sd_models.read_state_dict(secondary_model_info.filename, map_location='cpu')
     else:
         theta_1 = None
 
     if theta_func1:
-        shared.state.textinfo = f"Loading C"
+        shared.state.textinfo = "Loading C"
         print(f"Loading {tertiary_model_info.filename}...")
         theta_2 = sd_models.read_state_dict(tertiary_model_info.filename, map_location='cpu')
 
@@ -199,7 +199,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
                     result_is_inpainting_model = True
             else:
                 theta_0[key] = theta_func2(a, b, multiplier)
-            
+
             theta_0[key] = to_half(theta_0[key], save_as_half)
 
         shared.state.sampling_step += 1

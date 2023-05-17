@@ -1,29 +1,23 @@
-import html
 import json
-import math
 import mimetypes
 import os
-import platform
-import random
 import sys
-import tempfile
-import time
 import traceback
-from functools import partial, reduce
+from functools import reduce
 import warnings
 
 import gradio as gr
 import gradio.routes
 import gradio.utils
 import numpy as np
-from PIL import Image, PngImagePlugin
+from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, postprocessing, ui_components, ui_common, ui_postprocessing, progress
-from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave
+from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 
-from modules.shared import opts, cmd_opts, restricted_opts
+from modules.shared import opts, cmd_opts
 
 import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -34,7 +28,6 @@ import modules.shared as shared
 import modules.styles
 import modules.textual_inversion.ui
 from modules import prompt_parser
-from modules.images import save_image
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.textual_inversion import textual_inversion
@@ -92,16 +85,6 @@ def send_gradio_gallery_to_image(x):
     if len(x) == 0:
         return None
     return image_from_url_text(x[0])
-
-def visit(x, func, path=""):
-    if hasattr(x, 'children'):
-        if isinstance(x, gr.Tabs) and x.elem_id is not None:
-            # Tabs element can't have a label, have to use elem_id instead
-            func(f"{path}/Tabs@{x.elem_id}", x)
-        for c in x.children:
-            visit(c, func, path)
-    elif x.label is not None:
-        func(f"{path}/{x.label}", x)
 
 
 def add_style(name: str, prompt: str, negative_prompt: str):
@@ -246,7 +229,7 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
                 all_seeds = gen_info.get('all_seeds', [-1])
                 res = all_seeds[index if 0 <= index < len(all_seeds) else 0]
 
-        except json.decoder.JSONDecodeError as e:
+        except json.decoder.JSONDecodeError:
             if gen_info_string != '':
                 print("Error parsing JSON generation info:", file=sys.stderr)
                 print(gen_info_string, file=sys.stderr)
@@ -423,7 +406,7 @@ def create_sampler_and_steps_selection(choices, tabname):
 def ordered_ui_categories():
     user_order = {x.strip(): i * 2 + 1 for i, x in enumerate(shared.opts.ui_reorder.split(","))}
 
-    for i, category in sorted(enumerate(shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
+    for _, category in sorted(enumerate(shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category
 
 
@@ -736,8 +719,8 @@ def create_ui():
                     with gr.TabItem('Batch', id='batch', elem_id="img2img_batch_tab") as tab_batch:
                         hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if shared.cmd_opts.hide_ui_dir_config else ''
                         gr.HTML(
-                            f"<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running." +
-                            f"<br>Use an empty output directory to save pictures normally instead of writing to the output directory." +
+                            "<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running." +
+                            "<br>Use an empty output directory to save pictures normally instead of writing to the output directory." +
                             f"<br>Add inpaint batch mask directory to enable inpaint batch processing."
                             f"{hidden}</p>"
                         )
@@ -746,7 +729,6 @@ def create_ui():
                         img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
 
                     img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
-                    img2img_image_inputs = [init_img, sketch, init_img_with_mask, inpaint_color_sketch]
 
                     for i, tab in enumerate(img2img_tabs):
                         tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
@@ -1189,7 +1171,7 @@ def create_ui():
                         process_focal_crop_entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_entropy_weight")
                         process_focal_crop_edges_weight = gr.Slider(label='Focal point edges weight', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_edges_weight")
                         process_focal_crop_debug = gr.Checkbox(label='Create debug image', elem_id="train_process_focal_crop_debug")
-                    
+
                     with gr.Column(visible=False) as process_multicrop_col:
                         gr.Markdown('Each image is center-cropped with an automatically chosen width and height.')
                         with gr.Row():
@@ -1201,7 +1183,7 @@ def create_ui():
                         with gr.Row():
                             process_multicrop_objective = gr.Radio(["Maximize area", "Minimize error"], value="Maximize area", label="Resizing objective", elem_id="train_process_multicrop_objective")
                             process_multicrop_threshold = gr.Slider(minimum=0, maximum=1, step=0.01, label="Error threshold", value=0.1, elem_id="train_process_multicrop_threshold")
-   
+
                     with gr.Row():
                         with gr.Column(scale=3):
                             gr.HTML(value="")
@@ -1230,7 +1212,7 @@ def create_ui():
                     )
 
                 def get_textual_inversion_template_names():
-                    return sorted([x for x in textual_inversion.textual_inversion_templates])
+                    return sorted(textual_inversion.textual_inversion_templates)
 
                 with gr.Tab(label="Train", id="train"):
                     gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images <a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\" style=\"font-weight:bold;\">[wiki]</a></p>")
@@ -1238,13 +1220,13 @@ def create_ui():
                         train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                         create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
 
-                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=[x for x in shared.hypernetworks.keys()])
-                        create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted([x for x in shared.hypernetworks.keys()])}, "refresh_train_hypernetwork_name")
+                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=sorted(shared.hypernetworks))
+                        create_refresh_button(train_hypernetwork_name, shared.reload_hypernetworks, lambda: {"choices": sorted(shared.hypernetworks)}, "refresh_train_hypernetwork_name")
 
                     with FormRow():
                         embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005", elem_id="train_embedding_learn_rate")
                         hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001", elem_id="train_hypernetwork_learn_rate")
-                    
+
                     with FormRow():
                         clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
                         clip_grad_value = gr.Textbox(placeholder="Gradient clip value", value="0.1", show_label=False)
@@ -1290,8 +1272,8 @@ def create_ui():
 
             with gr.Column(elem_id='ti_gallery_container'):
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
-                ti_gallery = gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(columns=4)
-                ti_progress = gr.HTML(elem_id="ti_progress", value="")
+                gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(columns=4)
+                gr.HTML(elem_id="ti_progress", value="")
                 ti_outcome = gr.HTML(elem_id="ti_error", value="")
 
         create_embedding.click(
@@ -1479,6 +1461,8 @@ def create_ui():
 
         return res
 
+    loadsave = ui_loadsave.UiLoadsave(cmd_opts.ui_config_file)
+
     components = []
     component_dict = {}
     shared.settings_components = component_dict
@@ -1566,6 +1550,9 @@ def create_ui():
                 current_row.__exit__()
                 current_tab.__exit__()
 
+            with gr.TabItem("Defaults", id="defaults", elem_id="settings_tab_defaults"):
+                loadsave.create_ui()
+
             with gr.TabItem("Actions", id="actions", elem_id="settings_tab_actions"):
                 request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
                 download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
@@ -1578,7 +1565,7 @@ def create_ui():
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
 
             gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
-            
+
 
         def unload_sd_weights():
             modules.sd_models.unload_model_weights()
@@ -1639,7 +1626,7 @@ def create_ui():
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
         (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
-        (train_interface, "Train", "ti"),
+        (train_interface, "Train", "train"),
     ]
 
     interfaces += script_callbacks.ui_tabs_callback()
@@ -1654,7 +1641,7 @@ def create_ui():
 
     with gr.Blocks(theme=shared.gradio_theme, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
-            for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
+            for _i, k, _item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
 
@@ -1667,8 +1654,18 @@ def create_ui():
                 with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
 
+            for interface, _label, ifid in interfaces:
+                if ifid in ["extensions", "settings"]:
+                    continue
+
+                loadsave.add_block(interface, ifid)
+
+            loadsave.add_component(f"webui/Tabs@{tabs.elem_id}", tabs)
+
+            loadsave.setup_ui()
+
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
-            audio_notification = gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
+            gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
         footer = shared.html("footer.html")
         footer = footer.format(versions=versions_html())
@@ -1681,7 +1678,7 @@ def create_ui():
             outputs=[text_settings, result],
         )
 
-        for i, k, item in quicksettings_list:
+        for _i, k, _item in quicksettings_list:
             component = component_dict[k]
             info = opts.data_labels[k]
 
@@ -1755,97 +1752,8 @@ def create_ui():
             ]
         )
 
-    ui_config_file = cmd_opts.ui_config_file
-    ui_settings = {}
-    settings_count = len(ui_settings)
-    error_loading = False
-
-    try:
-        if os.path.exists(ui_config_file):
-            with open(ui_config_file, "r", encoding="utf8") as file:
-                ui_settings = json.load(file)
-    except Exception:
-        error_loading = True
-        print("Error loading settings:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
-
-    def loadsave(path, x):
-        def apply_field(obj, field, condition=None, init_field=None):
-            key = f"{path}/{field}"
-
-            if getattr(obj, 'custom_script_source', None) is not None:
-              key = f"customscript/{obj.custom_script_source}/{key}"
-
-            if getattr(obj, 'do_not_save_to_config', False):
-                return
-
-            saved_value = ui_settings.get(key, None)
-            if saved_value is None:
-                ui_settings[key] = getattr(obj, field)
-            elif condition and not condition(saved_value):
-                pass
-
-                # this warning is generally not useful;
-                # print(f'Warning: Bad ui setting value: {key}: {saved_value}; Default value "{getattr(obj, field)}" will be used instead.')
-            else:
-                setattr(obj, field, saved_value)
-                if init_field is not None:
-                    init_field(saved_value)
-
-        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton] and x.visible:
-            apply_field(x, 'visible')
-
-        if type(x) == gr.Slider:
-            apply_field(x, 'value')
-            apply_field(x, 'minimum')
-            apply_field(x, 'maximum')
-            apply_field(x, 'step')
-
-        if type(x) == gr.Radio:
-            apply_field(x, 'value', lambda val: val in x.choices)
-
-        if type(x) == gr.Checkbox:
-            apply_field(x, 'value')
-
-        if type(x) == gr.Textbox:
-            apply_field(x, 'value')
-
-        if type(x) == gr.Number:
-            apply_field(x, 'value')
-
-        if type(x) == gr.Dropdown:
-            def check_dropdown(val):
-                if getattr(x, 'multiselect', False):
-                    return all([value in x.choices for value in val])
-                else:
-                    return val in x.choices
-
-            apply_field(x, 'value', check_dropdown, getattr(x, 'init_field', None))
-
-        def check_tab_id(tab_id):
-            tab_items = list(filter(lambda e: isinstance(e, gr.TabItem), x.children))
-            if type(tab_id) == str:
-                tab_ids = [t.id for t in tab_items]
-                return tab_id in tab_ids
-            elif type(tab_id) == int:
-                return tab_id >= 0 and tab_id < len(tab_items)
-            else:
-                return False
-
-        if type(x) == gr.Tabs:
-            apply_field(x, 'selected', check_tab_id)
-
-    visit(txt2img_interface, loadsave, "txt2img")
-    visit(img2img_interface, loadsave, "img2img")
-    visit(extras_interface, loadsave, "extras")
-    visit(modelmerger_interface, loadsave, "modelmerger")
-    visit(train_interface, loadsave, "train")
-
-    loadsave(f"webui/Tabs@{tabs.elem_id}", tabs)
-
-    if not error_loading and (not os.path.exists(ui_config_file) or settings_count != len(ui_settings)):
-        with open(ui_config_file, "w", encoding="utf8") as file:
-            json.dump(ui_settings, file, indent=4)
+    loadsave.dump_defaults()
+    demo.ui_loadsave = loadsave
 
     # Required as a workaround for change() event not triggering when loading values from ui-config.json
     interp_description.value = update_interp_description(interp_method.value)
@@ -1863,12 +1771,11 @@ def webpath(fn):
 
 
 def javascript_html():
-    script_js = os.path.join(script_path, "script.js")
-    head = f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
+    # Ensure localization is in `window` before scripts
+    head = f'<script type="text/javascript">{localization.localization_js(shared.opts.localization)}</script>\n'
 
-    inline = f"{localization.localization_js(shared.opts.localization)};"
-    if cmd_opts.theme is not None:
-        inline += f"set_theme('{cmd_opts.theme}');"
+    script_js = os.path.join(script_path, "script.js")
+    head += f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
 
     for script in modules.scripts.list_scripts("javascript", ".js"):
         head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
@@ -1876,7 +1783,8 @@ def javascript_html():
     for script in modules.scripts.list_scripts("javascript", ".mjs"):
         head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
 
-    head += f'<script type="text/javascript">{inline}</script>\n'
+    if cmd_opts.theme:
+        head += f'<script type="text/javascript">set_theme(\"{cmd_opts.theme}\");</script>\n'
 
     return head
 
@@ -1933,15 +1841,15 @@ def versions_html():
 
     return f"""
 version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>
- • 
+&#x2000;•&#x2000;
 python: <span title="{sys.version}">{python_version}</span>
- • 
+&#x2000;•&#x2000;
 torch: {getattr(torch, '__long_version__',torch.__version__)}
- • 
+&#x2000;•&#x2000;
 xformers: {xformers_version}
- • 
+&#x2000;•&#x2000;
 gradio: {gr.__version__}
- • 
+&#x2000;•&#x2000;
 checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 """
 

@@ -13,15 +13,22 @@ import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
-from fonts.ttf import Roboto
 import string
 import json
 import hashlib
 
 from modules import sd_samplers, shared, script_callbacks, errors
-from modules.shared import opts, cmd_opts
+from modules.paths_internal import roboto_ttf_file
+from modules.shared import opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+
+
+def get_font(fontsize: int):
+    try:
+        return ImageFont.truetype(opts.font or roboto_ttf_file, fontsize)
+    except Exception:
+        return ImageFont.truetype(roboto_ttf_file, fontsize)
 
 
 def image_grid(imgs, batch_size=1, rows=None):
@@ -142,14 +149,8 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
                 lines.append(word)
         return lines
 
-    def get_font(fontsize):
-        try:
-            return ImageFont.truetype(opts.font or Roboto, fontsize)
-        except Exception:
-            return ImageFont.truetype(Roboto, fontsize)
-
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
-        for i, line in enumerate(lines):
+        for line in lines:
             fnt = initial_fnt
             fontsize = initial_fontsize
             while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
@@ -366,7 +367,7 @@ class FilenameGenerator:
         self.seed = seed
         self.prompt = prompt
         self.image = image
-        
+
     def hasprompt(self, *args):
         lower = self.prompt.lower()
         if self.p is None or self.prompt is None:
@@ -409,13 +410,13 @@ class FilenameGenerator:
         time_format = args[0] if len(args) > 0 and args[0] != "" else self.default_time_format
         try:
             time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
-        except pytz.exceptions.UnknownTimeZoneError as _:
+        except pytz.exceptions.UnknownTimeZoneError:
             time_zone = None
 
         time_zone_time = time_datetime.astimezone(time_zone)
         try:
             formatted_time = time_zone_time.strftime(time_format)
-        except (ValueError, TypeError) as _:
+        except (ValueError, TypeError):
             formatted_time = time_zone_time.strftime(self.default_time_format)
 
         return sanitize_filename_part(formatted_time, replace_spaces=False)
@@ -472,9 +473,9 @@ def get_next_sequence_number(path, basename):
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            parts = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
-                result = max(int(l[0]), result)
+                result = max(int(parts[0]), result)
             except ValueError:
                 pass
 

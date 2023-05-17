@@ -2,7 +2,6 @@ import json
 import math
 import os
 import sys
-import warnings
 import hashlib
 
 import torch
@@ -11,10 +10,10 @@ from PIL import Image, ImageFilter, ImageOps
 import random
 import cv2
 from skimage import exposure
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -30,6 +29,13 @@ from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
+import tomesd
+
+# add a logger for the processing module
+logger = logging.getLogger(__name__)
+# manually set output level here since there is no option to do so yet through launch options
+# logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(message)s')
+
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -165,7 +171,7 @@ class StableDiffusionProcessing:
         self.all_subseeds = None
         self.iteration = 0
         self.is_hr_pass = False
-        
+
 
     @property
     def sd_model(self):
@@ -472,6 +478,11 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     index = position_in_batch + iteration * p.batch_size
 
     clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
+    enable_hr = getattr(p, 'enable_hr', False)
+
+    uses_ensd = opts.eta_noise_seed_delta != 0
+    if uses_ensd:
+        uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
 
     generation_params = {
         "Steps": p.steps,
@@ -489,14 +500,15 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
-        "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "ENSD": opts.eta_noise_seed_delta if uses_ensd else None,
+        "Token merging ratio": None if opts.token_merging_ratio == 0 else opts.token_merging_ratio,
+        "Token merging ratio hr": None if not enable_hr or opts.token_merging_ratio_hr == 0 else opts.token_merging_ratio_hr,
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
+        **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
     }
-
-    generation_params.update(p.extra_generation_params)
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
 
@@ -523,9 +535,18 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()
 
+        if opts.token_merging_ratio > 0:
+            sd_models.apply_token_merging(sd_model=p.sd_model, hr=False)
+            logger.debug(f"Token merging applied to first pass. Ratio: '{opts.token_merging_ratio}'")
+
         res = process_images_inner(p)
 
     finally:
+        # undo model optimizations made by tomesd
+        if opts.token_merging_ratio > 0:
+            tomesd.remove_patch(p.sd_model)
+            logger.debug('Token merging model optimizations removed')
+
         # restore opts to original state
         if p.override_settings_restore_afterwards:
             for k, v in stored_opts.items():
@@ -660,12 +681,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     processed = Processed(p, [], p.seed, "")
                     file.write(processed.infotext(p, 0))
 
-            step_multiplier = 1
-            if not shared.opts.dont_fix_second_order_samplers_schedule:
-                try:
-                    step_multiplier = 2 if sd_samplers.all_samplers_map.get(p.sampler_name).aliases[0] in ['k_dpmpp_2s_a', 'k_dpmpp_2s_a_ka', 'k_dpmpp_sde', 'k_dpmpp_sde_ka', 'k_dpm_2', 'k_dpm_2_a', 'k_heun'] else 1
-                except:
-                    pass
+            sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
+            step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1
             uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
             c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
 
@@ -978,7 +995,21 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         x = None
         devices.torch_gc()
 
+        # apply token merging optimizations from tomesd for high-res pass
+        if opts.token_merging_ratio_hr > 0:
+            # in case the user has used separate merge ratios
+            if opts.token_merging_ratio > 0:
+                tomesd.remove_patch(self.sd_model)
+                logger.debug('Adjusting token merging ratio for high-res pass')
+
+            sd_models.apply_token_merging(sd_model=self.sd_model, hr=True)
+            logger.debug(f"Applied token merging for high-res pass. Ratio: '{opts.token_merging_ratio_hr}'")
+
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
+
+        if opts.token_merging_ratio_hr > 0 or opts.token_merging_ratio > 0:
+            tomesd.remove_patch(self.sd_model)
+            logger.debug('Removed token merging optimizations from model')
 
         self.is_hr_pass = False
 
