@@ -14,26 +14,19 @@ Stuff to be added...
 - Add `Gradio` theme maker
 - Create new `GitHub` hooks/actions for CI/CD  
 - Monitor file changes for misbehaving extensions
-- Kitchen theme: <https://github.com/canisminor1990/sd-webui-kitchen-theme>
-- Lightbox improvements
-- Check duplicate extensions
 - Reload browser on server restart
-- Gradio 3.28.4 when ready
 - Remove origin wiki
 - Import core repos
 - Import rembg
 - Improve core `Stability-AI` code: <https://github.com/vladmandic/automatic/discussions/795>
 - Improve core `k-Diffusion` code
-- Update and mdularize `cli` scripts
 
 ## Investigate
 
 Stuff to be investigated...
 
-- Torch Compile
 - TXT2IMG: <https://github.com/vladmandic/automatic/discussions/814>
 - `TensorRT`
-- [Temporal Weighing](https://github.com/comfyanonymous/ComfyUI/discussions/473)
 
 ## Merge PRs
 

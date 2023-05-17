@@ -4,6 +4,7 @@ from collections import namedtuple
 from typing import List
 import lark
 import torch
+from compel import Compel
 from modules.shared import log, opts
 
 # a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
@@ -289,8 +290,19 @@ def parse_prompt_attention(text):
     round_brackets = []
     square_brackets = []
     if opts.prompt_attention == 'Fixed attention':
-        return [[text, 1.0]]
-    elif opts.prompt_attention == 'Original parser':
+        res = [[text, 1.0]]
+        log.debug(f'Prompt parse-attention: {opts.prompt_attention} {res}')
+        return res
+    elif opts.prompt_attention == 'Compel parser':
+        conjunction = Compel.parse_prompt_string(text)
+        if conjunction is None or conjunction.prompts is None or conjunction.prompts is None or len(conjunction.prompts[0].children) == 0:
+            return [["", 1.0]]
+        res = []
+        for frag in conjunction.prompts[0].children:
+            res.append([frag.text, frag.weight])
+        log.debug(f'Prompt parse-attention: {opts.prompt_attention} {res}')
+        return res
+    elif opts.prompt_attention == 'A1111 parser':
         re_attention = re_attention_v1
         whitespace = ''
     else:
@@ -344,7 +356,7 @@ def parse_prompt_attention(text):
             res.pop(i + 1)
         else:
             i += 1
-    log.debug(f'Prompt parse-attention: {res}')
+    log.debug(f'Prompt parse-attention: {opts.prompt_attention} {res}')
     return res
 
 if __name__ == "__main__":
