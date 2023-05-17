@@ -65,6 +65,12 @@ class RunAnnotatorArgs:
         else:
             mask = get_tmp_local_path(mask)
             self.mask = np.array(Image.open(mask))
+        module = strip_model_hash(module)
+
+        if module == 'None':
+            module = 'none'
+        elif module in FreePreprocessors:
+            module = 'none'
         self.kwargs = kwargs
         self.module = module
         self.pres = annotator_resolution

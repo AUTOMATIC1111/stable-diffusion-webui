@@ -22,29 +22,33 @@ class LLuLFormatter(AlwaysonScriptArgsFormatter):
         def obj_to_array(obj: typing.Mapping) -> typing.Sequence:
             # 如果是[OBJ1, OBJ2]形式的，需要转换为ARRAY
             if isinstance(obj, dict):
-                return [args['enabled'],
-                        args['multiply'],
-                        args['weight'],
-                        args['understand'],
-                        args['layers'],
-                        args['apply_to'],
-                        args['start_steps'],
-                        args['max_steps'],
-                        args['up'],
-                        args['up_aa'],
-                        args['down'],
-                        args['down_aa'],
-                        args['intp'],
-                        args['x'],
-                        args['y'],
-                        args['force_float']]
+                return [obj['enabled'],
+                        obj['multiply'],
+                        obj['weight'],
+                        obj['understand'],
+                        obj['layers'],
+                        obj['apply_to'],
+                        obj['start_steps'],
+                        obj['max_steps'],
+                        obj['up'],
+                        obj['up_aa'],
+                        obj['down'],
+                        obj['down_aa'],
+                        obj['intp'],
+                        str(obj['x']),
+                        str(obj['y']),
+                        obj['force_float']]
             return obj
 
-        posex_script_args = args
+        llul_script_args = args
         if is_img2img:
             if isinstance(args, dict):
-                posex_script_args = obj_to_array(args)
+                llul_script_args = obj_to_array(args)
             else:
-                posex_script_args = [obj_to_array(x) for x in args]
+                llul_script_args = []
+                for x in args:
+                    llul_script_args.extend(obj_to_array(x))
 
-        return posex_script_args
+        return llul_script_args
+
+

@@ -67,14 +67,14 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
 
         if is_img2img:
             if isinstance(args, dict):
-                posex_script_args = obj_to_array(args)
+                md_script_args = obj_to_array(args)
             else:
-                posex_script_args = []
+                md_script_args = []
                 for x in args:
-                    posex_script_args.extend(obj_to_array(x))
+                    md_script_args.extend(obj_to_array(x))
         else:
-            posex_script_args = obj_to_array(args)
-        return posex_script_args
+            md_script_args = obj_to_array(args)
+        return md_script_args
 
 
 class MultiVAEFormatter(AlwaysonScriptArgsFormatter):
@@ -102,12 +102,12 @@ class MultiVAEFormatter(AlwaysonScriptArgsFormatter):
 
         if is_img2img:
             if isinstance(args, dict):
-                posex_script_args = obj_to_array(args)
+                mv_script_args = obj_to_array(args)
             else:
-                posex_script_args = []
+                mv_script_args = []
                 for x in args:
-                    posex_script_args.extend(obj_to_array(x))
+                    mv_script_args.extend(obj_to_array(x))
         else:
-            posex_script_args = obj_to_array(args)
-        return posex_script_args
+            mv_script_args = obj_to_array(args)
+        return mv_script_args
 
