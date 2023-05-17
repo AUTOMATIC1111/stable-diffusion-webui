@@ -171,7 +171,7 @@ class ExtraNetworksPage:
 
         # if this is true, the item must not be show in the default view, and must instead only be
         # shown when searching for it
-        serach_only = "/." in local_path or "\\." in local_path
+        search_only = "/." in local_path or "\\." in local_path
 
         args = {
             "style": f"'display: none; {height}{width}{background_image}'",
@@ -184,7 +184,7 @@ class ExtraNetworksPage:
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
-            "serach_only": " search_only" if serach_only else "",
+            "search_only": " search_only" if search_only else "",
         }
 
         return self.card_page.format(**args)
