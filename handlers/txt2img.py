@@ -165,7 +165,7 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
 
     def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
         base_model_path = self._get_local_checkpoint(task)
-        load_sd_model_weights(base_model_path)
+        load_sd_model_weights(base_model_path, task.model_hash)
         progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run i2i...')
         yield progress
         process_args = self._build_txt2img_arg(task)

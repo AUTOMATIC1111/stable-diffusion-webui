@@ -89,6 +89,10 @@ def calculate_sha256(filename):
 
 
 def sha256_from_cache(filename, title):
+    if shared.cmd_opts.worker:
+        basename, _ = os.path.splitext(os.path.basename(filename))
+        return basename
+
     hashes = cache("hashes")
     ondisk_mtime = os.path.getmtime(filename)
 
@@ -122,6 +126,7 @@ def sha256_from_cache(filename, title):
 
     if ondisk_mtime > cached_mtime or cached_sha256 is None:
         return None
+
 
     return cached_sha256
 

@@ -193,8 +193,8 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
     return script_args
 
 
-def load_sd_model_weights(filename):
-    checkpoint = CheckpointInfo(filename)
+def load_sd_model_weights(filename, sha256=None):
+    checkpoint = CheckpointInfo(filename, sha256)
     return reload_model_weights(info=checkpoint)
 
 

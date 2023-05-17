@@ -29,7 +29,7 @@ user_embedding_dirs = []
 
 
 class CheckpointInfo:
-    def __init__(self, filename):
+    def __init__(self, filename, sha256=None):
         self.filename = filename
         abspath = os.path.abspath(filename)
 
@@ -50,7 +50,7 @@ class CheckpointInfo:
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         self.hash = model_hash(filename)
 
-        self.sha256 = hashes.sha256_from_cache(self.filename, "checkpoint/" + name)
+        self.sha256 = hashes.sha256_from_cache(self.filename, "checkpoint/" + name) if not sha256 else sha256
         self.shorthash = self.sha256[0:10] if self.sha256 else None
 
         self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
@@ -72,16 +72,17 @@ class CheckpointInfo:
             checkpoint_alisases[id] = self
 
     def calculate_shorthash(self):
-        self.sha256 = hashes.sha256(self.filename, "checkpoint/" + self.name)
+        self.sha256 = self.sha256 or hashes.sha256(self.filename, "checkpoint/" + self.name)
         if self.sha256 is None:
             return
 
-        self.shorthash = self.sha256[0:10]
+        self.shorthash = self.shorthash or self.sha256[0:10]
 
         if self.shorthash not in self.ids:
             self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]']
 
-        checkpoints_list.pop(self.title)
+        if self.title in checkpoints_list:
+            checkpoints_list.pop(self.title)
         self.title = f'{self.name} [{self.shorthash}]'
         self.register()
 
@@ -282,7 +283,7 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
 
 
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
-    sd_model_hash = checkpoint_info.calculate_shorthash()
+    sd_model_hash = checkpoint_info.shorthash or checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
 
     shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
