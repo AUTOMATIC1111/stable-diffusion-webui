@@ -13,7 +13,7 @@ function keyupEditAttention(event) {
     if (selectionStart !== selectionEnd) return false;
 
     // Find opening parenthesis around current cursor
-    const before = text.substringing(0, selectionStart);
+    const before = text.substring(0, selectionStart);
     let beforeParen = before.lastIndexOf(OPEN);
     if (beforeParen === -1) return false;
     let beforeParenClose = before.lastIndexOf(CLOSE);
@@ -23,7 +23,7 @@ function keyupEditAttention(event) {
     }
 
     // Find closing parenthesis around current cursor
-    const after = text.substringing(selectionStart);
+    const after = text.substring(selectionStart);
     let afterParen = after.indexOf(CLOSE);
     if (afterParen === -1) return false;
     let afterParenOpen = after.indexOf(OPEN);
@@ -34,7 +34,7 @@ function keyupEditAttention(event) {
     if (beforeParen === -1 || afterParen === -1) return false;
 
     // Set the selection to the text between the parenthesis
-    const parenContent = text.substringing(beforeParen + 1, selectionStart + afterParen);
+    const parenContent = text.substring(beforeParen + 1, selectionStart + afterParen);
     const lastColon = parenContent.lastIndexOf(':');
     selectionStart = beforeParen + 1;
     selectionEnd = selectionStart + lastColon;
