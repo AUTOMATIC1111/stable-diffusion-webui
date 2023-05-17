@@ -45,29 +45,24 @@ function dimensionChange(e, is_width, is_height){
 
 		var viewportOffset = targetElement.getBoundingClientRect();
 
-		viewportscale = Math.min(  targetElement.clientWidth/targetElement.naturalWidth, targetElement.clientHeight/targetElement.naturalHeight )
+		var viewportscale = Math.min(  targetElement.clientWidth/targetElement.naturalWidth, targetElement.clientHeight/targetElement.naturalHeight )
 
-		scaledx = targetElement.naturalWidth*viewportscale
-		scaledy = targetElement.naturalHeight*viewportscale
+		var scaledx = targetElement.naturalWidth*viewportscale
+		var scaledy = targetElement.naturalHeight*viewportscale
 
-		cleintRectTop    = (viewportOffset.top+window.scrollY)
-		cleintRectLeft   = (viewportOffset.left+window.scrollX)
-		cleintRectCentreY = cleintRectTop  + (targetElement.clientHeight/2)
-		cleintRectCentreX = cleintRectLeft + (targetElement.clientWidth/2)
+		var cleintRectTop    = (viewportOffset.top+window.scrollY)
+		var cleintRectLeft   = (viewportOffset.left+window.scrollX)
+		var cleintRectCentreY = cleintRectTop  + (targetElement.clientHeight/2)
+		var cleintRectCentreX = cleintRectLeft + (targetElement.clientWidth/2)
 
-		viewRectTop    = cleintRectCentreY-(scaledy/2)
-		viewRectLeft   = cleintRectCentreX-(scaledx/2)
-		arRectWidth  = scaledx
-		arRectHeight = scaledy
+		var arscale = Math.min(  scaledx/currentWidth, scaledy/currentHeight )
+		var arscaledx = currentWidth*arscale
+		var arscaledy = currentHeight*arscale
 
-		arscale = Math.min(  arRectWidth/currentWidth, arRectHeight/currentHeight )
-		arscaledx = currentWidth*arscale
-		arscaledy = currentHeight*arscale
-
-		arRectTop    = cleintRectCentreY-(arscaledy/2)
-		arRectLeft   = cleintRectCentreX-(arscaledx/2)
-		arRectWidth  = arscaledx
-		arRectHeight = arscaledy
+		var arRectTop    = cleintRectCentreY-(arscaledy/2)
+		var arRectLeft   = cleintRectCentreX-(arscaledx/2)
+		var arRectWidth  = arscaledx
+		var arRectHeight = arscaledy
 
 	    arPreviewRect.style.top  = arRectTop+'px';
 	    arPreviewRect.style.left = arRectLeft+'px';

@@ -22,9 +22,6 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     """
     output = []
 
-    if ext_filter is None:
-        ext_filter = []
-
     try:
         places = []
 
@@ -39,22 +36,14 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
         places.append(model_path)
 
         for place in places:
-            if os.path.exists(place):
-                for file in glob.iglob(place + '**/**', recursive=True):
-                    full_path = file
-                    if os.path.isdir(full_path):
-                        continue
-                    if os.path.islink(full_path) and not os.path.exists(full_path):
-                        print(f"Skipping broken symlink: {full_path}")
-                        continue
-                    if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
-                        continue
-                    if len(ext_filter) != 0:
-                        model_name, extension = os.path.splitext(file)
-                        if extension not in ext_filter:
-                            continue
-                    if file not in output:
-                        output.append(full_path)
+            for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
+                if os.path.islink(full_path) and not os.path.exists(full_path):
+                    print(f"Skipping broken symlink: {full_path}")
+                    continue
+                if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
+                    continue
+                if full_path not in output:
+                    output.append(full_path)
 
         if model_url is not None and len(output) == 0:
             if download_name is not None:
@@ -128,23 +117,6 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
         pass
 
 
-builtin_upscaler_classes = []
-forbidden_upscaler_classes = set()
-
-
-def list_builtin_upscalers():
-    load_upscalers()
-
-    builtin_upscaler_classes.clear()
-    builtin_upscaler_classes.extend(Upscaler.__subclasses__())
-
-
-def forbid_loaded_nonbuiltin_upscalers():
-    for cls in Upscaler.__subclasses__():
-        if cls not in builtin_upscaler_classes:
-            forbidden_upscaler_classes.add(cls)
-
-
 def load_upscalers():
     # We can only do this 'magic' method to dynamically load upscalers if they are referenced,
     # so we'll try to import any _model.py files before looking in __subclasses__
@@ -160,10 +132,17 @@ def load_upscalers():
 
     datas = []
     commandline_options = vars(shared.cmd_opts)
-    for cls in Upscaler.__subclasses__():
-        if cls in forbidden_upscaler_classes:
-            continue
 
+    # some of upscaler classes will not go away after reloading their modules, and we'll end
+    # up with two copies of those classes. The newest copy will always be the last in the list,
+    # so we go from end to beginning and ignore duplicates
+    used_classes = {}
+    for cls in reversed(Upscaler.__subclasses__()):
+        classname = str(cls)
+        if classname not in used_classes:
+            used_classes[classname] = cls
+
+    for cls in reversed(used_classes.values()):
         name = cls.__name__
         cmd_name = f"{name.lower().replace('upscaler', '')}_models_path"
         scaler = cls(commandline_options.get(cmd_name, None))

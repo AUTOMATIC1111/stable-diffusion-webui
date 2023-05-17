@@ -25,6 +25,10 @@ re_emoji = /[\p{Extended_Pictographic}\u{1F3FB}-\u{1F3FF}\u{1F9B0}-\u{1F9B3}]/u
 original_lines = {}
 translated_lines = {}
 
+function hasLocalization() {
+    return window.localization && Object.keys(window.localization).length > 0;
+}
+
 function textNodesUnder(el){
     var n, a=[], walk=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null,false);
     while(n=walk.nextNode()) a.push(n);
@@ -35,11 +39,11 @@ function canBeTranslated(node, text){
     if(! text) return false;
     if(! node.parentElement) return false;
 
-    parentType = node.parentElement.nodeName
+    var parentType = node.parentElement.nodeName
     if(parentType=='SCRIPT' || parentType=='STYLE' || parentType=='TEXTAREA') return false;
 
     if (parentType=='OPTION' || parentType=='SPAN'){
-        pnode = node
+        var pnode = node
         for(var level=0; level<4; level++){
             pnode = pnode.parentElement
             if(! pnode) break;
@@ -69,7 +73,7 @@ function getTranslation(text){
 }
 
 function processTextNode(node){
-    text = node.textContent.trim()
+    var text = node.textContent.trim()
 
     if(! canBeTranslated(node, text)) return
 
@@ -105,30 +109,52 @@ function processNode(node){
 }
 
 function dumpTranslations(){
-    dumped = {}
+    if(!hasLocalization()) {
+        // If we don't have any localization,
+        // we will not have traversed the app to find
+        // original_lines, so do that now.
+        processNode(gradioApp());
+    }
+    var dumped = {}
     if (localization.rtl) {
-        dumped.rtl = true
+        dumped.rtl = true;
     }
 
-    Object.keys(original_lines).forEach(function(text){
-        if(dumped[text] !== undefined)  return
+    for (const text in original_lines) {
+        if(dumped[text] !== undefined) continue;
+        dumped[text] = localization[text] || text;
+    }
 
-        dumped[text] = localization[text] || text
-    })
-
-    return dumped
+    return dumped;
 }
 
-onUiUpdate(function(m){
-    m.forEach(function(mutation){
-        mutation.addedNodes.forEach(function(node){
-            processNode(node)
-        })
-    });
-})
+function download_localization() {
+    var text = JSON.stringify(dumpTranslations(), null, 4)
 
+    var element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', "localization.json");
+    element.style.display = 'none';
+    document.body.appendChild(element);
 
-document.addEventListener("DOMContentLoaded", function() {
+    element.click();
+
+    document.body.removeChild(element);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    if (!hasLocalization()) {
+        return;
+    }
+
+    onUiUpdate(function (m) {
+        m.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function (node) {
+                processNode(node)
+            })
+        });
+    })
+
     processNode(gradioApp())
 
     if (localization.rtl) {  // if the language is from right to left,
@@ -149,17 +175,3 @@ document.addEventListener("DOMContentLoaded", function() {
         })).observe(gradioApp(), { childList: true });
     }
 })
-
-function download_localization() {
-    text = JSON.stringify(dumpTranslations(), null, 4)
-
-    var element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-    element.setAttribute('download', "localization.json");
-    element.style.display = 'none';
-    document.body.appendChild(element);
-
-    element.click();
-
-    document.body.removeChild(element);
-}
