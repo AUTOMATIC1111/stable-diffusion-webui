@@ -48,6 +48,15 @@ body:
     validations:
       required: true
   - type: dropdown
+    id: py-version
+    attributes:
+      label: What Python version are you running on ?
+      multiple: false
+      options:
+        - Python 3.10.x
+        - Python 3.11.x (above, no supported yet)
+        - Python 3.9.x (below, no recommended)
+  - type: dropdown
     id: platforms
     attributes:
       label: What platforms do you use to access the UI ?
