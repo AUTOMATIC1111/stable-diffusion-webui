@@ -65,7 +65,9 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         caption = existing_caption
     caption = caption.strip()
     if len(caption) > 0:
-        if params.process_caption_only and existing_caption_filename is not None:
+        if params.process_caption_only:
+            fn = os.path.join(params.dstdir, f"{filename_part}.txt")
+        elif existing_caption_filename is not None:
             fn = existing_caption_filename
         else:
             fn = os.path.join(params.dstdir, f"{basename}.txt")

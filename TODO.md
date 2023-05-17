@@ -56,20 +56,3 @@ Tech that can be integrated as part of the core workflow...
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
 
 ### Pending Code Updates
-
-This is a massive one due to huge number of changes, but hopefully it will fo ok...
-
-- new **prompt parsers**  
-  select in UI -> Settings -> Stable Diffusion  
-  - **Full**: my new implementation  
-  - **A1111**: for backward compatibility  
-  - **Compel**: as used in ComfyUI and InvokeAI (a.k.a *Temporal Weighting*)  
-  - **Fixed**: for really old backward compatibility  
-- added `--safe` command line flag mode which skips loading user extensions  
-  please try to use it before opening new issue  
-- reintroduce `--api-only` mode to start server without ui  
-- monitor **extensions** install/startup and  
-  log if they modify any packages/requirements  
-  this is a *deep-experimental* python hack, but i think its worth it as extensions modifying requirements is one of most common causes of issues
-- port *all* upstream code from [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
-  up to today - commit hash `89f9faa`  
