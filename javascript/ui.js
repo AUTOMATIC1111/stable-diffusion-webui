@@ -227,16 +227,6 @@ onUiUpdate(function(){
     registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button')
     registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button')
     registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button')
-    show_all_pages = gradioApp().getElementById('settings_show_all_pages')
-    settings_tabs = gradioApp().querySelector('#settings > div.tab-nav')
-    if(show_all_pages && settings_tabs){
-        settings_tabs.appendChild(show_all_pages)
-        show_all_pages.onclick = function(){
-            gradioApp().querySelectorAll('#settings > div[id^="settings_"]').forEach(function(elem){
-                elem.style.display = "block";
-            })
-        }
-    }
 })
 
 onOptionsChanged(function(){
@@ -262,7 +252,12 @@ onOptionsChanged(function(){
 onUiLoaded(function(){
     tab_nav_element = gradioApp().querySelector('#settings > .tab-nav')
     tab_nav_buttons = gradioApp().querySelectorAll('#settings > .tab-nav > button')
-    tab_elements = gradioApp().querySelectorAll('#settings > [id^="settings_"]')
+    tab_elements = gradioApp().querySelectorAll('#settings > div:not(.tab-nav)')
+
+    // Add a wrapper for the tab content (everything but the tab nav)
+    const tab_content_wrapper = document.createElement('div')
+    tab_content_wrapper.className = "tab-content"
+    tab_nav_element.parentElement.insertBefore(tab_content_wrapper, tab_nav_element.nextSibling)
 
     tab_elements.forEach(function(elem, index){
         // Add a modification indicator to the toplevel tab button
@@ -274,7 +269,24 @@ onUiLoaded(function(){
 
         // Add a modification indicator to the toplevel tab button
         tab_nav_element.insertBefore(new_indicator, tab_nav_buttons[index])
+
+        // Add the tab content to the wrapper
+        tab_content_wrapper.appendChild(elem)
     })
+
+    // Add show all pages button
+    const show_all_pages = gradioApp().getElementById('settings_show_all_pages')
+    tab_nav_element.appendChild(show_all_pages)
+    show_all_pages.onclick = function(){
+      gradioApp().querySelectorAll('#settings [id^="settings_"]').forEach(function(elem){
+          elem.style.display = "block";
+      })
+    }
+
+    // HACK: Add empty span inplace of modification indicator infront of show all button
+    const dummy_indicator = document.createElement('span')
+    tab_nav_element.insertBefore(dummy_indicator, show_all_pages)
+
     // Add the dirtyable class to the tab nav element
     tab_nav_element.classList.add('dirtyable')
 })

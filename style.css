@@ -214,19 +214,30 @@ div#extras_scale_to_tab div.form{
 }
 
 #settings{
-    display: block;
+    display: flex;
+    flex-flow: row wrap;
+    gap: var(--layout-gap);
 }
 
-#settings > div{
+#settings div {
     border: none;
-    margin-left: 11em;
+}
+
+#settings > div.tab-content {
+    flex: 100000 0 75%;
+}
+
+#settings > div.tab-content > div{
+    border: none;
+    padding: 0;
 }
 
 #settings > div.tab-nav{
-    float: left;
-    margin-left: 0;
     display: grid;
-    grid-template-columns: .3em 10em;
+    grid-template-columns: repeat(auto-fill, .3em minmax(10em, 1fr));
+    flex: 1 0 auto;
+    width: 11em;
+    align-self: flex-start
 }
 
 #settings > div.tab-nav button{
@@ -238,12 +249,7 @@ div#extras_scale_to_tab div.form{
 }
 
 #settings > div.tab-nav > #settings_show_all_pages {
-    grid-column: 2;
     padding: var(--size-2) var(--size-4);
-}
-
-#settings > div.tabitem {
-    padding-top: 0;
 }
 
 #settings .block.gradio-checkbox {
