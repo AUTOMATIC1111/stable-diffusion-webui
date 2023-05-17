@@ -316,6 +316,7 @@ class Processed:
         self.s_tmin = p.s_tmin
         self.s_tmax = p.s_tmax
         self.s_noise = p.s_noise
+        self.s_min_uncond = p.s_min_uncond
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
