@@ -189,9 +189,8 @@ def create_seed_inputs(target_interface):
         seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from width", value=0, elem_id=f"{target_interface}_seed_resize_from_w")
         seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from height", value=0, elem_id=f"{target_interface}_seed_resize_from_h")
 
-    target_interface_state = gr.Textbox(target_interface, visible=False)
-    random_seed.click(fn=None, _js="setRandomSeed", show_progress=False, inputs=[target_interface_state], outputs=[])
-    random_subseed.click(fn=None, _js="setRandomSubseed", show_progress=False, inputs=[target_interface_state], outputs=[])
+    random_seed.click(fn=None, _js="function(){setRandomSeed('" + target_interface + "_seed')}", show_progress=False, inputs=[], outputs=[])
+    random_subseed.click(fn=None, _js="function(){setRandomSeed('" + target_interface + "_subseed')}", show_progress=False, inputs=[], outputs=[])
 
     def change_visibility(show):
         return {comp: gr_show(show) for comp in seed_extras}
@@ -575,7 +574,7 @@ def create_ui():
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
-            res_switch_btn.click(fn=None, _js="switchWidthHeightTxt2Img", inputs=None, outputs=None, show_progress=False)
+            res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('txt2img')}", inputs=None, outputs=None, show_progress=False)
 
             restore_progress_button.click(
                 fn=progress.restore_progress,
@@ -951,7 +950,7 @@ def create_ui():
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
 
-            res_switch_btn.click(fn=None, _js="switchWidthHeightImg2Img", inputs=None, outputs=None, show_progress=False)
+            res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('img2img')}", inputs=None, outputs=None, show_progress=False)
 
             restore_progress_button.click(
                 fn=progress.restore_progress,
