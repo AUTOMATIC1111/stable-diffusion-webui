@@ -86,7 +86,7 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
             without, ex = os.path.splitext(basename)
             sha256 = SHA256.new(basename.encode()).hexdigest()
             array = without.split('-')
-            epoch = array[-1] if array else ''
+            epoch = array[-1] if len(array) > 1 else ''
             hash_file_path = os.path.join(dirname, sha256+ex)
 
             shutil.move(m, hash_file_path)
