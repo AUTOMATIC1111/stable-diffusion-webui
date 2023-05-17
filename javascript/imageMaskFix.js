@@ -74,11 +74,10 @@ onUiLoaded(function () {
 
               if (intervalLastUIUpdate != null)
                 clearInterval(intervalLastUIUpdate);
+
               intervalLastUIUpdate = setInterval(function () {
                 clearInterval(intervalLastUIUpdate);
-                img_parent.addEventListener("mouseup", function (e) {
-                  img_src[i] = img.src;
-                });
+                img_parent.addEventListener("mouseup", function (e) {});
 
                 let spl_parent = elem.parentElement;
                 let spl;
@@ -123,7 +122,7 @@ onUiLoaded(function () {
                     img_parent.style.flexGrow = "1";
                     img_src[i] = "";
                     elem.style.transform = "none";
-                  }, 200);
+                  }, 500);
                 }
 
                 function spl_color_handler(e) {}
@@ -268,7 +267,7 @@ onUiLoaded(function () {
                   init_drawing_tools();
                 }, 500);
                 img_parent.style.visibility = "visible";
-              }, 500);
+              }, 1000);
             }
           }
         }
