@@ -276,7 +276,12 @@ re_attention = re.compile(r"""
 
 re_break = re.compile(r"\s*\bBREAK\b\s*", re.S)
 
-re_comment = re.compile(r"\r?\n(\/\/.*)")
+#       //this text will be ignored
+re_single_line_comment_slash = re.compile(r"\/\/.*")
+#       #this text will be ignored
+re_single_line_comment_hash = re.compile(r"\#.*")
+#       /*this text will be ignored*/
+re_multi_line_comment = re.compile(r"\/\*.*?\*\/", re.S)
 
 def parse_prompt_attention(text):
     """
@@ -325,12 +330,14 @@ def parse_prompt_attention(text):
         for p in range(start_position, len(res)):
             res[p][1] *= multiplier
 
+    # ignore comments
+    text = re_multi_line_comment.sub('', text)
+    text = re_single_line_comment_slash.sub('', text)
+    text = re_single_line_comment_hash.sub('', text)
+
     for m in re_attention.finditer(text):
         text = m.group(0)
         weight = m.group(1)
-
-        # ignore commented lines
-        text = re_comment.sub('', text)
 
         if text.startswith('\\'):
             res.append([text[1:], 1.0])
