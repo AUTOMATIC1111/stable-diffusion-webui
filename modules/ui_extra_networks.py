@@ -344,9 +344,19 @@ def setup_ui(ui, gallery):
         assert is_allowed, f'writing to {filename} is not allowed'
 
         if geninfo:
-            pnginfo_data = PngImagePlugin.PngInfo()
-            pnginfo_data.add_text('parameters', geninfo)
-            image.save(filename, pnginfo=pnginfo_data)
+            ext = os.path.splitext(filename)[1].lower()
+            if ext == '.png':
+                pnginfo_data = PngImagePlugin.PngInfo()
+                pnginfo_data.add_text('parameters', geninfo)
+                image.save(filename, pnginfo=pnginfo_data)
+            elif ext in ('.jpg', '.jpeg', '.webp'):
+                exif_bytes = piexif.dump({
+                    'Exif': {piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(geninfo or '',
+                                                                                        encoding='unicode')}
+                })
+                image.save(filename, exif=exif_bytes, quality=shared.opts.jpeg_quality)
+            else:
+                image.save(filename)
         else:
             image.save(filename)
 
