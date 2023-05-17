@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import sys
+import threading
 import time
 
 import gradio as gr
@@ -110,8 +111,47 @@ class State:
     id_live_preview = 0
     textinfo = None
     time_start = None
-    need_restart = False
     server_start = None
+    _server_command_signal = threading.Event()
+    _server_command: str | None = None
+
+    @property
+    def need_restart(self) -> bool:
+        # Compatibility getter for need_restart.
+        return self.server_command == "restart"
+
+    @need_restart.setter
+    def need_restart(self, value: bool) -> None:
+        # Compatibility setter for need_restart.
+        if value:
+            self.server_command = "restart"
+
+    @property
+    def server_command(self):
+        return self._server_command
+
+    @server_command.setter
+    def server_command(self, value: str | None) -> None:
+        """
+        Set the server command to `value` and signal that it's been set.
+        """
+        self._server_command = value
+        self._server_command_signal.set()
+
+    def wait_for_server_command(self, timeout: float | None = None) -> str | None:
+        """
+        Wait for server command to get set; return and clear the value and signal.
+        """
+        if self._server_command_signal.wait(timeout):
+            self._server_command_signal.clear()
+            req = self._server_command
+            self._server_command = None
+            return req
+        return None
+
+    def request_restart(self) -> None:
+        self.interrupt()
+        self.server_command = True
 
     def skip(self):
         self.skipped = True

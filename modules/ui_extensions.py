@@ -52,9 +52,7 @@ def apply_and_restart(disable_list, update_list, disable_all):
     shared.opts.disabled_extensions = disabled
     shared.opts.disable_all_extensions = disable_all
     shared.opts.save(shared.config_filename)
-
-    shared.state.interrupt()
-    shared.state.need_restart = True
+    shared.state.request_restart()
 
 
 def save_config_state(name):
@@ -92,8 +90,7 @@ def restore_config_state(confirmed, config_state_name, restore_type):
     if restore_type == "webui" or restore_type == "both":
         config_states.restore_webui_config(config_state)
 
-    shared.state.interrupt()
-    shared.state.need_restart = True
+    shared.state.request_restart()
 
     return ""
 
