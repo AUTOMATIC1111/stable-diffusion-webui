@@ -128,7 +128,7 @@ class TrainLoraBaseConfig(SerializationObj):
 
     def __init__(self, task: Task):
         self.model_name = task.value('model_name', requires=True)
-        self.model_space = task.value('model_space', requires=True)
+        self.group_id = task.value('group_id', requires=True)
         self.model_desc = task.value('model_desc', '')
         self.base_model = task.value('base_model', requires=True)
         self.base_lora = task.value('base_lora', '')
@@ -355,7 +355,7 @@ class TrainLoraTask(UserDict):
             'resolution': '512,512',
             'processed_key': 'xingzheaidraw/sd-web/resources/TrainLoraSamples.zip',
             'model_name': 'test_train(lora)',
-            'group_id': 'xxx',
+            'group_id': 'group-x87qrm7mzm4wwp',
             'model_desc': 'test only',
             'base_model': 'xingzheaidraw/models/system/Stable-diffusion/2023/05/06/0389907e714c9239261269f21eb511a9585e4884c75d17ecafabc74b7c9baad8.ckpt',
             'num_repeats': [{'sub_folder': 'jpg2', "num": 1}],
@@ -364,7 +364,6 @@ class TrainLoraTask(UserDict):
             'save_last_n_epochs': 10,
             'save_every_n_epochs': 2,
             'clip_skip': 1,
-            'model_space': 'xxxxx',
             'seed': 100001,
             'network_dim': 32,
             'network_alpha': 1,
