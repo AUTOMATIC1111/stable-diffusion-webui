@@ -35,13 +35,14 @@ def single_sample_to_image(sample, approximation=None):
     elif approximation == 1:
         x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
     elif approximation == 3:
-        x_sample = sd_vae_taesd.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
-        x_sample = sd_vae_taesd.TAESD.unscale_latents(x_sample)  # returns value in [-2, 2]
-        x_sample = x_sample * 0.5
+        x_sample = sample * 1.5
+        x_sample = sd_vae_taesd.model()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
     else:
         x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0]
 
-    x_sample = torch.clamp((x_sample + 1.0) / 2.0, min=0.0, max=1.0)
+    if approximation != 3:
+        x_sample = (x_sample + 1.0) / 2.0
+    x_sample = torch.clamp(x_sample, min=0.0, max=1.0)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)
 
