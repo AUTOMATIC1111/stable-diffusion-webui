@@ -144,6 +144,11 @@ def apply_face_restore(p, opt, x):
     p.restore_faces = is_active
 
 
+def apply_override(field):
+    def fun(p, x, xs):
+        p.override_settings[field] = x
+    return fun
+
 def format_value_add_label(p, opt, x):
     if type(x) == float:
         x = round(x, 8)
@@ -224,6 +229,8 @@ axis_options = [
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
     AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
+    AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
+    AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
 ]
 
 
