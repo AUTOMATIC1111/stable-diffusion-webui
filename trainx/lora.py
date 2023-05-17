@@ -84,15 +84,16 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
         without, ex = os.path.splitext(basename)
         sha256 = SHA256.new(basename.encode()).hexdigest()
         array = without.split('-')
-        epoch = '-' + array[-1] if array else ''
-        hash_file_path = os.path.join(dirname, sha256[:32]+epoch+ex)
+        epoch = array[-1] if array else ''
+        hash_file_path = os.path.join(dirname, sha256+ex)
 
         shutil.move(m, hash_file_path)
         key = upload_files(False, hash_file_path)
         result['models'].append({
             'key': key[0] if key else '',
             'thumbnail_path': cover,
-            'hash': sha256
+            'hash': sha256,
+            'epoch': epoch
         })
 
     # notify web server
