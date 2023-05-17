@@ -1,6 +1,5 @@
 import json
 import html
-import glob
 import os.path
 import urllib.parse
 from pathlib import Path
@@ -63,7 +62,9 @@ class ExtraNetworksPage:
         pass
 
     def link_preview(self, filename):
-        return "./sd_extra_networks/thumb?filename=" + urllib.parse.quote(filename.replace('\\', '/')) + "&mtime=" + str(os.path.getmtime(filename))
+        quoted_filename = urllib.parse.quote(filename.replace('\\', '/'))
+        mtime = os.path.getmtime(filename)
+        return f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
 
     def search_terms_from_path(self, filename, possible_directories=None):
         abspath = os.path.abspath(filename)
@@ -78,17 +79,20 @@ class ExtraNetworksPage:
         items_html = ''
         self.metadata = {}
         subdirs = {}
-        for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
-            for x in glob.glob(os.path.join(parentdir, '**/*'), recursive=True):
-                if not os.path.isdir(x):
-                    continue
-                subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
-                while subdir.startswith("/"):
-                    subdir = subdir[1:]
-                is_empty = len(os.listdir(x)) == 0
-                if not is_empty and not subdir.endswith("/"):
-                    subdir = subdir + "/"
-                subdirs[subdir] = 1
+        allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
+        for parentdir in [*set(allowed_folders)]:
+            for root, dirs, _files in os.walk(parentdir):
+                for dirname in dirs:
+                    x = os.path.join(root, dirname)
+                    if not os.path.isdir(x):
+                        continue
+                    subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
+                    while subdir.startswith("/"):
+                        subdir = subdir[1:]
+                    is_empty = len(os.listdir(x)) == 0
+                    if not is_empty and not subdir.endswith("/"):
+                        subdir = subdir + "/"
+                    subdirs[subdir] = 1
         if subdirs:
             subdirs = {"": 1, **subdirs}
         subdirs_html = "".join([f"""
@@ -181,7 +185,7 @@ def intialize():
 class ExtraNetworksUi:
     def __init__(self):
         self.pages = None
-        self.stored_extra_pages = None
+        self.stored_extra_pages = []
         self.button_save_preview = None
         self.preview_target_filename = None
         self.button_save_description = None

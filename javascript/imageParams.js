@@ -1,12 +1,10 @@
+/* global gradioApp, get_tab_index */
 window.onload = (function () {
   window.addEventListener('drop', (e) => {
     const target = e.composedPath()[0];
     if (!target.placeholder) return;
-    const idx = selected_gallery_index();
     if (target.placeholder.indexOf('Prompt') == -1) return;
-
     const prompt_target = get_tab_index('tabs') == 1 ? 'img2img_prompt_image' : 'txt2img_prompt_image';
-
     e.stopPropagation();
     e.preventDefault();
     const imgParent = gradioApp().getElementById(prompt_target);

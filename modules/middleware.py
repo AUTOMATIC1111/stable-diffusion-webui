@@ -1,3 +1,4 @@
+import ssl
 import time
 import datetime
 import logging
@@ -17,6 +18,7 @@ errors.install()
 
 def setup_middleware(app: FastAPI, cmd_opts):
     log.info('Initializing middleware')
+    ssl._create_default_https_context = ssl._create_unverified_context # pylint: disable=protected-access
     uvicorn_logger=logging.getLogger("uvicorn.error")
     uvicorn_logger.disabled = True
     from fastapi.middleware.cors import CORSMiddleware

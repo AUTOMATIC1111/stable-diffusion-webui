@@ -1,3 +1,4 @@
+/* global gradioApp, onUiUpdate */
 // A full size 'lightbox' preview modal shown when left clicking on gallery previews
 function closeModal() {
   gradioApp().getElementById('lightboxModal').style.display = 'none';
@@ -96,6 +97,11 @@ function modalKeyHandler(event) {
   }
 }
 
+function modalZoomSet(modalImage, enable) {
+  localStorage.setItem('modalZoom', enable ? 'yes' : 'no');
+  if (modalImage) modalImage.classList.toggle('modalImageFullscreen', !!enable);
+}
+
 function setupImageForLightbox(e) {
   if (e.dataset.modded)	return;
   e.dataset.modded = true;
@@ -106,21 +112,15 @@ function setupImageForLightbox(e) {
   const event = isFirefox ? 'mousedown' : 'click';
   e.addEventListener(event, (evt) => {
     if (evt.button != 0) return;
-    initialZoom = (localStorage.getItem('modalZoom') || true) == 'yes';
+    const initialZoom = (localStorage.getItem('modalZoom') || true) == 'yes';
     modalZoomSet(gradioApp().getElementById('modalImage'), initialZoom);
     evt.preventDefault();
     showModal(evt);
   }, true);
 }
 
-function modalZoomSet(modalImage, enable) {
-  if (enable) modalImage.classList.add('modalImageFullscreen');
-  else modalImage.classList.remove('modalImageFullscreen');
-  localStorage.setItem('modalZoom', enable ? 'yes' : 'no');
-}
-
 function modalZoomToggle(event) {
-  modalImage = gradioApp().getElementById('modalImage');
+  const modalImage = gradioApp().getElementById('modalImage');
   modalZoomSet(modalImage, !modalImage.classList.contains('modalImageFullscreen'));
   event.stopPropagation();
 }

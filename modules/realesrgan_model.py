@@ -1,12 +1,10 @@
 import os
 import sys
-
 import numpy as np
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
-
 from modules.upscaler import Upscaler, UpscalerData
-from modules.shared import cmd_opts, opts, device
+from modules.shared import opts, device
 from modules import modelloader
 import modules.errors as errors
 
@@ -27,9 +25,9 @@ class UpscalerRealESRGAN(Upscaler):
             for scaler in scalers:
                 if scaler.local_data_path.startswith("http"):
                     filename = modelloader.friendly_name(scaler.local_data_path)
-                    local = next(iter([local_model for local_model in local_model_paths if local_model.endswith(filename + '.pth')]), None)
-                    if local:
-                        scaler.local_data_path = local
+                    local_model_candidates = [local_model for local_model in local_model_paths if local_model.endswith(f"{filename}.pth")]
+                    if local_model_candidates:
+                        scaler.local_data_path = local_model_candidates[0]
                 if scaler.name in opts.realesrgan_enabled_models:
                     self.scalers.append(scaler)
 

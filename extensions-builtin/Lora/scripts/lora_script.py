@@ -20,7 +20,6 @@ def before_ui():
     ui_extra_networks.register_page(ui_extra_networks_lora.ExtraNetworksPageLora())
     extra_networks.register_extra_network(extra_networks_lora.ExtraNetworkLora())
 
-
 if not hasattr(torch.nn, 'Linear_forward_before_lora'):
     torch.nn.Linear_forward_before_lora = torch.nn.Linear.forward
 

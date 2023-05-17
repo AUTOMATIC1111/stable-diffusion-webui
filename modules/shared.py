@@ -7,6 +7,7 @@ import urllib.request
 import gradio as gr
 import tqdm
 import requests
+from ldm.models.diffusion.ddpm import LatentDiffusion
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.interrogate
@@ -27,7 +28,6 @@ cmd_opts, _ = parser.parse_known_args()
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
 is_device_dml = False
 xformers_available = False
-sd_model = None
 clip_model = None
 interrogator = modules.interrogate.InterrogateModels("interrogate")
 sd_upscalers = []
@@ -411,7 +411,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"), # pylint: disable=anomalous-backslash-in-string
-    "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings list"),
+    "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
     "ui_tab_reorder": OptionInfo("From Text, From Image, Process Image", "UI tabs order"),
     "ui_scripts_reorder": OptionInfo("Enable Dynamic Thresholding, ControlNet", "UI scripts order"),
@@ -550,6 +550,8 @@ class Options:
     def load(self, filename):
         with open(filename, "r", encoding="utf8") as file:
             self.data = json.load(file)
+        if self.data.get('quicksettings') is not None and self.data.get('quicksettings_list') is None:
+            self.data['quicksettings_list'] = [i.strip() for i in self.data.get('quicksettings').split(',')]
         bad_settings = 0
         for k, v in self.data.items():
             info = self.data_labels.get(k, None)
@@ -750,3 +752,21 @@ def html(filename):
         with open(path, encoding="utf8") as file:
             return file.read()
     return ""
+
+class Shared(sys.modules[__name__].__class__):
+    # this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than at program startup.
+    sd_model_val = None
+
+    @property
+    def sd_model(self):
+        import modules.sd_models # pylint: disable=W0621
+        # return modules.sd_models.model_data.sd_model
+        return modules.sd_models.model_data.get_sd_model()
+
+    @sd_model.setter
+    def sd_model(self, value):
+        import modules.sd_models # pylint: disable=W0621
+        modules.sd_models.model_data.set_sd_model(value)
+
+sd_model: LatentDiffusion = None  # this var is here just for IDE's type checking; it cannot be accessed because the class field above will be accessed instead
+sys.modules[__name__].__class__ = Shared

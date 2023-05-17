@@ -235,7 +235,7 @@ class Hypernetwork:
         if shared.opts.save_optimizer_state and self.optimizer_state_dict:
             optimizer_saved_dict['hash'] = self.shorthash()
             optimizer_saved_dict['optimizer_state_dict'] = self.optimizer_state_dict
-            torch.save(optimizer_saved_dict, filename + '.optim')
+            torch.save(optimizer_saved_dict, f"{filename}.optim")
 
     def load(self, filename):
         self.filename = filename

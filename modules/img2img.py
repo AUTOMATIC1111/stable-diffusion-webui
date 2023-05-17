@@ -33,7 +33,8 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
             break
         try:
             img = Image.open(image)
-        except UnidentifiedImageError:
+        except UnidentifiedImageError as e:
+            shared.log.error(f"Image error: {e}")
             continue
         # Use the EXIF orientation of photos taken by smartphones.
         img = ImageOps.exif_transpose(img)

@@ -43,7 +43,7 @@ args = Dot({
     'version': False,
     'ignore': False,
 })
-
+git_commit = "unknown"
 
 # setup console and file logging
 def setup_logging(clean=False):
@@ -369,6 +369,10 @@ def list_extensions(folder):
 
 # run installer for each installed and enabled extension and optionally update them
 def install_extensions():
+    import pkg_resources
+    pkg_resources._initialize_master_working_set() # pylint: disable=protected-access
+    pkgs = [f'{p.project_name}=={p._version}' for p in pkg_resources.working_set] # pylint: disable=protected-access,not-an-iterable
+    log.debug(f'Installed packages: {len(pkgs)}')
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
     extensions_duplicates = []
     extensions_enabled = []
@@ -390,6 +394,12 @@ def install_extensions():
                     log.error(f'Error updating extension: {os.path.join(folder, ext)}')
             if not args.skip_extensions:
                 run_extension_installer(os.path.join(folder, ext))
+            pkg_resources._initialize_master_working_set() # pylint: disable=protected-access
+            updated = [f'{p.project_name}=={p._version}' for p in pkg_resources.working_set] # pylint: disable=protected-access,not-an-iterable
+            diff = [x for x in updated if x not in pkgs]
+            pkgs = updated
+            if len(diff) > 0:
+                log.info(f'Extension installed packages: {ext} {diff}')
     log.info(f'Extensions enabled: {extensions_enabled}')
     if len(extensions_duplicates) > 0:
         log.warning(f'Extensions duplicates: {extensions_duplicates}')
@@ -500,6 +510,8 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
     if args.version:
         return
     commit = git('rev-parse HEAD')
+    global git_commit # pylint: disable=global-statement
+    git_commit = commit[:7]
     try:
         import requests
     except ImportError:
@@ -583,6 +595,7 @@ def add_args():
     group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
+    group.add_argument('--api-only', default = False, action='store_true', help = "Run in API only mode without starting UI")
     group.add_argument("--use-ipex", default = False, action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s")
     group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
     group.add_argument("--use-cuda", default=False, action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")

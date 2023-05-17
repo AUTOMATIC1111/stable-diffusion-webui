@@ -51,6 +51,7 @@ def image_from_url_text(filedata):
         filename = filedata["name"]
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         if is_in_right_dir:
+            filename = filename.rsplit('?', 1)[0]
             image = Image.open(filename)
             geninfo, _items = images.read_info_from_image(image)
             image.info['parameters'] = geninfo
@@ -134,6 +135,7 @@ def connect_paste_params_buttons():
                 _js=jsfunc,
                 inputs=[binding.source_image_component],
                 outputs=[destination_image_component, destination_width_component, destination_height_component] if destination_width_component else [destination_image_component],
+                show_progress=False,
             )
         if binding.source_text_component is not None and fields is not None:
             connect_paste(binding.paste_button, fields, binding.source_text_component, override_settings_component, binding.tabname)
@@ -149,6 +151,7 @@ def connect_paste_params_buttons():
             _js=f"switch_to_{binding.tabname}",
             inputs=[],
             outputs=[],
+            show_progress=False,
         )
 
 
@@ -257,8 +260,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         v = v[1:-1] if v[0] == '"' and v[-1] == '"' else v
         m = re_imagesize.match(v)
         if m is not None:
-            res[k+"-1"] = m.group(1)
-            res[k+"-2"] = m.group(2)
+            res[f"{k}-1"] = m.group(1)
+            res[f"{k}-2"] = m.group(2)
         else:
             res[k] = v
     # Missing CLIP skip means it was set to 1 (the default)
@@ -404,10 +407,12 @@ def connect_paste(button, local_paste_fields, input_comp, override_settings_comp
         fn=paste_func,
         inputs=[input_comp],
         outputs=[x[0] for x in local_paste_fields],
+        show_progress=False,
     )
     button.click(
         fn=None,
         _js=f"recalculate_prompts_{tabname}",
         inputs=[],
         outputs=[],
+        show_progress=False,
     )

@@ -1,23 +1,18 @@
-contextMenuInit = function () {
+/* global gradioApp, uiCurrentTab, onUiUpdate, get_uiCurrentTabContent */
+
+const contextMenuInit = () => {
   let eventListenerApplied = false;
   const menuSpecs = new Map();
 
-  const uid = function () {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
-  };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).substring(2);
 
   function showContextMenu(event, element, menuEntries) {
     const posx = event.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
     const posy = event.clientY + document.body.scrollTop + document.documentElement.scrollTop;
-
     const oldMenu = gradioApp().querySelector('#context-menu');
-    if (oldMenu) {
-      oldMenu.remove();
-    }
-
+    if (oldMenu) oldMenu.remove();
     const tabButton = uiCurrentTab;
     const baseStyle = window.getComputedStyle(tabButton);
-
     const contextMenu = document.createElement('nav');
     contextMenu.id = 'context-menu';
     contextMenu.style.background = baseStyle.background;
@@ -25,40 +20,26 @@ contextMenuInit = function () {
     contextMenu.style.fontFamily = baseStyle.fontFamily;
     contextMenu.style.top = `${posy}px`;
     contextMenu.style.left = `${posx}px`;
-
     const contextMenuList = document.createElement('ul');
     contextMenuList.className = 'context-menu-items';
     contextMenu.append(contextMenuList);
-
     menuEntries.forEach((entry) => {
       const contextMenuEntry = document.createElement('a');
       contextMenuEntry.innerHTML = entry.name;
-      contextMenuEntry.addEventListener('click', (e) => {
-        entry.func();
-      });
+      contextMenuEntry.addEventListener('click', (e) => entry.func());
       contextMenuList.append(contextMenuEntry);
     });
-
     gradioApp().appendChild(contextMenu);
-
     const menuWidth = contextMenu.offsetWidth + 4;
     const menuHeight = contextMenu.offsetHeight + 4;
-
     const windowWidth = window.innerWidth;
     const windowHeight = window.innerHeight;
-
-    if ((windowWidth - posx) < menuWidth) {
-      contextMenu.style.left = `${windowWidth - menuWidth}px`;
-    }
-
-    if ((windowHeight - posy) < menuHeight) {
-      contextMenu.style.top = `${windowHeight - menuHeight}px`;
-    }
+    if ((windowWidth - posx) < menuWidth) contextMenu.style.left = `${windowWidth - menuWidth}px`;
+    if ((windowHeight - posy) < menuHeight) contextMenu.style.top = `${windowHeight - menuHeight}px`;
   }
 
   function appendContextMenuOption(targetElementSelector, entryName, entryFunction) {
-    currentItems = menuSpecs.get(targetElementSelector);
-
+    let currentItems = menuSpecs.get(targetElementSelector);
     if (!currentItems) {
       currentItems = [];
       menuSpecs.set(targetElementSelector, currentItems);
@@ -69,7 +50,6 @@ contextMenuInit = function () {
       func: entryFunction,
       isNew: true,
     };
-
     currentItems.push(newItem);
     return newItem.id;
   }
@@ -89,15 +69,11 @@ contextMenuInit = function () {
     gradioApp().addEventListener('click', (e) => {
       if (!e.isTrusted) return;
       const oldMenu = gradioApp().querySelector('#context-menu');
-      if (oldMenu) {
-        oldMenu.remove();
-      }
+      if (oldMenu) oldMenu.remove();
     });
     gradioApp().addEventListener('contextmenu', (e) => {
       const oldMenu = gradioApp().querySelector('#context-menu');
-      if (oldMenu) {
-        oldMenu.remove();
-      }
+      if (oldMenu) oldMenu.remove();
       menuSpecs.forEach((v, k) => {
         if (e.composedPath()[0].matches(k)) {
           showContextMenu(e, e.composedPath()[0], v);
@@ -107,14 +83,13 @@ contextMenuInit = function () {
     });
     eventListenerApplied = true;
   }
-
   return [appendContextMenuOption, removeContextMenuOption, addContextMenuEventListener];
 };
 
-initResponse = contextMenuInit();
-appendContextMenuOption = initResponse[0];
-removeContextMenuOption = initResponse[1];
-addContextMenuEventListener = initResponse[2];
+const initResponse = contextMenuInit();
+const appendContextMenuOption = initResponse[0];
+const removeContextMenuOption = initResponse[1];
+const addContextMenuEventListener = initResponse[2];
 
 (function () {
   // Start example Context Menu Items
@@ -128,9 +103,7 @@ addContextMenuEventListener = initResponse[2];
     window.generateOnRepeatInterval = setInterval(
       () => {
         const busy = document.getElementById('progressbar')?.style.display === 'block';
-        if (!busy) {
-          genbutton.click();
-        }
+        if (!busy) genbutton.click();
       },
       500,
     );
@@ -151,7 +124,6 @@ addContextMenuEventListener = initResponse[2];
   appendContextMenuOption('#txt2img_generate', 'Cancel generate forever', cancelGenerateForever);
   appendContextMenuOption('#img2img_interrupt', 'Cancel generate forever', cancelGenerateForever);
   appendContextMenuOption('#img2img_generate', 'Cancel generate forever', cancelGenerateForever);
-
   appendContextMenuOption(
     '#roll',
     'Roll three',
@@ -165,6 +137,4 @@ addContextMenuEventListener = initResponse[2];
 }());
 // End example Context Menu Items
 
-onUiUpdate(() => {
-  addContextMenuEventListener();
-});
+onUiUpdate(() => addContextMenuEventListener());

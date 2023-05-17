@@ -16,7 +16,7 @@ def save_settings_to_file(log_directory, all_params):
     if all_params.get('preview_from_txt2img'):
         keys = keys | saved_params_previews
     params.update({k: v for k, v in all_params.items() if k in keys})
-    filename = f"{params['embedding_name']}-{now.strftime('%Y-%m-%d_%H-%M-%S')}.json"
+    filename = f"settings-{now.strftime('%Y-%m-%d_%H-%M-%S')}.json"
     with open(os.path.join(log_directory, filename), "w", encoding='utf-8') as file:
         print(f'Training settings file: {os.path.join(log_directory, filename)}')
         json.dump(params, file, indent=2)

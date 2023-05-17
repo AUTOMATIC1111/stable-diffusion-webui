@@ -14,6 +14,7 @@ from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
+from installer import git_commit
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts # pylint: disable=unused-import
 from modules.sd_hijack import model_hijack
@@ -40,56 +41,41 @@ def setup_color_correction(image):
 def apply_color_correction(correction, original_image):
     logging.info("Applying color correction.")
     image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
-        cv2.cvtColor(
-            np.asarray(original_image),
-            cv2.COLOR_RGB2LAB
-        ),
+        cv2.cvtColor(np.asarray(original_image), cv2.COLOR_RGB2LAB),
         correction,
         channel_axis=2
     ), cv2.COLOR_LAB2RGB).astype("uint8"))
-
     image = blendLayers(image, original_image, BlendType.LUMINOSITY)
-
     return image
 
 
 def apply_overlay(image, paste_loc, index, overlays):
     if overlays is None or index >= len(overlays):
         return image
-
     overlay = overlays[index]
-
     if paste_loc is not None:
         x, y, w, h = paste_loc
         base_image = Image.new('RGBA', (overlay.width, overlay.height))
         image = images.resize_image(1, image, w, h)
         base_image.paste(image, (x, y))
         image = base_image
-
     image = image.convert('RGBA')
     image.alpha_composite(overlay)
     image = image.convert('RGB')
-
     return image
 
 
 def txt2img_image_conditioning(sd_model, x, width, height):
     if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
-
         # The "masked-image" in this case will just be all zeros since the entire image is masked.
         image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
         image_conditioning = sd_model.get_first_stage_encoding(sd_model.encode_first_stage(image_conditioning))
-
         # Add the fake full 1s mask to the first dimension.
         image_conditioning = torch.nn.functional.pad(image_conditioning, (0, 0, 0, 0, 1, 0), value=1.0)
         image_conditioning = image_conditioning.to(x.dtype)
-
         return image_conditioning
-
     elif sd_model.model.conditioning_key == "crossattn-adm": # UnCLIP models
-
         return x.new_zeros(x.shape[0], 2*sd_model.noise_augmentor.time_embed.dim, dtype=x.dtype, device=x.device)
-
     else:
         # Dummy zero conditioning if we're not using inpainting or unclip models.
         # Still takes up a bit of memory, but no encoder call.
@@ -165,7 +151,6 @@ class StableDiffusionProcessing:
 
     def txt2img_image_conditioning(self, x, width=None, height=None):
         self.is_using_inpainting_conditioning = self.sd_model.model.conditioning_key in {'hybrid', 'concat'}
-
         return txt2img_image_conditioning(self.sd_model, x, width or self.width, height or self.height)
 
     def depth2img_image_conditioning(self, source_image):
@@ -174,7 +159,6 @@ class StableDiffusionProcessing:
         transformed = transformer({"jpg": rearrange(source_image[0], "c h w -> h w c")})
         midas_in = torch.from_numpy(transformed["midas_in"][None, ...]).to(device=shared.device)
         midas_in = repeat(midas_in, "1 ... -> n ...", n=self.batch_size)
-
         conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(source_image))
         conditioning = torch.nn.functional.interpolate(
             self.sd_model.depth_model(midas_in),
@@ -182,14 +166,12 @@ class StableDiffusionProcessing:
             mode="bicubic",
             align_corners=False,
         )
-
         (depth_min, depth_max) = torch.aminmax(conditioning)
         conditioning = 2. * (conditioning - depth_min) / (depth_max - depth_min) - 1.
         return conditioning
 
     def edit_image_conditioning(self, source_image):
         conditioning_image = self.sd_model.encode_first_stage(source_image).mode()
-
         return conditioning_image
 
     def unclip_image_conditioning(self, source_image):
@@ -202,7 +184,6 @@ class StableDiffusionProcessing:
 
     def inpainting_image_conditioning(self, source_image, latent_image, image_mask=None):
         self.is_using_inpainting_conditioning = True
-
         # Handle the different mask inputs
         if image_mask is not None:
             if torch.is_tensor(image_mask):
@@ -216,7 +197,6 @@ class StableDiffusionProcessing:
                 conditioning_mask = torch.round(conditioning_mask)
         else:
             conditioning_mask = source_image.new_ones(1, 1, *source_image.shape[-2:])
-
         # Create another latent image, this time with a masked version of the original input.
         # Smoothly interpolate between the masked and unmasked latent conditioning image using a parameter.
         conditioning_mask = conditioning_mask.to(device=source_image.device, dtype=source_image.dtype)
@@ -225,35 +205,27 @@ class StableDiffusionProcessing:
             source_image * (1.0 - conditioning_mask),
             getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight)
         )
-
         # Encode the new masked image using first stage of network.
         conditioning_image = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(conditioning_image))
-
         # Create the concatenated conditioning tensor to be fed to `c_concat`
         conditioning_mask = torch.nn.functional.interpolate(conditioning_mask, size=latent_image.shape[-2:])
         conditioning_mask = conditioning_mask.expand(conditioning_image.shape[0], -1, -1, -1)
         image_conditioning = torch.cat([conditioning_mask, conditioning_image], dim=1)
         image_conditioning = image_conditioning.to(shared.device).type(self.sd_model.dtype)
-
         return image_conditioning
 
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
         source_image = devices.cond_cast_float(source_image)
-
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image)
-
         if self.sd_model.cond_stage_key == "edit":
             return self.edit_image_conditioning(source_image)
-
         if self.sampler.conditioning_key in {'hybrid', 'concat'}:
             return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
-
         if self.sampler.conditioning_key == "crossattn-adm":
             return self.unclip_image_conditioning(source_image)
-
         # Dummy zero conditioning if we're not using inpainting or depth model.
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
 
@@ -344,7 +316,6 @@ class Processed:
             "clip_skip": self.clip_skip,
             "is_using_inpainting_conditioning": self.is_using_inpainting_conditioning,
         }
-
         return json.dumps(obj)
 
     def infotext(self, p: StableDiffusionProcessing, index):
@@ -468,6 +439,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Clip skip": p.clip_skip,
         "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
         "Init image hash": getattr(p, 'init_img_hash', None),
+        "Version": git_commit,
         "Token merging ratio": None if not (opts.token_merging or cmd_opts.token_merging) or opts.token_merging_hr_only else opts.token_merging_ratio,
         "Token merging ratio hr": None if not (opts.token_merging or cmd_opts.token_merging) else opts.token_merging_ratio_hr,
         "Token merging random": None if opts.token_merging_random is False else opts.token_merging_random,
@@ -479,7 +451,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     }
     generation_params.update(p.extra_generation_params)
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
-    negative_prompt_text = "\nNegative prompt: " + p.all_negative_prompts[index] if p.all_negative_prompts[index] else ""
+    negative_prompt_text = f"\nNegative prompt: {p.all_negative_prompts[index]}" if p.all_negative_prompts[index] else ""
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
 
@@ -726,7 +698,16 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if not p.disable_extra_networks and extra_network_data:
         extra_networks.deactivate(p, extra_network_data)
     devices.torch_gc()
-    res = Processed(p, output_images, p.all_seeds[0], infotext(), comments="".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts)
+    res = Processed(
+        p,
+        images_list=output_images,
+        seed=p.all_seeds[0],
+        info=infotext(),
+        comments="".join(f"\n\n{comment}" for comment in comments),
+        subseed=p.all_subseeds[0],
+        index_of_first_image=index_of_first_image,
+        infotexts=infotexts,
+    )
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
     return res

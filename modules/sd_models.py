@@ -2,6 +2,7 @@ import collections
 import os.path
 import re
 import io
+import threading
 from os import mkdir
 from urllib import request
 from rich import progress # pylint: disable=redefined-builtin
@@ -41,7 +42,7 @@ class CheckpointInfo:
         self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         self.hash = model_hash(filename)
-        self.sha256 = hashes.sha256_from_cache(self.filename, "checkpoint/" + name)
+        self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
         self.ids = [self.hash, self.model_name, self.title, name, f'{name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
@@ -59,7 +60,7 @@ class CheckpointInfo:
             checkpoint_aliases[i] = self
 
     def calculate_shorthash(self):
-        self.sha256 = hashes.sha256(self.filename, "checkpoint/" + self.name)
+        self.sha256 = hashes.sha256(self.filename, f"checkpoint/{self.name}")
         if self.sha256 is None:
             return
         self.shorthash = self.sha256[0:10]
@@ -349,6 +350,29 @@ sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embe
 sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight'
 
 
+class SdModelData:
+    def __init__(self):
+        self.sd_model = None
+        self.lock = threading.Lock()
+
+    def get_sd_model(self):
+        if self.sd_model is None:
+            with self.lock:
+                try:
+                    load_model()
+                except Exception as e:
+                    shared.log.error("Failed to load stable diffusion model")
+                    errors.display(e, "loading stable diffusion model")
+                    self.sd_model = None
+        return self.sd_model
+
+    def set_sd_model(self, v):
+        self.sd_model = v
+
+
+model_data = SdModelData()
+
+
 def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None):
     shared.log.debug(f'Load model: info={checkpoint_info is not None} dict={already_loaded_state_dict is not None}')
     from modules import lowvram, sd_hijack
@@ -358,9 +382,11 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     if timer is None:
         timer = Timer()
     current_checkpoint_info = None
-    if shared.sd_model:
-        current_checkpoint_info = shared.sd_model.sd_checkpoint_info
+    if model_data.sd_model is not None:
+        sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
+        current_checkpoint_info = model_data.sd_model.sd_checkpoint_info
         unload_model_weights()
+        model_data.sd_model = None
     do_inpainting_hijack()
     devices.set_cuda_params()
     if already_loaded_state_dict is not None:
@@ -405,14 +431,14 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     if shared.cmd_opts.use_ipex:
         sd_model = torch.xpu.optimize(sd_model, dtype=devices.dtype)
         shared.log.info("Applied IPEX Optimize")
-    shared.sd_model = sd_model
+    model_data.sd_model = sd_model
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
     timer.record("embeddings")
     script_callbacks.model_loaded_callback(sd_model)
     timer.record("callbacks")
     shared.log.info(f"Model loaded in {timer.summary()}")
     current_checkpoint_info = None
-    devices.torch_gc()
+    devices.torch_gc(force=True)
     shared.log.info(f'Model load finished: {memory_stats()}')
 
 
@@ -426,7 +452,7 @@ def reload_model_weights(sd_model=None, info=None):
     from modules import lowvram, sd_hijack
     checkpoint_info = info or select_checkpoint()
     if not sd_model:
-        sd_model = shared.sd_model
+        sd_model = model_data.sd_model
     if sd_model is None:  # previous model load failed
         current_checkpoint_info = None
     else:
@@ -443,7 +469,6 @@ def reload_model_weights(sd_model=None, info=None):
     else:
         unload_model_weights()
         sd_model = None
-        shared.sd_model = None
     timer = Timer()
     state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
@@ -452,7 +477,7 @@ def reload_model_weights(sd_model=None, info=None):
         del sd_model
         checkpoints_loaded.clear()
         load_model(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer)
-        return shared.sd_model
+        return model_data.sd_model
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
     except Exception:
@@ -471,14 +496,12 @@ def reload_model_weights(sd_model=None, info=None):
 
 def unload_model_weights(sd_model=None, _info=None):
     from modules import sd_hijack
-    if shared.sd_model:
-        # shared.sd_model.cond_stage_model.to(devices.cpu)
-        # shared.sd_model.first_stage_model.to(devices.cpu)
-        shared.sd_model.to(devices.cpu)
-        sd_hijack.model_hijack.undo_hijack(shared.sd_model)
-        shared.sd_model = None
+    if model_data.sd_model:
+        model_data.sd_model.to(devices.cpu)
+        sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
+        model_data.sd_model = None
         sd_model = None
-    devices.torch_gc()
+    devices.torch_gc(force=True)
     shared.log.debug(f'Model weights unloaded: {memory_stats()}')
     return sd_model
 

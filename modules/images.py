@@ -308,6 +308,7 @@ class FilenameGenerator:
         'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
         'clip_skip': lambda self: shared.opts.data["CLIP_stop_at_last_layers"],
+        'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -401,7 +402,7 @@ def get_next_sequence_number(path, basename):
     """
     result = -1
     if basename != '':
-        basename = basename + "-"
+        basename = f"{basename}-"
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
@@ -448,7 +449,7 @@ def atomically_save_image():
         # additional metadata saved in files
         if shared.opts.save_txt and len(exifinfo_data) > 0:
             with open(txt_fullfn, "w", encoding="utf8") as file:
-                file.write(exifinfo_data + "\n")
+                file.write(f"{exifinfo_data}\n")
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
             file.write(exifinfo_data)
         if shared.opts.save_log_fn != '' and len(exifinfo_data) > 0:
@@ -524,7 +525,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
             file_decoration = shared.opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
         add_number = shared.opts.save_images_add_number or file_decoration == ''
         if file_decoration != "" and add_number:
-            file_decoration = "-" + file_decoration
+            file_decoration = f"-{file_decoration}"
         file_decoration = namegen.apply(file_decoration) + suffix
         if add_number:
             basecount = get_next_sequence_number(path, basename)

@@ -142,7 +142,8 @@ class Script:
     def elem_id(self, item_id):
         """helper function to generate id for a HTML element, constructs final id out of script name, tab and user-supplied item_id"""
         need_tabname = self.show(True) == self.show(False)
-        tabname = ('img2img' if self.is_img2img else 'txt2txt') + "_" if need_tabname else ""
+        tabkind = 'img2img' if self.is_img2img else 'txt2txt'
+        tabname = f"{tabkind}_" if need_tabname else ""
         title = re.sub(r'[^a-z_0-9]', '', re.sub(r'\s', '_', self.title().lower()))
         return f'script_{tabname}{title}_{item_id}'
 
@@ -481,7 +482,7 @@ def add_classes_to_gradio_component(comp):
         elem_classes = comp.elem_classes
     if elem_classes is None:
         elem_classes = []
-    comp.elem_classes = ["gradio-" + comp.get_block_name(), *(elem_classes)]
+    comp.elem_classes = [f"gradio-{comp.get_block_name()}", *(comp.elem_classes or [])]
     if getattr(comp, 'multiselect', False):
         comp.elem_classes.append('multiselect')
 

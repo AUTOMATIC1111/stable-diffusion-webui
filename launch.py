@@ -118,7 +118,10 @@ def start_server(immediate=True, server=None):
         installer.log.info("Test only")
         server.wants_restart = False
     else:
-        server = server.webui()
+        if args.api_only:
+            server = server.api_only()
+        else:
+            server = server.webui()
     installer.log.info(f'Memory {get_memory_stats()}')
     return server
 

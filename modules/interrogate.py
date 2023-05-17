@@ -26,7 +26,7 @@ def category_types():
 def download_default_clip_interrogate_categories(content_dir):
     shared.log.info("Downloading CLIP categories...")
 
-    tmpdir = content_dir + "_tmp"
+    tmpdir = f"{content_dir}_tmp"
     cat_types = ["artists", "flavors", "mediums", "movements"]
 
     try:
@@ -211,7 +211,7 @@ class InterrogateModels:
                         if shared.opts.interrogate_return_ranks:
                             res += f", ({match}:{score/100:.3f})"
                         else:
-                            res += ", " + match
+                            res += f", {match}"
 
         except Exception as e:
             errors.display(e, 'interrogate')

@@ -11,7 +11,7 @@ cache_data = None
 
 
 def dump_cache():
-    with filelock.FileLock(cache_filename+".lock"):
+    with filelock.FileLock(f"{cache_filename}.lock"):
         with open(cache_filename, "w", encoding="utf8") as file:
             json.dump(cache_data, file, indent=4)
 
@@ -19,7 +19,7 @@ def dump_cache():
 def cache(subsection):
     global cache_data # pylint: disable=global-statement
     if cache_data is None:
-        with filelock.FileLock(cache_filename+".lock"):
+        with filelock.FileLock(f"{cache_filename}.lock"):
             if not os.path.isfile(cache_filename):
                 cache_data = {}
             else:

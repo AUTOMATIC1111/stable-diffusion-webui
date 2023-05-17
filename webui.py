@@ -5,6 +5,7 @@ import signal
 import asyncio
 import logging
 import warnings
+from threading import Thread
 from modules import timer, errors
 
 startup_timer = timer.Timer()
@@ -27,6 +28,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvisi
 startup_timer.record("torch")
 
 from modules import import_hook # pylint: disable=W0611,C0411,C0412
+from fastapi import FastAPI # pylint: disable=W0611,C0411
 import gradio # pylint: disable=W0611,C0411
 startup_timer.record("gradio")
 errors.install([gradio])
@@ -148,6 +150,8 @@ def initialize():
 def load_model():
     shared.state.begin()
     shared.state.job = 'load model'
+
+    """
     try:
         modules.sd_models.load_model()
         modules.sd_models.skip_next_load = True
@@ -155,17 +159,22 @@ def load_model():
         errors.display(e, "loading stable diffusion model")
         log.error("Stable diffusion model failed to load")
         exit(1)
+    """
+    Thread(target=lambda: shared.sd_model).start()
+
     if shared.sd_model is None:
         log.warning("No stable diffusion model loaded")
         # exit(1)
     else:
         shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
+
     shared.state.end()
     startup_timer.record("checkpoint")
 
 
 def create_api(app):
+    log.debug('Creating API')
     from modules.api.api import Api
     api = Api(app, queue_lock)
     return api
@@ -177,7 +186,6 @@ def monkey_patch_docs():
         self.redoc_url = "/redoc"
         self.setup_original()
 
-    from fastapi import FastAPI
     setup_original = getattr(FastAPI, "setup_original", None)
     if setup_original is None:
         FastAPI.setup_original = FastAPI.setup
@@ -199,8 +207,8 @@ def async_policy():
     asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
 
 
-def start_ui():
-    log.debug('Entering StartUI')
+def start_common():
+    log.debug('Entering start sequence')
     logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
     create_paths(opts)
     async_policy()
@@ -208,6 +216,10 @@ def start_ui():
     if shared.opts.clean_temp_dir_at_start:
         ui_tempdir.cleanup_tmpdr()
         startup_timer.record("cleanup")
+
+
+def start_ui():
+    log.debug('Creating UI')
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("scripts before_ui_callback")
     shared.demo = modules.ui.create_ui()
@@ -250,6 +262,12 @@ def start_ui():
     shared.demo.server.wants_restart = False
     setup_middleware(app, cmd_opts)
 
+    if cmd_opts.subpath:
+        redirector = FastAPI()
+        redirector.get("/")
+        _mounted_app = gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
+        shared.log.info('Redirector mounted: /{cmd_opts.subpath}')
+
     cmd_opts.autolaunch = False
     startup_timer.record("start")
 
@@ -262,12 +280,27 @@ def start_ui():
 
 
 def webui():
-    log.debug('Entering WebUI')
+    start_common()
     start_ui()
     load_model()
     log.info(f"Startup time: {startup_timer.summary()}")
     return shared.demo.server
 
 
+def api_only():
+    start_common()
+    app = FastAPI()
+    setup_middleware(app, cmd_opts)
+    api = create_api(app)
+    api.wants_restart = False
+    modules.script_callbacks.app_started_callback(None, app)
+    log.info(f"Startup time: {startup_timer.summary()}")
+    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+    return api
+
+
 if __name__ == "__main__":
-    webui()
+    if cmd_opts.api_only:
+        api_only()
+    else:
+        webui()

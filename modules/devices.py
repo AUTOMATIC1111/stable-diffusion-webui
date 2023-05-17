@@ -60,8 +60,8 @@ def get_device_for(task):
     return get_optimal_device()
 
 
-def torch_gc():
-    if shared.opts.disable_gc:
+def torch_gc(force=False):
+    if shared.opts.disable_gc and not force:
         return
     gc.collect()
     if shared.cmd_opts.use_ipex:

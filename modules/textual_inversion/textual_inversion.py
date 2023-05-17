@@ -60,7 +60,7 @@ class Embedding:
                 'hash': self.checksum(),
                 'optimizer_state_dict': self.optimizer_state_dict,
             }
-            torch.save(optimizer_saved_dict, filename + '.optim')
+            torch.save(optimizer_saved_dict, f"{filename}.optim")
 
     def checksum(self):
         if self.cached_checksum is not None:
@@ -419,8 +419,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate, weight_decay=0.0)
     if shared.opts.save_optimizer_state:
         optimizer_state_dict = None
-        if os.path.exists(filename + '.optim'):
-            optimizer_saved_dict = torch.load(filename + '.optim', map_location='cpu')
+        if os.path.exists(f"{filename}.optim"):
+            optimizer_saved_dict = torch.load(f"{filename}.optim", map_location='cpu')
             if embedding.checksum() == optimizer_saved_dict.get('hash', None):
                 optimizer_state_dict = optimizer_saved_dict.get('optimizer_state_dict', None)
         if optimizer_state_dict is not None:
