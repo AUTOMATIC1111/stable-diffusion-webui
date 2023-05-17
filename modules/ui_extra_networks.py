@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import PngImagePlugin
 
 from modules import shared
-from modules.images import read_info_from_image
+from modules.images import read_info_from_image, save_image_with_geninfo
 import gradio as gr
 import json
 import html
@@ -343,22 +343,7 @@ def setup_ui(ui, gallery):
 
         assert is_allowed, f'writing to {filename} is not allowed'
 
-        if geninfo:
-            ext = os.path.splitext(filename)[1].lower()
-            if ext == '.png':
-                pnginfo_data = PngImagePlugin.PngInfo()
-                pnginfo_data.add_text('parameters', geninfo)
-                image.save(filename, pnginfo=pnginfo_data)
-            elif ext in ('.jpg', '.jpeg', '.webp'):
-                exif_bytes = piexif.dump({
-                    'Exif': {piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(geninfo or '',
-                                                                                        encoding='unicode')}
-                })
-                image.save(filename, exif=exif_bytes, quality=shared.opts.jpeg_quality)
-            else:
-                image.save(filename)
-        else:
-            image.save(filename)
+        save_image_with_geninfo(image, geninfo, filename)
 
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
