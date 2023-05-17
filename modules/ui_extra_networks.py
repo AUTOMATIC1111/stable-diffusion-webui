@@ -105,6 +105,9 @@ class ExtraNetworksPage:
                     if not is_empty and not subdir.endswith("/"):
                         subdir = subdir + "/"
 
+                    if ("/." in subdir or subdir.startswith(".")) and not shared.opts.extra_networks_show_hidden_directories:
+                        continue
+
                     subdirs[subdir] = 1
 
         if subdirs:
@@ -147,6 +150,10 @@ class ExtraNetworksPage:
         return []
 
     def create_html_for_item(self, item, tabname):
+        """
+        Create HTML for card item in tab tabname; can return empty string if the item is not meant to be shown.
+        """
+
         preview = item.get("preview", None)
 
         onclick = item.get("onclick", None)
@@ -169,9 +176,15 @@ class ExtraNetworksPage:
             if filename.startswith(absdir):
                 local_path = filename[len(absdir):]
 
-        # if this is true, the item must not be show in the default view, and must instead only be
+        # if this is true, the item must not be shown in the default view, and must instead only be
         # shown when searching for it
-        search_only = "/." in local_path or "\\." in local_path
+        if shared.opts.extra_networks_hidden_models == "Always":
+            search_only = False
+        else:
+            search_only = "/." in local_path or "\\." in local_path
+
+        if search_only and shared.opts.extra_networks_hidden_models == "Never":
+            return ""
 
         args = {
             "style": f"'display: none; {height}{width}{background_image}'",

@@ -378,6 +378,7 @@ options_templates.update(options_section(('system', "System"), {
     "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
     "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job."),
     "print_hypernet_extra": OptionInfo(False, "Print extra hypernetwork information to console."),
+    "list_hidden_files": OptionInfo(True, "Load models/files in hidden directories").info("directory is hidden if its name starts with \".\""),
 }))
 
 options_templates.update(options_section(('training', "Training"), {
@@ -446,6 +447,8 @@ options_templates.update(options_section(('interrogate', "Interrogate Options"),
 }))
 
 options_templates.update(options_section(('extra_networks', "Extra Networks"), {
+    "extra_networks_show_hidden_directories": OptionInfo(True, "Show hidden directories").info("directory is hidden if its name starts with \".\"."),
+    "extra_networks_hidden_models": OptionInfo("When searched", "Show cards for models in hidden directories", gr.Radio, {"choices": ["Always", "When searched", "Never"]}).info('"When searched" option will only show the item when the search string has 4 characters or more'),
     "extra_networks_default_view": OptionInfo("cards", "Default view for Extra Networks", gr.Dropdown, {"choices": ["cards", "thumbs"]}),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "extra_networks_card_width": OptionInfo(0, "Card width for Extra Networks").info("in pixels"),
@@ -824,5 +827,8 @@ def walk_files(path, allowed_extensions=None):
                 _, ext = os.path.splitext(filename)
                 if ext not in allowed_extensions:
                     continue
+
+            if not opts.list_hidden_files and ("/." in root or "\\." in root):
+                continue
 
             yield os.path.join(root, filename)
