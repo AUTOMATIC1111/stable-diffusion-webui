@@ -116,7 +116,7 @@ titles = {
 }
 
 
-onUiUpdate(function(){
+onUiLoaded(function(){
 	gradioApp()
 	.querySelectorAll('span:not(.name, .description, .search_term), button:not([onclick^="extraNetworksSearchButton("]), select, p')
 	.forEach(function(span){
