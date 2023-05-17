@@ -3,24 +3,22 @@ import subprocess
 import os
 import sys
 import importlib.util
-import shlex
 import platform
 import json
+from functools import lru_cache
 
 from modules import cmd_args
 from modules.paths_internal import script_path, extensions_dir
-
-commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
-sys.argv += shlex.split(commandline_args)
 
 args, _ = cmd_args.parser.parse_known_args()
 
 python = sys.executable
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
-stored_commit_hash = None
-skip_install = False
 dir_repos = "repositories"
+
+# Whether to default to printing command output
+default_command_live = (os.environ.get('WEBUI_LAUNCH_LIVE_OUTPUT') == "1")
 
 if 'GRADIO_ANALYTICS_ENABLED' not in os.environ:
     os.environ['GRADIO_ANALYTICS_ENABLED'] = 'False'
@@ -49,7 +47,7 @@ or any other error regarding unsuccessful package (library) installation,
 please downgrade (or upgrade) to the latest version of 3.10 Python
 and delete current Python and "venv" folder in WebUI's directory.
 
-You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3109/
+You can download 3.10 Python from here: https://www.python.org/downloads/release/python-3106/
 
 {"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases" if is_windows else ""}
 
@@ -57,51 +55,52 @@ Use --skip-python-version-check to suppress this warning.
 """)
 
 
+@lru_cache()
 def commit_hash():
-    global stored_commit_hash
-
-    if stored_commit_hash is not None:
-        return stored_commit_hash
-
     try:
-        stored_commit_hash = run(f"{git} rev-parse HEAD").strip()
+        return subprocess.check_output([git, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
     except Exception:
-        stored_commit_hash = "<none>"
-
-    return stored_commit_hash
+        return "<none>"
 
 
-def run(command, desc=None, errdesc=None, custom_env=None, live=False):
+@lru_cache()
+def git_tag():
+    try:
+        return subprocess.check_output([git, "describe", "--tags"], shell=False, encoding='utf8').strip()
+    except Exception:
+        return "<none>"
+
+
+def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live) -> str:
     if desc is not None:
         print(desc)
 
-    if live:
-        result = subprocess.run(command, shell=True, env=os.environ if custom_env is None else custom_env)
-        if result.returncode != 0:
-            raise RuntimeError(f"""{errdesc or 'Error running command'}.
-Command: {command}
-Error code: {result.returncode}""")
+    run_kwargs = {
+        "args": command,
+        "shell": True,
+        "env": os.environ if custom_env is None else custom_env,
+        "encoding": 'utf8',
+        "errors": 'ignore',
+    }
 
-        return ""
+    if not live:
+        run_kwargs["stdout"] = run_kwargs["stderr"] = subprocess.PIPE
 
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True, env=os.environ if custom_env is None else custom_env)
+    result = subprocess.run(**run_kwargs)
 
     if result.returncode != 0:
+        error_bits = [
+            f"{errdesc or 'Error running command'}.",
+            f"Command: {command}",
+            f"Error code: {result.returncode}",
+        ]
+        if result.stdout:
+            error_bits.append(f"stdout: {result.stdout}")
+        if result.stderr:
+            error_bits.append(f"stderr: {result.stderr}")
+        raise RuntimeError("\n".join(error_bits))
 
-        message = f"""{errdesc or 'Error running command'}.
-Command: {command}
-Error code: {result.returncode}
-stdout: {result.stdout.decode(encoding="utf8", errors="ignore") if len(result.stdout)>0 else '<empty>'}
-stderr: {result.stderr.decode(encoding="utf8", errors="ignore") if len(result.stderr)>0 else '<empty>'}
-"""
-        raise RuntimeError(message)
-
-    return result.stdout.decode(encoding="utf8", errors="ignore")
-
-
-def check_run(command):
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    return result.returncode == 0
+    return (result.stdout or "")
 
 
 def is_installed(package):
@@ -117,20 +116,17 @@ def repo_dir(name):
     return os.path.join(script_path, dir_repos, name)
 
 
-def run_python(code, desc=None, errdesc=None):
-    return run(f'"{python}" -c "{code}"', desc, errdesc)
-
-
-def run_pip(args, desc=None):
-    if skip_install:
+def run_pip(command, desc=None, live=default_command_live):
+    if args.skip_install:
         return
 
     index_url_line = f' --index-url {index_url}' if index_url != '' else ''
-    return run(f'"{python}" -m pip {args} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
+    return run(f'"{python}" -m pip {command} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}", live=live)
 
 
-def check_run_python(code):
-    return check_run(f'"{python}" -c "{code}"')
+def check_run_python(code: str) -> bool:
+    result = subprocess.run([python, "-c", code], capture_output=True, shell=False)
+    return result.returncode == 0
 
 
 def git_clone(url, dir, name, commithash=None):
@@ -223,15 +219,14 @@ def run_extensions_installers(settings_file):
 
 
 def prepare_environment():
-    global skip_install
-
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==1.13.1+cu117 torchvision==0.14.1+cu117 --extra-index-url https://download.pytorch.org/whl/cu117")
+    torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu118")
+    torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url {torch_index_url}")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
-    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16rc425')
-    gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
-    clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
-    openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
+    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
+    gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "https://github.com/TencentARC/GFPGAN/archive/8d2447a2d918f8eba5a4a01463fd48e45126a379.zip")
+    clip_package = os.environ.get('CLIP_PACKAGE', "https://github.com/openai/CLIP/archive/d50d76daa670286dd6cacf3bcd80b5e4823fc8e1.zip")
+    openclip_package = os.environ.get('OPENCLIP_PACKAGE', "https://github.com/mlfoundations/open_clip/archive/bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b.zip")
 
     stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
     taming_transformers_repo = os.environ.get('TAMING_TRANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
@@ -249,15 +244,20 @@ def prepare_environment():
         check_python_version()
 
     commit = commit_hash()
+    tag = git_tag()
 
     print(f"Python {sys.version}")
+    print(f"Version: {tag}")
     print(f"Commit hash: {commit}")
 
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
 
-    if not args.skip_torch_cuda_test:
-        run_python("import torch; assert torch.cuda.is_available(), 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'")
+    if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
+        raise RuntimeError(
+            'Torch is not able to use GPU; '
+            'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
+        )
 
     if not is_installed("gfpgan"):
         run_pip(f"install {gfpgan_package}", "gfpgan")
@@ -271,7 +271,7 @@ def prepare_environment():
     if (not is_installed("xformers") or args.reinstall_xformers) and args.xformers:
         if platform.system() == "Windows":
             if platform.python_version().startswith("3.10"):
-                run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
+                run_pip(f"install -U -I --no-deps {xformers_package}", "xformers", live=True)
             else:
                 print("Installation of xformers is not supported in this version of Python.")
                 print("You can also check this and build manually: https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Xformers#building-xformers-on-windows-by-duckness")
@@ -296,7 +296,7 @@ def prepare_environment():
 
     if not os.path.isfile(requirements_file):
         requirements_file = os.path.join(script_path, requirements_file)
-    run_pip(f"install -r \"{requirements_file}\"", "requirements for Web UI")
+    run_pip(f"install -r \"{requirements_file}\"", "requirements")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
 
@@ -305,7 +305,7 @@ def prepare_environment():
 
     if args.update_all_extensions:
         git_pull_recursive(extensions_dir)
-    
+
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)

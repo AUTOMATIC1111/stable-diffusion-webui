@@ -10,15 +10,13 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, paths, sd_samplers, processing, sd_models, sd_vae
+from modules import images, sd_samplers, processing, sd_models, sd_vae
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
-from modules.shared import opts, cmd_opts, state
+from modules.shared import opts, state
 import modules.shared as shared
 import modules.sd_samplers
 import modules.sd_models
 import modules.sd_vae
-import glob
-import os
 import re
 
 from modules.ui_components import ToolButton
@@ -86,7 +84,7 @@ def apply_checkpoint(p, x, xs):
     info = modules.sd_models.get_closet_checkpoint_match(x)
     if info is None:
         raise RuntimeError(f"Unknown checkpoint: {x}")
-    modules.sd_models.reload_model_weights(shared.sd_model, info)
+    p.override_settings['sd_model_checkpoint'] = info.name
 
 
 def confirm_checkpoints(p, xs):
@@ -145,6 +143,11 @@ def apply_face_restore(p, opt, x):
 
     p.restore_faces = is_active
 
+
+def apply_override(field):
+    def fun(p, x, xs):
+        p.override_settings[field] = x
+    return fun
 
 def format_value_add_label(p, opt, x):
     if type(x) == float:
@@ -211,7 +214,8 @@ axis_options = [
     AxisOption("Prompt order", str_permutations, apply_order, format_value=format_value_join_list),
     AxisOptionTxt2Img("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOptionImg2Img("Sampler", str, apply_sampler, format_value=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img]),
-    AxisOption("Checkpoint name", str, apply_checkpoint, format_value=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: list(sd_models.checkpoints_list)),
+    AxisOption("Checkpoint name", str, apply_checkpoint, format_value=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: sorted(sd_models.checkpoints_list, key=str.casefold)),
+    AxisOption("Negative Guidance minimum sigma", float, apply_field("s_min_uncond")),
     AxisOption("Sigma Churn", float, apply_field("s_churn")),
     AxisOption("Sigma min", float, apply_field("s_tmin")),
     AxisOption("Sigma max", float, apply_field("s_tmax")),
@@ -221,10 +225,12 @@ axis_options = [
     AxisOption("Denoising", float, apply_field("denoising_strength")),
     AxisOptionTxt2Img("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
     AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
-    AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: list(sd_vae.vae_dict)),
+    AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: ['None'] + list(sd_vae.vae_dict)),
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
     AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
+    AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
+    AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
 ]
 
 
@@ -315,7 +321,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         return Processed(p, [])
 
     z_count = len(zs)
-    sub_grids = [None] * z_count
+
     for i in range(z_count):
         start_index = (i * len(xs) * len(ys)) + i
         end_index = start_index + len(xs) * len(ys)
@@ -345,7 +351,7 @@ class SharedSettingsStackHelper(object):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.vae = opts.sd_vae
         self.uni_pc_order = opts.uni_pc_order
-  
+
     def __exit__(self, exc_type, exc_value, tb):
         opts.data["sd_vae"] = self.vae
         opts.data["uni_pc_order"] = self.uni_pc_order
@@ -374,16 +380,19 @@ class Script(scripts.Script):
                 with gr.Row():
                     x_type = gr.Dropdown(label="X type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
                     x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
+                    x_values_dropdown = gr.Dropdown(label="X values",visible=False,multiselect=True,interactive=True)
                     fill_x_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_x_tool_button", visible=False)
 
                 with gr.Row():
                     y_type = gr.Dropdown(label="Y type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
                     y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
+                    y_values_dropdown = gr.Dropdown(label="Y values",visible=False,multiselect=True,interactive=True)
                     fill_y_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_y_tool_button", visible=False)
 
                 with gr.Row():
                     z_type = gr.Dropdown(label="Z type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("z_type"))
                     z_values = gr.Textbox(label="Z values", lines=1, elem_id=self.elem_id("z_values"))
+                    z_values_dropdown = gr.Dropdown(label="Z values",visible=False,multiselect=True,interactive=True)
                     fill_z_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_z_tool_button", visible=False)
 
         with gr.Row(variant="compact", elem_id="axis_options"):
@@ -395,60 +404,80 @@ class Script(scripts.Script):
                 include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
             with gr.Column():
                 margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
-        
+
         with gr.Row(variant="compact", elem_id="swap_axes"):
             swap_xy_axes_button = gr.Button(value="Swap X/Y axes", elem_id="xy_grid_swap_axes_button")
             swap_yz_axes_button = gr.Button(value="Swap Y/Z axes", elem_id="yz_grid_swap_axes_button")
             swap_xz_axes_button = gr.Button(value="Swap X/Z axes", elem_id="xz_grid_swap_axes_button")
 
-        def swap_axes(axis1_type, axis1_values, axis2_type, axis2_values):
-            return self.current_axis_options[axis2_type].label, axis2_values, self.current_axis_options[axis1_type].label, axis1_values
+        def swap_axes(axis1_type, axis1_values, axis1_values_dropdown, axis2_type, axis2_values, axis2_values_dropdown):
+            return self.current_axis_options[axis2_type].label, axis2_values, axis2_values_dropdown, self.current_axis_options[axis1_type].label, axis1_values, axis1_values_dropdown
 
-        xy_swap_args = [x_type, x_values, y_type, y_values]
+        xy_swap_args = [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown]
         swap_xy_axes_button.click(swap_axes, inputs=xy_swap_args, outputs=xy_swap_args)
-        yz_swap_args = [y_type, y_values, z_type, z_values]
+        yz_swap_args = [y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown]
         swap_yz_axes_button.click(swap_axes, inputs=yz_swap_args, outputs=yz_swap_args)
-        xz_swap_args = [x_type, x_values, z_type, z_values]
+        xz_swap_args = [x_type, x_values, x_values_dropdown, z_type, z_values, z_values_dropdown]
         swap_xz_axes_button.click(swap_axes, inputs=xz_swap_args, outputs=xz_swap_args)
 
         def fill(x_type):
             axis = self.current_axis_options[x_type]
-            return ", ".join(axis.choices()) if axis.choices else gr.update()
+            return axis.choices() if axis.choices else gr.update()
 
-        fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values])
-        fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values])
-        fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values])
+        fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values_dropdown])
+        fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values_dropdown])
+        fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values_dropdown])
 
-        def select_axis(x_type):
-            return gr.Button.update(visible=self.current_axis_options[x_type].choices is not None)
+        def select_axis(axis_type,axis_values_dropdown):
+            choices = self.current_axis_options[axis_type].choices
+            has_choices = choices is not None
+            current_values = axis_values_dropdown
+            if has_choices:
+                choices = choices()
+                if isinstance(current_values,str):
+                    current_values = current_values.split(",")
+                current_values = list(filter(lambda x: x in choices, current_values))
+            return gr.Button.update(visible=has_choices),gr.Textbox.update(visible=not has_choices),gr.update(choices=choices if has_choices else None,visible=has_choices,value=current_values)
 
-        x_type.change(fn=select_axis, inputs=[x_type], outputs=[fill_x_button])
-        y_type.change(fn=select_axis, inputs=[y_type], outputs=[fill_y_button])
-        z_type.change(fn=select_axis, inputs=[z_type], outputs=[fill_z_button])
+        x_type.change(fn=select_axis, inputs=[x_type,x_values_dropdown], outputs=[fill_x_button,x_values,x_values_dropdown])
+        y_type.change(fn=select_axis, inputs=[y_type,y_values_dropdown], outputs=[fill_y_button,y_values,y_values_dropdown])
+        z_type.change(fn=select_axis, inputs=[z_type,z_values_dropdown], outputs=[fill_z_button,z_values,z_values_dropdown])
+
+        def get_dropdown_update_from_params(axis,params):
+            val_key = f"{axis} Values"
+            vals = params.get(val_key,"")
+            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+            return gr.update(value = valslist)
 
         self.infotext_fields = (
             (x_type, "X Type"),
             (x_values, "X Values"),
+            (x_values_dropdown, lambda params:get_dropdown_update_from_params("X",params)),
             (y_type, "Y Type"),
             (y_values, "Y Values"),
+            (y_values_dropdown, lambda params:get_dropdown_update_from_params("Y",params)),
             (z_type, "Z Type"),
             (z_values, "Z Values"),
+            (z_values_dropdown, lambda params:get_dropdown_update_from_params("Z",params)),
         )
 
-        return [x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size]
 
-    def run(self, p, x_type, x_values, y_type, y_values, z_type, z_values, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size):
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
         if not opts.return_grid:
             p.batch_size = 1
 
-        def process_axis(opt, vals):
+        def process_axis(opt, vals, vals_dropdown):
             if opt.label == 'Nothing':
                 return [0]
 
-            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+            if opt.choices is not None:
+                valslist = vals_dropdown
+            else:
+                valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
 
             if opt.type == int:
                 valslist_ext = []
@@ -466,7 +495,7 @@ class Script(scripts.Script):
                         start = int(mc.group(1))
                         end   = int(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+
                         valslist_ext += [int(x) for x in np.linspace(start=start, stop=end, num=num).tolist()]
                     else:
                         valslist_ext.append(val)
@@ -488,7 +517,7 @@ class Script(scripts.Script):
                         start = float(mc.group(1))
                         end   = float(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+
                         valslist_ext += np.linspace(start=start, stop=end, num=num).tolist()
                     else:
                         valslist_ext.append(val)
@@ -506,13 +535,19 @@ class Script(scripts.Script):
             return valslist
 
         x_opt = self.current_axis_options[x_type]
-        xs = process_axis(x_opt, x_values)
+        if x_opt.choices is not None:
+            x_values = ",".join(x_values_dropdown)
+        xs = process_axis(x_opt, x_values, x_values_dropdown)
 
         y_opt = self.current_axis_options[y_type]
-        ys = process_axis(y_opt, y_values)
+        if y_opt.choices is not None:
+            y_values = ",".join(y_values_dropdown)
+        ys = process_axis(y_opt, y_values, y_values_dropdown)
 
         z_opt = self.current_axis_options[z_type]
-        zs = process_axis(z_opt, z_values)
+        if z_opt.choices is not None:
+            z_values = ",".join(z_values_dropdown)
+        zs = process_axis(z_opt, z_values, z_values_dropdown)
 
         # this could be moved to common code, but unlikely to be ever triggered anywhere else
         Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
@@ -676,7 +711,7 @@ class Script(scripts.Script):
 
         if not include_sub_grids:
             # Done with sub-grids, drop all related information:
-            for sg in range(z_count):
+            for _ in range(z_count):
                 del processed.images[1]
                 del processed.all_prompts[1]
                 del processed.all_seeds[1]

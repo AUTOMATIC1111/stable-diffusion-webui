@@ -2,7 +2,7 @@ import json
 import math
 import os
 import sys
-import warnings
+import hashlib
 
 import torch
 import numpy as np
@@ -10,10 +10,10 @@ from PIL import Image, ImageFilter, ImageOps
 import random
 import cv2
 from skimage import exposure
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -29,6 +29,7 @@ from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
+
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -105,7 +106,7 @@ class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
@@ -140,6 +141,7 @@ class StableDiffusionProcessing:
         self.denoising_strength: float = denoising_strength
         self.sampler_noise_scheduler_override = None
         self.ddim_discretize = ddim_discretize or opts.ddim_discretize
+        self.s_min_uncond = s_min_uncond or opts.s_min_uncond
         self.s_churn = s_churn or opts.s_churn
         self.s_tmin = s_tmin or opts.s_tmin
         self.s_tmax = s_tmax or float('inf')  # not representable as a standard ui option
@@ -148,6 +150,8 @@ class StableDiffusionProcessing:
         self.override_settings_restore_afterwards = override_settings_restore_afterwards
         self.is_using_inpainting_conditioning = False
         self.disable_extra_networks = False
+        self.token_merging_ratio = 0
+        self.token_merging_ratio_hr = 0
 
         if not seed_enable_extras:
             self.subseed = -1
@@ -162,6 +166,9 @@ class StableDiffusionProcessing:
         self.all_seeds = None
         self.all_subseeds = None
         self.iteration = 0
+        self.is_hr_pass = False
+        self.sampler = None
+
 
     @property
     def sd_model(self):
@@ -270,6 +277,12 @@ class StableDiffusionProcessing:
     def close(self):
         self.sampler = None
 
+    def get_token_merging_ratio(self, for_hr=False):
+        if for_hr:
+            return self.token_merging_ratio_hr or opts.token_merging_ratio_hr or self.token_merging_ratio or opts.token_merging_ratio
+
+        return self.token_merging_ratio or opts.token_merging_ratio
+
 
 class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
@@ -299,6 +312,8 @@ class Processed:
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
         self.clip_skip = opts.CLIP_stop_at_last_layers
+        self.token_merging_ratio = p.token_merging_ratio
+        self.token_merging_ratio_hr = p.token_merging_ratio_hr
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -306,6 +321,7 @@ class Processed:
         self.s_tmin = p.s_tmin
         self.s_tmax = p.s_tmax
         self.s_noise = p.s_noise
+        self.s_min_uncond = p.s_min_uncond
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
@@ -355,6 +371,9 @@ class Processed:
 
     def infotext(self, p: StableDiffusionProcessing, index):
         return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size)
+
+    def get_token_merging_ratio(self, for_hr=False):
+        return self.token_merging_ratio_hr if for_hr else self.token_merging_ratio
 
 
 # from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
@@ -454,10 +473,27 @@ def fix_seed(p):
     p.subseed = get_fixed_seed(p.subseed)
 
 
+def program_version():
+    import launch
+
+    res = launch.git_tag()
+    if res == "<none>":
+        res = None
+
+    return res
+
+
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
 
     clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
+    enable_hr = getattr(p, 'enable_hr', False)
+    token_merging_ratio = p.get_token_merging_ratio()
+    token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True)
+
+    uses_ensd = opts.eta_noise_seed_delta != 0
+    if uses_ensd:
+        uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
 
     generation_params = {
         "Steps": p.steps,
@@ -475,14 +511,19 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
-        "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "ENSD": opts.eta_noise_seed_delta if uses_ensd else None,
+        "Token merging ratio": None if token_merging_ratio == 0 else token_merging_ratio,
+        "Token merging ratio hr": None if not enable_hr or token_merging_ratio_hr == 0 else token_merging_ratio_hr,
+        "Init image hash": getattr(p, 'init_img_hash', None),
+        "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
+        "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
+        **p.extra_generation_params,
+        "Version": program_version() if opts.add_version_to_infotext else None,
     }
-
-    generation_params.update(p.extra_generation_params)
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
 
-    negative_prompt_text = "\nNegative prompt: " + p.all_negative_prompts[index] if p.all_negative_prompts[index] else ""
+    negative_prompt_text = f"\nNegative prompt: {p.all_negative_prompts[index]}" if p.all_negative_prompts[index] else ""
 
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
@@ -491,6 +532,11 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
 
     try:
+        # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
+        if sd_models.checkpoint_alisases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+            p.override_settings.pop('sd_model_checkpoint', None)
+            sd_models.reload_model_weights()
+
         for k, v in p.override_settings.items():
             setattr(opts, k, v)
 
@@ -500,15 +546,17 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()
 
+        sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
+
         res = process_images_inner(p)
 
     finally:
+        sd_models.apply_token_merging(p.sd_model, 0)
+
         # restore opts to original state
         if p.override_settings_restore_afterwards:
             for k, v in stored_opts.items():
                 setattr(opts, k, v)
-                if k == 'sd_model_checkpoint':
-                    sd_models.reload_model_weights()
 
                 if k == 'sd_vae':
                     sd_vae.reload_vae_weights()
@@ -639,8 +687,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     processed = Processed(p, [], p.seed, "")
                     file.write(processed.infotext(p, 0))
 
-            uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps, cached_uc)
-            c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps, cached_c)
+            sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
+            step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1
+            uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
+            c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
 
             if len(model_hijack.comments) > 0:
                 for comment in model_hijack.comments:
@@ -670,6 +720,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
             for i, x_sample in enumerate(x_samples_ddim):
+                p.batch_index = i
+
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                 x_sample = x_sample.astype(np.uint8)
 
@@ -706,9 +758,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     image.info["parameters"] = text
                 output_images.append(image)
 
-                if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay:
+                if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay and any([opts.save_mask, opts.save_mask_composite, opts.return_mask, opts.return_mask_composite]):
                     image_mask = p.mask_for_overlay.convert('RGB')
-                    image_mask_composite = Image.composite(image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), p.mask_for_overlay.convert('L')).convert('RGBA')
+                    image_mask_composite = Image.composite(image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, p.mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
 
                     if opts.save_mask:
                         images.save_image(image_mask, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=infotext(n, i), p=p, suffix="-mask")
@@ -718,7 +770,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                     if opts.return_mask:
                         output_images.append(image_mask)
-                    
+
                     if opts.return_mask_composite:
                         output_images.append(image_mask_composite)
 
@@ -751,7 +803,16 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     devices.torch_gc()
 
-    res = Processed(p, output_images, p.all_seeds[0], infotext(), comments="".join(["\n\n" + x for x in comments]), subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts)
+    res = Processed(
+        p,
+        images_list=output_images,
+        seed=p.all_seeds[0],
+        info=infotext(),
+        comments="".join(f"\n\n{comment}" for comment in comments),
+        subseed=p.all_subseeds[0],
+        index_of_first_image=index_of_first_image,
+        infotexts=infotexts,
+    )
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
@@ -871,6 +932,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if not self.enable_hr:
             return samples
 
+        self.is_hr_pass = True
+
         target_width = self.hr_upscale_to_x
         target_height = self.hr_upscale_to_y
 
@@ -938,7 +1001,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         x = None
         devices.torch_gc()
 
+        sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
+
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
+
+        sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
+
+        self.is_hr_pass = False
 
         return samples
 
@@ -1007,6 +1076,12 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.color_corrections = []
         imgs = []
         for img in self.init_images:
+
+            # Save init image
+            if opts.save_init_img:
+                self.init_img_hash = hashlib.md5(img.tobytes()).hexdigest()
+                images.save_image(img, path=opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, save_to_dirs=False)
+
             image = images.flatten(img, opts.img2img_background_color)
 
             if crop_region is None and self.resize_mode != 3:
@@ -1093,3 +1168,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         devices.torch_gc()
 
         return samples
+
+    def get_token_merging_ratio(self, for_hr=False):
+        return self.token_merging_ratio or ("token_merging_ratio" in self.override_settings and opts.token_merging_ratio) or opts.token_merging_ratio_img2img or opts.token_merging_ratio

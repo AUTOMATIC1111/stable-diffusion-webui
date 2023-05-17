@@ -23,7 +23,7 @@ def register_tmp_file(gradio, filename):
 
 def check_tmp_file(gradio, filename):
     if hasattr(gradio, 'temp_file_sets'):
-        return any([filename in fileset for fileset in gradio.temp_file_sets])
+        return any(filename in fileset for fileset in gradio.temp_file_sets)
 
     if hasattr(gradio, 'temp_dirs'):
         return any(Path(temp_dir).resolve() in Path(filename).resolve().parents for temp_dir in gradio.temp_dirs)
@@ -36,7 +36,7 @@ def save_pil_to_file(pil_image, dir=None):
     if already_saved_as and os.path.isfile(already_saved_as):
         register_tmp_file(shared.demo, already_saved_as)
 
-        file_obj = Savedfile(already_saved_as)
+        file_obj = Savedfile(f'{already_saved_as}?{os.path.getmtime(already_saved_as)}')
         return file_obj
 
     if shared.opts.temp_dir != "":
@@ -72,7 +72,7 @@ def cleanup_tmpdr():
     if temp_dir == "" or not os.path.isdir(temp_dir):
         return
 
-    for root, dirs, files in os.walk(temp_dir, topdown=False):
+    for root, _, files in os.walk(temp_dir, topdown=False):
         for name in files:
             _, extension = os.path.splitext(name)
             if extension != ".png":

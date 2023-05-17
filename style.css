@@ -1,3 +1,6 @@
+/* temporary fix to load default gradio font in frontend instead of backend */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap');
 
 /* general gradio fixes */
 
@@ -125,6 +128,10 @@ div.gradio-html.min{
     text-decoration: none;
 }
 
+a{
+    font-weight: bold;
+    cursor: pointer;
+}
 
 
 /* general styled components */
@@ -246,7 +253,7 @@ button.custom-button{
     }
 }
 
-#txt2img_gallery img, #img2img_gallery img{
+#txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
     object-fit: scale-down;
 }
 #txt2img_actions_column, #img2img_actions_column {
@@ -293,7 +300,12 @@ button.custom-button{
     margin-left: -0.75em
 }
 
-#txtimg_hr_finalres .resolution{
+#img2img_scale_resolution_preview.block{
+    display: flex;
+    align-items: end;
+}
+
+#txtimg_hr_finalres .resolution, #img2img_scale_resolution_preview .resolution{
     font-weight: bold;
 }
 
@@ -310,6 +322,10 @@ div.dimensions-tools{
     max-width: fit-content;
     flex-direction: row;
     align-content: center;
+}
+
+div#extras_scale_to_tab div.form{
+    flex-direction: row;
 }
 
 #mode_img2img .gradio-image > div.fixed-height, #mode_img2img .gradio-image > div.fixed-height img{
@@ -333,14 +349,24 @@ div.dimensions-tools{
     overflow-wrap: break-word;
 }
 
+#img2img_column_batch{
+    align-self: end;
+    margin-bottom: 0.9em;
+}
+
+#img2img_unused_scale_by_slider{
+    visibility: hidden;
+    width: 0.5em;
+    max-width: 0.5em;
+    min-width: 0.5em;
+}
+
 /* settings */
 #quicksettings {
-    width: fit-content;
     align-items: end;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
-    max-width: 24em;
     min-width: 24em;
     padding: 0;
     border: none;
@@ -376,6 +402,42 @@ div.dimensions-tools{
     margin: 0 1.2em;
 }
 
+table.settings-value-table{
+    background: white;
+    border-collapse: collapse;
+    margin: 1em;
+    border: 4px solid white;
+}
+
+table.settings-value-table td{
+    padding: 0.4em;
+    border: 1px solid #ccc;
+    max-width: 36em;
+}
+
+.ui-defaults-none{
+    color: #aaa !important;
+}
+
+#settings span{
+    color: var(--body-text-color);
+}
+
+#settings .gradio-textbox, #settings .gradio-slider, #settings .gradio-number, #settings .gradio-dropdown, #settings .gradio-checkboxgroup, #settings .gradio-radio{
+    margin-top: 0.75em;
+}
+
+#settings span .settings-comment {
+    display: inline
+}
+
+.settings-comment a{
+    text-decoration: underline;
+}
+
+.settings-comment .info{
+    opacity: 0.75;
+}
 
 /* live preview */
 .progressDiv{
@@ -513,6 +575,8 @@ div.dimensions-tools{
 #lightboxModal > img.modalImageFullscreen{
     object-fit: contain;
     height: 100%;
+    width: 100%;
+    min-height: 0;
 }
 
 .modalPrev,
@@ -641,6 +705,12 @@ footer {
 }
 
 /* extra networks UI */
+
+.extra-network-cards{
+    height: 725px;
+    overflow: scroll;
+    resize: vertical;
+}
 
 .extra-networks > div > [id *= '_extra_']{
     margin: 0.3em;

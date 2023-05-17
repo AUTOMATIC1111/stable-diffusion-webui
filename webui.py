@@ -5,7 +5,10 @@ import importlib
 import signal
 import re
 import warnings
-from fastapi import FastAPI
+import json
+from threading import Thread
+
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from packaging import version
@@ -13,31 +16,34 @@ from packaging import version
 import logging
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
-from modules import paths, timer, import_hook, errors
+from modules import paths, timer, import_hook, errors  # noqa: F401
 
 startup_timer = timer.Timer()
 
 import torch
-import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
+import pytorch_lightning   # noqa: F401 # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
+warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
+
+
 startup_timer.record("import torch")
 
 import gradio
 startup_timer.record("import gradio")
 
-import ldm.modules.encoders.modules
+import ldm.modules.encoders.modules  # noqa: F401
 startup_timer.record("import ldm")
 
 from modules import extra_networks, ui_extra_networks_checkpoints
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
-from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call
+from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, queue_lock  # noqa: F401
 
 # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
 if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__long_version__ = torch.__version__
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
 
-from modules import shared, devices, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks
+from modules import shared, sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks, config_states
 import modules.codeformer_model as codeformer
 import modules.face_restoration
 import modules.gfpgan_model as gfpgan
@@ -67,11 +73,51 @@ else:
     server_name = "0.0.0.0" if cmd_opts.listen else None
 
 
+def fix_asyncio_event_loop_policy():
+    """
+        The default `asyncio` event loop policy only automatically creates
+        event loops in the main threads. Other threads must create event
+        loops explicitly or `asyncio.get_event_loop` (and therefore
+        `.IOLoop.current`) will fail. Installing this policy allows event
+        loops to be created automatically on any thread, matching the
+        behavior of Tornado versions prior to 5.0 (or 5.0 on Python 2).
+    """
+
+    import asyncio
+
+    if sys.platform == "win32" and hasattr(asyncio, "WindowsSelectorEventLoopPolicy"):
+        # "Any thread" and "selector" should be orthogonal, but there's not a clean
+        # interface for composing policies so pick the right base.
+        _BasePolicy = asyncio.WindowsSelectorEventLoopPolicy  # type: ignore
+    else:
+        _BasePolicy = asyncio.DefaultEventLoopPolicy
+
+    class AnyThreadEventLoopPolicy(_BasePolicy):  # type: ignore
+        """Event loop policy that allows loop creation on any thread.
+        Usage::
+
+            asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+        """
+
+        def get_event_loop(self) -> asyncio.AbstractEventLoop:
+            try:
+                return super().get_event_loop()
+            except (RuntimeError, AssertionError):
+                # This was an AssertionError in python 3.4.2 (which ships with debian jessie)
+                # and changed to a RuntimeError in 3.4.3.
+                # "There is no current event loop in thread %r"
+                loop = self.new_event_loop()
+                self.set_event_loop(loop)
+                return loop
+
+    asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+
+
 def check_versions():
     if shared.cmd_opts.skip_version_check:
         return
 
-    expected_torch_version = "1.13.1"
+    expected_torch_version = "2.0.0"
 
     if version.parse(torch.__version__) < version.parse(expected_torch_version):
         errors.print_error_explanation(f"""
@@ -84,7 +130,7 @@ there are reports of issues with training tab on the latest version.
 Use --skip-version-check commandline argument to disable this check.
         """.strip())
 
-    expected_xformers_version = "0.0.16rc425"
+    expected_xformers_version = "0.0.17"
     if shared.xformers_available:
         import xformers
 
@@ -98,12 +144,34 @@ Use --skip-version-check commandline argument to disable this check.
             """.strip())
 
 
+def restore_config_state_file():
+    config_state_file = shared.opts.restore_config_state_file
+    if config_state_file == "":
+        return
+
+    shared.opts.restore_config_state_file = ""
+    shared.opts.save(shared.config_filename)
+
+    if os.path.isfile(config_state_file):
+        print(f"*** About to restore extension state from file: {config_state_file}")
+        with open(config_state_file, "r", encoding="utf-8") as f:
+            config_state = json.load(f)
+            config_states.restore_extension_config(config_state)
+        startup_timer.record("restore extension config")
+    elif config_state_file:
+        print(f"!!! Config state backup not found: {config_state_file}")
+
+
 def initialize():
+    fix_asyncio_event_loop_policy()
+
     check_versions()
 
     extensions.list_extensions()
     localization.list_localizations(cmd_opts.localizations_dir)
     startup_timer.record("list extensions")
+
+    restore_config_state_file()
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
@@ -120,9 +188,6 @@ def initialize():
     gfpgan.setup_model(cmd_opts.gfpgan_models_path)
     startup_timer.record("setup gfpgan")
 
-    modelloader.list_builtin_upscalers()
-    startup_timer.record("list builtin upscalers")
-
     modules.scripts.load_scripts()
     startup_timer.record("load scripts")
 
@@ -135,21 +200,14 @@ def initialize():
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")
 
-    try:
-        modules.sd_models.load_model()
-    except Exception as e:
-        errors.display(e, "loading stable diffusion model")
-        print("", file=sys.stderr)
-        print("Stable diffusion model failed to load, exiting", file=sys.stderr)
-        exit(1)
-    startup_timer.record("load SD checkpoint")
+    # load model in parallel to other startup stuff
+    Thread(target=lambda: shared.sd_model).start()
 
-    shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
-
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()))
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
+    shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
     startup_timer.record("opts onchange")
 
     shared.reload_hypernetworks()
@@ -183,7 +241,10 @@ def initialize():
         print(f'Interrupted with signal {sig} in {frame}')
         os._exit(0)
 
-    signal.signal(signal.SIGINT, sigint_handler)
+    if not os.environ.get("COVERAGE_RUN"):
+        # Don't install the immediate-quit handler when running under coverage,
+        # as then the coverage report won't be generated.
+        signal.signal(signal.SIGINT, sigint_handler)
 
 
 def setup_middleware(app):
@@ -204,17 +265,6 @@ def create_api(app):
     return api
 
 
-def wait_on_server(demo=None):
-    while 1:
-        time.sleep(0.5)
-        if shared.state.need_restart:
-            shared.state.need_restart = False
-            time.sleep(0.5)
-            demo.close()
-            time.sleep(0.5)
-            break
-
-
 def api_only():
     initialize()
 
@@ -226,6 +276,11 @@ def api_only():
 
     print(f"Startup time: {startup_timer.summary()}.")
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+
+
+def stop_route(request):
+    shared.state.server_command = "stop"
+    return Response("Stopping.")
 
 
 def webui():
@@ -254,17 +309,31 @@ def webui():
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
+        # this restores the missing /docs endpoint
+        if launch_api and not hasattr(FastAPI, 'original_setup'):
+            def fastapi_setup(self):
+                self.docs_url = "/docs"
+                self.redoc_url = "/redoc"
+                self.original_setup()
+
+            FastAPI.original_setup = FastAPI.setup
+            FastAPI.setup = fastapi_setup
+
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=server_name,
             server_port=cmd_opts.port,
             ssl_keyfile=cmd_opts.tls_keyfile,
             ssl_certfile=cmd_opts.tls_certfile,
+            ssl_verify=cmd_opts.disable_tls_verify,
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True
         )
+        if cmd_opts.add_stop_route:
+            app.add_route("/_stop", stop_route, methods=["POST"])
+
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
 
@@ -279,6 +348,7 @@ def webui():
         setup_middleware(app)
 
         modules.progress.setup_progress_api(app)
+        modules.ui.setup_ui_api(app)
 
         if launch_api:
             create_api(app)
@@ -290,8 +360,32 @@ def webui():
 
         print(f"Startup time: {startup_timer.summary()}.")
 
-        wait_on_server(shared.demo)
+        if cmd_opts.subpath:
+            redirector = FastAPI()
+            redirector.get("/")
+            gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
+
+        try:
+            while True:
+                server_command = shared.state.wait_for_server_command(timeout=5)
+                if server_command:
+                    if server_command in ("stop", "restart"):
+                        break
+                    else:
+                        print(f"Unknown server command: {server_command}")
+        except KeyboardInterrupt:
+            print('Caught KeyboardInterrupt, stopping...')
+            server_command = "stop"
+
+        if server_command == "stop":
+            print("Stopping server...")
+            # If we catch a keyboard interrupt, we want to stop the server and exit.
+            shared.demo.close()
+            break
         print('Restarting UI...')
+        shared.demo.close()
+        time.sleep(0.5)
+        modules.script_callbacks.app_reload_callback()
 
         startup_timer.reset()
 
@@ -301,9 +395,10 @@ def webui():
         extensions.list_extensions()
         startup_timer.record("list extensions")
 
+        restore_config_state_file()
+
         localization.list_localizations(cmd_opts.localizations_dir)
 
-        modelloader.forbid_loaded_nonbuiltin_upscalers()
         modules.scripts.reload_scripts()
         startup_timer.record("load scripts")
 
