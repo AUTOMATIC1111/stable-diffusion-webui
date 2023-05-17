@@ -33,7 +33,10 @@ def zip_uncompress(src, dst):
             new_zip_file = f.encode('cp437').decode('gbk')
         except:
             new_zip_file = f.encode('cp437').decode('utf-8')
-        os.rename(os.path.join(dst, f), os.path.join(dst, new_zip_file))
+        try:
+            os.rename(os.path.join(dst, f), os.path.join(dst, new_zip_file))
+        except:
+            pass 
 
 
 def zip_compress(src, dst):
