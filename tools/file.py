@@ -36,7 +36,7 @@ def zip_uncompress(src, dst):
         try:
             os.rename(os.path.join(dst, f), os.path.join(dst, new_zip_file))
         except:
-            pass 
+            pass
 
 
 def zip_compress(src, dst):

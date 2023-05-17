@@ -7,6 +7,7 @@
 # @Software: Hifive
 import copy
 import os.path
+from loguru import logger
 from worker.dumper import dumper
 from worker.task import Task
 from .typex import PreprocessTask
@@ -82,15 +83,19 @@ def build_thumbnail_tag(target_dir):
         basename, ex = os.path.splitext(os.path.basename(file))
         dirname = os.path.dirname(file)
         ex = str(ex).lstrip('.').lower()
+        if 'MACOSX' in dirname:
+            continue
         if ex == 'png':
-            thumbnail = create_thumbnail(file)
-            thumbnail_key = upload_files(True, thumbnail)
-            images[os.path.join(dirname, basename)] = {
-                'filename': os.path.basename(file),
-                'dirname': os.path.dirname(file).replace(target_dir, '').lstrip('/'),
-                'thumbnail': thumbnail_key[0] if thumbnail_key else ''
-            }
-            os.remove(thumbnail)
+            thumb = create_thumbnail(file)
+            if thumb and os.path.isfile(thumb):
+                thumbnail_key = upload_files(True, thumb)
+                images[os.path.join(dirname, basename)] = {
+                    'filename': os.path.basename(file),
+                    'dirname': os.path.dirname(file).replace(target_dir, '').lstrip('/'),
+                    'thumbnail': thumbnail_key[0] if thumbnail_key else ''
+                }
+                
+                os.remove(thumb)
         else:
             tag_files.append(file)
 
@@ -108,5 +113,11 @@ def create_thumbnail(image_path):
     dirname = os.path.dirname(image_path)
     basename = os.path.basename(image_path)
     dst = os.path.join(dirname, 'thumb-' + basename)
-    thumbnail(image_path, dst)
-    return dst
+    try:
+        thumbnail(image_path, dst)
+    except Exception as ex:
+        logger.exception('cannot gen thumbnail')
+    else:
+        return dst
+
+
