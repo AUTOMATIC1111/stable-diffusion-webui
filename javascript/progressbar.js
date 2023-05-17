@@ -64,9 +64,9 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd = null, o
   divProgress.appendChild(divInner);
   parentProgressbar.insertBefore(divProgress, progressbarContainer);
   localStorage.setItem('task', id_task);
-  console.debug('task active:', id_task);
+  let livePreview;
   if (parentGallery) {
-    const livePreview = document.createElement('div');
+    livePreview = document.createElement('div');
     livePreview.className = 'livePreview';
     parentGallery.insertBefore(livePreview, gallery);
   }
