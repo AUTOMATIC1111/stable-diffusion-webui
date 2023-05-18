@@ -707,5 +707,9 @@
     "train/Keep original size/value": false,
     "webui/Tabs@tabs/selected": null,
     "txt2img/Hires sampling method/visible": true,
-    "txt2img/Hires sampling method/value": "Use same sampler"
+    "txt2img/Hires sampling method/value": "Use same sampler",
+    "pnginfo/Send to txt2img/visible": true,
+    "pnginfo/Send to img2img/visible": true,
+    "pnginfo/Send to inpaint/visible": true,
+    "pnginfo/Send to extras/visible": true
 }
