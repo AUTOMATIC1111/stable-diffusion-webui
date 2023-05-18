@@ -252,7 +252,6 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         if line.startswith("Negative prompt:"):
             done_with_prompt = True
             line = line[16:].strip()
-
         if done_with_prompt:
             negative_prompt += ("" if negative_prompt == "" else "\n") + line
         else:
@@ -269,6 +268,11 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
             res[f"{k}-2"] = m.group(2)
         else:
             res[k] = v
+
+        if k.startswith("Hires prompt"):
+            res["Hires prompt"] = v[1:][:-1].replace(';', ',')
+        elif k.startswith("Hires negative prompt"):
+            res["Hires negative prompt"] = v[1:][:-1].replace(';', ',')
 
     # Missing CLIP skip means it was set to 1 (the default)
     if "Clip skip" not in res:
