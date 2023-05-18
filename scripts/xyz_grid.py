@@ -404,7 +404,7 @@ class Script(scripts.Script):
                     fill_z_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_z_tool_button", visible=False)
         with gr.Row(variant="compact", elem_id="axis_options"):
             draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
-            no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
+            no_fixed_seeds = gr.Checkbox(label='Keep random for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
             no_grid = gr.Checkbox(label='Do not create grid', value=False, elem_id=self.elem_id("no_xyz_grid"))
             include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
             include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
@@ -466,10 +466,10 @@ class Script(scripts.Script):
             (z_values_dropdown, lambda params:get_dropdown_update_from_params("Z",params)),
         )
 
-        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_grid, no_fixed_seeds, margin_size]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, no_grid]
 
-    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_grid, no_fixed_seeds, margin_size): # pylint: disable=arguments-differ
-        shared.log.debug(f'xyzgrid: {x_type}|{x_values}|{x_values_dropdown}|{y_type}|{y_values}|{y_values_dropdown}|{z_type}|{z_values}|{z_values_dropdown}|{draw_legend}|{include_lone_images}|{include_sub_grids}|{no_grid}|{margin_size}')
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, no_grid): # pylint: disable=arguments-differ
+        shared.log.debug(f'xyzgrid: x_type={x_type}|x_values={x_values}|x_values_dropdown={x_values_dropdown}|y_type={y_type}|{y_values}={y_values}|{y_values_dropdown}={y_values_dropdown}|z_type={z_type}|z_values={z_values}|z_values_dropdown={z_values_dropdown}|draw_legend={draw_legend}|include_lone_images={include_lone_images}|include_sub_grids={include_sub_grids}|no_grid={no_grid}|margin_size={margin_size}')
         if not no_fixed_seeds:
             processing.fix_seed(p)
         if not shared.opts.return_grid:
