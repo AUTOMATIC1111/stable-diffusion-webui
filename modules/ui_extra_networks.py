@@ -81,7 +81,7 @@ class ExtraNetworksPage:
         subdirs = {}
         allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
         for parentdir in [*set(allowed_folders)]:
-            for root, dirs, _files in os.walk(parentdir):
+            for root, dirs, _files in os.walk(parentdir, followlinks=True):
                 for dirname in dirs:
                     x = os.path.join(root, dirname)
                     if not os.path.isdir(x):

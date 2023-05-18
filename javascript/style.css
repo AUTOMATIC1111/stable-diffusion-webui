@@ -186,8 +186,10 @@ div#extras_scale_to_tab div.form{
 }
 
 .extra-network-cards{
-  height: 725px;
-  overflow: scroll;
+  height: fit-content;
+  max-height: 50vh;
+  overflow-y: scroll;
+  overflow-x: hidden;
   resize: vertical;
 }
 

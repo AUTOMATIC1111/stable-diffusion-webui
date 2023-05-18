@@ -1,9 +1,7 @@
-import glob
 import os
 import re
-import torch
 from typing import Union
-
+import torch
 from modules import shared, devices, sd_models, errors, scripts
 
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
