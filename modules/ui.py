@@ -526,24 +526,22 @@ def create_ui():
 
             hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
 
-            def update_resolution_hires_input(inp, evt):
-                getattr(inp, evt)(
+            for component in hr_resolution_preview_inputs:
+                event = component.release if isinstance(component, gr.Slider) else component.change
+
+                event(
                     fn=calc_resolution_hires,
                     inputs=hr_resolution_preview_inputs,
                     outputs=[hr_final_resolution],
                     show_progress=False,
                 )
-                getattr(inp, evt)(
+                event(
                     None,
                     _js="onCalcResolutionHires",
                     inputs=hr_resolution_preview_inputs,
                     outputs=[],
                     show_progress=False,
                 )
-
-            update_resolution_hires_input(enable_hr, 'change')
-            for input in hr_resolution_preview_inputs[1:]:
-                update_resolution_hires_input(input, 'release')
 
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
 
