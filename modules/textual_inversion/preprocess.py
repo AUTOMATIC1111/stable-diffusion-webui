@@ -309,7 +309,9 @@ def preprocess_sub_dir(process_src,
         for i, dirname in enumerate(sub_dirs):
             basename = os.path.basename(dirname)
             dst_dir = os.path.join(process_dst, basename)
+            print(f'preprocess work with:{dirname}')
             if basename.startswith('.') or 'MACOSX' in basename:
+                print('ignore macosx')
                 continue
 
             def work_progress(p):
