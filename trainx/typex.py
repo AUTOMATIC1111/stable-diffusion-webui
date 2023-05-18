@@ -251,6 +251,8 @@ class TrainLoraTask(UserDict):
                 if caption:
                     with open(caption_path, 'w+') as f:
                         f.write(','.join(caption))
+                else:
+                    raise ValueError(f'cannot found caption:{filename}')
 
     def create_toml(self, image_dir):
         params = self.train_param()

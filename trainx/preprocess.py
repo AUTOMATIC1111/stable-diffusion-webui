@@ -7,6 +7,8 @@
 # @Software: Hifive
 import copy
 import os.path
+import shutil
+
 from loguru import logger
 from worker.dumper import dumper
 from worker.task import Task
@@ -32,7 +34,7 @@ def exec_preprocess_task(job: Task):
         params = copy.copy(task.params)
 
         def progress_callback(progress):
-            p = TaskProgress.new_running(job, 'run preprocess', int(progress*0.7))
+            p = TaskProgress.new_running(job, 'run preprocess', int(progress * 0.7))
             dumper.dump_task_progress(p)
 
         params.update(
@@ -41,6 +43,7 @@ def exec_preprocess_task(job: Task):
             }
         )
 
+        copy_captions(target_dir, processed_dir)
         if not task.ignore:
             preprocess_sub_dir(
                 target_dir,
@@ -49,7 +52,8 @@ def exec_preprocess_task(job: Task):
             )
         else:
             processed_dir = target_dir
-
+        p = TaskProgress.new_running(job, 'upload thumbnail', 80)
+        yield p
         images = build_thumbnail_tag(processed_dir)
         p = TaskProgress.new_running(job, 'upload thumbnail', 90)
         yield p
@@ -89,7 +93,7 @@ def build_thumbnail_tag(target_dir):
             thumb = create_thumbnail(file)
             if thumb and os.path.isfile(thumb):
                 thumbnail_key = upload_files(True, thumb)
-                images[os.path.join(dirname, basename)] = {
+                images[basename] = {
                     'filename': os.path.basename(file),
                     'dirname': os.path.dirname(file).replace(target_dir, '').lstrip('/'),
                     'thumbnail': thumbnail_key[0] if thumbnail_key else ''
@@ -100,11 +104,22 @@ def build_thumbnail_tag(target_dir):
             tag_files.append(file)
 
     for file in tag_files:
-        dirname = os.path.dirname(file)
         basename, ex = os.path.splitext(os.path.basename(file))
-        with open(file) as f:
-            lines = f.readlines()
-            images[os.path.join(dirname, basename)]['tag'] = ' '.join(lines)
+        try:
+            with open(file) as f:
+                lines = f.readlines()
+                if basename in images:
+                    images[basename]['tag'] = ' '.join(lines)
+                else:
+                    # 提前预置了TXT，预处理后png名称会重命名。
+                    def get_rename_image():
+                        for k in images.keys():
+                            if str(k).endswith(basename):
+                                return k
+                    rename = get_rename_image()
+                    images[rename]['tag'] = ' '.join(lines)
+        except Exception as ex:
+            print(f'cannot read caption file:{file}, err:{ex}')
 
     return images.values()
 
@@ -120,4 +135,11 @@ def create_thumbnail(image_path):
     else:
         return dst
 
+
+def copy_captions(src, dst):
+    for file in find_files_from_dir(src, "txt"):
+        basename = file.replace(src, '').lstrip('/')
+        dirname = os.path.dirname(basename)
+        os.makedirs(os.path.join(dst, dirname), exist_ok=True)
+        shutil.copy(file, os.path.join(dst, basename))
 
