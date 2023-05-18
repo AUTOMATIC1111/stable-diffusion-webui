@@ -1,4 +1,4 @@
-window.onload = (function(){
+window.onload = (function() {
     window.addEventListener('drop', e => {
         const target = e.composedPath()[0];
         if (target.placeholder.indexOf("Prompt") == -1) return;
@@ -10,7 +10,7 @@ window.onload = (function(){
         const imgParent = gradioApp().getElementById(prompt_target);
         const files = e.dataTransfer.files;
         const fileInput = imgParent.querySelector('input[type="file"]');
-        if ( fileInput ) {
+        if (fileInput) {
             fileInput.files = files;
             fileInput.dispatchEvent(new Event('change'));
         }

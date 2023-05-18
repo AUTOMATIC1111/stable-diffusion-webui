@@ -19,6 +19,7 @@ def connect(token, port, options):
     if not options.get('session_metadata'):
         options['session_metadata'] = 'stable-diffusion-webui'
 
+
     try:
         public_url = ngrok.connect(f"127.0.0.1:{port}", **options).url()
     except Exception as e:
