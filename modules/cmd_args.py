@@ -77,6 +77,7 @@ parser.add_argument("--gradio-auth", type=str, help='set gradio authentication l
 parser.add_argument("--gradio-auth-path", type=str, help='set gradio authentication file path ex. "/path/to/auth/file" same auth format as --gradio-auth', default=None)
 parser.add_argument("--gradio-img2img-tool", type=str, help='does not do anything')
 parser.add_argument("--gradio-inpaint-tool", type=str, help="does not do anything")
+parser.add_argument("--gradio-allowed-path", action='append', help="add path to gradio's allowed_paths, make it possible to serve files from it")
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(data_path, 'styles.csv'))
 parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
