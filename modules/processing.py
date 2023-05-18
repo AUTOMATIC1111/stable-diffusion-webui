@@ -808,7 +808,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         images_list=output_images,
         seed=p.all_seeds[0],
         info=infotext(),
-        comments="".join(f"\n\n{comment}" for comment in comments),
+        comments="".join(f"{comment}\n" for comment in comments),
         subseed=p.all_subseeds[0],
         index_of_first_image=index_of_first_image,
         infotexts=infotexts,

@@ -3,7 +3,7 @@ import re
 import torch
 from typing import Union
 
-from modules import shared, devices, sd_models, errors, scripts
+from modules import shared, devices, sd_models, errors, scripts, sd_hijack
 
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
 
@@ -211,6 +211,8 @@ def load_loras(names, multipliers=None):
 
         loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
 
+    failed_to_load_loras = []
+
     for i, name in enumerate(names):
         lora = already_loaded.get(name, None)
 
@@ -224,11 +226,15 @@ def load_loras(names, multipliers=None):
                     continue
 
         if lora is None:
+            failed_to_load_loras.append(name)
             print(f"Couldn't find Lora with name {name}")
             continue
 
         lora.multiplier = multipliers[i] if multipliers else 1.0
         loaded_loras.append(lora)
+
+    if len(failed_to_load_loras) > 0:
+        sd_hijack.model_hijack.comments.append("Failed to find Loras: " + ", ".join(failed_to_load_loras))
 
 
 def lora_calc_updown(lora, module, target):
