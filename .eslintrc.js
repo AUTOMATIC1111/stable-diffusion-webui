@@ -3,7 +3,7 @@ module.exports = {
         browser: true,
         es2021: true,
     },
-    // "extends": "eslint:recommended",
+    extends: "eslint:recommended",
     parserOptions: {
         ecmaVersion: "latest",
     },
@@ -40,10 +40,50 @@ module.exports = {
         "switch-colon-spacing": "error",
         "template-curly-spacing": ["error", "never"],
         "unicode-bom": "error",
-        // "no-multi-spaces": "error", // TODO: enable?
-        // "object-curly-spacing": "off", // TODO: enable?
-        // "object-property-newline": "off", // TODO: enable?
-        // "operator-linebreak": "off", // TODO: enable?
-        // "quotes": ["error", "double", {avoidEscape: true}],  // TODO: enable?
+        "no-multi-spaces": "error",
+        "object-curly-spacing": ["error", "never"],
+        "operator-linebreak": ["error", "after"],
+        "no-unused-vars": "off",
+        "no-redeclare": "off",
     },
+    globals: {
+        // this file
+        module: "writable",
+        //script.js
+        gradioApp: "writable",
+        onUiLoaded: "writable",
+        onUiUpdate: "writable",
+        onOptionsChanged: "writable",
+        uiCurrentTab: "writable",
+        uiElementIsVisible: "writable",
+        executeCallbacks: "writable",
+        //ui.js
+        opts: "writable",
+        all_gallery_buttons: "writable",
+        selected_gallery_button: "writable",
+        selected_gallery_index: "writable",
+        args_to_array: "writable",
+        switch_to_txt2img: "writable",
+        switch_to_img2img_tab: "writable",
+        switch_to_img2img: "writable",
+        switch_to_sketch: "writable",
+        switch_to_inpaint: "writable",
+        switch_to_inpaint_sketch: "writable",
+        switch_to_extras: "writable",
+        get_tab_index: "writable",
+        create_submit_args: "writable",
+        restart_reload: "writable",
+        updateInput: "writable",
+        //extraNetworks.js
+        requestGet: "writable",
+        popup: "writable",
+        // from python
+        localization: "writable",
+        // progrssbar.js
+        randomId: "writable",
+        requestProgress: "writable",
+        // imageviewer.js
+        modalPrevImage: "writable",
+        modalNextImage: "writable",
+    }
 };
