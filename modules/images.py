@@ -420,7 +420,8 @@ def atomically_save_image():
         image, filename, extension, params, exifinfo_data, txt_fullfn = save_queue.get()
         mp = round(image.width * image.height / 1000000)
         if mp > shared.opts.img_max_size_mp:
-            shared.log.warning(f'Image size: {image.size} excedes {shared.opts.img_max_size_mp} MPixels')
+            shared.log.warning(f'Maximum image size exceded: size={image.size} maximum={shared.opts.img_max_size_mp} MPixels')
+            return
         fn = filename + extension
         image_format = Image.registered_extensions()[extension]
         shared.log.debug(f'Saving image: {image_format} {fn} {image.size}')
@@ -431,6 +432,9 @@ def atomically_save_image():
                 pnginfo_data.add_text(k, str(v))
             image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, pnginfo=pnginfo_data)
         elif image_format == 'JPEG':
+            if image.height > 65500 or image.width > 65500:
+                shared.log.warning(f'Maximum image size exceded: size={image.size} maximum=65550 pixels')
+                return
             if image.mode == 'RGBA':
                 shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
                 image = image.convert("RGB")
