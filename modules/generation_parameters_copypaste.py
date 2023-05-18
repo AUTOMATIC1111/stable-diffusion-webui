@@ -1,5 +1,6 @@
 import base64
 import io
+import json
 import os
 import re
 
@@ -34,13 +35,20 @@ def reset():
 
 
 def quote(text):
-    if ',' not in str(text):
+    if ',' not in str(text) and '\n' not in str(text):
         return text
 
-    text = str(text)
-    text = text.replace('\\', '\\\\')
-    text = text.replace('"', '\\"')
-    return f'"{text}"'
+    return json.dumps(text, ensure_ascii=False)
+
+
+def unquote(text):
+    if len(text) == 0 or text[0] != '"' or text[-1] != '"':
+        return text
+
+    try:
+        return json.loads(text)
+    except Exception:
+        return text
 
 
 def image_from_url_text(filedata):
@@ -261,18 +269,15 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     res["Negative prompt"] = negative_prompt
 
     for k, v in re_param.findall(lastline):
-        v = v[1:-1] if v[0] == '"' and v[-1] == '"' else v
+        if v[0] == '"' and v[-1] == '"':
+            v = unquote(v)
+
         m = re_imagesize.match(v)
         if m is not None:
             res[f"{k}-1"] = m.group(1)
             res[f"{k}-2"] = m.group(2)
         else:
             res[k] = v
-
-        if k.startswith("Hires prompt"):
-            res["Hires prompt"] = v[1:][:-1].replace(';', ',')
-        elif k.startswith("Hires negative prompt"):
-            res["Hires negative prompt"] = v[1:][:-1].replace(';', ',')
 
     # Missing CLIP skip means it was set to 1 (the default)
     if "Clip skip" not in res:
@@ -285,6 +290,15 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Hires resize-1" not in res:
         res["Hires resize-1"] = 0
         res["Hires resize-2"] = 0
+
+    if "Hires sampler" not in res:
+        res["Hires sampler"] = "Use same sampler"
+
+    if "Hires prompt" not in res:
+        res["Hires prompt"] = ""
+
+    if "Hires negative prompt" not in res:
+        res["Hires negative prompt"] = ""
 
     restore_old_hires_fix_params(res)
 

@@ -499,16 +499,16 @@ def create_ui():
                                 hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
                                 hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
 
-                            with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact"):
-                                hr_sampler_index = gr.Dropdown(label='Hires sampling method', elem_id=f"hr_sampler", choices=["---"] + [x.name for x in samplers_for_img2img], value="---", type="index")
+                            with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact", visible=opts.hires_fix_show_sampler) as hr_sampler_container:
+                                hr_sampler_index = gr.Dropdown(label='Hires sampling method', elem_id="hr_sampler", choices=["Use same sampler"] + [x.name for x in samplers_for_img2img], value="Use same sampler", type="index")
 
-                            with FormRow(elem_id="txt2img_hires_fix_row4", variant="compact"):
+                            with FormRow(elem_id="txt2img_hires_fix_row4", variant="compact", visible=opts.hires_fix_show_prompts) as hr_prompts_container:
                                 with gr.Column(scale=80):
                                     with gr.Row():
-                                        hr_prompt = gr.Textbox(label="Prompt", elem_id=f"hires_prompt", show_label=False, lines=3, placeholder="Prompt that will be used for hires fix pass (leave it blank to use the same prompt as in initial txt2img gen)")
+                                        hr_prompt = gr.Textbox(label="Prompt", elem_id="hires_prompt", show_label=False, lines=3, placeholder="Prompt for hires fix pass.\nLeave empty to use the same prompt as in first pass.")
                                 with gr.Column(scale=80):
                                     with gr.Row():
-                                        hr_negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt that will be used for hires fix pass (leave it blank to use the same prompt as in initial txt2img gen)")
+                                        hr_negative_prompt = gr.Textbox(label="Negative prompt", elem_id="hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt for hires fix pass.\nLeave empty to use the same negative prompt as in first pass.")
 
                     elif category == "batch":
                         if not opts.dimensions_and_batch_together:
@@ -646,9 +646,11 @@ def create_ui():
                 (hr_second_pass_steps, "Hires steps"),
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
-                (hr_sampler_index, "Hires sampling method"),
+                (hr_sampler_index, "Hires sampler"),
+                (hr_sampler_container, lambda d: gr.update(visible=True) if d.get("Hires sampler", "Use same sampler") != "Use same sampler" else gr.update()),
                 (hr_prompt, "Hires prompt"),
                 (hr_negative_prompt, "Hires negative prompt"),
+                (hr_prompts_container, lambda d: gr.update(visible=True) if d.get("Hires prompt", "") != "" or d.get("Hires negative prompt", "") != "" else gr.update()),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
