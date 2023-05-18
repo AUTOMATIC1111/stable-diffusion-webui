@@ -36,7 +36,7 @@ function install_extension(button, url) {
 }
 
 function uninstall_extension(button, url) {
-  console.log('Extension uninstall:', url);
+  console.log('Extension uninstall:', url, decodeURIComponent(url), encodeURI(url));
   button.disabled = 'disabled';
   button.value = 'Uninstalling...';
   button.innerHTML = 'uninstalling';

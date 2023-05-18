@@ -183,15 +183,26 @@ def install_extension(extension_to_install, search_text, sort_column):
 
 
 def uninstall_extension(extension_path, search_text, sort_column):
+    def errorRemoveReadonly(func, path, exc):
+        import stat
+        excvalue = exc[1]
+        shared.log.debug(f'Exception during cleanup: {func} {path} {excvalue.strerror}')
+        if func in (os.rmdir, os.remove, os.unlink) and excvalue.errno == errno.EACCES:
+            shared.log.debug(f'Retrying cleanup: {path}')
+            os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            func(path)
+
     shared.log.info(f'Extension uninstall: {extension_path}')
     ext = [extension for extension in extensions.extensions if extension.path == extension_path]
     if len(ext) > 0 and os.path.isdir(extension_path):
         try:
-            shutil.rmtree(extension_path, ignore_errors=False)
+            shutil.rmtree(extension_path, ignore_errors=False, onerror=errorRemoveReadonly)
         except Exception as e:
             shared.log.warning(f'Extension uninstall failed: {extension_path} {e}')
         extensions.extensions = [extension for extension in extensions.extensions if extension.path != extension_path]
         update_extension_list()
+    else:
+        shared.log.warning(f'Extension uninstall cannot find extension: {extension_path}')
     code = refresh_extensions_list_from_data(search_text, sort_column)
     # return code, ext_table, message
     return code, f"Extension uninstalled: {extension_path} | Restart required"
