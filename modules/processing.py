@@ -2,7 +2,6 @@ import json
 import math
 import os
 import sys
-import warnings
 import hashlib
 
 import torch
@@ -11,10 +10,10 @@ from PIL import Image, ImageFilter, ImageOps
 import random
 import cv2
 from skimage import exposure
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -30,6 +29,7 @@ from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
+
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -150,6 +150,8 @@ class StableDiffusionProcessing:
         self.override_settings_restore_afterwards = override_settings_restore_afterwards
         self.is_using_inpainting_conditioning = False
         self.disable_extra_networks = False
+        self.token_merging_ratio = 0
+        self.token_merging_ratio_hr = 0
 
         if not seed_enable_extras:
             self.subseed = -1
@@ -165,7 +167,8 @@ class StableDiffusionProcessing:
         self.all_subseeds = None
         self.iteration = 0
         self.is_hr_pass = False
-        
+        self.sampler = None
+
 
     @property
     def sd_model(self):
@@ -274,6 +277,12 @@ class StableDiffusionProcessing:
     def close(self):
         self.sampler = None
 
+    def get_token_merging_ratio(self, for_hr=False):
+        if for_hr:
+            return self.token_merging_ratio_hr or opts.token_merging_ratio_hr or self.token_merging_ratio or opts.token_merging_ratio
+
+        return self.token_merging_ratio or opts.token_merging_ratio
+
 
 class Processed:
     def __init__(self, p: StableDiffusionProcessing, images_list, seed=-1, info="", subseed=None, all_prompts=None, all_negative_prompts=None, all_seeds=None, all_subseeds=None, index_of_first_image=0, infotexts=None, comments=""):
@@ -303,6 +312,8 @@ class Processed:
         self.styles = p.styles
         self.job_timestamp = state.job_timestamp
         self.clip_skip = opts.CLIP_stop_at_last_layers
+        self.token_merging_ratio = p.token_merging_ratio
+        self.token_merging_ratio_hr = p.token_merging_ratio_hr
 
         self.eta = p.eta
         self.ddim_discretize = p.ddim_discretize
@@ -310,6 +321,7 @@ class Processed:
         self.s_tmin = p.s_tmin
         self.s_tmax = p.s_tmax
         self.s_noise = p.s_noise
+        self.s_min_uncond = p.s_min_uncond
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
         self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
         self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
@@ -359,6 +371,9 @@ class Processed:
 
     def infotext(self, p: StableDiffusionProcessing, index):
         return create_infotext(p, self.all_prompts, self.all_seeds, self.all_subseeds, comments=[], position_in_batch=index % self.batch_size, iteration=index // self.batch_size)
+
+    def get_token_merging_ratio(self, for_hr=False):
+        return self.token_merging_ratio_hr if for_hr else self.token_merging_ratio
 
 
 # from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
@@ -472,6 +487,13 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     index = position_in_batch + iteration * p.batch_size
 
     clip_skip = getattr(p, 'clip_skip', opts.CLIP_stop_at_last_layers)
+    enable_hr = getattr(p, 'enable_hr', False)
+    token_merging_ratio = p.get_token_merging_ratio()
+    token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True)
+
+    uses_ensd = opts.eta_noise_seed_delta != 0
+    if uses_ensd:
+        uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
 
     generation_params = {
         "Steps": p.steps,
@@ -489,14 +511,15 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": None if clip_skip <= 1 else clip_skip,
-        "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "ENSD": opts.eta_noise_seed_delta if uses_ensd else None,
+        "Token merging ratio": None if token_merging_ratio == 0 else token_merging_ratio,
+        "Token merging ratio hr": None if not enable_hr or token_merging_ratio_hr == 0 else token_merging_ratio_hr,
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
+        **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
     }
-
-    generation_params.update(p.extra_generation_params)
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
 
@@ -523,9 +546,13 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()
 
+        sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
+
         res = process_images_inner(p)
 
     finally:
+        sd_models.apply_token_merging(p.sd_model, 0)
+
         # restore opts to original state
         if p.override_settings_restore_afterwards:
             for k, v in stored_opts.items():
@@ -660,12 +687,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     processed = Processed(p, [], p.seed, "")
                     file.write(processed.infotext(p, 0))
 
-            step_multiplier = 1
-            if not shared.opts.dont_fix_second_order_samplers_schedule:
-                try:
-                    step_multiplier = 2 if sd_samplers.all_samplers_map.get(p.sampler_name).aliases[0] in ['k_dpmpp_2s_a', 'k_dpmpp_2s_a_ka', 'k_dpmpp_sde', 'k_dpmpp_sde_ka', 'k_dpm_2', 'k_dpm_2_a', 'k_heun'] else 1
-                except:
-                    pass
+            sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
+            step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1
             uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
             c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
 
@@ -978,7 +1001,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         x = None
         devices.torch_gc()
 
+        sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio(for_hr=True))
+
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)
+
+        sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
 
         self.is_hr_pass = False
 
@@ -1141,3 +1168,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         devices.torch_gc()
 
         return samples
+
+    def get_token_merging_ratio(self, for_hr=False):
+        return self.token_merging_ratio or ("token_merging_ratio" in self.override_settings and opts.token_merging_ratio) or opts.token_merging_ratio_img2img or opts.token_merging_ratio

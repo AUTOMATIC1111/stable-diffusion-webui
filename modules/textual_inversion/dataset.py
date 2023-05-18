@@ -118,7 +118,7 @@ class PersonalizedBase(Dataset):
                 weight = torch.ones(latent_sample.shape)
             else:
                 weight = None
-            
+
             if latent_sampling_method == "random":
                 entry = DatasetEntry(filename=path, filename_text=filename_text, latent_dist=latent_dist, weight=weight)
             else:
