@@ -135,8 +135,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             # pred = np.abs(
             #     np.sum(np.array(image, np.int), axis=-1) - np.sum(np.array(orig, np.int), axis=-1)
             # ) > PixelDeviation
-            if pred is None or not pred.any() or not pred.shape:
-                raise ValueError('mask err')
+
             mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
             mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
             blur = ImageFilter.GaussianBlur(mask_blur)

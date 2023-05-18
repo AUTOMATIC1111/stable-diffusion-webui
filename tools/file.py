@@ -37,12 +37,18 @@ def zip_uncompress(src, dst):
         try:
             new_zip_file = f.encode('cp437').decode('gbk')
         except:
-            new_zip_file = f.encode('cp437').decode('utf-8')
-        try:
-            os.rename(os.path.join(dst, f), os.path.join(dst, new_zip_file))
-        except Exception as ex:
-            print(f"cannot rename {os.path.join(dst, f)} to {os.path.join(dst, new_zip_file)}")
-            pass
+            try:
+                new_zip_file = f.encode('cp437').decode('utf-8')
+            except:
+                new_zip_file = None
+        if not new_zip_file:
+            print(f"cannot encode file name:{f}")
+        else:
+            try:
+                os.rename(os.path.join(dst, f), os.path.join(dst, new_zip_file))
+            except Exception as ex:
+                print(f"cannot rename {os.path.join(dst, f)} to {os.path.join(dst, new_zip_file)}")
+                pass
 
 
 def zip_compress(src, dst):
