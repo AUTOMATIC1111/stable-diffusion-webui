@@ -55,7 +55,7 @@ class UiLoadsave:
             if field == 'value' and key not in self.component_mapping:
                 self.component_mapping[key] = x
 
-        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton] and x.visible:
+        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton, gr.Button] and x.visible:
             apply_field(x, 'visible')
 
         if type(x) == gr.Slider:

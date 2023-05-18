@@ -485,6 +485,11 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order").needs_restart(),
     "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires sampler selection").needs_restart(),
     "hires_fix_show_prompts": OptionInfo(False, "Hires fix: show hires prompt and negative prompt").needs_restart(),
+    "hide_negative_prompt": OptionInfo(False,
+                                       "if true, will hide negative prompt from the text info under images in UI"),
+    "footer_file": OptionInfo("footer.html", "Name of the footer file"),
+    "additional_css": OptionInfo("", "Optional css file to be added. If it's empty, no file is loaded."),
+    "hide_external_links": OptionInfo(False, "If true, hides all links to external files, useful in kiosk mode."),
 }))
 
 options_templates.update(options_section(('infotext', "Infotext"), {

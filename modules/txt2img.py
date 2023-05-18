@@ -60,6 +60,13 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
 
     shared.total_tqdm.clear()
 
+    if opts.hide_negative_prompt:
+        for i, text in enumerate(processed.infotexts):
+            processed.infotexts[i] = text.replace(f'Negative prompt: {negative_prompt}', '')
+        processed.info = processed.info.replace(f'Negative prompt: {negative_prompt}', '')
+        processed.negative_prompt = ''
+        processed.all_negative_prompts = ['' for _ in processed.all_negative_prompts]
+
     generation_info_js = processed.js()
     if opts.samples_log_stdout:
         print(generation_info_js)

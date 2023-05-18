@@ -133,8 +133,8 @@ Requested path was: {f}
                 open_folder_button = gr.Button(folder_symbol, visible=not shared.cmd_opts.hide_ui_dir_config)
 
                 if tabname != "extras":
-                    save = gr.Button('Save', elem_id=f'save_{tabname}')
-                    save_zip = gr.Button('Zip', elem_id=f'save_zip_{tabname}')
+                    save = gr.Button('Save', elem_id=f'save_{tabname}', label=f'Save {tabname}')
+                    save_zip = gr.Button('Zip', elem_id=f'save_zip_{tabname}', label=f'Save zip {tabname}')
 
                 buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
 

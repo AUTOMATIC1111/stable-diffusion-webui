@@ -305,11 +305,11 @@ def create_toprow(is_img2img):
                 )
 
             with gr.Row(elem_id=f"{id_part}_tools"):
-                paste = ToolButton(value=paste_symbol, elem_id="paste")
-                clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
-                extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks")
-                prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
-                save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
+                paste = ToolButton(value=paste_symbol, elem_id="paste", label='Paste prompt')
+                clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt", label='Clear prompt')
+                extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks", label = 'Extra networks')
+                prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply", label='Style apply')
+                save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create", label='Style create')
                 restore_progress_button = ToolButton(value=restore_progress_symbol, elem_id=f"{id_part}_restore_progress", visible=False)
 
                 token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])
@@ -378,7 +378,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
 
         return gr.update(**(args or {}))
 
-    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
+    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id, label=elem_id+'_label')
     refresh_button.click(
         fn=refresh,
         inputs=[],
