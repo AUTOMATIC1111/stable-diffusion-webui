@@ -23,7 +23,7 @@ class Extension:
     def __init__(self, name, path, enabled=True, is_builtin=False):
         self.name = name
         self.git_name = ''
-        self.path = path.replace('\\', '/').rstrip('/')
+        self.path = path
         self.enabled = enabled
         self.status = ''
         self.can_update = False
