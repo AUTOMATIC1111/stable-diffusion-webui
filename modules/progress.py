@@ -62,7 +62,7 @@ def progressapi(req: ProgressRequest):
     queued = req.id_task in pending_tasks
     completed = req.id_task in finished_tasks
     if not active:
-        return ProgressResponse(active=active, queued=queued, completed=completed, id_live_preview=-1, textinfo="In queue..." if queued else "Waiting...")
+        return ProgressResponse(active=active, queued=queued, completed=completed, id_live_preview=-1, textinfo="Queued..." if queued else "Waiting...")
     progress = 0
     job_count, job_no = shared.state.job_count, shared.state.job_no
     sampling_steps, sampling_step = shared.state.sampling_steps, shared.state.sampling_step

@@ -317,6 +317,7 @@ def parse_prompt_attention(text):
     for m in re_attention.finditer(text):
         text = m.group(0)
         weight = m.group(1)
+
         if text.startswith('\\'):
             res.append([text[1:], 1.0])
         elif text == '(':
@@ -326,7 +327,8 @@ def parse_prompt_attention(text):
         elif weight is not None and len(round_brackets) > 0:
             multiply_range(round_brackets.pop(), float(weight))
         elif weight is not None and len(square_brackets) > 0:
-            multiply_range(square_brackets.pop(), float(weight))
+            if opts.prompt_attention == 'Full parser':
+                multiply_range(square_brackets.pop(), float(weight))
         elif text == ')' and len(round_brackets) > 0:
             multiply_range(round_brackets.pop(), round_bracket_multiplier)
         elif text == ']' and len(square_brackets) > 0:
