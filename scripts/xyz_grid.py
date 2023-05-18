@@ -86,7 +86,7 @@ def apply_checkpoint(p, x, xs):
     info = modules.sd_models.get_closet_checkpoint_match(x)
     if info is None:
         raise RuntimeError(f"Unknown checkpoint: {x}")
-    p.override_settings['sd_model_checkpoint'] = info.hash
+    p.override_settings['sd_model_checkpoint'] = info.name
 
 
 def confirm_checkpoints(p, xs):
