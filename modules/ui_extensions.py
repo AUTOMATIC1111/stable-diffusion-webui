@@ -192,24 +192,26 @@ def uninstall_extension(extension_path, search_text, sort_column):
             os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
             func(path)
 
-    shared.log.info(f'Extension uninstall: {extension_path}')
-    ext = [extension for extension in extensions.extensions if extension.path == extension_path]
+    ext = [extension for extension in extensions.extensions if os.path.abspath(extension.path) == os.path.abspath(extension_path)]
     if len(ext) > 0 and os.path.isdir(extension_path):
+        found = ext[0]
         try:
-            shutil.rmtree(extension_path, ignore_errors=False, onerror=errorRemoveReadonly)
+            shutil.rmtree(found.path, ignore_errors=False, onerror=errorRemoveReadonly)
         except Exception as e:
-            shared.log.warning(f'Extension uninstall failed: {extension_path} {e}')
-        extensions.extensions = [extension for extension in extensions.extensions if extension.path != extension_path]
+            shared.log.warning(f'Extension uninstall failed: {found.path} {e}')
+        extensions.extensions = [extension for extension in extensions.extensions if os.path.abspath(found.path) != os.path.abspath(extension_path)]
         update_extension_list()
+        code = refresh_extensions_list_from_data(search_text, sort_column)
+        shared.log.info(f'Extension uninstalled: {found.path}')
+        return code, f"Extension uninstalled: {found.path} | Restart required"
     else:
         shared.log.warning(f'Extension uninstall cannot find extension: {extension_path}')
-    code = refresh_extensions_list_from_data(search_text, sort_column)
-    # return code, ext_table, message
-    return code, f"Extension uninstalled: {extension_path} | Restart required"
+        code = refresh_extensions_list_from_data(search_text, sort_column)
+        return code, f"Extension uninstalled failed: {extension_path}"
 
 
 def update_extension(extension_path, search_text, sort_column):
-    exts = [extension for extension in extensions.extensions if extension.path == extension_path]
+    exts = [extension for extension in extensions.extensions if os.path.abspath(extension.path) == os.path.abspath(extension_path)]
     shared.state.job_count = len(exts)
     for ext in exts:
         shared.log.debug(f'Extensions update start: {ext.name} {ext.commit_hash} {ext.commit_date}')
@@ -339,10 +341,11 @@ def refresh_extensions_list_from_data(search_text, sort_column):
             type_code = f"""<div class="type">{"SYSTEM" if ext['is_builtin'] else 'USER'}</div>"""
             version_code = f"""<div class="version" style="background: {"--input-border-color-focus" if update_available else "inherit"}">{ext['version']}</div>"""
             enabled_code = f"""<input class="gr-check-radio gr-checkbox" name="enable_{html.escape(name)}" type="checkbox" {'checked="checked"' if enabled else ''}>"""
+            masked_path = html.escape(path.replace('\\', '/'))
             if not ext['is_builtin']:
-                install_code = f"""<button onclick="uninstall_extension(this, '{html.escape(path)}')" class="lg secondary gradio-button custom-button extension-button">uninstall</button>"""
+                install_code = f"""<button onclick="uninstall_extension(this, '{masked_path}')" class="lg secondary gradio-button custom-button extension-button">uninstall</button>"""
             if update_available:
-                install_code += f"""<button onclick="update_extension(this, '{html.escape(path)}')" class="lg secondary gradio-button custom-button extension-button">update</button>"""
+                install_code += f"""<button onclick="update_extension(this, '{masked_path}')" class="lg secondary gradio-button custom-button extension-button">update</button>"""
         else:
             install_code = f"""<button onclick="install_extension(this, '{html.escape(url)}')" class="lg secondary gradio-button custom-button extension-button">install</button>"""
         tags_text = ", ".join([f"<span class='extension-tag'>{x}</span>" for x in tags])
