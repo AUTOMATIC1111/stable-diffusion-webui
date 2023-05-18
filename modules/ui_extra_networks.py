@@ -1,7 +1,6 @@
 import os.path
 import urllib.parse
 from pathlib import Path
-from PIL import PngImagePlugin
 
 from modules import shared
 from modules.images import read_info_from_image, save_image_with_geninfo

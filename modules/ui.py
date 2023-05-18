@@ -974,7 +974,7 @@ def create_ui():
                 ],
                 show_progress=False,
             )
-            
+
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
                 **interrogate_args,
