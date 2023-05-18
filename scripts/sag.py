@@ -25,7 +25,7 @@ import os
 import math
 import torch
 import gradio as gr
-import torch.nn.functional as F
+import torch.nn.functional as tf
 import modules.scripts as scripts
 
 from torch import nn, einsum
@@ -176,8 +176,8 @@ def gaussian_blur_2d(img, kernel_size, sigma):
 
     padding = [kernel_size // 2, kernel_size // 2, kernel_size // 2, kernel_size // 2]
 
-    img = F.pad(img, padding, mode="reflect")
-    img = F.conv2d(img, kernel2d, groups=img.shape[-3])
+    img = tf.pad(img, padding, mode="reflect")
+    img = tf.conv2d(img, kernel2d, groups=img.shape[-3])
 
     return img
 
@@ -185,7 +185,8 @@ def gaussian_blur_2d(img, kernel_size, sigma):
 class Script(scripts.Script):
 
     def __init__(self):
-        pass
+        self.infotext_fields = None
+        self.paste_field_names = []
 
     def title(self):
         return "Self Attention Guidance"
@@ -240,7 +241,7 @@ class Script(scripts.Script):
             .repeat(1, latent_channel, 1, 1)
             .type(attn_map.dtype)
         )
-        attn_mask = F.interpolate(attn_mask, (latent_h, latent_w))
+        attn_mask = tf.interpolate(attn_mask, (latent_h, latent_w))
 
         # Blur according to the self-attention mask
         degraded_latents = gaussian_blur_2d(original_latents, kernel_size=9, sigma=1.0)
@@ -273,8 +274,16 @@ class Script(scripts.Script):
     def ui(self, is_img2img):
         with gr.Accordion('Self Attention Guidance', open=False):
             enabled = gr.Checkbox(label="Enabled", default=False)
-            scale = gr.Slider(label='Scale', minimum=-2.0, maximum=10.0, step=0.05, value=0.75)
-            mask_threshold = gr.Slider(label='SAG Mask Threshold', minimum=0.0, maximum=2.0, step=0.05, value=1.0)
+            scale = gr.Slider(label='Guidance Scale', minimum=-2.0, maximum=10.0, step=0.05, value=0.75)
+            mask_threshold = gr.Slider(label='Mask Threshold', minimum=0.0, maximum=2.0, step=0.05, value=1.0)
+
+        self.infotext_fields = [
+            (enabled, 'SAG Enabled'),
+            (scale, 'SAG Guidance Scale'),
+            (mask_threshold, 'SAG Mask Threshold')
+        ]
+        for _, name in self.infotext_fields:
+            self.paste_field_names.append(name)
 
         return [enabled, scale, mask_threshold]
 
@@ -295,8 +304,9 @@ class Script(scripts.Script):
             saved_original_selfattn_forward = org_attn_module.forward
             org_attn_module.forward = xattn_forward_log.__get__(org_attn_module, org_attn_module.__class__)
 
-            p.extra_generation_params["SAG Guidance Scale"] = scale
-            p.extra_generation_params["SAG Mask Threshold"] = mask_threshold
+            p.extra_generation_params['SAG Enabled'] = enabled
+            p.extra_generation_params['SAG Guidance Scale'] = scale
+            p.extra_generation_params['SAG Mask Threshold'] = mask_threshold
 
         else:
             sag_enabled = False
