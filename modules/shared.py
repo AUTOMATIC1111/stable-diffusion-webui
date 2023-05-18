@@ -488,7 +488,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "hide_negative_prompt": OptionInfo(False,
                                        "if true, will hide negative prompt from the text info under images in UI"),
     "footer_file": OptionInfo("footer.html", "Name of the footer file"),
-    "additional_css": OptionInfo("", "Optional css file to be added. If it's empty, no file is loaded."),
+    "additional_css": OptionInfo("user.css", "Optional css file to be added. If it's empty, no file is loaded."),
     "hide_external_links": OptionInfo(False, "If true, hides all links to external files, useful in kiosk mode."),
 }))
 
