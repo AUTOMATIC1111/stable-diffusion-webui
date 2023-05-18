@@ -5,7 +5,7 @@
 
 function checkBrackets(textArea, counterElt) {
     var counts = {};
-    (textArea.value.match(/[(){}\[\]]/g) || []).forEach(bracket => {
+    (textArea.value.match(/[(){}[\]]/g) || []).forEach(bracket => {
         counts[bracket] = (counts[bracket] || 0) + 1;
     });
     var errors = [];

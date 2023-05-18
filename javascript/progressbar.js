@@ -53,7 +53,7 @@ function setTitle(progress) {
     }
 
     if (document.title != title) {
-        document.title =  title;
+        document.title = title;
     }
 }
 
@@ -144,7 +144,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
 
             if (res.live_preview && gallery) {
-                var rect = gallery.getBoundingClientRect();
+                rect = gallery.getBoundingClientRect();
                 if (rect.width) {
                     livePreview.style.width = rect.width + "px";
                     livePreview.style.height = rect.height + "px";

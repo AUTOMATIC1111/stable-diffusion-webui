@@ -37,6 +37,7 @@ function updateOnBackgroundChange() {
         if (currentButton?.children?.length > 0 && modalImage.src != currentButton.children[0].src) {
             modalImage.src = currentButton.children[0].src;
             if (modalImage.style.display === 'none') {
+                const modal = gradioApp().getElementById("lightboxModal");
                 modal.style.setProperty('background-image', `url(${modalImage.src})`);
             }
         }
@@ -167,12 +168,6 @@ function modalTileImageToggle(event) {
     }
 
     event.stopPropagation();
-}
-
-function galleryImageHandler(e) {
-    //if (e && e.parentElement.tagName == 'BUTTON') {
-    e.onclick = showGalleryImage;
-    //}
 }
 
 onUiUpdate(function() {

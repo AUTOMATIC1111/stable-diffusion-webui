@@ -1,5 +1,5 @@
 
-contextMenuInit = function() {
+var contextMenuInit = function() {
     let eventListenerApplied = false;
     let menuSpecs = new Map();
 
@@ -126,10 +126,10 @@ contextMenuInit = function() {
     return [appendContextMenuOption, removeContextMenuOption, addContextMenuEventListener];
 };
 
-initResponse = contextMenuInit();
-appendContextMenuOption     = initResponse[0];
-removeContextMenuOption     = initResponse[1];
-addContextMenuEventListener = initResponse[2];
+var initResponse = contextMenuInit();
+var appendContextMenuOption = initResponse[0];
+var removeContextMenuOption = initResponse[1];
+var addContextMenuEventListener = initResponse[2];
 
 (function() {
     //Start example Context Menu Items

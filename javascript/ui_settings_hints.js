@@ -1,6 +1,6 @@
 // various hints and extra info for the settings tab
 
-settingsHintsSetup = false;
+var settingsHintsSetup = false;
 
 onOptionsChanged(function() {
     if (settingsHintsSetup) return;
@@ -30,7 +30,7 @@ onOptionsChanged(function() {
             span.parentElement.insertBefore(document.createTextNode('\xa0'), span);
         }
         if (commentAfter) {
-            var comment = document.createElement('DIV');
+            comment = document.createElement('DIV');
             comment.className = 'settings-comment';
             comment.innerHTML = commentAfter;
             span.parentElement.insertBefore(comment, span.nextSibling);
@@ -50,7 +50,7 @@ function settingsHintsShowQuicksettings() {
             td.textContent = obj.name;
             tr.appendChild(td);
 
-            var td = document.createElement('td');
+            td = document.createElement('td');
             td.textContent = obj.label;
             tr.appendChild(td);
 

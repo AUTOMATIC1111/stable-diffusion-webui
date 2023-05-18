@@ -99,13 +99,6 @@ function switch_to_inpaint_sketch() {
     return args_to_array(arguments);
 }
 
-function switch_to_inpaint() {
-    gradioApp().querySelector('#tabs').querySelectorAll('button')[1].click();
-    gradioApp().getElementById('mode_img2img').querySelectorAll('button')[2].click();
-
-    return args_to_array(arguments);
-}
-
 function switch_to_extras() {
     gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
 
@@ -172,7 +165,6 @@ function showRestoreProgressButton(tabname, show) {
 }
 
 function submit() {
-    rememberGallerySelection('txt2img_gallery');
     showSubmitButtons('txt2img', false);
 
     var id = randomId();
@@ -192,7 +184,6 @@ function submit() {
 }
 
 function submit_img2img() {
-    rememberGallerySelection('img2img_gallery');
     showSubmitButtons('img2img', false);
 
     var id = randomId();
@@ -273,7 +264,7 @@ function confirm_clear_prompt(prompt, negative_prompt) {
 }
 
 
-promptTokecountUpdateFuncs = {};
+var promptTokecountUpdateFuncs = {};
 
 function recalculatePromptTokens(name) {
     if (promptTokecountUpdateFuncs[name]) {
@@ -304,7 +295,8 @@ onUiUpdate(function() {
     var textarea = json_elem.querySelector('textarea');
     var jsdata = textarea.value;
     opts = JSON.parse(jsdata);
-    executeCallbacks(optionsChangedCallbacks);
+
+    executeCallbacks(optionsChangedCallbacks); /*global optionsChangedCallbacks*/
 
     Object.defineProperty(textarea, 'value', {
         set: function(newValue) {
@@ -390,7 +382,9 @@ function update_txt2img_tokens(...args) {
 }
 
 function update_img2img_tokens(...args) {
-    update_token_counter("img2img_token_button");
+    update_token_counter(
+        "img2img_token_button"
+    );
     if (args.length == 2) {
         return args[0];
     }
@@ -423,7 +417,7 @@ function restart_reload() {
 // Simulate an `input` DOM event for Gradio Textbox component. Needed after you edit its contents in javascript, otherwise your edits
 // will only visible on web page and not sent to python.
 function updateInput(target) {
-    let e = new Event("input", { bubbles: true });
+    let e = new Event("input", {bubbles: true});
     Object.defineProperty(e, "target", {value: target});
     target.dispatchEvent(e);
 }
@@ -435,7 +429,7 @@ function selectCheckpoint(name) {
     gradioApp().getElementById('change_checkpoint').click();
 }
 
-function currentImg2imgSourceResolution(_, _, scaleBy) {
+function currentImg2imgSourceResolution(w, h, scaleBy) {
     var img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img');
     return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy];
 }

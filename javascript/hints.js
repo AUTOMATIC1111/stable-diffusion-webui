@@ -1,6 +1,6 @@
 // mouseover tooltips for various UI elements
 
-titles = {
+var titles = {
     "Sampling steps": "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results",
     "Sampling method": "Which algorithm to use to produce the image",
     "GFPGAN": "Restore low quality faces using GFPGAN neural network",
@@ -118,7 +118,7 @@ titles = {
 
 onUiUpdate(function() {
     gradioApp().querySelectorAll('span, button, select, p').forEach(function(span) {
-        if (span.title) return;  // already has a title
+        if (span.title) return; // already has a title
 
         let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
 

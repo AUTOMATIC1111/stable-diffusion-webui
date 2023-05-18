@@ -18,11 +18,11 @@ function get_uiCurrentTabContent() {
     return gradioApp().querySelector('.tabitem[id^=tab_]:not([style*="display: none"])');
 }
 
-uiUpdateCallbacks = [];
-uiLoadedCallbacks = [];
-uiTabChangeCallbacks = [];
-optionsChangedCallbacks = [];
-let uiCurrentTab = null;
+var uiUpdateCallbacks = [];
+var uiLoadedCallbacks = [];
+var uiTabChangeCallbacks = [];
+var optionsChangedCallbacks = [];
+var uiCurrentTab = null;
 
 function onUiUpdate(callback) {
     uiUpdateCallbacks.push(callback);
@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", function() {
             executeCallbacks(uiTabChangeCallbacks);
         }
     });
-    mutationObserver.observe(gradioApp(), { childList: true, subtree: true });
+    mutationObserver.observe(gradioApp(), {childList: true, subtree: true});
 });
 
 /**
@@ -80,7 +80,7 @@ document.addEventListener('keydown', function(e) {
         if ((e.keyCode == 13 && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
     }
     if (handled) {
-        button = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
+        var button = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
         if (button) {
             button.click();
         }
@@ -97,7 +97,7 @@ function uiElementIsVisible(el) {
         return false;
     }
 
-    while (isVisible = el.closest('.tabitem')?.style.display !== 'none') {
+    while ((isVisible = el.closest('.tabitem')?.style.display) !== 'none') {
         if (!isVisible) {
             return false;
         } else if (el.parentElement) {
