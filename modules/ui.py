@@ -1700,7 +1700,7 @@ def create_ui():
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
-        footer = shared.html("footer.html")
+        footer = shared.html(shared.opts.footer_file)
         footer = footer.format(versions=versions_html())
         gr.HTML(footer, elem_id="footer")
 
@@ -1837,6 +1837,9 @@ def css_html():
     if os.path.exists(os.path.join(data_path, "user.css")):
         head += stylesheet(os.path.join(data_path, "user.css"))
 
+    if shared.opts.additional_css != "" and os.path.exists(os.path.join(data_path, shared.opts.additional_css)):
+        head += stylesheet(os.path.join(data_path, shared.opts.additional_css))
+
     return head
 
 
@@ -1872,8 +1875,12 @@ def versions_html():
     else:
         xformers_version = "N/A"
 
+    if shared.opts.hide_external_links:
+        version_row = f"version: https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}"
+    else:
+        version_row = f"""version: version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>"""
     return f"""
-version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>
+{version_row}
 &#x2000;•&#x2000;
 python: <span title="{sys.version}">{python_version}</span>
 &#x2000;•&#x2000;
