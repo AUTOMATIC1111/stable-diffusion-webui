@@ -1,4 +1,5 @@
 import argparse
+import json
 import os
 from modules.paths_internal import models_path, script_path, data_path, extensions_dir, extensions_builtin_dir, sd_default_config, sd_model_file  # noqa: F401
 
@@ -39,7 +40,8 @@ parser.add_argument("--precision", type=str, help="evaluate at this precision", 
 parser.add_argument("--upcast-sampling", action='store_true', help="upcast sampling. No effect with --no-half. Usually produces similar results to --no-half with better performance while using less memory.")
 parser.add_argument("--share", action='store_true', help="use share=True for gradio and make the UI accessible through their site")
 parser.add_argument("--ngrok", type=str, help="ngrok authtoken, alternative to gradio --share", default=None)
-parser.add_argument("--ngrok-region", type=str, help="The region in which ngrok should start.", default="us")
+parser.add_argument("--ngrok-region", type=str, help="does not do anything.", default="")
+parser.add_argument("--ngrok-options", type=json.loads, help='The options to pass to ngrok in JSON format, e.g.: \'{"authtoken_from_env":true, "basic_auth":"user:password", "oauth_provider":"google", "oauth_allow_emails":"user@asdf.com"}\'', default=dict())
 parser.add_argument("--enable-insecure-extension-access", action='store_true', help="enable extensions tab regardless of other options")
 parser.add_argument("--codeformer-models-path", type=str, help="Path to directory with codeformer model file(s).", default=os.path.join(models_path, 'Codeformer'))
 parser.add_argument("--gfpgan-models-path", type=str, help="Path to directory with GFPGAN model file(s).", default=os.path.join(models_path, 'GFPGAN'))
@@ -75,6 +77,7 @@ parser.add_argument("--gradio-auth", type=str, help='set gradio authentication l
 parser.add_argument("--gradio-auth-path", type=str, help='set gradio authentication file path ex. "/path/to/auth/file" same auth format as --gradio-auth', default=None)
 parser.add_argument("--gradio-img2img-tool", type=str, help='does not do anything')
 parser.add_argument("--gradio-inpaint-tool", type=str, help="does not do anything")
+parser.add_argument("--gradio-allowed-path", action='append', help="add path to gradio's allowed_paths, make it possible to serve files from it")
 parser.add_argument("--opt-channelslast", action='store_true', help="change memory type for stable diffusion to channels last")
 parser.add_argument("--styles-file", type=str, help="filename to use for styles", default=os.path.join(data_path, 'styles.csv'))
 parser.add_argument("--autolaunch", action='store_true', help="open the webui URL in the system's default browser upon launch", default=False)
@@ -103,3 +106,4 @@ parser.add_argument("--skip-version-check", action='store_true', help="Do not ch
 parser.add_argument("--no-hashing", action='store_true', help="disable sha256 hashing of checkpoints to help loading performance", default=False)
 parser.add_argument("--no-download-sd-model", action='store_true', help="don't download SD1.5 model even if no model is found in --ckpt-dir", default=False)
 parser.add_argument('--subpath', type=str, help='customize the subpath for gradio, use with reverse proxy')
+parser.add_argument('--add-stop-route', action='store_true', help='add /_stop route to stop server')

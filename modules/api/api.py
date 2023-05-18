@@ -204,6 +204,7 @@ class Api:
         self.add_api_route("/sdapi/v1/unload-checkpoint", self.unloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
+        self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -229,10 +230,18 @@ class Api:
         return script, script_idx
 
     def get_scripts_list(self):
-        t2ilist = [str(title.lower()) for title in scripts.scripts_txt2img.titles]
-        i2ilist = [str(title.lower()) for title in scripts.scripts_img2img.titles]
+        t2ilist = [script.name for script in scripts.scripts_txt2img.scripts if script.name is not None]
+        i2ilist = [script.name for script in scripts.scripts_img2img.scripts if script.name is not None]
 
         return models.ScriptsList(txt2img=t2ilist, img2img=i2ilist)
+
+    def get_script_info(self):
+        res = []
+
+        for script_list in [scripts.scripts_txt2img.scripts, scripts.scripts_img2img.scripts]:
+            res += [script.api_info for script in script_list if script.api_info is not None]
+
+        return res
 
     def get_script(self, script_name, script_runner):
         if script_name is None or script_name == "":

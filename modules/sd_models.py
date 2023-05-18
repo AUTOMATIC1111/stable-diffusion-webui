@@ -17,6 +17,7 @@ from ldm.util import instantiate_from_config
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
+import tomesd
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
@@ -408,11 +409,18 @@ sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_w
 class SdModelData:
     def __init__(self):
         self.sd_model = None
+        self.was_loaded_at_least_once = False
         self.lock = threading.Lock()
 
     def get_sd_model(self):
+        if self.was_loaded_at_least_once:
+            return self.sd_model
+
         if self.sd_model is None:
             with self.lock:
+                if self.sd_model is not None or self.was_loaded_at_least_once:
+                    return self.sd_model
+
                 try:
                     load_model()
                 except Exception as e:
@@ -491,6 +499,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     sd_model.eval()
     model_data.sd_model = sd_model
+    model_data.was_loaded_at_least_once = True
 
     sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
 
@@ -536,7 +545,6 @@ def reload_model_weights(sd_model=None, info=None):
 
     if sd_model is None or checkpoint_config != sd_model.used_config:
         del sd_model
-        checkpoints_loaded.clear()
         load_model(checkpoint_info, already_loaded_state_dict=state_dict)
         return model_data.sd_model
 
@@ -578,3 +586,29 @@ def unload_model_weights(sd_model=None, info=None):
     print(f"Unloaded weights {timer.summary()}.")
 
     return sd_model
+
+
+def apply_token_merging(sd_model, token_merging_ratio):
+    """
+    Applies speed and memory optimizations from tomesd.
+    """
+
+    current_token_merging_ratio = getattr(sd_model, 'applied_token_merged_ratio', 0)
+
+    if current_token_merging_ratio == token_merging_ratio:
+        return
+
+    if current_token_merging_ratio > 0:
+        tomesd.remove_patch(sd_model)
+
+    if token_merging_ratio > 0:
+        tomesd.apply_patch(
+            sd_model,
+            ratio=token_merging_ratio,
+            use_rand=False,  # can cause issues with some samplers
+            merge_attn=True,
+            merge_crossattn=False,
+            merge_mlp=False
+        )
+
+    sd_model.applied_token_merged_ratio = token_merging_ratio

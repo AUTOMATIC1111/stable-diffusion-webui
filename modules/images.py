@@ -482,6 +482,43 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
+def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_pnginfo=None):
+    if extension is None:
+        extension = os.path.splitext(filename)[1]
+
+    image_format = Image.registered_extensions()[extension]
+
+    existing_pnginfo = existing_pnginfo or {}
+    if opts.enable_pnginfo:
+        existing_pnginfo['parameters'] = geninfo
+
+    if extension.lower() == '.png':
+        pnginfo_data = PngImagePlugin.PngInfo()
+        for k, v in (existing_pnginfo or {}).items():
+            pnginfo_data.add_text(k, str(v))
+
+        image.save(filename, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
+
+    elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+        if image.mode == 'RGBA':
+            image = image.convert("RGB")
+        elif image.mode == 'I;16':
+            image = image.point(lambda p: p * 0.0038910505836576).convert("RGB" if extension.lower() == ".webp" else "L")
+
+        image.save(filename, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless)
+
+        if opts.enable_pnginfo and geninfo is not None:
+            exif_bytes = piexif.dump({
+                "Exif": {
+                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(geninfo or "", encoding="unicode")
+                },
+            })
+
+            piexif.insert(exif_bytes, filename)
+    else:
+        image.save(filename, format=image_format, quality=opts.jpeg_quality)
+
+
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
     """Save an image.
 
@@ -566,38 +603,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     info = params.pnginfo.get(pnginfo_section_name, None)
 
     def _atomically_save_image(image_to_save, filename_without_extension, extension):
-        # save image with .tmp extension to avoid race condition when another process detects new image in the directory
+        """
+        save image with .tmp extension to avoid race condition when another process detects new image in the directory
+        """
         temp_file_path = f"{filename_without_extension}.tmp"
-        image_format = Image.registered_extensions()[extension]
 
-        if extension.lower() == '.png':
-            pnginfo_data = PngImagePlugin.PngInfo()
-            if opts.enable_pnginfo:
-                for k, v in params.pnginfo.items():
-                    pnginfo_data.add_text(k, str(v))
+        save_image_with_geninfo(image_to_save, info, temp_file_path, extension, params.pnginfo)
 
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
-
-        elif extension.lower() in (".jpg", ".jpeg", ".webp"):
-            if image_to_save.mode == 'RGBA':
-                image_to_save = image_to_save.convert("RGB")
-            elif image_to_save.mode == 'I;16':
-                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("RGB" if extension.lower() == ".webp" else "L")
-
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless)
-
-            if opts.enable_pnginfo and info is not None:
-                exif_bytes = piexif.dump({
-                    "Exif": {
-                        piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
-                    },
-                })
-
-                piexif.insert(exif_bytes, temp_file_path)
-        else:
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
-
-        # atomically rename the file with correct extension
         os.replace(temp_file_path, filename_without_extension + extension)
 
     fullfn_without_extension, extension = os.path.splitext(params.filename)

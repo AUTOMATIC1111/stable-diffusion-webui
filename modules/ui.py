@@ -52,7 +52,7 @@ if cmd_opts.ngrok is not None:
     ngrok.connect(
         cmd_opts.ngrok,
         cmd_opts.port if cmd_opts.port is not None else 7860,
-        cmd_opts.ngrok_region
+        cmd_opts.ngrok_options
         )
 
 
@@ -75,6 +75,7 @@ clear_prompt_symbol = '\U0001f5d1\ufe0f'  # 🗑️
 extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 restore_progress_symbol = '\U0001F300' # 🌀
+detect_image_size_symbol = '\U0001F4D0'  # 📐
 
 
 def plaintext_to_html(text):
@@ -189,8 +190,8 @@ def create_seed_inputs(target_interface):
         seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from width", value=0, elem_id=f"{target_interface}_seed_resize_from_w")
         seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from height", value=0, elem_id=f"{target_interface}_seed_resize_from_h")
 
-    random_seed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[seed])
-    random_subseed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[subseed])
+    random_seed.click(fn=None, _js="function(){setRandomSeed('" + target_interface + "_seed')}", show_progress=False, inputs=[], outputs=[])
+    random_subseed.click(fn=None, _js="function(){setRandomSeed('" + target_interface + "_subseed')}", show_progress=False, inputs=[], outputs=[])
 
     def change_visibility(show):
         return {comp: gr_show(show) for comp in seed_extras}
@@ -574,7 +575,7 @@ def create_ui():
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
-            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
+            res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('txt2img')}", inputs=None, outputs=None, show_progress=False)
 
             restore_progress_button.click(
                 fn=progress.restore_progress,
@@ -687,19 +688,19 @@ def create_ui():
                     img2img_selected_tab = gr.State(0)
 
                     with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
-                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=480)
+                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=opts.img2img_editor_height)
                         add_copy_image_controls('img2img', init_img)
 
                     with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
-                        sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=480)
+                        sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=opts.img2img_editor_height)
                         add_copy_image_controls('sketch', sketch)
 
                     with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
-                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=480)
+                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=opts.img2img_editor_height)
                         add_copy_image_controls('inpaint', init_img_with_mask)
 
                     with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
-                        inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=480)
+                        inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=opts.img2img_editor_height)
                         inpaint_color_sketch_orig = gr.State(None)
                         add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
 
@@ -772,6 +773,7 @@ def create_ui():
                                                 height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
                                             with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                                detect_image_size_btn = ToolButton(value=detect_image_size_symbol, elem_id="img2img_detect_image_size_btn")
 
                                     with gr.Tab(label="Resize by") as tab_scale_by:
                                         scale_by = gr.Slider(minimum=0.05, maximum=4.0, step=0.05, label="Scale", value=1.0, elem_id="img2img_scale")
@@ -949,7 +951,16 @@ def create_ui():
 
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
-            res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
+
+            res_switch_btn.click(fn=None, _js="function(){switchWidthHeight('img2img')}", inputs=None, outputs=None, show_progress=False)
+
+            detect_image_size_btn.click(
+                fn=lambda w, h, _: (w or gr.update(), h or gr.update()),
+                _js="currentImg2imgSourceResolution",
+                inputs=[dummy_component, dummy_component, dummy_component],
+                outputs=[width, height],
+                show_progress=False,
+            )
 
             restore_progress_button.click(
                 fn=progress.restore_progress,
@@ -1609,12 +1620,8 @@ def create_ui():
             outputs=[]
         )
 
-        def request_restart():
-            shared.state.interrupt()
-            shared.state.need_restart = True
-
         restart_gradio.click(
-            fn=request_restart,
+            fn=shared.state.request_restart,
             _js='restart_reload',
             inputs=[],
             outputs=[],
@@ -1648,7 +1655,10 @@ def create_ui():
         parameters_copypaste.connect_paste_params_buttons()
 
         with gr.Tabs(elem_id="tabs") as tabs:
-            for interface, label, ifid in interfaces:
+            tab_order = {k: i for i, k in enumerate(opts.ui_tab_order)}
+            sorted_interfaces = sorted(interfaces, key=lambda x: tab_order.get(x[1], 9999))
+
+            for interface, label, ifid in sorted_interfaces:
                 if label in shared.opts.hidden_tabs:
                     continue
                 with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
@@ -1841,15 +1851,15 @@ def versions_html():
 
     return f"""
 version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>
- •
+&#x2000;•&#x2000;
 python: <span title="{sys.version}">{python_version}</span>
- •
+&#x2000;•&#x2000;
 torch: {getattr(torch, '__long_version__',torch.__version__)}
- •
+&#x2000;•&#x2000;
 xformers: {xformers_version}
- •
+&#x2000;•&#x2000;
 gradio: {gr.__version__}
- •
+&#x2000;•&#x2000;
 checkpoint: <a id="sd_checkpoint_hash">N/A</a>
 """
 

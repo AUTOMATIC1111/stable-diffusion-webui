@@ -242,9 +242,11 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     shared.state.textinfo = "Saving"
     print(f"Saving to {output_modelname}...")
 
-    metadata = {"format": "pt", "sd_merge_models": {}, "sd_merge_recipe": None}
+    metadata = None
 
     if save_metadata:
+        metadata = {"format": "pt"}
+
         merge_recipe = {
             "type": "webui", # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
@@ -262,15 +264,17 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         }
         metadata["sd_merge_recipe"] = json.dumps(merge_recipe)
 
+        sd_merge_models = {}
+
         def add_model_metadata(checkpoint_info):
             checkpoint_info.calculate_shorthash()
-            metadata["sd_merge_models"][checkpoint_info.sha256] = {
+            sd_merge_models[checkpoint_info.sha256] = {
                 "name": checkpoint_info.name,
                 "legacy_hash": checkpoint_info.hash,
                 "sd_merge_recipe": checkpoint_info.metadata.get("sd_merge_recipe", None)
             }
 
-            metadata["sd_merge_models"].update(checkpoint_info.metadata.get("sd_merge_models", {}))
+            sd_merge_models.update(checkpoint_info.metadata.get("sd_merge_models", {}))
 
         add_model_metadata(primary_model_info)
         if secondary_model_info:
@@ -278,7 +282,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         if tertiary_model_info:
             add_model_metadata(tertiary_model_info)
 
-        metadata["sd_merge_models"] = json.dumps(metadata["sd_merge_models"])
+        metadata["sd_merge_models"] = json.dumps(sd_merge_models)
 
     _, extension = os.path.splitext(output_modelname)
     if extension.lower() == ".safetensors":

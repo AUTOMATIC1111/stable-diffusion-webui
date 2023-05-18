@@ -58,7 +58,7 @@ Use --skip-python-version-check to suppress this warning.
 @lru_cache()
 def commit_hash():
     try:
-        return subprocess.check_output(f"{git} rev-parse HEAD", encoding='utf8').strip()
+        return subprocess.check_output([git, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
     except Exception:
         return "<none>"
 
@@ -66,7 +66,7 @@ def commit_hash():
 @lru_cache()
 def git_tag():
     try:
-        return subprocess.check_output(f"{git} describe --tags", encoding='utf8').strip()
+        return subprocess.check_output([git, "describe", "--tags"], shell=False, encoding='utf8').strip()
     except Exception:
         return "<none>"
 
@@ -125,7 +125,7 @@ def run_pip(command, desc=None, live=default_command_live):
 
 
 def check_run_python(code: str) -> bool:
-    result = subprocess.run([python, "-c", code], capture_output=True, shell=True)
+    result = subprocess.run([python, "-c", code], capture_output=True, shell=False)
     return result.returncode == 0
 
 
@@ -278,10 +278,10 @@ def prepare_environment():
                 if not is_installed("xformers"):
                     exit(0)
         elif platform.system() == "Linux":
-            run_pip(f"install {xformers_package}", "xformers")
+            run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
 
-    if not is_installed("pyngrok") and args.ngrok:
-        run_pip("install pyngrok", "ngrok")
+    if not is_installed("ngrok") and args.ngrok:
+        run_pip("install ngrok", "ngrok")
 
     os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 

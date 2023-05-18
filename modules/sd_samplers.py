@@ -14,11 +14,17 @@ samplers_for_img2img = []
 samplers_map = {}
 
 
-def create_sampler(name, model):
+def find_sampler_config(name):
     if name is not None:
         config = all_samplers_map.get(name, None)
     else:
         config = all_samplers[0]
+
+    return config
+
+
+def create_sampler(name, model):
+    config = find_sampler_config(name)
 
     assert config is not None, f'bad sampler name: {name}'
 

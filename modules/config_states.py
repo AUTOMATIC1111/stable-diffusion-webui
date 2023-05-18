@@ -83,6 +83,8 @@ def get_extension_config():
     ext_config = {}
 
     for ext in extensions.extensions:
+        ext.read_info_from_repo()
+
         entry = {
             "name": ext.name,
             "path": ext.path,

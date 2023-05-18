@@ -8,7 +8,7 @@ import warnings
 import json
 from threading import Thread
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from packaging import version
@@ -144,16 +144,11 @@ Use --skip-version-check commandline argument to disable this check.
             """.strip())
 
 
-def initialize():
-    fix_asyncio_event_loop_policy()
-
-    check_versions()
-
-    extensions.list_extensions()
-    localization.list_localizations(cmd_opts.localizations_dir)
-    startup_timer.record("list extensions")
-
+def restore_config_state_file():
     config_state_file = shared.opts.restore_config_state_file
+    if config_state_file == "":
+        return
+
     shared.opts.restore_config_state_file = ""
     shared.opts.save(shared.config_filename)
 
@@ -165,6 +160,18 @@ def initialize():
         startup_timer.record("restore extension config")
     elif config_state_file:
         print(f"!!! Config state backup not found: {config_state_file}")
+
+
+def initialize():
+    fix_asyncio_event_loop_policy()
+
+    check_versions()
+
+    extensions.list_extensions()
+    localization.list_localizations(cmd_opts.localizations_dir)
+    startup_timer.record("list extensions")
+
+    restore_config_state_file()
 
     if cmd_opts.ui_debug_mode:
         shared.sd_upscalers = upscaler.UpscalerLanczos().scalers
@@ -234,7 +241,10 @@ def initialize():
         print(f'Interrupted with signal {sig} in {frame}')
         os._exit(0)
 
-    signal.signal(signal.SIGINT, sigint_handler)
+    if not os.environ.get("COVERAGE_RUN"):
+        # Don't install the immediate-quit handler when running under coverage,
+        # as then the coverage report won't be generated.
+        signal.signal(signal.SIGINT, sigint_handler)
 
 
 def setup_middleware(app):
@@ -255,19 +265,6 @@ def create_api(app):
     return api
 
 
-def wait_on_server(demo=None):
-    while 1:
-        time.sleep(0.5)
-        if shared.state.need_restart:
-            shared.state.need_restart = False
-            time.sleep(0.5)
-            demo.close()
-            time.sleep(0.5)
-
-            modules.script_callbacks.app_reload_callback()
-            break
-
-
 def api_only():
     initialize()
 
@@ -279,6 +276,12 @@ def api_only():
 
     print(f"Startup time: {startup_timer.summary()}.")
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+
+
+def stop_route(request):
+    shared.state.server_command = "stop"
+    return Response("Stopping.")
+
 
 def webui():
     launch_api = cmd_opts.api
@@ -326,8 +329,12 @@ def webui():
             debug=cmd_opts.gradio_debug,
             auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
             inbrowser=cmd_opts.autolaunch,
-            prevent_thread_lock=True
+            prevent_thread_lock=True,
+            allowed_paths=cmd_opts.gradio_allowed_path,
         )
+        if cmd_opts.add_stop_route:
+            app.add_route("/_stop", stop_route, methods=["POST"])
+
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
 
@@ -359,8 +366,27 @@ def webui():
             redirector.get("/")
             gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
 
-        wait_on_server(shared.demo)
+        try:
+            while True:
+                server_command = shared.state.wait_for_server_command(timeout=5)
+                if server_command:
+                    if server_command in ("stop", "restart"):
+                        break
+                    else:
+                        print(f"Unknown server command: {server_command}")
+        except KeyboardInterrupt:
+            print('Caught KeyboardInterrupt, stopping...')
+            server_command = "stop"
+
+        if server_command == "stop":
+            print("Stopping server...")
+            # If we catch a keyboard interrupt, we want to stop the server and exit.
+            shared.demo.close()
+            break
         print('Restarting UI...')
+        shared.demo.close()
+        time.sleep(0.5)
+        modules.script_callbacks.app_reload_callback()
 
         startup_timer.reset()
 
@@ -370,18 +396,7 @@ def webui():
         extensions.list_extensions()
         startup_timer.record("list extensions")
 
-        config_state_file = shared.opts.restore_config_state_file
-        shared.opts.restore_config_state_file = ""
-        shared.opts.save(shared.config_filename)
-
-        if os.path.isfile(config_state_file):
-            print(f"*** About to restore extension state from file: {config_state_file}")
-            with open(config_state_file, "r", encoding="utf-8") as f:
-                config_state = json.load(f)
-                config_states.restore_extension_config(config_state)
-            startup_timer.record("restore extension config")
-        elif config_state_file:
-            print(f"!!! Config state backup not found: {config_state_file}")
+        restore_config_state_file()
 
         localization.list_localizations(cmd_opts.localizations_dir)
 
