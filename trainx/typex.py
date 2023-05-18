@@ -197,9 +197,9 @@ class TrainLoraTask(UserDict):
         images = self.get('images') or []
         for item in images:
             yield {
-                'filename': item['filename'],
-                'tag': item['tag'],
-                'dirname': item['dirname']
+                'filename': item.get('filename') or item['name'],
+                'tag': item.get('tags') or item['tag'],
+                'dirname': item.get('dirname') or item['folder']
             }
 
     @property
@@ -239,10 +239,12 @@ class TrainLoraTask(UserDict):
 
     def rewrite_caption(self, image_dir):
         for item in self.images:
-            image_path = os.path.join(image_dir, item['dirname'], item['filename'])
+            dirname = item.get('folder') or item['dirname']
+            filename = item.get('name') or item['filename']
+            image_path = os.path.join(image_dir, dirname, filename)
             if os.path.isfile(image_path):
-                name, _ = os.path.splitext(item['filename'])
-                caption_path = os.path.join(image_dir, item['dirname'], name + '.txt')
+                name, _ = os.path.splitext(filename)
+                caption_path = os.path.join(image_dir, dirname, name + '.txt')
                 caption = item['tag']
                 caption = str(caption) if not isinstance(caption, bytes) else caption.decode('utf8')
                 caption = set((x for x in caption.strip().replace('\n', ' ').split(',')))
