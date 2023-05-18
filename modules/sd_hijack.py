@@ -5,7 +5,6 @@ from types import MethodType
 import modules.textual_inversion.textual_inversion
 from modules import devices, sd_hijack_optimizations, shared, script_callbacks, errors
 from modules.hypernetworks import hypernetwork
-from modules.sd_hijack_optimizations import diffusionmodules_model_AttnBlock_forward
 from modules.shared import cmd_opts
 from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr
 
