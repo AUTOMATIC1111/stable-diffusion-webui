@@ -309,6 +309,11 @@ button.custom-button{
     font-weight: bold;
 }
 
+#txtimg_hr_finalres div.pending, #img2img_scale_resolution_preview div.pending {
+    opacity: 1;
+    transition: opacity 0s;
+}
+
 .inactive{
     opacity: 0.5;
 }
