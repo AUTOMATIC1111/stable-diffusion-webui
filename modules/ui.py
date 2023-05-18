@@ -513,6 +513,8 @@ def create_ui():
                         with FormGroup(elem_id="txt2img_script_container"):
                             custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
+            hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
+
             def update_resolution_hires_input(inp, evt):
                 getattr(inp, evt)(
                     fn=calc_resolution_hires,
@@ -528,7 +530,6 @@ def create_ui():
                     show_progress=False,
                 )
 
-            hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
             update_resolution_hires_input(enable_hr, 'change')
             for input in hr_resolution_preview_inputs[1:]:
                 update_resolution_hires_input(input, 'release')
