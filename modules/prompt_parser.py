@@ -337,8 +337,8 @@ def parse_prompt_attention(text):
                 if opts.prompt_attention == 'Full parser':
                     part = re_clean.sub("", part)
                     part = re_whitespace.sub(" ", part).strip()
-                if len(part) == 0:
-                    continue
+                    if len(part) == 0:
+                        continue
                 if i > 0:
                     res.append(["BREAK", -1])
                 res.append([part, 1.0])

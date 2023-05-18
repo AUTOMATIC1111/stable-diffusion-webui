@@ -393,6 +393,7 @@ class FilenameGenerator:
                     res += text + str(replacement)
                     continue
             res += f'{text}[{pattern}]'
+            res = res.split('?')[0]
         return res
 
 
@@ -523,10 +524,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
     if forced_filename is None:
         if short_filename or seed is None:
             file_decoration = ""
-        elif shared.opts.save_to_dirs:
-            file_decoration = shared.opts.samples_filename_pattern or "[seed]"
+        if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0:
+            file_decoration = shared.opts.samples_filename_pattern
         else:
-            file_decoration = shared.opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
+            file_decoration = "[seed]-[prompt_spaces]"
         add_number = shared.opts.save_images_add_number or file_decoration == ''
         if file_decoration != "" and add_number:
             file_decoration = f"-{file_decoration}"

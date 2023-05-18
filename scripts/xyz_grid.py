@@ -652,7 +652,6 @@ class Script(scripts.Script):
                 second_axes_processed=second_axes_processed,
                 margin_size=margin_size,
                 no_grid=no_grid,
-                
             )
 
         if not processed.images:
