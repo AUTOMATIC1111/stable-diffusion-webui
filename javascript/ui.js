@@ -1,4 +1,4 @@
-/* global gradioApp */
+/* global gradioApp, onUiUpdate, opts */
 
 window.opts = {};
 let tabSelected = '';
@@ -368,7 +368,7 @@ function sort_ui_elements() {
   const scriptsTxt = gradioApp().getElementById('scripts_alwayson_txt2img').children;
   for (const el of Array.from(scriptsTxt)) el.style.order = find(el, tabsOrder);
 
-  const scriptsImg = gradioApp().getElementById('scripts_alwayson_img2img');
+  const scriptsImg = gradioApp().getElementById('scripts_alwayson_img2img').children;
   for (const el of Array.from(scriptsImg)) el.style.order = find(el, tabsOrder);
 }
 
