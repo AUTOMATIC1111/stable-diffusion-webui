@@ -1637,7 +1637,7 @@ def train(args, train_epoch_callback=None):
         train_util.sample_images(accelerator, args, epoch + 1, global_step, accelerator.device, vae, tokenizer,
                                  text_encoder, unet)
         if callable(train_epoch_callback):
-            train_epoch_callback(epoch, loss_total / len(loss_list), num_train_epochs)
+            train_epoch_callback(epoch + 1, loss_total / len(loss_list), num_train_epochs)
         # end of epoch
 
     # metadata["ss_epoch"] = str(num_train_epochs)

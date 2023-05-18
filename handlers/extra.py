@@ -108,8 +108,12 @@ class ExtraTaskHandler(DumpTaskHandler):
             high_keys = upload_files(False, *high)
             low_keys = upload_files(False, *low)
             image_keys = ImageKeys(high_keys, low_keys)
+            images = result[0]
             p.set_finish_result({
-                'all': image_keys
+                'all': image_keys,
+                'upscaler': {
+                    'size': '' if not images else f'{images[0].width}*{images[0].height}',
+                }
             })
             p.task_desc = f'upscaler task:{task.id} finished.'
         else:
