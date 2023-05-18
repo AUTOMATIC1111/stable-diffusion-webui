@@ -404,6 +404,7 @@ class Script(scripts.Script):
                     fill_z_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_z_tool_button", visible=False)
         with gr.Row(variant="compact", elem_id="axis_options"):
             draw_legend = gr.Checkbox(label='Draw legend', value=True, elem_id=self.elem_id("draw_legend"))
+            no_fixed_seeds = gr.Checkbox(label='Keep -1 for seeds', value=False, elem_id=self.elem_id("no_fixed_seeds"))
             no_grid = gr.Checkbox(label='Do not create grid', value=False, elem_id=self.elem_id("no_xyz_grid"))
             include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
             include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
@@ -465,11 +466,12 @@ class Script(scripts.Script):
             (z_values_dropdown, lambda params:get_dropdown_update_from_params("Z",params)),
         )
 
-        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_grid, margin_size]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_grid, no_fixed_seeds, margin_size]
 
-    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_grid, margin_size): # pylint: disable=arguments-differ
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_grid, no_fixed_seeds, margin_size): # pylint: disable=arguments-differ
         shared.log.debug(f'xyzgrid: {x_type}|{x_values}|{x_values_dropdown}|{y_type}|{y_values}|{y_values_dropdown}|{z_type}|{z_values}|{z_values_dropdown}|{draw_legend}|{include_lone_images}|{include_sub_grids}|{no_grid}|{margin_size}')
-        processing.fix_seed(p)
+        if not no_fixed_seeds:
+            processing.fix_seed(p)
         if not shared.opts.return_grid:
             p.batch_size = 1
         def process_axis(opt, vals, vals_dropdown):
@@ -543,9 +545,10 @@ class Script(scripts.Script):
             else:
                 return axis_list
 
-        xs = fix_axis_seeds(x_opt, xs)
-        ys = fix_axis_seeds(y_opt, ys)
-        zs = fix_axis_seeds(z_opt, zs)
+        if not no_fixed_seeds:
+            xs = fix_axis_seeds(x_opt, xs)
+            ys = fix_axis_seeds(y_opt, ys)
+            zs = fix_axis_seeds(z_opt, zs)
 
         if x_opt.label == 'Steps':
             total_steps = sum(xs) * len(ys) * len(zs)
@@ -612,12 +615,12 @@ class Script(scripts.Script):
                 if x_opt.label != 'Nothing':
                     pc.extra_generation_params["X Type"] = x_opt.label
                     pc.extra_generation_params["X Values"] = x_values
-                    if x_opt.label in ["Seed", "Var. seed"]:
+                    if x_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
                         pc.extra_generation_params["Fixed X Values"] = ", ".join([str(x) for x in xs])
                 if y_opt.label != 'Nothing':
                     pc.extra_generation_params["Y Type"] = y_opt.label
                     pc.extra_generation_params["Y Values"] = y_values
-                    if y_opt.label in ["Seed", "Var. seed"]:
+                    if y_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
                         pc.extra_generation_params["Fixed Y Values"] = ", ".join([str(y) for y in ys])
                 grid_infotext[subgrid_index] = processing.create_infotext(pc, pc.all_prompts, pc.all_seeds, pc.all_subseeds)
             # Sets main grid infotext
@@ -627,7 +630,7 @@ class Script(scripts.Script):
                 if z_opt.label != 'Nothing':
                     pc.extra_generation_params["Z Type"] = z_opt.label
                     pc.extra_generation_params["Z Values"] = z_values
-                    if z_opt.label in ["Seed", "Var. seed"]:
+                    if z_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
                         pc.extra_generation_params["Fixed Z Values"] = ", ".join([str(z) for z in zs])
                 grid_infotext[0] = processing.create_infotext(pc, pc.all_prompts, pc.all_seeds, pc.all_subseeds)
             return res
@@ -649,6 +652,7 @@ class Script(scripts.Script):
                 second_axes_processed=second_axes_processed,
                 margin_size=margin_size,
                 no_grid=no_grid,
+                
             )
 
         if not processed.images:
