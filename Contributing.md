@@ -21,7 +21,18 @@ If you're not a contributor to this repository, you need to fork and clone the r
 If you are making changes to used libraries or the installation script, you must verify them to work on default Windows installation from scratch. If you cannot test if it works (due to your OS or anything else), do not make those changes (with possible exception of changes that explicitly are guarded from being executed on Windows by `if`s or something else).
 
 # Code style
-I mostly follow code style suggested by PyCharm, with the exception of disabled line length limit.
+We use linters to enforce style for python and javascript. If you make a PR that fails the check, I will ask you to fix the code until the linter does not complain anymore.
+
+Here's how to use linters locally:
+#### python
+Install: `pip install ruff`
+
+Run: `ruff .` (or `python -mruff .`)
+
+#### javascript
+Install: install npm on your system.
+
+Run: `npx eslint .`
 
 # Quirks
 * `webui.user.bat` is never to be edited
