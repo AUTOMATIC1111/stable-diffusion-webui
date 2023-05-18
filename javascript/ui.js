@@ -442,7 +442,7 @@ function updateImg2imgResizeToTextAfterChangingImage() {
         gradioApp().getElementById('img2img_update_resize_to').click();
     }, 500);
 
-    return []
+    return [];
 
 }
 

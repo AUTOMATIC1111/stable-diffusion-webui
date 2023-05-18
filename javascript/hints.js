@@ -3,15 +3,15 @@
 var titles = {
     "Sampling steps": "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results",
     "Sampling method": "Which algorithm to use to produce the image",
-	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
-	"Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps higher than 30-40 does not help",
-	"DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
-	"UniPC": "Unified Predictor-Corrector Framework for Fast Sampling of Diffusion Models",
-	"DPM adaptive": "Ignores step count - uses a number of steps determined by the CFG and resolution", 
+    "GFPGAN": "Restore low quality faces using GFPGAN neural network",
+    "Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps higher than 30-40 does not help",
+    "DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
+    "UniPC": "Unified Predictor-Corrector Framework for Fast Sampling of Diffusion Models",
+    "DPM adaptive": "Ignores step count - uses a number of steps determined by the CFG and resolution",
 
     "\u{1F4D0}": "Auto detect size from img2img",
-	"Batch count": "How many batches of images to create (has no impact on generation performance or VRAM usage)",
-	"Batch size": "How many image to create in a single batch (increases generation performance at cost of higher VRAM usage)",
+    "Batch count": "How many batches of images to create (has no impact on generation performance or VRAM usage)",
+    "Batch size": "How many image to create in a single batch (increases generation performance at cost of higher VRAM usage)",
     "CFG Scale": "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results",
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
@@ -116,53 +116,53 @@ var titles = {
     "Negative Guidance minimum sigma": "Skip negative prompt for steps where image is already mostly denoised; the higher this value, the more skips there will be; provides increased performance in exchange for minor quality reduction."
 };
 
-function updateTooltipForSpan(span){
-    if (span.title) return;  // already has a title
+function updateTooltipForSpan(span) {
+    if (span.title) return; // already has a title
 
     let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
 
-    if(!tooltip){
+    if (!tooltip) {
         tooltip = localization[titles[span.value]] || titles[span.value];
     }
 
-    if(!tooltip){
-		for (const c of span.classList) {
-			if (c in titles) {
-				tooltip = localization[titles[c]] || titles[c];
-				break;
-			}
-		}
-	}
+    if (!tooltip) {
+        for (const c of span.classList) {
+            if (c in titles) {
+                tooltip = localization[titles[c]] || titles[c];
+                break;
+            }
+        }
+    }
 
-	if(tooltip){
-		span.title = tooltip;
-	}
-}
-
-function updateTooltipForSelect(select){
-    if (select.onchange != null) return;
-
-    select.onchange = function(){
-        select.title = localization[titles[select.value]] || titles[select.value] || "";
+    if (tooltip) {
+        span.title = tooltip;
     }
 }
 
-observedTooltipElements = {"SPAN": 1, "BUTTON": 1, "SELECT": 1, "P": 1}
+function updateTooltipForSelect(select) {
+    if (select.onchange != null) return;
 
-onUiUpdate(function(m){
-    m.forEach(function(record){
-        record.addedNodes.forEach(function(node){
-            if(observedTooltipElements[node.tagName]){
-                updateTooltipForSpan(node)
+    select.onchange = function() {
+        select.title = localization[titles[select.value]] || titles[select.value] || "";
+    };
+}
+
+var observedTooltipElements = {SPAN: 1, BUTTON: 1, SELECT: 1, P: 1};
+
+onUiUpdate(function(m) {
+    m.forEach(function(record) {
+        record.addedNodes.forEach(function(node) {
+            if (observedTooltipElements[node.tagName]) {
+                updateTooltipForSpan(node);
             }
-            if(node.tagName == "SELECT"){
-                updateTooltipForSelect(node)
+            if (node.tagName == "SELECT") {
+                updateTooltipForSelect(node);
             }
 
-            if(node.querySelectorAll){
-                node.querySelectorAll('span, button, select, p').forEach(updateTooltipForSpan)
-    	        node.querySelectorAll('select').forEach(updateTooltipForSelect)
+            if (node.querySelectorAll) {
+                node.querySelectorAll('span, button, select, p').forEach(updateTooltipForSpan);
+                node.querySelectorAll('select').forEach(updateTooltipForSelect);
             }
-        })
-    })
-})
+        });
+    });
+});
