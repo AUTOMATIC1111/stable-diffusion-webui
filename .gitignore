@@ -1,9 +1,9 @@
 # defaults
 __pycache__
+setup.log
 /cache.json
 /config.json
 /params.txt
-/setup.log
 /styles.csv
 /ui-config.json
 /user.css

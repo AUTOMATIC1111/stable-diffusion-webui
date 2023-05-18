@@ -1,4 +1,3 @@
-import glob
 import os
 import shutil
 import importlib
@@ -21,20 +20,11 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @return: A list of paths containing the desired model(s)
     """
     output = []
-
     try:
         places = []
-
-        if command_path is not None and command_path != model_path:
-            pretrained_path = os.path.join(command_path, 'experiments/pretrained_models')
-            if os.path.exists(pretrained_path):
-                print(f"Appending path: {pretrained_path}")
-                places.append(pretrained_path)
-            elif os.path.exists(command_path):
-                places.append(command_path)
-
         places.append(model_path)
-
+        if command_path is not None and command_path != model_path and os.path.isdir(command_path):
+            places.append(command_path)
         for place in places:
             for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
                 if os.path.islink(full_path) and not os.path.exists(full_path):
@@ -44,7 +34,6 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                     continue
                 if full_path not in output:
                     output.append(full_path)
-
         if model_url is not None and len(output) == 0:
             if download_name is not None:
                 from basicsr.utils.download_util import load_file_from_url
@@ -52,7 +41,6 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                 output.append(dl)
             else:
                 output.append(model_url)
-
     except Exception:
         pass
 

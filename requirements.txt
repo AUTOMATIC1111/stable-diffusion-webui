@@ -24,7 +24,6 @@ kornia
 lark
 lmdb
 lpips
-numpy
 omegaconf
 open-clip-torch
 opencv-contrib-python
@@ -54,6 +53,7 @@ diffusers==0.16.1
 einops==0.4.1
 gradio==3.29.0
 numexpr==2.8.4
+numpy==1.24.3
 pandas==1.5.3
 protobuf==3.20.3
 pytorch_lightning==1.9.4

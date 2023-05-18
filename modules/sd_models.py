@@ -97,7 +97,7 @@ def checkpoint_tiles():
 
 def list_models():
     global model_path # pylint: disable=global-statement
-    model_path = shared.opts.ckpt_dir
+    model_path = shared.cmd_opts.models_dir
     checkpoints_list.clear()
     checkpoint_aliases.clear()
     model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
