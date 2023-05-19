@@ -99,10 +99,14 @@ function uiElementIsVisible(el) {
     const computedStyle = getComputedStyle(el);
     const isVisible = computedStyle.display !== 'none';
 
+    if (!isVisible) return false;
+    return uiElementIsVisible(el.parentNode);
+}
+
+function uiElementInSight(el) {
     const clRect = el.getBoundingClientRect();
     const windowHeight = window.innerHeight;
-    const onScreen = clRect.bottom > 0 && clRect.top < windowHeight;
+    const isOnScreen = clRect.bottom > 0 && clRect.top < windowHeight;
 
-    if (!isVisible || !onScreen) return false;
-    return uiElementIsVisible(el.parentNode);
+    return isOnScreen;
 }

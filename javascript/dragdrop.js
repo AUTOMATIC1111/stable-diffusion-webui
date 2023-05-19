@@ -81,7 +81,10 @@ window.addEventListener('paste', e => {
     }
 
     const visibleImageFields = [...gradioApp().querySelectorAll('[data-testid="image"]')]
-        .filter(el => uiElementIsVisible(el));
+        .filter(el => uiElementIsVisible(el))
+        .sort((a,b) => uiElementInSight(b) - uiElementInSight(a));
+
+
     if (!visibleImageFields.length) {
         return;
     }
