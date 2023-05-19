@@ -17,6 +17,15 @@ def register_extra_network(extra_network):
 class ExtraNetworkParams:
     def __init__(self, items=None):
         self.items = items or []
+        self.positional = []
+        self.named = {}
+
+        for item in self.items:
+            parts = item.split('=', 2)
+            if len(parts) == 2:
+                self.named[parts[0]] = parts[1]
+            else:
+                self.positional.append(item)
 
 
 class ExtraNetwork:

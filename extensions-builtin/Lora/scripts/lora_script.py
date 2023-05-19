@@ -1,3 +1,5 @@
+import re
+
 import torch
 import gradio as gr
 from fastapi import FastAPI
@@ -54,7 +56,8 @@ script_callbacks.on_infotext_pasted(lora.infotext_pasted)
 
 shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {
     "sd_lora": shared.OptionInfo("None", "Add Lora to prompt", gr.Dropdown, lambda: {"choices": ["None", *lora.available_loras]}, refresh=lora.list_available_loras),
-    "lora_preferred_name": shared.OptionInfo("Alias from file", "When adding to prompt, refer to lora by", gr.Radio, {"choices": ["Alias from file", "Filename"]}),
+    "lora_preferred_name": shared.OptionInfo("Alias from file", "When adding to prompt, refer to Lora by", gr.Radio, {"choices": ["Alias from file", "Filename"]}),
+    "lora_add_hashes_to_infotext": shared.OptionInfo(True, "Add Lora hashes to infotext"),
 }))
 
 
@@ -84,3 +87,30 @@ def api_loras(_: gr.Blocks, app: FastAPI):
 
 script_callbacks.on_app_started(api_loras)
 
+re_lora = re.compile("<lora:([^:]+):")
+
+
+def infotext_pasted(infotext, d):
+    hashes = d.get("Lora hashes")
+    if not hashes:
+        return
+
+    hashes = [x.strip().split(':', 1) for x in hashes.split(",")]
+    hashes = {x[0].strip().replace(",", ""): x[1].strip() for x in hashes}
+
+    def lora_replacement(m):
+        alias = m.group(1)
+        shorthash = hashes.get(alias)
+        if shorthash is None:
+            return m.group(0)
+
+        lora_on_disk = lora.available_lora_hash_lookup.get(shorthash)
+        if lora_on_disk is None:
+            return m.group(0)
+
+        return f'<lora:{lora_on_disk.get_alias()}:'
+
+    d["Prompt"] = re.sub(re_lora, lora_replacement, d["Prompt"])
+
+
+script_callbacks.on_infotext_pasted(infotext_pasted)
