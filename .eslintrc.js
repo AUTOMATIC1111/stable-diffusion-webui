@@ -56,6 +56,7 @@ module.exports = {
         onOptionsChanged: "writable",
         uiCurrentTab: "writable",
         uiElementIsVisible: "writable",
+        uiElementInSight: "writable",
         executeCallbacks: "writable",
         //ui.js
         opts: "writable",
