@@ -37,7 +37,7 @@ def list_optimizers():
 
     new_optimizers = [x for x in new_optimizers if x.is_available()]
 
-    new_optimizers = sorted(new_optimizers, key=lambda x: x.priority(), reverse=True)
+    new_optimizers = sorted(new_optimizers, key=lambda x: x.priority, reverse=True)
 
     optimizers.clear()
     optimizers.extend(new_optimizers)
