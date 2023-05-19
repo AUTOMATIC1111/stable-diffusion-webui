@@ -161,9 +161,26 @@ def restore_config_state_file():
         print(f"!!! Config state backup not found: {config_state_file}")
 
 
+def validate_tls_options():
+    if not (cmd_opts.tls_keyfile and cmd_opts.tls_certfile):
+        return
+
+    try:
+        if not os.path.exists(cmd_opts.tls_keyfile):
+            print("Invalid path to TLS keyfile given")
+        if not os.path.exists(cmd_opts.tls_certfile):
+            print(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
+    except TypeError:
+        cmd_opts.tls_keyfile = cmd_opts.tls_certfile = None
+        print("TLS setup invalid, running webui without TLS")
+    else:
+        print("Running with TLS")
+    startup_timer.record("TLS")
+
+
 def initialize():
     fix_asyncio_event_loop_policy()
-
+    validate_tls_options()
     check_versions()
 
     extensions.list_extensions()
@@ -219,20 +236,6 @@ def initialize():
     extra_networks.register_default_extra_networks()
 
     startup_timer.record("extra networks")
-
-    if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
-
-        try:
-            if not os.path.exists(cmd_opts.tls_keyfile):
-                print("Invalid path to TLS keyfile given")
-            if not os.path.exists(cmd_opts.tls_certfile):
-                print(f"Invalid path to TLS certfile: '{cmd_opts.tls_certfile}'")
-        except TypeError:
-            cmd_opts.tls_keyfile = cmd_opts.tls_certfile = None
-            print("TLS setup invalid, running webui without TLS")
-        else:
-            print("Running with TLS")
-        startup_timer.record("TLS")
 
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
