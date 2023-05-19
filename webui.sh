@@ -212,5 +212,5 @@ else
     printf "Launching launch.py..."
     printf "\n%s\n" "${delimiter}"
     prepare_tcmalloc
-    exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+    exec "${venv_dir}/bin/python3" "${LAUNCH_SCRIPT}" "$@"
 fi
