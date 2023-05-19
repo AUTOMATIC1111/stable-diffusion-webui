@@ -178,9 +178,22 @@ def validate_tls_options():
     startup_timer.record("TLS")
 
 
+def configure_sigint_handler():
+    # make the program just exit at ctrl+c without waiting for anything
+    def sigint_handler(sig, frame):
+        print(f'Interrupted with signal {sig} in {frame}')
+        os._exit(0)
+
+    if not os.environ.get("COVERAGE_RUN"):
+        # Don't install the immediate-quit handler when running under coverage,
+        # as then the coverage report won't be generated.
+        signal.signal(signal.SIGINT, sigint_handler)
+
+
 def initialize():
     fix_asyncio_event_loop_policy()
     validate_tls_options()
+    configure_sigint_handler()
     check_versions()
 
     extensions.list_extensions()
@@ -237,15 +250,6 @@ def initialize():
 
     startup_timer.record("extra networks")
 
-    # make the program just exit at ctrl+c without waiting for anything
-    def sigint_handler(sig, frame):
-        print(f'Interrupted with signal {sig} in {frame}')
-        os._exit(0)
-
-    if not os.environ.get("COVERAGE_RUN"):
-        # Don't install the immediate-quit handler when running under coverage,
-        # as then the coverage report won't be generated.
-        signal.signal(signal.SIGINT, sigint_handler)
 
 
 def setup_middleware(app):
