@@ -76,6 +76,10 @@ def api_loras(_: gr.Blocks, app: FastAPI):
     @app.get("/sdapi/v1/loras")
     async def get_loras():
         return [create_lora_json(obj) for obj in lora.available_loras.values()]
+    
+    @app.post("/sdapi/v1/refresh-loras")
+    async def refresh_loras():
+        return lora.list_available_loras()
 
 
 script_callbacks.on_app_started(api_loras)
