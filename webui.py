@@ -460,6 +460,9 @@ def run_worker():
 
         shared.demo = modules.ui.create_ui()
 
+    if cmd_opts.send_task_only:
+        exit(0)
+
     run_executor(shared.sd_model_recorder, train_only=cmd_opts.train_only)
 
 

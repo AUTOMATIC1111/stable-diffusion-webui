@@ -91,6 +91,7 @@ parser.add_argument("--nowebui", action='store_true', help="use api=True to laun
 parser.add_argument("--worker", action='store_true', help="run worker", default=False)
 parser.add_argument("--train-only", action='store_true', help="run worker and exec train task only", default=False)
 parser.add_argument("--noauth", action='store_true', help="no auth", default=False)
+parser.add_argument("--send-task-only", action='store_true', help="no auth", default=False)
 parser.add_argument("--debug-task", action='store_true', help="no auth", default=False)
 parser.add_argument("--ui-debug-mode", action='store_true', help="Don't load model to quickly launch UI")
 parser.add_argument("--device-id", type=str, help="Select the default CUDA device to use (export CUDA_VISIBLE_DEVICES=0,1,etc might be needed before)", default=None)
