@@ -84,6 +84,7 @@ extra_networks_symbol = '\U0001F3B4'  # 🎴
 #switch_values_symbol = '\U000021C5' # ⇅
 switch_values_symbol = '\u2B80' # ⮀                                     
 restore_progress_symbol = '\U0001F300'  # 🌀
+generate_forever_symbol = '\u267E' # ♾
 
 
 interogate_bubble_symbol = '\U0001F5E8' # 🗨
@@ -306,7 +307,8 @@ def create_generate(is_img2img):
         with gr.Row(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):                                                       
             interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
             skip = gr.Button('Skip', elem_id=f"{id_part}_skip", elem_classes="generate-box-skip")            
-            submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+            submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')            
+            gr.Button(value=generate_forever_symbol, elem_id=f"{id_part}_generate_forever", variant='primary')
 
             skip.click(
                 fn=lambda: shared.state.skip(),

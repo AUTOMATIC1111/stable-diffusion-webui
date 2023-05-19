@@ -150,7 +150,7 @@ body {
 /*********/
 /* Icons */
 /*********/
-
+[id*="2img_generate_forever"],
 [id^="refresh_"],
 [id$="_refresh"],
 [id$="_clear_prompt"],
@@ -173,7 +173,7 @@ body {
   position: relative;
   font-size: 0 !important;
 }
-
+[id*="2img_generate_forever"]::before,
 [id$="_refresh"]::before,
 [id^="refresh_"]::before,
 [id$="_clear_prompt"]::before,
@@ -207,7 +207,7 @@ body {
   background-color: var(--ae-icon-color);
   border-radius: var(--ae-panel-border-radius);
 }
-
+[id*="2img_generate_forever"]:hover::before,
 [id$="_refresh"]:hover::before,
 [id^="refresh_"]:hover::before,
 [id$="_clear_prompt"]:hover::before,
@@ -244,7 +244,12 @@ body {
   -webkit-mask: url(./file=html/svg/refresh-line.svg) no-repeat 50% 50%;
   mask: url(./file=html/svg/refresh-line.svg) no-repeat 50% 50%;
 }
-
+[id$="2img_generate_forever"]::before {
+  -webkit-mask: url(./file=html/svg/infinity-fill.svg) no-repeat 50% 50%;
+  mask: url(./file=html/svg/infinity-fill.svg) no-repeat 50% 50%;
+  width: 90%;
+  height: 90%;
+}
 [id$="_clear_prompt"]::before {
   -webkit-mask: url(./file=html/svg/delete-bin-5-line.svg) no-repeat 50% 50%;
   mask: url(./file=html/svg/delete-bin-5-line.svg) no-repeat 50% 50%;
@@ -1884,12 +1889,29 @@ button.primary:hover {
   min-height: var(--ae-generate-button-height);
 }
 
+button[id$="_generate_forever"] {
+  flex-grow: 0;
+  min-width: unset;
+}
+
+button[id$="_generate_forever"].active {
+  background: var(--ae-primary-color) !important;
+  color: var(--ae-input-bg-color) !important;
+}
+
+button[id$="_generate_forever"].active:before {
+  background: var(--ae-icon-hover-color) !important;
+}
+
 [id$="_interrupt"].secondary,
 [id$="_skip"].secondary {
+  min-height: var(--ae-generate-button-height);
   background-color: var(--ae-input-bg-color);
+  /*
   position: absolute;
   width: 50%;
   height: 100%;
+  */
   display: none;
 }
 

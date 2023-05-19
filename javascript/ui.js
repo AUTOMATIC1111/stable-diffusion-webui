@@ -174,10 +174,13 @@ function create_submit_args(args) {
 function showSubmitButtons(tabname, show) {
   gradioApp().getElementById(tabname + "_interrupt").style.display = show
     ? "none"
-    : "block";
+    : "flex";
   gradioApp().getElementById(tabname + "_skip").style.display = show
     ? "none"
-    : "block";
+    : "flex";
+  gradioApp().getElementById(tabname + "_generate").style.display = !show
+    ? "none"
+    : "flex";
 }
 
 function showRestoreProgressButton(tabname, show) {
@@ -672,8 +675,6 @@ onUiLoaded(function () {
     }
   }
 
-
-
   // close aside views
   function closeAsideViews(menu) {
     if (quick_menu != menu && quick_menu_open) quick_menu.click();
@@ -746,8 +747,12 @@ onUiLoaded(function () {
   // extra networks nav menu
   function clickedOutside(e) {
     //console.log(e.target.getAttribute('data-testid'));
-    if(e.target.getAttribute('data-testid') != "textbox" && e.target.getAttribute('data-testid')){
-      if (net_menu_open && e.target.closest('[id$="2img_settings_scroll"]')) net_menu.click();
+    if (
+      e.target.getAttribute("data-testid") != "textbox" &&
+      e.target.getAttribute("data-testid")
+    ) {
+      if (net_menu_open && e.target.closest('[id$="2img_settings_scroll"]'))
+        net_menu.click();
     }
   }
   function toggleNetMenu(e) {
@@ -799,6 +804,62 @@ onUiLoaded(function () {
     '#extensions input[name="enable_sd_theme_editor"]'
   );
   disabled_extensions(theme_ext.checked);
+
+  function generateOnRepeat(elem, isforever) {
+    if (elem.generateOnRepeatInterval != null)
+      clearInterval(elem.generateOnRepeatInterval);
+    if (isforever) {
+      const generate_button = elem.previousElementSibling;
+      elem.generateOnRepeatInterval = setInterval(function () {
+        if (window.getComputedStyle(generate_button).display !== "none") {
+          generate_button.click();
+          console.log(elem.id);
+        }
+      }, 500);
+    }
+  }
+
+  function toggleGenerateForever(e) {
+    e.target.classList.toggle("active");
+    if (e.target.className.indexOf("active") != -1) {
+      generateOnRepeat(e.target, true);
+    } else {
+      generateOnRepeat(e.target, false);
+    }
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  gradioApp()
+    .querySelectorAll('button[id*="2img_generate_forever"]')
+    .forEach((elem) => {
+      elem.addEventListener("click", toggleGenerateForever);
+    });
+
+  /*   let generateOnRepeat = function (genbuttonid, interruptbuttonid) {
+    let genbutton = gradioApp().querySelector(genbuttonid);
+    let interruptbutton = gradioApp().querySelector(interruptbuttonid);
+    if (!interruptbutton.offsetParent) {
+      genbutton.click();
+    }
+    clearInterval(window.generateOnRepeatInterval);
+    window.generateOnRepeatInterval = setInterval(function () {
+      if (!interruptbutton.offsetParent) {
+        genbutton.click();
+      }
+    }, 500);
+  };
+
+  appendContextMenuOption("#txt2img_generate", "Generate forever", function () {
+    generateOnRepeat("#txt2img_generate", "#txt2img_interrupt");
+  });
+  appendContextMenuOption("#img2img_generate", "Generate forever", function () {
+    generateOnRepeat("#img2img_generate", "#img2img_interrupt");
+  });
+
+  let cancelGenerateForever = function () {
+    clearInterval(window.generateOnRepeatInterval);
+  }; */
 
   //
   /*
@@ -1238,7 +1299,7 @@ onUiLoaded(function () {
     setting_quicksettings.value = field_settings;
     //addModelCheckpoint();
     saveQuickSettings();
-    console.log(section + " - "+ id + " - " + checked);
+    console.log(section + " - " + id + " - " + checked);
   }
   gradioApp()
     .querySelectorAll('[id*="add2quick_"]')

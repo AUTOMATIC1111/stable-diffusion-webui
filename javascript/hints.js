@@ -26,6 +26,7 @@ titles = {
 	"\u{1f5e8}": "Interogate Clip",
 	"\u{1f5ea}": "Interogate Deepbooru",							
 	"\u{1F300}": "Restore progress",
+    "\u{267E}": "Toggle generate forever",
 
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
