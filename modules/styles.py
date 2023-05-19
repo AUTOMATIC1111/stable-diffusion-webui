@@ -73,6 +73,7 @@ class StyleDatabase:
 
     def save_styles(self, path: str) -> None:
         # Write to temporary file first, so we don't nuke the file if something goes wrong
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         fd, temp_path = tempfile.mkstemp(".csv")
         with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:
             # _fields is actually part of the public API: typing.NamedTuple is a replacement for collections.NamedTuple,

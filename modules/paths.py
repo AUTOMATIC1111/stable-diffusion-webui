@@ -56,23 +56,35 @@ def create_paths(opts):
         if not os.path.exists(folder):
             try:
                 os.makedirs(folder, exist_ok=True)
-                print('Creating folder:', folder)
+                # print('Creating folder:', folder)
             except:
                 pass
-    create_path(opts.temp_dir)
+
+    def fix_path(folder):
+        if opts.data[folder] is None or opts.data[folder] == '':
+            return opts.data[folder]
+        if os.path.isabs(opts.data[folder]):
+            return opts.data[folder]
+        if opts.data[folder].startswith(data_path):
+            return opts.data[folder]
+        opts.data[folder] = os.path.join(data_path, opts.data[folder])
+        return opts.data[folder]
+
+    create_path(fix_path('temp_dir'))
     create_path(extensions_dir)
     create_path(extensions_builtin_dir)
-    create_path(opts.ckpt_dir)
-    create_path(opts.vae_dir)
-    create_path(opts.embeddings_dir)
-    create_path(opts.outdir_samples)
-    create_path(opts.outdir_txt2img_samples)
-    create_path(opts.outdir_img2img_samples)
-    create_path(opts.outdir_extras_samples)
-    create_path(opts.outdir_grids)
-    create_path(opts.outdir_txt2img_grids)
-    create_path(opts.outdir_img2img_grids)
-    create_path(opts.outdir_save)
+    create_path(fix_path('hypernetwork_dir'))
+    create_path(fix_path('ckpt_dir'))
+    create_path(fix_path('vae_dir'))
+    create_path(fix_path('embeddings_dir'))
+    create_path(fix_path('outdir_samples'))
+    create_path(fix_path('outdir_txt2img_samples'))
+    create_path(fix_path('outdir_img2img_samples'))
+    create_path(fix_path('outdir_extras_samples'))
+    create_path(fix_path('outdir_grids'))
+    create_path(fix_path('outdir_txt2img_grids'))
+    create_path(fix_path('outdir_img2img_grids'))
+    create_path(fix_path('outdir_save'))
 
 
 class Prioritize:

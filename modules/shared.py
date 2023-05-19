@@ -276,7 +276,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Path to directory with CLIP model file(s)"),
     "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with Lora network(s)"),
     "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
-    "styles_dir": OptionInfo('styles.csv', "Path to user-defined styles file"),
+    "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "Path to user-defined styles file"),
     # "gfpgan_model": OptionInfo("", "GFPGAN model file name"),
 }))
 
@@ -611,7 +611,6 @@ if os.path.exists(config_filename):
     opts.load(config_filename)
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
 
-os.makedirs(opts.hypernetwork_dir, exist_ok=True)
 prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_opts.server_name or False)) and not cmd_opts.insecure
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])

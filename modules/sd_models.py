@@ -16,6 +16,7 @@ from modules import paths, shared, modelloader, devices, script_callbacks, sd_va
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 from modules.memstats import memory_stats
+from modules.paths_internal import models_path
 
 
 model_dir = "Stable-diffusion"
@@ -98,7 +99,7 @@ def checkpoint_tiles():
 def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
-    model_list = modelloader.load_models(model_path=os.path.join(shared.cmd_opts.models_dir, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.cmd_opts.ckpt is not None:
         if not os.path.exists(shared.cmd_opts.ckpt):
             if shared.cmd_opts.ckpt.lower() != "none":
