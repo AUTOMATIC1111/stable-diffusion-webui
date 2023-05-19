@@ -254,6 +254,21 @@ onUiLoaded(function(){
     tab_nav_buttons = gradioApp().querySelectorAll('#settings > .tab-nav > button')
     tab_elements = gradioApp().querySelectorAll('#settings > div:not(.tab-nav)')
 
+    // Add mutation observer to to all tab items
+    // HACK to keep gradio from closing when showing all pages
+    const observer = new MutationObserver(function(mutations) {
+        const show_all_pages_dummy = gradioApp().getElementById('settings_show_all_pages')
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                if (show_all_pages_dummy.style.display != "none") {
+                    gradioApp().querySelectorAll('#settings [id^="settings_"]').forEach(function(elem){
+                        elem.style.display = "block";
+                    })
+                }
+            }
+        })
+    })
+
     // Add a wrapper for the tab content (everything but the tab nav)
     const tab_content_wrapper = document.createElement('div')
     tab_content_wrapper.className = "tab-content"
@@ -272,20 +287,11 @@ onUiLoaded(function(){
 
         // Add the tab content to the wrapper
         tab_content_wrapper.appendChild(elem)
+
+        // Add the mutation observer to the tab element
+        observer.observe(elem, { attributes: true, attributeFilter: ['style'] })
     })
 
-    // Add show all pages button
-    const show_all_pages = gradioApp().getElementById('settings_show_all_pages')
-    tab_nav_element.appendChild(show_all_pages)
-    show_all_pages.onclick = function(){
-      gradioApp().querySelectorAll('#settings [id^="settings_"]').forEach(function(elem){
-          elem.style.display = "block";
-      })
-    }
-
-    // HACK: Add empty span inplace of modification indicator infront of show all button
-    const dummy_indicator = document.createElement('span')
-    tab_nav_element.insertBefore(dummy_indicator, show_all_pages)
 
     // Add the dirtyable class to the tab nav element
     tab_nav_element.classList.add('dirtyable')

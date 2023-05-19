@@ -1323,9 +1323,10 @@ def create_ui():
                 current_tab.__exit__()
 
             request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications", visible=False)
-            _show_all_pages = gr.Button(value="Show all pages", variant='primary', elem_id="settings_show_all_pages")
             with gr.TabItem("Licenses"):
                 gr.HTML(shared.html("licenses.html"), elem_id="licenses")
+            with gr.TabItem("Show all pages", variant='primary', elem_id="settings_show_all_pages"):
+                pass
 
         def unload_sd_weights():
             modules.sd_models.unload_model_weights()
