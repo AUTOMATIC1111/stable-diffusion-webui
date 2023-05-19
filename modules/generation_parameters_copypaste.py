@@ -330,6 +330,7 @@ infotext_to_setting_name_mapping = [
     ('Token merging ratio hr', 'token_merging_ratio_hr'),
     ('RNG', 'randn_source'),
     ('NGMS', 's_min_uncond'),
+    ('CFG Rescale φ', 'cfg_rescale_fi'),
 ]
 
 

@@ -519,6 +519,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
     'uni_pc_order': OptionInfo(3, "UniPC order", gr.Slider, {"minimum": 1, "maximum": 50, "step": 1}).info("must be < sampling steps"),
     'uni_pc_lower_order_final': OptionInfo(True, "UniPC lower order final"),
+    "cfg_rescale_fi": OptionInfo(0.0, 'Classifier-Free Guidance Rescale φ', gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}).link("arxiv", "https://arxiv.org/abs/2305.08891").info("0 = disable; reduces overexposure effect"),
 }))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {

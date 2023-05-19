@@ -63,10 +63,17 @@ class CFGDenoiser(torch.nn.Module):
     def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
         denoised_uncond = x_out[-uncond.shape[0]:]
         denoised = torch.clone(denoised_uncond)
+        fi = opts.cfg_rescale_fi
 
         for i, conds in enumerate(conds_list):
             for cond_index, weight in conds:
-                denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
+                if fi == 0:
+                    denoised[i] += (x_out[cond_index] - denoised_uncond[i]) * (weight * cond_scale)
+                else:
+                    xcfg = (denoised_uncond[i] + (x_out[cond_index] - denoised_uncond[i]) * (cond_scale * weight))
+                    xrescaled = xcfg * (torch.std(x_out[cond_index]) / torch.std(xcfg))
+                    xfinal = fi * xrescaled + (1.0 - fi) * xcfg
+                    denoised[i] = xfinal
 
         return denoised
 
@@ -268,6 +275,9 @@ class KDiffusionSampler:
         self.s_min_uncond = getattr(p, 's_min_uncond', 0.0)
 
         k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
+
+        if opts.cfg_rescale_fi > 0:
+            p.extra_generation_params["CFG Rescale φ"] = opts.cfg_rescale_fi
 
         extra_params_kwargs = {}
         for param_name in self.extra_params:

@@ -231,6 +231,7 @@ axis_options = [
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
     AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
     AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
+    AxisOption("Rescale CFG φ", float, apply_override('cfg_rescale_fi')),
 ]
 
 
