@@ -94,7 +94,7 @@ def add_paste_fields(tabname, init_img, fields, override_settings_component=None
 def create_buttons(tabs_list):
     buttons = {}
     for tab in tabs_list:
-        buttons[tab] = gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab", label=f"Send to {tab}")
+        buttons[tab] = gr.Button(f"Send to {tab}", elem_id=f"{tab}_tab")
     return buttons
 
 
