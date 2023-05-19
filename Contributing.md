@@ -10,6 +10,7 @@ If you're not a contributor to this repository, you need to fork and clone the r
 * Make sure that your changes do not break anything by running [tests](Tests).
 * Do not submit PRs where you just take existing lines and reformat them without changing what they do.
 * If you are submitting a bug fix, there must be a way for me to reproduce the bug.
+* Do not use your clone's `master` or `main` branch to make a PR - create a branch and PR that.
 
 <details><summary>There is a discord channel for development of the webui (click to expand). Join if you want to talk about a PR in real time. Don't join if you're not involved in development.</summary><blockquote>
 <details><summary>This is a discord for development only, NOT for tech support.
