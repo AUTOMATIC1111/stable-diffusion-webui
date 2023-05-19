@@ -82,7 +82,8 @@ def confirm_checkpoints(p, xs):
 
 
 def apply_clip_skip(p, x, xs):
-    shared.opts.data["CLIP_stop_at_last_layers"] = x
+    p.clip_skip = x
+    shared.opts.data["clip_skip"] = x
 
 
 def apply_upscale_latent_space(p, x, xs):
@@ -344,7 +345,6 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
 class SharedSettingsStackHelper(object):
     def __enter__(self):
         #Save overridden settings so they can be restored later.
-        self.CLIP_stop_at_last_layers = shared.opts.CLIP_stop_at_last_layers
         self.vae = shared.opts.sd_vae
         self.uni_pc_order = shared.opts.uni_pc_order
         self.token_merging_ratio_hr = shared.opts.token_merging_ratio_hr
@@ -358,7 +358,6 @@ class SharedSettingsStackHelper(object):
         #Restore overriden settings after plot generation.
         shared.opts.data["sd_vae"] = self.vae
         shared.opts.data["uni_pc_order"] = self.uni_pc_order
-        shared.opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
         shared.opts.data["token_merging_ratio_hr"] = self.token_merging_ratio_hr
         shared.opts.data["token_merging_ratio"] = self.token_merging_ratio
         shared.opts.data["token_merging_random"] = self.token_merging_random

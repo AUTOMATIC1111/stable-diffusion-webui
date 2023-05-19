@@ -303,7 +303,6 @@ settings_map = {}
 
 
 infotext_to_setting_name_mapping = [
-    ('Clip skip', 'CLIP_stop_at_last_layers', ),
     ('Conditional mask weight', 'inpainting_mask_weight'),
     ('Model hash', 'sd_model_checkpoint'),
     ('ENSD', 'eta_noise_seed_delta'),

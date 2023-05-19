@@ -255,6 +255,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sub_quad_chunk_threshold": OptionInfo(80, "Sub-quadratic cross-attention percentage of VRAM chunking threshold", gr.Slider, {"minimum": 0, "maximum": 100, "step": 1}),
     "always_batch_cond_uncond": OptionInfo(False, "Disables cond/uncond batching that is enabled to save memory with --medvram or --lowvram"),
     "prompt_attention": OptionInfo("Full parser", "Prompt attention parser", gr.Radio, lambda: {"choices": ["Full parser", "Compel parser", "A1111 parser", "Fixed attention"] }),
+    "prompt_mean_norm": OptionInfo(True, "Prompt attention mean normalization"),
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {

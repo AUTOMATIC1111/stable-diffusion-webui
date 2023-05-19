@@ -128,7 +128,7 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
     if vae_file:
         if cache_enabled and vae_file in checkpoints_loaded:
             # use vae checkpoint cache
-            shared.log.info(f"Loading VAE weights {vae_source}: cached {get_filename(vae_file)}")
+            shared.log.info(f"Loading VAE weights: {vae_source}: cached {get_filename(vae_file)}")
             store_base_vae(model)
             _load_vae_dict(model, checkpoints_loaded[vae_file])
         else:
@@ -192,5 +192,5 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     script_callbacks.model_loaded_callback(sd_model)
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)
-    shared.log.info("VAE weights loaded.")
+    shared.log.info(f"VAE weights loaded: {vae_file}")
     return sd_model

@@ -142,10 +142,6 @@ def interrogate_deepbooru(image):
     return gr.update() if prompt is None else prompt
 
 
-def change_clip_skip(val):
-    modules.shared.opts.CLIP_stop_at_last_layers = val
-
-
 def create_seed_inputs(target_interface):
     with FormRow(elem_id=f"{target_interface}_seed_row", variant="compact"):
         seed = gr.Number(label='Seed', value=-1, elem_id=f"{target_interface}_seed")
@@ -369,8 +365,7 @@ def create_ui():
                     elif category == "cfg":
                         with FormRow():
                             cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=6.0, elem_id="txt2img_cfg_scale")
-                            clip_skip = gr.Slider(label='CLIP Skip', value=modules.shared.opts.CLIP_stop_at_last_layers, minimum=1, maximum=4, step=1, elem_id='txt2img_clip_skip', interactive=True)
-                            clip_skip.change(fn=change_clip_skip, show_progress=False, inputs=clip_skip)
+                            clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=4, step=1, elem_id='txt2img_clip_skip', interactive=True)
                     elif category == "seed":
                         seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('txt2img')
                     elif category == "checkboxes":
@@ -430,6 +425,7 @@ def create_ui():
                     batch_count,
                     batch_size,
                     cfg_scale,
+                    clip_skip,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     seed_checkbox,  # seed_enable_extras
@@ -484,6 +480,7 @@ def create_ui():
                 (sampler_index, "Sampler"),
                 (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
+                (clip_skip, "Clip skip"),
                 (seed, "Seed"),
                 (width, "Size-1"),
                 (height, "Size-2"),
@@ -681,8 +678,7 @@ def create_ui():
                                 cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.5, label='CFG Scale', value=6.0, elem_id="img2img_cfg_scale")
                                 image_cfg_scale = gr.Slider(minimum=0, maximum=3.0, step=0.05, label='Image CFG Scale', value=1.5, elem_id="img2img_image_cfg_scale", visible=False)
                                 denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
-                                clip_skip = gr.Slider(label='CLIP Skip', value=modules.shared.opts.CLIP_stop_at_last_layers, minimum=1, maximum=4, step=1, elem_id='img2img_clip_skip', interactive=True)
-                                clip_skip.change(fn=change_clip_skip, show_progress=False, inputs=clip_skip)
+                                clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=4, step=1, elem_id='img2img_clip_skip', interactive=True)
 
                     elif category == "seed":
                         seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox = create_seed_inputs('img2img')
@@ -772,6 +768,7 @@ def create_ui():
                     batch_size,
                     cfg_scale,
                     image_cfg_scale,
+                    clip_skip,
                     denoising_strength,
                     seed,
                     subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w, seed_checkbox,
@@ -861,6 +858,7 @@ def create_ui():
                 (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
                 (image_cfg_scale, "Image CFG scale"),
+                (clip_skip, "Clip skip"),
                 (seed, "Seed"),
                 (width, "Size-1"),
                 (height, "Size-2"),

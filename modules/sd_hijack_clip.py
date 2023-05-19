@@ -203,10 +203,13 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         z = self.encode_with_transformers(tokens)
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
         batch_multipliers = torch.asarray(batch_multipliers).to(devices.device)
-        original_mean = z.mean()
-        z = z * batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
-        new_mean = z.mean()
-        z = z * (original_mean / new_mean)
+        if opts.prompt_mean_norm:
+            original_mean = z.mean()
+            z = z * batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
+            new_mean = z.mean()
+            z = z * (original_mean / new_mean)
+        else:
+            z = z * batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
         return z
 
 
@@ -240,11 +243,10 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         return tokenized
 
     def encode_with_transformers(self, tokens):
-        if opts.CLIP_stop_at_last_layers is None:
-            opts.CLIP_stop_at_last_layers = 1
-        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=-opts.CLIP_stop_at_last_layers)
-        if opts.CLIP_stop_at_last_layers > 1:
-            z = outputs.hidden_states[-opts.CLIP_stop_at_last_layers]
+        clip_skip = opts.data['clip_skip'] or 1
+        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=-clip_skip)
+        if clip_skip > 1:
+            z = outputs.hidden_states[-clip_skip]
             z = self.wrapped.transformer.text_model.final_layer_norm(z)
         else:
             z = outputs.last_hidden_state

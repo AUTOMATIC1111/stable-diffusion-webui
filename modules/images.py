@@ -287,7 +287,7 @@ def sanitize_filename_part(text, replace_spaces=True):
 class FilenameGenerator:
     replacements = {
         'seed': lambda self: self.seed if self.seed is not None else '',
-        'steps': lambda self:  self.p and self.p.steps,
+        'steps': lambda self: self.p and self.p.steps,
         'cfg': lambda self: self.p and self.p.cfg_scale,
         'width': lambda self: self.image.width,
         'height': lambda self: self.image.height,
@@ -307,7 +307,7 @@ class FilenameGenerator:
         'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.batch_index + 1,
         'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
-        'clip_skip': lambda self: shared.opts.data["CLIP_stop_at_last_layers"],
+        'clip_skip': lambda self: self.p and self.p.clip_skip,
         'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
     }
     default_time_format = '%Y%m%d%H%M%S'

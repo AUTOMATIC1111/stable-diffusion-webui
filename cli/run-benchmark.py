@@ -87,7 +87,6 @@ async def main():
         'vae': opts.sd_vae,
         'hypernetwork': opts.sd_hypernetwork,
         'sampler': options.sampler_name,
-        'clip-stop': opts.CLIP_stop_at_last_layers,
         'preview': opts.show_progress_every_n_steps
     } })
     cpu, gpu = memstats()

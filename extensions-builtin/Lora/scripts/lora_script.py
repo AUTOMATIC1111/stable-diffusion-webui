@@ -54,10 +54,6 @@ script_callbacks.on_infotext_pasted(lora.infotext_pasted)
 shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {
     "sd_lora": shared.OptionInfo("None", "Add Lora to prompt", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in lora.available_loras]}, refresh=lora.list_available_loras),
     "lora_preferred_name": shared.OptionInfo("Alias from file", "When adding to prompt, refer to lora by", gr.Radio, {"choices": ["Alias from file", "Filename"]}),
-}))
-
-
-shared.options_templates.update(shared.options_section(('compatibility', "Compatibility"), {
     "lora_functional": shared.OptionInfo(False, "Lora: use old method that takes longer when you have multiple Loras active and produces same results as kohya-ss/sd-webui-additional-networks extension"),
 }))
 
