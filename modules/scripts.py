@@ -17,6 +17,9 @@ class PostprocessImageArgs:
 
 
 class Script:
+    name = None
+    """script's internal name derived from title"""
+
     filename = None
     args_from = None
     args_to = None
@@ -25,8 +28,8 @@ class Script:
     is_txt2img = False
     is_img2img = False
 
-    """A gr.Group component that has all script's UI inside it"""
     group = None
+    """A gr.Group component that has all script's UI inside it"""
 
     infotext_fields = None
     """if set in ui(), this is a list of pairs of gradio component + text; the text will be used when
@@ -37,6 +40,9 @@ class Script:
     """if set in ui(), this is a list of names of infotext fields; the fields will be sent through the
     various "Send to <X>" buttons when clicked
     """
+
+    api_info = None
+    """Generated value of type modules.api.models.ScriptInfo with information about the script for API"""
 
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
@@ -231,7 +237,7 @@ def load_scripts():
     syspath = sys.path
 
     def register_scripts_from_module(module):
-        for key, script_class in module.__dict__.items():
+        for script_class in module.__dict__.values():
             if type(script_class) != type:
                 continue
 
@@ -295,9 +301,9 @@ class ScriptRunner:
 
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
-        for script_class, path, basedir, script_module in auto_processing_scripts + scripts_data:
-            script = script_class()
-            script.filename = path
+        for script_data in auto_processing_scripts + scripts_data:
+            script = script_data.script_class()
+            script.filename = script_data.path
             script.is_txt2img = not is_img2img
             script.is_img2img = is_img2img
 
@@ -313,6 +319,8 @@ class ScriptRunner:
                 self.selectable_scripts.append(script)
 
     def setup_ui(self):
+        import modules.api.models as api_models
+
         self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
 
         inputs = [None]
@@ -327,8 +335,27 @@ class ScriptRunner:
             if controls is None:
                 return
 
+            script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
+            api_args = []
+
             for control in controls:
                 control.custom_script_source = os.path.basename(script.filename)
+
+                arg_info = api_models.ScriptArg(label=control.label or "")
+
+                for field in ("value", "minimum", "maximum", "step", "choices"):
+                    v = getattr(control, field, None)
+                    if v is not None:
+                        setattr(arg_info, field, v)
+
+                api_args.append(arg_info)
+
+            script.api_info = api_models.ScriptInfo(
+                name=script.name,
+                is_img2img=script.is_img2img,
+                is_alwayson=script.alwayson,
+                args=api_args,
+            )
 
             if script.infotext_fields is not None:
                 self.infotext_fields += script.infotext_fields
@@ -492,7 +519,7 @@ class ScriptRunner:
                 module = script_loading.load_module(script.filename)
                 cache[filename] = module
 
-            for key, script_class in module.__dict__.items():
+            for script_class in module.__dict__.values():
                 if type(script_class) == type and issubclass(script_class, Script):
                     self.scripts[si] = script_class()
                     self.scripts[si].filename = filename

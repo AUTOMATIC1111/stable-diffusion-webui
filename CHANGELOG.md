@@ -1,3 +1,53 @@
+## Upcoming 1.3.0
+
+### Features:
+ * add UI to edit defaults
+ * token merging (via dbolya/tomesd)
+ * settings tab rework: add a lot of additional explanations and links
+ * load extensions' git metadata in parallel to loading the main program to save a ton of time during startup
+ * update extensions table: show branch, show date in separate column, and show version from tags if available
+ * TAESD - another option for cheap live previews
+ * allow choosing sampler and prompts for second pass of hires fix - hidden by default, enabled in settings
+
+### Minor:
+ * gradio bumped to 3.31.0
+ * Bump pytorch to 2.0.1 for OSX and Linux AMD
+ * allow setting defaults for elements in extensions' tabs
+ * allow selecting file type for live previews
+ * Show "Loading..." for extra networks when displaying for the first time
+ * suppress ENSD infotext for samplers that don't use it
+ * clientside optimizations
+ * add options to show/hide hidden files and dirs in extra networks, and to not list models/files in hidden directories
+ * allow whitespace in styles.csv
+ * add option to reorder tabs
+ * move some functionality (swap resolution and set seed to -1) to client
+ * option to specify editor height for img2img
+ * button to copy image resolution into img2img width/height sliders
+ * switch from pyngrok to ngrok-py
+ * lazy-load images in extra networks UI
+ * set "Navigate image viewer with gamepad" option to false by default, by request
+
+### Extensions:
+ * add /sdapi/v1/script-info api
+ * use ruff to lint python code
+ * use eslit to link javascript code
+ * Add/modify CFG callbacks for Self-Attention Guidance extension
+ * command and endpoint for graceful server stopping
+ * add some locals (prompts/seeds/etc) from processing function into the Processing class as fields
+ * rework quoting for infotext items that have commas in them to use json (should be backwards compatible except for cases where it didn't work previously)
+
+### Bug Fixes:
+ * fix an issue preventing the program from starting if the user specifies a bad gradio theme
+ * fix broken prompts from file script
+ * fix symlink scanning for extra networks
+ * fix --data-dir ignored when launching via webui-user.bat COMMANDLINE_ARGS
+ * allow web UI to be ran fully offline
+ * fix inability to run with --freeze-settings
+ * fix inability to merge checkpoint without adding metadata
+ * fix extra networks save preview image not adding infotext for jpeg/webm
+ * remove blinking effect from text in hires fix and scale resolution preview
+
+
 ## 1.2.1
 
 ### Features:

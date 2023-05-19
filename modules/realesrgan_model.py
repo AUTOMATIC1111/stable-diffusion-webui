@@ -17,9 +17,9 @@ class UpscalerRealESRGAN(Upscaler):
         self.user_path = path
         super().__init__()
         try:
-            from basicsr.archs.rrdbnet_arch import RRDBNet
-            from realesrgan import RealESRGANer
-            from realesrgan.archs.srvgg_arch import SRVGGNetCompact
+            from basicsr.archs.rrdbnet_arch import RRDBNet  # noqa: F401
+            from realesrgan import RealESRGANer  # noqa: F401
+            from realesrgan.archs.srvgg_arch import SRVGGNetCompact  # noqa: F401
             self.enable = True
             self.scalers = []
             scalers = self.load_models(path)
@@ -134,6 +134,6 @@ def get_realesrgan_models(scaler):
             ),
         ]
         return models
-    except Exception as e:
+    except Exception:
         print("Error making Real-ESRGAN models list:", file=sys.stderr)
         print(traceback.format_exc(), file=sys.stderr)
