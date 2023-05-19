@@ -56,3 +56,13 @@ Tech that can be integrated as part of the core workflow...
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
 
 ### Pending Code Updates
+
+- tested with **torch 2.1** and **cuda 12.1**  
+  (production remains on torch2.0.1+cuda11.8)
+- fully extend support of `--data-dir`  
+  allows multiple installations to share pretty much everything, not just models
+- add dark/light theme mode toggle
+- redo some `clip-skip` functionality
+- better matching for vae vs model
+- update to `xyz grid` to allow creation of large number of images without
+- fixes...amazing how many issues were introduced by porting new a1111 code without adding almost no new functionality

@@ -448,7 +448,8 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Token merging merge cross attention": None if opts.token_merging_merge_cross_attention is False else opts.token_merging_merge_cross_attention,
         "Token merging merge mlp": None if opts.token_merging_merge_mlp is False else opts.token_merging_merge_mlp,
         "Token merging stride x": None if opts.token_merging_stride_x == 2 else opts.token_merging_stride_x,
-        "Token merging stride y": None if opts.token_merging_stride_y == 2 else opts.token_merging_stride_y
+        "Token merging stride y": None if opts.token_merging_stride_y == 2 else opts.token_merging_stride_y,
+        "Parser": opts.prompt_attention,
     }
     generation_params.update(p.extra_generation_params)
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
