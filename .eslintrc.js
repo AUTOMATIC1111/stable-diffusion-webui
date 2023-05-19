@@ -27,7 +27,7 @@ module.exports = {
         "no-extra-semi": "error",
         "no-mixed-spaces-and-tabs": "error",
         "no-multi-spaces": "error",
-        "no-redeclare": "off",
+        "no-redeclare": ["error", {builtinGlobals: false}],
         "no-trailing-spaces": "error",
         "no-unused-vars": "off",
         "no-whitespace-before-property": "error",
