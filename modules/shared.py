@@ -402,6 +402,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
 
 options_templates.update(options_section(('ui', "User interface"), {
     "gradio_theme": OptionInfo("black-orange", "UI theme", gr.Dropdown, lambda: {"choices": list_themes()}, refresh=refresh_themes),
+    "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "return_mask": OptionInfo(False, "For inpainting, include the greyscale mask in results for web"),
     "return_mask_composite": OptionInfo(False, "For inpainting, include masked composite in results for web"),
@@ -660,7 +661,7 @@ def reload_gradio_theme(theme_name=None):
         except:
             log.error("Theme download error accessing HuggingFace")
             gradio_theme = gr.themes.Default(**default_font_params)
-    log.info(f'Loading UI theme: {theme_name}')
+    log.info(f'Loading UI theme: name={theme_name} style={opts.theme_style}')
 
 
 class TotalTQDM:

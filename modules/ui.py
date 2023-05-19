@@ -1319,10 +1319,10 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         with gr.Row():
             settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
-            defaults_submit = gr.Button(value="Restore defaults", variant='primary', elem_id="defaults_submit")
             restart_submit = gr.Button(value="Restart server", variant='primary', elem_id="restart_submit")
             shutdown_submit = gr.Button(value="Shutdown server", variant='primary', elem_id="shutdown_submit")
             preview_theme = gr.Button(value="Preview theme", variant='primary', elem_id="settings_preview_theme")
+            defaults_submit = gr.Button(value="Restore defaults", variant='primary', elem_id="defaults_submit")
             unload_sd_model = gr.Button(value='Unload checkpoint', variant='primary', elem_id="sett_unload_sd_model")
             reload_sd_model = gr.Button(value='Reload checkpoint', variant='primary', elem_id="sett_reload_sd_model")
             # reload_script_bodies = gr.Button(value='Reload scripts', variant='primary', elem_id="settings_reload_script_bodies")
@@ -1391,18 +1391,6 @@ def create_ui():
             outputs=[],
             _js='function(){}'
         )
-
-        """
-        def reload_scripts():
-            modules.scripts.reload_script_body_only()
-            reload_javascript()  # need to refresh the html page
-
-        reload_script_bodies.click(
-            fn=reload_scripts,
-            inputs=[],
-            outputs=[]
-        )
-        """
 
         preview_theme.click(
             fn=None,
@@ -1651,11 +1639,13 @@ def html_head():
 
 def html_body():
     body = ''
-    # inline = f"{localization.localization_js(shared.opts.localization)};"
     inline = ''
-    if cmd_opts.theme is not None:
-        inline += f"set_theme('{cmd_opts.theme}');"
-    elif opts.gradio_theme == 'black-orange':
+    if opts.theme_style != 'Auto':
+        if opts.gradio_theme == 'black-orange':
+            modules.shared.log.info('Theme does not support custom mode')
+        else:
+            inline += f"set_theme('{opts.theme_style.lower()}');"
+    if opts.gradio_theme == 'black-orange':
         inline += "set_theme('dark');"
     body += f'<script type="text/javascript">{inline}</script>\n'
     return body

@@ -167,7 +167,10 @@ class EmbeddingDatabase:
             emb = next(iter(param_dict.items()))[1]
         # diffuser concepts
         elif type(data) == dict and type(next(iter(data.values()))) == torch.Tensor:
-            assert len(data.keys()) == 1, 'embedding file has multiple terms in it'
+            if len(data.keys()) != 1:
+                shared.log.warning(f"Embedding file has multiple terms in it: {filename}")
+                shared.log.warning(f"Skipping embedding: {filename}")
+                return
 
             emb = next(iter(data.values()))
             if len(emb.shape) == 1:
@@ -192,15 +195,12 @@ class EmbeddingDatabase:
     def load_from_dir(self, embdir):
         if not os.path.isdir(embdir.path):
             return
-
         for root, _dirs, fns in os.walk(embdir.path, followlinks=True):
             for fn in fns:
                 try:
                     fullfn = os.path.join(root, fn)
-
                     if os.stat(fullfn).st_size == 0:
                         continue
-
                     self.load_from_file(fullfn, fn)
                 except Exception as e:
                     errors.display(e, f'embedding load {fn}')
