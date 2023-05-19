@@ -55,7 +55,7 @@ class UiLoadsave:
             if field == 'value' and key not in self.component_mapping:
                 self.component_mapping[key] = x
 
-        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton] and x.visible:
+        if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton, gr.Button] and x.visible:
             apply_field(x, 'visible')
 
         if type(x) == gr.Slider:
@@ -109,6 +109,8 @@ class UiLoadsave:
                 self.add_block(c, path)
         elif x.label is not None:
             self.add_component(f"{path}/{x.label}", x)
+        elif isinstance(x, gr.Button) and x.value is not None:
+            self.add_component(f"{path}/{x.value}", x)
 
     def read_from_file(self):
         with open(self.filename, "r", encoding="utf8") as file:
