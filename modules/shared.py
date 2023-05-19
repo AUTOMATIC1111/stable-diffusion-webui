@@ -487,10 +487,6 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order").needs_restart(),
     "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires sampler selection").needs_restart(),
     "hires_fix_show_prompts": OptionInfo(False, "Hires fix: show hires prompt and negative prompt").needs_restart(),
-    "add_qr_code": OptionInfo(False,
-                              "If true, a qr code will be generated, pointing to the image on static web server"),
-    "static_server_uri": OptionInfo("http://localhost:7860/file=outputs/txt2img-images",
-                                    "URL of the prefix of the URI, directory with current date and image name will be appended after this."),
 }))
 
 options_templates.update(options_section(('infotext', "Infotext"), {

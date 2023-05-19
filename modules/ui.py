@@ -1848,9 +1848,6 @@ def css_html():
     if os.path.exists(os.path.join(data_path, "user.css")):
         head += stylesheet(os.path.join(data_path, "user.css"))
 
-    if shared.opts.additional_css != "" and os.path.exists(os.path.join(data_path, shared.opts.additional_css)):
-        head += stylesheet(os.path.join(data_path, shared.opts.additional_css))
-
     return head
 
 
@@ -1887,7 +1884,7 @@ def versions_html():
         xformers_version = "N/A"
 
     return f"""
-version: https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}
+version: <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/{commit}">{tag}</a>
 &#x2000;•&#x2000;
 python: <span title="{sys.version}">{python_version}</span>
 &#x2000;•&#x2000;

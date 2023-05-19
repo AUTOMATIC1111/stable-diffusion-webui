@@ -147,7 +147,7 @@
     "static_server_uri": "https://ai.animefest.cz",
     "hide_negative_prompt": false,
     "hide_footer": false,
-    "additional_css": "",
+    "hide_footer_links": true,
     "disable_all_extensions": "none",
     "uni_pc_order": 3,
     "quicksettings_list": [
