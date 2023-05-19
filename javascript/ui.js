@@ -61,18 +61,12 @@ function extract_image_from_gallery(gallery) {
     return [gallery[index]];
 }
 
-function args_to_array(args) {
-    var res = [];
-    for (var i = 0; i < args.length; i++) {
-        res.push(args[i]);
-    }
-    return res;
-}
+window.args_to_array = Array.from; // Compatibility with e.g. extensions that may expect this to be around
 
 function switch_to_txt2img() {
     gradioApp().querySelector('#tabs').querySelectorAll('button')[0].click();
 
-    return args_to_array(arguments);
+    return Array.from(arguments);
 }
 
 function switch_to_img2img_tab(no) {
@@ -81,28 +75,28 @@ function switch_to_img2img_tab(no) {
 }
 function switch_to_img2img() {
     switch_to_img2img_tab(0);
-    return args_to_array(arguments);
+    return Array.from(arguments);
 }
 
 function switch_to_sketch() {
     switch_to_img2img_tab(1);
-    return args_to_array(arguments);
+    return Array.from(arguments);
 }
 
 function switch_to_inpaint() {
     switch_to_img2img_tab(2);
-    return args_to_array(arguments);
+    return Array.from(arguments);
 }
 
 function switch_to_inpaint_sketch() {
     switch_to_img2img_tab(3);
-    return args_to_array(arguments);
+    return Array.from(arguments);
 }
 
 function switch_to_extras() {
     gradioApp().querySelector('#tabs').querySelectorAll('button')[2].click();
 
-    return args_to_array(arguments);
+    return Array.from(arguments);
 }
 
 function get_tab_index(tabId) {
@@ -118,28 +112,20 @@ function get_tab_index(tabId) {
 }
 
 function create_tab_index_args(tabId, args) {
-    var res = [];
-    for (var i = 0; i < args.length; i++) {
-        res.push(args[i]);
-    }
-
+    var res = Array.from(args);
     res[0] = get_tab_index(tabId);
-
     return res;
 }
 
 function get_img2img_tab_index() {
-    let res = args_to_array(arguments);
+    let res = Array.from(arguments);
     res.splice(-2);
     res[0] = get_tab_index('mode_img2img');
     return res;
 }
 
 function create_submit_args(args) {
-    var res = [];
-    for (var i = 0; i < args.length; i++) {
-        res.push(args[i]);
-    }
+    var res = Array.from(args);
 
     // As it is currently, txt2img and img2img send back the previous output args (txt2img_gallery, generation_info, html_info) whenever you generate a new image.
     // This can lead to uploading a huge gallery of previously generated images, which leads to an unnecessary delay between submitting and beginning to generate.
@@ -275,13 +261,13 @@ function recalculatePromptTokens(name) {
 function recalculate_prompts_txt2img() {
     recalculatePromptTokens('txt2img_prompt');
     recalculatePromptTokens('txt2img_neg_prompt');
-    return args_to_array(arguments);
+    return Array.from(arguments);
 }
 
 function recalculate_prompts_img2img() {
     recalculatePromptTokens('img2img_prompt');
     recalculatePromptTokens('img2img_neg_prompt');
-    return args_to_array(arguments);
+    return Array.from(arguments);
 }
 
 

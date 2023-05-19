@@ -62,7 +62,6 @@ module.exports = {
         all_gallery_buttons: "readonly",
         selected_gallery_button: "readonly",
         selected_gallery_index: "readonly",
-        args_to_array: "readonly",
         switch_to_txt2img: "readonly",
         switch_to_img2img_tab: "readonly",
         switch_to_img2img: "readonly",

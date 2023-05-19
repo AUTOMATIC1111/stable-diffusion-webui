@@ -9,7 +9,7 @@ function start_training_textual_inversion() {
         gradioApp().getElementById('ti_progress').innerHTML = progress.textinfo;
     });
 
-    var res = args_to_array(arguments);
+    var res = Array.from(arguments);
 
     res[0] = id;
 
