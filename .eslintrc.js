@@ -1,3 +1,4 @@
+/* global module */
 module.exports = {
     env: {
         browser: true,
@@ -47,8 +48,6 @@ module.exports = {
         "unicode-bom": "error",
     },
     globals: {
-        // this file
-        module: "writable",
         //script.js
         gradioApp: "writable",
         onUiLoaded: "writable",
