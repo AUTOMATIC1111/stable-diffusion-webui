@@ -58,22 +58,22 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     for k, v in kwargs.items():
         logger.info(f"> args: {k}: {v}")
     logger.info("====================================================")
-    # p = TaskProgress.new_running(task, 'running', 0)
-    #
-    # def progress_callback(epoch, loss, num_train_epochs):
-    #     print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
-    #     progress = epoch / num_train_epochs * 100 * 0.9
-    #     p.train.add_epoch_log(TrainEpoch(epoch, loss))
-    #     p.task_progress = progress
-    #     if callable(dump_func):
-    #         dump_func(p)
-    #
-    # ok = train_with_params(callback=progress_callback, **kwargs)
-    start_train_process(task, kwargs, dump_func)
-    local_models = get_train_models(train_lora_task, kwargs['output_name'])
-    ok = local_models is not None and len(local_models) > 0
+    p = TaskProgress.new_running(task, 'running', 0)
+
+    def progress_callback(epoch, loss, num_train_epochs):
+        print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
+        progress = epoch / num_train_epochs * 100 * 0.9
+        p.train.add_epoch_log(TrainEpoch(epoch, loss))
+        p.task_progress = progress
+        if callable(dump_func):
+            dump_func(p)
+
+    ok = train_with_params(callback=progress_callback, **kwargs)
+    # start_train_process(task, kwargs, dump_func)
+    # local_models = get_train_models(train_lora_task, kwargs['output_name'])
+    # ok = local_models is not None and len(local_models) > 0
     torch_gc()
-    
+
     if ok:
         logger.info("=============>>>> end of train <<<<=============")
         material = train_lora_task.compress_train_material(p.train.format_epoch_log())
