@@ -1,9 +1,0 @@
-#txt2img_prompt > label:nth-child(1) > textarea:nth-child(2) {
-    font-size: 28px;
-}
-#tabs > div:nth-child(1) > button:nth-child(1) {
-    font-size: 32px;
-}
-#txt2img_generate {
-    font-size: 24px;
-}

@@ -349,7 +349,7 @@ onOptionsChanged(function() {
     if (elem && elem.textContent != shorthash) {
         elem.textContent = shorthash;
         elem.title = sd_checkpoint_hash;
-        //elem.href = "https://google.com/search?q=" + sd_checkpoint_hash;
+        elem.href = "https://google.com/search?q=" + sd_checkpoint_hash;
     }
 });
 
