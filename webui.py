@@ -213,7 +213,7 @@ def initialize():
     shared.reload_hypernetworks()
     startup_timer.record("reload hypernets")
 
-    ui_extra_networks.intialize()
+    ui_extra_networks.initialize()
     ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
     ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
     ui_extra_networks.register_page(ui_extra_networks_checkpoints.ExtraNetworksPageCheckpoints())
@@ -419,7 +419,7 @@ def webui():
         shared.reload_hypernetworks()
         startup_timer.record("reload hypernetworks")
 
-        ui_extra_networks.intialize()
+        ui_extra_networks.initialize()
         ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
         ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
         ui_extra_networks.register_page(ui_extra_networks_checkpoints.ExtraNetworksPageCheckpoints())

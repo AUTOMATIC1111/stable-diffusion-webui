@@ -232,7 +232,7 @@ class ExtraNetworksPage:
         return None
 
 
-def intialize():
+def initialize():
     extra_pages.clear()
 
 
