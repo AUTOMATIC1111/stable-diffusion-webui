@@ -16,6 +16,7 @@ from sd_scripts.train_network_ly import train_with_params
 from .typex import TrainLoraTask
 from .utils import upload_files
 from worker.task_send import RedisSender
+from multiprocessing import Process
 
 
 def get_train_models(train_lora_task: TrainLoraTask, model_name: str):
@@ -54,17 +55,20 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     for k, v in kwargs.items():
         logger.info(f"> args: {k}: {v}")
     logger.info("====================================================")
-    p = TaskProgress.new_running(task, 'running', 0)
-
-    def progress_callback(epoch, loss, num_train_epochs):
-        print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
-        progress = epoch / num_train_epochs * 100 * 0.9
-        p.train.add_epoch_log(TrainEpoch(epoch, loss))
-        p.task_progress = progress
-        if callable(dump_func):
-            dump_func(p)
-
-    ok = train_with_params(callback=progress_callback, **kwargs)
+    # p = TaskProgress.new_running(task, 'running', 0)
+    #
+    # def progress_callback(epoch, loss, num_train_epochs):
+    #     print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
+    #     progress = epoch / num_train_epochs * 100 * 0.9
+    #     p.train.add_epoch_log(TrainEpoch(epoch, loss))
+    #     p.task_progress = progress
+    #     if callable(dump_func):
+    #         dump_func(p)
+    #
+    # ok = train_with_params(callback=progress_callback, **kwargs)
+    start_train_process(task, kwargs, dump_func)
+    local_models = get_train_models(train_lora_task, kwargs['output_name'])
+    ok = local_models is not None and len(local_models) > 0
     if ok:
         logger.info("=============>>>> end of train <<<<=============")
         material = train_lora_task.compress_train_material(p.train.format_epoch_log())
@@ -77,7 +81,6 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
             material_keys = upload_files(False, material)
             result['material'] = material_keys[0] if material_keys else ''
 
-        local_models = get_train_models(train_lora_task, kwargs['output_name'])
         cover = train_lora_task.get_model_cover_key()
         for m in local_models:
             # rename
@@ -111,3 +114,26 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     else:
         p = TaskProgress.new_failed(task, 'train failed(unknown errors)')
         yield p
+
+
+def do_train_with_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: typing.Callable):
+    p = TaskProgress.new_running(task, 'running', 0)
+
+    def progress_callback(epoch, loss, num_train_epochs):
+        print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
+        progress = epoch / num_train_epochs * 100 * 0.9
+        p.train.add_epoch_log(TrainEpoch(epoch, loss))
+        p.task_progress = progress
+        if callable(dump_progress_cb):
+            dump_progress_cb(p)
+
+    train_with_params(callback=progress_callback, **kwargs)
+
+
+def start_train_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: typing.Callable):
+    proc = Process(target=do_train_with_process,
+                   name='train_worker',
+                   args=(task, kwargs, dump_progress_cb))
+    proc.daemon = True
+    proc.start()
+    proc.join()
