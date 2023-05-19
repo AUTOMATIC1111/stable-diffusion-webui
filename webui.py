@@ -34,8 +34,7 @@ startup_timer.record("import gradio")
 import ldm.modules.encoders.modules  # noqa: F401
 startup_timer.record("import ldm")
 
-from modules import extra_networks, ui_extra_networks_checkpoints
-from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
+from modules import extra_networks
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, queue_lock  # noqa: F401
 
 # Truncate version number of nightly/local build of PyTorch to not cause exceptions with CodeFormer or Safetensors
@@ -214,12 +213,11 @@ def initialize():
     startup_timer.record("reload hypernets")
 
     ui_extra_networks.initialize()
-    ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
-    ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
-    ui_extra_networks.register_page(ui_extra_networks_checkpoints.ExtraNetworksPageCheckpoints())
+    ui_extra_networks.register_default_pages()
 
     extra_networks.initialize()
-    extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
+    extra_networks.register_default_extra_networks()
+
     startup_timer.record("extra networks")
 
     if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
@@ -420,12 +418,10 @@ def webui():
         startup_timer.record("reload hypernetworks")
 
         ui_extra_networks.initialize()
-        ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
-        ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
-        ui_extra_networks.register_page(ui_extra_networks_checkpoints.ExtraNetworksPageCheckpoints())
+        ui_extra_networks.register_default_pages()
 
         extra_networks.initialize()
-        extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
+        extra_networks.register_default_extra_networks()
         startup_timer.record("initialize extra networks")
 
 
