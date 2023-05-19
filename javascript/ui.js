@@ -813,7 +813,6 @@ onUiLoaded(function () {
       elem.generateOnRepeatInterval = setInterval(function () {
         if (window.getComputedStyle(generate_button).display !== "none") {
           generate_button.click();
-          console.log(elem.id);
         }
       }, 500);
     }
@@ -1299,7 +1298,7 @@ onUiLoaded(function () {
     setting_quicksettings.value = field_settings;
     //addModelCheckpoint();
     saveQuickSettings();
-    console.log(section + " - " + id + " - " + checked);
+    //console.log(section + " - " + id + " - " + checked);
   }
   gradioApp()
     .querySelectorAll('[id*="add2quick_"]')
