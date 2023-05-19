@@ -1,7 +1,7 @@
 ## [2023-04-29](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9669) - Fix prompt schedule for second order samplers
 Second order samplers (Heun, DPM2/a, DPM++ 2S/a, DPM++ SDE / Karras) cause the prompt schedule to run twice as fast when prompting something like `[dog:cat:0.5]` (i.e. for 100 steps, prompt is `dog` until step 25, `cat` until 50, and remains `dog` until 100). This fixes that by checking if the sampler is any of these second order samplers and multiplies the step count by 2 for calculating the prompt schedule.
 
-# [2023-03-26](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/80b26d2a69617b75d2d01c1e6b7d11445815ed4d) - Apply LoRA by altering layer's weights
+## [2023-03-26](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/80b26d2a69617b75d2d01c1e6b7d11445815ed4d) - Apply LoRA by altering layer's weights
 TLDR: produces pictures are a little bit different. If using highres fix, those small differences can be amplified into big ones.
 
 New method introduced in 80b26d2a69617b75d2d01c1e6b7d11445815ed4d allows to pre-calculate new model weights once and then not have to do anything when creating images. With this, adding many loras will incur small performance overhead the first time you apply those loras, and after that will be as fast as if you were making pictures without any loras enabled. Old method slows down generation by a lot with every new lora added.
