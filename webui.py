@@ -326,6 +326,7 @@ def webui():
 
         # this restores the missing /docs endpoint
         if launch_api and not hasattr(FastAPI, 'original_setup'):
+            # TODO: replace this with `launch(app_kwargs=...)` if https://github.com/gradio-app/gradio/pull/4282 gets merged
             def fastapi_setup(self):
                 self.docs_url = "/docs"
                 self.redoc_url = "/redoc"
