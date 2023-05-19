@@ -69,7 +69,7 @@ class Embedding:
                 'hash': self.checksum(),
                 'optimizer_state_dict': self.optimizer_state_dict,
             }
-            torch.save(optimizer_saved_dict, filename + '.optim')
+            torch.save(optimizer_saved_dict, f"{filename}.optim")
 
     def checksum(self):
         if self.cached_checksum is not None:
@@ -232,6 +232,12 @@ class EmbeddingDatabase:
         for path, embdir in self.embedding_dirs.items():
             self.load_from_dir(embdir)
             embdir.update()
+
+        # re-sort word_embeddings because load_from_dir may not load in alphabetic order.
+        # using a temporary copy so we don't reinitialize self.word_embeddings in case other objects have a reference to it.
+        sorted_word_embeddings = {e.name: e for e in sorted(self.word_embeddings.values(), key=lambda e: e.name.lower())}
+        self.word_embeddings.clear()
+        self.word_embeddings.update(sorted_word_embeddings)
 
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
@@ -431,8 +437,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate, weight_decay=0.0)
     if shared.opts.save_optimizer_state:
         optimizer_state_dict = None
-        if os.path.exists(filename + '.optim'):
-            optimizer_saved_dict = torch.load(filename + '.optim', map_location='cpu')
+        if os.path.exists(f"{filename}.optim"):
+            optimizer_saved_dict = torch.load(f"{filename}.optim", map_location='cpu')
             if embedding.checksum() == optimizer_saved_dict.get('hash', None):
                 optimizer_state_dict = optimizer_saved_dict.get('optimizer_state_dict', None)
     
@@ -593,7 +599,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                         data = torch.load(last_saved_file)
                         info.add_text("sd-ti-embedding", embedding_to_b64(data))
 
-                        title = "<{}>".format(data.get('name', '???'))
+                        title = f"<{data.get('name', '???')}>"
 
                         try:
                             vectorSize = list(data['string_to_param'].values())[0].shape[0]
@@ -602,8 +608,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
                         checkpoint = sd_models.select_checkpoint()
                         footer_left = checkpoint.model_name
-                        footer_mid = '[{}]'.format(checkpoint.shorthash)
-                        footer_right = '{}v {}s'.format(vectorSize, steps_done)
+                        footer_mid = f'[{checkpoint.shorthash}]'
+                        footer_right = f'{vectorSize}v {steps_done}s'
 
                         captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
                         captioned_image = insert_image_data_embed(captioned_image, data)

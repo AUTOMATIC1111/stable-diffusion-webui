@@ -16,14 +16,14 @@ onUiUpdate(function(){
 
 let modalObserver = new MutationObserver(function(mutations) {
 	mutations.forEach(function(mutationRecord) {
-		let selectedTab = gradioApp().querySelector('#tabs div button.bg-white')?.innerText
-		if (mutationRecord.target.style.display === 'none' && selectedTab === 'txt2img' || selectedTab === 'img2img')
-			gradioApp().getElementById(selectedTab+"_generation_info_button").click()
+		let selectedTab = gradioApp().querySelector('#tabs div button.selected')?.innerText
+		if (mutationRecord.target.style.display === 'none' && (selectedTab === 'txt2img' || selectedTab === 'img2img'))
+			gradioApp().getElementById(selectedTab+"_generation_info_button")?.click()
 	});
 });
 
 function attachGalleryListeners(tab_name) {
-	gallery = gradioApp().querySelector('#'+tab_name+'_gallery')
+	var gallery = gradioApp().querySelector('#'+tab_name+'_gallery')
 	gallery?.addEventListener('click', () => gradioApp().getElementById(tab_name+"_generation_info_button").click());
 	gallery?.addEventListener('keydown', (e) => {
 		if (e.keyCode == 37 || e.keyCode == 39) // left or right arrow
