@@ -19,6 +19,7 @@ from .typex import TrainLoraTask
 from .utils import upload_files
 from worker.task_send import RedisSender
 from multiprocessing import Process
+from modules.devices import torch_gc
 
 
 def get_train_models(train_lora_task: TrainLoraTask, model_name: str):
@@ -71,6 +72,8 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     start_train_process(task, kwargs, dump_func)
     local_models = get_train_models(train_lora_task, kwargs['output_name'])
     ok = local_models is not None and len(local_models) > 0
+    torch_gc()
+    
     if ok:
         logger.info("=============>>>> end of train <<<<=============")
         material = train_lora_task.compress_train_material(p.train.format_epoch_log())
