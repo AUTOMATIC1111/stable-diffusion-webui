@@ -161,6 +161,8 @@ def cond_cast_float(tensor):
 
 def randn(seed, shape):
     torch.manual_seed(seed)
+    if shared.cmd_opts.use_ipex:
+        torch.xpu.manual_seed_all(seed)
     if device.type == 'mps':
         return torch.randn(shape, device=cpu).to(device)
     return torch.randn(shape, device=device)
