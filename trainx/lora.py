@@ -9,6 +9,7 @@ import os.path
 import shutil
 import typing
 import torch
+import psutil
 
 from Crypto.Hash import SHA256
 from loguru import logger
@@ -133,10 +134,16 @@ def do_train_with_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: 
 
 def start_train_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: typing.Callable):
     torch.multiprocessing.set_start_method('spawn')
+
+    for p in psutil.process_iter():
+        if 'train_worker' == p.name():
+            p.kill()
+
     proc = Process(target=do_train_with_process,
                    name='train_worker',
                    args=(task, kwargs, dump_progress_cb))
-    proc.daemon = True
+
     print(f'start sub process:{proc.pid}')
     proc.start()
     proc.join()
+
