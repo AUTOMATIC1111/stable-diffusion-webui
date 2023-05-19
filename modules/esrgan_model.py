@@ -154,7 +154,7 @@ class UpscalerESRGAN(Upscaler):
         if "http" in path:
             filename = load_file_from_url(
                 url=self.model_url,
-                model_dir=self.model_path,
+                model_dir=self.model_download_path,
                 file_name=f"{self.model_name}.pth",
                 progress=True,
             )

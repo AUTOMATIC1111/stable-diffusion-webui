@@ -121,8 +121,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
     def load_model(self, path: str):
         device = devices.get_device_for('scunet')
         if "http" in path:
-            filename = load_file_from_url(url=self.model_url, model_dir=self.model_path, file_name="%s.pth" % self.name,
-                                          progress=True)
+            filename = load_file_from_url(url=self.model_url, model_dir=self.model_download_path, file_name="%s.pth" % self.name, progress=True)
         else:
             filename = path
         if not os.path.exists(os.path.join(self.model_path, filename)) or filename is None:

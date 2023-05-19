@@ -73,7 +73,7 @@ class UpscalerRealESRGAN(Upscaler):
                 return None
 
             if info.local_data_path.startswith("http"):
-                info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
+                info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_download_path, progress=True)
 
             return info
         except Exception as e:

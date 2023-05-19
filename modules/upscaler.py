@@ -34,6 +34,7 @@ class Upscaler:
         self.half = not modules.shared.cmd_opts.no_half
         self.pre_pad = 0
         self.mod_scale = None
+        self.model_download_path = None
 
         if self.model_path is None and self.name:
             self.model_path = os.path.join(shared.models_path, self.name)
