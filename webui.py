@@ -331,6 +331,7 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True,
             allowed_paths=cmd_opts.gradio_allowed_path,
+            favicon_path="logo.png",
         )
         if cmd_opts.add_stop_route:
             app.add_route("/_stop", stop_route, methods=["POST"])
