@@ -100,15 +100,13 @@ function switch_to_extras() {
 }
 
 function get_tab_index(tabId) {
-    var res = 0;
-
-    gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button').forEach(function(button, i) {
-        if (button.className.indexOf('selected') != -1) {
-            res = i;
+    let buttons = gradioApp().getElementById(tabId).querySelector('div').querySelectorAll('button');
+    for (let i = 0; i < buttons.length; i++) {
+        if (buttons[i].classList.contains('selected')) {
+            return i;
         }
-    });
-
-    return res;
+    }
+    return 0;
 }
 
 function create_tab_index_args(tabId, args) {
