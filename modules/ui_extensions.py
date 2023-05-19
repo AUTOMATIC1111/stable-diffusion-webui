@@ -125,7 +125,9 @@ def make_commit_link(commit_hash, remote, text=None):
     if text is None:
         text = commit_hash[:8]
     if remote.startswith("https://github.com/"):
-        href = os.path.join(remote, "commit", commit_hash)
+        if remote.endswith(".git"):
+            remote = remote[:-4]
+        href = remote + "/commit/" + commit_hash
         return f'<a href="{href}" target="_blank">{text}</a>'
     else:
         return text
