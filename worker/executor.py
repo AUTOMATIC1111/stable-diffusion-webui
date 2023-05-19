@@ -24,7 +24,7 @@ class TaskExecutor(Thread):
         self.recorder = ckpt_recorder
         self._handlers = {}
         self.timeout = timeout if timeout > 0 else TaskTimeout
-        self.stop = False
+        self.__stop = False
         self.mutex = Lock()
         self.not_busy = Condition(self.mutex)
         self.queue = Queue(1)  # 也可直接使用变量进行消息传递。。
@@ -38,7 +38,7 @@ class TaskExecutor(Thread):
             h.close()
 
     def stop(self):
-        self.stop = True
+        self.__stop = True
 
     def add_handler(self, *handlers: TaskHandler):
         for handler in handlers:
@@ -53,7 +53,7 @@ class TaskExecutor(Thread):
     def exec_task(self):
         handlers = [x.name for x in self._handlers.keys()]
         logger.info(f"executor start with:{','.join(handlers)}")
-        while self.is_alive():
+        while not self.__stop:
             task = self.queue.get()
             logger.info(f"====>>> receive task:{task.desc()}")
             logger.info(f"====>>> model history:{self.recorder.history()}")

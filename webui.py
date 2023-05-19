@@ -434,6 +434,7 @@ def check_resource():
 
 def run_worker():
     from consumer import run_executor
+    from worker.dumper import dumper
 
     if cmd_opts.debug_task:
         from worker.task_send import RedisSender, VipLevel
@@ -461,9 +462,12 @@ def run_worker():
         shared.demo = modules.ui.create_ui()
 
     if cmd_opts.send_task_only:
-        exit(0)
+        dumper.stop()
+        return
 
-    run_executor(shared.sd_model_recorder, train_only=cmd_opts.train_only)
+    exec = run_executor(shared.sd_model_recorder, train_only=cmd_opts.train_only)
+    exec.stop()
+    dumper.stop()
 
 
 if __name__ == "__main__":
