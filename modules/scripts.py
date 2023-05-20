@@ -271,6 +271,12 @@ def load_scripts():
             sys.path = syspath
             current_basedir = paths.script_path
 
+    global scripts_txt2img, scripts_img2img, scripts_postproc
+
+    scripts_txt2img = ScriptRunner()
+    scripts_img2img = ScriptRunner()
+    scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
+
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     try:
@@ -527,9 +533,9 @@ class ScriptRunner:
                     self.scripts[si].args_to = args_to
 
 
-scripts_txt2img = ScriptRunner()
-scripts_img2img = ScriptRunner()
-scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
+scripts_txt2img: ScriptRunner = None
+scripts_img2img: ScriptRunner = None
+scripts_postproc: scripts_postprocessing.ScriptPostprocessingRunner = None
 scripts_current: ScriptRunner = None
 
 
@@ -539,14 +545,7 @@ def reload_script_body_only():
     scripts_img2img.reload_sources(cache)
 
 
-def reload_scripts():
-    global scripts_txt2img, scripts_img2img, scripts_postproc
-
-    load_scripts()
-
-    scripts_txt2img = ScriptRunner()
-    scripts_img2img = ScriptRunner()
-    scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
+reload_scripts = load_scripts  # compatibility alias
 
 
 def add_classes_to_gradio_component(comp):
