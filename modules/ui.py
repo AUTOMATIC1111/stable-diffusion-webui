@@ -304,16 +304,6 @@ def create_toprow(is_img2img):
                     outputs=[],
                 )
 
-            with gr.Row(elem_id=f"{id_part}_generate_box", elem_classes="reload-box"):
-                # copied from this line in the settings
-                # restart_gradio = gr.Button(value='Reload UI', variant='primary', elem_id="settings_restart_gradio")
-                reload_page = gr.Button('Return to homepage', elem_id=f"{id_part}_reload", variant='secondary')
-                reload_page.click(
-                    fn=lambda: None,
-                    _js='reload_page',
-                    inputs=[],
-                    outputs=[],
-                )
             with gr.Row(elem_id=f"{id_part}_tools"):
                 paste = ToolButton(value=paste_symbol, elem_id="paste")
                 clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
@@ -553,7 +543,6 @@ def create_ui():
                     show_progress=False,
                 )
 
-        with gr.Row().style(equal_height=False):    # adding new row so all the hidden stuff would be in the same hidden row
             txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)

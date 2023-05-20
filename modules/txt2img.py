@@ -1,12 +1,9 @@
-import os.path
-
 import modules.scripts
 from modules import sd_samplers, processing
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.ui import plaintext_to_html
-import qrcode
 
 
 
@@ -69,16 +66,5 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
 
     if opts.do_not_show_images:
         processed.images = []
-
-    if opts.add_qr_code:
-        # I'm adding images to array I iterate to, better to create new one and replace
-        new_processed_images = processed.images[:processed.index_of_first_image]
-        for i, img in enumerate(processed.images[processed.index_of_first_image:]):
-            image_path = img.already_saved_as.replace(p.outpath_samples, '')
-            qr_link = f'{opts.static_server_uri}{image_path.replace(os.path.sep, "/")}'
-            qr_img = qrcode.make(qr_link).get_image()
-            new_processed_images.append(img)
-            new_processed_images.append(qr_img)
-        processed.images = new_processed_images
 
     return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments)
