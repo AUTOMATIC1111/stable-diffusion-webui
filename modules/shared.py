@@ -15,6 +15,7 @@ import modules.devices as devices
 from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir  # noqa: F401
 from ldm.models.diffusion.ddpm import LatentDiffusion
+from typing import Optional
 
 demo = None
 
@@ -113,7 +114,7 @@ class State:
     time_start = None
     server_start = None
     _server_command_signal = threading.Event()
-    _server_command: str | None = None
+    _server_command: Optional[str]
 
     @property
     def need_restart(self) -> bool:
@@ -131,14 +132,14 @@ class State:
         return self._server_command
 
     @server_command.setter
-    def server_command(self, value: str | None) -> None:
+    def server_command(self, value: Optional[str]) -> None:
         """
         Set the server command to `value` and signal that it's been set.
         """
         self._server_command = value
         self._server_command_signal.set()
 
-    def wait_for_server_command(self, timeout: float | None = None) -> str | None:
+    def wait_for_server_command(self, timeout: Optional[float]) -> Optional[str]:
         """
         Wait for server command to get set; return and clear the value and signal.
         """
