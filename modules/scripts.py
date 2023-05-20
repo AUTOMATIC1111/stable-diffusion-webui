@@ -6,7 +6,7 @@ from collections import namedtuple
 
 import gradio as gr
 
-from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing
+from modules import shared, paths, script_callbacks, extensions, script_loading, scripts_postprocessing, timer
 
 AlwaysVisible = object()
 
@@ -270,6 +270,7 @@ def load_scripts():
         finally:
             sys.path = syspath
             current_basedir = paths.script_path
+            timer.startup_timer.record(scriptfile.filename)
 
     global scripts_txt2img, scripts_img2img, scripts_postproc
 
