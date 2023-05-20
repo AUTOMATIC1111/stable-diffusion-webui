@@ -1,9 +1,12 @@
 # What is Textual Inversion?
-Textual Inversion allows you to train a tiny part of the neural network on your own pictures, and use results when generating new ones. In this context, embedding is the name of the tiny bit of the neural network you trained.
 
-The result of the training is a .pt or a .bin file (former is the format used by original author, latter is by the diffusers library) with the embedding in it.
+[Textual inversion](https://textual-inversion.github.io/): Teach the base model **new vocabulary about a particular concept** with a couple of images reflecting that concept.
+* The concept can be: a pose, an artistic style, a texture, etc.
+* It **doesn't enrich the model**. If your base model is trained solely on images of _apples_, and you tried to teach the model the word _"banana"_ with ~20 images of bananas, then -- at best -- your model will give you long, yellow apples when you ask for a banana.
 
-See original site for more details about what textual inversion is: https://textual-inversion.github.io/.
+The result of the training is a `.pt` or a `.bin` file (former is the format used by original author, latter is by the [diffusers][dl] library) with the embedding in it. These files can be shared to other generative artists.
+
+[dl]: https://huggingface.co/docs/diffusers/index
 
 # Using pre-trained embeddings
 Put the embedding into the `embeddings` directory and use its filename in the prompt. You don't have to restart the program for this to work.
