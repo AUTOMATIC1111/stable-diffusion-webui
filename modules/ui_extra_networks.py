@@ -3,6 +3,7 @@ import os.path
 import urllib.parse
 from pathlib import Path
 from PIL import PngImagePlugin
+import re
 
 from modules import shared
 from modules.images import read_info_from_image
@@ -117,7 +118,8 @@ class ExtraNetworksPage:
 </button>
 """ for subdir in subdirs])
 
-        for item in self.list_items():
+        items = sorted(self.list_items(), key=lambda x: natural_sort_key(x['name']))
+        for item in items:
             metadata = item.get("metadata")
             if metadata:
                 self.metadata[item["name"]] = metadata
@@ -349,3 +351,6 @@ def setup_ui(ui, gallery):
         outputs=[*ui.pages]
     )
 
+def natural_sort_key(s, _nsre=re.compile('([0-9]+)')):
+    return [int(text) if text.isdigit() else text.lower()
+            for text in _nsre.split(s)]
