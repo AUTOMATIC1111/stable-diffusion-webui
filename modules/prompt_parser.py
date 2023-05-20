@@ -34,7 +34,7 @@ plain: /([^\\\[\]():|]|\\.)+/
 """)
 re_clean = re.compile(r"^\W+", re.S)
 re_whitespace = re.compile(r"\s+", re.S)
-re_break = re.compile(r"\s*\bBREAK\b\s*", re.S)
+re_break = re.compile(r"\s*\bBREAK\b|##\s*", re.S)
 re_attention_v2 = re.compile(r"""
 \(|\[|\\\(|\\\[|\\|\\\\|
 :([+-]?[.\d]+)|
@@ -336,13 +336,13 @@ def parse_prompt_attention(text):
         else:
             parts = re.split(re_break, text)
             for i, part in enumerate(parts):
+                if i > 0:
+                    res.append(["BREAK", -1])
                 if opts.prompt_attention == 'Full parser':
                     part = re_clean.sub("", part)
                     part = re_whitespace.sub(" ", part).strip()
                     if len(part) == 0:
                         continue
-                if i > 0:
-                    res.append(["BREAK", -1])
                 res.append([part, 1.0])
     for pos in round_brackets:
         multiply_range(pos, round_bracket_multiplier)
@@ -366,7 +366,7 @@ if __name__ == "__main__":
     # import sys
     # sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     # input_text = "(upzero) (upone:1.1), ((uptwo:1.2)), [downzero], [downone:0.9], [[downtwo:0.8]], this is a test"
-    input_text = 'a (white (lion:1.4)), cat [mouse] [tiger:0.8], (high) in a jungle'
+    input_text = 'a (white (lion:1.4)), cat [mouse] [tiger:0.8], ##, (high) in a jungle'
     output_list = parse_prompt_attention(input_text)
     print('INPUT', input_text)
     print('OUTPUT', output_list)

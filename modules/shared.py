@@ -7,7 +7,7 @@ import urllib.request
 import gradio as gr
 import tqdm
 import requests
-from ldm.models.diffusion.ddpm import LatentDiffusion
+# from ldm.models.diffusion.ddpm import LatentDiffusion
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.interrogate
@@ -769,5 +769,6 @@ class Shared(sys.modules[__name__].__class__):
         import modules.sd_models # pylint: disable=W0621
         modules.sd_models.model_data.set_sd_model(value)
 
-sd_model: LatentDiffusion = None  # this var is here just for IDE's type checking; it cannot be accessed because the class field above will be accessed instead
+# sd_model: LatentDiffusion = None  # this var is here just for IDE's type checking; it cannot be accessed because the class field above will be accessed instead
+sd_model = None
 sys.modules[__name__].__class__ = Shared

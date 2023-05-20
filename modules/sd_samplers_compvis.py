@@ -162,7 +162,7 @@ class VanillaStableDiffusionSampler:
                 num_steps = shared.opts.uni_pc_order
             valid_step = 999 / (1000 // num_steps)
             if valid_step == math.floor(valid_step):
-                return int(valid_step) + 1
+                return min(int(valid_step) + 1, num_steps)
 
         return num_steps
 
