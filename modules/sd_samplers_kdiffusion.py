@@ -308,9 +308,17 @@ class KDiffusionSampler:
 
     def create_noise_sampler(self, x, sigmas, p):
         from k_diffusion.sampling import BrownianTreeNoiseSampler
-        sigma_min, sigma_max = sigmas[sigmas > 0].min(), sigmas.max()
-        current_iter_seeds = p.all_seeds[p.iteration * p.batch_size:(p.iteration + 1) * p.batch_size]
-        return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
+
+        positive_sigmas = sigmas[sigmas > 0]
+
+        if positive_sigmas.numel() > 0:
+            sigma_min = positive_sigmas.min(dim=0)[0]
+        else:
+            sigma_min = 0
+
+    sigma_max = sigmas.max()
+    current_iter_seeds = p.all_seeds[p.iteration * p.batch_size:(p.iteration + 1) * p.batch_size]
+    return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps, t_enc = sd_samplers_common.setup_img2img_steps(p, steps)
