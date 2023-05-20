@@ -19,6 +19,17 @@ from modules import sd_samplers, shared, script_callbacks, errors, paths
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
+def check_grid_size(imgs):
+    mp = 0
+    for img in imgs:
+        mp += img.width * img.height
+    mp = round(mp / 1000000)
+    ok = mp <= shared.opts.img_max_size_mp
+    if not ok:
+        shared.log.warning(f'Maximum image size exceded: size={mp} maximum={shared.opts.img_max_size_mp} MPixels')
+    return ok
+
+
 def image_grid(imgs, batch_size=1, rows=None):
     if rows is None:
         if shared.opts.n_rows > 0:
@@ -419,10 +430,6 @@ def atomically_save_image():
     Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
     while True:
         image, filename, extension, params, exifinfo_data, txt_fullfn = save_queue.get()
-        mp = round(image.width * image.height / 1000000)
-        if mp > shared.opts.img_max_size_mp:
-            shared.log.warning(f'Maximum image size exceded: size={image.size} maximum={shared.opts.img_max_size_mp} MPixels')
-            return
         fn = filename + extension
         image_format = Image.registered_extensions()[extension]
         shared.log.debug(f'Saving image: {image_format} {fn} {image.size}')
@@ -433,9 +440,6 @@ def atomically_save_image():
                 pnginfo_data.add_text(k, str(v))
             image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, pnginfo=pnginfo_data)
         elif image_format == 'JPEG':
-            if image.height > 65500 or image.width > 65500:
-                shared.log.warning(f'Maximum image size exceded: size={image.size} maximum=65550 pixels')
-                return
             if image.mode == 'RGBA':
                 shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
                 image = image.convert("RGB")
@@ -512,6 +516,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
     namegen = FilenameGenerator(p, seed, prompt, image)
     if image is None:
         shared.log.warning('Image is none')
+        return None, None
+    if not check_grid_size([image]):
         return None, None
     if path is None: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = shared.opts.outdir_save

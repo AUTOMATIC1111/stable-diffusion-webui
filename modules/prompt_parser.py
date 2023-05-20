@@ -1,4 +1,10 @@
 # pylint: disable=anomalous-backslash-in-string
+
+import os
+import sys
+from rich import print
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
 import re
 from collections import namedtuple
 from typing import List
@@ -16,7 +22,7 @@ from modules.shared import log, opts
 # [100, 'fantasy landscape with a lake and a christmas tree in background masterful']
 
 round_bracket_multiplier = 1.1
-square_bracket_multiplier = 0.9
+square_bracket_multiplier = 1.0 / 1.1
 re_AND = re.compile(r"\bAND\b")
 re_weight = re.compile(r"^(.*?)(?:\s*:\s*([-+]?(?:\d+\.?|\d*\.\d+)))?\s*$")
 ScheduledPromptConditioning = namedtuple("ScheduledPromptConditioning", ["end_at_step", "cond"])
@@ -306,7 +312,7 @@ def parse_prompt_attention(text):
         re_attention = re_attention_v1
         whitespace = ''
     else:
-        re_attention = re_attention_v2
+        re_attention = re_attention_v1
         text = text.replace('\\n', ' ')
         whitespace = ' '
 
@@ -326,9 +332,6 @@ def parse_prompt_attention(text):
             square_brackets.append(len(res))
         elif weight is not None and len(round_brackets) > 0:
             multiply_range(round_brackets.pop(), float(weight))
-        elif weight is not None and len(square_brackets) > 0:
-            if opts.prompt_attention == 'Full parser':
-                multiply_range(square_brackets.pop(), float(weight))
         elif text == ')' and len(round_brackets) > 0:
             multiply_range(round_brackets.pop(), round_bracket_multiplier)
         elif text == ']' and len(square_brackets) > 0:
@@ -362,11 +365,21 @@ def parse_prompt_attention(text):
     return res
 
 if __name__ == "__main__":
-    # import os
-    # import sys
-    # sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-    # input_text = "(upzero) (upone:1.1), ((uptwo:1.2)), [downzero], [downone:0.9], [[downtwo:0.8]], this is a test"
-    input_text = 'a (white (lion:1.4)), cat [mouse] [tiger:0.8], ##, (high) in a jungle'
-    output_list = parse_prompt_attention(input_text)
-    print('INPUT', input_text)
-    print('OUTPUT', output_list)
+    input_text = '[black] [[grey]] (white) ((gray)) ((orange:1.1) yellow) ((purple) and [dark] red:1.1) [mouse:0.2] [(cat:1.1):0.5]'
+    print(f'Prompt: {input_text}')
+    schedules = get_learned_conditioning_prompt_schedules([input_text], 100)[0]
+    print('Schedules', schedules)
+    for schedule in schedules:
+        print('Schedule', schedule[0])
+        opts.data['prompt_attention'] = 'Fixed attention'
+        output_list = parse_prompt_attention(schedule[1])
+        print('  Fixed:', output_list)
+        opts.data['prompt_attention'] = 'Compel parser'
+        output_list = parse_prompt_attention(schedule[1])
+        print('  Compel:', output_list)
+        opts.data['prompt_attention'] = 'A1111 parser'
+        output_list = parse_prompt_attention(schedule[1])
+        print('  A1111:', output_list)
+        opts.data['prompt_attention'] = 'Full parser'
+        output_list = parse_prompt_attention(schedule[1])
+        print('  Full :', output_list)

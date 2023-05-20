@@ -322,7 +322,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     for i in range(z_count):
         start_index = (i * len(xs) * len(ys)) + i
         end_index = start_index + len(xs) * len(ys)
-        if not no_grid:
+        if not no_grid and images.check_grid_size(processed_result.images[start_index:end_index]):
             grid = images.image_grid(processed_result.images[start_index:end_index], rows=len(ys))
             if draw_legend:
                 grid = images.draw_grid_annotations(grid, processed_result.images[start_index].size[0], processed_result.images[start_index].size[1], hor_texts, ver_texts, margin_size)
@@ -331,7 +331,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         processed_result.all_seeds.insert(i, processed_result.all_seeds[start_index])
         processed_result.infotexts.insert(i, processed_result.infotexts[start_index])
     sub_grid_size = processed_result.images[0].size
-    if not no_grid:
+    if not no_grid and images.check_grid_size(processed_result.images[:z_count]):
         z_grid = images.image_grid(processed_result.images[:z_count], rows=1)
         if draw_legend:
             z_grid = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], title_texts, [[images.GridAnnotation()]])
