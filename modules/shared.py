@@ -114,7 +114,7 @@ class State:
     time_start = None
     server_start = None
     _server_command_signal = threading.Event()
-    _server_command: Optional[str]
+    _server_command: Optional[str] = None
 
     @property
     def need_restart(self) -> bool:
@@ -139,7 +139,7 @@ class State:
         self._server_command = value
         self._server_command_signal.set()
 
-    def wait_for_server_command(self, timeout: Optional[float]) -> Optional[str]:
+    def wait_for_server_command(self, timeout: Optional[float] = None) -> Optional[str]:
         """
         Wait for server command to get set; return and clear the value and signal.
         """
