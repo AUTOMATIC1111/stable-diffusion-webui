@@ -1,9 +1,11 @@
 # pylint: disable=anomalous-backslash-in-string
 
+"""
 import os
 import sys
 from rich import print
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+"""
 
 import re
 from collections import namedtuple
@@ -367,9 +369,9 @@ def parse_prompt_attention(text):
 if __name__ == "__main__":
     input_text = '[black] [[grey]] (white) ((gray)) ((orange:1.1) yellow) ((purple) and [dark] red:1.1) [mouse:0.2] [(cat:1.1):0.5]'
     print(f'Prompt: {input_text}')
-    schedules = get_learned_conditioning_prompt_schedules([input_text], 100)[0]
-    print('Schedules', schedules)
-    for schedule in schedules:
+    all_schedules = get_learned_conditioning_prompt_schedules([input_text], 100)[0]
+    print('Schedules', all_schedules)
+    for schedule in all_schedules:
         print('Schedule', schedule[0])
         opts.data['prompt_attention'] = 'Fixed attention'
         output_list = parse_prompt_attention(schedule[1])
