@@ -2,7 +2,8 @@
 
 [Textual inversion](https://textual-inversion.github.io/): Teach the base model **new vocabulary about a particular concept** with a couple of images reflecting that concept.
 * The concept can be: a pose, an artistic style, a texture, etc.
-* It **doesn't enrich the model**. If your base model is trained solely on images of _apples_, and you tried to teach the model the word _"banana"_ with ~20 images of bananas, then -- at best -- your model will give you long, yellow apples when you ask for a banana.
+   * The concept doesn't have to actually exist in the real world. For example, you might have seen many generated images whose negative prompt (np) contained the tag "EasyNegative". That's an artificial concept trained on a bunch of images _someone_ thought of poor quality.
+* It **doesn't enrich the model**. If your base model is trained solely on images of _apples_, and you tried to teach the model the word _"banana"_ with ~20 images of bananas, then -- at best -- your model will give you long, yellow apples when you ask for a banana. (Of course, you can get the model to approximate a banana with apples with 1,000+ images, but is it really worth it? ;) )
 
 The result of the training is a `.pt` or a `.bin` file (former is the format used by original author, latter is by the [diffusers][dl] library) with the embedding in it. These files can be shared to other generative artists.
 
