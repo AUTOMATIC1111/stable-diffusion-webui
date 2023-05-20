@@ -53,6 +53,7 @@ import modules.img2img
 import modules.lowvram
 import modules.scripts
 import modules.sd_hijack
+import modules.sd_hijack_optimizations
 import modules.sd_models
 import modules.sd_vae
 import modules.txt2img
@@ -224,6 +225,7 @@ def configure_opts_onchange():
     shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
     shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
+    shared.opts.onchange("cross_attention_optimization", wrap_queued_call(lambda: modules.sd_hijack.model_hijack.redo_hijack(shared.sd_model)), call=False)
     startup_timer.record("opts onchange")
 
 
@@ -282,6 +284,10 @@ def initialize_rest(*, reload_script_modules=False):
     startup_timer.record("refresh VAE")
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")
+
+    modules.script_callbacks.on_list_optimizers(modules.sd_hijack_optimizations.list_optimizers)
+    modules.sd_hijack.list_optimizers()
+    startup_timer.record("scripts list_optimizers")
 
     # load model in parallel to other startup stuff
     # (when reloading, this does nothing)
@@ -446,6 +452,10 @@ def webui():
         modules.script_callbacks.script_unloaded_callback()
         startup_timer.record("scripts unloaded callback")
         initialize_rest(reload_script_modules=True)
+
+        modules.script_callbacks.on_list_optimizers(modules.sd_hijack_optimizations.list_optimizers)
+        modules.sd_hijack.list_optimizers()
+        startup_timer.record("scripts list_optimizers")
 
 
 if __name__ == "__main__":
