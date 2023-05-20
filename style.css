@@ -116,7 +116,7 @@ License: GNU General Public License
   );
 }
 
-@media only screen and (max-width: 680px) {
+@media only screen and (max-width: 860px) {
   :root {
     --ae-outside-gap-size: var(--ae-mobile-outside-gap-size);
     --ae-inside-padding-size: var(--ae-mobile-inside-padding-size);
@@ -1296,7 +1296,7 @@ button.secondary {
   min-width: unset !important;
 }
 .no-slider-layout [id$="2img_settings"] {
-  min-width: min(320px, 100%) !important;
+  min-width: min(420px, 100%) !important;
 }
 
 .no-slider-layout div.block.padded.gradio-slider {
@@ -3020,7 +3020,7 @@ pre {
   opacity: 0.98;
 }
 
-@media only screen and (max-width: 680px) {
+@media only screen and (max-width: 860px) {
   /* For tablets: */
   [id$="_splitter"] {
     display: none !important;
