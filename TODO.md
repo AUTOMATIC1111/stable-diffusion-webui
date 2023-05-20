@@ -25,6 +25,7 @@ Stuff to be added...
 
 Stuff to be investigated...
 
+- Gradio `app_kwargs`: <https://github.com/gradio-app/gradio/issues/4054>
 
 ## Merge PRs
 

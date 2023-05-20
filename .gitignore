@@ -32,6 +32,7 @@ venv
 /*.sh
 /*.txt
 /*.mp3
+/*.lnk
 !webui.bat
 !webui.sh
 
