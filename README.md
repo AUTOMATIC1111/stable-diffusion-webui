@@ -272,3 +272,7 @@ to add the extensions: just add these urls it in the UI:
 - https://github.com/Z-nonymous/sd_webui_batchscripts.git
 
 to use the batchscript, go to txt2img tab, script, and there select the script.
+
+branches:
+old master contains many commits and their reverts caused by migrating the code logic to the extension.
+master contains just relevant commits with the changes
