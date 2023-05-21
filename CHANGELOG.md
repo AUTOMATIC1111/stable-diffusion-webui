@@ -8,6 +8,10 @@
  * update extensions table: show branch, show date in separate column, and show version from tags if available
  * TAESD - another option for cheap live previews
  * allow choosing sampler and prompts for second pass of hires fix - hidden by default, enabled in settings
+ * calculate hashes for Lora
+ * add lora hashes to infotext
+ * when pasting infotext, use infotext's lora hashes to find local loras for `<lora:xxx:1>` entries whose hashes match loras the user has
+ * select cross attention optimization from UI
 
 ### Minor:
  * bump Gradio to 3.31.0
@@ -26,6 +30,8 @@
  * switch from pyngrok to ngrok-py
  * lazy-load images in extra networks UI
  * set "Navigate image viewer with gamepad" option to false by default, by request
+ * change upscalers to download models into user-specified directory (from commandline args) rather than the default models/<...>
+ * allow hiding buttons in ui-config.json
 
 ### Extensions:
  * add /sdapi/v1/script-info api
@@ -35,6 +41,8 @@
  * add command and endpoint for graceful server stopping
  * add some locals (prompts/seeds/etc) from processing function into the Processing class as fields
  * rework quoting for infotext items that have commas in them to use JSON (should be backwards compatible except for cases where it didn't work previously)
+ * add /sdapi/v1/refresh-loras api checkpoint post request
+ * tests overhaul
 
 ### Bug Fixes:
  * fix an issue preventing the program from starting if the user specifies a bad Gradio theme
@@ -46,6 +54,8 @@
  * fix inability to merge checkpoint without adding metadata
  * fix extra networks' save preview image not adding infotext for jpeg/webm
  * remove blinking effect from text in hires fix and scale resolution preview
+ * make links to `http://<...>.git` extensions work in the extension tab
+ * fix bug with webui hanging at startup due to hanging git process
 
 
 ## 1.2.1
