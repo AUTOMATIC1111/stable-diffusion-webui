@@ -21,6 +21,9 @@ function update_img2img_tokens(...args) {
 }
 
 function update_token_counter(button_id) {
+    if (opts.disable_token_counters) {
+        return;
+    }
     if (promptTokenCountTimeouts[button_id]) {
         clearTimeout(promptTokenCountTimeouts[button_id]);
     }
@@ -53,6 +56,11 @@ function setupTokenCounting(id, id_counter, id_button) {
     var prompt = gradioApp().getElementById(id);
     var counter = gradioApp().getElementById(id_counter);
     var textarea = gradioApp().querySelector(`#${id} > label > textarea`);
+
+    if (opts.disable_token_counters) {
+        counter.style.display = "none";
+        return;
+    }
 
     if (counter.parentElement == prompt.parentElement) {
         return;
