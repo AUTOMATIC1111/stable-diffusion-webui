@@ -622,12 +622,13 @@ def parse_args():
 
 def extensions_preload(force = False):
     setup_time = 0
-    if os.path.isfile('setup.log'):
-        with open('setup.log', 'r', encoding='utf8') as f:
-            lines = f.readlines()
-            for line in lines:
-                if 'Setup complete without errors' in line:
-                    setup_time = int(line.split(' ')[-1])
+    if not force:
+        if os.path.isfile('setup.log'):
+            with open('setup.log', 'r', encoding='utf8') as f:
+                lines = f.readlines()
+                for line in lines:
+                    if 'Setup complete without errors' in line:
+                        setup_time = int(line.split(' ')[-1])
     if setup_time > 0 or force:
         log.info('Running extension preloading')
         if args.safe:
