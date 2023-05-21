@@ -508,6 +508,11 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     timer.record("scripts callbacks")
 
+    with devices.autocast(), torch.no_grad():
+        sd_model.cond_stage_model_empty_prompt = sd_model.cond_stage_model([""])
+
+    timer.record("calculate empty prompt")
+
     print(f"Model loaded in {timer.summary()}.")
 
     return sd_model

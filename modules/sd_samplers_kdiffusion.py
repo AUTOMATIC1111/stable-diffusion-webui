@@ -125,6 +125,16 @@ class CFGDenoiser(torch.nn.Module):
             x_in = x_in[:-batch_size]
             sigma_in = sigma_in[:-batch_size]
 
+        # TODO add infotext entry
+        if shared.opts.pad_cond_uncond and tensor.shape[1] != uncond.shape[1]:
+            empty = shared.sd_model.cond_stage_model_empty_prompt
+            num_repeats = (tensor.shape[1] - uncond.shape[1]) // empty.shape[1]
+
+            if num_repeats < 0:
+                tensor = torch.cat([tensor, empty.repeat((tensor.shape[0], -num_repeats, 1))], axis=1)
+            elif num_repeats > 0:
+                uncond = torch.cat([uncond, empty.repeat((uncond.shape[0], num_repeats, 1))], axis=1)
+
         if tensor.shape[1] == uncond.shape[1] or skip_uncond:
             if is_edit_model:
                 cond_in = torch.cat([tensor, uncond, uncond])
