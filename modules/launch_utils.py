@@ -332,17 +332,3 @@ def start():
         webui.api_only()
     else:
         webui.webui()
-
-
-def main():
-    if not args.skip_prepare_environment:
-        prepare_environment()
-
-    if args.test_server:
-        configure_for_tests()
-
-    start()
-
-
-if __name__ == "__main__":
-    main()
