@@ -79,23 +79,36 @@ window.addEventListener('paste', e => {
     if (!isValidImageList(files)) {
         return;
     }
+    const hasImageInput = (el) => !!el.querySelector('input[type=file]');
+    const findClosestChildToTarget = (target, selector) => {
+        const supposedSelectedElement = target.querySelector(selector);
+        if (supposedSelectedElement && hasImageInput(supposedSelectedElement)) {
+            return supposedSelectedElement;
+        } else if (target.parentElement !== window) {
+            return findClosestChildToTarget(target.parentElement, selector);
+        } else {
+            return null;
+        }
+    };
 
     const visibleImageFields = [...gradioApp().querySelectorAll('[data-testid="image"]')]
-        .filter(el => uiElementIsVisible(el))
-        .sort((a, b) => uiElementInSight(b) - uiElementInSight(a));
-
-
+        .filter(el => uiElementIsVisible(el) && hasImageInput(el));
     if (!visibleImageFields.length) {
         return;
     }
 
-    const firstFreeImageField = visibleImageFields
-        .filter(el => el.querySelector('input[type=file]'))?.[0];
+    if (visibleImageFields.length === 1) {
+        return dropReplaceImage(visibleImageFields[0], files);
+    }
 
-    dropReplaceImage(
-        firstFreeImageField ?
-            firstFreeImageField :
-            visibleImageFields[visibleImageFields.length - 1]
-        , files
-    );
+    // in case if there are multiple inputs, find closest to the focused element
+
+    const supposedTarget = findClosestChildToTarget(e.target, '[data-testid="image"]');
+
+    if (supposedTarget) {
+        return dropReplaceImage(supposedTarget, files);
+    } else {
+        // probably will never happen, but kept just in case
+        return dropReplaceImage(visibleImageFields[0], files);
+    }
 });
