@@ -65,11 +65,12 @@ class Extension:
             try:
                 self.status = 'unknown'
                 self.remote = next(repo.remote().urls, None)
-                self.commit_date = repo.head.commit.committed_date
+                commit = repo.head.commit
+                self.commit_date = commit.committed_date
                 if repo.active_branch:
                     self.branch = repo.active_branch.name
-                self.commit_hash = repo.head.commit.hexsha
-                self.version = repo.git.describe("--always", "--tags")  # compared to `self.commit_hash[:8]` this takes about 30% more time total but since we run it in parallel we don't care
+                self.commit_hash = commit.hexsha
+                self.version = self.commit_hash[:8]
 
             except Exception as ex:
                 print(f"Failed reading extension data from Git repository ({self.name}): {ex}", file=sys.stderr)
