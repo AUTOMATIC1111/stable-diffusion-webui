@@ -81,6 +81,20 @@ class ExtraNetworksPage:
 
         return ""
 
+    def find_exclude(self, path):
+        """
+        Find exclude for a given path (without extension).
+        """
+        dirs =  list(Path(path).parents)
+        for dir in self.allowed_directories_for_previews():
+            if Path(dir) in dirs:
+                for parent_path in dirs[0:dirs.index(Path(dir))]:
+                    for file in [f"{parent_path}.exclude", f"{parent_path}.exclude.txt"]:
+                        if os.path.isfile(file):
+                            return str(parent_path).replace("\\", "/")
+
+        return ""
+
     def create_html(self, tabname):
         view = shared.opts.extra_networks_default_view
         items_html = ''
@@ -196,6 +210,7 @@ class ExtraNetworksPage:
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
+            "exclude_term": item.get("exclude_term", ""),
             "metadata_button": metadata_button,
             "search_only": " search_only" if search_only else "",
         }

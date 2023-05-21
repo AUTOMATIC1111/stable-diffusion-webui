@@ -23,6 +23,11 @@ function setupExtraNetworksForTab(tabname) {
             }
 
             elem.style.display = visible ? "" : "none";
+          
+            var exclude = elem.querySelector('.exclude_term').textContent.toLowerCase()
+
+            if (elem.style.display == "" && exclude != "")
+                elem.style.display = exclude.indexOf(searchTerm) == -1 ? "" : "none"
         });
     };
 
