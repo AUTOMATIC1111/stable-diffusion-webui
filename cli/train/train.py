@@ -82,7 +82,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description = 'Train')
 
     group_main = parser.add_argument_group('Main')
-    group_main.add_argument('--type', type=str, choices=['embedding', 'lora', 'lycoris', 'dreambooth'], default=None, required=True, help='training type')
+    group_main.add_argument('--type', type=str, choices=['embedding', 'ti', 'lora', 'lyco', 'dreambooth', 'hypernetwork'], default=None, required=True, help='training type')
     group_main.add_argument('--model', type=str, default='', required=False, help='base model to use for training, default: current loaded model')
     group_main.add_argument('--name', type=str, default=None, required=True, help='output filename')
     group_main.add_argument('--tag', type=str, default='person', required=False, help='primary tags, default: %(default)s')
@@ -97,11 +97,13 @@ def parse_args():
     group_train.add_argument('--steps', type=int, default=2500, required=False, help='training steps, default: %(default)s')
     group_train.add_argument('--batch', type=int, default=1, required=False, help='batch size, default: %(default)s')
     group_train.add_argument('--lr', type=float, default=1e-04, required=False, help='model learning rate, default: %(default)s')
-    group_train.add_argument('--dim', type=int, default=40, required=False, help='network dimension or number of vectors, default: %(default)s')
+    group_train.add_argument('--dim', type=int, default=32, required=False, help='network dimension or number of vectors, default: %(default)s')
 
     # lora params
     group_train.add_argument('--repeats', type=int, default=10, required=False, help='number of repeats per image, default: %(default)s')
-    group_train.add_argument('--alpha', type=float, default=0, required=False, help='alpha for weights scaling, default: dim/2')
+    group_train.add_argument('--alpha', type=float, default=0, required=False, help='lora/lyco alpha for weights scaling, default: dim/2')
+    group_train.add_argument('--algo', type=str, default=None, choices=['locon', 'loha', 'lokr', 'ia3'], required=False, help='alternative lyco algoritm, default: %(default)s')
+    group_train.add_argument('--args', type=str, default=None, required=False, help='lora/lyco additional network arguments, default: %(default)s')
 
     group_other = parser.add_argument_group('Other')
     group_other.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing training, default: %(default)s")
@@ -239,13 +241,13 @@ def train_lora():
     # lora imports
     lora_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lora'))
     sys.path.append(lora_path)
-    if args.type == 'lycoris':
+    if args.type == 'lyco':
         lycoris_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'modules', 'lycoris'))
         sys.path.append(lycoris_path)
     log.debug('importing lora lib')
     import train_network
     train_network.train(options.lora)
-    if args.type == 'lycoris':
+    if args.type == 'lyco':
         log.debug('importing lycoris lib')
         import importlib
         _network_module = importlib.import_module(options.lora.network_module)
@@ -262,7 +264,7 @@ def prepare_options():
         log.info('train using lora style training')
         options.lora.output_dir = args.lora_dir
         options.lora.in_json = os.path.join(args.process_dir, args.name + '.json')
-    if args.type == 'lycoris':
+    if args.type == 'lyco':
         log.info('train using lycoris network')
         options.lora.output_dir = args.lyco_dir
         options.lora.network_module = 'lycoris.kohya'
@@ -273,10 +275,15 @@ def prepare_options():
     options.lora.max_train_steps = args.steps
     options.lora.network_dim = args.dim
     options.lora.network_alpha = args.dim // 2 if args.alpha == 0 else args.alpha
+    options.lora.netwoork_args = []
+    if args.algo is not None:
+        options.lora.netwoork_args.append(f'algo={args.algo}')
+    if args.args is not None:
+        for net_arg in args.args:
+            options.lora.netwoork_args.append(net_arg)
     options.lora.gradient_accumulation_steps = args.gradient
     options.lora.learning_rate = args.lr
     options.lora.train_batch_size = args.batch
-    options.lora.network_alpha = args.dim // 2 if args.alpha == 0 else args.alpha
     options.lora.train_data_dir = args.process_dir
     # embedding specific
     options.embedding.embedding_name = args.name
@@ -322,7 +329,7 @@ def process_inputs():
             concept = args.tag.split(',')[0].strip()
         else:
             concept = step
-        if args.type in ['lora', 'lycoris', 'dreambooth']:
+        if args.type in ['lora', 'lyco', 'dreambooth']:
             folder = os.path.join(args.process_dir, str(args.repeats) + '_' + concept) # separate concepts per folder
         if args.type in ['embedding']:
             folder = os.path.join(args.process_dir) # everything into same folder
@@ -373,7 +380,7 @@ if __name__ == '__main__':
     try:
         if args.type == 'embedding':
             train_embedding()
-        if args.type == 'lora' or args.type == 'lycoris' or args.type == 'dreambooth':
+        if args.type == 'lora' or args.type == 'lyco' or args.type == 'dreambooth':
             train_lora()
     except KeyboardInterrupt as e:
         log.error('interrupt requested')

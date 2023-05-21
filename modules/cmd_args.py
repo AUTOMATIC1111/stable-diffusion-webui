@@ -107,6 +107,7 @@ def compatibility_args(opts, args):
     opts.multiple_tqdm = False
     opts.print_hypernet_extra = False
     opts.dimensions_and_batch_together = True
+    opts.enable_pnginfo = True
 
     args = parser.parse_args()
     return args

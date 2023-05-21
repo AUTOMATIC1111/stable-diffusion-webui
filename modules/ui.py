@@ -306,7 +306,7 @@ def create_sampler_and_steps_selection(choices, tabname):
             chosen_sampler_name = modules.sd_samplers.samplers[0].name
 
         sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=chosen_sampler_name if tabname == 'txt2img' else "Euler a", type="index")
-        steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
+        steps = gr.Slider(minimum=1, maximum=99, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
     return steps, sampler_index
 
 
