@@ -1,5 +1,7 @@
 from modules import launch_utils
 
+# These aliases exist for backwards compatibility.
+# Please import these names from `modules.launch_utils` instead.
 
 args = launch_utils.args
 python = launch_utils.python

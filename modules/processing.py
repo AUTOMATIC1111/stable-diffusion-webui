@@ -534,9 +534,8 @@ def fix_seed(p):
 
 
 def program_version():
-    import launch
-
-    res = launch.git_tag()
+    from modules.launch_utils import git_tag
+    res = git_tag()
     if res == "<none>":
         res = None
 

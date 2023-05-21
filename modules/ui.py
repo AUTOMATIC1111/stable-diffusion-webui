@@ -1860,11 +1860,11 @@ if not hasattr(shared, 'GradioTemplateResponseOriginal'):
 
 def versions_html():
     import torch
-    import launch
+    from modules.launch_utils import commit_hash, git_tag
 
     python_version = ".".join([str(x) for x in sys.version_info[0:3]])
-    commit = launch.commit_hash()
-    tag = launch.git_tag()
+    commit = commit_hash()
+    tag = git_tag()
 
     if shared.xformers_available:
         import xformers
