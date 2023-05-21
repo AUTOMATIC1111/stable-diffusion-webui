@@ -20,7 +20,7 @@ import logging
 
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
-from modules import paths, timer, import_hook, errors  # noqa: F401
+from modules import paths, timer, import_hook, errors, devices  # noqa: F401
 
 startup_timer = timer.Timer()
 
@@ -294,6 +294,8 @@ def initialize_rest(*, reload_script_modules=False):
     # load model in parallel to other startup stuff
     # (when reloading, this does nothing)
     Thread(target=lambda: shared.sd_model).start()
+
+    Thread(target=devices.first_time_calculation).start()
 
     shared.reload_hypernetworks()
     startup_timer.record("reload hypernetworks")
