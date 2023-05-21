@@ -19,7 +19,8 @@ samplers_k_diffusion = [
     ('DPM2 a', 'sample_dpm_2_ancestral', ['k_dpm_2_a'], {'discard_next_to_last_sigma': True, "uses_ensd": True}),
     ('DPM++ 2S a', 'sample_dpmpp_2s_ancestral', ['k_dpmpp_2s_a'], {"uses_ensd": True, "second_order": True}),
     ('DPM++ 2M', 'sample_dpmpp_2m', ['k_dpmpp_2m'], {}),
-    ('DPM++ SDE', 'sample_dpmpp_sde', ['k_dpmpp_sde'], {"second_order": True}),
+    ('DPM++ SDE', 'sample_dpmpp_sde', ['k_dpmpp_sde'], {"second_order": True, "brownian_noise": True}),
+    ('DPM++ 2M SDE', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {"brownian_noise": True}),
     ('DPM fast', 'sample_dpm_fast', ['k_dpm_fast'], {"uses_ensd": True}),
     ('DPM adaptive', 'sample_dpm_adaptive', ['k_dpm_ad'], {"uses_ensd": True}),
     ('LMS Karras', 'sample_lms', ['k_lms_ka'], {'scheduler': 'karras'}),
@@ -27,7 +28,8 @@ samplers_k_diffusion = [
     ('DPM2 a Karras', 'sample_dpm_2_ancestral', ['k_dpm_2_a_ka'], {'scheduler': 'karras', 'discard_next_to_last_sigma': True, "uses_ensd": True, "second_order": True}),
     ('DPM++ 2S a Karras', 'sample_dpmpp_2s_ancestral', ['k_dpmpp_2s_a_ka'], {'scheduler': 'karras', "uses_ensd": True, "second_order": True}),
     ('DPM++ 2M Karras', 'sample_dpmpp_2m', ['k_dpmpp_2m_ka'], {'scheduler': 'karras'}),
-    ('DPM++ SDE Karras', 'sample_dpmpp_sde', ['k_dpmpp_sde_ka'], {'scheduler': 'karras', "second_order": True}),
+    ('DPM++ SDE Karras', 'sample_dpmpp_sde', ['k_dpmpp_sde_ka'], {'scheduler': 'karras', "second_order": True, "brownian_noise": True}),
+    ('DPM++ 2M SDE Karras', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {'scheduler': 'karras', "brownian_noise": True}),
 ]
 
 samplers_data_k_diffusion = [
@@ -228,7 +230,7 @@ class KDiffusionSampler:
         self.sampler_noises = None
         self.stop_at = None
         self.eta = None
-        self.config = None
+        self.config = None  # set by the function calling the constructor
         self.last_latent = None
         self.s_min_uncond = None
 
@@ -337,13 +339,13 @@ class KDiffusionSampler:
         if 'sigmas' in parameters:
             extra_params_kwargs['sigmas'] = sigma_sched
 
-        if self.funcname == 'sample_dpmpp_sde':
+        if self.config.options.get('brownian_noise', False):
             noise_sampler = self.create_noise_sampler(x, sigmas, p)
             extra_params_kwargs['noise_sampler'] = noise_sampler
 
         self.model_wrap_cfg.init_latent = x
         self.last_latent = x
-        extra_args={
+        extra_args = {
             'cond': conditioning,
             'image_cond': image_conditioning,
             'uncond': unconditional_conditioning,
@@ -373,7 +375,7 @@ class KDiffusionSampler:
         else:
             extra_params_kwargs['sigmas'] = sigmas
 
-        if self.funcname == 'sample_dpmpp_sde':
+        if self.config.options.get('brownian_noise', False):
             noise_sampler = self.create_noise_sampler(x, sigmas, p)
             extra_params_kwargs['noise_sampler'] = noise_sampler
 
