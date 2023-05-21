@@ -319,6 +319,7 @@ class Api:
             shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
+        shared.state.current_processed_images = b64images
 
         return TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
@@ -424,7 +425,7 @@ class Api:
         # copy from check_progress_call of ui.py
 
         if shared.state.job_count == 0:
-            return ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict(), textinfo=shared.state.textinfo)
+            return ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict(), textinfo=shared.state.textinfo, current_processed_images=shared.state.current_processed_images)
 
         # avoid dividing zero
         progress = 0.01
