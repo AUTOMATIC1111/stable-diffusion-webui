@@ -108,6 +108,7 @@ def compatibility_args(opts, args):
     opts.print_hypernet_extra = False
     opts.dimensions_and_batch_together = True
     opts.enable_pnginfo = True
+    opts.data['clip_skip'] = 1
 
     args = parser.parse_args()
     return args

@@ -161,7 +161,7 @@ def get_learned_conditioning(model, prompts, steps):
     prompt_schedules = get_learned_conditioning_prompt_schedules(prompts, steps)
     cache = {}
     for prompt, prompt_schedule in zip(prompts, prompt_schedules):
-        log.debug(f'Prompt schedule: {prompt_schedule}')
+        # log.debug(f'Prompt schedule: {prompt_schedule}')
         cached = cache.get(prompt, None)
         if cached is not None:
             res.append(cached)
