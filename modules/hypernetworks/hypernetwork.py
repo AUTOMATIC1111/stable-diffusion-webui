@@ -1,4 +1,3 @@
-import csv
 import datetime
 import glob
 import html
@@ -18,7 +17,7 @@ from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
 from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
 
-from collections import defaultdict, deque
+from collections import deque
 from statistics import stdev, mean
 
 
@@ -178,34 +177,34 @@ class Hypernetwork:
 
     def weights(self):
         res = []
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 res += layer.parameters()
         return res
 
     def train(self, mode=True):
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 layer.train(mode=mode)
                 for param in layer.parameters():
                     param.requires_grad = mode
 
     def to(self, device):
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 layer.to(device)
 
         return self
 
     def set_multiplier(self, multiplier):
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 layer.multiplier = multiplier
 
         return self
 
     def eval(self):
-        for k, layers in self.layers.items():
+        for layers in self.layers.values():
             for layer in layers:
                 layer.eval()
                 for param in layer.parameters():
@@ -404,7 +403,7 @@ def attention_CrossAttention_forward(self, x, context=None, mask=None):
     k = self.to_k(context_k)
     v = self.to_v(context_v)
 
-    q, k, v = map(lambda t: rearrange(t, 'b n (h d) -> (b h) n d', h=h), (q, k, v))
+    q, k, v = (rearrange(t, 'b n (h d) -> (b h) n d', h=h) for t in (q, k, v))
 
     sim = einsum('b i d, b j d -> b i j', q, k) * self.scale
 
@@ -541,7 +540,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
         return hypernetwork, filename
 
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
-    
+
     clip_grad = torch.nn.utils.clip_grad_value_ if clip_grad_mode == "value" else torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else None
     if clip_grad:
         clip_grad_sched = LearnRateScheduler(clip_grad_value, steps, initial_step, verbose=False)
@@ -594,7 +593,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
             print(e)
 
     scaler = torch.cuda.amp.GradScaler()
-    
+
     batch_size = ds.batch_size
     gradient_step = ds.gradient_step
     # n steps = batch_size * gradient_step * n image processed
@@ -620,7 +619,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     try:
         sd_hijack_checkpoint.add()
 
-        for i in range((steps-initial_step) * gradient_step):
+        for _ in range((steps-initial_step) * gradient_step):
             if scheduler.finished:
                 break
             if shared.state.interrupted:
@@ -637,7 +636,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                 if clip_grad:
                     clip_grad_sched.step(hypernetwork.step)
-                
+
                 with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
                     if use_weight:
@@ -658,14 +657,14 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                     _loss_step += loss.item()
                 scaler.scale(loss).backward()
-                
+
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
                 loss_logging.append(_loss_step)
                 if clip_grad:
                     clip_grad(weights, clip_grad_sched.learn_rate)
-                
+
                 scaler.step(optimizer)
                 scaler.update()
                 hypernetwork.step += 1
@@ -675,7 +674,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                 _loss_step = 0
 
                 steps_done = hypernetwork.step + 1
-                
+
                 epoch_num = hypernetwork.step // steps_per_epoch
                 epoch_step = hypernetwork.step % steps_per_epoch
 
