@@ -114,6 +114,7 @@ def install(package, friendly: str = None, ignore: bool = False):
         quick_allowed = False
     if args.use_ipex and package == "pytorch_lightning==1.9.4":
         package = "pytorch_lightning==1.8.6"
+
     def pip(arg: str):
         arg = arg.replace('>=', '==')
         log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("--force", "").replace("  ", " ").strip()}')
@@ -129,6 +130,7 @@ def install(package, friendly: str = None, ignore: bool = False):
             log.error(f'Error running pip: {arg}')
             log.debug(f'Pip output: {txt}')
         return txt
+
     if args.reinstall or not installed(package, friendly):
         pip(f"install --upgrade {package}")
 
@@ -309,6 +311,7 @@ def install_packages():
     # install(openclip_package, 'open-clip-torch')
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
     install(clip_package, 'clip')
+    install('onnxruntime==1.14.0', 'onnxruntime', ignore=True)
 
 
 # clone required repositories
