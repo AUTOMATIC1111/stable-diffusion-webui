@@ -95,7 +95,10 @@ class SdOptimizationSdp(SdOptimizationSdpNoMem):
 class SdOptimizationSubQuad(SdOptimization):
     name = "sub-quadratic"
     cmd_opt = "opt_sub_quad_attention"
-    priority = 10
+
+    @property
+    def priority(self):
+        return 1000 if shared.device.type == 'mps' else 10
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = sub_quad_attention_forward
@@ -121,7 +124,7 @@ class SdOptimizationInvokeAI(SdOptimization):
 
     @property
     def priority(self):
-        return 1000 if not torch.cuda.is_available() else 10
+        return 1000 if shared.device.type != 'mps' and not torch.cuda.is_available() else 10
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward_invokeAI
