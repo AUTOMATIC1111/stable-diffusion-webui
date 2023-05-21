@@ -632,7 +632,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             del samples_ddim
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
                 lowvram.send_everything_to_cpu()
-            devices.torch_gc()
+                devices.torch_gc()
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
             for i, x_sample in enumerate(x_samples_ddim):
@@ -700,7 +700,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     if not p.disable_extra_networks and extra_network_data:
         extra_networks.deactivate(p, extra_network_data)
-    devices.torch_gc()
     res = Processed(
         p,
         images_list=output_images,

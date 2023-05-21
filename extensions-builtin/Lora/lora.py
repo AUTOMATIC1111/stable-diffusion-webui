@@ -175,7 +175,6 @@ def load_lora(name, filename):
         else:
             print(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
             continue
-            assert False, f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}'
 
         with torch.no_grad():
             module.weight.copy_(weight)
@@ -190,7 +189,7 @@ def load_lora(name, filename):
             assert False, f'Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha'
 
     if len(keys_failed_to_match) > 0:
-        print(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
+        print(f"Failed to match keys when loading Lora {filename}: {len(keys_failed_to_match)}")
 
     return lora
 

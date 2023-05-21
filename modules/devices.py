@@ -63,7 +63,7 @@ def get_device_for(task):
 def torch_gc(force=False):
     if shared.opts.disable_gc and not force:
         return
-    gc.collect()
+    collected = gc.collect()
     if shared.cmd_opts.use_ipex:
         try:
             with torch.xpu.device("xpu"):
@@ -77,7 +77,7 @@ def torch_gc(force=False):
                 torch.cuda.ipc_collect()
         except:
             pass
-    shared.log.debug(f'gc: device={torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
+    shared.log.debug(f'gc: collected={collected} device={torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
 
 
 def test_fp16():

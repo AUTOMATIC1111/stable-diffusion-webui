@@ -538,7 +538,9 @@ class Options:
         return data_label.default
 
     def save(self, filename):
-        assert not cmd_opts.freeze, "saving settings is disabled"
+        if cmd_opts.freeze:
+            log.warning(f'Settings saving is disabled: {filename}')
+            return
         with open(filename, "w", encoding="utf8") as file:
             json.dump(self.data, file, indent=4)
 
@@ -550,6 +552,10 @@ class Options:
         return type_x == type_y
 
     def load(self, filename):
+        if not os.path.isfile(filename):
+            log.debug(f'Created default config: {filename}')
+            self.save(filename)
+            return
         with open(filename, "r", encoding="utf8") as file:
             self.data = json.load(file)
         if self.data.get('quicksettings') is not None and self.data.get('quicksettings_list') is None:
@@ -560,7 +566,6 @@ class Options:
             if info is not None and not self.same_type(info.default, v):
                 log.error(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})")
                 bad_settings += 1
-
         if bad_settings > 0:
             log.error(f"Error: Bad settings found in {filename}")
 
@@ -607,8 +612,7 @@ class Options:
 
 opts = Options()
 config_filename = cmd_opts.config
-if os.path.exists(config_filename):
-    opts.load(config_filename)
+opts.load(config_filename)
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
 
 prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
