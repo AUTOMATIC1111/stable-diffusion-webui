@@ -136,14 +136,14 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     result_is_instruct_pix2pix_model = False
 
     if theta_func2:
-        shared.state.textinfo = f"Loading B"
+        shared.state.textinfo = "Loading B"
         print(f"Loading {secondary_model_info.filename}...")
         theta_1 = sd_models.read_state_dict(secondary_model_info.filename, map_location='cpu')
     else:
         theta_1 = None
 
     if theta_func1:
-        shared.state.textinfo = f"Loading C"
+        shared.state.textinfo = "Loading C"
         print(f"Loading {tertiary_model_info.filename}...")
         theta_2 = sd_models.read_state_dict(tertiary_model_info.filename, map_location='cpu')
 
@@ -199,7 +199,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
                     result_is_inpainting_model = True
             else:
                 theta_0[key] = theta_func2(a, b, multiplier)
-            
+
             theta_0[key] = to_half(theta_0[key], save_as_half)
 
         shared.state.sampling_step += 1
@@ -242,9 +242,11 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     shared.state.textinfo = "Saving"
     print(f"Saving to {output_modelname}...")
 
-    metadata = {"format": "pt", "sd_merge_models": {}, "sd_merge_recipe": None}
+    metadata = None
 
     if save_metadata:
+        metadata = {"format": "pt"}
+
         merge_recipe = {
             "type": "webui", # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
@@ -262,15 +264,17 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         }
         metadata["sd_merge_recipe"] = json.dumps(merge_recipe)
 
+        sd_merge_models = {}
+
         def add_model_metadata(checkpoint_info):
             checkpoint_info.calculate_shorthash()
-            metadata["sd_merge_models"][checkpoint_info.sha256] = {
+            sd_merge_models[checkpoint_info.sha256] = {
                 "name": checkpoint_info.name,
                 "legacy_hash": checkpoint_info.hash,
                 "sd_merge_recipe": checkpoint_info.metadata.get("sd_merge_recipe", None)
             }
 
-            metadata["sd_merge_models"].update(checkpoint_info.metadata.get("sd_merge_models", {}))
+            sd_merge_models.update(checkpoint_info.metadata.get("sd_merge_models", {}))
 
         add_model_metadata(primary_model_info)
         if secondary_model_info:
@@ -278,7 +282,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         if tertiary_model_info:
             add_model_metadata(tertiary_model_info)
 
-        metadata["sd_merge_models"] = json.dumps(metadata["sd_merge_models"])
+        metadata["sd_merge_models"] = json.dumps(sd_merge_models)
 
     _, extension = os.path.splitext(output_modelname)
     if extension.lower() == ".safetensors":
