@@ -299,7 +299,7 @@ def parse_prompt_attention(text):
     square_brackets = []
     if opts.prompt_attention == 'Fixed attention':
         res = [[text, 1.0]]
-        log.debug(f'Prompt parse-attention: {opts.prompt_attention} {res}')
+        # log.debug(f'Prompt parse-attention: {opts.prompt_attention} {res}')
         return res
     elif opts.prompt_attention == 'Compel parser':
         conjunction = Compel.parse_prompt_string(text)
@@ -308,7 +308,7 @@ def parse_prompt_attention(text):
         res = []
         for frag in conjunction.prompts[0].children:
             res.append([frag.text, frag.weight])
-        log.debug(f'Prompt parse-attention: {opts.prompt_attention} {res}')
+        # log.debug(f'Prompt parse-attention: {opts.prompt_attention} {res}')
         return res
     elif opts.prompt_attention == 'A1111 parser':
         re_attention = re_attention_v1
@@ -363,7 +363,7 @@ def parse_prompt_attention(text):
             res.pop(i + 1)
         else:
             i += 1
-    log.debug(f'Prompt parse-attention: {opts.prompt_attention} {res}')
+    # log.debug(f'Prompt parse-attention: {opts.prompt_attention} {res}')
     return res
 
 if __name__ == "__main__":
