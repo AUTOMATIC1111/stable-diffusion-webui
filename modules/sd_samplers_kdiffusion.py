@@ -308,7 +308,6 @@ class KDiffusionSampler:
             sigma_max = p.sigma_max
             sigma_min = p.sigma_min
             rho = p.rho
-            print(f"\nsigma_min: {sigma_min}, sigma_max: {sigma_max}, rho: {rho}")
             sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, rho=rho, device=shared.device)
         elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
             sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
