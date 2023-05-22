@@ -57,8 +57,8 @@ function eventHasFiles(e) {
 }
 
 function dragDropTargetIsPrompt(target) {
-    if (!(target?.placeholder?.indexOf("Prompt") >= 0)) return true;
-    if (target?.parentNode?.parentNode) return true;
+    if (target?.placeholder && target?.placeholder.indexOf("Prompt") >= 0) return true;
+    if (target?.parentNode?.parentNode?.className?.indexOf("prompt") > 0) return true;
     return false;
 }
 
