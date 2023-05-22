@@ -599,7 +599,6 @@ def add_args():
     group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
-    group.add_argument('--api-only', default = False, action='store_true', help = "Run in API only mode without starting UI")
     group.add_argument("--use-ipex", default = False, action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s")
     group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
     group.add_argument("--use-cuda", default=False, action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")

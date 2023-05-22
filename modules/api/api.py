@@ -93,6 +93,15 @@ class Api:
             for auth in shared.cmd_opts.api_auth.split(","):
                 user, password = auth.split(":")
                 self.credentials[user] = password
+        else:
+            if shared.cmd_opts.auth:
+                user, password = [x.strip() for x in shared.cmd_opts.auth.strip('"').replace('\n', '').split(',') if x.strip()]
+                self.credentials[user] = password
+            if shared.cmd_opts.authfile:
+                with open(shared.cmd_opts.authfile, 'r', encoding="utf8") as file:
+                    for line in file.readlines():
+                        user, password = [x.strip() for x in line.split(',') if x.strip()]
+                        self.credentials[user] = password
         self.router = APIRouter()
         self.app = app
         self.queue_lock = queue_lock
