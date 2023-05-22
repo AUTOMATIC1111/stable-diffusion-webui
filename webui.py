@@ -372,17 +372,6 @@ def webui():
 
         gradio_auth_creds = list(get_gradio_auth_creds()) or None
 
-        # this restores the missing /docs endpoint
-        if launch_api and not hasattr(FastAPI, 'original_setup'):
-            # TODO: replace this with `launch(app_kwargs=...)` if https://github.com/gradio-app/gradio/pull/4282 gets merged
-            def fastapi_setup(self):
-                self.docs_url = "/docs"
-                self.redoc_url = "/redoc"
-                self.original_setup()
-
-            FastAPI.original_setup = FastAPI.setup
-            FastAPI.setup = fastapi_setup
-
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=server_name,
@@ -395,6 +384,10 @@ def webui():
             inbrowser=cmd_opts.autolaunch,
             prevent_thread_lock=True,
             allowed_paths=cmd_opts.gradio_allowed_path,
+            app_kwargs={
+                "docs_url": "/docs",
+                "redoc_url": "/redoc",
+            },
         )
         if cmd_opts.add_stop_route:
             app.add_route("/_stop", stop_route, methods=["POST"])
