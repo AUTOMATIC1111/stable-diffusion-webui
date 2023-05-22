@@ -41,6 +41,7 @@ def list_optimizers():
 
     optimizers.clear()
     optimizers.extend(new_optimizers)
+    print(optimizers)
 
 
 def apply_optimizations():

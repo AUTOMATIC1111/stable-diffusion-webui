@@ -155,7 +155,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         inpaint_full_res_padding=inpaint_full_res_padding,
         inpainting_mask_invert=inpainting_mask_invert,
         override_settings=override_settings,
-        enable_karras=enable_k_sched,
+        enable_custom_k_sched=enable_k_sched,
         k_sched_type=k_sched_type,
         sigma_min=sigma_min,
         sigma_max=sigma_max,

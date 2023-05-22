@@ -43,7 +43,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         hr_prompt=hr_prompt,
         hr_negative_prompt=hr_negative_prompt,
         override_settings=override_settings,
-        enable_karras=enable_k_sched,
+        enable_custom_k_sched=enable_k_sched,
         k_sched_type=k_sched_type,
         sigma_min=sigma_min,
         sigma_max=sigma_max,

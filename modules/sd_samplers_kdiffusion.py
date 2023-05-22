@@ -44,6 +44,7 @@ sampler_extra_params = {
     'sample_dpm_2': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
 }
 
+k_diffusion_samplers_map = {x.name: x for x in samplers_data_k_diffusion}
 k_diffusion_scheduler = {
     'karras': k_diffusion.sampling.get_sigmas_karras,
     'exponential': k_diffusion.sampling.get_sigmas_exponential,
@@ -310,7 +311,7 @@ class KDiffusionSampler:
 
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
-        elif p.enable_karras:
+        elif p.enable_custom_k_sched:
             print(p.k_sched_type, p.sigma_min, p.sigma_max, p.rho)
             sigmas_func = k_diffusion_scheduler[p.k_sched_type]
             sigmas_kwargs = {
