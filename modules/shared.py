@@ -47,7 +47,7 @@ ui_reorder_categories = [
     "inpaint",
     "sampler",
     "checkboxes",
-    "karras_scheduler",
+    "kdiffusion_scheduler",
     "hires_fix",
     "dimensions",
     "cfg",
