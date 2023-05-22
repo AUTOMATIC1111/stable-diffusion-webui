@@ -67,7 +67,7 @@ def zip_compress(src, dst):
     for tar in filelist:
         arcname = tar[len(src):].lstrip('/')
         print(f"compress {tar} to {arcname}")
-        zf.write(tar)
+        zf.write(tar, arcname)
     zf.close()
 
 
