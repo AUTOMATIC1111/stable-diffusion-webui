@@ -51,7 +51,7 @@ function dropReplaceImage( imgWrap, files ) {
 window.document.addEventListener('dragover', e => {
     const target = e.composedPath()[0];
     const imgWrap = target.closest('[data-testid="image"]');
-    if ( !imgWrap && target.placeholder && target.placeholder.indexOf("Prompt") == -1) {
+    if (e.dataTransfer.files.length == 0 || (!imgWrap && target.placeholder && target.placeholder.indexOf("Prompt") == -1)) {
         return;
     }
     e.stopPropagation();
@@ -61,7 +61,7 @@ window.document.addEventListener('dragover', e => {
 
 window.document.addEventListener('drop', e => {
     const target = e.composedPath()[0];
-    if (target.placeholder.indexOf("Prompt") == -1) {
+    if (e.dataTransfer.files.length == 0 || target.placeholder.indexOf("Prompt") == -1) {
         return;
     }
     const imgWrap = target.closest('[data-testid="image"]');
