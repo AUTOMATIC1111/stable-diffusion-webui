@@ -171,6 +171,14 @@ class TrainLoraNetConfig(SerializationObj):
         train_module = train_module.lower()
         self.network_train_text_encoder_only = train_module == 'encoder'
         self.network_train_unet_only = train_module == 'unet'
+        self.unet_lr = self.get_lr(self.unet_lr)
+        self.text_encoder_lr = self.get_lr(self.text_encoder_lr)
+        self.learning_rate = self.get_lr(self.learning_rate)
+
+    def get_lr(self, v):
+        if v < 0:
+            return 'None'
+        return v
 
 
 class TrainLoraParams(SerializationObj):

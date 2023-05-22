@@ -8,6 +8,9 @@
 import abc
 import typing
 import traceback
+
+import torch.cuda
+
 from worker.dumper import dumper
 from loguru import logger
 from worker.task import Task, TaskProgress, TaskStatus, TaskType
@@ -39,6 +42,8 @@ class TaskHandler:
                 self._set_task_status(p)
                 for progress in self._exec(task):
                     self._set_task_status(progress)
+            except torch.cuda.OutOfMemoryError:
+                raise OSError('CUDA out of memory')
             except Exception as ex:
                 trace = traceback.format_exc()
                 msg = str(ex)
