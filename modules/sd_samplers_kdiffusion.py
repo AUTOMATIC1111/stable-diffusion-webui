@@ -272,6 +272,12 @@ class KDiffusionSampler:
 
         try:
             return func()
+        except RecursionError:
+            print(
+                'rho>5 with polyexponential scheduler may cause this error.'
+                'You should try to use smaller rho instead.'
+            )
+            return self.last_latent
         except sd_samplers_common.InterruptedException:
             return self.last_latent
 
