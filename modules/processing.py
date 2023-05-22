@@ -13,7 +13,7 @@ from skimage import exposure
 from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_samplers_kdiffusion
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -560,14 +560,16 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     if uses_ensd:
         uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
 
+    use_custom_k_sched = p.enable_custom_k_sched and p.sampler_name in sd_samplers_kdiffusion.k_diffusion_samplers_map
+
     generation_params = {
         "Steps": p.steps,
         "Sampler": p.sampler_name,
-        "Enable Custom Karras Schedule": p.enable_custom_k_sched or None,
-        "kdiffusion Scheduler Type": p.k_sched_type if p.enable_custom_k_sched else None,
-        "kdiffusion Scheduler sigma_max": p.sigma_max if p.enable_custom_k_sched else None,
-        "kdiffusion Scheduler sigma_min": p.sigma_min if p.enable_custom_k_sched else None,
-        "kdiffusion Scheduler rho": p.rho if p.enable_custom_k_sched else None,
+        "Enable Custom Karras Schedule": use_custom_k_sched or None,
+        "kdiffusion Scheduler Type": p.k_sched_type if use_custom_k_sched else None,
+        "kdiffusion Scheduler sigma_max": p.sigma_max if use_custom_k_sched else None,
+        "kdiffusion Scheduler sigma_min": p.sigma_min if use_custom_k_sched else None,
+        "kdiffusion Scheduler rho": p.rho if use_custom_k_sched else None,
         "CFG scale": p.cfg_scale,
         "Image CFG scale": getattr(p, 'image_cfg_scale', None),
         "Seed": all_seeds[index],
