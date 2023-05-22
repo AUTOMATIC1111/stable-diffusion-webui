@@ -312,7 +312,6 @@ class KDiffusionSampler:
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
         elif p.enable_custom_k_sched:
-            print(p.k_sched_type, p.sigma_min, p.sigma_max, p.rho)
             sigmas_func = k_diffusion_scheduler[p.k_sched_type]
             sigmas_kwargs = {
                 'sigma_min': p.sigma_min,
