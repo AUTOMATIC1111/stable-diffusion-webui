@@ -521,9 +521,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
     if path is None: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = shared.opts.outdir_save
     namegen = FilenameGenerator(p, seed, prompt, image)
-    if save_to_dirs is None:
-        save_to_dirs = (grid and shared.opts.grid_save_to_dirs) or (not grid and shared.opts.save_to_dirs and not no_prompt)
-    else:
+    save_to_dirs = save_to_dirs or (grid and shared.opts.grid_save_to_dirs) or (not grid and shared.opts.save_to_dirs and not no_prompt)
+    if save_to_dirs:
         dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
         path = os.path.join(path, dirname)
     os.makedirs(path, exist_ok=True)

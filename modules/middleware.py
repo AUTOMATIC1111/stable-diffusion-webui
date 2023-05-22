@@ -16,6 +16,7 @@ import modules.errors as errors
 
 errors.install()
 
+
 def setup_middleware(app: FastAPI, cmd_opts):
     log.info('Initializing middleware')
     ssl._create_default_https_context = ssl._create_unverified_context # pylint: disable=protected-access

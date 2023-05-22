@@ -51,7 +51,7 @@ accelerate==0.18.0
 opencv-python==4.7.0.72
 diffusers==0.16.1
 einops==0.4.1
-gradio==3.31.0
+gradio==3.32.0
 numexpr==2.8.4
 numpy==1.24.3
 numba==0.57.0

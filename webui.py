@@ -180,18 +180,6 @@ def create_api(app):
     return api
 
 
-def monkey_patch_docs():
-    def setup_with_docs(self):
-        self.docs_url = "/docs"
-        self.redoc_url = "/redoc"
-        self.setup_original()
-
-    setup_original = getattr(FastAPI, "setup_original", None)
-    if setup_original is None:
-        FastAPI.setup_original = FastAPI.setup
-    setattr(FastAPI, "setup", setup_with_docs)
-
-
 def async_policy():
     _BasePolicy = asyncio.WindowsSelectorEventLoopPolicy if sys.platform == "win32" and hasattr(asyncio, "WindowsSelectorEventLoopPolicy") else asyncio.DefaultEventLoopPolicy
 
@@ -225,7 +213,6 @@ def start_ui():
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("scripts before_ui_callback")
     shared.demo = modules.ui.create_ui()
-    monkey_patch_docs()
     startup_timer.record("ui")
     if cmd_opts.disable_queue:
         log.info('Server queues disabled')
@@ -241,6 +228,7 @@ def start_ui():
             for line in file.readlines():
                 gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
+    import installer
     app, local_url, share_url = shared.demo.launch(
         share=cmd_opts.share,
         server_name=server_name,
@@ -255,6 +243,18 @@ def start_ui():
         max_threads=64,
         show_api=True,
         favicon_path='html/logo.ico',
+        app_kwargs={
+            "version": f'0.0.{installer.git_commit}',
+            "title": "SD.Next",
+            "description": "SD.Next",
+            "docs_url": "/docs",
+            "redocs_url": "/redocs",
+            "swagger_ui_parameters": {
+                "displayOperationId": True,
+                "showCommonExtensions": True,
+                "deepLinking": False,
+            },
+        }
     )
     shared.log.info(f'Local URL: {local_url}')
     shared.log.info(f'API Docs: {local_url[:-1]}/docs') # {local_url[:-1]}?view=api
@@ -271,7 +271,7 @@ def start_ui():
         shared.log.info('Redirector mounted: /{cmd_opts.subpath}')
 
     cmd_opts.autolaunch = False
-    startup_timer.record("start")
+    startup_timer.record("launch")
 
     modules.progress.setup_progress_api(app)
     create_api(app)
