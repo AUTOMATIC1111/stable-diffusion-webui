@@ -19,6 +19,8 @@ from .utils import get_tmp_local_path, Tmp, upload_files
 from tools.file import zip_compress, zip_uncompress, find_files_from_dir
 from modules.textual_inversion.preprocess import preprocess_sub_dir
 
+ImagesEx = ["png", 'jpeg', 'jpg']
+
 
 def exec_preprocess_task(job: Task):
     task = PreprocessTask(job)
@@ -83,13 +85,13 @@ def build_zip(target_dir):
 def build_thumbnail_tag(target_dir):
     images = {}
     tag_files = []
-    for file in find_files_from_dir(target_dir, "txt", "png"):
+    for file in find_files_from_dir(target_dir, "txt", *ImagesEx):
         basename, ex = os.path.splitext(os.path.basename(file))
         dirname = os.path.dirname(file)
         ex = str(ex).lstrip('.').lower()
         if 'MACOSX' in dirname:
             continue
-        if ex == 'png':
+        if ex in ImagesEx:
             thumb = create_thumbnail(file)
             if thumb and os.path.isfile(thumb):
                 thumbnail_key = upload_files(True, thumb)
