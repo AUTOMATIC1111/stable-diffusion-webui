@@ -119,6 +119,9 @@ def build_thumbnail_tag(target_dir):
                             if str(k).endswith(basename):
                                 return k
                     rename = get_rename_image()
+                    if not rename:
+                        raise KeyError(f'cannot found image key:{basename}')
+
                     images[rename]['tag'] = ' '.join(lines)
         except Exception as ex:
             print(f'cannot read caption file:{file}, err:{ex}')
