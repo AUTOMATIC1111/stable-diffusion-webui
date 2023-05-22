@@ -516,7 +516,7 @@ def create_ui():
                             with FormRow(elem_id="txt2img_kdiffusion_scheduler_row1", variant="compact"):
                                 t2i_k_sched_type = gr.Dropdown(label="Type", elem_id="t2i_k_sched_type", choices=['karras', 'exponential', 'polyexponential'], value='karras')
                                 t2i_k_sched_sigma_min = gr.Slider(minimum=0.0, maximum=0.5, step=0.05, label='sigma min', value=0.1, elem_id="txt2img_sigma_min")
-                                t2i_k_sched_sigma_max = gr.Slider(minimum=5.0, maximum=50.0, step=0.1, label='sigma max', value=10.0, elem_id="txt2img_sigma_max")
+                                t2i_k_sched_sigma_max = gr.Slider(minimum=0.0, maximum=50.0, step=0.1, label='sigma max', value=10.0, elem_id="txt2img_sigma_max")
                                 t2i_k_sched_rho = gr.Slider(minimum=0.5, maximum=10.0, step=0.1, label='rho', value=7.0, elem_id="txt2img_rho")
 
                     elif category == "batch":
@@ -879,7 +879,7 @@ def create_ui():
                             with FormRow(elem_id="img2img_kdiffusion_scheduler_row1", variant="compact"):
                                 i2i_k_sched_type = gr.Dropdown(label="Type", elem_id="t2i_k_sched_type", choices=['karras', 'exponential', 'polyexponential'], value='karras')
                                 i2i_k_sched_sigma_min = gr.Slider(minimum=0.0, maximum=0.5, step=0.05, label='sigma min', value=0.1, elem_id="txt2img_sigma_min")
-                                i2i_k_sched_sigma_max = gr.Slider(minimum=5.0, maximum=50.0, step=0.1, label='sigma max', value=10.0, elem_id="txt2img_sigma_max")
+                                i2i_k_sched_sigma_max = gr.Slider(minimum=0.0, maximum=50.0, step=0.1, label='sigma max', value=10.0, elem_id="txt2img_sigma_max")
                                 i2i_k_sched_rho = gr.Slider(minimum=0.5, maximum=10.0, step=0.1, label='rho', value=7.0, elem_id="txt2img_rho")
 
                     elif category == "batch":

@@ -318,10 +318,11 @@ class KDiffusionSampler:
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
         elif p.enable_custom_k_sched:
+            sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
             sigmas_func = k_diffusion_scheduler[p.k_sched_type]
             sigmas_kwargs = {
-                'sigma_min': p.sigma_min,
-                'sigma_max': p.sigma_max
+                'sigma_min': p.sigma_min or sigma_min,
+                'sigma_max': p.sigma_max or sigma_max
             }
             if p.k_sched_type != 'exponential':
                 sigmas_kwargs['rho'] = p.rho
