@@ -15,6 +15,7 @@ from tools.image import compress_image
 from PIL.PngImagePlugin import PngInfo
 from filestorage import find_storage_classes_with_env
 from tools.environment import get_file_storage_system_env, Env_BucketKey, S3SDWEB, S3ImageBucket
+from tools.processor import MultiThreadWorker
 
 
 class ModelType(IntEnum):
@@ -58,6 +59,12 @@ class ImageKeys(UserDict):
         return ImageKeys(high, low)
 
 
+def get_upload_image_key(file_storage_system, file: str, key: str, key_outs: typing.List[str]):
+    r = file_storage_system.upload(file, key)
+    if r:
+        key_outs.append(r)
+
+
 class ImageOutput:
 
     def __init__(self, image_type: OutImageType, local_output_dir: str):
@@ -67,13 +74,21 @@ class ImageOutput:
         os.makedirs(local_output_dir, exist_ok=True)
 
     def get_local_low_images(self):
-        local_low_images = []
+        local_low_images, compress_images = [], []
         for image_path in self.local_files:
             filename = os.path.basename(image_path)
             low_file = os.path.join(self.output_dir, 'low-' + filename)
             if not os.path.isfile(low_file):
-                compress_image(image_path, low_file)
+                compress_images.append((image_path, low_file))
+                # compress_image(image_path, low_file)
             local_low_images.append(low_file)
+
+        worker = MultiThreadWorker(compress_images, compress_image, 4)
+        worker.run()
+        for image_path in local_low_images:
+            if not image_path:
+                raise OSError(f'cannot found low image:{image_path}')
+
         return local_low_images
 
     def add_image(self, image: str):
@@ -117,4 +132,42 @@ class ImageOutput:
             return ImageKeys(keys, low_keys)
 
         # local
+        return ImageKeys(self.local_files, low_files)
+
+    def multi_upload_keys(self, clean_upload_file: bool = True):
+        file_storage_system_cls = find_storage_classes_with_env()
+        file_storage_system = file_storage_system_cls()
+        storage_env = get_file_storage_system_env()
+        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+        low_files = self.get_local_low_images()
+
+        if file_storage_system.name() != 'default':
+            low_keys, high_keys, worker_args = [], [], []
+            for low_file in low_files:
+                relative_path = low_file
+                if S3SDWEB not in low_file:
+                    relative_path = os.path.join(S3SDWEB, low_file)
+                low_key = os.path.join(bucket, relative_path)
+                worker_args.append((file_storage_system, low_key, low_keys))
+
+            relative_path = self.output_dir
+            if S3SDWEB not in self.output_dir:
+                relative_path = os.path.join(S3SDWEB, self.output_dir)
+            for file_path in self.local_files:
+                filename = os.path.basename(file_path)
+                key = os.path.join(bucket, relative_path, filename)
+                file_storage_system.upload(file_path, key)
+                worker_args.append((file_storage_system, key, high_keys))
+            worker = MultiThreadWorker(worker_args, get_upload_image_key, 4)
+            worker.run()
+
+            if clean_upload_file:
+                try:
+                    shutil.rmtree(self.output_dir)
+                except:
+                    pass
+
+            return ImageKeys(high_keys, low_keys)
+
+            # local
         return ImageKeys(self.local_files, low_files)

@@ -339,7 +339,7 @@ class TrainLoraTask(UserDict):
         with open('train_log', 'w+') as f:
             f.write(train_log)
 
-        dst = os.path.join(Tmp, f'train-material-{self.id}.zip')
+        dst = os.path.join(Tmp, f'mater-{self.id}.zip')
         zip_compress(image_dir, dst)
         return dst
 

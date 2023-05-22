@@ -82,10 +82,6 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
             'models': []
         }
 
-        if os.path.isfile(material):
-            material_keys = upload_files(False, material)
-            result['material'] = material_keys[0] if material_keys else ''
-
         cover = train_lora_task.get_model_cover_key()
         for m in local_models:
             # rename
@@ -106,6 +102,9 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
                 'epoch': epoch
             })
 
+        if os.path.isfile(material):
+            material_keys = upload_files(False, material)
+            result['material'] = material_keys[0] if material_keys else ''
         # notify web server
         sender = RedisSender()
         sender.notify_train_task(task)

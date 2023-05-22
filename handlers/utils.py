@@ -243,9 +243,9 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
         processed_image.save(full_path, pnginfo=pnginfo_data)
         out_obj.add_image(full_path)
 
-    grid_keys = out_grid_image.upload_keys(clean_upload_files)
-    image_keys = out_image.upload_keys(clean_upload_files)
-    script_keys = out_script_image.upload_keys(clean_upload_files)
+    grid_keys = out_grid_image.multi_upload_keys(clean_upload_files)
+    image_keys = out_image.multi_upload_keys(clean_upload_files)
+    script_keys = out_script_image.multi_upload_keys(clean_upload_files)
 
     output = {
         'grids': grid_keys,

@@ -7,6 +7,7 @@
 # @Software: Hifive
 import os
 import random
+import shutil
 import time
 import typing
 import redis_lock
@@ -43,18 +44,22 @@ def find_files_from_dir(directory, *args):
         elif os.path.isdir(full_path):
             for f in find_files_from_dir(full_path, *extensions_):
                 yield f
+            yield full_path
 
 
 def clean_tmp(expired_days=1):
     if os.path.isdir(Tmp):
         now = time.time()
-        for file in find_files_from_dir(Tmp):
-            mtime = os.path.getmtime(file)
+        for fn in os.listdir(Tmp):
+            mtime = os.path.getmtime(fn)
             if now > mtime + expired_days * 24 * 3600:
                 try:
-                    os.remove(file)
-                except:
-                    pass
+                    if os.path.isdir(fn):
+                        shutil.rmtree(fn)
+                    else:
+                        os.remove(fn)
+                except Exception:
+                    logger.exception('cannot remove file!!')
 
 
 class TaskReceiver:
