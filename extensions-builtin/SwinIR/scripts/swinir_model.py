@@ -1,4 +1,3 @@
-import contextlib
 import os
 
 import numpy as np
@@ -8,7 +7,7 @@ from basicsr.utils.download_util import load_file_from_url
 from tqdm import tqdm
 
 from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import cmd_opts, opts, state
+from modules.shared import opts, state
 from swinir_model_arch import SwinIR as net
 from swinir_model_arch_v2 import Swin2SR as net2
 from modules.upscaler import Upscaler, UpscalerData
@@ -45,14 +44,14 @@ class UpscalerSwinIR(Upscaler):
         img = upscale(img, model)
         try:
             torch.cuda.empty_cache()
-        except:
+        except Exception:
             pass
         return img
 
     def load_model(self, path, scale=4):
         if "http" in path:
             dl_name = "%s%s" % (self.model_name.replace(" ", "_"), ".pth")
-            filename = load_file_from_url(url=path, model_dir=self.model_path, file_name=dl_name, progress=True)
+            filename = load_file_from_url(url=path, model_dir=self.model_download_path, file_name=dl_name, progress=True)
         else:
             filename = path
         if filename is None or not os.path.exists(filename):
@@ -151,7 +150,7 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
             for w_idx in w_idx_list:
                 if state.interrupted or state.skipped:
                     break
-                
+
                 in_patch = img[..., h_idx: h_idx + tile, w_idx: w_idx + tile]
                 out_patch = model(in_patch)
                 out_patch_mask = torch.ones_like(out_patch)

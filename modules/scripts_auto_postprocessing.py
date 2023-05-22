@@ -17,7 +17,7 @@ class ScriptPostprocessingForMainUI(scripts.Script):
         return self.postprocessing_controls.values()
 
     def postprocess_image(self, p, script_pp, *args):
-        args_dict = {k: v for k, v in zip(self.postprocessing_controls, args)}
+        args_dict = dict(zip(self.postprocessing_controls, args))
 
         pp = scripts_postprocessing.PostprocessedImage(script_pp.image)
         pp.info = {}

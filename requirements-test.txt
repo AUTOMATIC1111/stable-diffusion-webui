@@ -1,0 +1,3 @@
+pytest-base-url~=2.0
+pytest-cov~=4.0
+pytest~=7.3

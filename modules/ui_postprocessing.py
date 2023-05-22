@@ -1,5 +1,5 @@
 import gradio as gr
-from modules import scripts_postprocessing, scripts, shared, gfpgan_model, codeformer_model, ui_common, postprocessing, call_queue
+from modules import scripts, shared, ui_common, postprocessing, call_queue
 import modules.generation_parameters_copypaste as parameters_copypaste
 
 

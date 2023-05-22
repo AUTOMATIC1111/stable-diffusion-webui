@@ -1,4 +1,3 @@
-import glob
 import os
 import shutil
 import importlib
@@ -40,7 +39,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                 if os.path.islink(full_path) and not os.path.exists(full_path):
                     print(f"Skipping broken symlink: {full_path}")
                     continue
-                if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
+                if ext_blacklist is not None and any(full_path.endswith(x) for x in ext_blacklist):
                     continue
                 if full_path not in output:
                     output.append(full_path)
@@ -48,7 +47,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
         if model_url is not None and len(output) == 0:
             if download_name is not None:
                 from basicsr.utils.download_util import load_file_from_url
-                dl = load_file_from_url(model_url, model_path, True, download_name)
+                dl = load_file_from_url(model_url, places[0], True, download_name)
                 output.append(dl)
             else:
                 output.append(model_url)
@@ -108,12 +107,12 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
                     print(f"Moving {file} from {src_path} to {dest_path}.")
                     try:
                         shutil.move(fullpath, dest_path)
-                    except:
+                    except Exception:
                         pass
             if len(os.listdir(src_path)) == 0:
                 print(f"Removing empty folder: {src_path}")
                 shutil.rmtree(src_path, True)
-    except:
+    except Exception:
         pass
 
 
@@ -127,7 +126,7 @@ def load_upscalers():
             full_model = f"modules.{model_name}_model"
             try:
                 importlib.import_module(full_model)
-            except:
+            except Exception:
                 pass
 
     datas = []
@@ -145,7 +144,10 @@ def load_upscalers():
     for cls in reversed(used_classes.values()):
         name = cls.__name__
         cmd_name = f"{name.lower().replace('upscaler', '')}_models_path"
-        scaler = cls(commandline_options.get(cmd_name, None))
+        commandline_model_path = commandline_options.get(cmd_name, None)
+        scaler = cls(commandline_model_path)
+        scaler.user_path = commandline_model_path
+        scaler.model_download_path = commandline_model_path or scaler.model_path
         datas += scaler.scalers
 
     shared.sd_upscalers = sorted(

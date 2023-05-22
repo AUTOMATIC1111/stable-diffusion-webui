@@ -1,8 +1,8 @@
 import os
 import sys
-from modules.paths_internal import models_path, script_path, data_path, extensions_dir, extensions_builtin_dir
+from modules.paths_internal import models_path, script_path, data_path, extensions_dir, extensions_builtin_dir  # noqa: F401
 
-import modules.safe
+import modules.safe  # noqa: F401
 
 
 # data_path = cmd_opts_pre.data
