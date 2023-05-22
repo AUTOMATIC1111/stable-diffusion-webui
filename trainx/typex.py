@@ -347,8 +347,12 @@ class TrainLoraTask(UserDict):
         with open('train_log', 'w+') as f:
             f.write(train_log)
 
+        def filter_safetensors(x):
+            _, ex = os.path.splitext(x)
+            return str(ex).lower().lstrip('.') == 'safetensors'
+
         dst = os.path.join(Tmp, f'mater-{self.id}.zip')
-        zip_compress(image_dir, dst)
+        zip_compress(image_dir, dst, filter_safetensors)
         return dst
 
     def get_model_cover_key(self):

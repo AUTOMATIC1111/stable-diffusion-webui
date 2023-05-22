@@ -51,7 +51,7 @@ def zip_uncompress(src, dst):
                 pass
 
 
-def zip_compress(src, dst):
+def zip_compress(src, dst, filter=None):
     filelist = []
     if os.path.isfile(dst):
         os.remove(dst)
@@ -61,7 +61,10 @@ def zip_compress(src, dst):
     else:
         for root, dirs, files in os.walk(src):
             for name in files:
-                filelist.append(os.path.join(root, name))
+                file = os.path.join(root, name)
+                if callable(filter) and filter(file):
+                    continue
+                filelist.append(file)
 
     zf = zipfile.ZipFile(dst, "w", zipfile.ZIP_DEFLATED)
     for tar in filelist:
