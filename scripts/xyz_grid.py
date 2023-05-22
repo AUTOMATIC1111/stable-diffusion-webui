@@ -10,7 +10,7 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, sd_samplers, processing, sd_models, sd_vae
+from modules import images, sd_samplers, processing, sd_models, sd_vae, sd_samplers_kdiffusion
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, state
 import modules.shared as shared
@@ -220,6 +220,7 @@ axis_options = [
     AxisOption("Sigma min", float, apply_field("s_tmin")),
     AxisOption("Sigma max", float, apply_field("s_tmax")),
     AxisOption("Sigma noise", float, apply_field("s_noise")),
+    AxisOption("Karras Scheduler Type", str, apply_field("k_sched_type"), choices=lambda: [x for x in sd_samplers_kdiffusion.k_diffusion_scheduler]),
     AxisOption("Karras Scheduler Sigma Min", float, apply_field("sigma_min")),
     AxisOption("Karras Scheduler Sigma Max", float, apply_field("sigma_max")),
     AxisOption("Karras Scheduler rho", float, apply_field("rho")),

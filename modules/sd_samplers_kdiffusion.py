@@ -44,6 +44,12 @@ sampler_extra_params = {
     'sample_dpm_2': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
 }
 
+k_diffusion_scheduler = {
+    'karras': k_diffusion.sampling.get_sigmas_karras,
+    'exponential': k_diffusion.sampling.get_sigmas_exponential,
+    'polyexponential': k_diffusion.sampling.get_sigmas_polyexponential
+}
+
 
 class CFGDenoiser(torch.nn.Module):
     """
@@ -305,10 +311,15 @@ class KDiffusionSampler:
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
         elif p.enable_karras:
-            sigma_max = p.sigma_max
-            sigma_min = p.sigma_min
-            rho = p.rho
-            sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, rho=rho, device=shared.device)
+            print(p.k_sched_type, p.sigma_min, p.sigma_max, p.rho)
+            sigmas_func = k_diffusion_scheduler[p.k_sched_type]
+            sigmas_kwargs = {
+                'sigma_min': p.sigma_min,
+                'sigma_max': p.sigma_max
+            }
+            if p.k_sched_type != 'exponential':
+                sigmas_kwargs['rho'] = p.rho
+            sigmas = sigmas_func(n=steps, **sigmas_kwargs, device=shared.device)
         elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
             sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
 
