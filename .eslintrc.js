@@ -84,5 +84,7 @@ module.exports = {
         // imageviewer.js
         modalPrevImage: "readonly",
         modalNextImage: "readonly",
+        // token-counters.js
+        setupTokenCounters: "readonly",
     }
 };

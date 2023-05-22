@@ -488,6 +488,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order").needs_restart(),
     "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires sampler selection").needs_restart(),
     "hires_fix_show_prompts": OptionInfo(False, "Hires fix: show hires prompt and negative prompt").needs_restart(),
+    "disable_token_counters": OptionInfo(False, "Disable prompt token counters").needs_restart(),
 }))
 
 options_templates.update(options_section(('infotext', "Infotext"), {
