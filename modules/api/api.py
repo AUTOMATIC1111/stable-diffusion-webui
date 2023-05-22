@@ -682,4 +682,4 @@ class Api:
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)
-        uvicorn.run(self.app, host=server_name, port=port)
+        uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=0)
