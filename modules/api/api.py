@@ -95,13 +95,19 @@ class Api:
                 self.credentials[user] = password
         else:
             if shared.cmd_opts.auth:
-                user, password = [x.strip() for x in shared.cmd_opts.auth.strip('"').replace('\n', '').split(',') if x.strip()]
+                self.credentials = dict()
+                for auth in shared.cmd_opts.auth.split(","):
+                    user, password = auth.split(":")
+                    self.credentials[user] = password
+                user, password = [x.strip() for x in shared.cmd_opts.auth.strip('"').replace('\n', '').split(',') if x.strip()].split(':')
                 self.credentials[user] = password
             if shared.cmd_opts.authfile:
+                self.credentials = dict()
                 with open(shared.cmd_opts.authfile, 'r', encoding="utf8") as file:
                     for line in file.readlines():
-                        user, password = [x.strip() for x in line.split(',') if x.strip()]
+                        user, password = line.split(":")
                         self.credentials[user] = password
+
         self.router = APIRouter()
         self.app = app
         self.queue_lock = queue_lock
@@ -624,4 +630,6 @@ class Api:
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)
+        server_name = "0.0.0.0" if cmd_opts.listen else None
+
         uvicorn.run(self.app, host=server_name, port=port)
