@@ -13,7 +13,7 @@ from skimage import exposure
 from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_samplers_kdiffusion
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -560,6 +560,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     if uses_ensd:
         uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
 
+    # avoid loop import
+    from modules import sd_samplers_kdiffusion
     use_custom_k_sched = p.enable_custom_k_sched and p.sampler_name in sd_samplers_kdiffusion.k_diffusion_samplers_map
 
     generation_params = {
