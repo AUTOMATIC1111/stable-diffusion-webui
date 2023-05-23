@@ -1,1 +1,0 @@
-- [Stable Diffusion Tutorials Playlist](https://www.youtube.com/playlist?list=PL_pbwdIyffsmclLl0O144nQRnezKlNdx3)
