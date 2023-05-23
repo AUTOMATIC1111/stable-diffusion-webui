@@ -84,7 +84,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 
         upscaler1 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_1_name]), None)
         if not upscaler1:
-            shared.log.warning(f"Could not find upscaler named {upscaler_1_name or '<empty string>'}")
+            shared.log.warning(f"Could not find upscaler: {upscaler_1_name or '<empty string>'}")
             return
 
         if upscaler_2_name == "None":
@@ -92,7 +92,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
 
         upscaler2 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_2_name and x.name != "None"]), None)
         if not upscaler2 and (upscaler_2_name is not None):
-            shared.log.warning(f"Could not find upscaler named {upscaler_1_name or '<empty string>'}")
+            shared.log.warning(f"Could not find upscaler: {upscaler_2_name or '<empty string>'}")
             return
 
         upscaled_image = self.upscale(pp.image, pp.info, upscaler1, upscale_mode, upscale_by, upscale_to_width, upscale_to_height, upscale_crop)
@@ -130,7 +130,7 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
 
         upscaler1 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_name]), None)
         if upscaler1 is None:
-            shared.log.warning(f"Could not find upscaler named {upscaler_name or '<empty string>'}")
+            shared.log.warning(f"Could not find upscaler: {upscaler_name or '<empty string>'}")
 
         pp.image = self.upscale(pp.image, pp.info, upscaler1, 0, upscale_by, 0, 0, False)
         pp.info["Postprocess upscaler"] = upscaler1.name

@@ -236,7 +236,7 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
             upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
             if len(upscalers) == 0:
                 upscaler = shared.sd_upscalers[0]
-                shared.log.warning(f"Could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
+                shared.log.warning(f"Could not find upscaler: {upscaler_name or '<empty string>'} using fallback: {upscaler.name}")
             else:
                 upscaler = upscalers[0]
             im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
@@ -521,7 +521,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
     if path is None: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = shared.opts.outdir_save
     namegen = FilenameGenerator(p, seed, prompt, image)
-    save_to_dirs = save_to_dirs or (grid and shared.opts.grid_save_to_dirs) or (not grid and shared.opts.save_to_dirs and not no_prompt)
+    if save_to_dirs is None:
+        save_to_dirs = (grid and shared.opts.grid_save_to_dirs) or (not grid and shared.opts.save_to_dirs and not no_prompt)
     if save_to_dirs:
         dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
         path = os.path.join(path, dirname)

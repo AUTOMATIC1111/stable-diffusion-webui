@@ -307,7 +307,7 @@ options_templates.update(options_section(('saving-images', "Image options"), {
     "save_init_img": OptionInfo(False, "Save init images when using image processing"),
     "save_to_dirs": OptionInfo(False, "Save images to a subdirectory"),
     "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
-    "use_save_to_dirs_for_ui": OptionInfo(False, "When using \"Save\" button, save images to a subdirectory"),
+    "use_save_to_dirs_for_ui": OptionInfo(False, "When using Save button, save images to a subdirectory"),
     "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
 }))
@@ -605,6 +605,8 @@ class Options:
         expected_type = type(default_value)
         if expected_type == bool and value == "False":
             value = False
+        elif expected_type == type(value):
+            pass
         else:
             value = expected_type(value)
         return value

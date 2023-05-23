@@ -23,8 +23,11 @@ def cache(subsection):
             if not os.path.isfile(cache_filename):
                 cache_data = {}
             else:
-                with open(cache_filename, "r", encoding="utf8") as file:
-                    cache_data = json.load(file)
+                try:
+                    with open(cache_filename, "r", encoding="utf8") as file:
+                        cache_data = json.load(file)
+                except:
+                    cache_data = None
     s = cache_data.get(subsection, {})
     cache_data[subsection] = s
     return s
