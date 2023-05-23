@@ -318,7 +318,6 @@ infotext_to_setting_name_mapping = [
     ('Conditional mask weight', 'inpainting_mask_weight'),
     ('Model hash', 'sd_model_checkpoint'),
     ('ENSD', 'eta_noise_seed_delta'),
-    ('Enable Custom KDiffusion Schedule', 'custom_k_sched'),
     ('KDiffusion Scheduler Type', 'k_sched_type'),
     ('KDiffusion Scheduler sigma_max', 'sigma_max'),
     ('KDiffusion Scheduler sigma_min', 'sigma_min'),

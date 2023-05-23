@@ -46,6 +46,7 @@ sampler_extra_params = {
 
 k_diffusion_samplers_map = {x.name: x for x in samplers_data_k_diffusion}
 k_diffusion_scheduler = {
+    'None': None,
     'karras': k_diffusion.sampling.get_sigmas_karras,
     'exponential': k_diffusion.sampling.get_sigmas_exponential,
     'polyexponential': k_diffusion.sampling.get_sigmas_polyexponential
@@ -295,8 +296,7 @@ class KDiffusionSampler:
 
         k_diffusion.sampling.torch = TorchHijack(self.sampler_noises if self.sampler_noises is not None else [])
 
-        if opts.custom_k_sched:
-            p.extra_generation_params["Enable Custom KDiffusion Schedule"] = True
+        if opts.k_sched_type != "None":
             p.extra_generation_params["KDiffusion Scheduler Type"] = opts.k_sched_type
             p.extra_generation_params["KDiffusion Scheduler sigma_max"] = opts.sigma_max
             p.extra_generation_params["KDiffusion Scheduler sigma_min"] = opts.sigma_min
@@ -325,7 +325,7 @@ class KDiffusionSampler:
 
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
-        elif opts.custom_k_sched:
+        elif opts.k_sched_type != "None":
             sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
             sigmas_func = k_diffusion_scheduler[opts.k_sched_type]
             sigmas_kwargs = {
