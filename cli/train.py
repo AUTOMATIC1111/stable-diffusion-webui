@@ -17,7 +17,6 @@ import warnings
 warnings.filterwarnings(action="ignore", category=DeprecationWarning)
 warnings.filterwarnings(action="ignore", category=UserWarning)
 warnings.filterwarnings(action="ignore", category=FutureWarning)
-sys.path.append('.')
 
 # 3rd party imports
 import filetype
@@ -27,9 +26,9 @@ from tqdm.rich import tqdm
 # local imports
 import util
 import sdapi
+import options
 import process
 import latents
-import options
 
 
 # globals
@@ -79,7 +78,7 @@ def mem_stats():
 
 def parse_args():
     global args # pylint: disable=global-statement
-    parser = argparse.ArgumentParser(description = 'Train')
+    parser = argparse.ArgumentParser(description = 'SD.Next Train')
 
     group_main = parser.add_argument_group('Main')
     group_main.add_argument('--type', type=str, choices=['embedding', 'ti', 'lora', 'lyco', 'dreambooth', 'hypernetwork'], default=None, required=True, help='training type')
@@ -240,9 +239,9 @@ def train_lora():
     log.info(f'{args.type} options: {options.lora}')
     # lora imports
     lora_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lora'))
+    lycoris_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'modules', 'lycoris'))
     sys.path.append(lora_path)
     if args.type == 'lyco':
-        lycoris_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, 'modules', 'lycoris'))
         sys.path.append(lycoris_path)
     log.debug('importing lora lib')
     import train_network
@@ -368,7 +367,7 @@ def process_inputs():
 
 
 if __name__ == '__main__':
-    log.info('train script for stable diffusion')
+    log.info('SD.Next train script')
     parse_args()
     setup_logging()
     prepare_server()

@@ -223,8 +223,8 @@ def start_ui():
     gradio_auth_creds = []
     if cmd_opts.auth:
         gradio_auth_creds += [x.strip() for x in cmd_opts.auth.strip('"').replace('\n', '').split(',') if x.strip()]
-    if cmd_opts.authfile:
-        with open(cmd_opts.authfile, 'r', encoding="utf8") as file:
+    if cmd_opts.auth_file:
+        with open(cmd_opts.auth_file, 'r', encoding="utf8") as file:
             for line in file.readlines():
                 gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 

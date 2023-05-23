@@ -6,9 +6,13 @@ generic helper methods
 import os
 import string
 import logging
+import warnings
 
 log_format = '%(asctime)s %(levelname)s: %(message)s'
 logging.basicConfig(level = logging.INFO, format = log_format)
+warnings.filterwarnings(action="ignore", category=DeprecationWarning)
+warnings.filterwarnings(action="ignore", category=FutureWarning)
+warnings.filterwarnings(action="ignore", category=UserWarning)
 log = logging.getLogger("sd")
 
 
@@ -52,14 +56,14 @@ def get_memory():
             reserved = { 'current': gb(s['reserved_bytes.all.current']), 'peak': gb(s['reserved_bytes.all.peak']) }
             active = { 'current': gb(s['active_bytes.all.current']), 'peak': gb(s['active_bytes.all.peak']) }
             inactive = { 'current': gb(s['inactive_split_bytes.all.current']), 'peak': gb(s['inactive_split_bytes.all.peak']) }
-            warnings = { 'retries': s['num_alloc_retries'], 'oom': s['num_ooms'] }
+            events = { 'retries': s['num_alloc_retries'], 'oom': s['num_ooms'] }
             mem.update({
                 'gpu': gpu,
                 'gpu-active': active,
                 'gpu-allocated': allocated,
                 'gpu-reserved': reserved,
                 'gpu-inactive': inactive,
-                'events': warnings,
+                'events': events,
             })
     except:
         pass

@@ -23,7 +23,7 @@ console = Console(log_time=True, log_time_format='%H:%M:%S-%f')
 pretty_install(console=console)
 traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False)
 
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..', 'modules', 'lora'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'modules', 'lora'))
 import library.model_util as model_util
 import library.train_util as train_util
 

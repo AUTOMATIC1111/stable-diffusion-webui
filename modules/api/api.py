@@ -88,25 +88,16 @@ def encode_pil_to_base64(image):
 
 class Api:
     def __init__(self, app: FastAPI, queue_lock: Lock):
-        if shared.cmd_opts.api_auth:
-            self.credentials = dict()
-            for auth in shared.cmd_opts.api_auth.split(","):
+        self.credentials = dict()
+        if shared.cmd_opts.auth:
+            for auth in shared.cmd_opts.auth.split(","):
                 user, password = auth.split(":")
-                self.credentials[user] = password
-        else:
-            if shared.cmd_opts.auth:
-                self.credentials = dict()
-                for auth in shared.cmd_opts.auth.split(","):
-                    user, password = auth.split(":")
-                    self.credentials[user] = password
-                user, password = [x.strip() for x in shared.cmd_opts.auth.strip('"').replace('\n', '').split(',') if x.strip()].split(':')
-                self.credentials[user] = password
-            if shared.cmd_opts.authfile:
-                self.credentials = dict()
-                with open(shared.cmd_opts.authfile, 'r', encoding="utf8") as file:
-                    for line in file.readlines():
-                        user, password = line.split(":")
-                        self.credentials[user] = password
+                self.credentials[user.replace('"', '').strip()] = password.replace('"', '').strip()
+        if shared.cmd_opts.auth_file:
+            with open(shared.cmd_opts.auth_file, 'r', encoding="utf8") as file:
+                for line in file.readlines():
+                    user, password = line.split(":")
+                    self.credentials[user.replace('"', '').strip()] = password.replace('"', '').strip()
 
         self.router = APIRouter()
         self.app = app
@@ -146,7 +137,7 @@ class Api:
         self.default_script_arg_img2img = []
 
     def add_api_route(self, path: str, endpoint, **kwargs):
-        if shared.cmd_opts.api_auth:
+        if shared.cmd_opts.auth or shared.cmd_opts.auth_file:
             return self.app.add_api_route(path, endpoint, dependencies=[Depends(self.auth)], **kwargs)
         return self.app.add_api_route(path, endpoint, **kwargs)
 
@@ -154,7 +145,7 @@ class Api:
         if credentials.username in self.credentials:
             if compare_digest(credentials.password, self.credentials[credentials.username]):
                 return True
-        raise HTTPException(status_code=401, detail="Incorrect username or password", headers={"WWW-Authenticate": "Basic"})
+        raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Basic"})
 
     def get_selectable_script(self, script_name, script_runner):
         if script_name is None or script_name == "":
@@ -630,6 +621,5 @@ class Api:
 
     def launch(self, server_name, port):
         self.app.include_router(self.router)
-        server_name = "0.0.0.0" if cmd_opts.listen else None
-
+        server_name = "0.0.0.0" if shared.cmd_opts.listen else None
         uvicorn.run(self.app, host=server_name, port=port)

@@ -9,6 +9,7 @@ commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
 
 import installer
+installer.setup_logging(False)
 installer.add_args()
 installer.ensure_base_requirements()
 installer.parse_args()

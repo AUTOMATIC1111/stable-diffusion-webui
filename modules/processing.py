@@ -3,7 +3,6 @@ import math
 import os
 import hashlib
 import random
-import logging
 from typing import Any, Dict, List
 import torch
 import numpy as np
@@ -33,13 +32,13 @@ opt_f = 8
 
 
 def setup_color_correction(image):
-    logging.info("Calibrating color correction.")
+    log.debug("Calibrating color correction.")
     correction_target = cv2.cvtColor(np.asarray(image.copy()), cv2.COLOR_RGB2LAB)
     return correction_target
 
 
 def apply_color_correction(correction, original_image):
-    logging.info("Applying color correction.")
+    log.debug("Applying color correction.")
     image = Image.fromarray(cv2.cvtColor(exposure.match_histograms(
         cv2.cvtColor(np.asarray(original_image), cv2.COLOR_RGB2LAB),
         correction,
@@ -575,7 +574,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         for n in range(p.n_iter):
             p.iteration = n
             if state.skipped:
+                shared.log.debug(f'Process skipped: {n}/{p.n_iter}')
                 state.skipped = False
+                continue
             if state.interrupted:
                 shared.log.debug(f'Process interrupted: {n}/{p.n_iter}')
                 break
@@ -710,7 +711,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         index_of_first_image=index_of_first_image,
         infotexts=infotexts,
     )
-    if p.scripts is not None:
+    if p.scripts is not None and not state.interrupted:
         p.scripts.postprocess(p, res)
     return res
 
@@ -803,10 +804,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
         if self.enable_hr and latent_scale_mode is None:
-            assert len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) > 0, f"could not find upscaler named {self.hr_upscaler}"
+            if len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) == 0:
+                log.warning("Could not find upscaler to use with hrfix")
+                self.enable_hr = False
         x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
-        if not self.enable_hr:
+        if not self.enable_hr or state.interrupted or state.skipped:
             return samples
         self.is_hr_pass = True
         target_width = self.hr_upscale_to_x

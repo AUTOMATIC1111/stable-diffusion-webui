@@ -23,10 +23,9 @@ group.add_argument("--listen", action='store_true', help="Launch web server usin
 group.add_argument("--port", type=int, default=7860, help="Launch web server with given server port, default: %(default)s")
 group.add_argument("--freeze", action='store_true', help="Disable editing settings", default=False)
 group.add_argument("--auth", type=str, help='Set access authentication like "user:pwd,user:pwd""', default=None)
-group.add_argument("--authfile", type=str, help='Set access authentication using file, default: %(default)s', default=None)
+group.add_argument("--auth-file", type=str, help='Set access authentication using file, default: %(default)s', default=None)
 group.add_argument("--autolaunch", action='store_true', help="Open the UI URL in the system's default browser upon launch", default=False)
 group.add_argument('--api-only', default = False, action='store_true', help = "Run in API only mode without starting UI")
-group.add_argument("--api-auth", type=str, help='Set API authentication, default: %(default)s', default=None)
 group.add_argument("--api-log", default=False, action='store_true', help="Enable logging of all API requests, default: %(default)s")
 group.add_argument("--device-id", type=str, help="Select the default CUDA device to use, default: %(default)s", default=None)
 group.add_argument("--cors-origins", type=str, help="Allowed CORS origins as comma-separated list, default: %(default)s", default=None)
@@ -57,6 +56,7 @@ group.add_argument("--disable-safe-unpickle", action='store_true', help=argparse
 group.add_argument("--lowram", action='store_true', help=argparse.SUPPRESS)
 group.add_argument("--disable-extension-access", default = False, action='store_true', help=argparse.SUPPRESS)
 group.add_argument("--api", help=argparse.SUPPRESS, default=True)
+group.add_argument("--api-auth", type=str, help=argparse.SUPPRESS, default=None)
 
 
 def compatibility_args(opts, args):

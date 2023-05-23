@@ -68,6 +68,8 @@ def setup_logging(clean=False):
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
     rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
     rh.set_name(logging.DEBUG if args.debug else logging.INFO)
+    while log.hasHandlers() and len(log.handlers) > 0:
+        log.removeHandler(log.handlers[0])
     log.addHandler(rh)
 
 
@@ -186,6 +188,7 @@ def clone(url, folder, commithash=None):
             git(f'checkout {commithash}', folder)
             return
     else:
+        log.info(f'Cloning repository: {url}')
         git(f'clone "{url}" "{folder}"')
         if commithash is not None:
             git(f'-C "{folder}" checkout {commithash}')
@@ -309,7 +312,7 @@ def install_packages():
     # openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
     # install(gfpgan_package, 'gfpgan')
     # install(openclip_package, 'open-clip-torch')
-    clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
+    clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git")
     install(clip_package, 'clip')
     install('onnxruntime==1.14.0', 'onnxruntime', ignore=True)
 
@@ -321,19 +324,24 @@ def install_repositories():
     log.info('Installing repositories')
     os.makedirs(os.path.join(os.path.dirname(__file__), 'repositories'), exist_ok=True)
     stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
-    stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
+    # stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
+    stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', None)
     clone(stable_diffusion_repo, d('stable-diffusion-stability-ai'), stable_diffusion_commit)
     taming_transformers_repo = os.environ.get('TAMING_TRANSFORMERS_REPO', "https://github.com/CompVis/taming-transformers.git")
-    taming_transformers_commit = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "3ba01b241669f5ade541ce990f7650a3b8f65318")
+    # taming_transformers_commit = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', "3ba01b241669f5ade541ce990f7650a3b8f65318")
+    taming_transformers_commit = os.environ.get('TAMING_TRANSFORMERS_COMMIT_HASH', None)
     clone(taming_transformers_repo, d('taming-transformers'), taming_transformers_commit)
     k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
-    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', "b43db16749d51055f813255eea2fdf1def801919")
+    # k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', "b43db16749d51055f813255eea2fdf1def801919")
+    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', None)
     clone(k_diffusion_repo, d('k-diffusion'), k_diffusion_commit)
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
-    codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
+    # codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
+    codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "7a584fd")
     clone(codeformer_repo, d('CodeFormer'), codeformer_commit)
     blip_repo = os.environ.get('BLIP_REPO', 'https://github.com/salesforce/BLIP.git')
-    blip_commit = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
+    # blip_commit = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
+    blip_commit = os.environ.get('BLIP_COMMIT_HASH', None)
     clone(blip_repo, d('BLIP'), blip_commit)
 
 
@@ -635,12 +643,14 @@ def extensions_preload(force = False):
         log.info('Running extension preloading')
         if args.safe:
             log.info('Running in safe mode without user extensions')
-        from modules.script_loading import preload_extensions
-        from modules.paths_internal import extensions_builtin_dir, extensions_dir
-        extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
-        for ext_dir in extension_folders:
-            preload_extensions(ext_dir, parser)
-
+        try:
+            from modules.script_loading import preload_extensions
+            from modules.paths_internal import extensions_builtin_dir, extensions_dir
+            extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+            for ext_dir in extension_folders:
+                preload_extensions(ext_dir, parser, args.debug)
+        except:
+            log.error('Error running extension preloading')
 
 def git_reset():
     log.warning('Running GIT reset')

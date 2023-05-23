@@ -5,19 +5,55 @@ helper methods that creates HTTP session with managed connection pool
 provides async HTTP get/post methods and several helper methods
 """
 
+import os
 import sys
+import ssl
 import asyncio
 import logging
 import aiohttp
 import requests
+import urllib3
 from util import Map, log
 
 
-sd_url = "http://127.0.0.1:7860" # automatic1111 api url root
+sd_url = os.environ.get('SDAPI_URL', "http://127.0.0.1:7860") # automatic1111 api url root
+
 use_session = True
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+ssl.create_default_context = ssl._create_unverified_context # pylint: disable=protected-access
 timeout = aiohttp.ClientTimeout(total = None, sock_connect = 10, sock_read = None) # default value is 5 minutes, we need longer for training
 sess = None
 quiet = False
+BaseThreadPolicy = asyncio.WindowsSelectorEventLoopPolicy if sys.platform == "win32" and hasattr(asyncio, "WindowsSelectorEventLoopPolicy") else asyncio.DefaultEventLoopPolicy
+
+
+class AnyThreadEventLoopPolicy(BaseThreadPolicy):
+    def get_event_loop(self) -> asyncio.AbstractEventLoop:
+        try:
+            return super().get_event_loop()
+        except (RuntimeError, AssertionError):
+            loop = self.new_event_loop()
+            self.set_event_loop(loop)
+            return loop
+
+asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
+
+
+def authsync():
+    sd_username = os.environ.get('SDAPI_USR', None)
+    sd_password = os.environ.get('SDAPI_PWD', None)
+    if sd_username is not None and sd_password is not None:
+        return requests.auth.HTTPBasicAuth(sd_username, sd_password)
+    return None
+
+
+def auth():
+    sd_username = os.environ.get('SDAPI_USR', None)
+    sd_password = os.environ.get('SDAPI_PWD', None)
+    if sd_username is not None and sd_password is not None:
+        return aiohttp.BasicAuth(sd_username, sd_password)
+    return None
+
 
 
 async def result(req):
@@ -60,7 +96,7 @@ async def get(endpoint: str, json: dict = None):
     global sess # pylint: disable=global-statement
     sess = sess if sess is not None else await session()
     try:
-        async with sess.get(url = endpoint, json = json) as req:
+        async with sess.get(url=endpoint, json=json, verify_ssl=False) as req:
             res = await result(req)
             return res
     except Exception as err:
@@ -70,7 +106,7 @@ async def get(endpoint: str, json: dict = None):
 
 def getsync(endpoint: str, json: dict = None):
     try:
-        req = requests.get(f'{sd_url}{endpoint}', json = json) # pylint: disable=missing-timeout
+        req = requests.get(f'{sd_url}{endpoint}', json=json, verify=False, auth=authsync()) # pylint: disable=missing-timeout
         res = resultsync(req)
         return res
     except Exception as err:
@@ -85,7 +121,7 @@ async def post(endpoint: str, json: dict = None):
         await sess.close()
     sess = await session()
     try:
-        async with sess.post(url = endpoint, json = json) as req:
+        async with sess.post(url=endpoint, json=json, verify_ssl=False) as req:
             res = await result(req)
             return res
     except Exception as err:
@@ -94,7 +130,7 @@ async def post(endpoint: str, json: dict = None):
 
 
 def postsync(endpoint: str, json: dict = None):
-    req = requests.post(f'{sd_url}{endpoint}', json = json) # pylint: disable=missing-timeout
+    req = requests.post(f'{sd_url}{endpoint}', json=json, verify=False, auth=authsync()) # pylint: disable=missing-timeout
     res = resultsync(req)
     return res
 
@@ -150,7 +186,7 @@ def shutdown():
 async def session():
     global sess # pylint: disable=global-statement
     time = aiohttp.ClientTimeout(total = None, sock_connect = 10, sock_read = None) # default value is 5 minutes, we need longer for training
-    sess = aiohttp.ClientSession(timeout = time, base_url = sd_url)
+    sess = aiohttp.ClientSession(timeout = time, base_url = sd_url, auth=auth())
     log.debug({ 'sdapi': 'session created', 'endpoint': sd_url })
     """
     sess = await aiohttp.ClientSession(timeout = timeout).__aenter__()
@@ -170,6 +206,7 @@ async def session():
 async def close():
     if sess is not None:
         await asyncio.sleep(0)
+        await sess.close()
         await sess.__aexit__(None, None, None)
         log.debug({ 'sdapi': 'session closed', 'endpoint': sd_url })
 
@@ -180,6 +217,8 @@ if __name__ == "__main__":
         asyncio.run(interrupt())
     if 'progress' in sys.argv:
         asyncio.run(progress())
+    if 'progresssync' in sys.argv:
+        progresssync()
     if 'options' in sys.argv:
         opt = options()
         log.debug({ 'options' })
@@ -189,4 +228,5 @@ if __name__ == "__main__":
         print(json.dumps(opt['flags'], indent = 2))
     if 'shutdown' in sys.argv:
         shutdown()
-    asyncio.run(close())
+    asyncio.run(close(), debug=True)
+    asyncio.run(asyncio.sleep(0.5))
