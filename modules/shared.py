@@ -53,7 +53,7 @@ ui_reorder_categories = [
     "seed",
     "batch",
     "override_settings",
-    'quicksettings_accordion',
+    "quicksettings_accordion",
     "scripts",
 ]
 
