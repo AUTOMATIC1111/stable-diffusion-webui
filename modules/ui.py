@@ -520,6 +520,10 @@ def create_ui():
                         with FormRow(elem_id="txt2img_override_settings_row") as row:
                             override_settings = create_override_settings_dropdown('txt2img', row)
 
+                    elif category == "quicksettings_accordion":
+                        with FormRow(elem_id="txt2img_quicksettings_row", visible=False) as row:
+                            pass
+
                     elif category == "scripts":
                         with FormGroup(elem_id="txt2img_script_container"):
                             custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
@@ -856,6 +860,10 @@ def create_ui():
                     elif category == "override_settings":
                         with FormRow(elem_id="img2img_override_settings_row") as row:
                             override_settings = create_override_settings_dropdown('img2img', row)
+
+                    elif category == "quicksettings_accordion":
+                        with FormRow(elem_id="img2img_quicksettings_row", visible=False) as row:
+                            pass
 
                     elif category == "scripts":
                         with FormGroup(elem_id="img2img_script_container"):
@@ -1525,16 +1533,25 @@ def create_ui():
             return opts.dumpjson(), f'{len(changed)} settings changed without save: {", ".join(changed)}.'
         return opts.dumpjson(), f'{len(changed)} settings changed{": " if len(changed) > 0 else ""}{", ".join(changed)}.'
 
-    def run_settings_single(value, key):
+    def run_settings_single(value, key, quicksettings_accordion=False):
         if not opts.same_type(value, opts.data_labels[key].default):
-            return gr.update(visible=True), opts.dumpjson()
+            if not quicksettings_accordion:
+                return gr.update(visible=True), opts.dumpjson()
+            else:
+                return gr.update(visible=True), gr.update(visible=True), opts.dumpjson()
 
         if not opts.set(key, value):
-            return gr.update(value=getattr(opts, key)), opts.dumpjson()
+            if not quicksettings_accordion:
+                return gr.update(value=getattr(opts, key)), opts.dumpjson()
+            else:
+                return gr.update(value=getattr(opts, key)), gr.update(value=getattr(opts, key)), opts.dumpjson()
 
         opts.save(shared.config_filename)
 
-        return get_value_for_setting(key), opts.dumpjson()
+        if not quicksettings_accordion:
+            return get_value_for_setting(key), opts.dumpjson()
+        else:
+            return get_value_for_setting(key), get_value_for_setting(key), opts.dumpjson()
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         with gr.Row():
@@ -1545,10 +1562,21 @@ def create_ui():
 
         result = gr.HTML(elem_id="settings_result")
 
-        quicksettings_names = opts.quicksettings_list
-        quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
+        quicksettings_names = {'list': opts.quicksettings_list, 'accordion': opts.quicksettings_accordion}
+        quicksettings_names = {section: {x: i for i, x in enumerate(settings) if x != 'quicksettings'} for section, settings in quicksettings_names.items() }
 
         quicksettings_list = []
+        quicksettings_accordion = []
+        quicksettings_components = {}
+
+        def setup_quicksettings(lst: list, section='list'):
+            for _i, k, _item in sorted(lst, key=lambda x: quicksettings_names['accordion' if section != 'list' else 'list'].get(x[1], x[0])):
+                component = create_setting_component(k, is_quicksettings=True)
+                k = k if k == 'sd_model_checkpoint' else f'{k}${section}'
+                if k == 'sd_model_checkpoint':
+                    component_dict[k] = component
+                quicksettings_components[k] = component
+
 
         previous_section = None
         current_tab = None
@@ -1572,8 +1600,11 @@ def create_ui():
 
                     previous_section = item.section
 
-                if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
-                    quicksettings_list.append((i, k, item))
+                if k in {**quicksettings_names['list'], **quicksettings_names['accordion']} and not shared.cmd_opts.freeze_settings:
+                    if k in quicksettings_names['list']:
+                        quicksettings_list.append((i, k, item))
+                    elif k in quicksettings_names['accordion']:
+                        quicksettings_accordion.append((i, k, item))
                     components.append(dummy_component)
                 elif section_must_be_skipped:
                     components.append(dummy_component)
@@ -1673,9 +1704,7 @@ def create_ui():
 
     with gr.Blocks(theme=shared.gradio_theme, analytics_enabled=False, title="Stable Diffusion") as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
-            for _i, k, _item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
-                component = create_setting_component(k, is_quicksettings=True)
-                component_dict[k] = component
+            setup_quicksettings(quicksettings_list)
 
         parameters_copypaste.connect_paste_params_buttons()
 
@@ -1686,6 +1715,13 @@ def create_ui():
             for interface, label, ifid in sorted_interfaces:
                 if label in shared.opts.hidden_tabs:
                     continue
+                if ifid in ['txt2img', 'img2img'] and len(quicksettings_accordion) > 0:
+                    qs_rows = [x for x in [i[1] for i in interface.blocks.items()] if x.elem_id and 'quicksettings_row' in x.elem_id]
+                    if len(qs_rows) == 1:
+                        with qs_rows[0]:
+                            with gr.Accordion(label='Quicksettings', elem_id=f'quicksettings_accordion_{ifid}', open=False):
+                                setup_quicksettings(quicksettings_accordion, section=ifid)
+                        qs_rows[0].visible = True
                 with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
 
@@ -1713,15 +1749,15 @@ def create_ui():
             outputs=[text_settings, result],
         )
 
-        for _i, k, _item in quicksettings_list:
-            component = component_dict[k]
+        for key, component in quicksettings_components.items():
+            k = key.split('$')[0]
             info = opts.data_labels[k]
 
             change_handler = component.release if hasattr(component, 'release') else component.change
             change_handler(
-                fn=lambda value, k=k: run_settings_single(value, key=k),
+                fn=lambda value, k=key: run_settings_single(value, key=k.split('$')[0], quicksettings_accordion=k.endswith(('$txt2img', '$img2img'))),
                 inputs=[component],
-                outputs=[component, text_settings],
+                outputs=[component, text_settings] if k == 'sd_model_checkpoint' else [comp for ckey, comp in quicksettings_components.items() if ckey.startswith(k+'$')] + [text_settings],
                 show_progress=info.refresh is not None,
             )
 
@@ -1738,14 +1774,31 @@ def create_ui():
         )
 
         component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
+        qs_component_keys = [
+            k for k in
+            [x + '$list' for x in opts.data_labels.keys()]
+            + [x + '$txt2img' for x in opts.data_labels.keys()]
+            + [x + '$img2img' for x in opts.data_labels.keys()]
+            if k in quicksettings_components and k != 'sd_model_checkpoint'
+        ]
 
         def get_settings_values():
             return [get_value_for_setting(key) for key in component_keys]
+
+        def get_qs_settings_values():
+            return [get_value_for_setting(key.split('$')[0]) for key in qs_component_keys]
 
         demo.load(
             fn=get_settings_values,
             inputs=[],
             outputs=[component_dict[k] for k in component_keys],
+            queue=False,
+        )
+
+        demo.load(
+            fn=get_qs_settings_values,
+            inputs=[],
+            outputs=[quicksettings_components[k] for k in qs_component_keys],
             queue=False,
         )
 

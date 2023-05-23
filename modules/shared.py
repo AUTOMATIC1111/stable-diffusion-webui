@@ -53,6 +53,7 @@ ui_reorder_categories = [
     "seed",
     "batch",
     "override_settings",
+    'quicksettings_accordion',
     "scripts",
 ]
 
@@ -483,6 +484,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_delimiters": OptionInfo(".,\\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"),
     "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that appear at the top of page rather than in settings tab").needs_restart(),
+    "quicksettings_accordion": OptionInfo([], "Quicksettings accordion", ui_components.DropdownMulti, lambda: {"choices": [x for x in list(opts.data_labels.keys()) if x != 'sd_model_checkpoint']}).js("info", "settingsHintsShowQuicksettings").info("setting entries that appear in an accordion within the txt2img and img2img tabs").needs_restart(),
     "ui_tab_order": OptionInfo([], "UI tab order", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order").needs_restart(),
