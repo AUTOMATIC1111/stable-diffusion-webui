@@ -48,6 +48,11 @@ def apply_optimizations():
 
     undo_optimizations()
 
+    if len(optimizers) == 0:
+        # a script can access the model very early, and optimizations would not be filled by then
+        current_optimizer = None
+        return ''
+
     ldm.modules.diffusionmodules.model.nonlinearity = silu
     ldm.modules.diffusionmodules.openaimodel.th = sd_hijack_unet.th
 
@@ -67,8 +72,9 @@ def apply_optimizations():
         matching_optimizer = optimizers[0]
 
     if matching_optimizer is not None:
-        print(f"Applying optimization: {matching_optimizer.name}")
+        print(f"Applying optimization: {matching_optimizer.name}... ", end='')
         matching_optimizer.apply()
+        print("done.")
         current_optimizer = matching_optimizer
         return current_optimizer.name
     else:
@@ -149,6 +155,13 @@ class StableDiffusionModelHijack:
     def __init__(self):
         self.embedding_db.add_embedding_dir(cmd_opts.embeddings_dir)
 
+    def apply_optimizations(self):
+        try:
+            self.optimization_method = apply_optimizations()
+        except Exception as e:
+            errors.display(e, "applying cross attention optimization")
+            undo_optimizations()
+
     def hijack(self, m):
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             model_embeddings = m.cond_stage_model.roberta.embeddings
@@ -168,11 +181,7 @@ class StableDiffusionModelHijack:
         if m.cond_stage_key == "edit":
             sd_hijack_unet.hijack_ddpm_edit()
 
-        try:
-            self.optimization_method = apply_optimizations()
-        except Exception as e:
-            errors.display(e, "applying cross attention optimization")
-            undo_optimizations()
+        self.apply_optimizations()
 
         self.clip = m.cond_stage_model
 
