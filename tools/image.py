@@ -6,10 +6,26 @@
 # @File    : image.py
 # @Software: Hifive
 import os
+import base64
 import shutil
 from io import BytesIO
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
+
+
+def encode_pil_to_base64(image, quality=80):
+    with BytesIO() as output_bytes:
+        use_metadata = False
+        metadata = PngInfo()
+        for key, value in image.info.items():
+            if isinstance(key, str) and isinstance(value, str):
+                metadata.add_text(key, value)
+                use_metadata = True
+        image.save(output_bytes, format="PNG", pnginfo=(metadata if use_metadata else None),
+                   quality=quality)
+        bytes_data = output_bytes.getvalue()
+
+    return base64.b64encode(bytes_data)
 
 
 # compress_image 压缩图片函数，减轻网络压力

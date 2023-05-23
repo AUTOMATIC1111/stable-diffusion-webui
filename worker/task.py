@@ -181,6 +181,7 @@ class TaskProgress(SerializationObj):
         self._result = None
         self.task_progress = 0
         self.train = TrainTaskInfo()
+        self.preview = None
 
     @property
     def completed(self):

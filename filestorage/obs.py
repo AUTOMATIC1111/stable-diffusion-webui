@@ -61,3 +61,12 @@ class ObsFileStorage(FileStorage):
         else:
             raise OSError(f'cannot download file from obs, resp:{resp.errorMessage},key: {remoting_path}')
 
+    def upload_content(self, remoting_path, content) -> str:
+        bucket, key = self.extract_buack_key_from_path(remoting_path)
+        headers = PutObjectHeader()
+        resp = self.obsClient.putContent(bucket, key, content, headers=headers)
+
+        if resp.status < 300:
+            return remoting_path
+        else:
+            raise OSError(f'cannot download file from obs, resp:{resp.errorMessage},key: {remoting_path}')

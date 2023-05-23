@@ -801,8 +801,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             del x_samples_ddim
 
             devices.torch_gc()
-
-            state.nextjob()
             if callable(p.progress_callback):
                 progress = 0.01
                 if shared.state.job_count > 0:
@@ -811,6 +809,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     progress += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
                 progress = int(min(progress, 1) * 100)
                 p.progress_callback(progress)
+            state.nextjob()
 
         p.color_corrections = None
 

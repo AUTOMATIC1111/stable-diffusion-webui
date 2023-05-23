@@ -166,33 +166,25 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
     def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
         base_model_path = self._get_local_checkpoint(task)
         load_sd_model_weights(base_model_path, task.model_hash)
-        progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run i2i...')
+        progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run t2i...')
         yield progress
         process_args = self._build_txt2img_arg(task)
-        if process_args.loras:
-            # 设置LORA，具体实施在modules/exta_networks.py 中activate函数。
-            sd_models.user_loras = self._get_local_loras(process_args.loras)
-        else:
-            sd_models.user_loras = []
-        if process_args.embedding:
-            embedding_dirs = self._get_local_embedding_dirs(process_args.embedding)
-            sd_models.user_embendding_dirs = set(embedding_dirs)
-        else:
-            sd_models.user_embendding_dirs = []
+        self._set_little_models(process_args)
         progress.status = TaskStatus.Running
         progress.task_desc = f't2i task({task.id}) running'
         yield progress
+        shared.state.begin()
         if process_args.selectable_scripts:
             processed = process_args.scripts.run(process_args, *process_args.script_args)
         else:
             processed = process_images(process_args)
+        shared.state.end()
         process_args.close()
         images = save_processed_images(processed,
                                        process_args.outpath_samples,
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
                                        task.id)
-
         progress.update_seed(processed.seed, processed.subseed)
         progress.set_finish_result(images)
         yield progress

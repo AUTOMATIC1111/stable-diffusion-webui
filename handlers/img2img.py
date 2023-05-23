@@ -24,7 +24,7 @@ from handlers.utils import init_script_args, get_selectable_script, init_default
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path, batch_model_local_paths
 from handlers.extension.controlnet import exec_control_net_annotator
 from worker.dumper import dumper
-from tools.image import plt_show
+from tools.image import plt_show, encode_pil_to_base64
 from modules import sd_models
 
 AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]
@@ -388,14 +388,7 @@ class Img2ImgTaskHandler(TaskHandler):
         loras = batch_model_local_paths(ModelType.Lora, *loras)
         return [p for p in loras if p and os.path.isfile(p)]
 
-    def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
-
-        base_model_path = self._get_local_checkpoint(task)
-        load_sd_model_weights(base_model_path, task.model_hash)
-        progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run i2i...')
-        yield progress
-        # 参数有使用到sd_model因此在切换模型后再构造参数。
-        process_args = self._build_img2img_arg(task)
+    def _set_little_models(self, process_args):
         if process_args.loras:
             # 设置LORA，具体实施在modules/exta_networks.py 中activate函数。
             sd_models.user_loras = self._get_local_loras(process_args.loras)
@@ -406,6 +399,26 @@ class Img2ImgTaskHandler(TaskHandler):
             sd_models.user_embedding_dirs = set(embedding_dirs)
         else:
             sd_models.user_embedding_dirs = []
+
+    def _exec_img2img(self, task: Task) -> typing.Iterable[TaskProgress]:
+
+        base_model_path = self._get_local_checkpoint(task)
+        load_sd_model_weights(base_model_path, task.model_hash)
+        progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run i2i...')
+        yield progress
+        # 参数有使用到sd_model因此在切换模型后再构造参数。
+        process_args = self._build_img2img_arg(task)
+        self._set_little_models(process_args)
+        # if process_args.loras:
+        #     # 设置LORA，具体实施在modules/exta_networks.py 中activate函数。
+        #     sd_models.user_loras = self._get_local_loras(process_args.loras)
+        # else:
+        #     sd_models.user_loras = []
+        # if process_args.embedding:
+        #     embedding_dirs = self._get_local_embedding_dirs(process_args.embedding)
+        #     sd_models.user_embedding_dirs = set(embedding_dirs)
+        # else:
+        #     sd_models.user_embedding_dirs = []
 
         progress.status = TaskStatus.Running
         progress.task_desc = f'i2i task({task.id}) running'
@@ -449,6 +462,10 @@ class Img2ImgTaskHandler(TaskHandler):
             v = 99
 
         progress = TaskProgress.new_running(task, "generate image...", v)
+        shared.state.set_current_image()
+        if shared.state.current_image:
+            current = encode_pil_to_base64(shared.state.current_image, 60)
+            progress.preview = current
         self._set_task_status(progress)
 
     def _exec_interrogate(self, task: Task):

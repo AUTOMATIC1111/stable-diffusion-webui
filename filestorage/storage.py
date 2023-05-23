@@ -117,6 +117,9 @@ class FileStorage:
     def upload(self, local_path, remoting_path) -> str:
         raise NotImplementedError
 
+    def upload_content(self, remoting_path, content) -> str:
+        raise NotImplementedError
+
     def multi_upload(self, local_remoting_pars: typing.Sequence[typing.Tuple[str, str]]):
         if local_remoting_pars:
             worker_count = cpu_count()
@@ -212,3 +215,10 @@ class PrivatizationFileStorage(FileStorage):
         if remoting_path != local_path:
             shutil.copy(local_path, remoting_path)
             return remoting_path
+
+    def upload_content(self, remoting_path, content) -> str:
+        with open(remoting_path, 'wb+') as f:
+            f.write(content)
+        return remoting_path
+
+
