@@ -346,7 +346,7 @@ class Processed:
         self.infotexts = infotexts or [info]
 
         if index_of_end_image <= 0 and images_list:
-            self.index_of_end_image = len(images_list) - 1 - index_of_first_image
+            self.index_of_end_image = len(images_list) - index_of_first_image
         else:
             self.index_of_end_image = index_of_end_image
 
@@ -814,7 +814,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
         p.color_corrections = None
 
-        index_of_first_image, index_of_end_image = 0, 0
+        index_of_first_image = 0
 
         unwanted_grid_because_of_img_count = len(output_images) < 2 and opts.grid_only_if_multiple
         if (opts.return_grid or opts.grid_save) and not p.do_not_save_grid and not unwanted_grid_because_of_img_count:
@@ -836,7 +836,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     devices.torch_gc()
 
-    index_of_end_image = len(output_images) - index_of_first_image - 1
     res = Processed(p, output_images, p.all_seeds[0], infotext(), comments="".join(["\n\n" + x for x in comments]),
                     subseed=p.all_subseeds[0], index_of_first_image=index_of_first_image, infotexts=infotexts)
 

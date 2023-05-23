@@ -148,7 +148,7 @@ class ImageOutput:
                 if S3SDWEB not in low_file:
                     relative_path = os.path.join(S3SDWEB, low_file)
                 low_key = os.path.join(bucket, relative_path)
-                worker_args.append((file_storage_system, low_key, low_keys))
+                worker_args.append((file_storage_system, low_file, low_key, low_keys))
 
             relative_path = self.output_dir
             if S3SDWEB not in self.output_dir:
@@ -157,7 +157,7 @@ class ImageOutput:
                 filename = os.path.basename(file_path)
                 key = os.path.join(bucket, relative_path, filename)
                 file_storage_system.upload(file_path, key)
-                worker_args.append((file_storage_system, key, high_keys))
+                worker_args.append((file_storage_system, file_path, key, high_keys))
             worker = MultiThreadWorker(worker_args, get_upload_image_key, 4)
             worker.run()
 

@@ -74,9 +74,9 @@ def exec_preprocess_task(job: Task):
 
 
 def build_zip(target_dir):
-    dirname = os.path.dirname(Tmp)
+    # dirname = os.path.dirname(Tmp)
     filename = os.path.basename(target_dir) + '.zip'
-    dst = os.path.join(dirname, filename)
+    dst = os.path.join(Tmp, filename)
 
     zip_compress(target_dir, dst)
     return dst

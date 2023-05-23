@@ -80,7 +80,7 @@ class MultiWorker(object):
 
         # 等待任务完成
         while not self.queue.empty() and any(w.is_alive() for w in workers):
-            time.sleep(1)
+            time.sleep(0.3)
 
         # 等待最后一波任务完成。
         self.start = False
