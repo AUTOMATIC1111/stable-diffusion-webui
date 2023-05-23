@@ -106,7 +106,7 @@ class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None, enable_custom_k_sched: bool = False, k_sched_type: str = "", sigma_min: float=0.0, sigma_max: float=0.0, rho: float=0.0):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
@@ -146,11 +146,6 @@ class StableDiffusionProcessing:
         self.s_tmin = s_tmin or opts.s_tmin
         self.s_tmax = s_tmax or float('inf')  # not representable as a standard ui option
         self.s_noise = s_noise or opts.s_noise
-        self.enable_custom_k_sched = opts.custom_k_sched
-        self.k_sched_type = k_sched_type or opts.k_sched_type
-        self.sigma_max = sigma_max or opts.sigma_max
-        self.sigma_min = sigma_min or opts.sigma_min
-        self.rho = rho or opts.rho
         self.override_settings = {k: v for k, v in (override_settings or {}).items() if k not in shared.restricted_opts}
         self.override_settings_restore_afterwards = override_settings_restore_afterwards
         self.is_using_inpainting_conditioning = False
@@ -560,18 +555,9 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     if uses_ensd:
         uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
 
-    # avoid loop import
-    from modules import sd_samplers_kdiffusion
-    use_custom_k_sched = p.enable_custom_k_sched and p.sampler_name in sd_samplers_kdiffusion.k_diffusion_samplers_map
-
     generation_params = {
         "Steps": p.steps,
         "Sampler": p.sampler_name,
-        "Enable Custom KDiffusion Schedule": use_custom_k_sched or None,
-        "KDiffusion Scheduler Type": p.k_sched_type if use_custom_k_sched else None,
-        "KDiffusion Scheduler sigma_max": p.sigma_max if use_custom_k_sched else None,
-        "KDiffusion Scheduler sigma_min": p.sigma_min if use_custom_k_sched else None,
-        "KDiffusion Scheduler rho": p.rho if use_custom_k_sched else None,
         "CFG scale": p.cfg_scale,
         "Image CFG scale": getattr(p, 'image_cfg_scale', None),
         "Seed": all_seeds[index],
