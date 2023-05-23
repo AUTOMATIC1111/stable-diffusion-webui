@@ -21,6 +21,8 @@ import hashlib
 from modules import sd_samplers, shared, script_callbacks, errors
 from modules.shared import opts, cmd_opts
 
+import modules.sd_vae as sd_vae
+
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
@@ -335,6 +337,16 @@ def sanitize_filename_part(text, replace_spaces=True):
 
 
 class FilenameGenerator:
+    def get_vae_filename(self): #get the name of the VAE file.
+        if sd_vae.loaded_vae_file is None:
+            return "NoneType"
+        file_name = os.path.basename(sd_vae.loaded_vae_file)
+        split_file_name = file_name.split('.')
+        if len(split_file_name) > 1 and split_file_name[0] == '':
+            return split_file_name[1] # if the first character of the filename is "." then [1] is obtained.
+        else:
+            return split_file_name[0]
+
     replacements = {
         'seed': lambda self: self.seed if self.seed is not None else '',
         'steps': lambda self:  self.p and self.p.steps,
@@ -358,6 +370,8 @@ class FilenameGenerator:
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
         'clip_skip': lambda self: opts.data["CLIP_stop_at_last_layers"],
         'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
+        'vae_filename': lambda self: self.get_vae_filename(),
+
     }
     default_time_format = '%Y%m%d%H%M%S'
 
