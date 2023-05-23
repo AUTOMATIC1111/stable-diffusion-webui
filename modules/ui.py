@@ -1718,9 +1718,12 @@ def create_ui():
                 if ifid in ['txt2img', 'img2img'] and len(quicksettings_accordion) > 0:
                     qs_rows = [x for x in [i[1] for i in interface.blocks.items()] if x.elem_id and 'quicksettings_row' in x.elem_id]
                     if len(qs_rows) == 1:
+                        separate_qs_rows = [quicksettings_accordion[i:i+3] for i in range(0, len(quicksettings_accordion), 3)]
                         with qs_rows[0]:
                             with gr.Accordion(label='Quicksettings', elem_id=f'quicksettings_accordion_{ifid}', open=False):
-                                setup_quicksettings(quicksettings_accordion, section=ifid)
+                                for row in separate_qs_rows:
+                                    with gr.Row():
+                                        setup_quicksettings(row, section=ifid)
                         qs_rows[0].visible = True
                 with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
