@@ -517,7 +517,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-    'k_sched_type':  OptionInfo("default", "scheduler type", gr.Dropdown, {"choices": ["None", "karras", "exponential", "polyexponential"]}),
+    'k_sched_type':  OptionInfo("Automatic", "scheduler type", gr.Dropdown, {"choices": ["Automatic", "karras", "exponential", "polyexponential"]}),
     'sigma_max': OptionInfo(0.0, "sigma max", gr.Number).info("the maximum noise strength for the scheduler. Set to 0 to use the same value which 'xxx karras' samplers use."),
     'sigma_min': OptionInfo(0.0, "sigma min", gr.Number).info("the minimum noise strength for the scheduler. Set to 0 to use the same value which 'xxx karras' samplers use."),
     'rho':  OptionInfo(7.0, "rho", gr.Number).info("higher will make a more steep noise scheduler (decrease faster). default for karras is 7.0, for polyexponential is 1.0"),
