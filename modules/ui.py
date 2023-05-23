@@ -484,7 +484,6 @@ def create_ui():
                         with FormRow(elem_classes="checkboxes-row", variant="compact"):
                             restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
-                            t2i_enable_k_sched = gr.Checkbox(label='Custom KDiffusion Scheduler', value=False, elem_id="txt2img_enable_k_sched")
                             enable_hr = gr.Checkbox(label='Hires. fix', value=False, elem_id="txt2img_enable_hr")
                             hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
 
@@ -510,14 +509,6 @@ def create_ui():
                                 with gr.Column(scale=80):
                                     with gr.Row():
                                         hr_negative_prompt = gr.Textbox(label="Negative prompt", elem_id="hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt for hires fix pass.\nLeave empty to use the same negative prompt as in first pass.", elem_classes=["prompt"])
-
-                    elif category == "kdiffusion_scheduler":
-                        with FormGroup(visible=False, elem_id="txt2img_kdiffusion_scheduler") as t2i_k_sched_options:
-                            with FormRow(elem_id="txt2img_kdiffusion_scheduler_row1", variant="compact"):
-                                t2i_k_sched_type = gr.Dropdown(label="Type", elem_id="t2i_k_sched_type", choices=['karras', 'exponential', 'polyexponential'], value='karras')
-                                t2i_k_sched_sigma_min = gr.Slider(minimum=0.0, maximum=0.5, step=0.05, label='sigma min', value=0.1, elem_id="txt2img_sigma_min")
-                                t2i_k_sched_sigma_max = gr.Slider(minimum=0.0, maximum=50.0, step=0.1, label='sigma max', value=10.0, elem_id="txt2img_sigma_max")
-                                t2i_k_sched_rho = gr.Slider(minimum=0.5, maximum=10.0, step=0.1, label='rho', value=7.0, elem_id="txt2img_rho")
 
                     elif category == "batch":
                         if not opts.dimensions_and_batch_together:
@@ -587,11 +578,6 @@ def create_ui():
                     hr_prompt,
                     hr_negative_prompt,
                     override_settings,
-                    t2i_enable_k_sched,
-                    t2i_k_sched_type,
-                    t2i_k_sched_sigma_min,
-                    t2i_k_sched_sigma_max,
-                    t2i_k_sched_rho
 
                 ] + custom_inputs,
 
@@ -641,13 +627,6 @@ def create_ui():
                 show_progress = False,
             )
 
-            t2i_enable_k_sched.change(
-                fn=lambda x: gr_show(x),
-                inputs=[t2i_enable_k_sched],
-                outputs=[t2i_k_sched_options],
-                show_progress=False
-            )
-
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
@@ -676,11 +655,6 @@ def create_ui():
                 (hr_prompt, "Hires prompt"),
                 (hr_negative_prompt, "Hires negative prompt"),
                 (hr_prompts_container, lambda d: gr.update(visible=True) if d.get("Hires prompt", "") != "" or d.get("Hires negative prompt", "") != "" else gr.update()),
-                (t2i_enable_k_sched, "Enable Custom KDiffusion Schedule"),
-                (t2i_k_sched_type, "KDiffusion Scheduler Type"),
-                (t2i_k_sched_sigma_max, "KDiffusion Scheduler sigma_max"),
-                (t2i_k_sched_sigma_min, "KDiffusion Scheduler sigma_min"),
-                (t2i_k_sched_rho, "KDiffusion Scheduler rho"),
                 *modules.scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
@@ -872,15 +846,6 @@ def create_ui():
                         with FormRow(elem_classes="checkboxes-row", variant="compact"):
                             restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="img2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
-                            i2i_enable_k_sched = gr.Checkbox(label='Custom KDiffusion Scheduler', value=False, elem_id="txt2img_enable_k_sched")
-
-                    elif category == "kdiffusion_scheduler":
-                        with FormGroup(visible=False, elem_id="img2img_kdiffusion_scheduler") as i2i_k_sched_options:
-                            with FormRow(elem_id="img2img_kdiffusion_scheduler_row1", variant="compact"):
-                                i2i_k_sched_type = gr.Dropdown(label="Type", elem_id="t2i_k_sched_type", choices=['karras', 'exponential', 'polyexponential'], value='karras')
-                                i2i_k_sched_sigma_min = gr.Slider(minimum=0.0, maximum=0.5, step=0.05, label='sigma min', value=0.1, elem_id="txt2img_sigma_min")
-                                i2i_k_sched_sigma_max = gr.Slider(minimum=0.0, maximum=50.0, step=0.1, label='sigma max', value=10.0, elem_id="txt2img_sigma_max")
-                                i2i_k_sched_rho = gr.Slider(minimum=0.5, maximum=10.0, step=0.1, label='rho', value=7.0, elem_id="txt2img_rho")
 
                     elif category == "batch":
                         if not opts.dimensions_and_batch_together:
@@ -984,11 +949,6 @@ def create_ui():
                     img2img_batch_output_dir,
                     img2img_batch_inpaint_mask_dir,
                     override_settings,
-                    i2i_enable_k_sched,
-                    i2i_k_sched_type,
-                    i2i_k_sched_sigma_min,
-                    i2i_k_sched_sigma_max,
-                    i2i_k_sched_rho
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,
@@ -1072,13 +1032,6 @@ def create_ui():
                     outputs=[prompt, negative_prompt, styles],
                 )
 
-            i2i_enable_k_sched.change(
-                fn=lambda x: gr_show(x),
-                inputs=[i2i_enable_k_sched],
-                outputs=[i2i_k_sched_options],
-                show_progress=False
-            )
-
             token_button.click(fn=update_token_counter, inputs=[img2img_prompt, steps], outputs=[token_counter])
             negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[img2img_negative_prompt, steps], outputs=[negative_token_counter])
 
@@ -1090,11 +1043,6 @@ def create_ui():
                 (steps, "Steps"),
                 (sampler_index, "Sampler"),
                 (restore_faces, "Face restoration"),
-                (i2i_enable_k_sched, "Enable Custom KDiffusion Schedule"),
-                (i2i_k_sched_type, "KDiffusion Scheduler Type"),
-                (i2i_k_sched_sigma_max, "KDiffusion Scheduler sigma_max"),
-                (i2i_k_sched_sigma_min, "KDiffusion Scheduler sigma_min"),
-                (i2i_k_sched_rho, "KDiffusion Scheduler rho"),
                 (cfg_scale, "CFG scale"),
                 (image_cfg_scale, "Image CFG scale"),
                 (seed, "Seed"),

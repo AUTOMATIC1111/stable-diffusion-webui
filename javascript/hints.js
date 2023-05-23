@@ -113,12 +113,7 @@ var titles = {
     "Multiplier for extra networks": "When adding extra network such as Hypernetwork or Lora to prompt, use this multiplier for it.",
     "Discard weights with matching name": "Regular expression; if weights's name matches it, the weights is not written to the resulting checkpoint. Use ^model_ema to discard EMA weights.",
     "Extra networks tab order": "Comma-separated list of tab names; tabs listed here will appear in the extra networks UI first and in order lsited.",
-    "Negative Guidance minimum sigma": "Skip negative prompt for steps where image is already mostly denoised; the higher this value, the more skips there will be; provides increased performance in exchange for minor quality reduction.",
-
-    "Custom KDiffusion Scheduler": "Custom noise scheduler to use for KDiffusion. See https://arxiv.org/abs/2206.00364",
-    "sigma min": "the minimum noise strength for the scheduler. Set to 0 to use the same value which 'xxx karras' samplers use.",
-    "sigma max": "the maximum noise strength for the scheduler. Set to 0 to use the same value which 'xxx karras' samplers use.",
-    "rho": "higher will make a more steep noise scheduler (decrease faster). default for karras is 7.0, for polyexponential is 1.0"
+    "Negative Guidance minimum sigma": "Skip negative prompt for steps where image is already mostly denoised; the higher this value, the more skips there will be; provides increased performance in exchange for minor quality reduction."
 };
 
 function updateTooltipForSpan(span) {
