@@ -220,7 +220,7 @@ axis_options = [
     AxisOption("Sigma min", float, apply_field("s_tmin")),
     AxisOption("Sigma max", float, apply_field("s_tmax")),
     AxisOption("Sigma noise", float, apply_field("s_noise")),
-    AxisOption("KDiffusion Scheduler Type", str, apply_override("k_sched_type"), choices=lambda: [x for x in sd_samplers_kdiffusion.k_diffusion_scheduler]),
+    AxisOption("KDiffusion Scheduler Type", str, apply_override("k_sched_type"), choices=lambda: list(sd_samplers_kdiffusion.k_diffusion_scheduler)),
     AxisOption("KDiffusion Scheduler Sigma Min", float, apply_override("sigma_min")),
     AxisOption("KDiffusion Scheduler Sigma Max", float, apply_override("sigma_max")),
     AxisOption("KDiffusion Scheduler rho", float, apply_override("rho")),
