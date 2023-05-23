@@ -291,9 +291,20 @@ def initialize_rest(*, reload_script_modules=False):
     modules.sd_hijack.list_optimizers()
     startup_timer.record("scripts list_optimizers")
 
-    # load model in parallel to other startup stuff
-    # (when reloading, this does nothing)
-    Thread(target=lambda: shared.sd_model).start()
+    def load_model():
+        """
+        Accesses shared.sd_model property to load model.
+        After it's available, if it has been loaded before this access by some extension,
+        its optimization may be None because the list of optimizaers has neet been filled
+        by that time, so we apply optimization again.
+        """
+
+        shared.sd_model  # noqa: B018
+
+        if modules.sd_hijack.current_optimizer is None:
+            modules.sd_hijack.apply_optimizations()
+
+    Thread(target=load_model).start()
 
     Thread(target=devices.first_time_calculation).start()
 
