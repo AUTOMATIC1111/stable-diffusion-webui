@@ -1,5 +1,5 @@
 /* global gradioApp, opts */
-function onCalcResolutionHires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y) {
+function onCalcResolutionHires(enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y) {
   function setInactive(elem, inactive) {
     elem.classList.toggle('inactive', !!inactive);
   }
@@ -10,5 +10,5 @@ function onCalcResolutionHires(enable, width, height, hr_scale, hr_resize_x, hr_
   setInactive(hrUpscaleBy, opts.use_old_hires_fix_width_height || hr_resize_x > 0 || hr_resize_y > 0);
   setInactive(hrResizeX, opts.use_old_hires_fix_width_height || hr_resize_x == 0);
   setInactive(hrResizeY, opts.use_old_hires_fix_width_height || hr_resize_y == 0);
-  return [enable, width, height, hr_scale, hr_resize_x, hr_resize_y];
+  return [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y];
 }

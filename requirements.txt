@@ -53,7 +53,7 @@ diffusers==0.16.1
 einops==0.4.1
 gradio==3.32.0
 numexpr==2.8.4
-numpy==1.24.3
+numpy==1.23.5
 numba==0.57.0
 pandas==1.5.3
 protobuf==3.20.3
