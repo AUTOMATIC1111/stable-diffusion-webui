@@ -306,6 +306,18 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "RNG" not in res:
         res["RNG"] = "GPU"
 
+    if "KDiff Sched Type" not in res:
+        res["KDiff Sched Type"] = "Automatic"
+
+    if "KDiff Sched max sigma" not in res:
+        res["KDiff Sched max sigma"] = 14.6
+
+    if "KDiff Sched min sigma" not in res:
+        res["KDiff Sched min sigma"] = 0.3
+
+    if "KDiff Sched rho" not in res:
+        res["KDiff Sched rho"] = 7.0
+
     return res
 
 
@@ -318,10 +330,10 @@ infotext_to_setting_name_mapping = [
     ('Conditional mask weight', 'inpainting_mask_weight'),
     ('Model hash', 'sd_model_checkpoint'),
     ('ENSD', 'eta_noise_seed_delta'),
-    ('KDiffusion Scheduler Type', 'k_sched_type'),
-    ('KDiffusion Scheduler sigma_max', 'sigma_max'),
-    ('KDiffusion Scheduler sigma_min', 'sigma_min'),
-    ('KDiffusion Scheduler rho', 'rho'),
+    ('KDiff Sched Type', 'k_sched_type'),
+    ('KDiff Sched max sigma', 'sigma_max'),
+    ('KDiff Sched min sigma', 'sigma_min'),
+    ('KDiff Sched rho', 'rho'),
     ('Noise multiplier', 'initial_noise_multiplier'),
     ('Eta', 'eta_ancestral'),
     ('Eta DDIM', 'eta_ddim'),
