@@ -328,18 +328,18 @@ class KDiffusionSampler:
             }
 
             sigmas_func = k_diffusion_scheduler[opts.k_sched_type]
-            p.extra_generation_params["KDiff Sched Type"] = opts.k_sched_type
+            p.extra_generation_params["KDiff Schedule Type"] = opts.k_sched_type
 
             if opts.sigma_min != 0.3:
                 # take 0.0 as model default
                 sigmas_kwargs['sigma_min'] = opts.sigma_min or m_sigma_min
-                p.extra_generation_params["KDiff Sched min sigma"] = opts.sigma_min
+                p.extra_generation_params["KDiff Schedule min sigma"] = opts.sigma_min
             if opts.sigma_max != 14.6:
                 sigmas_kwargs['sigma_max'] = opts.sigma_max or m_sigma_max
-                p.extra_generation_params["KDiff Sched max sigma"] = opts.sigma_max
+                p.extra_generation_params["KDiff Schedule max sigma"] = opts.sigma_max
             if opts.k_sched_type != 'exponential':
                 sigmas_kwargs['rho'] = opts.rho
-                p.extra_generation_params["KDiff Sched rho"] = opts.rho
+                p.extra_generation_params["KDiff Schedule rho"] = opts.rho
 
             sigmas = sigmas_func(n=steps, **sigmas_kwargs, device=shared.device)
         elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':

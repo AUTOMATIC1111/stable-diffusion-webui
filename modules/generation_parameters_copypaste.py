@@ -306,17 +306,17 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "RNG" not in res:
         res["RNG"] = "GPU"
 
-    if "KDiff Sched Type" not in res:
-        res["KDiff Sched Type"] = "Automatic"
+    if "KDiff Schedule Type" not in res:
+        res["KDiff Schedule Type"] = "Automatic"
 
-    if "KDiff Sched max sigma" not in res:
-        res["KDiff Sched max sigma"] = 14.6
+    if "KDiff Schedule max sigma" not in res:
+        res["KDiff Schedule max sigma"] = 14.6
 
-    if "KDiff Sched min sigma" not in res:
-        res["KDiff Sched min sigma"] = 0.3
+    if "KDiff Schedule min sigma" not in res:
+        res["KDiff Schedule min sigma"] = 0.3
 
-    if "KDiff Sched rho" not in res:
-        res["KDiff Sched rho"] = 7.0
+    if "KDiff Schedule rho" not in res:
+        res["KDiff Schedule rho"] = 7.0
 
     return res
 
@@ -330,10 +330,10 @@ infotext_to_setting_name_mapping = [
     ('Conditional mask weight', 'inpainting_mask_weight'),
     ('Model hash', 'sd_model_checkpoint'),
     ('ENSD', 'eta_noise_seed_delta'),
-    ('KDiff Sched Type', 'k_sched_type'),
-    ('KDiff Sched max sigma', 'sigma_max'),
-    ('KDiff Sched min sigma', 'sigma_min'),
-    ('KDiff Sched rho', 'rho'),
+    ('KDiff Schedule Type', 'k_sched_type'),
+    ('KDiff Schedule max sigma', 'sigma_max'),
+    ('KDiff Schedule min sigma', 'sigma_min'),
+    ('KDiff Schedule rho', 'rho'),
     ('Noise multiplier', 'initial_noise_multiplier'),
     ('Eta', 'eta_ancestral'),
     ('Eta DDIM', 'eta_ddim'),
