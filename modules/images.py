@@ -338,6 +338,8 @@ def sanitize_filename_part(text, replace_spaces=True):
 class FilenameGenerator:
     replacements = {
         'seed': lambda self: self.seed if self.seed is not None else '',
+        'seed_first': lambda self: self.seed if self.p.batch_size == 1 else self.p.all_seeds[0],
+        'seed_last': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.all_seeds[-1],
         'steps': lambda self:  self.p and self.p.steps,
         'cfg': lambda self: self.p and self.p.cfg_scale,
         'width': lambda self: self.image.width,
@@ -354,19 +356,21 @@ class FilenameGenerator:
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
         'prompt_words': lambda self: self.prompt_words(),
-        'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.batch_index + 1,
-        'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
+        'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 or self.zip else self.p.batch_index + 1,
+        'batch_size': lambda self: self.p.batch_size,
+        'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if (self.p.n_iter == 1 and self.p.batch_size == 1) or self.zip else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
         'clip_skip': lambda self: opts.data["CLIP_stop_at_last_layers"],
         'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
     }
     default_time_format = '%Y%m%d%H%M%S'
 
-    def __init__(self, p, seed, prompt, image):
+    def __init__(self, p, seed, prompt, image, zip=False):
         self.p = p
         self.seed = seed
         self.prompt = prompt
         self.image = image
+        self.zip = zip
 
     def hasprompt(self, *args):
         lower = self.prompt.lower()

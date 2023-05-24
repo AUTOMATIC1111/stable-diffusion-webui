@@ -50,9 +50,10 @@ def save_files(js_data, images, do_make_zip, index):
     save_to_dirs = shared.opts.use_save_to_dirs_for_ui
     extension: str = shared.opts.samples_format
     start_index = 0
+    only_one = False
 
     if index > -1 and shared.opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
-
+        only_one = True
         images = [images[index]]
         start_index = index
 
@@ -70,6 +71,7 @@ def save_files(js_data, images, do_make_zip, index):
             is_grid = image_index < p.index_of_first_image
             i = 0 if is_grid else (image_index - p.index_of_first_image)
 
+            p.batch_index = image_index-1
             fullfn, txt_fullfn = modules.images.save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
 
             filename = os.path.relpath(fullfn, path)
@@ -83,7 +85,10 @@ def save_files(js_data, images, do_make_zip, index):
 
     # Make Zip
     if do_make_zip:
-        zip_filepath = os.path.join(path, "images.zip")
+        zip_fileseed = p.all_seeds[index-1] if only_one else p.all_seeds[0]
+        namegen = modules.images.FilenameGenerator(p, zip_fileseed, p.all_prompts[0], image, True)
+        zip_filename = namegen.apply(shared.opts.grid_zip_filename_pattern or "[datetime]_[[model_name]]_[seed]-[seed_last]")
+        zip_filepath = os.path.join(path, f"{zip_filename}.zip")
 
         from zipfile import ZipFile
         with ZipFile(zip_filepath, "w") as zip_file:
