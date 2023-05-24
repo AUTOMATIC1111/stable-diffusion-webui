@@ -153,14 +153,27 @@ function processTooltipCheckNodes() {
 
 onUiUpdate(function(mutationRecords) {
     for (const record of mutationRecords) {
+        if (record.type === "childList" && record.target.classList.contains("options")) {
+            // This smells like a Gradio dropdown menu having changed,
+            // so let's enqueue an update for the input element that shows the current value.
+            let wrap = record.target.parentNode;
+            let input = wrap?.querySelector("input");
+            if (input) {
+                input.title = ""; // So we'll even have a chance to update it.
+                tooltipCheckNodes.add(input);
+            }
+        }
         for (const node of record.addedNodes) {
             if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains("hide")) {
-                if (
-                    node.tagName === "SPAN" ||
-                    node.tagName === "BUTTON" ||
-                    node.tagName === "P"
-                ) {
-                    tooltipCheckNodes.add(node);
+                if (!node.title) {
+                    if (
+                        node.tagName === "SPAN" ||
+                        node.tagName === "BUTTON" ||
+                        node.tagName === "P" ||
+                        node.tagName === "INPUT"
+                    ) {
+                        tooltipCheckNodes.add(node);
+                    }
                 }
                 node.querySelectorAll('span, button, p').forEach(n => tooltipCheckNodes.add(n));
             }
