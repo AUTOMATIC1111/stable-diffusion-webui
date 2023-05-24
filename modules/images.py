@@ -665,9 +665,13 @@ def read_info_from_image(image):
             items['exif comment'] = exif_comment
             geninfo = exif_comment
 
-        for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
-                      'loop', 'background', 'timestamp', 'duration']:
+    for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+                    'loop', 'background', 'timestamp', 'duration', 'progressive', 'progression',
+                    'icc_profile', 'chromaticity']:
+        try:
             items.pop(field, None)
+        except KeyError:
+            pass
 
     if items.get("Software", None) == "NovelAI":
         try:
