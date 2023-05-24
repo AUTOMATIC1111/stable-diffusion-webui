@@ -114,7 +114,7 @@ def set_cuda_params():
                 pass
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
     ok = test_fp16()
-    if shared.cmd_opts.use_directml: # TODO
+    if shared.cmd_opts.use_directml: # TODO DirectML does not have full autocast capabilities
         shared.opts.no_half = True
         shared.opts.no_half_vae = True
     if ok and shared.opts.cuda_dtype == 'FP32':

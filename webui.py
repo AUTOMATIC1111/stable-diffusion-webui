@@ -265,10 +265,8 @@ def start_ui():
     setup_middleware(app, cmd_opts)
 
     if cmd_opts.subpath:
-        redirector = FastAPI()
-        redirector.get("/")
-        _mounted_app = gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
-        shared.log.info('Redirector mounted: /{cmd_opts.subpath}')
+        _mounted_app = gradio.mount_gradio_app(app, shared.demo, path=f"/{cmd_opts.subpath}")
+        shared.log.info(f'Redirector mounted: /{cmd_opts.subpath}')
 
     cmd_opts.autolaunch = False
     startup_timer.record("launch")
