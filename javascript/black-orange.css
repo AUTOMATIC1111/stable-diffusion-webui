@@ -54,7 +54,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .py-6 { padding-bottom: 0; }
 .rounded-lg { border-radius: 0; }
 .tabs { background-color: black; }
-.gradio-button.tool { border-radius: 0; height: 2.0em; }
+.gradio-button.tool { border-radius: 0; }
 .block.token-counter span { background-color: #222 !important; box-shadow: 2px 2px 2px #111; border: none !important; border-radius: 0; font-size: 0.8rem; }
 .tab-nav { zoom: 130%; margin-bottom: 16px; border-bottom: 2px solid #CE6400 !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
