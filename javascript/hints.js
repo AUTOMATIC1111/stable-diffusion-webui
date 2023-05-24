@@ -116,17 +116,17 @@ var titles = {
     "Negative Guidance minimum sigma": "Skip negative prompt for steps where image is already mostly denoised; the higher this value, the more skips there will be; provides increased performance in exchange for minor quality reduction."
 };
 
-function updateTooltipForSpan(span) {
-    if (span.title) return; // already has a title
+function updateTooltip(element) {
+    if (element.title) return; // already has a title
 
-    let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
+    let tooltip = localization[titles[element.textContent]] || titles[element.textContent];
 
     if (!tooltip) {
-        tooltip = localization[titles[span.value]] || titles[span.value];
+        tooltip = localization[titles[element.value]] || titles[element.value];
     }
 
     if (!tooltip) {
-        for (const c of span.classList) {
+        for (const c of element.classList) {
             if (c in titles) {
                 tooltip = localization[titles[c]] || titles[c];
                 break;
@@ -135,34 +135,39 @@ function updateTooltipForSpan(span) {
     }
 
     if (tooltip) {
-        span.title = tooltip;
+        element.title = tooltip;
     }
 }
 
-function updateTooltipForSelect(select) {
-    if (select.onchange != null) return;
+// Nodes to check for adding tooltips.
+const tooltipCheckNodes = new Set();
+// Timer for debouncing tooltip check.
+let tooltipCheckTimer = null;
 
-    select.onchange = function() {
-        select.title = localization[titles[select.value]] || titles[select.value] || "";
-    };
+function processTooltipCheckNodes() {
+    for (const node of tooltipCheckNodes) {
+        updateTooltip(node);
+    }
+    tooltipCheckNodes.clear();
 }
 
-var observedTooltipElements = {SPAN: 1, BUTTON: 1, SELECT: 1, P: 1};
-
-onUiUpdate(function(m) {
-    m.forEach(function(record) {
-        record.addedNodes.forEach(function(node) {
-            if (observedTooltipElements[node.tagName]) {
-                updateTooltipForSpan(node);
+onUiUpdate(function(mutationRecords) {
+    for (const record of mutationRecords) {
+        for (const node of record.addedNodes) {
+            if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains("hide")) {
+                if (
+                    node.tagName === "SPAN" ||
+                    node.tagName === "BUTTON" ||
+                    node.tagName === "P"
+                ) {
+                    tooltipCheckNodes.add(node);
+                }
+                node.querySelectorAll('span, button, p').forEach(n => tooltipCheckNodes.add(n));
             }
-            if (node.tagName == "SELECT") {
-                updateTooltipForSelect(node);
-            }
-
-            if (node.querySelectorAll) {
-                node.querySelectorAll('span, button, select, p').forEach(updateTooltipForSpan);
-                node.querySelectorAll('select').forEach(updateTooltipForSelect);
-            }
-        });
-    });
+        }
+    }
+    if (tooltipCheckNodes.size) {
+        clearTimeout(tooltipCheckTimer);
+        tooltipCheckTimer = setTimeout(processTooltipCheckNodes, 1000);
+    }
 });
