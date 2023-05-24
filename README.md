@@ -20,7 +20,7 @@ Individual features are not listed here, instead check [Changelog](CHANGELOG.md)
 - Any GPU compatibile with **DirectX** on *Windows* using **DirectML** libraries  
   This includes support for AMD GPUs that are not supported by native ROCm libraries
 - **Intel Arc** GPUs using Intel OneAPI **Ipex/XPU** libraries  
-- **Apple M1/M2** on *OSX* using built-in support in Torch with some platform optimizations
+- **Apple M1/M2** on *OSX* using built-in support in Torch with **MPS** optimizations
 
 ## Install
 

@@ -4,15 +4,19 @@
 
 Mostly cosmetic...
 
-- updated README.md
-- created CHANGELOG.md
-- set default cross-optimization method for each platform  
+- updated [README](https://github.com/vladmandic/automatic/blob/master/README.md)
+- created [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)  
+  this will be the source for all info about new things moving forward  
+  and cross-posted to discussions #99 as well as discord [announcements](https://discord.com/channels/1101998836328697867/1109953953396957286)
+- set default cross-optimization method for each platform backend  
   applicable for new installs only  
-  - `cpu` => Doggettx's
-  - `ipex` => InvokeAI's
-  - `directml` => Sub-quadratic
-  - `rocm` => Sub-quadratic
   - `cuda` => Scaled-Dot-Product
+  - `rocm` => Sub-quadratic
+  - `directml` => Sub-quadratic
+  - `ipex` => InvokeAI's
+  - `mps` => Doggettx's
+  - `cpu` => Doggettx's
+- bugfixes...i don't recall when was a release with at least several of those
 
 ## Update for 05/23/2023
 

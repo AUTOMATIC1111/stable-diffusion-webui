@@ -233,9 +233,11 @@ def refresh_themes():
 
 if devices.backend == "cpu":
     cross_attention_optimization_default = "Doggettx's"
+elif devices.backend == "mps":
+    cross_attention_optimization_default = "Doggettx's"
 elif devices.backend == "ipex":
     cross_attention_optimization_default = "InvokeAI's"
-if devices.backend == "directml":
+elif devices.backend == "directml":
     cross_attention_optimization_default = "Sub-quadratic"
 elif devices.backend == "rocm":
     cross_attention_optimization_default = "Sub-quadratic"

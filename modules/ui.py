@@ -39,7 +39,6 @@ if not cmd_opts.share and not cmd_opts.listen:
 
 
 def gr_show(visible=True):
-    print('HERE1')
     return {"visible": visible, "__type__": "update"}
 
 
