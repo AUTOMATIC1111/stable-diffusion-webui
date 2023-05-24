@@ -55,25 +55,14 @@ class SdOptimizationXformers(SdOptimization):
         ldm.modules.diffusionmodules.model.AttnBlock.forward = xformers_attnblock_forward
 
 
-class SdOptimizationSdpNoMem(SdOptimization):
-    name = "sdp-no-mem"
-    label = "scaled dot product without memory efficient attention"
-    cmd_opt = "opt_sdp_no_mem_attention"
+class SdOptimizationSdp(SdOptimization):
+    name = "sdp"
+    label = "scaled dot product"
+    cmd_opt = "opt_sdp_attention"
     priority = 90
 
     def is_available(self):
         return hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(torch.nn.functional.scaled_dot_product_attention)
-
-    def apply(self):
-        ldm.modules.attention.CrossAttention.forward = scaled_dot_product_no_mem_attention_forward
-        ldm.modules.diffusionmodules.model.AttnBlock.forward = sdp_no_mem_attnblock_forward
-
-
-class SdOptimizationSdp(SdOptimizationSdpNoMem):
-    name = "sdp"
-    label = "scaled dot product"
-    cmd_opt = "opt_sdp_attention"
-    priority = 80
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = scaled_dot_product_attention_forward
@@ -126,7 +115,6 @@ class SdOptimizationDoggettx(SdOptimization):
 def list_optimizers(res):
     res.extend([
         SdOptimizationXformers(),
-        SdOptimizationSdpNoMem(),
         SdOptimizationSdp(),
         SdOptimizationSubQuad(),
         SdOptimizationV1(),
