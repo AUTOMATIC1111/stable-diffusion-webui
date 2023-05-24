@@ -119,10 +119,18 @@ var titles = {
 function updateTooltip(element) {
     if (element.title) return; // already has a title
 
-    let tooltip = localization[titles[element.textContent]] || titles[element.textContent];
+    let text = element.textContent;
+    let tooltip = localization[titles[text]] || titles[text];
 
     if (!tooltip) {
-        tooltip = localization[titles[element.value]] || titles[element.value];
+        let value = element.value;
+        if (value) tooltip = localization[titles[value]] || titles[value];
+    }
+
+    if (!tooltip) {
+        // Gradio dropdown options have `data-value`.
+        let dataValue = element.dataset.value;
+        if (dataValue) tooltip = localization[titles[dataValue]] || titles[dataValue];
     }
 
     if (!tooltip) {
@@ -170,7 +178,8 @@ onUiUpdate(function(mutationRecords) {
                         node.tagName === "SPAN" ||
                         node.tagName === "BUTTON" ||
                         node.tagName === "P" ||
-                        node.tagName === "INPUT"
+                        node.tagName === "INPUT" ||
+                        (node.tagName === "LI" && node.classList.contains("item")) // Gradio dropdown item
                     ) {
                         tooltipCheckNodes.add(node);
                     }
