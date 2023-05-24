@@ -52,6 +52,3 @@ Tech that can be integrated as part of the core workflow...
 ## Random
 
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
-
-### Pending Code Updates
-

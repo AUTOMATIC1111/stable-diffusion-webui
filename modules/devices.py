@@ -149,6 +149,16 @@ dtype = torch.float16
 dtype_vae = torch.float16
 dtype_unet = torch.float16
 unet_needs_upcast = False
+if args.use_ipex:
+    backend = 'ipex'
+elif args.use_directml:
+    backend = 'directml'
+elif torch.cuda.is_available() and torch.version.cuda:
+    backend = 'cuda'
+elif torch.cuda.is_available() and torch.version.rocm:
+    backend = 'rocm'
+else:
+    backend = 'cpu'
 
 
 def cond_cast_unet(tensor):

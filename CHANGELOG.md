@@ -4,8 +4,15 @@
 
 Mostly cosmetic...
 
-- Updated README.md
-- Created CHANGELOG.md
+- updated README.md
+- created CHANGELOG.md
+- set default cross-optimization method for each platform  
+  applicable for new installs only  
+  - `cpu` => Doggettx's
+  - `ipex` => InvokeAI's
+  - `directml` => Sub-quadratic
+  - `rocm` => Sub-quadratic
+  - `cuda` => Scaled-Dot-Product
 
 ## Update for 05/23/2023
 

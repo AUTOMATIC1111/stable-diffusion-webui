@@ -26,7 +26,6 @@ parser = cmd_args.parser
 url = 'https://github.com/vladmandic/automatic'
 cmd_opts, _ = parser.parse_known_args()
 hide_dirs = {"visible": not cmd_opts.hide_ui_dir_config}
-is_device_dml = False
 xformers_available = False
 clip_model = None
 interrogator = modules.interrogate.InterrogateModels("interrogate")
@@ -232,6 +231,17 @@ def refresh_themes():
         log.error('Exception refreshing UI themes')
 
 
+if devices.backend == "cpu":
+    cross_attention_optimization_default = "Doggettx's"
+elif devices.backend == "ipex":
+    cross_attention_optimization_default = "InvokeAI's"
+if devices.backend == "directml":
+    cross_attention_optimization_default = "Sub-quadratic"
+elif devices.backend == "rocm":
+    cross_attention_optimization_default = "Sub-quadratic"
+else: # cuda
+    cross_attention_optimization_default ="Scaled-Dot-Product"
+
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_model_checkpoint": OptionInfo(default_checkpoint, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_checkpoint_cache": OptionInfo(0, "Model checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
@@ -248,7 +258,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "comma_padding_backtrack": OptionInfo(20, "Increase coherency by padding from the last comma within n tokens when using more than 75 tokens", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 8, "step": 1, "visible": False}),
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to FP32"),
-    "cross_attention_optimization": OptionInfo("Sub-quadratic" if is_device_dml else "Scaled-Dot-Product", "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
+    "cross_attention_optimization": OptionInfo(cross_attention_optimization_default, "Cross-attention optimization method", gr.Radio, lambda: {"choices": shared_items.list_crossattention() }),
     "cross_attention_options": OptionInfo([], "Cross-attention advanced options", gr.CheckboxGroup, lambda: {"choices": ['xFormers enable flash Attention', 'SDP disable memory attention']}),
     "sub_quad_q_chunk_size": OptionInfo(512, "Sub-quadratic cross-attention query chunk size for the  layer optimization to use", gr.Slider, {"minimum": 16, "maximum": 8192, "step": 8}),
     "sub_quad_kv_chunk_size": OptionInfo(512, "Sub-quadratic cross-attentionkv chunk size for the sub-quadratic cross-attention layer optimization to use", gr.Slider, {"minimum": 0, "maximum": 8192, "step": 8}),
@@ -328,8 +338,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "precision": OptionInfo("Autocast", "Precision type", gr.Radio, lambda: {"choices": ["Autocast", "Full"]}),
     "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
-    "no_half": OptionInfo(True if is_device_dml else False, "Use full precision for model (--no-half)", None, None, None),
-    "no_half_vae": OptionInfo(True if is_device_dml else False, "Use full precision for VAE (--no-half-vae)"),
+    "no_half": OptionInfo(False, "Use full precision for model (--no-half)", None, None, None),
+    "no_half_vae": OptionInfo(False, "Use full precision for VAE (--no-half-vae)"),
     "upcast_sampling": OptionInfo(True if sys.platform == "darwin" or cmd_opts.use_ipex else False, "Enable upcast sampling. Usually produces similar results to --no-half with better performance while using less memory"),
     "disable_nan_check": OptionInfo(True, "Do not check if produced images/latent spaces have NaN values"),
     "rollback_vae": OptionInfo(False, "Attempt to roll back VAE when produced NaN values, requires NaN check (experimental)"),
@@ -627,7 +637,6 @@ mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
 if device.type == 'privateuseone':
     import modules.dml # pylint: disable=ungrouped-imports
-    is_device_dml = True
 
 
 def reload_gradio_theme(theme_name=None):
