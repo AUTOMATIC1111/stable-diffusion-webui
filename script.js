@@ -37,17 +37,15 @@ function onOptionsChanged(callback) {
     optionsChangedCallbacks.push(callback);
 }
 
-function runCallback(x, m) {
-    try {
-        x(m);
-    } catch (e) {
-        console.error("error running callback", x, ":", e);
+function executeCallbacks(queue, arg) {
+    for (const callback of queue) {
+        try {
+            callback(arg);
+        } catch (e) {
+            console.error("error running callback", callback, ":", e);
+        }
     }
 }
-function executeCallbacks(queue, m) {
-    queue.forEach(function(x) {
-        runCallback(x, m);
-    });
 }
 
 var executedOnLoaded = false;
