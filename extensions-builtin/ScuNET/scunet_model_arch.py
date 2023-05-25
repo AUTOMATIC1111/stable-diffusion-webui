@@ -61,7 +61,9 @@ class WMSA(nn.Module):
         Returns:
             output: tensor shape [b h w c]
         """
-        if self.type != 'W': x = torch.roll(x, shifts=(-(self.window_size // 2), -(self.window_size // 2)), dims=(1, 2))
+        if self.type != 'W':
+            x = torch.roll(x, shifts=(-(self.window_size // 2), -(self.window_size // 2)), dims=(1, 2))
+
         x = rearrange(x, 'b (w1 p1) (w2 p2) c -> b w1 w2 p1 p2 c', p1=self.window_size, p2=self.window_size)
         h_windows = x.size(1)
         w_windows = x.size(2)
@@ -85,8 +87,9 @@ class WMSA(nn.Module):
         output = self.linear(output)
         output = rearrange(output, 'b (w1 w2) (p1 p2) c -> b (w1 p1) (w2 p2) c', w1=h_windows, p1=self.window_size)
 
-        if self.type != 'W': output = torch.roll(output, shifts=(self.window_size // 2, self.window_size // 2),
-                                                 dims=(1, 2))
+        if self.type != 'W':
+            output = torch.roll(output, shifts=(self.window_size // 2, self.window_size // 2), dims=(1, 2))
+
         return output
 
     def relative_embedding(self):

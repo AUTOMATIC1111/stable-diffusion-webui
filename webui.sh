@@ -94,6 +94,14 @@ else
     printf "\n%s\n" "${delimiter}"
 fi
 
+if [[ $(getconf LONG_BIT) = 32 ]]
+then
+    printf "\n%s\n" "${delimiter}"
+    printf "\e[1m\e[31mERROR: Unsupported Running on a 32bit OS\e[0m"
+    printf "\n%s\n" "${delimiter}"
+    exit 1
+fi
+
 if [[ -d .git ]]
 then
     printf "\n%s\n" "${delimiter}"
