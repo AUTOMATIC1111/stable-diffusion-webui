@@ -859,8 +859,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         shared.state.nextjob()
         img2img_sampler_name = self.sampler_name
         force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
-        if self.sampler_name in ['PLMS'] or (force_latent_upscaler is not None and force_latent_upscaler != 'None'):
-            img2img_sampler_name = force_latent_upscaler or shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
+        if self.sampler_name in ['PLMS']:
+            img2img_sampler_name = force_latent_upscaler if force_latent_upscaler != 'None' else shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
         noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
@@ -908,8 +908,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
-        if self.sampler_name in ['PLMS'] or (force_latent_upscaler is not None and force_latent_upscaler != 'None'):
-            self.sampler_name = force_latent_upscaler or shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
+        if self.sampler_name in ['PLMS']:
+            self.sampler_name = force_latent_upscaler if force_latent_upscaler != 'None' else shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         crop_region = None
         image_mask = self.image_mask
