@@ -397,6 +397,8 @@ div#extras_scale_to_tab div.form{
     font-weight: bold;
     cursor: pointer;
     width: 1em;
+    position: absolute;
+    z-index: 1;
 }
 
 .modalControls span:hover, .modalControls span:focus{
@@ -430,12 +432,14 @@ table.settings-value-table td{
   max-width: 36em;
 }
 
-.modalPrev,
-.modalNext {
+.modalPrev, .modalNext {
   cursor: pointer;
   position: absolute;
-  top: 50%;
+  top: 0;
   width: auto;
+  height: 100vh;
+  line-height: 100vh;
+  text-align: center;
   padding: 16px;
   margin-top: -50px;
   color: white;
@@ -452,8 +456,7 @@ table.settings-value-table td{
   border-radius: 3px 0 0 3px;
 }
 
-.modalPrev:hover,
-.modalNext:hover {
+.modalPrev:hover, .modalNext:hover {
   background-color: rgba(0, 0, 0, 0.8);
 }
 
