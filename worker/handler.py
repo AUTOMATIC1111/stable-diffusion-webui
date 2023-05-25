@@ -43,7 +43,9 @@ class TaskHandler:
                 for progress in self._exec(task):
                     self._set_task_status(progress)
             except torch.cuda.OutOfMemoryError:
-                raise OSError('CUDA out of memory')
+                logger.exception('CUDA out of memory')
+                p = TaskProgress.new_failed(task, 'CUDA out of memory', '')
+                self._set_task_status(p)
             except Exception as ex:
                 trace = traceback.format_exc()
                 msg = str(ex)

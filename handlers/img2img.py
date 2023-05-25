@@ -466,6 +466,8 @@ class Img2ImgTaskHandler(TaskHandler):
         if shared.state.current_image:
             current = encode_pil_to_base64(shared.state.current_image, 60)
             progress.preview = current
+        else:
+            progress.preview = None
         self._set_task_status(progress)
 
     def _exec_interrogate(self, task: Task):

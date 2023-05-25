@@ -97,14 +97,14 @@ RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffus
 RUN https_proxy=${HTTP_PROXY} git clone https://github.com/opparco/stable-diffusion-webui-two-shot.git  /root/stable-diffusion-webui/extensions/two-shot
 
 RUN mkdir -p  /root/stable-diffusion-webui/stable-diffusion-webui/extensions/sd-webui-controlnet/annotator/openpose
-RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3, \"tac_translation.translationFile\": \"zh_cn.csv\", \"sd_vae\": \"vae-ft-mse-840000-ema-pruned.ckpt\"}" > /root/stable-diffusion-webui/config.json
+# RUN echo "{\"localization\": \"zh_CN\", \"control_net_max_models_num\": 3, \"tac_translation.translationFile\": \"zh_cn.csv\", \"sd_vae\": \"vae-ft-mse-840000-ema-pruned.ckpt\"}" > /root/stable-diffusion-webui/config.json
 # CLIP 所需物料
 RUN mkdir -p  /root/stable-diffusion-webui/stable-diffusion-webui/interrogate
 RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/artists.txt -O /root/stable-diffusion-webui/stable-diffusion-webui/interrogate/artists.txt
 RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/flavors.txt -O /root/stable-diffusion-webui/stable-diffusion-webui/interrogate/flavors.txt
 RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/mediums.txt -O /root/stable-diffusion-webui/stable-diffusion-webui/interrogate/mediums.txt
 RUN wget https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/movements.txt -O /root/stable-diffusion-webui/stable-diffusion-webui/interrogate/movements.txt
-
+RUN wget https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/configs/config.json -O /root/stable-diffusion-webui/config.json
 # 下载模型(默认不下载)
 #RUN cd  /root/stable-diffusion-webui/models/Stable-diffusion \
 #    &&wget -nd -np -r  -c http://apksamba.ops.ilongyuan.cn:8000/ai/7/AI%E7%BE%8E%E6%9C%AF/%E6%89%93%E5%8C%85/models/Stable-diffusion/

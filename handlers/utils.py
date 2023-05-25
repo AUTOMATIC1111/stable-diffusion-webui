@@ -5,8 +5,11 @@
 # @Site    : 
 # @File    : utils.py
 # @Software: Hifive
+import io
 import os
 import typing
+import uuid
+
 from PIL import Image
 from loguru import logger
 from datetime import datetime
@@ -20,7 +23,6 @@ from handlers.formatter import format_alwayson_script_args
 from tools.environment import get_file_storage_system_env, Env_BucketKey, S3ImageBucket, S3Tmp, S3SDWEB
 from filestorage import FileStorageCls, get_local_path, batch_download
 from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, UserModelLocation
-
 
 StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
 
@@ -95,6 +97,27 @@ def upload_files(is_tmp, *files):
             file_storage_system.upload(f, key)
             keys.append(key)
     return keys
+
+
+def upload_content(is_tmp, content, name=None):
+    date = datetime.today().strftime('%Y/%m/%d')
+    storage_env = get_file_storage_system_env()
+    bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+    file_storage_system = FileStorageCls()
+    relative = S3Tmp if is_tmp else S3SDWEB
+    name = name or str(uuid.uuid1())
+    key = os.path.join(bucket, relative, date, name)
+    file_storage_system.upload_content(key, content)
+
+    return key
+
+
+def upload_pil_image(is_tmp, image, quality=80, name=None):
+    with io.BytesIO() as output_bytes:
+        use_metadata = False
+        image.save(output_bytes, format="PNG", quality=quality)
+        bytes_data = output_bytes.getvalue()
+        return upload_content(is_tmp, bytes_data, name)
 
 
 def strip_model_hash(model_name: str):

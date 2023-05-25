@@ -14,7 +14,7 @@ from PIL import Image
 from collections.abc import Iterable
 from modules.scripts import scripts_img2img
 from handlers.formatter import AlwaysonScriptArgsFormatter
-from handlers.utils import get_tmp_local_path, Tmp, upload_files, strip_model_hash
+from handlers.utils import get_tmp_local_path, Tmp, upload_files, strip_model_hash, upload_pil_image
 from worker.task import TaskProgress, Task, TaskStatus
 
 ControlNet = 'ControlNet'
@@ -23,7 +23,26 @@ FreePreprocessors = [
     "reference_adain",
     "reference_adain+attn"
 ]
-
+preprocessor_aliases = {
+    "invert": "invert (from white bg & black line)",
+    "lineart_standard": "lineart_standard (from white bg & black line)",
+    "lineart": "lineart_realistic",
+    "color": "t2ia_color_grid",
+    "clip_vision": "t2ia_style_clipvision",
+    "pidinet_sketch": "t2ia_sketch_pidi",
+    "depth": "depth_midas",
+    "normal_map": "normal_midas",
+    "hed": "softedge_hed",
+    "hed_safe": "softedge_hedsafe",
+    "pidinet": "softedge_pidinet",
+    "pidinet_safe": "softedge_pidisafe",
+    "segmentation": "seg_ufade20k",
+    "oneformer_coco": "seg_ofcoco",
+    "oneformer_ade20k": "seg_ofade20k",
+    "pidinet_scribble": "scribble_pidinet",
+    "inpaint": "inpaint_global_harmonious",
+}
+reverse_preprocessor_aliases = {preprocessor_aliases[k]: k for k in preprocessor_aliases.keys()}
 
 def HWC3(x):
     assert x.dtype == np.uint8
@@ -55,7 +74,7 @@ class RunAnnotatorArgs:
                  pthr_b: int = 64,  # 阈值B
                  **kwargs):
         image = get_tmp_local_path(image)
-        self.image = np.array(Image.open(image))
+        self.image = np.array(Image.open(image).convert('RGB'))
         if not mask:
             shape = list(self.image.shape)
             if shape[-1] == 3:
@@ -64,8 +83,9 @@ class RunAnnotatorArgs:
             self.mask[:, :, -1] = 255
         else:
             mask = get_tmp_local_path(mask)
-            self.mask = np.array(Image.open(mask))
+            self.mask = np.array(Image.open(mask).convert('RGBA'))
         module = strip_model_hash(module)
+        module = reverse_preprocessor_aliases.get(module, module)
 
         if module == 'None':
             module = 'none'
@@ -110,23 +130,64 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
             yield progress
             # control_net_script.run_annotator(**args.args)
 
+            module = args.module
             img = HWC3(args.image)
             if not ((args.mask[:, :, 0] == 0).all() or (args.mask[:, :, 0] == 255).all()):
                 img = HWC3(args.mask[:, :, 0])
+
+            if 'inpaint' in module:
+                color = HWC3(args.image)
+                alpha = args.mask[:, :, 0:1]
+                img = np.concatenate([color, alpha], axis=2)
+
+            # def get_module_basename(self, module):
+            #     if module is None:
+            #         module = 'none'
+            #
+            #     return global_state.reverse_preprocessor_aliases.get(module, module)
+
             preprocessor = control_net_script.preprocessor[args.module]
+            # if pp:
+            #     raw_H, raw_W, _ = img.shape
+            #     target_H, target_W = t2i_h, t2i_w
+            #     rm = str(rm)
+            #
+            #     k0 = float(target_H) / float(raw_H)
+            #     k1 = float(target_W) / float(raw_W)
+            #
+            #     if rm == external_code.ResizeMode.OUTER_FIT.value:
+            #         estimation = min(k0, k1) * float(min(raw_H, raw_W))
+            #     else:
+            #         estimation = max(k0, k1) * float(min(raw_H, raw_W))
+            #
+            #     pres = int(np.round(estimation))
+            #     print(f'Pixel Perfect Mode Enabled In Preview.')
+            #     print(f'resize_mode = {rm}')
+            #     print(f'raw_H = {raw_H}')
+            #     print(f'raw_W = {raw_W}')
+            #     print(f'target_H = {target_H}')
+            #     print(f'target_W = {target_W}')
+            #     print(f'estimation = {estimation}')
             if args.pres > 64:
                 result, is_image = preprocessor(img, res=args.pres, thr_a=args.pthr_a, thr_b=args.pthr_b)
             else:
                 result, is_image = preprocessor(img)
 
-            r = None
+            r, pli_img = None, None
             if is_image:
-                pli_img = Image.fromarray(result, mode='RGB')
+                if result.ndim == 3 and result.shape[2] == 4:
+                    inpaint_mask = result[:, :, 3]
+                    result = result[:, :, 0:3]
+                    result[inpaint_mask > 127] = 0
+                    pli_img = Image.fromarray(result, mode='RGB')
+                elif result.ndim == 2:
+                    pli_img = Image.fromarray(result, mode='L')
+                else:
+                    pli_img = Image.fromarray(result, mode='RGB')
+
+            if pli_img:
                 filename = task.id + '.png'
-                local = os.path.join(Tmp, filename)
-                pli_img.save(local)
-                keys = upload_files(True, local)
-                r = keys[0] if keys else None
+                r = upload_pil_image(True, pli_img, name=filename)
 
             progress = TaskProgress.new_finish(task, {
                 'all': {

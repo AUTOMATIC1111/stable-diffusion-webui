@@ -69,7 +69,7 @@ class PreprocessParams:
         if not existing_caption:
             return True
         return self.preprocess_txt_action in [
-            PreprocessTxtAction.Prepend, PreprocessTxtAction.Copy, PreprocessTxtAction.Append
+            PreprocessTxtAction.Prepend.value, PreprocessTxtAction.Copy.value, PreprocessTxtAction.Append.value
         ]
 
 
@@ -92,9 +92,9 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
     image.save(os.path.join(params.dstdir, f"{basename}.png"))
 
     if params.preprocess_txt_action == 'prepend' and existing_caption:
-        caption = existing_caption + ' ' + caption
+        caption = existing_caption + ',' + caption
     elif params.preprocess_txt_action == 'append' and existing_caption:
-        caption = caption + ' ' + existing_caption
+        caption = caption + ',' + existing_caption
     elif params.preprocess_txt_action == 'copy' and existing_caption:
         caption = existing_caption
 
