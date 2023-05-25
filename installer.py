@@ -6,6 +6,9 @@ import shutil
 import logging
 import platform
 import subprocess
+import io
+import pstats
+import cProfile
 
 try:
     from modules.cmd_args import parser
@@ -76,6 +79,21 @@ def setup_logging(clean=False):
     while log.hasHandlers() and len(log.handlers) > 0:
         log.removeHandler(log.handlers[0])
     log.addHandler(rh)
+
+
+def print_profile(profile: cProfile.Profile, msg: str):
+    try:
+        from rich import print # pylint: disable=redefined-builtin
+    except:
+        pass
+    profile.disable()
+    stream = io.StringIO()
+    ps = pstats.Stats(profile, stream=stream)
+    ps.sort_stats(pstats.SortKey.CUMULATIVE).print_stats(15)
+    profile = None
+    lines = stream.getvalue().split('\n')
+    lines = [l for l in lines if '<frozen' not in l and '{built-in' not in l and '/logging' not in l and '/rich' not in l]
+    print(f'Profile {msg}:', '\n'.join(lines))
 
 
 # check if package is installed
@@ -221,6 +239,9 @@ def check_python():
 
 # check torch version
 def check_torch():
+    if args.profile:
+        pr = cProfile.Profile()
+        pr.enable()
     allow_cuda = not (args.use_rocm or args.use_directml or args.use_ipex)
     allow_rocm = not (args.use_cuda or args.use_directml or args.use_ipex)
     allow_ipex = not (args.use_cuda or args.use_rocm or args.use_directml)
@@ -308,10 +329,15 @@ def check_torch():
         log.debug(f'Cannot install tensorflow package: {e}')
     if opts.get('cuda_compile_mode', '') == 'hidet':
         install('hidet', 'hidet')
+    if args.profile:
+        print_profile(pr, 'Torch')
 
 
 # install required packages
 def install_packages():
+    if args.profile:
+        pr = cProfile.Profile()
+        pr.enable()
     log.info('Installing packages')
     # gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     # openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
@@ -320,10 +346,15 @@ def install_packages():
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git")
     install(clip_package, 'clip')
     install('onnxruntime==1.14.0', 'onnxruntime', ignore=True)
+    if args.profile:
+        print_profile(pr, 'Packages')
 
 
 # clone required repositories
 def install_repositories():
+    if args.profile:
+        pr = cProfile.Profile()
+        pr.enable()
     def d(name):
         return os.path.join(os.path.dirname(__file__), 'repositories', name)
     log.info('Installing repositories')
@@ -348,6 +379,8 @@ def install_repositories():
     # blip_commit = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
     blip_commit = os.environ.get('BLIP_COMMIT_HASH', None)
     clone(blip_repo, d('BLIP'), blip_commit)
+    if args.profile:
+        print_profile(pr, 'Repositories')
 
 
 # run extension installer
@@ -385,6 +418,9 @@ def list_extensions(folder):
 
 # run installer for each installed and enabled extension and optionally update them
 def install_extensions():
+    if args.profile:
+        pr = cProfile.Profile()
+        pr.enable()
     import pkg_resources
     pkg_resources._initialize_master_working_set() # pylint: disable=protected-access
     pkgs = [f'{p.project_name}=={p._version}' for p in pkg_resources.working_set] # pylint: disable=protected-access,not-an-iterable
@@ -419,10 +455,15 @@ def install_extensions():
     log.info(f'Extensions enabled: {extensions_enabled}')
     if len(extensions_duplicates) > 0:
         log.warning(f'Extensions duplicates: {extensions_duplicates}')
+    if args.profile:
+        print_profile(pr, 'Extensions')
 
 
 # initialize and optionally update submodules
 def install_submodules():
+    if args.profile:
+        pr = cProfile.Profile()
+        pr.enable()
     log.info('Installing submodules')
     txt = git('submodule')
     log.debug(f'Submodules list: {txt}')
@@ -446,6 +487,8 @@ def install_submodules():
                 update(name)
             except:
                 log.error(f'Error updating submodule: {submodule}')
+    if args.profile:
+        print_profile(pr, 'Submodule')
 
 
 def ensure_base_requirements():
@@ -456,6 +499,9 @@ def ensure_base_requirements():
 
 
 def install_requirements():
+    if args.profile:
+        pr = cProfile.Profile()
+        pr.enable()
     if args.skip_requirements:
         return
     log.info('Verifying requirements')
@@ -463,6 +509,8 @@ def install_requirements():
         lines = [line.strip() for line in f.readlines() if line.strip() != '' and not line.startswith('#') and line is not None]
         for line in lines:
             install(line)
+    if args.profile:
+        print_profile(pr, 'Requirements')
 
 
 # set environment variables controling the behavior of various libraries
@@ -635,6 +683,9 @@ def parse_args():
 
 
 def extensions_preload(force = False):
+    if args.profile:
+        pr = cProfile.Profile()
+        pr.enable()
     setup_time = 0
     if not force:
         if os.path.isfile(log_file):
@@ -655,6 +706,8 @@ def extensions_preload(force = False):
                 preload_extensions(ext_dir, parser, args.debug)
         except:
             log.error('Error running extension preloading')
+    if args.profile:
+        print_profile(pr, 'Preload')
 
 def git_reset():
     log.warning('Running GIT reset')

@@ -103,6 +103,10 @@ def get_memory_stats():
 
 
 def start_server(immediate=True, server=None):
+    if args.profile:
+        import cProfile
+        pr = cProfile.Profile()
+        pr.enable()
     import gc
     import importlib.util
     collected = 0
@@ -123,6 +127,8 @@ def start_server(immediate=True, server=None):
             server = server.api_only()
         else:
             server = server.webui()
+    if args.profile:
+        installer.print_profile(pr, 'WebUI')
     return server
 
 

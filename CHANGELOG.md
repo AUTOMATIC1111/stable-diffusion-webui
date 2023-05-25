@@ -1,13 +1,15 @@
 # Change Log for SD.Next
 
-## Update for 05/24/2023
+## Update for 05/25/2023
 
-Mostly cosmetic...
+Some quality-of-life improvements...
 
 - updated [README](https://github.com/vladmandic/automatic/blob/master/README.md)
 - created [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)  
   this will be the source for all info about new things moving forward  
   and cross-posted to discussions #99 as well as discord [announcements](https://discord.com/channels/1101998836328697867/1109953953396957286)
+- optimize model loading on startup  
+  this should reduce startup time significantly  
 - set default cross-optimization method for each platform backend  
   applicable for new installs only  
   - `cuda` => Scaled-Dot-Product
@@ -16,6 +18,8 @@ Mostly cosmetic...
   - `ipex` => InvokeAI's
   - `mps` => Doggettx's
   - `cpu` => Doggettx's
+- optimize logging
+- optimize profiling
 - bugfixes...i don't recall when was a release with at least several of those
 
 ## Update for 05/23/2023
