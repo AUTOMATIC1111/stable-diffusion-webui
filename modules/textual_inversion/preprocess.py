@@ -1,6 +1,6 @@
 import os
 import math
-from tqdm.rich import tqdm
+from tqdm import tqdm
 from PIL import Image, ImageOps
 from modules import paths, shared, images, deepbooru
 from modules.textual_inversion import autocrop

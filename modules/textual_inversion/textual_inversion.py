@@ -3,7 +3,7 @@ import html
 import csv
 from collections import namedtuple
 import torch
-from tqdm.rich import tqdm
+from tqdm import tqdm
 import safetensors.torch
 import numpy as np
 from PIL import Image, PngImagePlugin
