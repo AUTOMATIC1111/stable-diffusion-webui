@@ -378,11 +378,13 @@ model_data = SdModelData()
 
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None):
-    shared.log.debug(f'Load model: info={checkpoint_info is not None} dict={already_loaded_state_dict is not None}')
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
     if checkpoint_info is None:
         return
+    if model_data.sd_model is not None and (checkpoint_info.hash == model_data.sd_model.sd_checkpoint_info.hash): # trying to load the same model
+        return
+    shared.log.debug(f'Load model: name={checkpoint_info.filename} dict={already_loaded_state_dict is not None}')
     if timer is None:
         timer = Timer()
     current_checkpoint_info = None
@@ -410,7 +412,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     timer.record("config")
     shared.log.debug(f'Model config loaded: {memory_stats()}')
     sd_model = None
-    shared.log.debug(f'Model config: {sd_config.model.get("params", dict())}')
+    # shared.log.debug(f'Model config: {sd_config.model.get("params", dict())}')
     try:
         clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict
         with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
