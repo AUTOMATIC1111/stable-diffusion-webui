@@ -19,9 +19,11 @@ function get_uiCurrentTabContent() {
 }
 
 var uiUpdateCallbacks = [];
+var uiAfterUpdateCallbacks = [];
 var uiLoadedCallbacks = [];
 var uiTabChangeCallbacks = [];
 var optionsChangedCallbacks = [];
+var uiAfterUpdateTimeout = null;
 var uiCurrentTab = null;
 
 /**
@@ -30,6 +32,18 @@ var uiCurrentTab = null;
  */
 function onUiUpdate(callback) {
     uiUpdateCallbacks.push(callback);
+}
+
+/**
+ * Register callback to be called soon after UI updates.
+ * The callback receives no arguments.
+ *
+ * This is preferred over `onUiUpdate` if you don't need
+ * access to the MutationRecords, as your function will
+ * not be called quite as often.
+ */
+function onAfterUiUpdate(callback) {
+    uiAfterUpdateCallbacks.push(callback);
 }
 
 /**
@@ -66,6 +80,18 @@ function executeCallbacks(queue, arg) {
         }
     }
 }
+
+/**
+ * Schedule the execution of the callbacks registered with onAfterUiUpdate.
+ * The callbacks are executed after a short while, unless another call to this function
+ * is made before that time. IOW, the callbacks are executed only once, even
+ * when there are multiple mutations observed.
+ */
+function scheduleAfterUiUpdateCallbacks() {
+    clearTimeout(uiAfterUpdateTimeout);
+    uiAfterUpdateTimeout = setTimeout(function() {
+        executeCallbacks(uiAfterUpdateCallbacks);
+    }, 200);
 }
 
 var executedOnLoaded = false;
@@ -78,6 +104,7 @@ document.addEventListener("DOMContentLoaded", function() {
         }
 
         executeCallbacks(uiUpdateCallbacks, m);
+        scheduleAfterUiUpdateCallbacks();
         const newTab = get_uiCurrentTab();
         if (newTab && (newTab !== uiCurrentTab)) {
             uiCurrentTab = newTab;
