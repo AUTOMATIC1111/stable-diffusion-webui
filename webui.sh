@@ -116,11 +116,14 @@ case "$gpu_info" in
     *)
     ;;
 esac
-if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
+if ! echo "$gpu_info" | grep -q "NVIDIA";
 then
-    # AMD users will still use torch 1.13 because 2.0 does not seem to work.
-    export TORCH_COMMAND="pip install torch==1.13.1+rocm5.2 torchvision==0.14.1+rocm5.2 --index-url https://download.pytorch.org/whl/rocm5.2"
-fi  
+    if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
+    then
+        # AMD users will still use torch 1.13 because 2.0 does not seem to work.
+        export TORCH_COMMAND="pip install torch==1.13.1+rocm5.2 torchvision==0.14.1+rocm5.2 --index-url https://download.pytorch.org/whl/rocm5.2"
+    fi
+fi
 
 for preq in "${GIT}" "${python_cmd}"
 do
