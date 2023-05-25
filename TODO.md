@@ -9,13 +9,9 @@ Stuff to be fixed...
 
 Stuff to be added...
 
-- Update `README.md`
 - Update `Wiki`
-- Add `Gradio` theme maker
 - Create new `GitHub` hooks/actions for CI/CD  
-- Monitor file changes for misbehaving extensions
 - Reload browser on server restart
-- Remove origin wiki
 - Import core repos
 - Improve core `Stability-AI` code: <https://github.com/vladmandic/automatic/discussions/795>
 - Improve core `k-Diffusion` code
