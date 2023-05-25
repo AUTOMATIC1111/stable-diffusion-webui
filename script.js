@@ -24,15 +24,35 @@ var uiTabChangeCallbacks = [];
 var optionsChangedCallbacks = [];
 var uiCurrentTab = null;
 
+/**
+ * Register callback to be called at each UI update.
+ * The callback receives an array of MutationRecords as an argument.
+ */
 function onUiUpdate(callback) {
     uiUpdateCallbacks.push(callback);
 }
+
+/**
+ * Register callback to be called when the UI is loaded.
+ * The callback receives no arguments.
+ */
 function onUiLoaded(callback) {
     uiLoadedCallbacks.push(callback);
 }
+
+/**
+ * Register callback to be called when the UI tab is changed.
+ * The callback receives no arguments.
+ */
 function onUiTabChange(callback) {
     uiTabChangeCallbacks.push(callback);
 }
+
+/**
+ * Register callback to be called when the options are changed.
+ * The callback receives no arguments.
+ * @param callback
+ */
 function onOptionsChanged(callback) {
     optionsChangedCallbacks.push(callback);
 }
