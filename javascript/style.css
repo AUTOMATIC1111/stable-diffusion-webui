@@ -387,18 +387,21 @@ div#extras_scale_to_tab div.form{
     gap: 1em;
     padding: 1em;
     background-color: rgba(0,0,0,0.2);
+    position: absolute;
+    width: fit-content;
+    z-index: 1;
 }
+
 .modalClose {
     margin-left: auto;
 }
+
 .modalControls span{
     color: white;
     font-size: 35px;
     font-weight: bold;
     cursor: pointer;
     width: 1em;
-    position: absolute;
-    z-index: 1;
 }
 
 .modalControls span:hover, .modalControls span:focus{

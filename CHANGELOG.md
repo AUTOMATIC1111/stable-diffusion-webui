@@ -20,6 +20,7 @@ Some quality-of-life improvements...
   - `cpu` => Doggettx's
 - optimize logging
 - optimize profiling
+- minor lightbox improvements
 - bugfixes...i don't recall when was a release with at least several of those
 
 ## Update for 05/23/2023

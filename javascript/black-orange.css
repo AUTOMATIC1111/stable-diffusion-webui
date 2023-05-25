@@ -68,7 +68,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .progressDiv .progress { border-radius: 0 !important; background: var(--highlight-color); line-height: 3rem; height: 48px; }
 .gallery-item { box-shadow: none !important; }
 .performance { color: #888; }
-.modalControls { background-color: #4E1400; }
 
 /* gradio elements overrides */
 #div.gradio-container.dark { overflow-x: hidden; }
@@ -83,7 +82,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #refresh_sd_model_checkpoint { height: 48px; margin-left: -14px; background: #333333; box-shadow: none; }
 #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h { display: none; }
 #refresh_txt2img_styles, #refresh_img2img_styles { height: 40px; }
-#open_folder_txt2img, #open_folder_img2img { }
 #save-animation { border-radius: 0 !important; margin-bottom: 16px; background-color: #111111; }
 #script_list { padding: 4px; margin-top: 20px; margin-bottom: 20px; }
 #settings > div.flex-wrap { width: 15em; }
