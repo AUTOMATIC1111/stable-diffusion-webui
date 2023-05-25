@@ -41,7 +41,7 @@ function runCallback(x, m) {
     try {
         x(m);
     } catch (e) {
-        (console.error || console.log).call(console, e.message, e);
+        console.error("error running callback", x, ":", e);
     }
 }
 function executeCallbacks(queue, m) {
