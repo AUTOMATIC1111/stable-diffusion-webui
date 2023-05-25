@@ -81,10 +81,20 @@ else
     exit 1
 fi
 
+if [[ "$@" == *"--use-ipex"* ]]
+then
+    echo "Setting OneAPI enviroment"
+    source /opt/intel/oneapi/setvars.sh
+fi
+
 if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]
 then
     echo "Accelerating launch.py..."
     exec accelerate launch --num_cpu_threads_per_process=6 launch.py "$@"
+elif [[ -z "${first_launch}" ]] && [ -x "$(command -v ipexrun)" ] && [[ "$@" == *"--use-ipex"* ]]
+then
+    echo "Ipexrun'ning launch.py..."
+    exec ipexrun launch.py "$@"
 else
     echo "Launching launch.py..."
     exec "${python_cmd}" launch.py "$@"
