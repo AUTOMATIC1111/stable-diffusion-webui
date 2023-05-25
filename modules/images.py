@@ -668,10 +668,7 @@ def read_info_from_image(image):
     for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
                     'loop', 'background', 'timestamp', 'duration', 'progressive', 'progression',
                     'icc_profile', 'chromaticity']:
-        try:
-            items.pop(field, None)
-        except KeyError:
-            pass
+        items.pop(field, None)
 
     if items.get("Software", None) == "NovelAI":
         try:
