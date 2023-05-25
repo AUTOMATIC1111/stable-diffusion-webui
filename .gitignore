@@ -1,6 +1,5 @@
 # defaults
 __pycache__
-setup.log
 /cache.json
 /config.json
 /params.txt
@@ -17,6 +16,7 @@ package-lock.json
 venv
 
 # all models and temp files
+*.log
 *.bak
 *.ckpt
 *.safetensors

@@ -33,19 +33,19 @@ import latents
 
 # globals
 args = None
-log = logging.getLogger(__name__)
+log = logging.getLogger('train')
 valid_steps = ['original', 'face', 'body', 'blur', 'range', 'upscale', 'restore', 'interrogate', 'resize', 'square', 'segment']
+log_file = os.path.join(os.path.dirname(__file__), 'train.log')
 
 # methods
 
 def setup_logging(clean=False):
     try:
-        if clean and os.path.isfile('setup.log'):
-            os.remove('setup.log')
+        if clean and os.path.isfile(log_file):
+            os.remove(log_file)
         time.sleep(0.1) # prevent race condition
     except:
         pass
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', filename='setup.log', filemode='a', encoding='utf-8', force=True)
     from rich.theme import Theme
     from rich.logging import RichHandler
     from rich.console import Console
@@ -56,10 +56,17 @@ def setup_logging(clean=False):
         "traceback.border.syntax_error": "black",
         "inspect.value.border": "black",
     }))
+    # logging.getLogger("urllib3").setLevel(logging.ERROR)
+    # logging.getLogger("httpx").setLevel(logging.ERROR)
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', filename=log_file, filemode='a', encoding='utf-8', force=True)
+    log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`
     pretty_install(console=console)
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
-    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
-    rh.set_name(logging.DEBUG if args.debug else logging.INFO)
+    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=level, console=console)
+    rh.set_name(level)
+    while log.hasHandlers() and len(log.handlers) > 0:
+        log.removeHandler(log.handlers[0])
     log.addHandler(rh)
 
 

@@ -20,6 +20,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
+log_file = os.path.join(os.path.dirname(__file__), 'webui.log')
 quick_allowed = True
 errors = 0
 opts = {}
@@ -48,12 +49,11 @@ git_commit = "unknown"
 # setup console and file logging
 def setup_logging(clean=False):
     try:
-        if clean and os.path.isfile('setup.log'):
-            os.remove('setup.log')
+        if clean and os.path.isfile(log_file):
+            os.remove(log_file)
         time.sleep(0.1) # prevent race condition
     except:
         pass
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s', filename='setup.log', filemode='a', encoding='utf-8', force=True)
     from rich.theme import Theme
     from rich.logging import RichHandler
     from rich.console import Console
@@ -64,10 +64,15 @@ def setup_logging(clean=False):
         "traceback.border.syntax_error": "black",
         "inspect.value.border": "black",
     }))
+    # logging.getLogger("urllib3").setLevel(logging.ERROR)
+    # logging.getLogger("httpx").setLevel(logging.ERROR)
+    level = logging.DEBUG if args.debug else logging.INFO
+    logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', filename=log_file, filemode='a', encoding='utf-8', force=True)
+    log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`
     pretty_install(console=console)
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
-    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=logging.DEBUG if args.debug else logging.INFO, console=console)
-    rh.set_name(logging.DEBUG if args.debug else logging.INFO)
+    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=level, console=console)
+    rh.set_name(level)
     while log.hasHandlers() and len(log.handlers) > 0:
         log.removeHandler(log.handlers[0])
     log.addHandler(rh)
@@ -152,7 +157,7 @@ def git(arg: str, folder: str = None, ignore: bool = False):
         errors += 1
         log.error(f'Error running git: {folder} / {arg}')
         if 'or stash them' in txt:
-            log.error('Local changes detected: check setup.log for details')
+            log.error(f'Local changes detected: check log for details: {log_file}')
         log.debug(f'Git output: {txt}')
     return txt
 
@@ -528,7 +533,6 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
         import requests
     except ImportError:
         return
-    logging.getLogger("urllib3").setLevel(logging.ERROR)
     commits = None
     try:
         commits = requests.get('https://api.github.com/repos/vladmandic/automatic/branches/master', timeout=10).json()
@@ -569,13 +573,13 @@ def update_wiki():
 
 # check if we can run setup in quick mode
 def check_timestamp():
-    if not quick_allowed or not os.path.isfile('setup.log'):
+    if not quick_allowed or not os.path.isfile(log_file):
         return False
     if args.skip_git:
         return True
     ok = True
     setup_time = -1
-    with open('setup.log', 'r', encoding='utf8') as f:
+    with open(log_file, 'r', encoding='utf8') as f:
         lines = f.readlines()
         for line in lines:
             if 'Setup complete without errors' in line:
@@ -633,8 +637,8 @@ def parse_args():
 def extensions_preload(force = False):
     setup_time = 0
     if not force:
-        if os.path.isfile('setup.log'):
-            with open('setup.log', 'r', encoding='utf8') as f:
+        if os.path.isfile(log_file):
+            with open(log_file, 'r', encoding='utf8') as f:
                 lines = f.readlines()
                 for line in lines:
                     if 'Setup complete without errors' in line:
@@ -672,7 +676,7 @@ def read_options():
 
 # entry method when used as module
 def run_setup():
-    setup_logging(args.upgrade)
+    # setup_logging(args.upgrade)
     log.info('Starting SD.Next')
     read_options()
     check_python()
@@ -700,7 +704,7 @@ def run_setup():
         log.debug(f'Setup complete without errors: {round(time.time())}')
     else:
         log.warning(f'Setup complete with errors: {errors}')
-        log.warning('See log file for more details: setup.log')
+        log.warning(f'See log file for more details: {log_file}')
 
 
 if __name__ == "__main__":

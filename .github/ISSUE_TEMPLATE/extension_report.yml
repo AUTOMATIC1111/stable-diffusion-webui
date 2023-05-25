@@ -29,5 +29,5 @@ body:
   - type: markdown
     attributes:
       value: |
-        If issue is extension installation or startup related, please check `setup.log` before reporting  
+        If issue is extension installation or startup related, please check `webui.log` before reporting  
         And when posting console logs, please use code blocks ( \`\`\` ) to format them insead of uploading screenshots  

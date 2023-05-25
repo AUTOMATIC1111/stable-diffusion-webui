@@ -10,9 +10,9 @@ sys.argv += shlex.split(commandline_args)
 
 import installer
 installer.ensure_base_requirements()
-installer.setup_logging(False)
 installer.add_args()
 installer.parse_args()
+installer.setup_logging(False)
 installer.extensions_preload(force=False)
 
 import modules.cmd_args
@@ -130,7 +130,6 @@ def start_server(immediate=True, server=None):
 if __name__ == "__main__":
     if args.version:
         installer.add_args()
-        installer.setup_logging(clean=False)
         installer.log.info('SD.Next version information')
         installer.check_python()
         installer.check_version()

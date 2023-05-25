@@ -37,7 +37,7 @@ Individual features are not listed here, instead check [Changelog](CHANGELOG.md)
 
 *Note*: **nVidia/CUDA** and **AMD/ROCm** are auto-detected is present and available, but for any other use case specify required parameter explicitly or wrong packages may be installed as installer will assume CPU-only environment
 
-Full startup sequence is logged in `setup.log`, so if you encounter any issues, please check it first  
+Full startup sequence is logged in `webui.log`, so if you encounter any issues, please check it first  
 
 Below is partial list of all available parameters, run `webui --help` for the full list:
 
