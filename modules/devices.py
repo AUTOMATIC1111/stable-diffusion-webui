@@ -155,7 +155,7 @@ elif args.use_directml:
     backend = 'directml'
 elif torch.cuda.is_available() and torch.version.cuda:
     backend = 'cuda'
-elif torch.cuda.is_available() and torch.version.rocm:
+elif torch.cuda.is_available() and torch.version.hip:
     backend = 'rocm'
 elif sys.platform == 'darwin':
     backend = 'mps'

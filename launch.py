@@ -123,7 +123,6 @@ def start_server(immediate=True, server=None):
             server = server.api_only()
         else:
             server = server.webui()
-    installer.log.info(f'Memory {get_memory_stats()}')
     return server
 
 
