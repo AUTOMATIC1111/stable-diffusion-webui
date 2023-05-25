@@ -197,6 +197,8 @@ def async_policy():
 
 def start_common():
     log.debug('Entering start sequence')
+    if cmd_opts.debug and hasattr(shared, 'get_version'):
+        log.debug(f'Version: {shared.get_version()}')
     logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
     if shared.cmd_opts.data_dir is not None or len(shared.cmd_opts.data_dir) > 0:
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')

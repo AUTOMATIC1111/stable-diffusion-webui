@@ -771,6 +771,31 @@ def html(filename):
             return file.read()
     return ""
 
+
+def get_version():
+    version = None
+    if version is None:
+        try:
+            import subprocess
+            res = subprocess.run('git log --pretty=format:"%h %ad" -1 --date=short', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+            ver = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else ''
+            githash, updated = ver.split(' ')
+            res = subprocess.run('git remote get-url origin', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+            origin = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else ''
+            res = subprocess.run('git branch --show-current', stdout = subprocess.PIPE, stderr = subprocess.PIPE, shell=True, check=True)
+            branch = res.stdout.decode(encoding = 'utf8', errors='ignore') if len(res.stdout) > 0 else ''
+            version = {
+                'app': 'sd.next',
+                'updated': updated,
+                'hash': githash,
+                'url': origin.replace('\n', '') + '/tree/' + branch.replace('\n', '')
+            }
+        except:
+            version = { 'app': 'sd.next' }
+            pass
+    return version
+
+
 class Shared(sys.modules[__name__].__class__):
     # this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than at program startup.
     sd_model_val = None
