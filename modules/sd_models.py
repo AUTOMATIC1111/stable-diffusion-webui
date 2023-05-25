@@ -467,8 +467,6 @@ def reload_model_weights(sd_model=None, info=None):
             return
         if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
             lowvram.send_everything_to_cpu()
-        elif shared.cmd_opts.use_ipex:
-            sd_model.to("cpu")
         else:
             sd_model.to(devices.cpu)
         sd_hijack.model_hijack.undo_hijack(sd_model)
@@ -505,10 +503,7 @@ def reload_model_weights(sd_model=None, info=None):
 def unload_model_weights(sd_model=None, _info=None):
     from modules import sd_hijack
     if model_data.sd_model:
-        if shared.cmd_opts.use_ipex:
-            model_data.sd_model.to("cpu")
-        else:
-            model_data.sd_model.to(devices.cpu)
+        model_data.sd_model.to(devices.cpu)
         sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
         model_data.sd_model = None
         sd_model = None
