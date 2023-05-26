@@ -164,6 +164,7 @@ def model_hash(filename):
 
 
 def select_checkpoint():
+    """Raises `FileNotFoundError` if no checkpoints are found."""
     model_checkpoint = shared.opts.sd_model_checkpoint
 
     checkpoint_info = checkpoint_alisases.get(model_checkpoint, None)
@@ -171,14 +172,14 @@ def select_checkpoint():
         return checkpoint_info
 
     if len(checkpoints_list) == 0:
-        print("No checkpoints found. When searching for checkpoints, looked at:", file=sys.stderr)
+        error_message = "No checkpoints found. When searching for checkpoints, looked at:"
         if shared.cmd_opts.ckpt is not None:
-            print(f" - file {os.path.abspath(shared.cmd_opts.ckpt)}", file=sys.stderr)
-        print(f" - directory {model_path}", file=sys.stderr)
+            error_message += f"\n - file {os.path.abspath(shared.cmd_opts.ckpt)}"
+        error_message += f"\n - directory {model_path}"
         if shared.cmd_opts.ckpt_dir is not None:
-            print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
-        print("Can't run without a checkpoint. Find and place a .ckpt or .safetensors file into any of those locations. The program will exit.", file=sys.stderr)
-        exit(1)
+            error_message += f"\n - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}"
+        error_message += "Can't run without a checkpoint. Find and place a .ckpt or .safetensors file into any of those locations."
+        raise FileNotFoundError(error_message)
 
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
