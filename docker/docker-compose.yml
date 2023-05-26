@@ -1,7 +1,7 @@
 services:
   stable-diffusion-webui:
     runtime: nvidia
-    image: automatic111/stable-diffusion-webui
+    image: ghcr.io/emsi/stable-diffusion-webui
     build:
       context: ../
       dockerfile: docker/Dockerfile
