@@ -159,7 +159,6 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
                     f.write(resp.content)
             else:
                 raise Exception("response error:" + resp.text)
-        sd_models.list_models()
     except Exception as err:
         traceback.print_exc()
         return f"download failed:{err}"
