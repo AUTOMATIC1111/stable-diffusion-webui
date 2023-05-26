@@ -91,7 +91,7 @@ if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v 
 then
     echo "Accelerating launch.py..."
     exec accelerate launch --num_cpu_threads_per_process=6 launch.py "$@"
-elif [[ -z "${first_launch}" ]] && [ -x "$(command -v ipexrun)" ] && [[ "$@" == *"--use-ipex"* ]]
+elif [[ -z "${first_launch}" ]] && [ -x "$(command -v ipexrun)" ] && [ -x "$(command -v numactl)" ] && [[ "$@" == *"--use-ipex"* ]]
 then
     echo "Ipexrun'ning launch.py..."
     exec ipexrun launch.py "$@"
