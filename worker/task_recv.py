@@ -50,7 +50,10 @@ def find_files_from_dir(directory, *args):
 def clean_tmp(expired_days=1):
     if os.path.isdir(Tmp):
         now = time.time()
-        for fn in os.listdir(Tmp):
+        files = [x for x in os.listdir(Tmp)]
+        for fn in files:
+            if not os.path.isfile(fn):
+                continue
             mtime = os.path.getmtime(fn)
             if now > mtime + expired_days * 24 * 3600:
                 try:

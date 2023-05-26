@@ -28,6 +28,7 @@ class SingleUpscalerTask:
 
     def __init__(self,
                  image: str,  # 图片路径
+                 resize_mode: int = 1,  # 模式 0-scale by 1-scale to
                  gfpgan_visibility: float = 0,  # gfpgan 可见度，0-1
                  codeformer_visibility: float = 0,  # code former 可见度，0-1
                  codeformer_weight: float = 0,  # code former 权重
@@ -39,8 +40,8 @@ class SingleUpscalerTask:
                  extras_upscaler_2: str = None,  # upscaler_2
                  extras_upscaler_2_visibility: float = 0  # upscaler_2 可见度，0-1
                  ):
-        self.resize_mode = 0  # 模式 0-single
-        self.extras_mode = 0
+        self.resize_mode = resize_mode
+        self.extras_mode = 0   # 0-single, 1-batch
         self.image_folder = ""
         self.input_dir = ""
         self.output_dir = ""
@@ -59,7 +60,7 @@ class SingleUpscalerTask:
 
         local_image = get_tmp_local_path(image)
         if local_image and os.path.isfile(local_image):
-            self.image = Image.open(local_image)
+            self.image = Image.open(local_image).convert('RGB')
         else:
             raise OSError(f'cannot found image:{image}')
 

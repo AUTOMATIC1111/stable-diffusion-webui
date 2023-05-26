@@ -17,6 +17,7 @@ import os
 import random
 import gradio as gr
 from typing import Tuple
+from tools.file import find_files_from_dir
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1"
@@ -202,7 +203,8 @@ def create_upload_model_ui():
         with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
             url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai,samba页面地址直接解析")
             model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
-            url_img_ctl = gr.Textbox(label="从URL下载封面:", placeholder="输入封面下载链接，civitai自动解析无需手动添加,samba默认自动拉取同名PNG资源")
+            url_img_ctl = gr.Textbox(label="从URL下载封面:",
+                                     placeholder="输入封面下载链接，civitai自动解析无需手动添加,samba默认自动拉取同名PNG资源")
             btn = gr.Button(value="开始下载")
 
     result = gr.Label(label="上传结果:")
@@ -225,6 +227,62 @@ def create_upload_model_ui():
               show_progress=True)
 
 
+def create_rm_model_ui():
+    gr.Label("你可以对自己空间模型进行管理", label=None)
+    # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
+    radio_ctl = gr.Radio(["Lora", "Stable-diffusion"],
+                         label="选择模型类型:")
+    # model_set = gr.Dataset(
+    #     label='选择要删除的文件',
+    #     headers=["文件名", "路径"],
+    #     components=[gr.Textbox(show_label=False, visible=False), gr.Textbox(show_label=False, visible=False)]
+    # )
+    state = gr.State()
+    model_frame = gr.Dataframe(
+        headers=["路径"],
+        datatype=["str"],
+        col_count=1,
+        type='array'
+    )
+    confirm = gr.Button('删除选中文件')
+
+    def list_models(relative):
+        models = []
+        relative = os.path.join('user-models', relative)
+        for fn in find_files_from_dir(relative, 'safetensors', 'ckpt', 'pt'):
+            index = fn.index(relative)
+
+            models.append([fn[index:]])
+        if not models:
+            models = None
+
+        return models
+
+    def set_ds(relative):
+        models = list_models(relative)
+        return gr.Dataframe.update(
+            value=models
+        )
+
+    def remove(index, models):
+        filename = models[index][0]
+        if os.path.isfile(filename):
+            os.remove(filename)
+
+        values = [x for x in models if x != models[index]]
+        if not values:
+            return None
+
+        return values
+
+    def selected(ind: gr.SelectData):
+        return ind.index[0]
+
+    radio_ctl.change(list_models, inputs=radio_ctl, outputs=[model_frame])
+    model_frame.select(fn=selected, outputs=state)
+    confirm.click(remove, inputs=[state, model_frame], outputs=model_frame)
+
+
 def append_upload_model_ui(interfaces: typing.List):
     '''
     将模型页添加到UI的TAB，需要在ui.py下找到interfaces列表下加入：
@@ -235,5 +293,9 @@ def append_upload_model_ui(interfaces: typing.List):
     :return:
     '''
     with gr.Blocks(analytics_enabled=False) as upload_model_interface:
-        create_upload_model_ui()
-    interfaces.append((upload_model_interface, "模型上传", "uploadModel"))
+        with gr.Tabs(elem_id="upload_tab_elem") as tabs:
+            with gr.TabItem('模型上传', elem_id='tab_upload_file'):
+                create_upload_model_ui()
+            with gr.TabItem('模型删除', elem_id='tab_rm_file'):
+                create_rm_model_ui()
+    interfaces.append((upload_model_interface, "模型管理", "ModelManager"))

@@ -56,7 +56,7 @@ class TaskDumper(Thread):
         super(TaskDumper, self).__init__(name='task-dumper')
         self.db = db
         self.ip = get_host_ip()
-        self.send_delay = 10
+        self.send_delay = 4
         self.queue = queue.Queue(maxsize=100)
         self._stop_flag = False
         self._dump_now = False
@@ -110,8 +110,7 @@ class TaskDumper(Thread):
         self.queue.put(info)
         if not self._dump_now:
             # 如果dump_now 已经是True,就不要覆盖
-            self._dump_now = task_progress.status == TaskStatus.Prepare \
-                             or task_progress.task_progress > 0 \
+            self._dump_now = task_progress.status >= TaskStatus.Prepare \
                              or task_progress.completed
 
     @abc.abstractmethod

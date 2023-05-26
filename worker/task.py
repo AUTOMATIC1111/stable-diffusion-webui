@@ -119,6 +119,7 @@ class TaskStatus(IntEnum):
     Prepare = 1
     Ready = 2
     Running = 3
+    Uploading = 4
     TrainCompleted = 9
     Finish = 10
     Failed = -1

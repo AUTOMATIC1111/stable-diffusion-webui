@@ -507,8 +507,7 @@ def create_ui():
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
                             enable_hr = gr.Checkbox(label='Hires. fix',
                                                     value=False,
-                                                    elem_id="txt2img_enable_hr",
-                                                    visible=False)
+                                                    elem_id="txt2img_enable_hr")
                             hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
 
                     elif category == "hires_fix":

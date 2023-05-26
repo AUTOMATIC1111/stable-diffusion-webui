@@ -443,6 +443,10 @@ class Img2ImgTaskHandler(TaskHandler):
                 processed = process_images(process_args)
         shared.state.end()
         process_args.close()
+
+        progress.status = TaskStatus.Uploading
+        yield progress
+
         images = save_processed_images(processed,
                                        process_args.outpath_samples,
                                        process_args.outpath_grids,

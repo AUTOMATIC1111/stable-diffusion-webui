@@ -13,6 +13,7 @@ import torch.cuda
 
 from worker.dumper import dumper
 from loguru import logger
+from modules.devices import torch_gc
 from worker.task import Task, TaskProgress, TaskStatus, TaskType
 
 
@@ -43,6 +44,7 @@ class TaskHandler:
                 for progress in self._exec(task):
                     self._set_task_status(progress)
             except torch.cuda.OutOfMemoryError:
+                torch_gc()
                 logger.exception('CUDA out of memory')
                 p = TaskProgress.new_failed(task, 'CUDA out of memory', '')
                 self._set_task_status(p)
