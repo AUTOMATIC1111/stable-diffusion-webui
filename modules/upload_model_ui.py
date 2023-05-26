@@ -196,7 +196,7 @@ def create_upload_model_ui():
                          label="选择模型类型:")
     with gr.Tabs(elem_id="tabs") as tabs:
         with gr.TabItem('模型文件上传', elem_id='tab_upload_file'):
-            gr.Label(None, label="通过模型文件上传:")
+            gr.Label(None, label="通过模型文件上传，模型文件较大，请耐心等待:")
             upload_ctl = gr.File(label="本地上传模型文件:")
             upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
         with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
@@ -286,6 +286,69 @@ def create_rm_model_ui():
     confirm.click(remove, inputs=[state, model_frame], outputs=model_frame)
 
 
+def create_upload_others():
+    gr.Label("你可以上传资料到指定路径", label=None)
+    # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
+    radio_ctl = gr.Radio(["用户空间", "插件物料"],
+                         value="用户空间",
+                         label="选择文件类型:")
+    extension_input = gr.Textbox(
+        placeholder='如:tagcomplete/tags/zh_cn.csv',
+        label='输入插件物料路径:extensions/',
+        interactive=True,
+        visible=False
+    )
+
+    def upload(file_obj, asset_type, relative: str):
+        folder = 'extensions'
+        if asset_type == '插件物料':
+            relative = relative.lstrip('/')
+            if relative.startswith(folder):
+                relative = relative[len(folder):].lstrip('/')
+            file_path = os.path.join(folder, relative)
+        else:
+            folder = 'user-asset'
+            file_path = os.path.join(folder, os.path.basename(file_obj.orig_name))
+        os.makedirs(folder, exist_ok=True)
+        shutil.copy(file_obj.name, file_path)
+        return file_path
+
+    def update_visible(asset_type):
+        visible = asset_type == '插件物料'
+        return gr.Textbox.update(
+            visible=visible
+        )
+
+    upload_ctl = gr.File(label="本地上传文件:")
+    result = gr.Label(label="服务器文件路径:")
+
+    radio_ctl.change(
+        update_visible,
+        inputs=[radio_ctl],
+        outputs=[extension_input])
+    upload_ctl.upload(fn=upload,
+                      inputs=[upload_ctl, radio_ctl, extension_input],
+                      outputs=[result],
+                      show_progress=True)
+
+
+def download_user_assets():
+    gr.Label("你可以下载个人物料空间下的文件", label=None)
+    refresh_btn = gr.Button('刷新文件列表')
+
+    def list_files():
+        files = []
+        for fn in os.listdir('user-asset'):
+            files.append(os.path.join('user-asset', fn))
+        if not files:
+            files = None
+        return files
+
+    f = gr.Files(label='选择文件下载:', interactive=False)
+
+    refresh_btn.click(list_files, outputs=f)
+
+
 def append_upload_model_ui(interfaces: typing.List):
     '''
     将模型页添加到UI的TAB，需要在ui.py下找到interfaces列表下加入：
@@ -301,4 +364,8 @@ def append_upload_model_ui(interfaces: typing.List):
                 create_upload_model_ui()
             with gr.TabItem('模型删除', elem_id='tab_rm_model'):
                 create_rm_model_ui()
+            with gr.TabItem('物料上传', elem_id='tab_upload_others'):
+                create_upload_others()
+            with gr.TabItem('资料下载'):
+                download_user_assets()
     interfaces.append((upload_model_interface, "文件管理", "FileManager"))

@@ -69,7 +69,7 @@ class PreprocessParams:
         if not existing_caption:
             return True
         return self.preprocess_txt_action in [
-            PreprocessTxtAction.Prepend.value, PreprocessTxtAction.Copy.value, PreprocessTxtAction.Append.value
+            PreprocessTxtAction.Prepend.value, PreprocessTxtAction.Ignore.value, PreprocessTxtAction.Append.value
         ]
 
 
