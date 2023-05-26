@@ -268,6 +268,10 @@ def create_rm_model_ui():
         filename = models[index][0]
         if os.path.isfile(filename):
             os.remove(filename)
+        base, _ = os.path.splitext(filename)
+        cover = base + '.png'
+        if os.path.isfile(cover):
+            os.remove(cover)
 
         values = [x for x in models if x != models[index]]
         if not values:
@@ -294,8 +298,8 @@ def append_upload_model_ui(interfaces: typing.List):
     '''
     with gr.Blocks(analytics_enabled=False) as upload_model_interface:
         with gr.Tabs(elem_id="upload_tab_elem") as tabs:
-            with gr.TabItem('模型上传', elem_id='tab_upload_file'):
+            with gr.TabItem('模型上传', elem_id='tab_upload_model'):
                 create_upload_model_ui()
-            with gr.TabItem('模型删除', elem_id='tab_rm_file'):
+            with gr.TabItem('模型删除', elem_id='tab_rm_model'):
                 create_rm_model_ui()
-    interfaces.append((upload_model_interface, "模型管理", "ModelManager"))
+    interfaces.append((upload_model_interface, "文件管理", "FileManager"))
