@@ -28,7 +28,7 @@ class SingleUpscalerTask:
 
     def __init__(self,
                  image: str,  # 图片路径
-                 resize_mode: int = 1,  # 模式 0-scale by 1-scale to
+                 resize_mode: int = 0,  # 模式 0-scale by 1-scale to
                  gfpgan_visibility: float = 0,  # gfpgan 可见度，0-1
                  codeformer_visibility: float = 0,  # code former 可见度，0-1
                  codeformer_weight: float = 0,  # code former 权重
@@ -68,6 +68,7 @@ class SingleUpscalerTask:
     def exec_task(cls, task: Task):
         t = SingleUpscalerTask(
             task['image'],
+            task.get('resize_mode', 0),
             task.get('gfpgan_visibility', 0),
             task.get('codeformer_visibility', 0),
             task.get('codeformer_weight', 0),
