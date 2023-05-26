@@ -1,19 +1,15 @@
-import math
 import os
-import sys
-import traceback
 
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
 
-from modules import devices, sd_samplers
+from modules import sd_samplers
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
 import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
-import modules.images as images
 import modules.scripts
 
 
@@ -59,7 +55,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
             # try to find corresponding mask for an image using simple filename matching
             mask_image_path = os.path.join(inpaint_mask_dir, os.path.basename(image))
             # if not found use first one ("same mask for all images" use-case)
-            if not mask_image_path in inpaint_masks:
+            if mask_image_path not in inpaint_masks:
                 mask_image_path = inpaint_masks[0]
             mask_image = Image.open(mask_image_path)
             p.image_mask = mask_image
@@ -96,7 +92,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     elif mode == 2:  # inpaint
         image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
         alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
-        mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
+        mask = mask.convert('L').point(lambda x: 255 if x > 128 else 0, mode='1')
+        mask = ImageChops.lighter(alpha_mask, mask).convert('L')
         image = image.convert("RGB")
     elif mode == 3:  # inpaint sketch
         image = inpaint_color_sketch
