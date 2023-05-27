@@ -33,11 +33,9 @@ def setup_model(dirname):
     try:
         from torchvision.transforms.functional import normalize
         from modules.codeformer.codeformer_arch import CodeFormer
-        from basicsr.utils.download_util import load_file_from_url
-        from basicsr.utils import imwrite, img2tensor, tensor2img
+        from basicsr.utils import img2tensor, tensor2img
         from facelib.utils.face_restoration_helper import FaceRestoreHelper
         from facelib.detection.retinaface import retinaface
-        from modules.shared import cmd_opts
 
         net_class = CodeFormer
 
@@ -96,7 +94,7 @@ def setup_model(dirname):
                 self.face_helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
                 self.face_helper.align_warp_face()
 
-                for idx, cropped_face in enumerate(self.face_helper.cropped_faces):
+                for cropped_face in self.face_helper.cropped_faces:
                     cropped_face_t = img2tensor(cropped_face / 255., bgr2rgb=True, float32=True)
                     normalize(cropped_face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
                     cropped_face_t = cropped_face_t.unsqueeze(0).to(devices.device_codeformer)

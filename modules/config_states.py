@@ -14,7 +14,7 @@ from collections import OrderedDict
 import git
 
 from modules import shared, extensions
-from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path, config_states_dir
+from modules.paths_internal import script_path, config_states_dir
 
 
 all_config_states = OrderedDict()
@@ -35,7 +35,7 @@ def list_config_states():
                 j["filepath"] = path
                 config_states.append(j)
 
-    config_states = list(sorted(config_states, key=lambda cs: cs["created_at"], reverse=True))
+    config_states = sorted(config_states, key=lambda cs: cs["created_at"], reverse=True)
 
     for cs in config_states:
         timestamp = time.asctime(time.gmtime(cs["created_at"]))
@@ -83,6 +83,8 @@ def get_extension_config():
     ext_config = {}
 
     for ext in extensions.extensions:
+        ext.read_info_from_repo()
+
         entry = {
             "name": ext.name,
             "path": ext.path,
