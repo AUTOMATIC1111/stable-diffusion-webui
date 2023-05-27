@@ -1,6 +1,7 @@
 /* global gradioApp, onUiUpdate, opts */
 
 window.opts = {};
+window.localization = {};
 let tabSelected = '';
 
 function set_theme(theme) {
@@ -192,6 +193,22 @@ function recalculate_prompts_inpaint(...args) {
   return args_to_array(args);
 }
 
+function register_drag_drop() {
+  const qs = gradioApp().getElementById('quicksettings');
+  if (!qs) return;
+  qs.addEventListener('dragover', (evt) => {
+    evt.preventDefault();
+    evt.dataTransfer.dropEffect = 'copy';
+  });
+  qs.addEventListener('drop', (evt) => {
+    evt.preventDefault();
+    evt.dataTransfer.dropEffect = 'copy';
+    for (const f of evt.dataTransfer.files) {
+      console.log('QuickSettingsDrop', f);
+    }
+  });
+}
+
 onUiUpdate(() => {
   sort_ui_elements();
   if (Object.keys(opts).length !== 0) return;
@@ -202,6 +219,7 @@ onUiUpdate(() => {
   const jsdata = textarea.value;
   opts = JSON.parse(jsdata);
   executeCallbacks(optionsChangedCallbacks);
+  register_drag_drop();
 
   Object.defineProperty(textarea, 'value', {
     set(newValue) {

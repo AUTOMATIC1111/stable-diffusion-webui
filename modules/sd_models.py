@@ -27,7 +27,7 @@ checkpoints_loaded = collections.OrderedDict()
 skip_next_load = False
 
 
-class CheckpointInfo:
+class CheckpointInfo: # TODO Diffusers
     def __init__(self, filename):
         self.filename = filename
         abspath = os.path.abspath(filename)
@@ -42,8 +42,13 @@ class CheckpointInfo:
         self.name = name
         self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
-        self.hash = model_hash(filename)
-        self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
+        if shared.opts.sd_backend == 'Original':
+            self.hash = model_hash(self.filename)
+            self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
+        else: # TODO Diffusers calculate hash
+            # sd_model.unet.config._name_or_path.split("/")[-2]
+            self.hash = 'ABCDEFGH'
+            self.sha256 = 'ABCDEFGH'
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
         self.ids = [self.hash, self.model_name, self.title, name, f'{name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
@@ -99,9 +104,12 @@ def checkpoint_tiles():
 def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
-    model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    if shared.opts.sd_backend == 'Original':
+        model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    else:
+        model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Diffusers'), model_url=None, command_path=shared.opts.diffusers_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.cmd_opts.ckpt is not None:
-        if not os.path.exists(shared.cmd_opts.ckpt):
+        if not os.path.exists(shared.cmd_opts.ckpt) and shared.opts.sd_backend == 'Original':
             if shared.cmd_opts.ckpt.lower() != "none":
                 shared.log.warning(f"Requested checkpoint not found: {shared.cmd_opts.ckpt}")
         else:
@@ -363,7 +371,12 @@ class SdModelData:
         if self.sd_model is None:
             with self.lock:
                 try:
-                    load_model()
+                    if shared.opts.sd_backend == 'Original':
+                        load_model()
+                    elif shared.opts.sd_backend == 'Diffusers':
+                        load_diffusers()
+                    else:
+                        shared.log.error(f"Unknown Stable Diffusion backend: {shared.opts.sd_backend}")
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
                     errors.display(e, "loading stable diffusion model")
@@ -375,6 +388,39 @@ class SdModelData:
 
 
 model_data = SdModelData()
+
+
+def load_diffusers(checkpoint_info=None, already_loaded_state_dict=None, timer=None):
+    if timer is None:
+        timer = Timer()
+    import diffusers
+    timer.record("diffusers")
+    diffusor_config = {
+        "force_download": False,
+        "safety_checker": None,
+        "resume_download": True,
+        "low_cpu_mem_usage": True,
+        "use_safetensors": True,
+        "cache_dir": shared.opts.diffusers_dir,
+        "torch_dtype": devices.dtype,
+    }
+    shared.log.warning("Using experimental Diffusers backend for Stable Diffusion")
+    if shared.opts.data['sd_model_checkpoint'] == 'model.ckpt':
+        shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
+    sd_model = None
+    try:
+        checkpoint_info = checkpoint_info or select_checkpoint()
+        scheduler = diffusers.UniPCMultistepScheduler.from_pretrained(checkpoint_info.filename, subfolder="scheduler")
+        scheduler.name = 'UniPC'
+        sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.filename, scheduler=scheduler, **diffusor_config)
+        sd_model.to(devices.device)
+        sd_model.sd_checkpoint_info = checkpoint_info
+        sd_model.sd_model_hash = checkpoint_info.hash
+    except Exception as e:
+        shared.log.error("Failed to load diffusers model")
+        errors.display(e, "loading Diffusers model")
+    shared.sd_model = sd_model
+    timer.record("load")
 
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None):

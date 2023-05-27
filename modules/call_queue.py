@@ -65,10 +65,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             if shared.cmd_opts.profile:
                 pr.disable()
                 s = io.StringIO()
-                ps = pstats.Stats(pr, stream=s)
-                ps.sort_stats(pstats.SortKey.CUMULATIVE)
-                # ps.strip_dirs()
-                ps.print_stats(15)
+                pstats.Stats(pr, stream=s).sort_stats(pstats.SortKey.CUMULATIVE).print_stats(15)
                 print('Profile Exec:', s.getvalue())
         except Exception as e:
             errors.display(e, 'gradio call')

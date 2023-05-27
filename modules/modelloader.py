@@ -8,7 +8,7 @@ from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, Upscale
 from modules.paths import script_path, models_path
 
 
-def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
+def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None, diffusors=False) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
 
@@ -19,32 +19,45 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
-    output = []
-    try:
-        places = []
-        places.append(model_path)
-        if command_path is not None and command_path != model_path and os.path.isdir(command_path):
-            places.append(command_path)
-        for place in places:
-            for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
-                if os.path.islink(full_path) and not os.path.exists(full_path):
-                    print(f"Skipping broken symlink: {full_path}")
-                    continue
-                if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
-                    continue
-                if full_path not in output:
-                    output.append(full_path)
-        if model_url is not None and len(output) == 0:
-            if download_name is not None:
-                from basicsr.utils.download_util import load_file_from_url
-                dl = load_file_from_url(model_url, model_path, True, download_name)
-                output.append(dl)
-            else:
-                output.append(model_url)
-    except Exception:
-        pass
+    places = []
+    places.append(model_path)
+    if command_path is not None and command_path != model_path and os.path.isdir(command_path):
+        places.append(command_path)
 
-    return output
+    def get_checkpoints():
+        output = []
+        try:
+            for place in places:
+                for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
+                    if os.path.islink(full_path) and not os.path.exists(full_path):
+                        print(f"Skipping broken symlink: {full_path}")
+                        continue
+                    if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
+                        continue
+                    if full_path not in output:
+                        output.append(full_path)
+            if model_url is not None and len(output) == 0:
+                if download_name is not None:
+                    from basicsr.utils.download_util import load_file_from_url
+                    dl = load_file_from_url(model_url, model_path, True, download_name)
+                    output.append(dl)
+                else:
+                    output.append(model_url)
+        except Exception:
+            pass
+        return output
+
+    def get_diffusors():
+        output = []
+        for place in places:
+            output = os.listdir(place)
+            output = [os.path.join(place, x) for x in output]
+        return output
+
+    if not diffusors:
+        return get_checkpoints()
+    else:
+        return get_diffusors()
 
 
 def friendly_name(file: str):

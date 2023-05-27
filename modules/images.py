@@ -642,18 +642,27 @@ Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}
 
 def image_data(data):
     import gradio as gr
+    if data is None:
+        return gr.update(), None
+    err1 = None
+    err2 = None
     try:
         image = Image.open(io.BytesIO(data))
+        errors.log.debug(f'Decoded object: image={image}')
         textinfo, _ = read_info_from_image(image)
         return textinfo, None
-    except Exception:
-        pass
+    except Exception as e:
+        err1 = e
     try:
+        if len(data) > 1024 * 10:
+            errors.log.warning(f'Error decoding object: data too long: {len(data)}')
+            return gr.update(), None
         text = data.decode('utf8')
-        assert len(text) < 10000
+        errors.log.debug(f'Decoded object: size={len(text)}')
         return text, None
-    except Exception:
-        pass
+    except Exception as e:
+        err2 = e
+    errors.log.error(f'Error decoding object: {err1 or err2}')
     return gr.update(), None
 
 

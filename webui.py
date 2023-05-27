@@ -150,25 +150,13 @@ def initialize():
 def load_model():
     shared.state.begin()
     shared.state.job = 'load model'
-
-    """
-    try:
-        modules.sd_models.load_model()
-        modules.sd_models.skip_next_load = True
-    except Exception as e:
-        errors.display(e, "loading stable diffusion model")
-        log.error("Stable diffusion model failed to load")
-        exit(1)
-    """
     Thread(target=lambda: shared.sd_model).start()
-
     if shared.sd_model is None:
         log.warning("No stable diffusion model loaded")
         # exit(1)
     else:
         shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
-
     shared.state.end()
     startup_timer.record("checkpoint")
 

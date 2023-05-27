@@ -28,6 +28,7 @@ import modules.textual_inversion.ui
 import modules.sd_samplers
 from modules.textual_inversion import textual_inversion
 
+
 modules.errors.install()
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
@@ -203,7 +204,13 @@ def update_token_counter(text, steps):
         prompt_schedules = [[[steps, text]]]
     flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
     prompts = [prompt_text for step, prompt_text in flat_prompts]
-    token_count, max_length = max([sd_hijack.model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
+    if opts.sd_backend == 'Original':
+        token_count, max_length = max([sd_hijack.model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
+    else:
+        tokenizer = modules.shared.sd_model.tokenizer
+        has_bos_token, has_eos_token = tokenizer.bos_token_id is not None, tokenizer.eos_token_id is not None
+        token_count = max([len(modules.shared.sd_model.tokenizer(prompt)) for prompt in prompts]) - int(has_bos_token) - int(has_eos_token)
+        max_length = tokenizer.model_max_length - int(has_bos_token) - int(has_eos_token)
     return f"<span class='gr-box gr-text-input'>{token_count}/{max_length}</span>"
 
 
@@ -299,13 +306,12 @@ def create_output_panel(tabname, outdir):
 def create_sampler_and_steps_selection(choices, tabname):
     with FormRow(elem_id=f"sampler_selection_{tabname}"):
         if 'UniPC' in [sampler.name for sampler in choices]:
-            chosen_sampler_name = 'UniPC'
+            default_sampler_name = 'UniPC'
         elif 'Euler a' in [sampler.name for sampler in choices]:
-            chosen_sampler_name = 'Euler a'
+            default_sampler_name = 'Euler a'
         else:
-            chosen_sampler_name = modules.sd_samplers.samplers[0].name
-
-        sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=chosen_sampler_name if tabname == 'txt2img' else "Euler a", type="index")
+            default_sampler_name = modules.sd_samplers.samplers[0].name
+        sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=default_sampler_name, type="index")
         steps = gr.Slider(minimum=1, maximum=99, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
     return steps, sampler_index
 
@@ -1452,9 +1458,9 @@ def create_ui():
                 show_progress=info.refresh is not None,
             )
 
-        update_image_cfg_scale_visibility = lambda: gr.update(visible=modules.shared.sd_model and modules.shared.sd_model.cond_stage_key == "edit") # pylint: disable=unnecessary-lambda-assignment
-        text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
-        demo.load(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
+        image_cfg_scale_visibility = (modules.shared.sd_model is not None) and hasattr(modules.shared.sd_model, 'cond_stage_key') and (modules.shared.sd_model.cond_stage_key == "edit") # pix2pix
+        text_settings.change(fn=lambda: gr.update(visible=image_cfg_scale_visibility), inputs=[], outputs=[image_cfg_scale])
+        demo.load(fn=lambda: gr.update(visible=image_cfg_scale_visibility), inputs=[], outputs=[image_cfg_scale])
 
         button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
         button_set_checkpoint.click(

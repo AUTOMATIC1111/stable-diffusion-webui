@@ -3,11 +3,13 @@ import math
 import os
 import hashlib
 import random
+from contextlib import nullcontext
 from typing import Any, Dict, List
 import torch
 import numpy as np
 from PIL import Image, ImageFilter, ImageOps
 import cv2
+import tomesd
 from skimage import exposure
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
@@ -25,7 +27,7 @@ import modules.images as images
 import modules.styles
 import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
-import tomesd # pylint: disable=wrong-import-order
+
 
 opt_C = 4
 opt_f = 8
@@ -218,6 +220,8 @@ class StableDiffusionProcessing:
         source_image = devices.cond_cast_float(source_image)
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
+        if opts.sd_backend == 'Diffusers': # TODO: img2img_image_conditioning
+            return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image)
         if self.sd_model.cond_stage_key == "edit":
@@ -456,9 +460,19 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
 
+def print_profile(profile, msg: str):
+    try:
+        from rich import print # pylint: disable=redefined-builtin
+    except:
+        pass
+    lines = profile.key_averages().table(sort_by="cuda_time_total", row_limit=20)
+    lines = lines.split('\n')
+    lines = [l for l in lines if '/profiler' not in l]
+    print(f'Profile {msg}:', '\n'.join(lines))
+
+
 def process_images(p: StableDiffusionProcessing) -> Processed:
     stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
-
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
         if p.override_settings.get('sd_model_checkpoint', None) is not None and sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
@@ -471,28 +485,24 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             if k == 'sd_vae':
                 sd_vae.reload_vae_weights()
 
-        """
-        import torch.profiler
-        with torch.profiler.profile(activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA], record_shapes=True, with_modules=True) as prof:
-            with torch.profiler.record_function("process_images"):
-                res = process_images_inner(p)
-        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=15))
-        """
-
         if (opts.token_merging or cmd_opts.token_merging) and not opts.token_merging_hr_only:
             sd_models.apply_token_merging(sd_model=p.sd_model, hr=False)
             log.debug('Token merging applied')
 
-        res = process_images_inner(p)
-
+        if cmd_opts.profile:
+            import torch.profiler # pylint: disable=redefined-outer-name
+            # activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA]
+            with torch.profiler.profile(profile_memory=True, with_modules=True) as prof:
+                with torch.profiler.record_function("process_images"):
+                    res = process_images_inner(p)
+            print_profile(prof, 'process_images')
+        else:
+            res = process_images_inner(p)
     finally:
-        # undo model optimizations made by tomesd
         if opts.token_merging or cmd_opts.token_merging:
             tomesd.remove_patch(p.sd_model)
             log.debug('Token merging model optimizations removed')
-
-        # restore opts to original state
-        if p.override_settings_restore_afterwards:
+        if p.override_settings_restore_afterwards: # restore opts to original state
             for k, v in stored_opts.items():
                 setattr(opts, k, v)
                 if k == 'sd_model_checkpoint':
@@ -500,7 +510,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 
                 if k == 'sd_vae':
                     sd_vae.reload_vae_weights()
-
     return res
 
 
@@ -513,8 +522,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         assert p.prompt is not None
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
-    modules.sd_hijack.model_hijack.apply_circular(p.tiling)
-    modules.sd_hijack.model_hijack.clear_comments()
+    if opts.sd_backend == 'Original':
+        modules.sd_hijack.model_hijack.apply_circular(p.tiling)
+        modules.sd_hijack.model_hijack.clear_comments()
     comments = {}
     if type(p.prompt) == list:
         p.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, p.styles) for x in p.prompt]
@@ -563,10 +573,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         cache[0] = (required_prompts, steps)
         return cache[1]
 
-    with torch.no_grad(), p.sd_model.ema_scope():
+    ema_scope_context = p.sd_model.ema_scope if opts.sd_backend == 'Original' else nullcontext
+    with torch.no_grad(), ema_scope_context():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
-            if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
+            if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN" and opts.sd_backend == 'Original':
                 sd_vae_approx.model()
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -604,42 +615,67 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     step_multiplier = 2 if sd_samplers.all_samplers_map.get(p.sampler_name).aliases[0] in ['k_dpmpp_2s_a', 'k_dpmpp_2s_a_ka', 'k_dpmpp_sde', 'k_dpmpp_sde_ka', 'k_dpm_2', 'k_dpm_2_a', 'k_heun'] else 1
                 except:
                     pass
-            uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
-            c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
-            if len(model_hijack.comments) > 0:
-                for comment in model_hijack.comments:
-                    comments[comment] = 1
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
-            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
-                samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
-            x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
-            try:
-                for x in x_samples_ddim:
-                    devices.test_for_nans(x, "vae")
-            except devices.NansException as e:
-                if not shared.opts.no_half and not shared.opts.no_half_vae and shared.cmd_opts.rollback_vae:
-                    log.warning('Tensor with all NaNs was produced in VAE')
-                    devices.dtype_vae = torch.bfloat16
-                    vae_file, vae_source = sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
-                    sd_vae.load_vae(p.sd_model, vae_file, vae_source)
-                    x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
+
+            if opts.sd_backend == 'Original':
+                uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
+                c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
+                if len(model_hijack.comments) > 0:
+                    for comment in model_hijack.comments:
+                        comments[comment] = 1
+                with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
+                    samples_ddim = p.sample(conditioning=c, unconditional_conditioning=uc, seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, prompts=prompts)
+                x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
+                try:
                     for x in x_samples_ddim:
                         devices.test_for_nans(x, "vae")
-                else:
-                    raise e
-            x_samples_ddim = torch.stack(x_samples_ddim).float()
-            x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
-            del samples_ddim
-            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-                lowvram.send_everything_to_cpu()
-                devices.torch_gc()
-            if p.scripts is not None:
-                p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
+                except devices.NansException as e:
+                    if not shared.opts.no_half and not shared.opts.no_half_vae and shared.cmd_opts.rollback_vae:
+                        log.warning('Tensor with all NaNs was produced in VAE')
+                        devices.dtype_vae = torch.bfloat16
+                        vae_file, vae_source = sd_vae.resolve_vae(p.sd_model.sd_model_checkpoint)
+                        sd_vae.load_vae(p.sd_model, vae_file, vae_source)
+                        x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
+                        for x in x_samples_ddim:
+                            devices.test_for_nans(x, "vae")
+                    else:
+                        raise e
+                x_samples_ddim = torch.stack(x_samples_ddim).float()
+                x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+                del samples_ddim
+                if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                    lowvram.send_everything_to_cpu()
+                    devices.torch_gc()
+                if p.scripts is not None:
+                    p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
+            else: # TODO Diffusers
+                generator = [torch.Generator(device="cpu").manual_seed(s) for s in seeds]
+                if shared.sd_model.scheduler.name != p.sampler_name:
+                    sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
+                    if sampler is None:
+                        sampler = sd_samplers.all_samplers_map.get("UniPC")
+                    scheduler = sampler.constructor(shared.sd_model.sd_checkpoint_info.filename)
+                    shared.sd_model.scheduler = scheduler.sampler
+                output = shared.sd_model(
+                    prompt=prompts,
+                    negative_prompt=negative_prompts,
+                    num_inference_steps=p.steps,
+                    guidance_scale=p.cfg_scale,
+                    height=p.height,
+                    width=p.width,
+                    generator=generator,
+                    output_type="np",
+                )
+                x_samples_ddim = output.images
+
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
-                x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-                x_sample = x_sample.astype(np.uint8)
+                if opts.sd_backend == 'Original':
+                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
+                    x_sample = x_sample.astype(np.uint8)
+                else:
+                    x_sample = (255. * x_sample).astype(np.uint8)
                 if p.restore_faces:
                     if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
                         orig = p.restore_faces
@@ -891,7 +927,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.init_images = init_images
         self.resize_mode: int = resize_mode
         self.denoising_strength: float = denoising_strength
-        self.image_cfg_scale: float = image_cfg_scale if shared.sd_model.cond_stage_key == "edit" else None
+        self.image_cfg_scale: float = image_cfg_scale if (shared.sd_model is not None) and hasattr(shared.sd_model, 'cond_stage_key') and (shared.sd_model.cond_stage_key == "edit") else None
         self.init_latent = None
         self.image_mask = mask
         self.latent_mask = None

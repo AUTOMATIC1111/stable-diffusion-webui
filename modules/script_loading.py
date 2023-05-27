@@ -12,10 +12,7 @@ def load_module(path, detailed=False):
     try:
         module_spec.loader.exec_module(module)
     except Exception as e:
-        if detailed:
-            errors.display(e, f'Module load: {path}')
-        else:
-            errors.log.error(f'Module load: {path}')
+        errors.display(e, f'Module load: {path}')
     return module
 
 
@@ -31,11 +28,8 @@ def preload_extensions(extensions_dir, parser, detailed=False):
         if not os.path.isfile(preload_script):
             continue
         try:
-            module = load_module(preload_script)
+            module = load_module(preload_script, detailed)
             if hasattr(module, 'preload'):
                 module.preload(parser)
         except Exception as e:
-            if detailed:
-                errors.display(e, f'Extension preload: {preload_script}')
-            else:
-                errors.log.error(f'Extension preload: {preload_script}')
+            errors.display(e, f'Extension preload: {preload_script}')

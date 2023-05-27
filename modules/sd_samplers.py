@@ -1,10 +1,16 @@
-from modules import sd_samplers_compvis, sd_samplers_kdiffusion, shared
+from modules import sd_samplers_compvis, sd_samplers_kdiffusion, sd_samplers_diffusors, shared
 from modules.sd_samplers_common import samples_to_image_grid, sample_to_image # pylint: disable=unused-import
+from modules.shared import opts
 
-all_samplers = [
-    *sd_samplers_kdiffusion.samplers_data_k_diffusion,
-    *sd_samplers_compvis.samplers_data_compvis,
-]
+if opts.sd_backend == 'Original':
+    all_samplers = [
+        *sd_samplers_kdiffusion.samplers_data_k_diffusion,
+        *sd_samplers_compvis.samplers_data_compvis,
+    ]
+else:
+    all_samplers = [
+        *sd_samplers_diffusors.samplers_data_diffusors,
+    ]
 all_samplers_map = {x.name: x for x in all_samplers}
 samplers = all_samplers
 samplers_for_img2img = all_samplers
@@ -17,9 +23,14 @@ def create_sampler(name, model):
     else:
         config = all_samplers[0]
     assert config is not None, f'bad sampler name: {name}'
-    sampler = config.constructor(model)
-    sampler.config = config
-    return sampler
+    if opts.sd_backend == 'Original':
+        sampler = config.constructor(model)
+        sampler.config = config
+        return sampler
+    else:
+        sampler = config.constructor(model.sd_checkpoint_info.filename)
+        model.scheduler = sampler.sampler
+        return sampler.sampler
 
 
 def set_samplers():
