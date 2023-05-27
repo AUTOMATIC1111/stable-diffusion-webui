@@ -44,6 +44,14 @@ sampler_extra_params = {
     'sample_dpm_2': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
 }
 
+k_diffusion_samplers_map = {x.name: x for x in samplers_data_k_diffusion}
+k_diffusion_scheduler = {
+    'Automatic': None,
+    'karras': k_diffusion.sampling.get_sigmas_karras,
+    'exponential': k_diffusion.sampling.get_sigmas_exponential,
+    'polyexponential': k_diffusion.sampling.get_sigmas_polyexponential
+}
+
 
 class CFGDenoiser(torch.nn.Module):
     """
@@ -265,6 +273,13 @@ class KDiffusionSampler:
 
         try:
             return func()
+        except RecursionError:
+            print(
+                'Encountered RecursionError during sampling, returning last latent. '
+                'rho >5 with a polyexponential scheduler may cause this error. '
+                'You should try to use a smaller rho value instead.'
+            )
+            return self.last_latent
         except sd_samplers_common.InterruptedException:
             return self.last_latent
 
@@ -304,6 +319,29 @@ class KDiffusionSampler:
 
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
+        elif opts.k_sched_type != "Automatic":
+            m_sigma_min, m_sigma_max = (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
+            sigma_min, sigma_max = (0.1, 10)
+            sigmas_kwargs = {
+                'sigma_min': sigma_min if opts.use_old_karras_scheduler_sigmas else m_sigma_min,
+                'sigma_max': sigma_max if opts.use_old_karras_scheduler_sigmas else m_sigma_max
+            }
+
+            sigmas_func = k_diffusion_scheduler[opts.k_sched_type]
+            p.extra_generation_params["KDiff Schedule Type"] = opts.k_sched_type
+
+            if opts.sigma_min != 0.3:
+                # take 0.0 as model default
+                sigmas_kwargs['sigma_min'] = opts.sigma_min or m_sigma_min
+                p.extra_generation_params["KDiff Schedule min sigma"] = opts.sigma_min
+            if opts.sigma_max != 14.6:
+                sigmas_kwargs['sigma_max'] = opts.sigma_max or m_sigma_max
+                p.extra_generation_params["KDiff Schedule max sigma"] = opts.sigma_max
+            if opts.k_sched_type != 'exponential':
+                sigmas_kwargs['rho'] = opts.rho
+                p.extra_generation_params["KDiff Schedule rho"] = opts.rho
+
+            sigmas = sigmas_func(n=steps, **sigmas_kwargs, device=shared.device)
         elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
             sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
 
