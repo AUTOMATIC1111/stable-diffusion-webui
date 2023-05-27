@@ -1,13 +1,13 @@
 # Change Log for SD.Next
 
-## Update for 05/25/2023
+## Update for 05/26/2023
 
 Some quality-of-life improvements...
 
 - updated [README](https://github.com/vladmandic/automatic/blob/master/README.md)
 - created [CHANGELOG](https://github.com/vladmandic/automatic/blob/master/CHANGELOG.md)  
   this will be the source for all info about new things moving forward  
-  and cross-posted to discussions #99 as well as discord [announcements](https://discord.com/channels/1101998836328697867/1109953953396957286)
+  and cross-posted to [Discussions#99](https://github.com/vladmandic/automatic/discussions/99) as well as discord [announcements](https://discord.com/channels/1101998836328697867/1109953953396957286)
 - optimize model loading on startup  
   this should reduce startup time significantly  
 - set default cross-optimization method for each platform backend  
@@ -18,10 +18,15 @@ Some quality-of-life improvements...
   - `ipex` => InvokeAI's
   - `mps` => Doggettx's
   - `cpu` => Doggettx's
-- optimize logging
-- optimize profiling
-- minor lightbox improvements
-- bugfixes...i don't recall when was a release with at least several of those
+- optimize logging  
+- optimize profiling  
+  now includes startup profiling as well as `cuda` profiling during generate  
+- minor lightbox improvements  
+- bugfixes...i don't recall when was a release with at least several of those  
+
+other than that - first stage of [Diffusers](https://github.com/huggingface/diffusers) integration is now in master branch  
+i don't recommend anyone to try it (and dont even think reporting issues for it)  
+but if anyone wants to contribute, take a look at [project page](https://github.com/users/vladmandic/projects/1/views/1)
 
 ## Update for 05/23/2023
 
