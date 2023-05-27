@@ -58,6 +58,7 @@ import modules.sd_hijack
 import modules.sd_hijack_optimizations
 import modules.sd_models
 import modules.sd_vae
+import modules.sd_unet
 import modules.txt2img
 import modules.script_callbacks
 import modules.textual_inversion.textual_inversion
@@ -290,6 +291,9 @@ def initialize_rest(*, reload_script_modules=False):
     modules.script_callbacks.on_list_optimizers(modules.sd_hijack_optimizations.list_optimizers)
     modules.sd_hijack.list_optimizers()
     startup_timer.record("scripts list_optimizers")
+
+    modules.sd_unet.list_unets()
+    startup_timer.record("scripts list_unets")
 
     def load_model():
         """

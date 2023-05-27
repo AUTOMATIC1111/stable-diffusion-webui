@@ -29,3 +29,14 @@ def cross_attention_optimizations():
     return ["Automatic"] + [x.title() for x in modules.sd_hijack.optimizers] + ["None"]
 
 
+def sd_unet_items():
+    import modules.sd_unet
+
+    return ["Automatic"] + [x.label for x in modules.sd_unet.unet_options] + ["None"]
+
+
+def refresh_unet_list():
+    import modules.sd_unet
+
+    modules.sd_unet.list_unets()
+
