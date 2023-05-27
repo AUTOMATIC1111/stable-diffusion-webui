@@ -98,13 +98,13 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     }
     filename_generator, theta_func1, theta_func2 = theta_funcs[interp_method]
     shared.state.job_count = (1 if theta_func1 else 0) + (1 if theta_func2 else 0)
-    if not primary_model_name:
+    if not primary_model_name or primary_model_name == 'None':
         return fail("Failed: Merging requires a primary model.")
     primary_model_info = sd_models.checkpoints_list[primary_model_name]
-    if theta_func2 and not secondary_model_name:
+    if theta_func2 and (not secondary_model_name or secondary_model_name == 'None'):
         return fail("Failed: Merging requires a secondary model.")
     secondary_model_info = sd_models.checkpoints_list[secondary_model_name] if theta_func2 else None
-    if theta_func1 and not tertiary_model_name:
+    if theta_func1 and (not tertiary_model_name or tertiary_model_name == 'None'):
         return fail(f"Failed: Interpolation method ({interp_method}) requires a tertiary model.")
     tertiary_model_info = sd_models.checkpoints_list[tertiary_model_name] if theta_func1 else None
     result_is_inpainting_model = False

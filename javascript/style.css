@@ -675,3 +675,5 @@ footer {
 
 #extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
 #extras_upscale { margin-top: 10px }
+
+#modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }

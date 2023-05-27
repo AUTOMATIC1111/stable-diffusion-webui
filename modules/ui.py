@@ -898,40 +898,36 @@ def create_ui():
                 with gr.Tab(label="Merge models") as modelmerger_interface:
                     with gr.Row().style(equal_height=False):
                         with gr.Column(variant='compact'):
-                            interp_description = gr.HTML(value=update_interp_description("Weighted sum"), elem_id="modelmerger_interp_description")
-
                             with FormRow(elem_id="modelmerger_models"):
-                                primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
-                                create_refresh_button(primary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_A")
-
-                                secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary model (B)")
-                                create_refresh_button(secondary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_B")
-
-                                tertiary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_tertiary_model_name", label="Tertiary model (C)")
-                                create_refresh_button(tertiary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_C")
-
-                            custom_name = gr.Textbox(label="Custom Name (Optional)", elem_id="modelmerger_custom_name")
-                            interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3, elem_id="modelmerger_interp_amount")
-                            interp_method = gr.Radio(choices=["No interpolation", "Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method", elem_id="modelmerger_interp_method")
-                            interp_method.change(fn=update_interp_description, inputs=[interp_method], outputs=[interp_description])
-
+                                def sd_model_choices():
+                                    return ['None'] + modules.sd_models.checkpoint_tiles()
+                                primary_model_name = gr.Dropdown(sd_model_choices(), elem_id="modelmerger_primary_model_name", label="Primary model", value="None")
+                                create_refresh_button(primary_model_name, modules.sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_A")
+                                secondary_model_name = gr.Dropdown(sd_model_choices(), elem_id="modelmerger_secondary_model_name", label="Secondary model", value="None")
+                                create_refresh_button(secondary_model_name, modules.sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_B")
+                                tertiary_model_name = gr.Dropdown(sd_model_choices(), elem_id="modelmerger_tertiary_model_name", label="Tertiary model", value="None")
+                                create_refresh_button(tertiary_model_name, modules.sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_C")
+                            custom_name = gr.Textbox(label="New model name", elem_id="modelmerger_custom_name")
+                            with FormRow():
+                                interp_description = gr.HTML(value=update_interp_description("Weighted sum"), elem_id="modelmerger_interp_description")
+                            with FormRow():
+                                interp_method = gr.Radio(choices=["No interpolation", "Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method", elem_id="modelmerger_interp_method")
+                                interp_method.change(fn=update_interp_description, inputs=[interp_method], outputs=[interp_description])
+                                interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation ratio from Primary to Secondary', value=0.5, elem_id="modelmerger_interp_amount")
                             with FormRow():
                                 checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
-                                save_as_half = gr.Checkbox(value=False, label="Save as float16", elem_id="modelmerger_save_as_half")
-                                save_metadata = gr.Checkbox(value=True, label="Save metadata (.safetensors only)", elem_id="modelmerger_save_metadata")
-
+                            with gr.Box():
+                                save_as_half = gr.Checkbox(value=True, label="Use FP16", elem_id="modelmerger_save_as_half")
+                                save_metadata = gr.Checkbox(value=True, label="Save metadata", elem_id="modelmerger_save_metadata")
                             with FormRow():
                                 with gr.Column():
-                                    config_source = gr.Radio(choices=["A, B or C", "B", "C", "Don't"], value="A, B or C", label="Copy config from", type="index", elem_id="modelmerger_config_method")
-
+                                    config_source = gr.Radio(choices=["Primary", "Secondary", "Tertiary", "None"], value="Primary", label="Model configuration", type="index", elem_id="modelmerger_config_method")
                                 with gr.Column():
                                     with FormRow():
                                         bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None", label="Bake in VAE", elem_id="modelmerger_bake_in_vae")
                                         create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list, lambda: {"choices": ["None"] + list(sd_vae.vae_dict)}, "modelmerger_refresh_bake_in_vae")
-
                             with FormRow():
                                 discard_weights = gr.Textbox(value="", label="Discard weights with matching name", elem_id="modelmerger_discard_weights")
-
                             with gr.Row():
                                 modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
 
