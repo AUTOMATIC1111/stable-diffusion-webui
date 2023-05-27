@@ -249,7 +249,7 @@ function confirm_clear_prompt(prompt, negative_prompt) {
 
 
 var opts = {};
-onUiUpdate(function() {
+onAfterUiUpdate(function() {
     if (Object.keys(opts).length != 0) return;
 
     var json_elem = gradioApp().getElementById('settings_json');

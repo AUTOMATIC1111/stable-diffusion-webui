@@ -167,6 +167,4 @@ var addContextMenuEventListener = initResponse[2];
 })();
 //End example Context Menu Items
 
-onUiUpdate(function() {
-    addContextMenuEventListener();
-});
+onAfterUiUpdate(addContextMenuEventListener);
