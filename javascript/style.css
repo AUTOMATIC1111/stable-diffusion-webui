@@ -675,3 +675,24 @@ footer {
 
 #extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
 #extras_upscale { margin-top: 10px }
+
+#controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type {
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+#controlnet_preprocessor_model {
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: 1fr max-content;
+}
+
+#controlnet_preprocessor_model button.gradio-button {
+    align-self: center;
+}
+
+.controlnet_resize_mode_radio .wrap:last-of-type,
+.controlnet_control_mode_radio .wrap:last-of-type {
+    flex-direction: column;
+}
