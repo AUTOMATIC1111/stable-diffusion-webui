@@ -1,4 +1,19 @@
 // Main
+
+// Helper functions
+// Get active tab
+function getActiveTab(elements, all = false) {
+  const tabs = elements.img2imgTabs.querySelectorAll("button");
+
+  if (all) return tabs;
+
+  for (let tab of tabs) {
+    if (tab.classList.contains("selected")) {
+      return tab;
+    }
+  }
+}
+
 onUiLoaded(async () => {
   const hotkeysConfig = {
     resetZoom: "KeyR",
@@ -33,12 +48,27 @@ onUiLoaded(async () => {
     let [zoomLevel, panX, panY] = [1, 0, 0];
     let fullScreenMode = false;
 
+    // In the course of research, it was found that the tag img is very harmful when zooming and creates white canvases. This hack allows you to almost never think about this problem, it has no effect on webui.
+    function fixCanvas() {
+      const activeTab = getActiveTab(elements).textContent.trim();
+
+      if (activeTab !== "img2img") {
+        const img = targetElement.querySelector(`${elemId} img`);
+
+        if (img && img.style.display !== "none") {
+          img.style.display = "none";
+          img.style.visibility = "hidden";
+        }
+      }
+    }
+
     // Reset the zoom level and pan position of the target element to their initial values
     function resetZoom() {
       zoomLevel = 1;
       panX = 0;
       panY = 0;
 
+      fixCanvas();
       targetElement.style.transform = `scale(${zoomLevel}) translate(${panX}px, ${panY}px)`;
 
       const canvas = document.querySelector(
@@ -318,7 +348,10 @@ onUiLoaded(async () => {
     // Reset zoom when click on another tab
     elements.img2imgTabs.addEventListener("click", resetZoom);
     elements.img2imgTabs.addEventListener("click", () => {
-      targetElement.style.width = "";
+      // targetElement.style.width = "";
+      if (parseInt(targetElement.style.width) > 865) {
+        setTimeout(fitToElement, 0);
+      }
     });
 
     targetElement.addEventListener("wheel", (e) => {
