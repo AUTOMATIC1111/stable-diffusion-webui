@@ -696,3 +696,5 @@ footer {
 .controlnet_control_mode_radio .wrap:last-of-type {
     flex-direction: column;
 }
+
+#modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }

@@ -81,10 +81,15 @@ else
     exit 1
 fi
 
-if [[ "$@" == *"--use-ipex"* ]]
+#Set OneAPI environmet if it's not set by the user
+if [[ "$@" == *"--use-ipex"* ]] && ! [ -x "$(command -v sycl-ls)" ]
 then
-    echo "Setting OneAPI enviroment"
-    source /opt/intel/oneapi/setvars.sh
+    echo "Setting OneAPI environment"
+    if [[ -z "$ONEAPI_ROOT" ]]
+    then
+        ONEAPI_ROOT=/opt/intel/oneapi
+    fi
+    source $ONEAPI_ROOT/setvars.sh
 fi
 
 if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]

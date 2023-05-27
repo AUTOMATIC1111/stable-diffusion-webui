@@ -7,8 +7,50 @@ from modules import shared
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
 
+diffuser_repos = []
 
-def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None, diffusors=False) -> list:
+def load_diffusers(model_path: str, command_path: str = None):
+    import huggingface_hub as hf
+    places = []
+    places.append(model_path)
+    if command_path is not None and command_path != model_path and os.path.isdir(command_path):
+        places.append(command_path)
+    diffuser_repos.clear()
+    output = []
+    try:
+        for place in places:
+            res = hf.scan_cache_dir(cache_dir=place)
+            for r in list(res.repos):
+                diffuser_repos.append({ 'name': r.repo_id, 'filename': r.repo_id, 'path': str(r.repo_path), 'size': r.size_on_disk, 'mtime': r.last_modified, 'hash': list(r.revisions)[-1].commit_hash })
+                output.append(str(r.repo_id))
+    except Exception as e:
+        shared.log.error(f"Error listing diffusers: {place} {e}")
+    shared.log.debug(f'Scanning diffusers cache: {len(output)} {model_path} {command_path}')
+    return output
+
+
+def find_diffuser(name: str):
+    import huggingface_hub as hf
+
+    if name in diffuser_repos:
+        return name
+    if shared.cmd_opts.no_download:
+        return None
+    api = hf.HfApi()
+    filt = hf.ModelFilter(
+        model_name=name,
+        task='text-to-image',
+        tags='stable-diffusion',
+        library=['diffusers', 'stable-diffusion'],
+    )
+    models = list(api.list_models(filter=filt, full=True, limit=50, sort="downloads", direction=-1))
+    shared.log.debug(f'Searching diffusers models: {name} {len(models) > 0}')
+    if len(models) > 0:
+        return models[0].modelId
+    return None
+
+
+def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
 
@@ -23,41 +65,27 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     places.append(model_path)
     if command_path is not None and command_path != model_path and os.path.isdir(command_path):
         places.append(command_path)
-
-    def get_checkpoints():
-        output = []
-        try:
-            for place in places:
-                for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
-                    if os.path.islink(full_path) and not os.path.exists(full_path):
-                        print(f"Skipping broken symlink: {full_path}")
-                        continue
-                    if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
-                        continue
-                    if full_path not in output:
-                        output.append(full_path)
-            if model_url is not None and len(output) == 0:
-                if download_name is not None:
-                    from basicsr.utils.download_util import load_file_from_url
-                    dl = load_file_from_url(model_url, model_path, True, download_name)
-                    output.append(dl)
-                else:
-                    output.append(model_url)
-        except Exception:
-            pass
-        return output
-
-    def get_diffusors():
-        output = []
+    output = []
+    try:
         for place in places:
-            output = os.listdir(place)
-            output = [os.path.join(place, x) for x in output]
-        return output
-
-    if not diffusors:
-        return get_checkpoints()
-    else:
-        return get_diffusors()
+            for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
+                if os.path.islink(full_path) and not os.path.exists(full_path):
+                    print(f"Skipping broken symlink: {full_path}")
+                    continue
+                if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
+                    continue
+                if full_path not in output:
+                    output.append(full_path)
+        if model_url is not None and len(output) == 0:
+            if download_name is not None:
+                from basicsr.utils.download_util import load_file_from_url
+                dl = load_file_from_url(model_url, model_path, True, download_name)
+                output.append(dl)
+            else:
+                output.append(model_url)
+    except Exception as e:
+        shared.log.error(f"Error listing models: {places} {e}")
+    return output
 
 
 def friendly_name(file: str):
