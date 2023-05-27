@@ -10,6 +10,7 @@ import torch
 import safetensors.torch
 from omegaconf import OmegaConf
 import tomesd
+from transformers import logging as transformers_logging
 import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
@@ -18,7 +19,7 @@ from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths_internal import models_path
 
-
+transformers_logging.set_verbosity_error()
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
 checkpoints_list = {}
@@ -29,29 +30,37 @@ skip_next_load = False
 
 class CheckpointInfo: # TODO Diffusers
     def __init__(self, filename):
+        name = ''
+        self.name = None
+        self.hash = None
         self.filename = filename
         abspath = os.path.abspath(filename)
-        if shared.opts.ckpt_dir is not None and abspath.startswith(shared.opts.ckpt_dir):
-            name = abspath.replace(shared.opts.ckpt_dir, '')
-        elif abspath.startswith(model_path):
-            name = abspath.replace(model_path, '')
-        else:
-            name = os.path.basename(filename)
-        if name.startswith("\\") or name.startswith("/"):
-            name = name[1:]
-        self.name = name
-        self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
-        self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         if shared.opts.sd_backend == 'Original':
+            if shared.opts.ckpt_dir is not None and abspath.startswith(shared.opts.ckpt_dir):
+                name = abspath.replace(shared.opts.ckpt_dir, '')
+            elif abspath.startswith(model_path):
+                name = abspath.replace(model_path, '')
+            else:
+                name = os.path.basename(filename)
+            if name.startswith("\\") or name.startswith("/"):
+                name = name[1:]
+            self.name = name
             self.hash = model_hash(self.filename)
             self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
-        else: # TODO Diffusers calculate hash
+        else: # TODO Diffusers
             # sd_model.unet.config._name_or_path.split("/")[-2]
-            self.hash = 'ABCDEFGH'
-            self.sha256 = 'ABCDEFGH'
+            repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
+            if len(repo) == 0:
+                shared.log.error(f'Cannot find diffuser model: {filename}')
+                return
+            self.name = repo[0]['name']
+            self.hash = repo[0]['hash'][:8]
+            self.sha256 = repo[0]['hash']
+        self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
+        self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         self.shorthash = self.sha256[0:10] if self.sha256 else None
-        self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
-        self.ids = [self.hash, self.model_name, self.title, name, f'{name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
+        self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
+        self.ids = [self.hash, self.model_name, self.title, self.name, f'{self.name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
         self.metadata = {}
         _, ext = os.path.splitext(self.filename)
         if ext.lower() == ".safetensors":
@@ -78,14 +87,6 @@ class CheckpointInfo: # TODO Diffusers
         return self.shorthash
 
 
-try:
-    # this silences the annoying "Some weights of the model checkpoint were not used when initializing..." message at start.
-    from transformers import logging
-    logging.set_verbosity_error()
-except Exception:
-    pass
-
-
 def setup_model():
     if not os.path.exists(model_path):
         os.makedirs(model_path)
@@ -107,20 +108,22 @@ def list_models():
     if shared.opts.sd_backend == 'Original':
         model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     else:
-        model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Diffusers'), model_url=None, command_path=shared.opts.diffusers_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+        model_list = modelloader.load_diffusers(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
+    for filename in sorted(model_list, key=str.lower):
+        checkpoint_info = CheckpointInfo(filename)
+        if checkpoint_info.name is not None:
+            checkpoint_info.register()
     if shared.cmd_opts.ckpt is not None:
         if not os.path.exists(shared.cmd_opts.ckpt) and shared.opts.sd_backend == 'Original':
             if shared.cmd_opts.ckpt.lower() != "none":
                 shared.log.warning(f"Requested checkpoint not found: {shared.cmd_opts.ckpt}")
         else:
             checkpoint_info = CheckpointInfo(shared.cmd_opts.ckpt)
-            checkpoint_info.register()
-            shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
+            if checkpoint_info.name is not None:
+                checkpoint_info.register()
+                shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
-    for filename in sorted(model_list, key=str.lower):
-        checkpoint_info = CheckpointInfo(filename)
-        checkpoint_info.register()
     shared.log.info(f'Available models: {shared.opts.ckpt_dir} {len(checkpoints_list)}')
     if len(checkpoints_list) == 0:
         if not shared.cmd_opts.no_download:
@@ -162,7 +165,7 @@ def model_hash(filename):
 def select_checkpoint():
     model_checkpoint = shared.opts.sd_model_checkpoint
     checkpoint_info = checkpoint_aliases.get(model_checkpoint, None)
-    if checkpoint_info is not None or shared.cmd_opts.ckpt is not None:
+    if checkpoint_info is not None:
         shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
         return checkpoint_info
     if len(checkpoints_list) == 0:
@@ -171,7 +174,7 @@ def select_checkpoint():
         exit(1)
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
-        shared.log.warning(f"Default checkpoint not found: {model_checkpoint}")
+        shared.log.warning(f"Selected checkpoint not found: {model_checkpoint}")
         shared.log.warning(f"Loading fallback checkpoint: {checkpoint_info.title}")
     shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
     return checkpoint_info
@@ -225,6 +228,8 @@ def read_metadata_from_safetensors(filename):
 
 
 def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unused-argument
+    if shared.opts.sd_backend == 'Diffusers':
+        return None
     try:
         pl_sd = None
         with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
@@ -365,6 +370,7 @@ sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_w
 class SdModelData:
     def __init__(self):
         self.sd_model = None
+        self.initial = True
         self.lock = threading.Lock()
 
     def get_sd_model(self):
@@ -374,9 +380,10 @@ class SdModelData:
                     if shared.opts.sd_backend == 'Original':
                         load_model()
                     elif shared.opts.sd_backend == 'Diffusers':
-                        load_diffusers()
+                        load_diffuser()
                     else:
                         shared.log.error(f"Unknown Stable Diffusion backend: {shared.opts.sd_backend}")
+                    self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
                     errors.display(e, "loading stable diffusion model")
@@ -390,10 +397,12 @@ class SdModelData:
 model_data = SdModelData()
 
 
-def load_diffusers(checkpoint_info=None, already_loaded_state_dict=None, timer=None):
+def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None): # pylint: disable=unused-argument
     if timer is None:
         timer = Timer()
     import diffusers
+    import logging
+    logging.getLogger("diffusers").setLevel(logging.ERROR)
     timer.record("diffusers")
     diffusor_config = {
         "force_download": False,
@@ -404,23 +413,37 @@ def load_diffusers(checkpoint_info=None, already_loaded_state_dict=None, timer=N
         "cache_dir": shared.opts.diffusers_dir,
         "torch_dtype": devices.dtype,
     }
-    shared.log.warning("Using experimental Diffusers backend for Stable Diffusion")
     if shared.opts.data['sd_model_checkpoint'] == 'model.ckpt':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
     sd_model = None
     try:
-        checkpoint_info = checkpoint_info or select_checkpoint()
-        scheduler = diffusers.UniPCMultistepScheduler.from_pretrained(checkpoint_info.filename, subfolder="scheduler")
-        scheduler.name = 'UniPC'
-        sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.filename, scheduler=scheduler, **diffusor_config)
-        sd_model.to(devices.device)
+        if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
+            model_name = modelloader.find_diffuser(shared.cmd_opts.ckpt)
+            if model_name is not None:
+                shared.log.info(f'Loading diffuser model: {model_name}')
+                scheduler = diffusers.UniPCMultistepScheduler.from_pretrained(model_name, subfolder="scheduler")
+                sd_model = diffusers.DiffusionPipeline.from_pretrained(model_name, scheduler=scheduler, **diffusor_config)
+                list_models() # rescan for downloaded model
+                checkpoint_info = CheckpointInfo(model_name)
+        if sd_model is None:
+            checkpoint_info = checkpoint_info or select_checkpoint()
+            shared.log.info(f'Loading diffuser model: {checkpoint_info.filename}')
+            scheduler = diffusers.UniPCMultistepScheduler.from_pretrained(checkpoint_info.filename, subfolder="scheduler")
+            sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.filename, scheduler=scheduler, **diffusor_config)
         sd_model.sd_checkpoint_info = checkpoint_info
+        sd_model.sd_model_checkpoint = checkpoint_info.filename
         sd_model.sd_model_hash = checkpoint_info.hash
+        scheduler.name = 'UniPC'
+        sd_model.to(devices.device)
     except Exception as e:
         shared.log.error("Failed to load diffusers model")
         errors.display(e, "loading Diffusers model")
     shared.sd_model = sd_model
     timer.record("load")
+    shared.log.info(f"Model loaded in {timer.summary()}")
+    devices.torch_gc(force=True)
+    shared.log.info(f'Model load finished: {memory_stats()}')
+
 
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None):
@@ -515,9 +538,9 @@ def reload_model_weights(sd_model=None, info=None):
             lowvram.send_everything_to_cpu()
         else:
             sd_model.to(devices.cpu)
-        sd_hijack.model_hijack.undo_hijack(sd_model)
     if shared.opts.model_reuse_dict and sd_model is not None:
         shared.log.info('Reusing previous model dictionary')
+        sd_hijack.model_hijack.undo_hijack(sd_model) # TODO double undo hijack
     else:
         unload_model_weights()
         sd_model = None
@@ -528,7 +551,10 @@ def reload_model_weights(sd_model=None, info=None):
     if sd_model is None or checkpoint_config != sd_model.used_config:
         del sd_model
         checkpoints_loaded.clear()
-        load_model(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer)
+        if shared.opts.sd_backend == 'Original':
+            load_model(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer)
+        else:
+            load_diffuser(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer)
         return model_data.sd_model
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
@@ -550,7 +576,8 @@ def unload_model_weights(sd_model=None, _info=None):
     from modules import sd_hijack
     if model_data.sd_model:
         model_data.sd_model.to(devices.cpu)
-        sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
+        if shared.opts.sd_backend == 'Original':
+            sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
         model_data.sd_model = None
         sd_model = None
     devices.torch_gc(force=True)

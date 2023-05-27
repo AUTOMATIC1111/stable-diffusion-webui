@@ -1,6 +1,5 @@
 """SAMPLING ONLY."""
 
-import numpy as np
 import torch
 
 from .uni_pc import NoiseScheduleVP, model_wrapper, UniPC, get_time_steps
