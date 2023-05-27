@@ -41,10 +41,21 @@ onUiLoaded(async () => {
 
       targetElement.style.transform = `scale(${zoomLevel}) translate(${panX}px, ${panY}px)`;
 
-      const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
+      const canvas = document.querySelector(
+        `${elemId} canvas[key="interface"]`
+      );
 
       toggleOverlap("off");
       fullScreenMode = false;
+
+      if (
+        canvas &&
+        parseFloat(canvas.style.width) > 865 &&
+        parseFloat(targetElement.style.width) > 865
+      ) {
+        fitToElement();
+        return;
+      }
 
       targetElement.style.width = "";
       if (canvas) {
@@ -137,16 +148,73 @@ onUiLoaded(async () => {
     }
 
     /**
-       * This function fits the target element to the screen by calculating
-       * the required scale and offsets. It also updates the global variables
-       * zoomLevel, panX, and panY to reflect the new state.
-       */
+     * This function fits the target element to the screen by calculating
+     * the required scale and offsets. It also updates the global variables
+     * zoomLevel, panX, and panY to reflect the new state.
+     */
+
+    function fitToElement() {
+      //Reset Zoom
+      targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
+
+      // Get element and screen dimensions
+      const elementWidth = targetElement.offsetWidth;
+      const elementHeight = targetElement.offsetHeight;
+      const parentElement = targetElement.parentElement;
+      const screenWidth = parentElement.clientWidth;
+      const screenHeight = parentElement.clientHeight;
+
+      // Get element's coordinates relative to the parent element
+      const elementRect = targetElement.getBoundingClientRect();
+      const parentRect = parentElement.getBoundingClientRect();
+      const elementX = elementRect.x - parentRect.x;
+
+      // Calculate scale and offsets
+      const scaleX = screenWidth / elementWidth;
+      const scaleY = screenHeight / elementHeight;
+      const scale = Math.min(scaleX, scaleY);
+
+      const transformOrigin =
+        window.getComputedStyle(targetElement).transformOrigin;
+      const [originX, originY] = transformOrigin.split(" ");
+      const originXValue = parseFloat(originX);
+      const originYValue = parseFloat(originY);
+
+      const offsetX =
+        (screenWidth - elementWidth * scale) / 2 - originXValue * (1 - scale);
+      const offsetY =
+        (screenHeight - elementHeight * scale) / 2.5 -
+        originYValue * (1 - scale);
+
+      // Apply scale and offsets to the element
+      targetElement.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+
+      // Update global variables
+      zoomLevel = scale;
+      panX = offsetX;
+      panY = offsetY;
+
+      fullScreenMode = false;
+      toggleOverlap("off");
+    }
+
+    /**
+     * This function fits the target element to the screen by calculating
+     * the required scale and offsets. It also updates the global variables
+     * zoomLevel, panX, and panY to reflect the new state.
+     */
 
     // Fullscreen mode
     function fitToScreen() {
-      const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
+      const canvas = document.querySelector(
+        `${elemId} canvas[key="interface"]`
+      );
 
       if (!canvas) return;
+
+      if (canvas.offsetWidth > 862) {
+        targetElement.style.width = canvas.offsetWidth + "px";
+      }
 
       if (fullScreenMode) {
         resetZoom();
@@ -154,7 +222,8 @@ onUiLoaded(async () => {
         return;
       }
 
-      resetZoom();
+      //Reset Zoom
+      targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
 
       // Get element and screen dimensions
       const elementWidth = targetElement.offsetWidth;
@@ -180,8 +249,14 @@ onUiLoaded(async () => {
       const originYValue = parseFloat(originY);
 
       // Calculate offsets with respect to the transformOrigin
-      const offsetX = (screenWidth - elementWidth * scale) / 2 - elementX - originXValue * (1 - scale);
-      const offsetY = (screenHeight - elementHeight * scale) / 2 - elementY - originYValue * (1 - scale);
+      const offsetX =
+        (screenWidth - elementWidth * scale) / 2 -
+        elementX -
+        originXValue * (1 - scale);
+      const offsetY =
+        (screenHeight - elementHeight * scale) / 2 -
+        elementY -
+        originYValue * (1 - scale);
 
       // Apply scale and offsets to the element
       targetElement.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
@@ -191,8 +266,8 @@ onUiLoaded(async () => {
       panX = offsetX;
       panY = offsetY;
 
-      toggleOverlap("on");
       fullScreenMode = true;
+      toggleOverlap("on");
     }
 
     // Handle keydown events
@@ -208,8 +283,7 @@ onUiLoaded(async () => {
       if (action) {
         event.preventDefault();
         action(event);
-      } 
-
+      }
     }
 
     // Get Mouse position
@@ -243,6 +317,9 @@ onUiLoaded(async () => {
 
     // Reset zoom when click on another tab
     elements.img2imgTabs.addEventListener("click", resetZoom);
+    elements.img2imgTabs.addEventListener("click", () => {
+      targetElement.style.width = "";
+    });
 
     targetElement.addEventListener("wheel", (e) => {
       // change zoom level
@@ -259,12 +336,12 @@ onUiLoaded(async () => {
     });
 
     /**
-       * Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
-       * @param {MouseEvent} e - The mouse event.
-       */
+     * Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
+     * @param {MouseEvent} e - The mouse event.
+     */
     function handleMoveKeyDown(e) {
       if (e.code === hotkeysConfig.moveKey) {
-        if(!e.ctrlKey  && !e.metaKey){
+        if (!e.ctrlKey && !e.metaKey) {
           isMoving = true;
         }
       }
