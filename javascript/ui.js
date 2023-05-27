@@ -439,3 +439,53 @@ function updateImg2imgResizeToTextAfterChangingImage(){
 
     return []
 }
+var registeredZoomSlider = false;
+onUiUpdate(function () {
+  if (registeredZoomSlider) return;
+  var img2img_visible = gradioApp().querySelector('#img2img_settings');
+
+  if (img2img_visible) {
+    registerImageZoomHandler();
+  }
+});
+
+var originalImageSizes = {};
+function registerImageZoomHandler() {
+  var zoomSlider = gradioApp().querySelector('#img2img_zoom_slider input[type=range]');
+
+  if (zoomSlider) {
+    registeredZoomSlider = true;
+  } else {
+    return;
+  }
+  console.log(zoomSlider);
+  zoomSlider.addEventListener('change', function (e) {
+    var img2imgImage = gradioApp().querySelectorAll('#img2img_img2img_tab img, #img2img_img2img_sketch_tab img, #img2img_inpaint_tab img, #img2img_inpaint_sketch_tab img');
+    img2imgImage.forEach((img) => {
+      if (!originalImageSizes[img.src]) {
+        originalImageSizes[img.src] = {
+          aspect: img.naturalWidth / img.naturalHeight,
+          height: 480
+        };
+      }
+      var aspect = originalImageSizes[img.src].aspect;
+      var height = originalImageSizes[img.src].height;
+      img.style.height = height * parseFloat(e.target.value) + 'px';
+      img.style.width = height * parseFloat(e.target.value) * aspect + 'px';
+
+      // resize the canvasas for proper inpainting
+      var canvases = img.parentElement.querySelectorAll('canvas');
+      canvases.forEach((canvas) => {
+        canvas.style.height = height * parseFloat(e.target.value) + 'px';
+        canvas.style.width = height * parseFloat(e.target.value) * aspect + 'px';
+      });
+
+      // resize the gradio image container so it doesn't overflow
+      var gradioImage = gradioApp().querySelectorAll('#img2img_img2img_tab .gradio-image, #img2img_img2img_sketch_tab  .gradio-image, #img2img_inpaint_tab .gradio-image, #img2img_inpaint_sketch_tab .gradio-image');
+      gradioImage.forEach((img) => {
+        img.style.height = height * parseFloat(e.target.value) + 'px';
+        img.style.width = `max(100%, ${height * parseFloat(e.target.value) * aspect}px)`;
+      })
+    })
+  })
+}

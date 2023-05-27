@@ -702,6 +702,7 @@ def create_ui():
 
                 with gr.Tabs(elem_id="mode_img2img"):
                     img2img_selected_tab = gr.State(0)
+                    gr.Slider(label="Image zoom", interactive=True, elem_id="img2img_zoom_slider", value=1.0, maximum=2.5, minimum=0.5)
 
                     with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
                         init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=480)
