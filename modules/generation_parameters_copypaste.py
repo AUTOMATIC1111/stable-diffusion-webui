@@ -35,7 +35,7 @@ def reset():
 
 
 def quote(text):
-    if ',' not in str(text) and '\n' not in str(text):
+    if ',' not in str(text) and '\n' not in str(text) and ':' not in str(text):
         return text
 
     return json.dumps(text, ensure_ascii=False)
