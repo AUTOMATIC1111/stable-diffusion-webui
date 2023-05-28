@@ -6,7 +6,7 @@ cpu = torch.device("cpu")
 
 
 def send_everything_to_cpu():
-    global module_in_gpu
+    global module_in_gpu # pylint: disable=global-statement
 
     if module_in_gpu is not None:
         module_in_gpu.to(cpu)
@@ -22,7 +22,7 @@ def setup_for_low_vram(sd_model, use_medvram):
         we add this as forward_pre_hook to a lot of modules and this way all but one of them will
         be in CPU
         """
-        global module_in_gpu
+        global module_in_gpu # pylint: disable=global-statement
 
         module = parents.get(module, module)
 

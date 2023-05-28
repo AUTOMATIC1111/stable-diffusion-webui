@@ -17,7 +17,7 @@ def mod2normal(state_dict):
     if 'conv_first.weight' in state_dict:
         crt_net = {}
         items = []
-        for k, v in state_dict.items():
+        for k, _v in state_dict.items():
             items.append(k)
 
         crt_net['model.0.weight'] = state_dict['conv_first.weight']
@@ -53,7 +53,7 @@ def resrgan2normal(state_dict, nb=23):
         re8x = 0
         crt_net = {}
         items = []
-        for k, v in state_dict.items():
+        for k, _v in state_dict.items():
             items.append(k)
 
         crt_net['model.0.weight'] = state_dict['conv_first.weight']
@@ -186,7 +186,7 @@ class UpscalerESRGAN(Upscaler):
         elif "conv_first.weight" in state_dict:
             state_dict = mod2normal(state_dict)
         elif "model.0.weight" not in state_dict:
-            raise Exception("The file is not a recognized ESRGAN model.")
+            raise TypeError("The file is not a recognized ESRGAN model.")
 
         in_nc, out_nc, nf, nb, plus, mscale = infer_params(state_dict)
 

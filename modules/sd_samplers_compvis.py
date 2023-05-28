@@ -40,7 +40,7 @@ class VanillaStableDiffusionSampler:
 
         self.conditioning_key = sd_model.model.conditioning_key
 
-    def number_of_needed_noises(self, p):
+    def number_of_needed_noises(self, p): # pylint: disable=unused-argument
         return 0
 
     def launch_sampling(self, steps, func):
@@ -128,7 +128,7 @@ class VanillaStableDiffusionSampler:
             self.update_step(res[1])
         return x, ts, cond, uncond, res
 
-    def unipc_after_update(self, x, model_x):
+    def unipc_after_update(self, x, model_x): # pylint: disable=unused-argument
         self.update_step(x)
 
     def initialize(self, p):

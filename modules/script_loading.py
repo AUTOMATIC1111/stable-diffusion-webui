@@ -6,7 +6,7 @@ import modules.errors as errors
 preloaded = []
 
 
-def load_module(path, detailed=False):
+def load_module(path):
     module_spec = importlib.util.spec_from_file_location(os.path.basename(path), path)
     module = importlib.util.module_from_spec(module_spec)
     try:
@@ -17,7 +17,7 @@ def load_module(path, detailed=False):
 
 
 
-def preload_extensions(extensions_dir, parser, detailed=False):
+def preload_extensions(extensions_dir, parser):
     if not os.path.isdir(extensions_dir):
         return
     for dirname in sorted(os.listdir(extensions_dir)):
@@ -28,7 +28,7 @@ def preload_extensions(extensions_dir, parser, detailed=False):
         if not os.path.isfile(preload_script):
             continue
         try:
-            module = load_module(preload_script, detailed)
+            module = load_module(preload_script)
             if hasattr(module, 'preload'):
                 module.preload(parser)
         except Exception as e:

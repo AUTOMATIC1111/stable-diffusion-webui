@@ -28,7 +28,7 @@ checkpoints_loaded = collections.OrderedDict()
 skip_next_load = False
 
 
-class CheckpointInfo: # TODO Diffusers
+class CheckpointInfo:
     def __init__(self, filename):
         name = ''
         self.name = None
@@ -48,7 +48,6 @@ class CheckpointInfo: # TODO Diffusers
             self.hash = model_hash(self.filename)
             self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
         else: # TODO Diffusers
-            # sd_model.unet.config._name_or_path.split("/")[-2]
             repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
             if len(repo) == 0:
                 shared.log.error(f'Cannot find diffuser model: {filename}')
@@ -540,7 +539,7 @@ def reload_model_weights(sd_model=None, info=None):
             sd_model.to(devices.cpu)
     if shared.opts.model_reuse_dict and sd_model is not None:
         shared.log.info('Reusing previous model dictionary')
-        sd_hijack.model_hijack.undo_hijack(sd_model) # TODO double undo hijack
+        sd_hijack.model_hijack.undo_hijack(sd_model)
     else:
         unload_model_weights()
         sd_model = None

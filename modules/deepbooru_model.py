@@ -671,7 +671,7 @@ class DeepDanbooruModel(nn.Module):
         t_771 = torch.sigmoid(t_770)
         return t_771
 
-    def load_state_dict(self, state_dict, **kwargs):
+    def load_state_dict(self, state_dict, **kwargs): # pylint: disable=arguments-differ,unused-argument
         self.tags = state_dict.get('tags', [])
 
         super(DeepDanbooruModel, self).load_state_dict({k: v for k, v in state_dict.items() if k != 'tags'})

@@ -220,7 +220,7 @@ class StableDiffusionProcessing:
         source_image = devices.cond_cast_float(source_image)
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
-        if opts.sd_backend == 'Diffusers': # TODO: img2img_image_conditioning
+        if opts.sd_backend == 'Diffusers': # TODO: Diffusers img2img_image_conditioning
             return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image)
@@ -649,7 +649,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     devices.torch_gc()
                 if p.scripts is not None:
                     p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
-            else: # TODO Diffusers
+            else: # TODO Diffusers main processing
                 generator = [torch.Generator(device="cpu").manual_seed(s) for s in seeds]
                 if shared.sd_model.scheduler.name != p.sampler_name:
                     sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)

@@ -51,7 +51,7 @@ def get_available_vram():
 
 
 # see https://github.com/basujindal/stable-diffusion/pull/117 for discussion
-def split_cross_attention_forward_v1(self, x, context=None, mask=None):
+def split_cross_attention_forward_v1(self, x, context=None, mask=None): # pylint: disable=unused-argument
     h = self.heads
 
     q_in = self.to_q(x)
@@ -90,7 +90,7 @@ def split_cross_attention_forward_v1(self, x, context=None, mask=None):
 
 
 # taken from https://github.com/Doggettx/stable-diffusion and modified
-def split_cross_attention_forward(self, x, context=None, mask=None):
+def split_cross_attention_forward(self, x, context=None, mask=None): # pylint: disable=unused-argument
     h = self.heads
     q_in = self.to_q(x)
     context = default(context, x)
@@ -231,7 +231,7 @@ def einsum_op(q, k, v):
     # Tested on i7 with 8MB L3 cache.
     return einsum_op_tensor_mem(q, k, v, 32)
 
-def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None):
+def split_cross_attention_forward_invokeAI(self, x, context=None, mask=None): # pylint: disable=unused-argument
     h = self.heads
 
     q = self.to_q(x)
@@ -315,7 +315,7 @@ def sub_quad_attention(q, k, v, q_chunk_size=1024, kv_chunk_size=None, kv_chunk_
     if chunk_threshold_bytes is not None and qk_matmul_size_bytes <= chunk_threshold_bytes:
         # the big matmul fits into our memory limit; do everything in 1 chunk,
         # i.e. send it down the unchunked fast-path
-        query_chunk_size = q_tokens
+        query_chunk_size = q_tokens # pylint: disable=unused-variable
         kv_chunk_size = k_tokens
 
     with devices.without_autocast(disable=q.dtype == v.dtype):
@@ -336,7 +336,7 @@ def get_xformers_flash_attention_op(q, k, v):
 
     try:
         flash_attention_op = xformers.ops.MemoryEfficientAttentionFlashAttentionOp
-        fw, bw = flash_attention_op
+        fw, _bw = flash_attention_op
         if fw.supports(xformers.ops.fmha.Inputs(query=q, key=k, value=v, attn_bias=None)):
             return flash_attention_op
     except Exception as e:
@@ -345,7 +345,7 @@ def get_xformers_flash_attention_op(q, k, v):
     return None
 
 
-def xformers_attention_forward(self, x, context=None, mask=None):
+def xformers_attention_forward(self, x, context=None, mask=None): # pylint: disable=unused-argument
     h = self.heads
     q_in = self.to_q(x)
     context = default(context, x)
@@ -481,7 +481,7 @@ def xformers_attnblock_forward(self, x):
         q = self.q(h_)
         k = self.k(h_)
         v = self.v(h_)
-        b, c, h, w = q.shape
+        b, c, h, w = q.shape # pylint: disable=unused-variable
         q, k, v = map(lambda t: rearrange(t, 'b c h w -> b (h w) c'), (q, k, v))
         dtype = q.dtype
         if shared.opts.upcast_attn:
@@ -503,7 +503,7 @@ def sdp_attnblock_forward(self, x):
     q = self.q(h_)
     k = self.k(h_)
     v = self.v(h_)
-    b, c, h, w = q.shape
+    b, c, h, w = q.shape # pylint: disable=unused-variable
     q, k, v = map(lambda t: rearrange(t, 'b c h w -> b (h w) c'), (q, k, v))
     dtype = q.dtype
     if shared.opts.upcast_attn:
@@ -531,7 +531,7 @@ def sub_quad_attnblock_forward(self, x):
     q = self.q(h_)
     k = self.k(h_)
     v = self.v(h_)
-    b, c, h, w = q.shape
+    b, c, h, w = q.shape # pylint: disable=unused-variable
     q, k, v = map(lambda t: rearrange(t, 'b c h w -> b (h w) c'), (q, k, v))
     q = q.contiguous()
     k = k.contiguous()

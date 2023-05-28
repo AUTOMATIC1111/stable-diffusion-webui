@@ -31,21 +31,17 @@ class ScriptPostprocessing:
         The return value should be a dictionary that maps parameter names to components used in processing.
         Values of those components will be passed to process() function.
         """
-
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def process(self, pp: PostprocessedImage, **args):
         """
         This function is called to postprocess the image.
         args contains a dictionary with all values returned by components from ui()
         """
-
-        pass
+        pass # pylint: disable=unnecessary-pass
 
     def image_changed(self):
         pass
-
-
 
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
@@ -66,7 +62,7 @@ class ScriptPostprocessingRunner:
     def initialize_scripts(self, scripts_data):
         self.scripts = []
 
-        for script_class, path, basedir, script_module in scripts_data:
+        for script_class, path, _basedir, _script_module in scripts_data:
             script: ScriptPostprocessing = script_class()
             script.filename = path
 
@@ -124,7 +120,7 @@ class ScriptPostprocessingRunner:
             script_args = args[script.args_from:script.args_to]
 
             process_args = {}
-            for (name, component), value in zip(script.controls.items(), script_args):
+            for (name, _component), value in zip(script.controls.items(), script_args):
                 process_args[name] = value
 
             script.process(pp, **process_args)

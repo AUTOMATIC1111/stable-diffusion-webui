@@ -705,7 +705,7 @@ def extensions_preload(force = False):
             from modules.paths_internal import extensions_builtin_dir, extensions_dir
             extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
             for ext_dir in extension_folders:
-                preload_extensions(ext_dir, parser, args.debug)
+                preload_extensions(ext_dir, parser)
         except:
             log.error('Error running extension preloading')
     if args.profile:
