@@ -703,7 +703,25 @@ div.controlnet_weight_steps > div.form {
 }
 
 div.controlnet_weight_steps .controlnet_control_weight_slider {
-    grid-column: 1 / 3;
+    grid-column: 1 / -1;
+}
+div.controlnet_image_controls {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+div.controlnet_image_controls .controlnet_invert_warning {
+    grid-column: 1 / -1;
+}
+
+div.controlnet_image_controls button {
+    justify-self: center;
+}
+
+div.controlnet_main_options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: row;
 }
 
 #modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
