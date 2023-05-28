@@ -262,16 +262,19 @@ onUiUpdate(() => {
   }
   const settings_search = gradioApp().querySelectorAll('#settings_search > label > textarea')[0];
   settings_search.oninput = (e) => {
-    gradioApp().querySelectorAll('#settings > div').forEach((elem) => {
-      elem.style.display = 'block';
-    });
-    gradioApp().querySelectorAll('#tab_settings .tabitem').forEach((section) => {
-      section.querySelectorAll('.block').forEach((setting) => {
-        const visible = setting.innerText.toLowerCase().includes(e.target.value.toLowerCase()) || setting.id.toLowerCase().includes(e.target.value.toLowerCase());
-        const el = setting.parentElement.classList.contains('form') ? setting.parentElement : setting; // if parent is form use that instead
-        el.style.display = visible ? 'block' : 'none';
+    setTimeout(() => {
+      gradioApp().querySelectorAll('#settings > div').forEach((elem) => {
+        if (elem.id === 'settings_tab_licenses') return;
+        elem.style.display = 'block';
       });
-    });
+      gradioApp().querySelectorAll('#tab_settings .tabitem').forEach((section) => {
+        section.querySelectorAll('.block').forEach((setting) => {
+          const visible = setting.innerText.toLowerCase().includes(e.target.value.toLowerCase()) || setting.id.toLowerCase().includes(e.target.value.toLowerCase());
+          if (setting.parentElement.classList.contains('form')) setting.parentElement.style.display = visible ? 'flex' : 'none';
+          else setting.style.display = visible ? 'block' : 'none';
+        });
+      });
+    }, 50);
   };
 });
 

@@ -1,5 +1,10 @@
 # Change Log for SD.Next
 
+## Update for 05/28/2023
+
+- settings search option
+- system info live gpu memory and load graphs
+
 ## Update for 05/26/2023
 
 Some quality-of-life improvements...
