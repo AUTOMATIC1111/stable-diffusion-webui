@@ -24,17 +24,13 @@ class MemUsageMonitor(threading.Thread):
             #torch.cuda.is_available() reports False when using IPEX.
             if shared.cmd_opts.use_ipex:
                 self.cuda_mem_get_info()
-                torch.cuda.memory_stats("xpu")
+                torch.xpu.memory_stats("xpu")
             else:
                 self.disabled = True
         else:
             try:
-                if shared.cmd_opts.use_ipex:
-                    self.cuda_mem_get_info()
-                    torch.cuda.memory_stats("xpu")
-                else:
-                    self.cuda_mem_get_info()
-                    torch.cuda.memory_stats(self.device)
+                self.cuda_mem_get_info()
+                torch.cuda.memory_stats(self.device)
             except Exception:
                 self.disabled = True
 
