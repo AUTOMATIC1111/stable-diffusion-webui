@@ -1323,9 +1323,10 @@ def create_ui():
             unload_sd_model = gr.Button(value='Unload checkpoint', variant='primary', elem_id="sett_unload_sd_model")
             reload_sd_model = gr.Button(value='Reload checkpoint', variant='primary', elem_id="sett_reload_sd_model")
             # reload_script_bodies = gr.Button(value='Reload scripts', variant='primary', elem_id="settings_reload_script_bodies")
+        with gr.Row():
+            _settings_search = gr.Text(label="Search", elem_id="settings_search") # TODO settings search
 
         result = gr.HTML(elem_id="settings_result")
-
         quicksettings_names = opts.quicksettings_list
         quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
         quicksettings_list = []

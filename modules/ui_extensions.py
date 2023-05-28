@@ -18,7 +18,7 @@ sort_ordering = {
     "user extensions": (True, lambda x: x.get('sort_user', '')),
     "update avilable": (True, lambda x: x.get('sort_update', '')),
     "updated date": (True, lambda x: x.get('updated', '2000-01-01T00:00')),
-    "created date": (False, lambda x: x.get('created', '2000-01-01T00:00')),
+    "created date": (True, lambda x: x.get('created', '2000-01-01T00:00')),
     "name": (False, lambda x: x.get('name', '').lower()),
     "enabled": (False, lambda x: x.get('sort_enabled', '').lower()),
     "size": (True, lambda x: x.get('size', 0)),
