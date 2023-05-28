@@ -71,7 +71,7 @@ onUiLoaded(async() => {
             fixCanvas();
             targetElement.style.transform = `scale(${zoomLevel}) translate(${panX}px, ${panY}px)`;
 
-            const canvas = document.querySelector(
+            const canvas = gradioApp().querySelector(
                 `${elemId} canvas[key="interface"]`
             );
 
@@ -116,10 +116,10 @@ onUiLoaded(async() => {
             percentage = 5
         ) {
             const input =
-                document.querySelector(
+                gradioApp().querySelector(
                     `${elemId} input[aria-label='Brush radius']`
                 ) ||
-                document.querySelector(
+                gradioApp().querySelector(
                     `${elemId} button[aria-label="Use brush"]`
                 );
 
@@ -139,7 +139,7 @@ onUiLoaded(async() => {
         }
 
         // Reset zoom when uploading a new image
-        const fileInput = document.querySelector(
+        const fileInput = gradioApp().querySelector(
             `${elemId} input[type="file"][accept="image/*"].svelte-116rqfv`
         );
         fileInput.addEventListener("click", resetZoom);
@@ -242,7 +242,7 @@ onUiLoaded(async() => {
 
         // Fullscreen mode
         function fitToScreen() {
-            const canvas = document.querySelector(
+            const canvas = gradioApp().querySelector(
                 `${elemId} canvas[key="interface"]`
             );
 
@@ -419,7 +419,7 @@ onUiLoaded(async() => {
             }
         }
 
-        document.addEventListener("mousemove", handleMoveByKey);
+        gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
 
     applyZoomAndPan(elements.sketch, elementIDs.sketch);
