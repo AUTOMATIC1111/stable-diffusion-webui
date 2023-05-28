@@ -3,7 +3,6 @@ import tempfile
 from collections import namedtuple
 from pathlib import Path
 
-import gradio as gr
 import gradio.components
 
 from PIL import PngImagePlugin
