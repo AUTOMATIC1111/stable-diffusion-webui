@@ -682,19 +682,28 @@ footer {
     grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
-.controlnet_preprocessor_model {
+div.controlnet_preprocessor_model {
     display: grid;
     grid-auto-flow: row;
     grid-template-columns: 1fr max-content;
 }
 
-.controlnet_preprocessor_model button.gradio-button {
+div.controlnet_preprocessor_model button.gradio-button {
     align-self: center;
 }
 
-.controlnet_resize_mode_radio .wrap:last-of-type,
-.controlnet_control_mode_radio .wrap:last-of-type {
+fieldset.controlnet_resize_mode_radio .wrap:last-of-type,
+fieldset.controlnet_control_mode_radio .wrap:last-of-type {
     flex-direction: column;
+}
+
+div.controlnet_weight_steps > div.form {
+    display: grid;
+    grid-template: repeat(2, 1fr) / repeat(2, 1fr);
+}
+
+div.controlnet_weight_steps .controlnet_control_weight_slider {
+    grid-column: 1 / 3;
 }
 
 #modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
