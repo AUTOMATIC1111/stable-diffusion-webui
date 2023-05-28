@@ -179,7 +179,7 @@ def efficient_dot_product_attention(
             chunk_idx,
             min(query_chunk_size, q_tokens)
         )
-    
+
     summarize_chunk: SummarizeChunk = partial(_summarize_chunk, scale=scale)
     summarize_chunk: SummarizeChunk = partial(checkpoint, summarize_chunk) if use_checkpoint else summarize_chunk
     compute_query_chunk_attn: ComputeQueryChunkAttn = partial(
@@ -201,14 +201,15 @@ def efficient_dot_product_attention(
             key=key,
             value=value,
         )
-    
-    # TODO: maybe we should use torch.empty_like(query) to allocate storage in-advance,
-    # and pass slices to be mutated, instead of torch.cat()ing the returned slices
-    res = torch.cat([
-        compute_query_chunk_attn(
+
+    res = torch.zeros_like(query)
+    for i in range(math.ceil(q_tokens / query_chunk_size)):
+        attn_scores = compute_query_chunk_attn(
             query=get_query_chunk(i * query_chunk_size),
             key=key,
             value=value,
-        ) for i in range(math.ceil(q_tokens / query_chunk_size))
-    ], dim=1)
+        )
+
+        res[:, i * query_chunk_size:i * query_chunk_size + attn_scores.shape[1], :] = attn_scores
+
     return res

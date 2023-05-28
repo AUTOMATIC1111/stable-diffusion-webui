@@ -1,0 +1,11 @@
+{
+  "name": "stable-diffusion-webui",
+  "version": "0.0.0",
+  "devDependencies": {
+    "eslint": "^8.40.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "fix": "eslint --fix ."
+  }
+}

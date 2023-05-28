@@ -1,4 +1,4 @@
-from modules import extra_networks, shared, extra_networks
+from modules import extra_networks, shared
 from modules.hypernetworks import hypernetwork
 
 
