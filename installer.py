@@ -289,7 +289,8 @@ def check_torch():
             log.info(f'Torch {torch.__version__}')
             if args.use_ipex and allow_ipex:
                 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-                log.info(f'Torch backend: Intel OneAPI {torch.__version__}')
+                log.info(f'Torch backend: Intel IPEX {ipex.__version__}')
+                log.info(f'{os.popen("icpx --version").read().rstrip()}')
                 log.info(f'Torch detected GPU: {torch.xpu.get_device_name("xpu")} VRAM {round(torch.xpu.get_device_properties("xpu").total_memory / 1024 / 1024)}')
             elif torch.cuda.is_available() and (allow_cuda or allow_rocm):
                 if torch.version.cuda and allow_cuda:

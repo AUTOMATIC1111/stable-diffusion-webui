@@ -97,7 +97,10 @@ class VanillaStableDiffusionSampler:
             unconditional_conditioning = unconditional_conditioning[:, :cond.shape[1]]
 
         if self.mask is not None:
-            img_orig = self.sampler.model.q_sample(self.init_latent, ts)
+            if shared.cmd_opts.use_ipex:
+                img_orig = self.sampler.model.q_sample(self.init_latent, ts.type(torch.int64))
+            else:
+                img_orig = self.sampler.model.q_sample(self.init_latent, ts)
             x = img_orig * self.mask + self.nmask * x
 
         # Wrap the image conditioning back up since the DDIM code can accept the dict directly.
