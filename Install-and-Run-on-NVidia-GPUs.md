@@ -14,7 +14,7 @@ set COMMANDLINE_ARGS=--autolaunch --update-check
 > Each individual argument need to separated by a space, the above example well configure web UI to auto launch the browser page after it completes loading, and also chack for new version of web UI at launch.
 
 ### Troubleshooting
-The default configuration of web UI should run on most modon GPU, but in some cases you may need some extra arguments to allow it to work properly.
+The default configuration of web UI should run on most modern GPU, but in some cases you may need some extra arguments to allow it to work properly.
 
 1. For GPU with less ammounts of VRAM, you may need `--medvram` or `--lowvram`, these optimizations reduces VRAM requirements but sacrifice performance. If you do not have enough VRAM, web UI may refuse to launch or fail to generate images due to an out-of-memory error. The amount of VRAM required largely depends the desired image resolution, for more details see [Troubleshooting](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Troubleshooting).
 > the [Tiled VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111) extension can help to reduce the VRAM requirement.
