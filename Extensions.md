@@ -976,3 +976,11 @@ One Button Prompt is a tool/script for automatic1111 for beginners who have prob
 
 It generates an entire prompt from scratch. It is random, but controlled. You simply load up the script and press generate, and let it surprise you.
 ![One Button Prompt](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/40751091/9491d781-c0ad-4f22-93c4-b361635fc265)
+
+
+
+## Model Downloader
+https://github.com/Iyashinouta/sd-model-downloader
+
+SD-Webui extension to Download Model from CivitAI and HuggingFace, Recomended for Cloud Users (a.k.a Google Colab, etc.)
+
