@@ -94,7 +94,10 @@ def confirm_checkpoints(p, xs):
 
 
 def apply_clip_skip(p, x, xs):
-    opts.data["CLIP_stop_at_last_layers"] = x
+    if opts.data["CLIP_stop_at_last_layers"] != x:
+        opts.data["CLIP_stop_at_last_layers"] = x
+        p.cached_c = [None, None]
+        p.cached_uc = [None, None]
 
 
 def apply_upscale_latent_space(p, x, xs):
