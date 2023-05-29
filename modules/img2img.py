@@ -14,7 +14,7 @@ from modules.ui import plaintext_to_html
 import modules.scripts
 
 
-def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
+def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0):
     processing.fix_seed(p)
 
     images = shared.listfiles(input_dir)
@@ -50,6 +50,11 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
             continue
         # Use the EXIF orientation of photos taken by smartphones.
         img = ImageOps.exif_transpose(img)
+        
+        if to_scale:
+            p.width = int(img.width * scale_by)
+            p.height = int(img.height * scale_by)
+        
         p.init_images = [img] * p.batch_size
 
         if is_inpaint_batch:
@@ -119,7 +124,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     if image is not None:
         image = ImageOps.exif_transpose(image)
 
-    if selected_scale_tab == 1:
+    if selected_scale_tab == 1 and not is_batch:
         assert image, "Can't scale by because no image is selected"
 
         width = int(image.width * scale_by)
@@ -174,7 +179,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     if is_batch:
         assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
-        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args)
+        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by)
 
         processed = Processed(p, [], p.seed, "")
     else:
