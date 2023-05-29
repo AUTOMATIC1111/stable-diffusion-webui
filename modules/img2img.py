@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
@@ -53,7 +54,11 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
 
         if is_inpaint_batch:
             # try to find corresponding mask for an image using simple filename matching
-            mask_image_path = os.path.join(inpaint_mask_dir, os.path.basename(image))
+            path = Path(os.path.join(inpaint_mask_dir, os.path.basename(image)))
+            mask_image_path = list(path.parent.glob(f"**/{path.stem}*"))
+            if len(mask_image_path) > 0:
+                mask_image_path = str(mask_image_path[0])
+            
             # if not found use first one ("same mask for all images" use-case)
             if mask_image_path not in inpaint_masks:
                 mask_image_path = inpaint_masks[0]
