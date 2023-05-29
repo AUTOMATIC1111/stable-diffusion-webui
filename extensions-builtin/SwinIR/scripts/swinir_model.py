@@ -27,7 +27,7 @@ class UpscalerSwinIR(Upscaler):
         scalers = []
         model_files = self.find_models(ext_filter=[".pt", ".pth"])
         for model in model_files:
-            if "http" in model:
+            if model.startswith("http"):
                 name = self.model_name
             else:
                 name = modelloader.friendly_name(model)
@@ -48,7 +48,7 @@ class UpscalerSwinIR(Upscaler):
         return img
 
     def load_model(self, path, scale=4):
-        if "http" in path:
+        if path.startswith("http"):
             filename = modelloader.load_file_from_url(
                 url=path,
                 model_dir=self.model_download_path,

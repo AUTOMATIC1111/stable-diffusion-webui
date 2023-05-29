@@ -133,7 +133,7 @@ class UpscalerESRGAN(Upscaler):
             scaler_data = UpscalerData(self.model_name, self.model_url, self, 4)
             scalers.append(scaler_data)
         for file in model_paths:
-            if "http" in file:
+            if file.startswith("http"):
                 name = self.model_name
             else:
                 name = modelloader.friendly_name(file)
@@ -150,7 +150,7 @@ class UpscalerESRGAN(Upscaler):
         return img
 
     def load_model(self, path: str):
-        if "http" in path:
+        if path.startswith("http"):
             filename = modelloader.load_file_from_url(
                 url=self.model_url,
                 model_dir=self.model_download_path,
