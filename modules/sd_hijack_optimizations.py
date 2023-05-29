@@ -48,7 +48,12 @@ class SdOptimizationXformers(SdOptimization):
     priority = 100
 
     def is_available(self):
-        return shared.cmd_opts.force_enable_xformers or (shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0))
+        try:
+            is_avail = shared.cmd_opts.force_enable_xformers or (shared.xformers_available and torch.version.cuda and (6, 0) <= torch.cuda.get_device_capability(shared.device) <= (9, 0))
+        except Exception as e:
+            errors.display(e, "Error while checking torch cuda availability in SdOptimizationXformers")
+            return False
+        return is_avail
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = xformers_attention_forward
