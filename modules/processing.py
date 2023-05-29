@@ -19,7 +19,7 @@ from installer import git_commit
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts # pylint: disable=unused-import
 from modules.sd_hijack import model_hijack
-from modules.shared import opts, cmd_opts, state, log
+from modules.shared import opts, cmd_opts, state, log, backend, Backend
 import modules.shared as shared
 import modules.paths as paths
 import modules.face_restoration
@@ -220,7 +220,7 @@ class StableDiffusionProcessing:
         source_image = devices.cond_cast_float(source_image)
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
-        if opts.sd_backend == 'Diffusers': # TODO: Diffusers img2img_image_conditioning
+        if backend == Backend.DIFFUSERS: # TODO: Diffusers img2img_image_conditioning
             return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image)
@@ -522,7 +522,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         assert p.prompt is not None
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
-    if opts.sd_backend == 'Original':
+    if backend == Backend.ORIGINAL:
         modules.sd_hijack.model_hijack.apply_circular(p.tiling)
         modules.sd_hijack.model_hijack.clear_comments()
     comments = {}
@@ -573,11 +573,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         cache[0] = (required_prompts, steps)
         return cache[1]
 
-    ema_scope_context = p.sd_model.ema_scope if opts.sd_backend == 'Original' else nullcontext
+    ema_scope_context = p.sd_model.ema_scope if backend == Backend.ORIGINAL else nullcontext
     with torch.no_grad(), ema_scope_context():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
-            if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN" and opts.sd_backend == 'Original':
+            if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN" and backend == Backend.ORIGINAL:
                 sd_vae_approx.model()
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -618,7 +618,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            if opts.sd_backend == 'Original':
+            if backend == Backend.ORIGINAL:
                 uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
                 c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
                 if len(model_hijack.comments) > 0:
@@ -671,7 +671,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
-                if opts.sd_backend == 'Original':
+                if backend == Backend.ORIGINAL:
                     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = x_sample.astype(np.uint8)
                 else:

@@ -1,8 +1,8 @@
 from modules import sd_samplers_compvis, sd_samplers_kdiffusion, sd_samplers_diffusors, shared
 from modules.sd_samplers_common import samples_to_image_grid, sample_to_image # pylint: disable=unused-import
-from modules.shared import opts
+from modules.shared import backend, Backend
 
-if opts.sd_backend == 'Original':
+if backend == Backend.ORIGINAL:
     all_samplers = [
         *sd_samplers_kdiffusion.samplers_data_k_diffusion,
         *sd_samplers_compvis.samplers_data_compvis,
@@ -23,7 +23,7 @@ def create_sampler(name, model):
     else:
         config = all_samplers[0]
     assert config is not None, f'bad sampler name: {name}'
-    if opts.sd_backend == 'Original':
+    if backend == Backend.ORIGINAL:
         sampler = config.constructor(model)
         sampler.config = config
         return sampler

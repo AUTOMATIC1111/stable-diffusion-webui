@@ -4,10 +4,10 @@ import time
 import json
 import datetime
 import urllib.request
+from enum import Enum
 import gradio as gr
 import tqdm
 import requests
-# from ldm.models.diffusion.ddpm import LatentDiffusion
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.interrogate
@@ -70,6 +70,11 @@ ui_reorder_categories = [
     "override_settings",
     "scripts",
 ]
+
+
+class Backend(Enum):
+    ORIGINAL = 1
+    DIFFUSERS = 2
 
 
 def reload_hypernetworks():
@@ -634,6 +639,13 @@ opts = Options()
 config_filename = cmd_opts.config
 opts.load(config_filename)
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
+if cmd_opts.backend == 'diffusers':
+    log.info('Overriding backend to Diffusers')
+    opts.data['sd_backend'] = 'Diffusers'
+if cmd_opts.backend == 'original':
+    log.info('Overriding backend to Diffusers')
+    opts.data['sd_backend'] = 'Original'
+backend = Backend.DIFFUSERS if opts.sd_backend == 'Diffusers' else Backend.ORIGINAL
 
 prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_opts.server_name or False)) and not cmd_opts.insecure

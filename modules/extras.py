@@ -24,9 +24,6 @@ def run_pnginfo(image):
     for key, text in items.items():
         if key != 'UserComment':
             info += f"<div><b>{html.escape(str(key))}</b>: {html.escape(str(text))}</div>"
-    if len(info) == 0:
-        message = "Nothing found in the image."
-        info = f"<div><p>{message}<p></div>"
     return '', geninfo, info
 
 

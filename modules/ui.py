@@ -13,7 +13,7 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_grad
 from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing
 from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML # pylint: disable=unused-import
 from modules.paths import script_path, data_path
-from modules.shared import opts, cmd_opts
+from modules.shared import opts, cmd_opts, backend, Backend
 from modules import prompt_parser
 import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -61,6 +61,10 @@ switch_values_symbol = '\U000021C5' # ⇅
 
 def plaintext_to_html(text):
     return ui_common.plaintext_to_html(text)
+
+
+def infotext_to_html(text):
+    return ui_common.infotext_to_html(text)
 
 
 def send_gradio_gallery_to_image(x):
@@ -204,7 +208,7 @@ def update_token_counter(text, steps):
         prompt_schedules = [[[steps, text]]]
     flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
     prompts = [prompt_text for step, prompt_text in flat_prompts]
-    if opts.sd_backend == 'Original':
+    if backend == Backend.ORIGINAL:
         token_count, max_length = max([sd_hijack.model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
     else:
         tokenizer = modules.shared.sd_model.tokenizer
