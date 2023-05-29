@@ -1761,7 +1761,7 @@ def train_with_params(pretrained_model_name_or_path, network_weights, train_data
                       otherargs=[]):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
-    args = parser.parse_args(['--save_model_as=safetensors', '--enable_bucket'])
+    args = parser.parse_args(['--save_model_as=safetensors', '--enable_bucket', '--xformers'])
     # args = train_util.read_config_from_file(args, parser)
 
     args.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -1805,7 +1805,7 @@ def train_with_params(pretrained_model_name_or_path, network_weights, train_data
     
     #####默认设置
     args.enable_bucket = True
-	args.network_args = otherargs
+    args.network_args = otherargs
     return train(args, callback)
 
 
@@ -1833,7 +1833,7 @@ if __name__ == "__main__":
                       network_train_unet_only=False, seed=1, network_module="lycoris.kohya",
                       lr_scheduler="cosine_with_restarts",
                       multires_noise_iterations=8,multires_noise_discount=0.3,
-                      otherargs=["conv_dim=128","conv_alpha=64","unit=8","dropout=0","algo=lora"]
+                      otherargs=["conv_dim=128","conv_alpha=64","unit=8","dropout=0","algo=lora","--xformers"]
                       )
 
 # python train_network_qll.py --pretrained_model_name_or_path "/data/qll/qianzai_ai_draw/v1-5-pruned-emaonly.ckpt" --train_data_dir "/data/qll/lora_pictures/train_ironman" --output_name im2 --resolution 512 --network_module "networks.lora" --network_dim 32 --xformers  --caption_extension ".txt" --prior_loss_weight 1 --output_dir "./output" --logging_dir "./logs" --repeats_times "20" --class_tokens iiiiimqll --output_name iiiiimqll --list_train_data_dir "/data/qll/lora_pictures/train_ironman/10_immmmmman"
