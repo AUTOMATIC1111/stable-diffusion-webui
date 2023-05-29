@@ -166,8 +166,8 @@ class ExtraNetworksPage:
         if onclick is None:
             onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
 
-        height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
-        width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
+        #height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
+        #width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
         background_image = f'<img src="{html.escape(preview)}" class="preview" loading="lazy">' if preview else ''
 
         metadata_button = ""
@@ -195,8 +195,8 @@ class ExtraNetworksPage:
             return ""
 
         args = {
-            "background_image": background_image,
-            "style": f"'display: none; {height}{width}'",
+            #"background_image": background_image,
+            #"style": f"'display: none; {height}{width}'",
             "preview_image": html.escape(preview) if preview else './file=html/card-no-preview.png',
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
@@ -308,9 +308,9 @@ def create_ui(container, button, tabname):
             for page in ui.stored_extra_pages:
                 page_id = page.title.lower().replace(" ", "_")
                 with gr.Tab(page.title, id=page_id):
-                    elem_id = f"{tabname}_{page_id}_cards_html"
-                    page_elem = gr.HTML('Loading...', elem_id=elem_id)
-                    #page_elem = gr.HTML(page.create_html(ui.tabname))
+                    #elem_id = f"{tabname}_{page_id}_cards_html"
+                    #page_elem = gr.HTML('Loading...', elem_id=elem_id)
+                    page_elem = gr.HTML(page.create_html(ui.tabname))
                     ui.pages.append(page_elem)
 
         filter = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)       

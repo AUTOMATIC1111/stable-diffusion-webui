@@ -111,7 +111,7 @@ License: GNU General Public License
       (
         var(--ae-top-header-height) + var(--ae-footer-height) +
           var(--ae-accordion-header-height) + var(--ae-outside-gap-size) * 4 +
-          34px
+          36px
       )
   );
 }
@@ -1227,7 +1227,7 @@ button.secondary {
   text-align: center !important;
 }
 
-.gradio-container-3-29-0 .prose * {
+.gradio-container-3-31-0 .prose * {
   color: var(--ae-label-color);
 }
 
@@ -1242,34 +1242,34 @@ button.secondary {
 
 .wrap.svelte-1p9xokt.svelte-1p9xokt.svelte-1p9xokt label,
 .wrap.svelte-1qxcj04.svelte-1qxcj04.svelte-1qxcj04 label,
-.gradio-container-3-29-0 [type="text"],
-.gradio-container-3-29-0 [type="email"],
-.gradio-container-3-29-0 [type="url"],
-.gradio-container-3-29-0 [type="password"],
-.gradio-container-3-29-0 [type="number"],
-.gradio-container-3-29-0 [type="date"],
-.gradio-container-3-29-0 [type="datetime-local"],
-.gradio-container-3-29-0 [type="month"],
-.gradio-container-3-29-0 [type="search"],
-.gradio-container-3-29-0 [type="tel"],
-.gradio-container-3-29-0 [type="time"],
-.gradio-container-3-29-0 [type="week"],
-.gradio-container-3-29-0 [multiple],
-.gradio-container-3-29-0 textarea,
-.gradio-container-3-29-0 select {
+.gradio-container-3-31-0 [type="text"],
+.gradio-container-3-31-0 [type="email"],
+.gradio-container-3-31-0 [type="url"],
+.gradio-container-3-31-0 [type="password"],
+.gradio-container-3-31-0 [type="number"],
+.gradio-container-3-31-0 [type="date"],
+.gradio-container-3-31-0 [type="datetime-local"],
+.gradio-container-3-31-0 [type="month"],
+.gradio-container-3-31-0 [type="search"],
+.gradio-container-3-31-0 [type="tel"],
+.gradio-container-3-31-0 [type="time"],
+.gradio-container-3-31-0 [type="week"],
+.gradio-container-3-31-0 [multiple],
+.gradio-container-3-31-0 textarea,
+.gradio-container-3-31-0 select {
   line-height: 1.5rem;
   padding: 4px 8px;
 }
 
-.gradio-container-3-29-0 [type="checkbox"],
-.gradio-container-3-29-0 [type="radio"] {
+.gradio-container-3-31-0 [type="checkbox"],
+.gradio-container-3-31-0 [type="radio"] {
   background-color: var(--ae-input-bg-color);
   border: 1px solid var(--ae-input-border-color);
   border-radius: var(--ae-panel-border-radius);
 }
 
-.gradio-container-3-29-0 [type="checkbox"]:checked,
-.gradio-container-3-29-0 [type="radio"]:checked {
+.gradio-container-3-31-0 [type="checkbox"]:checked,
+.gradio-container-3-31-0 [type="radio"]:checked {
   background-color: var(--ae-primary-color);
 }
 
@@ -1639,7 +1639,7 @@ span.ml-2 {
   padding: var(--ae-inside-padding-size) !important;
 }
 
-.gradio-container-3-29-0 .prose {
+.gradio-container-3-31-0 .prose {
   min-height: unset !important;
 }
 
@@ -1853,6 +1853,12 @@ button.tool.secondary:hover,
   padding: 0;
 }
 
+#img2img_dimensions_row{
+  min-width:unset !important;
+  max-width:34px;
+}
+
+[id$="2img_detect_image_size_btn"],
 [id$="2img_res_switch_btn"] {
   margin: -1px !important;
 }
@@ -2913,6 +2919,12 @@ label.svelte-1qxcj04.svelte-1qxcj04.svelte-1qxcj04 {
 /*************/
 /* settings  */
 /*************/
+#row_setting_quicksettings_list,
+#row_setting_gradio_theme,
+#row_setting_hidden_tabs
+{
+display:none !important;
+}
 pre {
   white-space: pre-wrap;
   /* css-3 */
@@ -2960,7 +2972,7 @@ pre {
   float: left;
   display: block;
   margin-left: 0;
-  width: 10em;
+  width: 12em;
 }
 
 #settings > div.tab-nav button {

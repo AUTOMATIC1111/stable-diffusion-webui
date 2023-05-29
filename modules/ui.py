@@ -79,9 +79,10 @@ switch_values_symbol = '\u2B80' # ⮀
 restore_progress_symbol = '\U0001F300' # 🌀
 detect_image_size_symbol = '\U0001F4D0'  # 📐
 
-
 interogate_bubble_symbol = '\U0001F5E8' # 🗨
 interogate_2bubble_symbol = '\U0001F5EA' # 🗪
+generate_forever_symbol = '\u267E' # ♾
+
 def plaintext_to_html(text):
     return ui_common.plaintext_to_html(text)
 
@@ -816,8 +817,8 @@ def create_ui():
                                 for i, tab in enumerate(img2img_tabs):
                                     tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
                                     
-                            #for category in ordered_ui_categories():    
-                            #    if category == "inpaint":  
+                            for category in ordered_ui_categories():    
+                                if category == "inpaint":  
                                     
                                     with gr.Column(elem_id="dim_controls", visible=True):
                                         with gr.Row():
@@ -1812,22 +1813,18 @@ def create_ui():
             gr.Row(elem_id="quick_menu")
 
         parameters_copypaste.connect_paste_params_buttons()
- 
+        # with gr.Tabs(elem_id="tabs") as tabs:
+        #     for interface, label, ifid in interfaces:
+        #         with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
+        #             interface.render()
+        
         with gr.Tabs(elem_id="tabs") as tabs:
-            
             tab_order = {k: i for i, k in enumerate(opts.ui_tab_order)}
             sorted_interfaces = sorted(interfaces, key=lambda x: tab_order.get(x[1], 9999))
 
             for interface, label, ifid in sorted_interfaces:
-                if label in shared.opts.hidden_tabs:
-                    continue
-                    
                 with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
-
-            for interface, _label, ifid in interfaces:
-                if ifid in ["extensions", "settings"]:
-                    continue
 
                 loadsave.add_block(interface, ifid)
 
