@@ -2,7 +2,6 @@ import json
 import mimetypes
 import os
 import sys
-import traceback
 from functools import reduce
 import warnings
 
@@ -14,6 +13,7 @@ from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
 from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave
+from modules.errors import print_error
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path, data_path
 
@@ -231,9 +231,8 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
                 res = all_seeds[index if 0 <= index < len(all_seeds) else 0]
 
         except json.decoder.JSONDecodeError:
-            if gen_info_string != '':
-                print("Error parsing JSON generation info:", file=sys.stderr)
-                print(gen_info_string, file=sys.stderr)
+            if gen_info_string:
+                print_error(f"Error parsing JSON generation info: {gen_info_string}")
 
         return [res, gr_show(False)]
 
@@ -1753,8 +1752,7 @@ def create_ui():
             try:
                 results = modules.extras.run_modelmerger(*args)
             except Exception as e:
-                print("Error loading/saving model file:", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                print_error("Error loading/saving model file", exc_info=True)
                 modules.sd_models.list_models()  # to remove the potentially missing models from the list
                 return [*[gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(4)], f"Error merging checkpoints: {e}"]
             return results

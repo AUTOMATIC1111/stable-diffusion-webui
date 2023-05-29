@@ -1,6 +1,4 @@
 import datetime
-import sys
-import traceback
 
 import pytz
 import io
@@ -18,6 +16,7 @@ import json
 import hashlib
 
 from modules import sd_samplers, shared, script_callbacks, errors
+from modules.errors import print_error
 from modules.paths_internal import roboto_ttf_file
 from modules.shared import opts
 
@@ -464,8 +463,7 @@ class FilenameGenerator:
                     replacement = fun(self, *pattern_args)
                 except Exception:
                     replacement = None
-                    print(f"Error adding [{pattern}] to filename", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
+                    print_error(f"Error adding [{pattern}] to filename", exc_info=True)
 
                 if replacement == NOTHING_AND_SKIP_PREVIOUS_TEXT:
                     continue
@@ -697,8 +695,7 @@ def read_info_from_image(image):
 Negative prompt: {json_info["uc"]}
 Steps: {json_info["steps"]}, Sampler: {sampler}, CFG scale: {json_info["scale"]}, Seed: {json_info["seed"]}, Size: {image.width}x{image.height}, Clip skip: 2, ENSD: 31337"""
         except Exception:
-            print("Error parsing NovelAI image generation parameters:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            print_error("Error parsing NovelAI image generation parameters", exc_info=True)
 
     return geninfo, items
 

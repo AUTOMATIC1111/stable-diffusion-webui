@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 import sys
@@ -23,7 +24,6 @@ import modules.images as images
 import modules.styles
 import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
-import logging
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 

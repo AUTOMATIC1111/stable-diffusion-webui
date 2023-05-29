@@ -1,5 +1,21 @@
 import sys
+import textwrap
 import traceback
+
+
+def print_error(
+    message: str,
+    *,
+    exc_info: bool = False,
+) -> None:
+    """
+    Print an error message to stderr, with optional traceback.
+    """
+    for line in message.splitlines():
+        print("***", line, file=sys.stderr)
+    if exc_info:
+        print(textwrap.indent(traceback.format_exc(), "    "), file=sys.stderr)
+        print("---")
 
 
 def print_error_explanation(message):
