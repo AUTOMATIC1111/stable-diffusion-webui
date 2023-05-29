@@ -151,6 +151,7 @@ class UpscalerESRGAN(Upscaler):
 
     def load_model(self, path: str):
         if path.startswith("http"):
+            # TODO: this doesn't use `path` at all?
             filename = modelloader.load_file_from_url(
                 url=self.model_url,
                 model_dir=self.model_download_path,
