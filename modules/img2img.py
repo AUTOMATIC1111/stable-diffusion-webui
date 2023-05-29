@@ -50,11 +50,11 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
             continue
         # Use the EXIF orientation of photos taken by smartphones.
         img = ImageOps.exif_transpose(img)
-        
+
         if to_scale:
             p.width = int(img.width * scale_by)
             p.height = int(img.height * scale_by)
-        
+
         p.init_images = [img] * p.batch_size
 
         if is_inpaint_batch:
@@ -63,7 +63,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
             mask_image_path = list(path.parent.glob(f"**/{path.stem}*"))
             if len(mask_image_path) > 0:
                 mask_image_path = str(mask_image_path[0])
-            
+
             # if not found use first one ("same mask for all images" use-case)
             if mask_image_path not in inpaint_masks:
                 mask_image_path = inpaint_masks[0]
