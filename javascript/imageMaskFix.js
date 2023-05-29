@@ -8,17 +8,16 @@ window.addEventListener( 'resize', () => imageMaskResize());
 
 function imageMaskResize() {
     const canvases = gradioApp().querySelectorAll('#img2maskimg .touch-none canvas');
-    if ( ! canvases.length ) {
-    canvases_fixed = false; // TODO: this is unused..?
-    window.removeEventListener( 'resize', imageMaskResize );
-    return;
+    if (!canvases.length) {
+        window.removeEventListener('resize', imageMaskResize);
+        return;
     }
 
     const wrapper = canvases[0].closest('.touch-none');
     const previewImage = wrapper.previousElementSibling;
 
-    if ( ! previewImage.complete ) {
-        previewImage.addEventListener( 'load', imageMaskResize);
+    if (!previewImage.complete) {
+        previewImage.addEventListener('load', imageMaskResize);
         return;
     }
 
@@ -28,15 +27,15 @@ function imageMaskResize() {
     const nh = previewImage.naturalHeight;
     const portrait = nh > nw;
 
-    const wW = Math.min(w, portrait ? h/nh*nw : w/nw*nw);
-    const wH = Math.min(h, portrait ? h/nh*nh : w/nw*nh);
+    const wW = Math.min(w, portrait ? h / nh * nw : w / nw * nw);
+    const wH = Math.min(h, portrait ? h / nh * nh : w / nw * nh);
 
     wrapper.style.width = `${wW}px`;
     wrapper.style.height = `${wH}px`;
     wrapper.style.left = `0px`;
     wrapper.style.top = `0px`;
 
-    canvases.forEach( c => {
+    canvases.forEach(c => {
         c.style.width = c.style.height = '';
         c.style.maxWidth = '100%';
         c.style.maxHeight = '100%';
@@ -337,3 +336,4 @@ onUiUpdate(function() {
 	if(intervalLastUIUpdate != null) clearInterval(intervalLastUIUpdate);
 	intervalLastUIUpdate = setInterval(onLastUIUpdate, 1000);	
 }) */
+

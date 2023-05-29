@@ -2,7 +2,6 @@ import os
 import re
 
 import torch
-from PIL import Image
 import numpy as np
 
 from modules import modelloader, paths, deepbooru_model, devices, images, shared
@@ -79,7 +78,7 @@ class DeepDanbooru:
 
         res = []
 
-        filtertags = set([x.strip().replace(' ', '_') for x in shared.opts.deepbooru_filter_tags.split(",")])
+        filtertags = {x.strip().replace(' ', '_') for x in shared.opts.deepbooru_filter_tags.split(",")}
 
         for tag in [x for x in tags if x not in filtertags]:
             probability = probability_dict[tag]

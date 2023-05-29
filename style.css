@@ -3681,7 +3681,7 @@ input[type="range"]::-moz-range-track {
   background-color: var(--ae-input-bg-color);
 }
 
-input[type=range]::after:: {
+input[type=range]::after {
   content: "";
   position: absolute;
   height: 13px;

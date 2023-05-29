@@ -1,72 +1,64 @@
 // code related to showing and updating progressbar shown as the image is being made
 
-function rememberGallerySelection() {}
+function rememberGallerySelection() {
 
-function getGallerySelectedIndex() {}
+}
+
+function getGallerySelectedIndex() {
+
+}
 
 function request(url, data, handler, errorHandler) {
-  var xhr = new XMLHttpRequest();
-  xhr.open("POST", url, true);
-  xhr.setRequestHeader("Content-Type", "application/json");
-  xhr.onreadystatechange = function () {
-    if (xhr.readyState === 4) {
-      if (xhr.status === 200) {
-        try {
-          var js = JSON.parse(xhr.responseText);
-          handler(js);
-        } catch (error) {
-          console.error(error);
-          errorHandler();
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var js = JSON.parse(xhr.responseText);
+                    handler(js);
+                } catch (error) {
+                    console.error(error);
+                    errorHandler();
+                }
+            } else {
+                errorHandler();
+            }
         }
-      } else {
-        errorHandler();
-      }
-    }
-  };
-  var js = JSON.stringify(data);
-  xhr.send(js);
+    };
+    var js = JSON.stringify(data);
+    xhr.send(js);
 }
 
 function pad2(x) {
-  return x < 10 ? "0" + x : x;
+    return x < 10 ? '0' + x : x;
 }
 
 function formatTime(secs) {
   if (secs > 3600) {
-    return (
-      pad2(Math.floor(secs / 60 / 60)) +
-      ":" +
-      pad2(Math.floor(secs / 60) % 60) +
-      ":" +
-      pad2(Math.floor(secs) % 60)
-    );
+      return pad2(Math.floor(secs / 60 / 60)) + ":" + pad2(Math.floor(secs / 60) % 60) + ":" + pad2(Math.floor(secs) % 60);
   } else if (secs > 60) {
-    return pad2(Math.floor(secs / 60)) + ":" + pad2(Math.floor(secs) % 60);
+      return pad2(Math.floor(secs / 60)) + ":" + pad2(Math.floor(secs) % 60);
   } else {
-    return Math.floor(secs) + "s";
+      return Math.floor(secs) + "s";
   }
 }
 
 function setTitle(progress) {
-  var title = "Stable Diffusion";
+    var title = 'Stable Diffusion';
 
-  if (opts.show_progress_in_title && progress) {
-    title = "[" + progress.trim() + "] " + title;
-  }
+    if (opts.show_progress_in_title && progress) {
+        title = '[' + progress.trim() + '] ' + title;
+    }
 
-  if (document.title != title) {
-    document.title = title;
-  }
+    if (document.title != title) {
+        document.title = title;
+    }
 }
 
 function randomId() {
-  return (
-    "task(" +
-    Math.random().toString(36).slice(2, 7) +
-    Math.random().toString(36).slice(2, 7) +
-    Math.random().toString(36).slice(2, 7) +
-    ")"
-  );
+    return "task(" + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7) + ")";
 }
 
 // starts sending progress requests to "/internal/progress" uri, creating progressbar above progressbarContainer element and
@@ -183,11 +175,6 @@ function requestProgress(
         }
 
         if (res.live_preview && gallery) {
-          //var rect = gallery.getBoundingClientRect()
-          //if(rect.width){
-          //livePreview.style.width = rect.width + "px"
-          //livePreview.style.height = rect.height + "px"
-          //}
 
           livePreview.classList.remove("init");
 

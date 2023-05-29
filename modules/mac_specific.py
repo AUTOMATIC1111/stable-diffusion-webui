@@ -1,6 +1,5 @@
 import torch
 import platform
-from modules import paths
 from modules.sd_hijack_utils import CondFunc
 from packaging import version
 
@@ -43,7 +42,7 @@ if has_mps:
         # MPS workaround for https://github.com/pytorch/pytorch/issues/79383
         CondFunc('torch.Tensor.to', lambda orig_func, self, *args, **kwargs: orig_func(self.contiguous(), *args, **kwargs),
                                                           lambda _, self, *args, **kwargs: self.device.type != 'mps' and (args and isinstance(args[0], torch.device) and args[0].type == 'mps' or isinstance(kwargs.get('device'), torch.device) and kwargs['device'].type == 'mps'))
-        # MPS workaround for https://github.com/pytorch/pytorch/issues/80800 
+        # MPS workaround for https://github.com/pytorch/pytorch/issues/80800
         CondFunc('torch.nn.functional.layer_norm', lambda orig_func, *args, **kwargs: orig_func(*([args[0].contiguous()] + list(args[1:])), **kwargs),
                                                                                         lambda _, *args, **kwargs: args and isinstance(args[0], torch.Tensor) and args[0].device.type == 'mps')
         # MPS workaround for https://github.com/pytorch/pytorch/issues/90532
