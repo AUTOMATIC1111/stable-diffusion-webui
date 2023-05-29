@@ -8,7 +8,7 @@ Default theme
 
 ![anapnoe_uiux](https://user-images.githubusercontent.com/124302297/227973574-6003142d-0c7c-41c6-9966-0792a94549e9.png)
 
-## Features and to do list of ui-ux
+## Features of ui-ux
 - resizable viewport
 - switchable viewports (DoubleClick on the split handler to swap views) option in settings for default position
 - mobile navigation
@@ -28,14 +28,16 @@ Default theme
 - frame border animation when generating images
 - progress bar on top of the page always visible (when scroll for mobile)
 - remix icons 
-- [ ] small arrows next to icons sent to inpaint, extras, img2img etc  
 - style theme configurator extension to customize every aspect of theme in real time with cool global functions to change the hue / saturation / brightness or invert the theme colors
 - pan and zoom in out functionality for sketch, inpaint, inpaint sketch
 - fullscreen support for sketch, inpaint, inpaint sketch  
-- [ ] component gallery navigate to previous generations inside the txt2img, img2img interface
-- [ ] and auto load the current generation settings 
 - better lightbox with zoom in-out mobile gestures support etc.. 
-- [ ] credits/about page display all 300+ contributors so far inside the UI 
+
+## TODO
+- small arrows next to icons sent to inpaint, extras, img2img etc  
+- component gallery navigate to previous generations inside the txt2img, img2img interface
+- and auto load the current generation settings 
+- credits/about page display all 300+ contributors so far inside the UI 
 
 Quick Settings aside off-canvas view - drag and drop to custom sort your settings
 
