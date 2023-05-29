@@ -3,7 +3,9 @@
 ## Update for 05/28/2023
 
 - settings search option
-- system info live gpu memory and load graphs
+- fully common save/zip/delete (new) options in all tabs
+- system info live gpu memory and load graphs for nvidia gpus
+- minor style changes
 
 ## Update for 05/26/2023
 

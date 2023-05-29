@@ -50,12 +50,12 @@ sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 # Important that they exactly match script.js for tooltip to work.
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
-paste_symbol = '\u2199\ufe0f'  # ↙
-refresh_symbol = '\U0001f504'  # 🔄
-save_style_symbol = '\U0001f4be'  # 💾
-apply_style_symbol = '\U0001f4cb'  # 📋
-clear_prompt_symbol = '\U0001f5d1\ufe0f'  # 🗑️
-extra_networks_symbol = '\U0001F3B4'  # 🎴
+paste_symbol = '\U0001F4D8' # '\u2199\ufe0f'  # ↙
+refresh_symbol = '\U0001F504' # 🔄
+save_style_symbol = '\U0001F6C5' # '\U0001f4be'  # 💾
+apply_style_symbol = '\U0001F9F3' # '\U0001f4cb'  # 📋
+clear_prompt_symbol = '\U0001F6AE' # '\U0001f5d1\ufe0f'  # 🗑️
+extra_networks_symbol = '\U0001F310' # '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 
 

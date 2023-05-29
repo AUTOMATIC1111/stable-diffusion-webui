@@ -115,6 +115,8 @@ a{
 
 #txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
     object-fit: scale-down;
+    width: -webkit-fill-available !important;
+    height: -webkit-fill-available !important;
 }
 #txt2img_actions_column, #img2img_actions_column {
     gap: 0.5em;
@@ -677,3 +679,7 @@ footer {
 #extras_upscale { margin-top: 10px }
 
 #modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
+
+.thumbnail-item > img {
+
+}
