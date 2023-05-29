@@ -3,7 +3,6 @@ import os
 import numpy as np
 import torch
 from PIL import Image
-from basicsr.utils.download_util import load_file_from_url
 from tqdm import tqdm
 
 from modules import modelloader, devices, script_callbacks, shared
@@ -50,8 +49,11 @@ class UpscalerSwinIR(Upscaler):
 
     def load_model(self, path, scale=4):
         if "http" in path:
-            dl_name = "%s%s" % (self.model_name.replace(" ", "_"), ".pth")
-            filename = load_file_from_url(url=path, model_dir=self.model_download_path, file_name=dl_name, progress=True)
+            filename = modelloader.load_file_from_url(
+                url=path,
+                model_dir=self.model_download_path,
+                file_name=f"{self.model_name.replace(' ', '_')}.pth",
+            )
         else:
             filename = path
         if filename is None or not os.path.exists(filename):

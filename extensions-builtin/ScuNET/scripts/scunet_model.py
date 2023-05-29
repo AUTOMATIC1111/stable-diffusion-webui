@@ -6,12 +6,11 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from basicsr.utils.download_util import load_file_from_url
-
 import modules.upscaler
 from modules import devices, modelloader, script_callbacks, errors
 from scunet_model_arch import SCUNet as net
 
+from modules.modelloader import load_file_from_url
 from modules.shared import opts
 
 
@@ -120,7 +119,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
     def load_model(self, path: str):
         device = devices.get_device_for('scunet')
         if "http" in path:
-            filename = load_file_from_url(url=self.model_url, model_dir=self.model_download_path, file_name="%s.pth" % self.name, progress=True)
+            filename = load_file_from_url(self.model_url, model_dir=self.model_download_path, file_name=f"{self.name}.pth")
         else:
             filename = path
         if not os.path.exists(os.path.join(self.model_path, filename)) or filename is None:

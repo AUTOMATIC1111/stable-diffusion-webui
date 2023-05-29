@@ -2,12 +2,12 @@ import os
 
 import numpy as np
 from PIL import Image
-from basicsr.utils.download_util import load_file_from_url
 from realesrgan import RealESRGANer
 
 from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import cmd_opts, opts
 from modules import modelloader, errors
+
 
 
 class UpscalerRealESRGAN(Upscaler):
@@ -71,7 +71,7 @@ class UpscalerRealESRGAN(Upscaler):
                 return None
 
             if info.local_data_path.startswith("http"):
-                info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_download_path, progress=True)
+                info.local_data_path = modelloader.load_file_from_url(info.data_path, model_dir=self.model_download_path)
 
             return info
         except Exception:

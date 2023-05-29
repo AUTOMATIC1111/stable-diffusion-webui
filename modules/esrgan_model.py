@@ -3,7 +3,6 @@ import os
 import numpy as np
 import torch
 from PIL import Image
-from basicsr.utils.download_util import load_file_from_url
 
 import modules.esrgan_model_arch as arch
 from modules import modelloader, images, devices
@@ -152,11 +151,10 @@ class UpscalerESRGAN(Upscaler):
 
     def load_model(self, path: str):
         if "http" in path:
-            filename = load_file_from_url(
+            filename = modelloader.load_file_from_url(
                 url=self.model_url,
                 model_dir=self.model_download_path,
                 file_name=f"{self.model_name}.pth",
-                progress=True,
             )
         else:
             filename = path
