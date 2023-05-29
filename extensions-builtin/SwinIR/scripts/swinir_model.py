@@ -1,4 +1,4 @@
-import os
+import sys
 
 import numpy as np
 import torch
@@ -7,8 +7,8 @@ from tqdm import tqdm
 
 from modules import modelloader, devices, script_callbacks, shared
 from modules.shared import opts, state
-from swinir_model_arch import SwinIR as net
-from swinir_model_arch_v2 import Swin2SR as net2
+from swinir_model_arch import SwinIR
+from swinir_model_arch_v2 import Swin2SR
 from modules.upscaler import Upscaler, UpscalerData
 
 
@@ -36,8 +36,10 @@ class UpscalerSwinIR(Upscaler):
         self.scalers = scalers
 
     def do_upscale(self, img, model_file):
-        model = self.load_model(model_file)
-        if model is None:
+        try:
+            model = self.load_model(model_file)
+        except Exception as e:
+            print(f"Failed loading SwinIR model {model_file}: {e}", file=sys.stderr)
             return img
         model = model.to(device_swinir, dtype=devices.dtype)
         img = upscale(img, model)
@@ -56,25 +58,23 @@ class UpscalerSwinIR(Upscaler):
             )
         else:
             filename = path
-        if filename is None or not os.path.exists(filename):
-            return None
         if filename.endswith(".v2.pth"):
-            model = net2(
-            upscale=scale,
-            in_chans=3,
-            img_size=64,
-            window_size=8,
-            img_range=1.0,
-            depths=[6, 6, 6, 6, 6, 6],
-            embed_dim=180,
-            num_heads=[6, 6, 6, 6, 6, 6],
-            mlp_ratio=2,
-            upsampler="nearest+conv",
-            resi_connection="1conv",
+            model = Swin2SR(
+                upscale=scale,
+                in_chans=3,
+                img_size=64,
+                window_size=8,
+                img_range=1.0,
+                depths=[6, 6, 6, 6, 6, 6],
+                embed_dim=180,
+                num_heads=[6, 6, 6, 6, 6, 6],
+                mlp_ratio=2,
+                upsampler="nearest+conv",
+                resi_connection="1conv",
             )
             params = None
         else:
-            model = net(
+            model = SwinIR(
                 upscale=scale,
                 in_chans=3,
                 img_size=64,

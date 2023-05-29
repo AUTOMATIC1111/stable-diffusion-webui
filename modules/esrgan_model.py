@@ -1,4 +1,4 @@
-import os
+import sys
 
 import numpy as np
 import torch
@@ -6,9 +6,8 @@ from PIL import Image
 
 import modules.esrgan_model_arch as arch
 from modules import modelloader, images, devices
-from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import opts
-
+from modules.upscaler import Upscaler, UpscalerData
 
 
 def mod2normal(state_dict):
@@ -142,8 +141,10 @@ class UpscalerESRGAN(Upscaler):
             self.scalers.append(scaler_data)
 
     def do_upscale(self, img, selected_model):
-        model = self.load_model(selected_model)
-        if model is None:
+        try:
+            model = self.load_model(selected_model)
+        except Exception as e:
+            print(f"Unable to load ESRGAN model {selected_model}: {e}", file=sys.stderr)
             return img
         model.to(devices.device_esrgan)
         img = esrgan_upscale(model, img)
@@ -159,9 +160,6 @@ class UpscalerESRGAN(Upscaler):
             )
         else:
             filename = path
-        if not os.path.exists(filename) or filename is None:
-            print(f"Unable to load {self.model_path} from {filename}")
-            return None
 
         state_dict = torch.load(filename, map_location='cpu' if devices.device_esrgan.type == 'mps' else None)
 

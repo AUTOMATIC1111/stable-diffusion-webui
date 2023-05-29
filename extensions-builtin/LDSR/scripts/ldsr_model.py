@@ -46,16 +46,13 @@ class UpscalerLDSR(Upscaler):
 
         yaml = local_yaml_path or load_file_from_url(self.yaml_url, model_dir=self.model_download_path, file_name="project.yaml")
 
-        try:
-            return LDSR(model, yaml)
-        except Exception:
-            errors.report("Error importing LDSR", exc_info=True)
-        return None
+        return LDSR(model, yaml)
 
     def do_upscale(self, img, path):
-        ldsr = self.load_model(path)
-        if ldsr is None:
-            print("NO LDSR!")
+        try:
+            ldsr = self.load_model(path)
+        except Exception:
+            errors.report(f"Failed loading LDSR model {path}", exc_info=True)
             return img
         ddim_steps = shared.opts.ldsr_steps
         return ldsr.super_resolution(img, ddim_steps, self.scale)
