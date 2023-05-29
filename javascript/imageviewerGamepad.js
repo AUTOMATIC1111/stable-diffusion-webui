@@ -24,7 +24,7 @@ window.addEventListener('gamepadconnected', (e) => {
             isWaiting = false;
         }
     }, 10);
-    window.addEventListener('gamepaddisconnected', (e) => clearInterval(gamepads[e.gamepad.index]))
+    window.addEventListener('gamepaddisconnected', (e) => clearInterval(gamepads[e.gamepad.index]));
 });
 
 /*
