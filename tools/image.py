@@ -25,7 +25,7 @@ def encode_pil_to_base64(image, quality=80):
                    quality=quality)
         bytes_data = output_bytes.getvalue()
 
-    return base64.b64encode(bytes_data)
+        return 'data:image/png;base64,' + base64.b64encode(bytes_data).decode('ascii')
 
 
 # compress_image 压缩图片函数，减轻网络压力

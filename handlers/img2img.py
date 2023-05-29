@@ -369,7 +369,8 @@ class Img2ImgTaskHandler(TaskHandler):
         self._refresh_default_script_args()
 
         t = Img2ImgTask.from_task(task, self.default_script_args)
-        t.progress_callback = lambda x: self._update_running_progress(task, x)
+        progress = TaskProgress.new_running(task, "generate image...", 0)
+        t.progress_callback = lambda x: self._update_running_progress(progress, x)
         return t
 
     def _get_local_checkpoint(self, task: Task):
@@ -461,17 +462,16 @@ class Img2ImgTaskHandler(TaskHandler):
         super()._set_task_status(p)
         dumper.dump_task_progress(p)
 
-    def _update_running_progress(self, task: Task, v: int):
+    def _update_running_progress(self, progress: TaskProgress, v: int):
         if v > 99:
             v = 99
-
-        progress = TaskProgress.new_running(task, "generate image...", v)
+        progress.task_progress = v
         shared.state.set_current_image()
         if shared.state.current_image:
             current = encode_pil_to_base64(shared.state.current_image, 60)
-            progress.preview = current
-        else:
-            progress.preview = None
+            if current:
+                progress.preview = current
+
         self._set_task_status(progress)
 
     def _exec_interrogate(self, task: Task):

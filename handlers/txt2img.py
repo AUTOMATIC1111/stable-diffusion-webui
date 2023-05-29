@@ -34,7 +34,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  negative_prompt: str,  # 反向TAG
                  sampler_name: str = None,  # 采样器
                  enable_hr: bool = False,
-                 denoising_strength: float = 0.75,  # 重绘幅度
+                 denoising_strength: float = 0.7,  # 重绘幅度
                  tiling: bool = False,  # 可平铺
                  hr_scale: float = 2.0,
                  hr_upscaler: str = None,
