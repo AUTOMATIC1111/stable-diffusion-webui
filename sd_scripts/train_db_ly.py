@@ -59,14 +59,16 @@ def train(args, callback):
         reg_tokens = []
         list_train_data_dirs = args.list_train_data_dir
         list_reg_data_dirs = []
+        reg_repeats = []
         if args.reg_data_dir is not None:
             list_reg_data_dirs = args.list_reg_data_dir
             reg_tokens = args.reg_tokens
+            reg_repeats = args.reg_repeats_times
         user_config = {
             "datasets": [
                 # {"subsets": config_util.generate_dreambooth_subsets_config_by_subdirs(args.train_data_dir, args.reg_data_dir)}
                 {"subsets": config_util.generate_dreambooth_subsets_config_by_args(
-                    list_repeats, class_tokens, list_train_data_dirs, reg_tokens, list_reg_data_dirs)}
+                    list_repeats, class_tokens, list_train_data_dirs, reg_repeats, reg_tokens, list_reg_data_dirs)}
             ]
         }
 
@@ -493,6 +495,11 @@ def setup_parser() -> argparse.ArgumentParser:
         "--list_reg_data_dir", type=list, default="",
         help="list for reg_data folder name"
     )
+    parser.add_argument(
+        "--reg_repeats_times", type=list, default="",
+        help="repeat times of source images for reg"
+    )
+
     return parser
 
 
@@ -504,7 +511,7 @@ def train_callback(epoch, avg_loss):
 def train_db_with_params(pretrained_model_name_or_path, train_data_dir, reg_data_dir, output_name,
                       save_model_as,
                       save_every_n_epochs=2, trigger_words=[], reg_tokens=[], list_train_data_dir=[],
-                      list_reg_data_dir=[], num_repeats=[],
+                      list_reg_data_dir=[], num_repeats=[],reg_repeats=[],
                       batch_size=1, epoch=20,max_train_steps=800,
                       resolution="512", clip_skip=None,
                       learning_rate=0.0001,
@@ -516,6 +523,7 @@ def train_db_with_params(pretrained_model_name_or_path, train_data_dir, reg_data
                       enable_bucket=True,min_bucket_reso=384, max_bucket_reso=1280,
                       color_aug=True,flip_aug=True,gradient_checkpointing=True,
                       save_precision="bf16",
+                      prior_loss_weight=1.0,
                       otherargs=[]):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
@@ -528,6 +536,7 @@ def train_db_with_params(pretrained_model_name_or_path, train_data_dir, reg_data
         args.reg_data_dir = reg_data_dir
         args.reg_tokens = reg_tokens
         args.list_reg_data_dir = list_reg_data_dir
+        args.reg_repeats_times = reg_repeats
     args.output_name = output_name
     args.save_model_as = save_model_as
     args.trigger_words = trigger_words
@@ -548,6 +557,7 @@ def train_db_with_params(pretrained_model_name_or_path, train_data_dir, reg_data
     args.save_last_n_epochs = save_last_n_epochs
     args.lr_scheduler_num_cycles = lr_scheduler_num_cycles
     args.lr_scheduler = lr_scheduler
+    args.prior_loss_weight = prior_loss_weight
 
     #####建议默认设置
     args.enable_bucket = enable_bucket
@@ -572,22 +582,24 @@ if __name__ == "__main__":
 
     train_db_with_params(
         pretrained_model_name_or_path="/data/qll/stable-diffusion-webui/models/Stable-diffusion/chilloutmix_NiPrunedFp32Fix.safetensors",
-        train_data_dir="/data/qll/pics/minglan",
+        train_data_dir="/root/qll/pics/minglan",
         output_dir="/data/qll/stable-diffusion-webui/models/Lora/",
-        reg_data_dir="",
-        output_name="minglan-body-head-lycoris", save_model_as="safetensors",
-        trigger_words=["minglan", "minglan"], save_every_n_epochs=2,
-        reg_tokens=[""],
-        list_train_data_dir=["/data/qll/pics/minglan/head512x512", "/data/qll/pics/minglan/upperbody512x768"],
-        list_reg_data_dir=[""],
-        num_repeats=["1", "1"], batch_size=1, epoch=2, resolution="512,512", clip_skip=1,
+        reg_data_dir="/root/qll/pics/minglan",
+        output_name="minglan-db-reg", save_model_as="safetensors",
+        trigger_words=["minglan", "minglan"], save_every_n_epochs=3,
+        reg_tokens=["1girl"],
+        list_train_data_dir=["/root/qll/pics/minglan/head512x512", "/root/qll/pics/minglan/upperbody512x768"],
+        list_reg_data_dir=["/root/qll/pics/minglan/reg"],
+        num_repeats=["15", "30"], reg_repeats=["3"],
+        batch_size=1, epoch=10, resolution="512,768", clip_skip=1,
         learning_rate=1e-4,seed=42,
         lr_scheduler="cosine_with_restarts",lr_scheduler_num_cycles=1,
-        max_train_steps=800,
+        max_train_steps=8000,
         enable_bucket=True, min_bucket_reso=384, max_bucket_reso=1280,
         color_aug=True, flip_aug=True, gradient_checkpointing=True,
-        save_precision="bf16",
+        save_precision="bf16",prior_loss_weight=0.5,
         logging_dir="./logs",
+        otherargs=["--xformers"],
         )
 # if __name__ == "__main__":
 #     parser = setup_parser()
