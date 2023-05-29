@@ -22,4 +22,4 @@
 - [Custom Filename Name and Subdirectory](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Images-Filename-Name-and-Subdirectory)
 - [API](API)
 - [Tests](Tests)
-- [Tutorials](Tutorials)
+- [Guides and Tutorials](Guides-and-Tutorials)
