@@ -293,7 +293,7 @@ def check_torch():
                 log.info(f'{os.popen("icpx --version").read().rstrip()}')
                 log.info(f'Torch detected GPU: {torch.xpu.get_device_name("xpu")} VRAM {round(torch.xpu.get_device_properties("xpu").total_memory / 1024 / 1024)}')
             elif torch.cuda.is_available() and (allow_cuda or allow_rocm):
-                log.debug(f'Torch allocator: {torch.cuda.get_allocator_backend()}')
+                # log.debug(f'Torch allocator: {torch.cuda.get_allocator_backend()}')
                 if torch.version.cuda and allow_cuda:
                     log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else "N/A"}')
                 elif torch.version.hip and allow_rocm:
