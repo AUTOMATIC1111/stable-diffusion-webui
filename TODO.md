@@ -46,4 +46,5 @@ Tech that can be integrated as part of the core workflow...
 ## Random
 
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
+- <https://towardsdatascience.com/mastering-memoization-in-python-dcdd8b435189>
 - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...20ae71f>
