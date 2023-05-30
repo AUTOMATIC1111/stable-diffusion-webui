@@ -3,7 +3,7 @@ from modules import sd_samplers, shared
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images
 # from modules.shared import opts, sd_model, debug
-from modules.ui import plaintext_to_html
+from modules.ui import plaintext_to_html, infotext_to_html
 from modules.memstats import memory_stats
 
 
@@ -58,4 +58,4 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
     p.close()
     generation_info_js = processed.js()
     shared.log.debug(f'Processed: {len(processed.images)} Memory: {memory_stats()} txt')
-    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments)
+    return processed.images, generation_info_js, infotext_to_html(processed.info), plaintext_to_html(processed.comments)

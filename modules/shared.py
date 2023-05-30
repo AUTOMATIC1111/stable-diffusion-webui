@@ -4,10 +4,10 @@ import time
 import json
 import datetime
 import urllib.request
+from enum import Enum
 import gradio as gr
 import tqdm
 import requests
-# from ldm.models.diffusion.ddpm import LatentDiffusion
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.interrogate
@@ -70,6 +70,11 @@ ui_reorder_categories = [
     "override_settings",
     "scripts",
 ]
+
+
+class Backend(Enum):
+    ORIGINAL = 1
+    DIFFUSERS = 2
 
 
 def reload_hypernetworks():
@@ -444,7 +449,7 @@ options_templates.update(options_section(('ui', "Live previews"), {
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "notification_audio_enable": OptionInfo(False, "Play a sound when images are finished generating"),
-    "notification_audio_path": OptionInfo("html/notification.mp3","Path to notification sound",component_args=hide_dirs),
+    "notification_audio_path": OptionInfo("html/notification.mp3","Path to notification sound", component_args=hide_dirs),
     "show_progress_every_n_steps": OptionInfo(1, "Show new live preview image every N sampling steps. Set to -1 to show after completion of batch.", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_type": OptionInfo("Approx NN", "Image creation progress preview mode", gr.Radio, {"choices": ["Full", "Approx NN", "Approx cheap"]}),
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
@@ -634,6 +639,13 @@ opts = Options()
 config_filename = cmd_opts.config
 opts.load(config_filename)
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
+if cmd_opts.backend == 'diffusers':
+    log.info('Overriding backend to Diffusers')
+    opts.data['sd_backend'] = 'Diffusers'
+if cmd_opts.backend == 'original':
+    log.info('Overriding backend to Diffusers')
+    opts.data['sd_backend'] = 'Original'
+backend = Backend.DIFFUSERS if opts.sd_backend == 'Diffusers' else Backend.ORIGINAL
 
 prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_opts.server_name or False)) and not cmd_opts.insecure

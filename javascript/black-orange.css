@@ -81,12 +81,12 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #quicksettings > div, #quicksettings > fieldset { min-width: 24em; max-width: 26em; line-height: 2em; }
 #refresh_sd_model_checkpoint { height: 48px; margin-left: -14px; background: #333333; box-shadow: none; }
 #open_folder_extras, #footer, #style_pos_col, #style_neg_col, #roll_col, #extras_upscaler_2, #extras_upscaler_2_visibility, #txt2img_seed_resize_from_w, #txt2img_seed_resize_from_h { display: none; }
-#refresh_txt2img_styles, #refresh_img2img_styles { height: 40px; }
+#refresh_txt2img_styles, #refresh_img2img_styles { height: 45px; margin-left: -8px; }
 #save-animation { border-radius: 0 !important; margin-bottom: 16px; background-color: #111111; }
 #script_list { padding: 4px; margin-top: 20px; margin-bottom: 20px; }
 #settings > div.flex-wrap { width: 15em; }
 #tab_extensions table { background-color: #222222; }
-#txt2img_actions_column, #img2img_actions_column { min-width: 260px !important; max-width: 260px !important; }
+#txt2img_actions_column, #img2img_actions_column { min-width: 280px !important; max-width: 280px !important; gap: 0.6em }
 #txt2img_cfg_scale { min-width: 200px; }
 #txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
 #txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }
@@ -102,7 +102,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_subseed_row { padding: 0; margin-top: 16px; }
 #txt2img_subseed_show, #img2img_subseed_show { display: None }
 #txt2img_subseed_strength { margin-top: 0; }
-#txt2img_tools, #img2img_tools { margin-top: 54px; scale: 120%; margin-left: 26px; }
+#txt2img_tools, #img2img_tools { margin-top: 54px; scale: 120%; margin-left: 40px; filter: hue-rotate(180deg) saturate(0.5); }
 #txtimg_hr_finalres { max-width: 200px; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
 #txt2img_extra_refresh, #txt2img_extra_close { height: 1.7em; }

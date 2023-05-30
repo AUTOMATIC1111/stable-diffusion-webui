@@ -48,8 +48,8 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
         outpath = output_dir
     else:
         outpath = opts.outdir_samples or opts.outdir_extras_samples
-    infotext = ''
     for image, name, ext in zip(image_data, image_names, image_ext):
+        infotext = ''
         if shared.state.interrupted:
             shared.log.debug('Postprocess interrupted')
             break
@@ -62,10 +62,12 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
             basename = os.path.splitext(os.path.basename(name))[0]
         else:
             basename = ''
-        infotext = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in pp.info.items() if v is not None])
         _geninfo, items = images.read_info_from_image(image)
         for k, v in items.items():
             pp.image.info[k] = v
+        if 'parameters' in items:
+            infotext = items['parameters'] + ', '
+        infotext = infotext + ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in pp.info.items() if v is not None])
         pp.image.info["postprocessing"] = infotext
         if save_output:
             images.save_image(pp.image, path=outpath, basename=basename, seed=None, prompt=None, extension=ext or opts.samples_format, info=infotext, short_filename=True, no_prompt=True, grid=False, pnginfo_section_name="extras", existing_info=pp.image.info, forced_filename=None)
@@ -73,7 +75,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
             outputs.append(pp.image)
 
     devices.torch_gc()
-    return outputs, ui_common.plaintext_to_html(infotext), ''
+    return outputs, ui_common.infotext_to_html(infotext), pp.image.info
 
 
 def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, save_output: bool = True): #pylint: disable=unused-argument

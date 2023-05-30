@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 import modules.errors as errors
 
@@ -7,9 +6,8 @@ import modules.errors as errors
 localizations = {}
 
 
-def list_localizations(dirname):
+def list_localizations(dirname): # pylint: disable=unused-argument
     localizations.clear()
-    return localizations
     """
     for file in os.listdir(dirname):
         fn, ext = os.path.splitext(file)
@@ -23,6 +21,8 @@ def list_localizations(dirname):
         fn, ext = os.path.splitext(file.filename)
         localizations[fn] = file.path
     """
+    return localizations
+
 
 def localization_js(current_localization_name):
     fn = localizations.get(current_localization_name, None)

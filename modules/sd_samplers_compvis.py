@@ -40,7 +40,7 @@ class VanillaStableDiffusionSampler:
 
         self.conditioning_key = sd_model.model.conditioning_key
 
-    def number_of_needed_noises(self, p):
+    def number_of_needed_noises(self, p): # pylint: disable=unused-argument
         return 0
 
     def launch_sampling(self, steps, func):
@@ -97,7 +97,10 @@ class VanillaStableDiffusionSampler:
             unconditional_conditioning = unconditional_conditioning[:, :cond.shape[1]]
 
         if self.mask is not None:
-            img_orig = self.sampler.model.q_sample(self.init_latent, ts)
+            if shared.cmd_opts.use_ipex:
+                img_orig = self.sampler.model.q_sample(self.init_latent, ts.type(torch.int64))
+            else:
+                img_orig = self.sampler.model.q_sample(self.init_latent, ts)
             x = img_orig * self.mask + self.nmask * x
 
         # Wrap the image conditioning back up since the DDIM code can accept the dict directly.
@@ -125,7 +128,7 @@ class VanillaStableDiffusionSampler:
             self.update_step(res[1])
         return x, ts, cond, uncond, res
 
-    def unipc_after_update(self, x, model_x):
+    def unipc_after_update(self, x, model_x): # pylint: disable=unused-argument
         self.update_step(x)
 
     def initialize(self, p):

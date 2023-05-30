@@ -13,7 +13,7 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_grad
 from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing
 from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML # pylint: disable=unused-import
 from modules.paths import script_path, data_path
-from modules.shared import opts, cmd_opts
+from modules.shared import opts, cmd_opts, backend, Backend
 from modules import prompt_parser
 import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -50,17 +50,21 @@ sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
 # Important that they exactly match script.js for tooltip to work.
 random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
-paste_symbol = '\u2199\ufe0f'  # ↙
-refresh_symbol = '\U0001f504'  # 🔄
-save_style_symbol = '\U0001f4be'  # 💾
-apply_style_symbol = '\U0001f4cb'  # 📋
-clear_prompt_symbol = '\U0001f5d1\ufe0f'  # 🗑️
-extra_networks_symbol = '\U0001F3B4'  # 🎴
+paste_symbol = '\U0001F4D8' # '\u2199\ufe0f'  # ↙
+refresh_symbol = '\U0001F504' # 🔄
+save_style_symbol = '\U0001F6C5' # '\U0001f4be'  # 💾
+apply_style_symbol = '\U0001F9F3' # '\U0001f4cb'  # 📋
+clear_prompt_symbol = '\U0001F6AE' # '\U0001f5d1\ufe0f'  # 🗑️
+extra_networks_symbol = '\U0001F310' # '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 
 
 def plaintext_to_html(text):
     return ui_common.plaintext_to_html(text)
+
+
+def infotext_to_html(text):
+    return ui_common.infotext_to_html(text)
 
 
 def send_gradio_gallery_to_image(x):
@@ -204,7 +208,7 @@ def update_token_counter(text, steps):
         prompt_schedules = [[[steps, text]]]
     flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
     prompts = [prompt_text for step, prompt_text in flat_prompts]
-    if opts.sd_backend == 'Original':
+    if backend == Backend.ORIGINAL:
         token_count, max_length = max([sd_hijack.model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
     else:
         tokenizer = modules.shared.sd_model.tokenizer
@@ -1323,9 +1327,10 @@ def create_ui():
             unload_sd_model = gr.Button(value='Unload checkpoint', variant='primary', elem_id="sett_unload_sd_model")
             reload_sd_model = gr.Button(value='Reload checkpoint', variant='primary', elem_id="sett_reload_sd_model")
             # reload_script_bodies = gr.Button(value='Reload scripts', variant='primary', elem_id="settings_reload_script_bodies")
+        with gr.Row():
+            _settings_search = gr.Text(label="Search", elem_id="settings_search")
 
         result = gr.HTML(elem_id="settings_result")
-
         quicksettings_names = opts.quicksettings_list
         quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
         quicksettings_list = []

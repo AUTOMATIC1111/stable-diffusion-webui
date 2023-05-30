@@ -13,9 +13,8 @@ loaded_gfpgan_model = None
 
 def gfpgann():
     import facexlib
-    import gfpgan
-    global loaded_gfpgan_model
-    global model_path
+    import gfpgan # pylint: disable=unused-import
+    global loaded_gfpgan_model # pylint: disable=global-statement
     if loaded_gfpgan_model is not None:
         loaded_gfpgan_model.gfpgan.to(devices.device_gfpgan)
         return loaded_gfpgan_model
@@ -54,7 +53,7 @@ def gfpgan_fix_faces(np_image):
     send_model_to(model, devices.device_gfpgan)
 
     np_image_bgr = np_image[:, :, ::-1]
-    cropped_faces, restored_faces, gfpgan_output_bgr = model.enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
+    _cropped_faces, _restored_faces, gfpgan_output_bgr = model.enhance(np_image_bgr, has_aligned=False, only_center_face=False, paste_back=True)
     np_image = gfpgan_output_bgr[:, :, ::-1]
 
     model.face_helper.clean_all()
@@ -69,7 +68,6 @@ gfpgan_constructor = None
 
 
 def setup_model(dirname):
-    global model_path
     if not os.path.exists(model_path):
         os.makedirs(model_path)
 
@@ -77,9 +75,9 @@ def setup_model(dirname):
         import gfpgan
         import facexlib
 
-        global user_path
-        global have_gfpgan
-        global gfpgan_constructor
+        global user_path # pylint: disable=global-statement
+        global have_gfpgan # pylint: disable=global-statement
+        global gfpgan_constructor # pylint: disable=global-statement
 
         load_file_from_url_orig = gfpgan.utils.load_file_from_url
         facex_load_file_from_url_orig = facexlib.detection.load_file_from_url

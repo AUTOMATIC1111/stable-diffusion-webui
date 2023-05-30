@@ -13,7 +13,7 @@ from typing import List
 import lark
 import torch
 from compel import Compel
-from modules.shared import log, opts
+from modules.shared import opts
 
 # a prompt like this: "fantasy landscape with a [mountain:lake:0.25] and [an oak:a christmas tree:0.75][ in foreground::0.6][ in background:0.25] [shoddy:masterful:0.5]"
 # will be represented with prompt_schedule like this (assuming steps=100):

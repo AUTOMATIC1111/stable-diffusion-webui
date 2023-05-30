@@ -1,5 +1,12 @@
 # Change Log for SD.Next
 
+## Update for 05/28/2023
+
+- settings search option
+- fully common save/zip/delete (new) options in all tabs
+- system info live gpu memory and load graphs for nvidia gpus
+- minor style changes
+
 ## Update for 05/26/2023
 
 Some quality-of-life improvements...

@@ -48,3 +48,4 @@ Tech that can be integrated as part of the core workflow...
 ## Random
 
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
+- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...20ae71f>

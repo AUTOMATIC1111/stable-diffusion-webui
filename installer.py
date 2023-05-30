@@ -258,7 +258,7 @@ def check_torch():
     elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo') or os.path.exists('/dev/kfd')):
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
-        os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.9,max_split_size_mb:512')
+        os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision==0.15.1 --index-url https://download.pytorch.org/whl/rocm5.4.2')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     elif allow_ipex and args.use_ipex and shutil.which('sycl-ls') is not None:
@@ -289,9 +289,11 @@ def check_torch():
             log.info(f'Torch {torch.__version__}')
             if args.use_ipex and allow_ipex:
                 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-                log.info(f'Torch backend: Intel OneAPI {torch.__version__}')
+                log.info(f'Torch backend: Intel IPEX {ipex.__version__}')
+                log.info(f'{os.popen("icpx --version").read().rstrip()}')
                 log.info(f'Torch detected GPU: {torch.xpu.get_device_name("xpu")} VRAM {round(torch.xpu.get_device_properties("xpu").total_memory / 1024 / 1024)}')
             elif torch.cuda.is_available() and (allow_cuda or allow_rocm):
+                # log.debug(f'Torch allocator: {torch.cuda.get_allocator_backend()}')
                 if torch.version.cuda and allow_cuda:
                     log.info(f'Torch backend: nVidia CUDA {torch.version.cuda} cuDNN {torch.backends.cudnn.version() if torch.backends.cudnn.is_available() else "N/A"}')
                 elif torch.version.hip and allow_rocm:
@@ -521,7 +523,7 @@ def set_environment():
     os.environ.setdefault('ACCELERATE', 'True')
     os.environ.setdefault('FORCE_CUDA', '1')
     os.environ.setdefault('ATTN_PRECISION', 'fp16')
-    os.environ.setdefault('PYTORCH_CUDA_ALLOC_CONF', 'garbage_collection_threshold:0.9,max_split_size_mb:512')
+    os.environ.setdefault('PYTORCH_CUDA_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
     os.environ.setdefault('CUDA_LAUNCH_BLOCKING', '0')
     os.environ.setdefault('CUDA_CACHE_DISABLE', '0')
     os.environ.setdefault('CUDA_AUTO_BOOST', '1')
@@ -703,7 +705,7 @@ def extensions_preload(force = False):
             from modules.paths_internal import extensions_builtin_dir, extensions_dir
             extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
             for ext_dir in extension_folders:
-                preload_extensions(ext_dir, parser, args.debug)
+                preload_extensions(ext_dir, parser)
         except:
             log.error('Error running extension preloading')
     if args.profile:

@@ -207,7 +207,7 @@ class EmbeddingDatabase:
                     continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
-        if shared.opts.sd_backend == 'Diffusers': # TODO Diffusers
+        if shared.backend == shared.Backend.DIFFUSERS: # TODO Diffusers
             return
         if not force_reload:
             need_reload = False

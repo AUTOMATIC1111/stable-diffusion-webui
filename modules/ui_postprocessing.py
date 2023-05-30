@@ -3,13 +3,18 @@ from modules import scripts_postprocessing, scripts, shared, gfpgan_model, codef
 import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call # pylint: disable=unused-import
 from modules.extras import run_pnginfo
+from modules.ui_common import infotext_to_html
+
+
+def wrap_pnginfo(image):
+    _, geninfo, info = run_pnginfo(image)
+    return '', infotext_to_html(geninfo), info, geninfo
 
 
 def submit_click(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs):
-    result_images, html_info_x, html_info = postprocessing.run_postprocessing(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs)
-    if result_images is not None and len(result_images) > 0:
-        _html_info, _generation_info, html_info_x = run_pnginfo(result_images[0])
-    return result_images, html_info_x, html_info
+
+    result_images, geninfo, _js_info = postprocessing.run_postprocessing(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs)
+    return result_images, geninfo, '{}', ''
 
 
 def create_ui():
@@ -37,32 +42,21 @@ def create_ui():
                 skip = gr.Button('Skip', elem_id=f"{id_part}_skip", variant='secondary')
                 skip.click(fn=lambda: shared.state.skip(), inputs=[], outputs=[])
                 interrupt.click(fn=lambda: shared.state.interrupt(), inputs=[], outputs=[])
-            result_images, html_info_x, html_info, _html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
-            html_info = gr.HTML(elem_id="pnginfo_html_info")
-            generation_info = gr.Textbox(elem_id="pnginfo_generation_info", label="Parameters", visible=False)
-            generation_info_pretty = gr.Textbox(elem_id="pnginfo_generation_info_pretty", label="Parameters")
-            gr.HTML('Full metadata')
-            html2_info = gr.HTML(elem_id="pnginfo_html2_info")
+            result_images, generation_info, html_info, html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
+            gr.HTML('File metadata')
+            exif_info = gr.HTML(elem_id="pnginfo_html_info")
+            gen_info = gr.Text(elem_id="pnginfo_gen_info", visible=False)
         for tabname, button in buttons.items():
-            parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(paste_button=button, tabname=tabname, source_text_component=generation_info, source_image_component=extras_image))
-
-    def pretty_geninfo(generation_info: str):
-        if generation_info is None:
-            return ''
-        sections = generation_info.split('Steps:')
-        if len(sections) > 1:
-            param = sections[0].strip() + '\nSteps:' + sections[1].strip().replace(', ', '\n')
-            return param
-        return generation_info
+            parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(paste_button=button, tabname=tabname, source_text_component=gen_info, source_image_component=extras_image))
 
     tab_single.select(fn=lambda: 0, inputs=[], outputs=[tab_index])
     tab_batch.select(fn=lambda: 1, inputs=[], outputs=[tab_index])
     tab_batch_dir.select(fn=lambda: 2, inputs=[], outputs=[tab_index])
-    generation_info.change(fn=pretty_geninfo, inputs=[generation_info], outputs=[generation_info_pretty])
+    _dummy = gr.HTML(visible=False)
     extras_image.change(
-        fn=wrap_gradio_call(run_pnginfo),
+        fn=wrap_gradio_call(wrap_pnginfo),
         inputs=[extras_image],
-        outputs=[html_info, generation_info, html2_info],
+        outputs=[_dummy, html_info, exif_info, gen_info],
     )
     submit.click(
         fn=call_queue.wrap_gradio_gpu_call(submit_click, extra_outputs=[None, '']),
@@ -73,12 +67,13 @@ def create_ui():
             extras_batch_input_dir,
             extras_batch_output_dir,
             show_extras_results,
-            *script_inputs
+            *script_inputs,
         ],
         outputs=[
             result_images,
-            html_info_x,
             html_info,
+            generation_info,
+            html_log,
         ]
     )
 

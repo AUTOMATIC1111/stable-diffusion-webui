@@ -350,7 +350,9 @@ def create_override_settings_dict(text_pairs):
 
 
 def connect_paste(button, local_paste_fields, input_comp, override_settings_component, tabname):
+
     def paste_func(prompt):
+        shared.log.debug(f'paste prompt: {prompt}')
         if prompt is not None and 'Negative prompt' not in prompt and 'Steps' not in prompt:
             prompt = None
         if not prompt and not shared.cmd_opts.hide_ui_dir_config:

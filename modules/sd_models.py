@@ -28,14 +28,14 @@ checkpoints_loaded = collections.OrderedDict()
 skip_next_load = False
 
 
-class CheckpointInfo: # TODO Diffusers
+class CheckpointInfo:
     def __init__(self, filename):
         name = ''
         self.name = None
         self.hash = None
         self.filename = filename
         abspath = os.path.abspath(filename)
-        if shared.opts.sd_backend == 'Original':
+        if shared.backend == shared.Backend.ORIGINAL:
             if shared.opts.ckpt_dir is not None and abspath.startswith(shared.opts.ckpt_dir):
                 name = abspath.replace(shared.opts.ckpt_dir, '')
             elif abspath.startswith(model_path):
@@ -48,7 +48,6 @@ class CheckpointInfo: # TODO Diffusers
             self.hash = model_hash(self.filename)
             self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
         else: # TODO Diffusers
-            # sd_model.unet.config._name_or_path.split("/")[-2]
             repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
             if len(repo) == 0:
                 shared.log.error(f'Cannot find diffuser model: {filename}')
@@ -105,7 +104,7 @@ def checkpoint_tiles():
 def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
-    if shared.opts.sd_backend == 'Original':
+    if shared.backend == shared.Backend.ORIGINAL:
         model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     else:
         model_list = modelloader.load_diffusers(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
@@ -114,7 +113,7 @@ def list_models():
         if checkpoint_info.name is not None:
             checkpoint_info.register()
     if shared.cmd_opts.ckpt is not None:
-        if not os.path.exists(shared.cmd_opts.ckpt) and shared.opts.sd_backend == 'Original':
+        if not os.path.exists(shared.cmd_opts.ckpt) and shared.backend == shared.Backend.ORIGINAL:
             if shared.cmd_opts.ckpt.lower() != "none":
                 shared.log.warning(f"Requested checkpoint not found: {shared.cmd_opts.ckpt}")
         else:
@@ -228,7 +227,7 @@ def read_metadata_from_safetensors(filename):
 
 
 def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unused-argument
-    if shared.opts.sd_backend == 'Diffusers':
+    if shared.backend == shared.Backend.DIFFUSERS:
         return None
     try:
         pl_sd = None
@@ -377,9 +376,9 @@ class SdModelData:
         if self.sd_model is None:
             with self.lock:
                 try:
-                    if shared.opts.sd_backend == 'Original':
+                    if shared.backend == shared.Backend.ORIGINAL:
                         load_model()
-                    elif shared.opts.sd_backend == 'Diffusers':
+                    elif shared.backend == shared.Backend.DIFFUSERS:
                         load_diffuser()
                     else:
                         shared.log.error(f"Unknown Stable Diffusion backend: {shared.opts.sd_backend}")
@@ -430,6 +429,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             shared.log.info(f'Loading diffuser model: {checkpoint_info.filename}')
             scheduler = diffusers.UniPCMultistepScheduler.from_pretrained(checkpoint_info.filename, subfolder="scheduler")
             sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.filename, scheduler=scheduler, **diffusor_config)
+        if shared.cmd_opts.medvram:
+            sd_model.enable_model_cpu_offload()
+        if shared.cmd_opts.lowvram:
+            sd_model.enable_sequential_cpu_offload()
+        if shared.opts.cross_attention_optimization == "xFormers":
+            sd_model.enable_xformers_memory_efficient_attention()
         sd_model.sd_checkpoint_info = checkpoint_info
         sd_model.sd_model_checkpoint = checkpoint_info.filename
         sd_model.sd_model_hash = checkpoint_info.hash
@@ -540,7 +545,7 @@ def reload_model_weights(sd_model=None, info=None):
             sd_model.to(devices.cpu)
     if shared.opts.model_reuse_dict and sd_model is not None:
         shared.log.info('Reusing previous model dictionary')
-        sd_hijack.model_hijack.undo_hijack(sd_model) # TODO double undo hijack
+        sd_hijack.model_hijack.undo_hijack(sd_model)
     else:
         unload_model_weights()
         sd_model = None
@@ -551,7 +556,7 @@ def reload_model_weights(sd_model=None, info=None):
     if sd_model is None or checkpoint_config != sd_model.used_config:
         del sd_model
         checkpoints_loaded.clear()
-        if shared.opts.sd_backend == 'Original':
+        if shared.backend == shared.Backend.ORIGINAL:
             load_model(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer)
         else:
             load_diffuser(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer)
@@ -576,7 +581,7 @@ def unload_model_weights(sd_model=None, _info=None):
     from modules import sd_hijack
     if model_data.sd_model:
         model_data.sd_model.to(devices.cpu)
-        if shared.opts.sd_backend == 'Original':
+        if shared.backend == shared.Backend.ORIGINAL:
             sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
         model_data.sd_model = None
         sd_model = None

@@ -32,7 +32,7 @@ class VAEApprox(nn.Module):
 
 
 def model():
-    global sd_vae_approx_model
+    global sd_vae_approx_model # pylint: disable=global-statement
 
     if sd_vae_approx_model is None:
         model_path = os.path.join(paths.models_path, "VAE-approx", "model.pt")
