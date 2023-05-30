@@ -1,13 +1,12 @@
 import os
 import sys
+import threading
 import traceback
 
-import time
-from datetime import datetime
 import git
 
 from modules import shared
-from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path
+from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
 extensions = []
 
@@ -25,6 +24,8 @@ def active():
 
 
 class Extension:
+    lock = threading.Lock()
+
     def __init__(self, name, path, enabled=True, is_builtin=False):
         self.name = name
         self.path = path
@@ -43,8 +44,13 @@ class Extension:
         if self.is_builtin or self.have_info_from_repo:
             return
 
-        self.have_info_from_repo = True
+        with self.lock:
+            if self.have_info_from_repo:
+                return
 
+            self.do_read_info_from_repo()
+
+    def do_read_info_from_repo(self):
         repo = None
         try:
             if os.path.exists(os.path.join(self.path, ".git")):
@@ -59,17 +65,18 @@ class Extension:
             try:
                 self.status = 'unknown'
                 self.remote = next(repo.remote().urls, None)
-                head = repo.head.commit
-                self.commit_date = repo.head.commit.committed_date
-                ts = time.asctime(time.gmtime(self.commit_date))
+                commit = repo.head.commit
+                self.commit_date = commit.committed_date
                 if repo.active_branch:
                     self.branch = repo.active_branch.name
-                self.commit_hash = head.hexsha
-                self.version = f'{self.commit_hash[:8]} ({ts})'
+                self.commit_hash = commit.hexsha
+                self.version = self.commit_hash[:8]
 
             except Exception as ex:
                 print(f"Failed reading extension data from Git repository ({self.name}): {ex}", file=sys.stderr)
                 self.remote = None
+
+        self.have_info_from_repo = True
 
     def list_files(self, subdir, extension):
         from modules import scripts
