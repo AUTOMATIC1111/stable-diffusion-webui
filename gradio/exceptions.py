@@ -1,4 +1,4 @@
-from gradio.documentation import document, set_documentation_group
+from gradio_client.documentation import document, set_documentation_group
 
 set_documentation_group("helpers")
 
@@ -15,8 +15,11 @@ class TooManyRequestsError(Exception):
     pass
 
 
-class InvalidApiName(ValueError):
+class InvalidApiNameError(ValueError):
     pass
+
+
+InvalidApiName = InvalidApiNameError  # backwards compatibility
 
 
 @document()

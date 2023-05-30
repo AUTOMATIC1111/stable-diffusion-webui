@@ -2,8 +2,6 @@ import json
 
 import math
 import os
-import sys
-import traceback
 
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
@@ -15,7 +13,6 @@ from modules.shared import opts, state
 import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
-import modules.images as images
 import modules.scripts
 
 
@@ -50,7 +47,8 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
 
         try:
             img = Image.open(image)
-        except UnidentifiedImageError:
+        except UnidentifiedImageError as e:
+            print(e)
             continue
         # Use the EXIF orientation of photos taken by smartphones.
         img = ImageOps.exif_transpose(img)
@@ -60,7 +58,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
             # try to find corresponding mask for an image using simple filename matching
             mask_image_path = os.path.join(inpaint_mask_dir, os.path.basename(image))
             # if not found use first one ("same mask for all images" use-case)
-            if not mask_image_path in inpaint_masks:
+            if mask_image_path not in inpaint_masks:
                 mask_image_path = inpaint_masks[0]
             mask_image = Image.open(mask_image_path)
             p.image_mask = mask_image
@@ -102,15 +100,12 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     elif mode == 3:  # inpaint sketch
         image = inpaint_color_sketch
         orig = inpaint_color_sketch_orig or inpaint_color_sketch
-
         pred = np.any(np.array(image) != np.array(orig), axis=-1)
         mask = Image.fromarray(pred.astype(np.uint8) * 255, "L")
         mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
         blur = ImageFilter.GaussianBlur(mask_blur)
         image = Image.composite(image.filter(blur), orig, mask.filter(blur))
         image = image.convert("RGB")
-        # plt_show(image, 'image')
-        # plt_show(mask, 'mask')
     elif mode == 4:  # inpaint upload mask
         image = init_img_inpaint
         mask = init_mask_inpaint

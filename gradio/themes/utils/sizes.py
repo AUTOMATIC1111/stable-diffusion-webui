@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+
 class Size:
     all = []
 
@@ -13,6 +16,9 @@ class Size:
         self.xxl = xxl
         self.name = name
         Size.all.append(self)
+
+    def expand(self) -> list[str]:
+        return [self.xxs, self.xs, self.sm, self.md, self.lg, self.xl, self.xxl]
 
 
 radius_none = Size(

@@ -4,7 +4,7 @@ from PIL import Image, ImageFilter, ImageOps
 def get_crop_region(mask, pad=0):
     """finds a rectangular region that contains all masked ares in an image. Returns (x1, y1, x2, y2) coordinates of the rectangle.
     For example, if a user has painted the top-right part of a 512x512 image", the result may be (256, 0, 512, 256)"""
-    
+
     h, w = mask.shape
 
     crop_left = 0

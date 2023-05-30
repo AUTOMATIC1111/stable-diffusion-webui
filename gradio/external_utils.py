@@ -1,20 +1,16 @@
 """Utility function for gradio/external.py"""
 
 import base64
-import json
 import math
 import operator
 import re
 import warnings
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 import requests
-import websockets
 import yaml
-from packaging import version
-from websockets.legacy.protocol import WebSocketCommonProtocol
 
-from gradio import components, exceptions
+from gradio import components
 
 ##################
 # Helper functions for processing tabular data
@@ -103,59 +99,18 @@ def encode_to_base64(r: requests.Response) -> str:
         # Case 2: the data prefix is a key in the response
         if content_type == "application/json":
             try:
-                content_type = r.json()[0]["content-type"]
-                base64_repr = r.json()[0]["blob"]
-            except KeyError:
+                data = r.json()[0]
+                content_type = data["content-type"]
+                base64_repr = data["blob"]
+            except KeyError as ke:
                 raise ValueError(
-                    "Cannot determine content type returned" "by external API."
-                )
+                    "Cannot determine content type returned by external API."
+                ) from ke
         # Case 3: the data prefix is included in the response headers
         else:
             pass
-        new_base64 = "data:{};base64,".format(content_type) + base64_repr
+        new_base64 = f"data:{content_type};base64,{base64_repr}"
         return new_base64
-
-
-##################
-# Helper functions for connecting to websockets
-##################
-
-
-async def get_pred_from_ws(
-    websocket: WebSocketCommonProtocol, data: str, hash_data: str
-) -> Dict[str, Any]:
-    completed = False
-    resp = {}
-    while not completed:
-        msg = await websocket.recv()
-        resp = json.loads(msg)
-        if resp["msg"] == "queue_full":
-            raise exceptions.Error("Queue is full! Please try again.")
-        if resp["msg"] == "send_hash":
-            await websocket.send(hash_data)
-        elif resp["msg"] == "send_data":
-            await websocket.send(data)
-        completed = resp["msg"] == "process_completed"
-    return resp["output"]
-
-
-def get_ws_fn(ws_url, headers):
-    async def ws_fn(data, hash_data):
-        async with websockets.connect(  # type: ignore
-            ws_url, open_timeout=10, extra_headers=headers
-        ) as websocket:
-            return await get_pred_from_ws(websocket, data, hash_data)
-
-    return ws_fn
-
-
-def use_websocket(config, dependency):
-    queue_enabled = config.get("enable_queue", False)
-    queue_uses_websocket = version.parse(
-        config.get("version", "2.0")
-    ) >= version.Version("3.2")
-    dependency_uses_queue = dependency.get("queue", False) is not False
-    return queue_enabled and queue_uses_websocket and dependency_uses_queue
 
 
 ##################

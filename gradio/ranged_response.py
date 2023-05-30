@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import re
 import stat
-from typing import Dict, NamedTuple
+from typing import NamedTuple
 from urllib.parse import quote
 
 import aiofiles
@@ -36,7 +36,7 @@ class OpenRange(NamedTuple):
 
     def clamp(self, start: int, end: int) -> ClosedRange:
         begin = max(self.start, start)
-        end = min((x for x in (self.end, end) if x))
+        end = min(x for x in (self.end, end) if x)
 
         begin = min(begin, end)
         end = max(begin, end)
@@ -51,7 +51,7 @@ class RangedFileResponse(Response):
         self,
         path: str | os.PathLike,
         range: OpenRange,
-        headers: Dict[str, str] | None = None,
+        headers: dict[str, str] | None = None,
         media_type: str | None = None,
         filename: str | None = None,
         stat_result: os.stat_result | None = None,
@@ -93,8 +93,10 @@ class RangedFileResponse(Response):
             try:
                 stat_result = await aio_stat(self.path)
                 self.stat_result = stat_result
-            except FileNotFoundError:
-                raise RuntimeError(f"File at path {self.path} does not exist.")
+            except FileNotFoundError as fnfe:
+                raise RuntimeError(
+                    f"File at path {self.path} does not exist."
+                ) from fnfe
             else:
                 mode = stat_result.st_mode
                 if not stat.S_ISREG(mode):

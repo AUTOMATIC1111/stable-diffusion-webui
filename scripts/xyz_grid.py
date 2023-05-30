@@ -10,15 +10,13 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, paths, sd_samplers, processing, sd_models, sd_vae
+from modules import images, sd_samplers, processing, sd_models, sd_vae
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
-from modules.shared import opts, cmd_opts, state
+from modules.shared import opts, state
 import modules.shared as shared
 import modules.sd_samplers
 import modules.sd_models
 import modules.sd_vae
-import glob
-import os
 import re
 
 from modules.ui_components import ToolButton
@@ -86,7 +84,7 @@ def apply_checkpoint(p, x, xs):
     info = modules.sd_models.get_closet_checkpoint_match(x)
     if info is None:
         raise RuntimeError(f"Unknown checkpoint: {x}")
-    p.override_settings['sd_model_checkpoint'] = info.hash
+    p.override_settings['sd_model_checkpoint'] = info.name
 
 
 def confirm_checkpoints(p, xs):
@@ -145,6 +143,11 @@ def apply_face_restore(p, opt, x):
 
     p.restore_faces = is_active
 
+
+def apply_override(field):
+    def fun(p, x, xs):
+        p.override_settings[field] = x
+    return fun
 
 def format_value_add_label(p, opt, x):
     if type(x) == float:
@@ -222,10 +225,12 @@ axis_options = [
     AxisOption("Denoising", float, apply_field("denoising_strength")),
     AxisOptionTxt2Img("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
     AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
-    AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: list(sd_vae.vae_dict)),
+    AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: ['None'] + list(sd_vae.vae_dict)),
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
     AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
+    AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
+    AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
 ]
 
 
@@ -316,7 +321,7 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         return Processed(p, [])
 
     z_count = len(zs)
-    sub_grids = [None] * z_count
+
     for i in range(z_count):
         start_index = (i * len(xs) * len(ys)) + i
         end_index = start_index + len(xs) * len(ys)
@@ -346,7 +351,7 @@ class SharedSettingsStackHelper(object):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.vae = opts.sd_vae
         self.uni_pc_order = opts.uni_pc_order
-  
+
     def __exit__(self, exc_type, exc_value, tb):
         opts.data["sd_vae"] = self.vae
         opts.data["uni_pc_order"] = self.uni_pc_order
@@ -399,7 +404,7 @@ class Script(scripts.Script):
                 include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
             with gr.Column():
                 margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
-        
+
         with gr.Row(variant="compact", elem_id="swap_axes"):
             swap_xy_axes_button = gr.Button(value="Swap X/Y axes", elem_id="xy_grid_swap_axes_button")
             swap_yz_axes_button = gr.Button(value="Swap Y/Z axes", elem_id="yz_grid_swap_axes_button")
@@ -439,7 +444,7 @@ class Script(scripts.Script):
         z_type.change(fn=select_axis, inputs=[z_type,z_values_dropdown], outputs=[fill_z_button,z_values,z_values_dropdown])
 
         def get_dropdown_update_from_params(axis,params):
-            val_key = axis + " Values"
+            val_key = f"{axis} Values"
             vals = params.get(val_key,"")
             valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
             return gr.update(value = valslist)
@@ -490,7 +495,7 @@ class Script(scripts.Script):
                         start = int(mc.group(1))
                         end   = int(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+
                         valslist_ext += [int(x) for x in np.linspace(start=start, stop=end, num=num).tolist()]
                     else:
                         valslist_ext.append(val)
@@ -512,7 +517,7 @@ class Script(scripts.Script):
                         start = float(mc.group(1))
                         end   = float(mc.group(2))
                         num   = int(mc.group(3)) if mc.group(3) is not None else 1
-                        
+
                         valslist_ext += np.linspace(start=start, stop=end, num=num).tolist()
                     else:
                         valslist_ext.append(val)
@@ -706,7 +711,7 @@ class Script(scripts.Script):
 
         if not include_sub_grids:
             # Done with sub-grids, drop all related information:
-            for sg in range(z_count):
+            for _ in range(z_count):
                 del processed.images[1]
                 del processed.all_prompts[1]
                 del processed.all_seeds[1]

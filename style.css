@@ -1,3 +1,6 @@
+/* temporary fix to load default gradio font in frontend instead of backend */
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap');
 
 /* general gradio fixes */
 
@@ -125,6 +128,10 @@ div.gradio-html.min{
     text-decoration: none;
 }
 
+a{
+    font-weight: bold;
+    cursor: pointer;
+}
 
 
 /* general styled components */
@@ -246,7 +253,7 @@ button.custom-button{
     }
 }
 
-#txt2img_gallery img, #img2img_gallery img{
+#txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
     object-fit: scale-down;
 }
 #txt2img_actions_column, #img2img_actions_column {
@@ -302,6 +309,11 @@ button.custom-button{
     font-weight: bold;
 }
 
+#txtimg_hr_finalres div.pending, #img2img_scale_resolution_preview div.pending {
+    opacity: 1;
+    transition: opacity 0s;
+}
+
 .inactive{
     opacity: 0.5;
 }
@@ -313,18 +325,12 @@ button.custom-button{
 div.dimensions-tools{
     min-width: 0 !important;
     max-width: fit-content;
-    flex-direction: row;
-    align-content: center;
+    flex-direction: column;
+    place-content: center;
 }
 
 div#extras_scale_to_tab div.form{
     flex-direction: row;
-}
-
-#mode_img2img .gradio-image > div.fixed-height, #mode_img2img .gradio-image > div.fixed-height img{
-    height: 480px !important;
-    max-height: 480px !important;
-    min-height: 480px !important;
 }
 
 #img2img_sketch, #img2maskimg, #inpaint_sketch {
@@ -397,6 +403,42 @@ div#extras_scale_to_tab div.form{
     margin: 0 1.2em;
 }
 
+table.settings-value-table{
+    background: white;
+    border-collapse: collapse;
+    margin: 1em;
+    border: 4px solid white;
+}
+
+table.settings-value-table td{
+    padding: 0.4em;
+    border: 1px solid #ccc;
+    max-width: 36em;
+}
+
+.ui-defaults-none{
+    color: #aaa !important;
+}
+
+#settings span{
+    color: var(--body-text-color);
+}
+
+#settings .gradio-textbox, #settings .gradio-slider, #settings .gradio-number, #settings .gradio-dropdown, #settings .gradio-checkboxgroup, #settings .gradio-radio{
+    margin-top: 0.75em;
+}
+
+#settings span .settings-comment {
+    display: inline
+}
+
+.settings-comment a{
+    text-decoration: underline;
+}
+
+.settings-comment .info{
+    opacity: 0.75;
+}
 
 /* live preview */
 .progressDiv{
@@ -534,6 +576,8 @@ div#extras_scale_to_tab div.form{
 #lightboxModal > img.modalImageFullscreen{
     object-fit: contain;
     height: 100%;
+    width: 100%;
+    min-height: 0;
 }
 
 .modalPrev,
@@ -712,12 +756,21 @@ footer {
 .extra-network-cards .card .metadata-button, .extra-network-thumbs .card .metadata-button{
     display: none;
     position: absolute;
-    right: 0;
     color: white;
+    right: 0;
+}
+.extra-network-cards .card .metadata-button {
     text-shadow: 2px 2px 3px black;
     padding: 0.25em;
     font-size: 22pt;
     width: 1.5em;
+}
+.extra-network-thumbs .card .metadata-button {
+    text-shadow: 1px 1px 2px black;
+    padding: 0;
+    font-size: 16pt;
+    width: 1em;
+    top: -0.25em;
 }
 .extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{
     display: inline-block;
@@ -741,6 +794,13 @@ footer {
     background-size: cover;
     background-position: center center;
     position: relative;
+}
+
+.extra-network-thumbs .card .preview{
+    position: absolute;
+    object-fit: cover;
+    width: 100%;
+    height:100%;
 }
 
 .extra-network-thumbs .card:hover .additional a {
@@ -856,4 +916,11 @@ footer {
 
 .extra-network-cards .card ul a:hover{
     color: red;
+}
+
+.extra-network-cards .card .preview{
+    position: absolute;
+    object-fit: cover;
+    width: 100%;
+    height:100%;
 }

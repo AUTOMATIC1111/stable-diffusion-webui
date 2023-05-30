@@ -43,6 +43,7 @@ class Default(Base):
             font=font,
             font_mono=font_mono,
         )
+        self.name = "default"
         super().set(
             # Colors
             input_background_fill_dark="*neutral_800",

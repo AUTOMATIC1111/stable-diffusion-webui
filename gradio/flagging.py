@@ -6,67 +6,26 @@ import json
 import os
 import time
 import uuid
+import warnings
 from abc import ABC, abstractmethod
+from collections import OrderedDict
 from distutils.version import StrictVersion
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List
+from typing import TYPE_CHECKING, Any
 
+import filelock
+import huggingface_hub
 import pkg_resources
+from gradio_client import utils as client_utils
+from gradio_client.documentation import document, set_documentation_group
 
 import gradio as gr
 from gradio import utils
-from gradio.documentation import document, set_documentation_group
 
 if TYPE_CHECKING:
     from gradio.components import IOComponent
 
 set_documentation_group("flagging")
-
-
-def _get_dataset_features_info(is_new, components):
-    """
-    Takes in a list of components and returns a dataset features info
-
-    Parameters:
-    is_new: boolean, whether the dataset is new or not
-    components: list of components
-
-    Returns:
-    infos: a dictionary of the dataset features
-    file_preview_types: dictionary mapping of gradio components to appropriate string.
-    header: list of header strings
-
-    """
-    infos = {"flagged": {"features": {}}}
-    # File previews for certain input and output types
-    file_preview_types = {gr.Audio: "Audio", gr.Image: "Image"}
-    headers = []
-
-    # Generate the headers and dataset_infos
-    if is_new:
-
-        for component in components:
-            headers.append(component.label)
-            infos["flagged"]["features"][component.label] = {
-                "dtype": "string",
-                "_type": "Value",
-            }
-            if isinstance(component, tuple(file_preview_types)):
-                headers.append(component.label + " file")
-                for _component, _type in file_preview_types.items():
-                    if isinstance(component, _component):
-                        infos["flagged"]["features"][
-                            (component.label or "") + " file"
-                        ] = {"_type": _type}
-                        break
-
-        headers.append("flag")
-        infos["flagged"]["features"]["flag"] = {
-            "dtype": "string",
-            "_type": "Value",
-        }
-
-    return infos, file_preview_types, headers
 
 
 class FlaggingCallback(ABC):
@@ -75,7 +34,7 @@ class FlaggingCallback(ABC):
     """
 
     @abstractmethod
-    def setup(self, components: List[IOComponent], flagging_dir: str):
+    def setup(self, components: list[IOComponent], flagging_dir: str):
         """
         This method should be overridden and ensure that everything is set up correctly for flag().
         This method gets called once at the beginning of the Interface.launch() method.
@@ -88,7 +47,7 @@ class FlaggingCallback(ABC):
     @abstractmethod
     def flag(
         self,
-        flag_data: List[Any],
+        flag_data: list[Any],
         flag_option: str = "",
         username: str | None = None,
     ) -> int:
@@ -123,14 +82,14 @@ class SimpleCSVLogger(FlaggingCallback):
     def __init__(self):
         pass
 
-    def setup(self, components: List[IOComponent], flagging_dir: str | Path):
+    def setup(self, components: list[IOComponent], flagging_dir: str | Path):
         self.components = components
         self.flagging_dir = flagging_dir
         os.makedirs(flagging_dir, exist_ok=True)
 
     def flag(
         self,
-        flag_data: List[Any],
+        flag_data: list[Any],
         flag_option: str = "",
         username: str | None = None,
     ) -> int:
@@ -139,9 +98,9 @@ class SimpleCSVLogger(FlaggingCallback):
 
         csv_data = []
         for component, sample in zip(self.components, flag_data):
-            save_dir = Path(flagging_dir) / utils.strip_invalid_filename_characters(
-                component.label or ""
-            )
+            save_dir = Path(
+                flagging_dir
+            ) / client_utils.strip_invalid_filename_characters(component.label or "")
             csv_data.append(
                 component.deserialize(
                     sample,
@@ -154,8 +113,8 @@ class SimpleCSVLogger(FlaggingCallback):
             writer = csv.writer(csvfile)
             writer.writerow(utils.sanitize_list_for_csv(csv_data))
 
-        with open(log_filepath, "r") as csvfile:
-            line_count = len([None for row in csv.reader(csvfile)]) - 1
+        with open(log_filepath) as csvfile:
+            line_count = len(list(csv.reader(csvfile))) - 1
         return line_count
 
 
@@ -170,7 +129,7 @@ class CSVLogger(FlaggingCallback):
             return {'cat': 0.3, 'dog': 0.7}
         demo = gr.Interface(fn=image_classifier, inputs="image", outputs="label",
                             flagging_callback=CSVLogger())
-    Guides: using_flagging
+    Guides: using-flagging
     """
 
     def __init__(self):
@@ -178,7 +137,7 @@ class CSVLogger(FlaggingCallback):
 
     def setup(
         self,
-        components: List[IOComponent],
+        components: list[IOComponent],
         flagging_dir: str | Path,
     ):
         self.components = components
@@ -187,7 +146,7 @@ class CSVLogger(FlaggingCallback):
 
     def flag(
         self,
-        flag_data: List[Any],
+        flag_data: list[Any],
         flag_option: str = "",
         username: str | None = None,
     ) -> int:
@@ -205,7 +164,9 @@ class CSVLogger(FlaggingCallback):
 
         csv_data = []
         for idx, (component, sample) in enumerate(zip(self.components, flag_data)):
-            save_dir = Path(flagging_dir) / utils.strip_invalid_filename_characters(
+            save_dir = Path(
+                flagging_dir
+            ) / client_utils.strip_invalid_filename_characters(
                 getattr(component, "label", None) or f"component {idx}"
             )
             if utils.is_update(sample):
@@ -226,16 +187,16 @@ class CSVLogger(FlaggingCallback):
                 writer.writerow(utils.sanitize_list_for_csv(headers))
             writer.writerow(utils.sanitize_list_for_csv(csv_data))
 
-        with open(log_filepath, "r", encoding="utf-8") as csvfile:
-            line_count = len([None for row in csv.reader(csvfile)]) - 1
+        with open(log_filepath, encoding="utf-8") as csvfile:
+            line_count = len(list(csv.reader(csvfile))) - 1
         return line_count
 
 
 @document()
 class HuggingFaceDatasetSaver(FlaggingCallback):
     """
-    A callback that saves each flagged sample (both the input and output data)
-    to a HuggingFace dataset.
+    A callback that saves each flagged sample (both the input and output data) to a HuggingFace dataset.
+
     Example:
         import gradio as gr
         hf_writer = gr.HuggingFaceDatasetSaver(HF_API_TOKEN, "image-classification-mistakes")
@@ -243,7 +204,7 @@ class HuggingFaceDatasetSaver(FlaggingCallback):
             return {'cat': 0.3, 'dog': 0.7}
         demo = gr.Interface(fn=image_classifier, inputs="image", outputs="label",
                             allow_flagging="manual", flagging_callback=hf_writer)
-    Guides: using_flagging
+    Guides: using-flagging
     """
 
     def __init__(
@@ -252,272 +213,272 @@ class HuggingFaceDatasetSaver(FlaggingCallback):
         dataset_name: str,
         organization: str | None = None,
         private: bool = False,
+        info_filename: str = "dataset_info.json",
+        separate_dirs: bool = False,
+        verbose: bool = True,  # silently ignored. TODO: remove it?
     ):
         """
         Parameters:
-            hf_token: The HuggingFace token to use to create (and write the flagged sample to) the HuggingFace dataset.
-            dataset_name: The name of the dataset to save the data to, e.g. "image-classifier-1"
-            organization: The organization to save the dataset under. The hf_token must provide write access to this organization. If not provided, saved under the name of the user corresponding to the hf_token.
+            hf_token: The HuggingFace token to use to create (and write the flagged sample to) the HuggingFace dataset (defaults to the registered one).
+            dataset_name: The repo_id of the dataset to save the data to, e.g. "image-classifier-1" or "username/image-classifier-1".
+            organization: Deprecated argument. Please pass a full dataset id (e.g. 'username/dataset_name') to `dataset_name` instead.
             private: Whether the dataset should be private (defaults to False).
+            info_filename: The name of the file to save the dataset info (defaults to "dataset_infos.json").
+            separate_dirs: If True, each flagged item will be saved in a separate directory. This makes the flagging more robust to concurrent editing, but may be less convenient to use.
         """
+        if organization is not None:
+            warnings.warn(
+                "Parameter `organization` is not used anymore. Please pass a full dataset id (e.g. 'username/dataset_name') to `dataset_name` instead."
+            )
         self.hf_token = hf_token
-        self.dataset_name = dataset_name
-        self.organization_name = organization
+        self.dataset_id = dataset_name  # TODO: rename parameter (but ensure backward compatibility somehow)
         self.dataset_private = private
+        self.info_filename = info_filename
+        self.separate_dirs = separate_dirs
 
-    def setup(self, components: List[IOComponent], flagging_dir: str):
+    def setup(self, components: list[IOComponent], flagging_dir: str):
         """
         Params:
         flagging_dir (str): local directory where the dataset is cloned,
         updated, and pushed from.
         """
-        try:
-            import huggingface_hub
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "Package `huggingface_hub` not found is needed "
-                "for HuggingFaceDatasetSaver. Try 'pip install huggingface_hub'."
-            )
         hh_version = pkg_resources.get_distribution("huggingface_hub").version
         try:
-            if StrictVersion(hh_version) < StrictVersion("0.6.0"):
+            if StrictVersion(hh_version) < StrictVersion("0.12.0"):
                 raise ImportError(
-                    "The `huggingface_hub` package must be version 0.6.0 or higher"
+                    "The `huggingface_hub` package must be version 0.12.0 or higher"
                     "for HuggingFaceDatasetSaver. Try 'pip install huggingface_hub --upgrade'."
                 )
         except ValueError:
             pass
-        repo_id = huggingface_hub.get_full_repo_name(
-            self.dataset_name, token=self.hf_token
-        )
-        path_to_dataset_repo = huggingface_hub.create_repo(
-            repo_id=repo_id,
+
+        # Setup dataset on the Hub
+        self.dataset_id = huggingface_hub.create_repo(
+            repo_id=self.dataset_id,
             token=self.hf_token,
             private=self.dataset_private,
             repo_type="dataset",
             exist_ok=True,
-        )
-        self.path_to_dataset_repo = path_to_dataset_repo  # e.g. "https://huggingface.co/datasets/abidlabs/test-audio-10"
-        self.components = components
-        self.flagging_dir = flagging_dir
-        self.dataset_dir = Path(flagging_dir) / self.dataset_name
-        self.repo = huggingface_hub.Repository(
-            local_dir=str(self.dataset_dir),
-            clone_from=path_to_dataset_repo,
-            use_auth_token=self.hf_token,
-        )
-        self.repo.git_pull(lfs=True)
+        ).repo_id
 
-        # Should filename be user-specified?
-        self.log_file = Path(self.dataset_dir) / "data.csv"
-        self.infos_file = Path(self.dataset_dir) / "dataset_infos.json"
+        # Setup flagging dir
+        self.components = components
+        self.dataset_dir = (
+            Path(flagging_dir).absolute() / self.dataset_id.split("/")[-1]
+        )
+        self.dataset_dir.mkdir(parents=True, exist_ok=True)
+        self.infos_file = self.dataset_dir / self.info_filename
+
+        # Download remote files to local
+        remote_files = [self.info_filename]
+        if not self.separate_dirs:
+            # No separate dirs => means all data is in the same CSV file => download it to get its current content
+            remote_files.append("data.csv")
+
+        for filename in remote_files:
+            try:
+                huggingface_hub.hf_hub_download(
+                    repo_id=self.dataset_id,
+                    repo_type="dataset",
+                    filename=filename,
+                    local_dir=self.dataset_dir,
+                    token=self.hf_token,
+                )
+            except huggingface_hub.utils.EntryNotFoundError:
+                pass
 
     def flag(
         self,
-        flag_data: List[Any],
+        flag_data: list[Any],
         flag_option: str = "",
         username: str | None = None,
     ) -> int:
-        self.repo.git_pull(lfs=True)
+        if self.separate_dirs:
+            # JSONL files to support dataset preview on the Hub
+            unique_id = str(uuid.uuid4())
+            components_dir = self.dataset_dir / str(uuid.uuid4())
+            data_file = components_dir / "metadata.jsonl"
+            path_in_repo = unique_id  # upload in sub folder (safer for concurrency)
+        else:
+            # Unique CSV file
+            components_dir = self.dataset_dir
+            data_file = components_dir / "data.csv"
+            path_in_repo = None  # upload at root level
 
-        is_new = not Path(self.log_file).exists()
+        return self._flag_in_dir(
+            data_file=data_file,
+            components_dir=components_dir,
+            path_in_repo=path_in_repo,
+            flag_data=flag_data,
+            flag_option=flag_option,
+            username=username or "",
+        )
 
-        with open(self.log_file, "a", newline="", encoding="utf-8") as csvfile:
-            writer = csv.writer(csvfile)
+    def _flag_in_dir(
+        self,
+        data_file: Path,
+        components_dir: Path,
+        path_in_repo: str | None,
+        flag_data: list[Any],
+        flag_option: str = "",
+        username: str = "",
+    ) -> int:
+        # Deserialize components (write images/audio to files)
+        features, row = self._deserialize_components(
+            components_dir, flag_data, flag_option, username
+        )
 
-            # File previews for certain input and output types
-            infos, file_preview_types, headers = _get_dataset_features_info(
-                is_new, self.components
+        # Write generic info to dataset_infos.json + upload
+        with filelock.FileLock(str(self.infos_file) + ".lock"):
+            if not self.infos_file.exists():
+                self.infos_file.write_text(
+                    json.dumps({"flagged": {"features": features}})
+                )
+
+                huggingface_hub.upload_file(
+                    repo_id=self.dataset_id,
+                    repo_type="dataset",
+                    token=self.hf_token,
+                    path_in_repo=self.infos_file.name,
+                    path_or_fileobj=self.infos_file,
+                )
+
+        headers = list(features.keys())
+
+        if not self.separate_dirs:
+            with filelock.FileLock(components_dir / ".lock"):
+                sample_nb = self._save_as_csv(data_file, headers=headers, row=row)
+                sample_name = str(sample_nb)
+                huggingface_hub.upload_folder(
+                    repo_id=self.dataset_id,
+                    repo_type="dataset",
+                    commit_message=f"Flagged sample #{sample_name}",
+                    path_in_repo=path_in_repo,
+                    ignore_patterns="*.lock",
+                    folder_path=components_dir,
+                    token=self.hf_token,
+                )
+        else:
+            sample_name = self._save_as_jsonl(data_file, headers=headers, row=row)
+            sample_nb = len(
+                [path for path in self.dataset_dir.iterdir() if path.is_dir()]
+            )
+            huggingface_hub.upload_folder(
+                repo_id=self.dataset_id,
+                repo_type="dataset",
+                commit_message=f"Flagged sample #{sample_name}",
+                path_in_repo=path_in_repo,
+                ignore_patterns="*.lock",
+                folder_path=components_dir,
+                token=self.hf_token,
             )
 
-            # Generate the headers and dataset_infos
+        return sample_nb
+
+    @staticmethod
+    def _save_as_csv(data_file: Path, headers: list[str], row: list[Any]) -> int:
+        """Save data as CSV and return the sample name (row number)."""
+        is_new = not data_file.exists()
+
+        with data_file.open("a", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+
+            # Write CSV headers if new file
             if is_new:
                 writer.writerow(utils.sanitize_list_for_csv(headers))
 
-            # Generate the row corresponding to the flagged sample
-            csv_data = []
-            for component, sample in zip(self.components, flag_data):
-                save_dir = Path(
-                    self.dataset_dir
-                ) / utils.strip_invalid_filename_characters(component.label or "")
-                filepath = component.deserialize(sample, save_dir, None)
-                csv_data.append(filepath)
-                if isinstance(component, tuple(file_preview_types)):
-                    csv_data.append(
-                        "{}/resolve/main/{}".format(self.path_to_dataset_repo, filepath)
+            # Write CSV row for flagged sample
+            writer.writerow(utils.sanitize_list_for_csv(row))
+
+        with data_file.open(encoding="utf-8") as csvfile:
+            return sum(1 for _ in csv.reader(csvfile)) - 1
+
+    @staticmethod
+    def _save_as_jsonl(data_file: Path, headers: list[str], row: list[Any]) -> str:
+        """Save data as JSONL and return the sample name (uuid)."""
+        Path.mkdir(data_file.parent, parents=True, exist_ok=True)
+        with open(data_file, "w") as f:
+            json.dump(dict(zip(headers, row)), f)
+        return data_file.parent.name
+
+    def _deserialize_components(
+        self,
+        data_dir: Path,
+        flag_data: list[Any],
+        flag_option: str = "",
+        username: str = "",
+    ) -> tuple[dict[Any, Any], list[Any]]:
+        """Deserialize components and return the corresponding row for the flagged sample.
+
+        Images/audio are saved to disk as individual files.
+        """
+        # Components that can have a preview on dataset repos
+        file_preview_types = {gr.Audio: "Audio", gr.Image: "Image"}
+
+        # Generate the row corresponding to the flagged sample
+        features = OrderedDict()
+        row = []
+        for component, sample in zip(self.components, flag_data):
+            # Get deserialized object (will save sample to disk if applicable -file, audio, image,...-)
+            label = component.label or ""
+            save_dir = data_dir / client_utils.strip_invalid_filename_characters(label)
+            deserialized = component.deserialize(sample, save_dir, None)
+
+            # Add deserialized object to row
+            features[label] = {"dtype": "string", "_type": "Value"}
+            try:
+                assert Path(deserialized).exists()
+                row.append(Path(deserialized).name)
+            except (AssertionError, TypeError, ValueError):
+                row.append(str(deserialized))
+
+            # If component is eligible for a preview, add the URL of the file
+            if isinstance(component, tuple(file_preview_types)):  # type: ignore
+                for _component, _type in file_preview_types.items():
+                    if isinstance(component, _component):
+                        features[label + " file"] = {"_type": _type}
+                        break
+                path_in_repo = str(  # returned filepath is absolute, we want it relative to compute URL
+                    Path(deserialized).relative_to(self.dataset_dir)
+                ).replace(
+                    "\\", "/"
+                )
+                row.append(
+                    huggingface_hub.hf_hub_url(
+                        repo_id=self.dataset_id,
+                        filename=path_in_repo,
+                        repo_type="dataset",
                     )
-            csv_data.append(flag_option)
-            writer.writerow(utils.sanitize_list_for_csv(csv_data))
-
-        if is_new:
-            json.dump(infos, open(self.infos_file, "w"))
-
-        with open(self.log_file, "r", encoding="utf-8") as csvfile:
-            line_count = len([None for row in csv.reader(csvfile)]) - 1
-
-        self.repo.push_to_hub(commit_message="Flagged sample #{}".format(line_count))
-
-        return line_count
+                )
+        features["flag"] = {"dtype": "string", "_type": "Value"}
+        features["username"] = {"dtype": "string", "_type": "Value"}
+        row.append(flag_option)
+        row.append(username)
+        return features, row
 
 
-class HuggingFaceDatasetJSONSaver(FlaggingCallback):
-    """
-    A FlaggingCallback that saves flagged data to a Hugging Face dataset in JSONL format.
-
-    Each data sample is saved in a different JSONL file,
-    allowing multiple users to use flagging simultaneously.
-    Saving to a single CSV would cause errors as only one user can edit at the same time.
-
-    """
-
+class HuggingFaceDatasetJSONSaver(HuggingFaceDatasetSaver):
     def __init__(
         self,
         hf_token: str,
         dataset_name: str,
         organization: str | None = None,
         private: bool = False,
-        verbose: bool = True,
+        info_filename: str = "dataset_info.json",
+        verbose: bool = True,  # silently ignored. TODO: remove it?
     ):
-        """
-        Params:
-        hf_token (str): The token to use to access the huggingface API.
-        dataset_name (str): The name of the dataset to save the data to, e.g.
-            "image-classifier-1"
-        organization (str): The name of the organization to which to attach
-            the datasets. If None, the dataset attaches to the user only.
-        private (bool): If the dataset does not already exist, whether it
-            should be created as a private dataset or public. Private datasets
-            may require paid huggingface.co accounts
-        verbose (bool): Whether to print out the status of the dataset
-            creation.
-        """
-        self.hf_token = hf_token
-        self.dataset_name = dataset_name
-        self.organization_name = organization
-        self.dataset_private = private
-        self.verbose = verbose
-
-    def setup(self, components: List[IOComponent], flagging_dir: str):
-        """
-        Params:
-        components List[Component]: list of components for flagging
-        flagging_dir (str): local directory where the dataset is cloned,
-        updated, and pushed from.
-        """
-        try:
-            import huggingface_hub
-        except (ImportError, ModuleNotFoundError):
-            raise ImportError(
-                "Package `huggingface_hub` not found is needed "
-                "for HuggingFaceDatasetJSONSaver. Try 'pip install huggingface_hub'."
-            )
-        hh_version = pkg_resources.get_distribution("huggingface_hub").version
-        try:
-            if StrictVersion(hh_version) < StrictVersion("0.6.0"):
-                raise ImportError(
-                    "The `huggingface_hub` package must be version 0.6.0 or higher"
-                    "for HuggingFaceDatasetSaver. Try 'pip install huggingface_hub --upgrade'."
-                )
-        except ValueError:
-            pass
-        repo_id = huggingface_hub.get_full_repo_name(
-            self.dataset_name, token=self.hf_token
+        warnings.warn(
+            "Callback `HuggingFaceDatasetJSONSaver` is deprecated in favor of using"
+            " `HuggingFaceDatasetSaver` and passing `separate_dirs=True` as parameter."
         )
-        path_to_dataset_repo = huggingface_hub.create_repo(
-            repo_id=repo_id,
-            token=self.hf_token,
-            private=self.dataset_private,
-            repo_type="dataset",
-            exist_ok=True,
+        super().__init__(
+            hf_token=hf_token,
+            dataset_name=dataset_name,
+            organization=organization,
+            private=private,
+            info_filename=info_filename,
+            separate_dirs=True,
         )
-        self.path_to_dataset_repo = path_to_dataset_repo  # e.g. "https://huggingface.co/datasets/abidlabs/test-audio-10"
-        self.components = components
-        self.flagging_dir = flagging_dir
-        self.dataset_dir = Path(flagging_dir) / self.dataset_name
-        self.repo = huggingface_hub.Repository(
-            local_dir=str(self.dataset_dir),
-            clone_from=path_to_dataset_repo,
-            use_auth_token=self.hf_token,
-        )
-        self.repo.git_pull(lfs=True)
-
-        self.infos_file = Path(self.dataset_dir) / "dataset_infos.json"
-
-    def flag(
-        self,
-        flag_data: List[Any],
-        flag_option: str = "",
-        username: str | None = None,
-    ) -> str:
-        self.repo.git_pull(lfs=True)
-
-        # Generate unique folder for the flagged sample
-        unique_name = self.get_unique_name()  # unique name for folder
-        folder_name = (
-            Path(self.dataset_dir) / unique_name
-        )  # unique folder for specific example
-        os.makedirs(folder_name)
-
-        # Now uses the existence of `dataset_infos.json` to determine if new
-        is_new = not Path(self.infos_file).exists()
-
-        # File previews for certain input and output types
-        infos, file_preview_types, _ = _get_dataset_features_info(
-            is_new, self.components
-        )
-
-        # Generate the row and header corresponding to the flagged sample
-        csv_data = []
-        headers = []
-
-        for component, sample in zip(self.components, flag_data):
-            headers.append(component.label)
-
-            try:
-                save_dir = Path(folder_name) / utils.strip_invalid_filename_characters(
-                    component.label or ""
-                )
-                filepath = component.deserialize(sample, save_dir, None)
-            except Exception:
-                # Could not parse 'sample' (mostly) because it was None and `component.save_flagged`
-                # does not handle None cases.
-                # for example: Label (line 3109 of components.py raises an error if data is None)
-                filepath = None
-
-            if isinstance(component, tuple(file_preview_types)):
-                headers.append(component.label or "" + " file")
-
-                csv_data.append(
-                    "{}/resolve/main/{}/{}".format(
-                        self.path_to_dataset_repo, unique_name, filepath
-                    )
-                    if filepath is not None
-                    else None
-                )
-
-            csv_data.append(filepath)
-        headers.append("flag")
-        csv_data.append(flag_option)
-
-        # Creates metadata dict from row data and dumps it
-        metadata_dict = {
-            header: _csv_data for header, _csv_data in zip(headers, csv_data)
-        }
-        self.dump_json(metadata_dict, Path(folder_name) / "metadata.jsonl")
-
-        if is_new:
-            json.dump(infos, open(self.infos_file, "w"))
-
-        self.repo.push_to_hub(commit_message="Flagged sample {}".format(unique_name))
-        return unique_name
-
-    def get_unique_name(self):
-        id = uuid.uuid4()
-        return str(id)
-
-    def dump_json(self, thing: dict, file_path: str | Path) -> None:
-        with open(file_path, "w+", encoding="utf8") as f:
-            json.dump(thing, f)
 
 
 class FlagMethod:
@@ -539,11 +500,13 @@ class FlagMethod:
         self.__name__ = "Flag"
         self.visual_feedback = visual_feedback
 
-    def __call__(self, *flag_data):
+    def __call__(self, request: gr.Request, *flag_data):
         try:
-            self.flagging_callback.flag(list(flag_data), flag_option=self.value)
+            self.flagging_callback.flag(
+                list(flag_data), flag_option=self.value, username=request.username
+            )
         except Exception as e:
-            print("Error while flagging: {}".format(e))
+            print(f"Error while flagging: {e}")
             if self.visual_feedback:
                 return "Error!"
         if not self.visual_feedback:

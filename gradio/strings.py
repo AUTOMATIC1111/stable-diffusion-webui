@@ -1,4 +1,5 @@
 import json
+import os
 import threading
 from typing import Dict
 
@@ -45,4 +46,5 @@ def get_updated_messaging(en: Dict):
         pass
 
 
-threading.Thread(target=get_updated_messaging, args=(en,)).start()
+if os.getenv("GRADIO_ANALYTICS_ENABLED", "True") == "True":
+    threading.Thread(target=get_updated_messaging, args=(en,)).start()

@@ -2,16 +2,16 @@
 
 let lastHeadImg = null;
 
-notificationButton = null
+let notificationButton = null;
 
-onUiUpdate(function(){
-    if(notificationButton == null){
-        notificationButton = gradioApp().getElementById('request_notifications')
+onUiUpdate(function() {
+    if (notificationButton == null) {
+        notificationButton = gradioApp().getElementById('request_notifications');
 
-        if(notificationButton != null){
-            notificationButton.addEventListener('click', function (evt) {
-                Notification.requestPermission();
-            },true);
+        if (notificationButton != null) {
+            notificationButton.addEventListener('click', () => {
+                void Notification.requestPermission();
+            }, true);
         }
     }
 
@@ -42,7 +42,7 @@ onUiUpdate(function(){
         }
     );
 
-    notification.onclick = function(_){
+    notification.onclick = function(_) {
         parent.focus();
         this.close();
     };

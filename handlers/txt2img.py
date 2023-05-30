@@ -8,9 +8,9 @@
 import os.path
 import time
 import typing
+import modules.scripts
 import modules.shared as shared
 from enum import IntEnum
-from modules.scripts import scripts_txt2img
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images, Processed
@@ -63,10 +63,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
-        if not scripts_txt2img:
-            scripts_txt2img.initialize_scripts(False)
 
-        t2i_script_runner = scripts_txt2img
+        t2i_script_runner = modules.scripts.scripts_txt2img
         selectable_scripts, selectable_script_idx = get_selectable_script(t2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_txt2img, alwayson_scripts, selectable_scripts,
                                        selectable_script_idx, select_script_args, t2i_script_runner)
@@ -103,7 +101,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             outpath_grids=f"output/{user_id}/txt2img/grids/",
         )
 
-        self.scripts = scripts_txt2img
+        self.scripts = modules.scripts.scripts_txt2img
         self.script_args = script_args
         self.script_name = select_script_name
         self.base_model_path = base_model_path
@@ -157,11 +155,16 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         self.task_type = TaskType.Txt2Image
 
     def _load_default_script_args(self):
-        self.default_script_args = init_default_script_args(scripts_txt2img)
+        self.default_script_args = init_default_script_args(modules.scripts.scripts_txt2img)
         self._default_script_args_load_t = time.time()
 
     def _build_txt2img_arg(self, task: Task) -> Txt2ImgTask:
-        return Txt2ImgTask.from_task(task, self.default_script_args)
+        self._refresh_default_script_args()
+        t = Txt2ImgTask.from_task(task, self.default_script_args)
+        progress = TaskProgress.new_running(task, "generate image...", 0)
+        t.progress_callback = lambda x: self._update_running_progress(progress, x)
+
+        return t
 
     def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
         base_model_path = self._get_local_checkpoint(task)

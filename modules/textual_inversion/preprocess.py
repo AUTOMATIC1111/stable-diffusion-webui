@@ -1,13 +1,10 @@
 import os
 from PIL import Image, ImageOps
 import math
-import platform
-import sys
 import tqdm
 import time
 from enum import Enum
 from modules import paths, shared, images, deepbooru
-from modules.shared import opts, cmd_opts
 from modules.textual_inversion import autocrop
 
 
@@ -210,7 +207,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         params.src = filename
 
         existing_caption = None
-        existing_caption_filename = os.path.splitext(filename)[0] + '.txt'
+        existing_caption_filename = f"{os.path.splitext(filename)[0]}.txt"
         if os.path.exists(existing_caption_filename):
             with open(existing_caption_filename, 'r', encoding="utf8") as file:
                 existing_caption = file.read()

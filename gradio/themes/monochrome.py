@@ -43,6 +43,7 @@ class Monochrome(Base):
             font=font,
             font_mono=font_mono,
         )
+        self.name = "monochrome"
         super().set(
             # Colors
             slider_color="*neutral_900",

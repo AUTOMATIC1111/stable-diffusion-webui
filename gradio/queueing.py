@@ -6,7 +6,7 @@ import sys
 import time
 from asyncio import TimeoutError as AsyncTimeOutError
 from collections import deque
-from typing import Any, Deque, Dict, List, Tuple
+from typing import Any, Deque
 
 import fastapi
 import httpx
@@ -44,14 +44,14 @@ class Queue:
         concurrency_count: int,
         update_intervals: float,
         max_size: int | None,
-        blocks_dependencies: List,
+        blocks_dependencies: list,
     ):
         self.event_queue: Deque[Event] = deque()
         self.events_pending_reconnection = []
         self.stopped = False
         self.max_thread_count = concurrency_count
         self.update_intervals = update_intervals
-        self.active_jobs: List[None | List[Event]] = [None] * concurrency_count
+        self.active_jobs: list[None | list[Event]] = [None] * concurrency_count
         self.delete_lock = asyncio.Lock()
         self.server_path = None
         self.duration_history_total = 0
@@ -67,9 +67,9 @@ class Queue:
         self.access_token = ""
         self.queue_client = None
 
-    async def start(self, progress_tracking=False):
+    async def start(self, progress_tracking=False, ssl_verify=True):
         # So that the client is attached to the running event loop
-        self.queue_client = httpx.AsyncClient()
+        self.queue_client = httpx.AsyncClient(verify=ssl_verify)
 
         run_coro_in_background(self.start_processing)
         if progress_tracking:
@@ -96,7 +96,7 @@ class Queue:
                 count += 1
         return count
 
-    def get_events_in_batch(self) -> Tuple[List[Event] | None, bool]:
+    def get_events_in_batch(self) -> tuple[list[Event] | None, bool]:
         if not (self.event_queue):
             return None, False
 
@@ -122,7 +122,7 @@ class Queue:
                 await asyncio.sleep(self.sleep_when_free)
                 continue
 
-            if not (None in self.active_jobs):
+            if None not in self.active_jobs:
                 await asyncio.sleep(self.sleep_when_free)
                 continue
             # Using mutex to avoid editing a list in use
@@ -158,7 +158,7 @@ class Queue:
     def set_progress(
         self,
         event_id: str,
-        iterables: List[TrackedIterable] | None,
+        iterables: list[TrackedIterable] | None,
     ):
         if iterables is None:
             return
@@ -167,7 +167,7 @@ class Queue:
                 continue
             for evt in job:
                 if evt._id == event_id:
-                    progress_data: List[ProgressUnit] = []
+                    progress_data: list[ProgressUnit] = []
                     for iterable in iterables:
                         progress_unit = ProgressUnit(
                             index=iterable.index,
@@ -209,9 +209,9 @@ class Queue:
     async def gather_event_data(self, event: Event, receive_timeout=60) -> bool:
         """
         Gather data for the event
-
         Parameters:
-            event:
+            event: the Event to gather data for
+            receive_timeout: how long to wait for data to be received from frontend
         """
         if not event.data:
             client_awake = await self.send_message(event, {"msg": "send_data"})
@@ -303,16 +303,16 @@ class Queue:
             queue_eta=self.queue_duration,
         )
 
-    def get_request_params(self, websocket: fastapi.WebSocket) -> Dict[str, Any]:
+    def get_request_params(self, websocket: fastapi.WebSocket) -> dict[str, Any]:
         return {
             "url": str(websocket.url),
             "headers": dict(websocket.headers),
             "query_params": dict(websocket.query_params),
             "path_params": dict(websocket.path_params),
-            "client": dict(host=websocket.client.host, port=websocket.client.port),  # type: ignore
+            "client": {"host": websocket.client.host, "port": websocket.client.port},  # type: ignore
         }
 
-    async def call_prediction(self, events: List[Event], batch: bool):
+    async def call_prediction(self, events: list[Event], batch: bool):
         data = events[0].data
         assert data is not None, "No event data"
         token = events[0].token
@@ -340,8 +340,8 @@ class Queue:
         )
         return response
 
-    async def process_events(self, events: List[Event], batch: bool) -> None:
-        awake_events: List[Event] = []
+    async def process_events(self, events: list[Event], batch: bool) -> None:
+        awake_events: list[Event] = []
         try:
             for event in events:
                 client_awake = await self.gather_event_data(event)
@@ -430,7 +430,7 @@ class Queue:
                 except Exception:
                     pass
             self.active_jobs[self.active_jobs.index(events)] = None
-            for event in awake_events:
+            for event in events:
                 await self.clean_event(event)
                 # Always reset the state of the iterator
                 # If the job finished successfully, this has no effect
@@ -438,17 +438,17 @@ class Queue:
                 # to start "from scratch"
                 await self.reset_iterators(event.session_hash, event.fn_index)
 
-    async def send_message(self, event, data: Dict, timeout: float | int = 1) -> bool:
+    async def send_message(self, event, data: dict, timeout: float | int = 1) -> bool:
         try:
             await asyncio.wait_for(
                 event.websocket.send_json(data=data), timeout=timeout
             )
             return True
-        except:
+        except Exception:
             await self.clean_event(event)
             return False
 
-    async def get_message(self, event, timeout=5) -> Tuple[PredictBody | None, bool]:
+    async def get_message(self, event, timeout=5) -> tuple[PredictBody | None, bool]:
         try:
             data = await asyncio.wait_for(
                 event.websocket.receive_json(), timeout=timeout

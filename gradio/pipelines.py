@@ -3,7 +3,7 @@ please use the `gr.Interface.from_pipeline()` function."""
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from gradio import components
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:  # Only import for type checking (is False at runtime).
     from transformers import pipelines
 
 
-def load_from_pipeline(pipeline: pipelines.base.Pipeline) -> Dict:
+def load_from_pipeline(pipeline: pipelines.base.Pipeline) -> dict:
     """
     Gets the appropriate Interface kwargs for a given Hugging Face transformers.Pipeline.
     pipeline (transformers.Pipeline): the transformers.Pipeline from which to create an interface
@@ -21,10 +21,10 @@ def load_from_pipeline(pipeline: pipelines.base.Pipeline) -> Dict:
     try:
         import transformers
         from transformers import pipelines
-    except ImportError:
+    except ImportError as ie:
         raise ImportError(
             "transformers not installed. Please try `pip install transformers`"
-        )
+        ) from ie
     if not isinstance(pipeline, pipelines.base.Pipeline):
         raise ValueError("pipeline must be a transformers.Pipeline")
 
@@ -159,8 +159,42 @@ def load_from_pipeline(pipeline: pipelines.base.Pipeline) -> Dict:
                 r["labels"][i]: r["scores"][i] for i in range(len(r["labels"]))
             },
         }
+    elif hasattr(transformers, "DocumentQuestionAnsweringPipeline") and isinstance(
+        pipeline,
+        pipelines.document_question_answering.DocumentQuestionAnsweringPipeline,  # type: ignore
+    ):
+        pipeline_info = {
+            "inputs": [
+                components.Image(type="filepath", label="Input Document"),
+                components.Textbox(label="Question"),
+            ],
+            "outputs": components.Label(label="Label"),
+            "preprocess": lambda img, q: {"image": img, "question": q},
+            "postprocess": lambda r: {i["answer"]: i["score"] for i in r},
+        }
+    elif hasattr(transformers, "VisualQuestionAnsweringPipeline") and isinstance(
+        pipeline, pipelines.visual_question_answering.VisualQuestionAnsweringPipeline
+    ):
+        pipeline_info = {
+            "inputs": [
+                components.Image(type="filepath", label="Input Image"),
+                components.Textbox(label="Question"),
+            ],
+            "outputs": components.Label(label="Score"),
+            "preprocess": lambda img, q: {"image": img, "question": q},
+            "postprocess": lambda r: {i["answer"]: i["score"] for i in r},
+        }
+    elif hasattr(transformers, "ImageToTextPipeline") and isinstance(
+        pipeline, pipelines.image_to_text.ImageToTextPipeline  # type: ignore
+    ):
+        pipeline_info = {
+            "inputs": components.Image(type="filepath", label="Input Image"),
+            "outputs": components.Textbox(label="Text"),
+            "preprocess": lambda i: {"images": i},
+            "postprocess": lambda r: r[0]["generated_text"],
+        }
     else:
-        raise ValueError("Unsupported pipeline type: {}".format(type(pipeline)))
+        raise ValueError(f"Unsupported pipeline type: {type(pipeline)}")
 
     # define the function that will be called by the Interface
     def fn(*params):

@@ -33,6 +33,21 @@ class Color:
         self.name = name
         Color.all.append(self)
 
+    def expand(self) -> list[str]:
+        return [
+            self.c50,
+            self.c100,
+            self.c200,
+            self.c300,
+            self.c400,
+            self.c500,
+            self.c600,
+            self.c700,
+            self.c800,
+            self.c900,
+            self.c950,
+        ]
+
 
 slate = Color(
     name="slate",

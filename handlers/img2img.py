@@ -8,6 +8,7 @@
 import os.path
 import time
 import typing
+import modules.scripts
 import modules.shared as shared
 import numpy as np
 from enum import IntEnum
@@ -15,7 +16,6 @@ from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
 from modules import deepbooru
 from handlers.typex import ModelType
 from worker.handler import TaskHandler
-from modules.scripts import scripts_img2img
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.img2img import process_batch
 from worker.task import TaskType, TaskProgress, Task, TaskStatus
@@ -187,10 +187,10 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
 
         assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 
-        if not scripts_img2img:
-            scripts_img2img.initialize_scripts(True)
+        if not modules.scripts.scripts_img2img:
+            modules.scripts.scripts_img2img.initialize_scripts(True)
 
-        i2i_script_runner = scripts_img2img
+        i2i_script_runner = modules.scripts.scripts_img2img
         selectable_scripts, selectable_script_idx = get_selectable_script(i2i_script_runner, select_script_name)
         script_args = init_script_args(default_script_arg_img2img, alwayson_scripts, selectable_scripts,
                                        selectable_script_idx, select_script_args, i2i_script_runner)
@@ -361,7 +361,9 @@ class Img2ImgTaskHandler(TaskHandler):
             self._load_default_script_args()
 
     def _load_default_script_args(self):
-        self.default_script_args = init_default_script_args(scripts_img2img)
+        if not modules.scripts.scripts_img2img:
+            modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
+        self.default_script_args = init_default_script_args(modules.scripts.scripts_img2img)
         self._default_script_args_load_t = time.time()
 
     def _build_img2img_arg(self, task: Task) -> Img2ImgTask:

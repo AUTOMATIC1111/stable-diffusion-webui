@@ -9,7 +9,7 @@ import socket
 import threading
 import time
 import warnings
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING
 
 import requests
 import uvicorn
@@ -62,9 +62,7 @@ def get_first_available_port(initial: int, final: int) -> int:
         except OSError:
             pass
     raise OSError(
-        "All ports from {} to {} are in use. Please close a port.".format(
-            initial, final - 1
-        )
+        f"All ports from {initial} to {final - 1} are in use. Please close a port."
     )
 
 
@@ -91,7 +89,7 @@ def start_server(
     ssl_keyfile: str | None = None,
     ssl_certfile: str | None = None,
     ssl_keyfile_password: str | None = None,
-) -> Tuple[str, int, str, App, Server]:
+) -> tuple[str, int, str, App, Server]:
     """Launches a local server running the provided Interface
     Parameters:
     blocks: The Blocks object to run on the server
@@ -116,14 +114,14 @@ def start_server(
     else:
         try:
             s = socket.socket()
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.bind((LOCALHOST_NAME, server_port))
             s.close()
-        except OSError:
+        except OSError as err:
             raise OSError(
-                "Port {} is in use. If a gradio.Blocks is running on the port, you can close() it or gradio.close_all().".format(
-                    server_port
-                )
-            )
+                f"Port {server_port} is in use. If a gradio.Blocks is running on the port, "
+                f"you can close() it or gradio.close_all()."
+            ) from err
         port = server_port
 
     url_host_name = "localhost" if server_name == "0.0.0.0" else server_name
@@ -133,9 +131,17 @@ def start_server(
             raise ValueError(
                 "ssl_certfile must be provided if ssl_keyfile is provided."
             )
-        path_to_local_server = "https://{}:{}/".format(url_host_name, port)
+        path_to_local_server = f"https://{url_host_name}:{port}/"
     else:
-        path_to_local_server = "http://{}:{}/".format(url_host_name, port)
+        path_to_local_server = f"http://{url_host_name}:{port}/"
+
+    # Strip IPv6 brackets from the address if they exist.
+    # This is needed as http://[::1]:port/ is a valid browser address,
+    # but not a valid IPv6 address, so asyncio will throw an exception.
+    if server_name.startswith("[") and server_name.endswith("]"):
+        host = server_name[1:-1]
+    else:
+        host = server_name
 
     app = App.create_app(blocks)
 
@@ -144,7 +150,7 @@ def start_server(
     config = uvicorn.Config(
         app=app,
         port=port,
-        host=server_name,
+        host=host,
         log_level="warning",
         ssl_keyfile=ssl_keyfile,
         ssl_certfile=ssl_certfile,
@@ -168,9 +174,8 @@ def setup_tunnel(local_host: str, local_port: int, share_token: str) -> str:
             address = tunnel.start_tunnel()
             return address
         except Exception as e:
-            raise RuntimeError(str(e))
-    else:
-        raise RuntimeError("Could not get share link from Gradio API Server.")
+            raise RuntimeError(str(e)) from e
+    raise RuntimeError("Could not get share link from Gradio API Server.")
 
 
 def url_ok(url: str) -> bool:

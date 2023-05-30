@@ -7,7 +7,7 @@ from gradio.themes.utils import ThemeAsset
 def create_theme_dropdown():
     import gradio as gr
 
-    asset_path = pathlib.Path(__file__).parent / "themes"
+    asset_path = pathlib.Path() / "themes"
     themes = []
     for theme_asset in os.listdir(str(asset_path)):
         themes.append(

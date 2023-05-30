@@ -1,8 +1,7 @@
 import time
 
-from theme_dropdown import create_theme_dropdown  # noqa: F401
-
 import gradio as gr
+from gradio.themes.utils.theme_dropdown import create_theme_dropdown
 
 dropdown, js = create_theme_dropdown()
 
@@ -28,7 +27,6 @@ with gr.Blocks(theme=gr.themes.Default()) as demo:
         _js="""
         () => {
             document.body.classList.toggle('dark');
-            document.querySelector('gradio-app').style.backgroundColor = 'var(--color-background-primary)'
         }
         """,
     )

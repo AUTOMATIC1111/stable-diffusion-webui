@@ -12,17 +12,17 @@ import tempfile
 import threading
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Iterable
 
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import PIL
 import PIL.Image
+from gradio_client import utils as client_utils
+from gradio_client.documentation import document, set_documentation_group
 
 from gradio import processing_utils, routes, utils
 from gradio.context import Context
-from gradio.documentation import document, set_documentation_group
 from gradio.flagging import CSVLogger
 
 if TYPE_CHECKING:  # Only import for type checking (to avoid circular imports).
@@ -36,9 +36,9 @@ set_documentation_group("helpers")
 
 
 def create_examples(
-    examples: List[Any] | List[List[Any]] | str,
-    inputs: IOComponent | List[IOComponent],
-    outputs: IOComponent | List[IOComponent] | None = None,
+    examples: list[Any] | list[list[Any]] | str,
+    inputs: IOComponent | list[IOComponent],
+    outputs: IOComponent | list[IOComponent] | None = None,
     fn: Callable | None = None,
     cache_examples: bool = False,
     examples_per_page: int = 10,
@@ -67,7 +67,7 @@ def create_examples(
         batch=batch,
         _initiated_directly=False,
     )
-    utils.synchronize_async(examples_obj.create)
+    client_utils.synchronize_async(examples_obj.create)
     return examples_obj
 
 
@@ -80,14 +80,14 @@ class Examples:
     components. Optionally handles example caching for fast inference.
 
     Demos: blocks_inputs, fake_gan
-    Guides: more_on_examples_and_flagging, using_hugging_face_integrations, image_classification_in_pytorch, image_classification_in_tensorflow, image_classification_with_vision_transformers, create_your_own_friends_with_a_gan
+    Guides: more-on-examples-and-flagging, using-hugging-face-integrations, image-classification-in-pytorch, image-classification-in-tensorflow, image-classification-with-vision-transformers, create-your-own-friends-with-a-gan
     """
 
     def __init__(
         self,
-        examples: List[Any] | List[List[Any]] | str,
-        inputs: IOComponent | List[IOComponent],
-        outputs: IOComponent | List[IOComponent] | None = None,
+        examples: list[Any] | list[list[Any]] | str,
+        inputs: IOComponent | list[IOComponent],
+        outputs: IOComponent | list[IOComponent] | None = None,
         fn: Callable | None = None,
         cache_examples: bool = False,
         examples_per_page: int = 10,
@@ -143,7 +143,7 @@ class Examples:
         elif isinstance(examples, str):
             if not Path(examples).exists():
                 raise FileNotFoundError(
-                    "Could not find examples directory: " + examples
+                    f"Could not find examples directory: {examples}"
                 )
             working_directory = examples
             if not (Path(examples) / LOG_FILE).exists():
@@ -171,7 +171,7 @@ class Examples:
         input_has_examples = [False] * len(inputs)
         for example in examples:
             for idx, example_for_input in enumerate(example):
-                if not (example_for_input is None):
+                if example_for_input is not None:
                     try:
                         input_has_examples[idx] = True
                     except IndexError:
@@ -308,9 +308,13 @@ class Examples:
                 processed_input = self.processed_examples[example_id]
                 if self.batch:
                     processed_input = [[value] for value in processed_input]
-                prediction = await Context.root_block.process_api(
-                    fn_index=fn_index, inputs=processed_input, request=None, state={}
-                )
+                with utils.MatplotlibBackendMananger():
+                    prediction = await Context.root_block.process_api(
+                        fn_index=fn_index,
+                        inputs=processed_input,
+                        request=None,
+                        state={},
+                    )
                 output = prediction["data"]
                 if self.batch:
                     output = [value[0] for value in output]
@@ -319,7 +323,7 @@ class Examples:
             Context.root_block.dependencies.remove(dependency)
             Context.root_block.fns.pop(fn_index)
 
-    async def load_from_cache(self, example_id: int) -> List[Any]:
+    async def load_from_cache(self, example_id: int) -> list[Any]:
         """Loads a particular cached example for the interface.
         Parameters:
             example_id: The id of the example to process (zero-indexed).
@@ -392,7 +396,7 @@ class Progress(Iterable):
         self.track_tqdm = track_tqdm
         self._callback = _callback
         self._event_id = _event_id
-        self.iterables: List[TrackedIterable] = []
+        self.iterables: list[TrackedIterable] = []
 
     def __len__(self):
         return self.iterables[-1].length
@@ -421,13 +425,13 @@ class Progress(Iterable):
                 return next(current_iterable.iterable)  # type: ignore
             except StopIteration:
                 self.iterables.pop()
-                raise StopIteration
+                raise
         else:
             return self
 
     def __call__(
         self,
-        progress: float | Tuple[int, int | None] | None,
+        progress: float | tuple[int, int | None] | None,
         desc: str | None = None,
         total: int | None = None,
         unit: str = "steps",
@@ -462,8 +466,6 @@ class Progress(Iterable):
         total: int | None = None,
         unit: str = "steps",
         _tqdm=None,
-        *args,
-        **kwargs,
     ):
         """
         Attaches progress tracker to iterable, like tqdm.
@@ -538,8 +540,8 @@ def create_tracker(root_blocks, event_id, fn, track_tqdm):
         )
         if self._progress is not None:
             self._progress.event_id = event_id
-            self._progress.tqdm(iterable, desc, _tqdm=self, *args, **kwargs)
-            kwargs["file"] = open(os.devnull, "w")
+            self._progress.tqdm(iterable, desc, _tqdm=self)
+            kwargs["file"] = open(os.devnull, "w")  # noqa: SIM115
         self.__init__orig__(iterable, desc, *args, **kwargs)
 
     def iter_tqdm(self):
@@ -593,7 +595,7 @@ def create_tracker(root_blocks, event_id, fn, track_tqdm):
 
 def special_args(
     fn: Callable,
-    inputs: List[Any] | None = None,
+    inputs: list[Any] | None = None,
     request: routes.Request | None = None,
     event_data: EventData | None = None,
 ):
@@ -601,34 +603,43 @@ def special_args(
     Checks if function has special arguments Request or EventData (via annotation) or Progress (via default value).
     If inputs is provided, these values will be loaded into the inputs array.
     Parameters:
-        block_fn: function to check.
+        fn: function to check.
         inputs: array to load special arguments into.
         request: request to load into inputs.
+        event_data: event-related data to load into inputs.
     Returns:
         updated inputs, progress index, event data index.
     """
     signature = inspect.signature(fn)
+    type_hints = utils.get_type_hints(fn)
     positional_args = []
-    for i, param in enumerate(signature.parameters.values()):
+    for param in signature.parameters.values():
         if param.kind not in (param.POSITIONAL_ONLY, param.POSITIONAL_OR_KEYWORD):
             break
         positional_args.append(param)
     progress_index = None
     event_data_index = None
     for i, param in enumerate(positional_args):
+        type_hint = type_hints.get(param.name)
         if isinstance(param.default, Progress):
             progress_index = i
             if inputs is not None:
                 inputs.insert(i, param.default)
-        elif param.annotation == routes.Request:
+        elif type_hint == routes.Request:
             if inputs is not None:
                 inputs.insert(i, request)
-        elif isinstance(param.annotation, type) and issubclass(
-            param.annotation, EventData
+        elif (
+            type_hint
+            and inspect.isclass(type_hint)
+            and issubclass(type_hint, EventData)
         ):
             event_data_index = i
             if inputs is not None and event_data is not None:
-                inputs.insert(i, param.annotation(event_data.target, event_data._data))
+                inputs.insert(i, type_hint(event_data.target, event_data._data))
+        elif (
+            param.default is not param.empty and inputs is not None and len(inputs) <= i
+        ):
+            inputs.insert(i, param.default)
     if inputs is not None:
         while len(inputs) < len(positional_args):
             i = len(inputs)
@@ -690,12 +701,12 @@ def skip() -> dict:
 
 @document()
 def make_waveform(
-    audio: str | Tuple[int, np.ndarray],
+    audio: str | tuple[int, np.ndarray],
     *,
     bg_color: str = "#f3f4f6",
     bg_image: str | None = None,
     fg_alpha: float = 0.75,
-    bars_color: str | Tuple[str, str] = ("#fbbf24", "#ea580c"),
+    bars_color: str | tuple[str, str] = ("#fbbf24", "#ea580c"),
     bar_count: int = 50,
     bar_width: float = 0.6,
 ):
@@ -717,22 +728,22 @@ def make_waveform(
         audio = processing_utils.audio_from_file(audio)
     else:
         tmp_wav = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
-        processing_utils.audio_to_file(audio[0], audio[1], tmp_wav.name)
+        processing_utils.audio_to_file(audio[0], audio[1], tmp_wav.name, format="wav")
         audio_file = tmp_wav.name
     duration = round(len(audio[1]) / audio[0], 4)
 
     # Helper methods to create waveform
-    def hex_to_RGB(hex_str):
+    def hex_to_rgb(hex_str):
         return [int(hex_str[i : i + 2], 16) for i in range(1, 6, 2)]
 
     def get_color_gradient(c1, c2, n):
         assert n > 1
-        c1_rgb = np.array(hex_to_RGB(c1)) / 255
-        c2_rgb = np.array(hex_to_RGB(c2)) / 255
+        c1_rgb = np.array(hex_to_rgb(c1)) / 255
+        c2_rgb = np.array(hex_to_rgb(c2)) / 255
         mix_pcts = [x / (n - 1) for x in range(n)]
         rgb_colors = [((1 - mix) * c1_rgb + (mix * c2_rgb)) for mix in mix_pcts]
         return [
-            "#" + "".join([format(int(round(val * 255)), "02x") for val in item])
+            "#" + "".join(f"{int(round(val * 255)):02x}" for val in item)
             for item in rgb_colors
         ]
 
@@ -746,58 +757,60 @@ def make_waveform(
     samples = np.abs(samples)
     samples = np.max(samples, 1)
 
-    matplotlib.use("Agg")
-    plt.clf()
-    # Plot waveform
-    color = (
-        bars_color
-        if isinstance(bars_color, str)
-        else get_color_gradient(bars_color[0], bars_color[1], bar_count)
-    )
-    plt.bar(
-        np.arange(0, bar_count),
-        samples * 2,
-        bottom=(-1 * samples),
-        width=bar_width,
-        color=color,
-    )
-    plt.axis("off")
-    plt.margins(x=0)
-    tmp_img = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
-    savefig_kwargs: Dict[str, Any] = {"bbox_inches": "tight"}
-    if bg_image is not None:
-        savefig_kwargs["transparent"] = True
-    else:
-        savefig_kwargs["facecolor"] = bg_color
-    plt.savefig(tmp_img.name, **savefig_kwargs)
-    waveform_img = PIL.Image.open(tmp_img.name)
-    waveform_img = waveform_img.resize((1000, 200))
-
-    # Composite waveform with background image
-    if bg_image is not None:
-        waveform_array = np.array(waveform_img)
-        waveform_array[:, :, 3] = waveform_array[:, :, 3] * fg_alpha
-        waveform_img = PIL.Image.fromarray(waveform_array)
-
-        bg_img = PIL.Image.open(bg_image)
-        waveform_width, waveform_height = waveform_img.size
-        bg_width, bg_height = bg_img.size
-        if waveform_width != bg_width:
-            bg_img = bg_img.resize(
-                (waveform_width, 2 * int(bg_height * waveform_width / bg_width / 2))
-            )
-            bg_width, bg_height = bg_img.size
-        composite_height = max(bg_height, waveform_height)
-        composite = PIL.Image.new("RGBA", (waveform_width, composite_height), "#FFFFFF")
-        composite.paste(bg_img, (0, composite_height - bg_height))
-        composite.paste(
-            waveform_img, (0, composite_height - waveform_height), waveform_img
+    with utils.MatplotlibBackendMananger():
+        plt.clf()
+        # Plot waveform
+        color = (
+            bars_color
+            if isinstance(bars_color, str)
+            else get_color_gradient(bars_color[0], bars_color[1], bar_count)
         )
-        composite.save(tmp_img.name)
-        img_width, img_height = composite.size
-    else:
-        img_width, img_height = waveform_img.size
-        waveform_img.save(tmp_img.name)
+        plt.bar(
+            np.arange(0, bar_count),
+            samples * 2,
+            bottom=(-1 * samples),
+            width=bar_width,
+            color=color,
+        )
+        plt.axis("off")
+        plt.margins(x=0)
+        tmp_img = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
+        savefig_kwargs: dict[str, Any] = {"bbox_inches": "tight"}
+        if bg_image is not None:
+            savefig_kwargs["transparent"] = True
+        else:
+            savefig_kwargs["facecolor"] = bg_color
+        plt.savefig(tmp_img.name, **savefig_kwargs)
+        waveform_img = PIL.Image.open(tmp_img.name)
+        waveform_img = waveform_img.resize((1000, 200))
+
+        # Composite waveform with background image
+        if bg_image is not None:
+            waveform_array = np.array(waveform_img)
+            waveform_array[:, :, 3] = waveform_array[:, :, 3] * fg_alpha
+            waveform_img = PIL.Image.fromarray(waveform_array)
+
+            bg_img = PIL.Image.open(bg_image)
+            waveform_width, waveform_height = waveform_img.size
+            bg_width, bg_height = bg_img.size
+            if waveform_width != bg_width:
+                bg_img = bg_img.resize(
+                    (waveform_width, 2 * int(bg_height * waveform_width / bg_width / 2))
+                )
+                bg_width, bg_height = bg_img.size
+            composite_height = max(bg_height, waveform_height)
+            composite = PIL.Image.new(
+                "RGBA", (waveform_width, composite_height), "#FFFFFF"
+            )
+            composite.paste(bg_img, (0, composite_height - bg_height))
+            composite.paste(
+                waveform_img, (0, composite_height - waveform_height), waveform_img
+            )
+            composite.save(tmp_img.name)
+            img_width, img_height = composite.size
+        else:
+            img_width, img_height = waveform_img.size
+            waveform_img.save(tmp_img.name)
 
     # Convert waveform to video with ffmpeg
     output_mp4 = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)

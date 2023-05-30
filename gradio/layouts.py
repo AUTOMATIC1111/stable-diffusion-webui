@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import warnings
-from typing import Type
+
+from gradio_client.documentation import document, set_documentation_group
 
 from gradio.blocks import BlockContext
-from gradio.documentation import document, set_documentation_group
 from gradio.events import Changeable, Selectable
 
 set_documentation_group("layout")
@@ -15,12 +15,12 @@ class Row(BlockContext):
     """
     Row is a layout element within Blocks that renders all children horizontally.
     Example:
-        with gradio.Blocks() as demo:
-            with gradio.Row():
+        with gr.Blocks() as demo:
+            with gr.Row():
                 gr.Image("lion.jpg")
                 gr.Image("tiger.jpg")
         demo.launch()
-    Guides: controlling_layout
+    Guides: controlling-layout
     """
 
     def __init__(
@@ -80,15 +80,15 @@ class Column(BlockContext):
     Column is a layout element within Blocks that renders all children vertically. The widths of columns can be set through the `scale` and `min_width` parameters.
     If a certain scale results in a column narrower than min_width, the min_width parameter will win.
     Example:
-        with gradio.Blocks() as demo:
-            with gradio.Row():
-                with gradio.Column(scale=1):
+        with gr.Blocks() as demo:
+            with gr.Row():
+                with gr.Column(scale=1):
                     text1 = gr.Textbox()
                     text2 = gr.Textbox()
-                with gradio.Column(scale=4):
+                with gr.Column(scale=4):
                     btn1 = gr.Button("Button 1")
                     btn2 = gr.Button("Button 2")
-    Guides: controlling_layout
+    Guides: controlling-layout
     """
 
     def __init__(
@@ -179,14 +179,14 @@ class Tab(BlockContext, Selectable):
     """
     Tab (or its alias TabItem) is a layout element. Components defined within the Tab will be visible when this tab is selected tab.
     Example:
-        with gradio.Blocks() as demo:
-            with gradio.Tab("Lion"):
+        with gr.Blocks() as demo:
+            with gr.Tab("Lion"):
                 gr.Image("lion.jpg")
                 gr.Button("New Lion")
-            with gradio.Tab("Tiger"):
+            with gr.Tab("Tiger"):
                 gr.Image("tiger.jpg")
                 gr.Button("New Tiger")
-    Guides: controlling_layout
+    Guides: controlling-layout
     """
 
     def __init__(
@@ -215,7 +215,7 @@ class Tab(BlockContext, Selectable):
             **super(BlockContext, self).get_config(),
         }
 
-    def get_expected_parent(self) -> Type[Tabs]:
+    def get_expected_parent(self) -> type[Tabs]:
         return Tabs
 
     def get_block_name(self):
@@ -230,7 +230,7 @@ class Group(BlockContext):
     Group is a layout element within Blocks which groups together children so that
     they do not have any padding or margin between them.
     Example:
-        with gradio.Group():
+        with gr.Group():
             gr.Textbox(label="First")
             gr.Textbox(label="Last")
     """
@@ -268,7 +268,7 @@ class Box(BlockContext):
     Box is a a layout element which places children in a box with rounded corners and
     some padding around them.
     Example:
-        with gradio.Box():
+        with gr.Box():
             gr.Textbox(label="First")
             gr.Textbox(label="Last")
     """
@@ -313,7 +313,7 @@ class Accordion(BlockContext):
     """
     Accordion is a layout element which can be toggled to show/hide the contained content.
     Example:
-        with gradio.Accordion("See Details"):
+        with gr.Accordion("See Details"):
             gr.Markdown("lorem ipsum")
     """
 

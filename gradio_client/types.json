@@ -1,0 +1,199 @@
+{
+	"SimpleSerializable": {
+		"type": {},
+		"description": "any valid value"
+	},
+	"StringSerializable": {
+		"type": "string"
+	},
+	"ListStringSerializable": {
+		"type": "array",
+		"items": {
+			"type": "string"
+		}
+	},
+	"BooleanSerializable": {
+		"type": "boolean"
+	},
+	"NumberSerializable": {
+		"type": "number"
+	},
+	"ImgSerializable": {
+		"type": "string",
+		"description": "base64 representation of an image"
+	},
+	"FileSerializable": {
+		"oneOf": [
+			{
+				"type": "string",
+				"description": "filepath or URL to file"
+			},
+			{
+				"type": "object",
+				"properties": {
+					"name": { "type": "string", "description": "name of file" },
+					"data": {
+						"type": "string",
+						"description": "base64 representation of file"
+					},
+					"size": {
+						"type": "integer",
+						"description": "size of image in bytes"
+					},
+					"is_file": {
+						"type": "boolean",
+						"description": "true if the file has been uploaded to the server"
+					},
+					"orig_name": {
+						"type": "string",
+						"description": "original name of the file"
+					}
+				},
+				"required": ["name", "data"]
+			},
+			{
+				"type": "array",
+				"items": {
+					"anyOf": [
+						{
+							"type": "string",
+							"description": "filepath or URL to file"
+						},
+						{
+							"type": "object",
+							"properties": {
+								"name": { "type": "string", "description": "name of file" },
+								"data": {
+									"type": "string",
+									"description": "base64 representation of file"
+								},
+								"size": {
+									"type": "integer",
+									"description": "size of image in bytes"
+								},
+								"is_file": {
+									"type": "boolean",
+									"description": "true if the file has been uploaded to the server"
+								},
+								"orig_name": {
+									"type": "string",
+									"description": "original name of the file"
+								}
+							},
+							"required": ["name", "data"]
+						}
+					]
+				}
+			}
+		]
+	},
+	"SingleFileSerializable": {
+		"oneOf": [
+			{
+				"type": "string",
+				"description": "filepath or URL to file"
+			},
+			{
+				"type": "object",
+				"properties": {
+					"name": { "type": "string", "description": "name of file" },
+					"data": {
+						"type": "string",
+						"description": "base64 representation of file"
+					},
+					"size": {
+						"type": "integer",
+						"description": "size of image in bytes"
+					},
+					"is_file": {
+						"type": "boolean",
+						"description": "true if the file has been uploaded to the server"
+					},
+					"orig_name": {
+						"type": "string",
+						"description": "original name of the file"
+					}
+				},
+				"required": ["name", "data"]
+			}
+		]
+	},
+	"MultipleFileSerializable": {
+		"type": "array",
+		"items": {
+			"anyOf": [
+				{
+					"type": "string",
+					"description": "filepath or URL to file"
+				},
+				{
+					"type": "object",
+					"properties": {
+						"name": { "type": "string", "description": "name of file" },
+						"data": {
+							"type": "string",
+							"description": "base64 representation of file"
+						},
+						"size": {
+							"type": "integer",
+							"description": "size of image in bytes"
+						},
+						"is_file": {
+							"type": "boolean",
+							"description": "true if the file has been uploaded to the server"
+						},
+						"orig_name": {
+							"type": "string",
+							"description": "original name of the file"
+						}
+					},
+					"required": ["name", "data"]
+				}
+			]
+		}
+	},
+	"JSONSerializable": {
+		"type": {},
+		"description": "any valid json"
+	},
+	"GallerySerializable": {
+		"type": "array",
+		"items": {
+			"type": "array",
+			"items": false,
+			"maxSize": 2,
+			"minSize": 2,
+			"prefixItems": [
+				{
+					"type": "object",
+					"properties": {
+						"name": { "type": "string", "description": "name of file" },
+						"data": {
+							"type": "string",
+							"description": "base64 representation of file"
+						},
+						"size": {
+							"type": "integer",
+							"description": "size of image in bytes"
+						},
+						"is_file": {
+							"type": "boolean",
+							"description": "true if the file has been uploaded to the server"
+						},
+						"orig_name": {
+							"type": "string",
+							"description": "original name of the file"
+						}
+					},
+					"required": ["name", "data"]
+				},
+				{
+					"oneOf": [
+						{ "type": "string", "description": "caption of image" },
+						{ "type": "null" }
+					]
+				}
+			]
+		}
+	}
+}

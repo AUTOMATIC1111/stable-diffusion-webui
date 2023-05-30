@@ -39,3 +39,6 @@ cache.json.lock
 gradio/launches.json
 models/
 stable-diffusion-webui/
+/node_modules
+/package-lock.json
+/.coverage*

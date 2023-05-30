@@ -1,16 +1,16 @@
 """This module should not be used directly as its API is subject to change. Instead,
-use the `gr.Blocks.load()` or `gr.Interface.load()` functions."""
+use the `gr.Blocks.load()` or `gr.load()` functions."""
 
 from __future__ import annotations
 
 import json
 import re
-import uuid
 import warnings
-from copy import deepcopy
-from typing import TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING, Callable
 
 import requests
+from gradio_client import Client
+from gradio_client.documentation import document, set_documentation_group
 
 import gradio
 from gradio import components, utils
@@ -20,17 +20,54 @@ from gradio.external_utils import (
     cols_to_rows,
     encode_to_base64,
     get_tabular_examples,
-    get_ws_fn,
     postprocess_label,
     rows_to_cols,
     streamline_spaces_interface,
-    use_websocket,
 )
-from gradio.processing_utils import to_binary
+from gradio.processing_utils import extract_base64_data, to_binary
 
 if TYPE_CHECKING:
     from gradio.blocks import Blocks
     from gradio.interface import Interface
+
+
+set_documentation_group("helpers")
+
+
+@document()
+def load(
+    name: str,
+    src: str | None = None,
+    api_key: str | None = None,
+    hf_token: str | None = None,
+    alias: str | None = None,
+    **kwargs,
+) -> Blocks:
+    """
+    Method that constructs a Blocks from a Hugging Face repo. Can accept
+    model repos (if src is "models") or Space repos (if src is "spaces"). The input
+    and output components are automatically loaded from the repo.
+    Parameters:
+        name: the name of the model (e.g. "gpt2" or "facebook/bart-base") or space (e.g. "flax-community/spanish-gpt2"), can include the `src` as prefix (e.g. "models/facebook/bart-base")
+        src: the source of the model: `models` or `spaces` (or leave empty if source is provided as a prefix in `name`)
+        api_key: Deprecated. Please use the `hf_token` parameter instead.
+        hf_token: optional access token for loading private Hugging Face Hub models or spaces. Find your token here: https://huggingface.co/settings/tokens
+        alias: optional string used as the name of the loaded model instead of the default name (only applies if loading a Space running Gradio 2.x)
+    Returns:
+        a Gradio Blocks object for the given model
+    Example:
+        import gradio as gr
+        demo = gr.load("gradio/question-answering", src="spaces")
+        demo.launch()
+    """
+    if hf_token is None and api_key:
+        warnings.warn(
+            "The `api_key` parameter will be deprecated. Please use the `hf_token` parameter going forward."
+        )
+        hf_token = api_key
+    return load_blocks_from_repo(
+        name=name, src=src, api_key=hf_token, alias=alias, **kwargs
+    )
 
 
 def load_blocks_from_repo(
@@ -50,22 +87,22 @@ def load_blocks_from_repo(
         src = tokens[0]
         name = "/".join(tokens[1:])
 
-    factory_methods: Dict[str, Callable] = {
+    factory_methods: dict[str, Callable] = {
         # for each repo type, we have a method that returns the Interface given the model name & optionally an api_key
         "huggingface": from_model,
         "models": from_model,
         "spaces": from_spaces,
     }
-    assert src.lower() in factory_methods, "parameter: src must be one of {}".format(
-        factory_methods.keys()
-    )
+    assert (
+        src.lower() in factory_methods
+    ), f"parameter: src must be one of {factory_methods.keys()}"
 
     if api_key is not None:
-        if Context.access_token is not None and Context.access_token != api_key:
+        if Context.hf_token is not None and Context.hf_token != api_key:
             warnings.warn(
                 """You are loading a model/Space with a different access token than the one you used to load a previous model/Space. This is not recommended, as it may cause unexpected behavior."""
             )
-        Context.access_token = api_key
+        Context.hf_token = api_key
 
     blocks: gradio.Blocks = factory_methods[src](name, api_key, alias, **kwargs)
     return blocks
@@ -98,9 +135,9 @@ def chatbot_postprocess(response):
 
 
 def from_model(model_name: str, api_key: str | None, alias: str | None, **kwargs):
-    model_url = "https://huggingface.co/{}".format(model_name)
-    api_url = "https://api-inference.huggingface.co/models/{}".format(model_name)
-    print("Fetching model from: {}".format(model_url))
+    model_url = f"https://huggingface.co/{model_name}"
+    api_url = f"https://api-inference.huggingface.co/models/{model_name}"
+    print(f"Fetching model from: {model_url}")
 
     headers = {"Authorization": f"Bearer {api_key}"} if api_key is not None else {}
 
@@ -163,12 +200,6 @@ def from_model(model_name: str, api_key: str | None, alias: str | None, **kwargs
             "postprocess": lambda r: postprocess_label(
                 {i["label"].split(", ")[0]: i["score"] for i in r.json()}
             ),
-        },
-        "image-to-text": {
-            "inputs": components.Image(type="filepath", label="Input Image"),
-            "outputs": components.Textbox(),
-            "preprocess": to_binary,
-            "postprocess": lambda r: r.json()[0]["generated_text"],
         },
         "question-answering": {
             # Example: deepset/xlm-roberta-base-squad2
@@ -282,6 +313,47 @@ def from_model(model_name: str, api_key: str | None, alias: str | None, **kwargs
             "preprocess": lambda x: {"inputs": x},
             "postprocess": lambda r: r,  # Handled as a special case in query_huggingface_api()
         },
+        "document-question-answering": {
+            # example model: impira/layoutlm-document-qa
+            "inputs": [
+                components.Image(type="filepath", label="Input Document"),
+                components.Textbox(label="Question"),
+            ],
+            "outputs": components.Label(label="Label"),
+            "preprocess": lambda img, q: {
+                "inputs": {
+                    "image": extract_base64_data(img),  # Extract base64 data
+                    "question": q,
+                }
+            },
+            "postprocess": lambda r: postprocess_label(
+                {i["answer"]: i["score"] for i in r.json()}
+            ),
+        },
+        "visual-question-answering": {
+            # example model: dandelin/vilt-b32-finetuned-vqa
+            "inputs": [
+                components.Image(type="filepath", label="Input Image"),
+                components.Textbox(label="Question"),
+            ],
+            "outputs": components.Label(label="Label"),
+            "preprocess": lambda img, q: {
+                "inputs": {
+                    "image": extract_base64_data(img),
+                    "question": q,
+                }
+            },
+            "postprocess": lambda r: postprocess_label(
+                {i["answer"]: i["score"] for i in r.json()}
+            ),
+        },
+        "image-to-text": {
+            # example model: Salesforce/blip-image-captioning-base
+            "inputs": components.Image(type="filepath", label="Input Image"),
+            "outputs": components.Textbox(label="Generated Text"),
+            "preprocess": to_binary,
+            "postprocess": lambda r: r.json()[0]["generated_text"],
+        },
     }
 
     if p in ["tabular-classification", "tabular-regression"]:
@@ -307,8 +379,8 @@ def from_model(model_name: str, api_key: str | None, alias: str | None, **kwargs
             "examples": example_data,
         }
 
-    if p is None or not (p in pipelines):
-        raise ValueError("Unsupported pipeline type: {}".format(p))
+    if p is None or p not in pipelines:
+        raise ValueError(f"Unsupported pipeline type: {p}")
 
     pipeline = pipelines[p]
 
@@ -321,7 +393,7 @@ def from_model(model_name: str, api_key: str | None, alias: str | None, **kwargs
             data.update({"options": {"wait_for_model": True}})
             data = json.dumps(data)
         response = requests.request("POST", api_url, headers=headers, data=data)
-        if not (response.status_code == 200):
+        if response.status_code != 200:
             errors_json = response.json()
             errors, warns = "", ""
             if errors_json.get("error"):
@@ -369,9 +441,9 @@ def from_model(model_name: str, api_key: str | None, alias: str | None, **kwargs
 def from_spaces(
     space_name: str, api_key: str | None, alias: str | None, **kwargs
 ) -> Blocks:
-    space_url = "https://huggingface.co/spaces/{}".format(space_name)
+    space_url = f"https://huggingface.co/spaces/{space_name}"
 
-    print("Fetching Space from: {}".format(space_url))
+    print(f"Fetching Space from: {space_url}")
 
     headers = {}
     if api_key is not None:
@@ -397,8 +469,8 @@ def from_spaces(
     )  # some basic regex to extract the config
     try:
         config = json.loads(result.group(1))  # type: ignore
-    except AttributeError:
-        raise ValueError("Could not load the Space: {}".format(space_name))
+    except AttributeError as ae:
+        raise ValueError(f"Could not load the Space: {space_name}") from ae
     if "allow_flagging" in config:  # Create an Interface for Gradio 2.x Spaces
         return from_spaces_interface(
             space_name, config, alias, api_key, iframe_url, **kwargs
@@ -411,63 +483,18 @@ def from_spaces(
                 "Blocks or Interface locally. You may find this Guide helpful: "
                 "https://gradio.app/using_blocks_like_functions/"
             )
-        return from_spaces_blocks(config, api_key, iframe_url)
+        return from_spaces_blocks(space=space_name, api_key=api_key)
 
 
-def from_spaces_blocks(config: Dict, api_key: str | None, iframe_url: str) -> Blocks:
-    api_url = "{}/api/predict/".format(iframe_url)
-
-    headers = {"Content-Type": "application/json"}
-    if api_key is not None:
-        headers["Authorization"] = f"Bearer {api_key}"
-    ws_url = "{}/queue/join".format(iframe_url).replace("https", "wss")
-
-    ws_fn = get_ws_fn(ws_url, headers)
-
-    fns = []
-    for d, dependency in enumerate(config["dependencies"]):
-        if dependency["backend_fn"]:
-
-            def get_fn(outputs, fn_index, use_ws):
-                def fn(*data):
-                    data = json.dumps({"data": data, "fn_index": fn_index})
-                    hash_data = json.dumps(
-                        {"fn_index": fn_index, "session_hash": str(uuid.uuid4())}
-                    )
-                    if use_ws:
-                        result = utils.synchronize_async(ws_fn, data, hash_data)
-                        output = result["data"]
-                    else:
-                        response = requests.post(api_url, headers=headers, data=data)
-                        result = json.loads(response.content.decode("utf-8"))
-                        try:
-                            output = result["data"]
-                        except KeyError:
-                            if "error" in result and "429" in result["error"]:
-                                raise TooManyRequestsError(
-                                    "Too many requests to the Hugging Face API"
-                                )
-                            raise KeyError(
-                                f"Could not find 'data' key in response from external Space. Response received: {result}"
-                            )
-                    if len(outputs) == 1:
-                        output = output[0]
-                    return output
-
-                return fn
-
-            fn = get_fn(
-                deepcopy(dependency["outputs"]), d, use_websocket(config, dependency)
-            )
-            fns.append(fn)
-        else:
-            fns.append(None)
-    return gradio.Blocks.from_config(config, fns, iframe_url)
+def from_spaces_blocks(space: str, api_key: str | None) -> Blocks:
+    client = Client(space, hf_token=api_key)
+    predict_fns = [endpoint._predict_resolve for endpoint in client.endpoints]
+    return gradio.Blocks.from_config(client.config, predict_fns, client.src)
 
 
 def from_spaces_interface(
     model_name: str,
-    config: Dict,
+    config: dict,
     alias: str | None,
     api_key: str | None,
     iframe_url: str,
@@ -475,7 +502,7 @@ def from_spaces_interface(
 ) -> Interface:
 
     config = streamline_spaces_interface(config)
-    api_url = "{}/api/predict/".format(iframe_url)
+    api_url = f"{iframe_url}/api/predict/"
     headers = {"Content-Type": "application/json"}
     if api_key is not None:
         headers["Authorization"] = f"Bearer {api_key}"
@@ -485,14 +512,14 @@ def from_spaces_interface(
         data = json.dumps({"data": data})
         response = requests.post(api_url, headers=headers, data=data)
         result = json.loads(response.content.decode("utf-8"))
+        if "error" in result and "429" in result["error"]:
+            raise TooManyRequestsError("Too many requests to the Hugging Face API")
         try:
             output = result["data"]
-        except KeyError:
-            if "error" in result and "429" in result["error"]:
-                raise TooManyRequestsError("Too many requests to the Hugging Face API")
+        except KeyError as ke:
             raise KeyError(
                 f"Could not find 'data' key in response from external Space. Response received: {result}"
-            )
+            ) from ke
         if (
             len(config["outputs"]) == 1
         ):  # if the fn is supposed to return a single value, pop it

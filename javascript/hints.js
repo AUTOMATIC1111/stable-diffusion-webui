@@ -1,16 +1,17 @@
 // mouseover tooltips for various UI elements
 
-titles = {
+var titles = {
     "Sampling steps": "How many times to improve the generated image iteratively; higher values take longer; very low values can produce bad results",
     "Sampling method": "Which algorithm to use to produce the image",
-	"GFPGAN": "Restore low quality faces using GFPGAN neural network",
-	"Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps higher than 30-40 does not help",
-	"DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
-	"UniPC": "Unified Predictor-Corrector Framework for Fast Sampling of Diffusion Models",
-	"DPM adaptive": "Ignores step count - uses a number of steps determined by the CFG and resolution", 
+    "GFPGAN": "Restore low quality faces using GFPGAN neural network",
+    "Euler a": "Euler Ancestral - very creative, each can get a completely different picture depending on step count, setting steps higher than 30-40 does not help",
+    "DDIM": "Denoising Diffusion Implicit Models - best at inpainting",
+    "UniPC": "Unified Predictor-Corrector Framework for Fast Sampling of Diffusion Models",
+    "DPM adaptive": "Ignores step count - uses a number of steps determined by the CFG and resolution",
 
-	"Batch count": "How many batches of images to create (has no impact on generation performance or VRAM usage)",
-	"Batch size": "How many image to create in a single batch (increases generation performance at cost of higher VRAM usage)",
+    "\u{1F4D0}": "Auto detect size from img2img",
+    "Batch count": "How many batches of images to create (has no impact on generation performance or VRAM usage)",
+    "Batch size": "How many image to create in a single batch (increases generation performance at cost of higher VRAM usage)",
     "CFG Scale": "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results",
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
@@ -40,7 +41,7 @@ titles = {
     "Inpaint at full resolution": "Upscale masked region to target resolution, do inpainting, downscale back and paste into original image",
 
     "Denoising strength": "Determines how little respect the algorithm should have for image's content. At 0, nothing will change, and at 1 you'll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps slider specifies.",
-    
+
     "Skip": "Stop processing current image and continue processing.",
     "Interrupt": "Stop processing images and return any results accumulated so far.",
     "Save": "Write image to a directory (default - log/images) and generation parameters into csv file.",
@@ -66,8 +67,8 @@ titles = {
 
     "Interrogate": "Reconstruct prompt from existing image and put it into the prompt field.",
 
-    "Images filename pattern": "Use following tags to define how filenames for images are chosen: [steps], [cfg], [clip_skip], [batch_number], [generation_number], [prompt_hash], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp], [hasprompt<prompt1|default><prompt2>..]; leave empty for default.",
-    "Directory name pattern": "Use following tags to define how subdirectories for images and grids are chosen: [steps], [cfg], [clip_skip], [batch_number], [generation_number], [prompt_hash], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp], [hasprompt<prompt1|default><prompt2>..]; leave empty for default.",
+    "Images filename pattern": "Use tags like [seed] and [date] to define how filenames for images are chosen. Leave empty for default.",
+    "Directory name pattern": "Use tags like [seed] and [date] to define how subdirectories for images and grids are chosen. Leave empty for default.",
     "Max prompt words": "Set the maximum number of words to be used in the [prompt_words] option; ATTENTION: If the words are too long, they may exceed the maximum length of the file path that the system can handle",
 
     "Loopback": "Performs img2img processing multiple times. Output images are used as input for the next loop.",
@@ -96,7 +97,7 @@ titles = {
     "Add difference": "Result = A + (B - C) * M",
     "No interpolation": "Result = A",
 
-	"Initialization text": "If the number of tokens is more than the number of vectors, some may be skipped.\nLeave the textbox empty to start with zeroed out vectors",
+    "Initialization text": "If the number of tokens is more than the number of vectors, some may be skipped.\nLeave the textbox empty to start with zeroed out vectors",
     "Learning rate": "How fast should training go. Low values will take longer to train, high values may fail to converge (not generate accurate results) and/or may break the embedding (This has happened if you see Loss: nan in the training info textbox. If this happens, you need to manually restore your embedding from an older not-broken backup).\n\nYou can set a single numeric value, or multiple learning rates using the syntax:\n\n   rate_1:max_steps_1, rate_2:max_steps_2, ...\n\nEG:   0.005:100, 1e-3:1000, 1e-5\n\nWill train with rate of 0.005 for first 100 steps, then 1e-3 until 1000 steps, then 1e-5 for all remaining steps.",
 
     "Clip skip": "Early stopping parameter for CLIP model; 1 is stop at last layer as usual, 2 is stop at penultimate layer, etc.",
@@ -113,36 +114,55 @@ titles = {
     "Discard weights with matching name": "Regular expression; if weights's name matches it, the weights is not written to the resulting checkpoint. Use ^model_ema to discard EMA weights.",
     "Extra networks tab order": "Comma-separated list of tab names; tabs listed here will appear in the extra networks UI first and in order lsited.",
     "Negative Guidance minimum sigma": "Skip negative prompt for steps where image is already mostly denoised; the higher this value, the more skips there will be; provides increased performance in exchange for minor quality reduction."
+};
+
+function updateTooltipForSpan(span) {
+    if (span.title) return; // already has a title
+
+    let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
+
+    if (!tooltip) {
+        tooltip = localization[titles[span.value]] || titles[span.value];
+    }
+
+    if (!tooltip) {
+        for (const c of span.classList) {
+            if (c in titles) {
+                tooltip = localization[titles[c]] || titles[c];
+                break;
+            }
+        }
+    }
+
+    if (tooltip) {
+        span.title = tooltip;
+    }
 }
 
+function updateTooltipForSelect(select) {
+    if (select.onchange != null) return;
 
-onUiUpdate(function(){
-	gradioApp().querySelectorAll('span, button, select, p').forEach(function(span){
-		tooltip = titles[span.textContent];
+    select.onchange = function() {
+        select.title = localization[titles[select.value]] || titles[select.value] || "";
+    };
+}
 
-		if(!tooltip){
-		    tooltip = titles[span.value];
-		}
+var observedTooltipElements = {SPAN: 1, BUTTON: 1, SELECT: 1, P: 1};
 
-		if(!tooltip){
-			for (const c of span.classList) {
-				if (c in titles) {
-					tooltip = titles[c];
-					break;
-				}
-			}
-		}
+onUiUpdate(function(m) {
+    m.forEach(function(record) {
+        record.addedNodes.forEach(function(node) {
+            if (observedTooltipElements[node.tagName]) {
+                updateTooltipForSpan(node);
+            }
+            if (node.tagName == "SELECT") {
+                updateTooltipForSelect(node);
+            }
 
-		if(tooltip){
-			span.title = tooltip;
-		}
-	})
-
-	gradioApp().querySelectorAll('select').forEach(function(select){
-	    if (select.onchange != null) return;
-
-	    select.onchange = function(){
-            select.title = titles[select.value] || "";
-	    }
-	})
-})
+            if (node.querySelectorAll) {
+                node.querySelectorAll('span, button, select, p').forEach(updateTooltipForSpan);
+                node.querySelectorAll('select').forEach(updateTooltipForSelect);
+            }
+        });
+    });
+});

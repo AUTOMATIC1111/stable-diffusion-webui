@@ -32,14 +32,15 @@ DEPRECATION_MESSAGE = {
 }
 
 
-def check_deprecated_parameters(cls: str, **kwargs) -> None:
+def check_deprecated_parameters(cls: str, *, stacklevel: int = 2, kwargs) -> None:
     for key, value in DEPRECATION_MESSAGE.items():
         if key in kwargs:
             kwargs.pop(key)
             # Interestingly, using DeprecationWarning causes warning to not appear.
-            warnings.warn(value)
+            warnings.warn(value, stacklevel=stacklevel)
 
-    if len(kwargs) != 0:
+    if kwargs:
         warnings.warn(
-            f"You have unused kwarg parameters in {cls}, please remove them: {kwargs}"
+            f"You have unused kwarg parameters in {cls}, please remove them: {kwargs}",
+            stacklevel=stacklevel,
         )

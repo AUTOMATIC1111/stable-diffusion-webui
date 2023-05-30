@@ -44,6 +44,7 @@ class Glass(Base):
             font=font,
             font_mono=font_mono,
         )
+        self.name = "glass"
         super().set(
             body_background_fill_dark="*primary_800",
             background_fill_secondary_dark="*primary_800",

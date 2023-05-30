@@ -43,6 +43,7 @@ class Soft(Base):
             font=font,
             font_mono=font_mono,
         )
+        self.name = "soft"
         super().set(
             # Colors
             background_fill_primary="*neutral_50",
@@ -60,13 +61,13 @@ class Soft(Base):
             block_label_text_size="*text_md",
             block_label_text_weight="600",
             block_label_text_color="*primary_500",
-            block_label_text_color_dark="*white",
+            block_label_text_color_dark="white",
             block_title_radius="*block_label_radius",
             block_title_padding="*block_label_padding",
             block_title_background_fill="*block_label_background_fill",
             block_title_text_weight="600",
             block_title_text_color="*primary_500",
-            block_title_text_color_dark="*white",
+            block_title_text_color_dark="white",
             block_label_margin="*spacing_md",
             # Inputs
             input_background_fill="white",
