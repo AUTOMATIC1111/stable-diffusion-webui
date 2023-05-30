@@ -41,13 +41,12 @@ class LLuLFormatter(AlwaysonScriptArgsFormatter):
             return obj
 
         llul_script_args = args
-        if is_img2img:
-            if isinstance(args, dict):
-                llul_script_args = obj_to_array(args)
-            else:
-                llul_script_args = []
-                for x in args:
-                    llul_script_args.extend(obj_to_array(x))
+        if isinstance(args, dict):
+            llul_script_args = obj_to_array(args)
+        else:
+            llul_script_args = []
+            for x in args:
+                llul_script_args.extend(obj_to_array(x))
 
         return llul_script_args
 

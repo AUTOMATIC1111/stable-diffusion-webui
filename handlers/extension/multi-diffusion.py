@@ -100,14 +100,11 @@ class MultiVAEFormatter(AlwaysonScriptArgsFormatter):
 
             return obj
 
-        if is_img2img:
-            if isinstance(args, dict):
-                mv_script_args = obj_to_array(args)
-            else:
-                mv_script_args = []
-                for x in args:
-                    mv_script_args.extend(obj_to_array(x))
-        else:
+        if isinstance(args, dict):
             mv_script_args = obj_to_array(args)
+        else:
+            mv_script_args = []
+            for x in args:
+                mv_script_args.extend(obj_to_array(x))
         return mv_script_args
 

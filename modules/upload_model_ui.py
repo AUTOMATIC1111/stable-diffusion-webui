@@ -11,6 +11,8 @@ import re
 import types
 import typing
 import traceback
+import uuid
+
 import requests
 import shutil
 import os
@@ -287,14 +289,14 @@ def create_rm_model_ui():
 
 
 def create_upload_others():
-    gr.Label("你可以上传资料到指定路径", label=None)
+    gr.Label("你可以上传资料到指定路径，支持ZIP自动解压返回文件夹路径", label=None)
     # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
     radio_ctl = gr.Radio(["用户空间", "插件物料"],
                          value="用户空间",
                          label="选择文件类型:")
     extension_input = gr.Textbox(
-        placeholder='如:tagcomplete/tags/zh_cn.csv',
-        label='输入插件物料路径:extensions/',
+        placeholder='如:tagcomplete/tags/zh_cn.csv,插件文件夹名可咨询客服',
+        label='输入插件物料路径，位于extensions文件夹下,可以省略extensions/',
         interactive=True,
         visible=False
     )
@@ -314,9 +316,10 @@ def create_upload_others():
 
         base, ex = os.path.splitext(file_path)
         if ex.lower() == '.zip':
-            dst = os.path.join(folder, base+'_zip')
-            os.makedirs()
-            zip_uncompress(file_path, )
+            dst = os.path.join(folder, 'dec_'+base)
+            os.makedirs(dst, exist_ok=True)
+            zip_uncompress(file_path, dst)
+            file_path = dst
         return os.path.join(os.getcwd(), file_path)
 
     def update_visible(asset_type):
@@ -339,7 +342,7 @@ def create_upload_others():
 
 
 def download_user_assets():
-    gr.Label("你可以下载个人物料空间下的文件", label=None)
+    gr.Label("你可以管理个人物料空间下的文件", label=None)
     refresh_btn = gr.Button('刷新文件列表')
 
     def list_files():
@@ -350,8 +353,13 @@ def download_user_assets():
             files = None
         return files
 
-    f = gr.Files(label='选择文件下载:', interactive=False)
+    f = gr.Files(label='选择文件下载:', interactive=True, selectable=True)
+    remove = gr.Button('删除选中文件')
 
+    def remove_file(file_obj):
+        print(file_obj)
+
+    remove.click(remove_file, inputs=f)
     refresh_btn.click(list_files, outputs=f)
 
 

@@ -44,6 +44,7 @@ preprocessor_aliases = {
 }
 reverse_preprocessor_aliases = {preprocessor_aliases[k]: k for k in preprocessor_aliases.keys()}
 
+
 def HWC3(x):
     assert x.dtype == np.uint8
     if x.ndim == 2:
