@@ -233,9 +233,6 @@ class App(FastAPI):
             else:
                 raise HTTPException(status_code=400, detail="Incorrect credentials.")
 
-        def valid_tk(ticket: str) -> typing.Union[str]:
-            if ticket in TEST_TICKETS:
-                return TEST_TICKETS[ticket]
 
         @app.post("/tk")
         @app.post("/tk/")
