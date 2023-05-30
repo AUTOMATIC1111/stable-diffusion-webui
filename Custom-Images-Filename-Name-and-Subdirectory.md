@@ -1,13 +1,17 @@
 > the following information is about the image filename and subdirectory name, not the `Paths for saving \ Output directories`
-### By default, the Web UI saves images in the output directories with a filename structure of
+### By default, the Web UI saves images in the output directories and output archive with a filename structure of
 
-`number`-`seed`-`[prompt_spaces]`
-
+Images: `number`-`seed`-`[prompt_spaces]`
 ```
 01234-987654321-((masterpiece)), ((best quality)), ((illustration)), extremely detailed,style girl.png
 ```
 
-A different image filename and optional subdirectory can be used if a user wishes.
+Zip archive: `[datetime]`\_[`[model_name]`]\_`[seed]`-`[seed_last]`
+```
+20230530133149_[v1-5-pruned-emaonly]_987654321-987654329.zip
+```
+
+A different image filename and optional subdirectory and zip filename can be used if a user wishes.
 
 Image filename pattern can be configured under.
 
@@ -17,6 +21,10 @@ Subdirectory can be configured under settings.
 
 `settings tab` > `Saving to a directory` > `Directory name pattern`
 
+Zip archive can be configured under settings.
+
+`settings tab` > `Saving images/grids` > `Archive filename pattern`
+
 # Patterns
 Web-Ui provides several patterns that can be used as placeholders for inserting information into the filename or subdirectory,
 user can chain these patterns together, forming a filename that suits their use case.
@@ -24,6 +32,8 @@ user can chain these patterns together, forming a filename that suits their use 
 | Pattern                        | Description                                          | Example                                                                                                                               |
 |--------------------------------|------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
 | `[seed]`                       | Seed                                                 | 1234567890                                                                                                                            |
+| `[seed_first]`                 | First Seed of batch or Seed of single image          | [1234567890,1234567891,1234567892,1234567893] -> 1234567890<br>[1234567891] -> 1234567891
+| `[seed_last]`                  | Last Seed of batch                                   | [1234567890,1234567891,1234567892,1234567893] -> 1234567893
 | `[steps]`                      | Steps                                                | 20                                                                                                                                    |
 | `[cfg]`                        | CFG scale                                            | 7                                                                                                                                     |
 | `[sampler]`                    | Sampling method                                      | Euler a                                                                                                                               |
@@ -43,26 +53,22 @@ user can chain these patterns together, forming a filename that suits their use 
 | `[prompt_hash]` | The first 8 characters of the prompt's SHA-256 hash | 1girl -> 6362d0d2<br>(1girl:1.1) -> 0102e068 |
 | `[clip_skip]` | CLIP stop at last layers | 1 |
 | `[batch_number]` | the Nth image in a single batch job | BatchNo_[batch_number] -> BatchNo_3
+| `[batch_size]`   | Batch size | [1234567890,1234567891,1234567892,1234567893] -> 4
 | `[generation_number]` | the Nth image in an entire job | GenNo_[generation_number] -> GenNo_9
 | `[hasprompt<prompt1\|default><prompt2>...]` | if specified `prompt` is found in prompts then `prompt` will be added to filename, else `default` will be added to filename (`default` can be blank) | [hasprompt<girl><boy>] -> girl<br>[hasprompt<girl\|no girl><boy\|no boy>] -> girlno boy
-
-### Datetime Formatting details
-Reference python documentation for more details on [Format Codes](https://docs.python.org/3.10/library/datetime.html#strftime-and-strptime-format-codes)
-
-### Datetime Time Zone details
-Reference [List of Time Zones](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/List-of-Time-Zones) for a list of valid time zones
 
 If `<Format>` is blank or invalid, it will use the default time format "%Y%m%d%H%M%S"
 tip: you can use extra characters inside `<Format>` for punctuation, such as `_ -`
 
 If `<TimeZone>` is blank or invalid, it will use the default system time zone
 
-If `batch size` is 1 the [batch_number] along with the previous segment of text will not be added to filename
+If `batch size` is 1 the `[batch_number]`, `[seed_last]` along with the previous segment of text will not be added to filename
 
 If `batch size` x `batch count` is 1 the [generation_number] along with the previous segment of text will not be added to filename
 
-The Prompts and Style used for the above `[prompt]` examples
+`[batch_number]` and `[generation_number]` along with the previous segment of text will not be added to filename of zip achive.
 
+The Prompts and Style used for the above `[prompt]` examples
 Prompt:
 ```
 1girl,   white space, ((very important)), [not important], (some value:1.5), (whatever), the end
@@ -73,6 +79,11 @@ Selected Styles:
 ```
 
 note: the `Styles` mentioned above is referring to the two drop down menu below the generate button
+### Datetime Formatting details
+Reference python documentation for more details on [Format Codes](https://docs.python.org/3.10/library/datetime.html#strftime-and-strptime-format-codes)
+
+### Datetime Time Zone details
+Reference [List of Time Zones](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/List-of-Time-Zones) for a list of valid time zones
 
 ### if the prompt is too long, it will be cutoff
 this is due to your computer having a maximum file length
