@@ -268,7 +268,7 @@ def check_torch():
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0 torchvision==0.15.1')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1 torchvision==0.15.2')
         elif allow_directml and args.use_directml and ('arm' not in machine and 'aarch' not in machine):
             log.info('Using DirectML Backend')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch-directml')

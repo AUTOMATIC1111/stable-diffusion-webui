@@ -22,6 +22,13 @@ titles = {
   '\u{1f4cb}': 'Apply selected styles to current prompt',
   '\u{1f4d2}': 'Paste available values into the field',
   '\u{1f3b4}': 'Show/hide extra networks',
+  '\u{1F4D8}': 'Read generation parameters from prompt or last generation if prompt is empty into user interface.',
+  '\u{1F6C5}': 'Save style',
+  '\u{1F9F3}': 'Apply selected styles to current prompt',
+  '\u{1F6AE}': 'Clear prompt',
+  '\u{1F310}': 'Show/hide extra networks',
+ 
+
 
   'Inpaint a part of image': 'Draw a mask over an image, and the script will regenerate the masked area with content according to prompt',
   'SD upscale': 'Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back',

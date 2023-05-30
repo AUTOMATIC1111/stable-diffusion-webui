@@ -1,10 +1,10 @@
 import os
+
 import numpy as np
 import torch
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
 from tqdm import tqdm
-from rich import progress
 
 from modules import modelloader, devices, script_callbacks, shared
 from modules.shared import opts, state
@@ -44,31 +44,31 @@ class UpscalerSwinIR(Upscaler):
         img = upscale(img, model)
         try:
             torch.cuda.empty_cache()
-        except:
+        except Exception:
             pass
         return img
 
     def load_model(self, path, scale=4):
         if "http" in path:
             dl_name = "%s%s" % (self.model_name.replace(" ", "_"), ".pth")
-            filename = load_file_from_url(url=path, model_dir=self.model_path, file_name=dl_name, progress=True)
+            filename = load_file_from_url(url=path, model_dir=self.model_download_path, file_name=dl_name, progress=True)
         else:
             filename = path
         if filename is None or not os.path.exists(filename):
             return None
         if filename.endswith(".v2.pth"):
             model = net2(
-                upscale=scale,
-                in_chans=3,
-                img_size=64,
-                window_size=8,
-                img_range=1.0,
-                depths=[6, 6, 6, 6, 6, 6],
-                embed_dim=180,
-                num_heads=[6, 6, 6, 6, 6, 6],
-                mlp_ratio=2,
-                upsampler="nearest+conv",
-                resi_connection="1conv",
+            upscale=scale,
+            in_chans=3,
+            img_size=64,
+            window_size=8,
+            img_range=1.0,
+            depths=[6, 6, 6, 6, 6, 6],
+            embed_dim=180,
+            num_heads=[6, 6, 6, 6, 6, 6],
+            mlp_ratio=2,
+            upsampler="nearest+conv",
+            resi_connection="1conv",
             )
             params = None
         else:
@@ -87,9 +87,8 @@ class UpscalerSwinIR(Upscaler):
             )
             params = "params_ema"
 
-        with progress.open(filename, 'rb', description=f'Loading weights: [cyan]{filename}', auto_refresh=True) as f:
-            pretrained_model = torch.load(f)
-        if params is not None and params in pretrained_model:
+        pretrained_model = torch.load(filename)
+        if params is not None:
             model.load_state_dict(pretrained_model[params], strict=True)
         else:
             model.load_state_dict(pretrained_model, strict=True)
