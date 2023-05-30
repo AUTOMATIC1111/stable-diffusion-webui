@@ -8,7 +8,7 @@ from modules.ui_common import infotext_to_html
 
 def wrap_pnginfo(image):
     _, geninfo, info = run_pnginfo(image)
-    return '', infotext_to_html(geninfo), info
+    return '', infotext_to_html(geninfo), info, geninfo
 
 
 def submit_click(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs):
@@ -45,18 +45,18 @@ def create_ui():
             result_images, generation_info, html_info, html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
             gr.HTML('File metadata')
             exif_info = gr.HTML(elem_id="pnginfo_html_info")
+            gen_info = gr.Text(elem_id="pnginfo_gen_info", visible=False)
         for tabname, button in buttons.items():
-            parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(paste_button=button, tabname=tabname, source_text_component=html_info, source_image_component=extras_image))
+            parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(paste_button=button, tabname=tabname, source_text_component=gen_info, source_image_component=extras_image))
 
     tab_single.select(fn=lambda: 0, inputs=[], outputs=[tab_index])
     tab_batch.select(fn=lambda: 1, inputs=[], outputs=[tab_index])
     tab_batch_dir.select(fn=lambda: 2, inputs=[], outputs=[tab_index])
-    # html_info.change(fn=pretty_geninfo, inputs=[html_info], outputs=[html_info_pretty])
     _dummy = gr.HTML(visible=False)
     extras_image.change(
         fn=wrap_gradio_call(wrap_pnginfo),
         inputs=[extras_image],
-        outputs=[_dummy, html_info, exif_info],
+        outputs=[_dummy, html_info, exif_info, gen_info],
     )
     submit.click(
         fn=call_queue.wrap_gradio_gpu_call(submit_click, extra_outputs=[None, '']),

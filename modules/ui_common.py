@@ -31,7 +31,7 @@ def plaintext_to_html(text):
 
 
 def infotext_to_html(text):
-    res = '<p class="html_info">Prompt: ' + html.escape(text).replace('\n', '<br>') + '</p>'
+    res = '<p class="html_info">Prompt: ' + html.escape(text or '').replace('\n', '<br>') + '</p>'
     sections = res.split('Steps:') # before and after prompt+negprompt'
     if len(sections) > 1:
         res = sections[0] + '<br>Steps: ' + sections[1].strip().replace(', ', ' | ')
@@ -86,7 +86,7 @@ def save_files(js_data, images, do_make_zip, index):
     filenames = []
     fullfns = []
     for image_index, filedata in enumerate(images, start_index):
-        if 'name' in filedata and os.path.isfile(filedata['name']):
+        if 'name' in filedata and ('tmp' not in filedata['name']) and os.path.isfile(filedata['name']):
             fullfn = filedata['name']
             filenames.append(os.path.basename(fullfn))
             fullfns.append(fullfn)
@@ -186,7 +186,6 @@ def create_output_panel(tabname, outdir):
                 paste_field_names = []
             for paste_tabname, paste_button in buttons.items():
                 parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
-                    paste_button=paste_button, tabname=paste_tabname, source_tabname=("txt2img" if tabname == "txt2img" else None), source_image_component=result_gallery,
-                    paste_field_names=paste_field_names
+                    paste_button=paste_button, tabname=paste_tabname, source_tabname=("txt2img" if tabname == "txt2img" else None), source_image_component=result_gallery, paste_field_names=paste_field_names
                 ))
             return result_gallery, generation_info, html_info, html_log

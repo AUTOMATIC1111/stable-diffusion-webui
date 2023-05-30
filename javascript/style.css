@@ -92,6 +92,7 @@ button.custom-button{
 
 .performance p{
     display: inline-block;
+    color: var(--primary-100) !important
 }
 
 .performance .time {
@@ -116,7 +117,7 @@ a{
 #txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
     object-fit: scale-down;
     width: -webkit-fill-available !important;
-    height: -webkit-fill-available !important;
+    height: inherit !important;
 }
 #txt2img_actions_column, #img2img_actions_column {
     gap: 0.5em;
