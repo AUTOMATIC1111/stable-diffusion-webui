@@ -678,6 +678,54 @@ footer {
 #extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
 #extras_upscale { margin-top: 10px }
 
+.controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type {
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+div.controlnet_preprocessor_model {
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: 1fr max-content;
+}
+
+div.controlnet_preprocessor_model button.gradio-button {
+    align-self: center;
+}
+
+fieldset.controlnet_resize_mode_radio .wrap:last-of-type,
+fieldset.controlnet_control_mode_radio .wrap:last-of-type {
+    flex-direction: column;
+}
+
+div.controlnet_weight_steps > div.form {
+    display: grid;
+    grid-template: repeat(2, 1fr) / repeat(2, 1fr);
+}
+
+div.controlnet_weight_steps .controlnet_control_weight_slider {
+    grid-column: 1 / -1;
+}
+div.controlnet_image_controls {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+div.controlnet_image_controls .controlnet_invert_warning {
+    grid-column: 1 / -1;
+}
+
+div.controlnet_image_controls button {
+    justify-self: center;
+}
+
+div.controlnet_main_options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: row;
+}
+
 #modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
 
 .thumbnail-item > img {
