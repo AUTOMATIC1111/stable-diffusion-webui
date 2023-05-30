@@ -196,4 +196,4 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
         minor_type = Txt2ImgMinorTaskType(task.minor_type)
         if minor_type <= Txt2ImgMinorTaskType.Txt2Img:
-            yield from self._exec_img2img(task)
+            yield from self._exec_txt2img(task)
