@@ -114,10 +114,9 @@ a{
   cursor: pointer;
 }
 
-#txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
+#txt2img_gallery img, #img2img_gallery img, #extras_gallery img {
     object-fit: scale-down;
     width: -webkit-fill-available !important;
-    height: inherit !important;
 }
 #txt2img_actions_column, #img2img_actions_column {
     gap: 0.5em;

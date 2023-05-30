@@ -176,6 +176,8 @@ class Api:
         script_args[0] = 0
 
         # get default values
+        if gr is None:
+            return script_args
         with gr.Blocks(): # will throw errors calling ui function without this
             for script in script_runner.scripts:
                 if script.ui(script.is_img2img):

@@ -460,6 +460,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
 
+"""
 def print_profile(profile, msg: str):
     try:
         from rich import print # pylint: disable=redefined-builtin
@@ -468,6 +469,24 @@ def print_profile(profile, msg: str):
     lines = profile.key_averages().table(sort_by="cuda_time_total", row_limit=20)
     lines = lines.split('\n')
     lines = [l for l in lines if '/profiler' not in l]
+    print(f'Profile {msg}:', '\n'.join(lines))
+"""
+
+
+def print_profile(profile, msg: str):
+    import io
+    import pstats
+    try:
+        from rich import print # pylint: disable=redefined-builtin
+    except:
+        pass
+    profile.disable()
+    stream = io.StringIO()
+    ps = pstats.Stats(profile, stream=stream)
+    ps.sort_stats(pstats.SortKey.CUMULATIVE).print_stats(15)
+    profile = None
+    lines = stream.getvalue().split('\n')
+    lines = [l for l in lines if '<frozen' not in l and '{built-in' not in l and '/logging' not in l and '/rich' not in l]
     print(f'Profile {msg}:', '\n'.join(lines))
 
 
@@ -490,12 +509,18 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             log.debug('Token merging applied')
 
         if cmd_opts.profile:
+            """
             import torch.profiler # pylint: disable=redefined-outer-name
-            # activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA]
             with torch.profiler.profile(profile_memory=True, with_modules=True) as prof:
                 with torch.profiler.record_function("process_images"):
                     res = process_images_inner(p)
             print_profile(prof, 'process_images')
+            """
+            import cProfile
+            pr = cProfile.Profile()
+            pr.enable()
+            res = process_images_inner(p)
+            print_profile(pr, 'Torch')
         else:
             res = process_images_inner(p)
     finally:
@@ -836,7 +861,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if self.hr_upscaler is not None:
                 self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts): # TODO this is majority of processing time
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
         if self.enable_hr and latent_scale_mode is None:

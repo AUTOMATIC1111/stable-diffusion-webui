@@ -45,7 +45,7 @@ yapf
 scikit-image
 basicsr
 compel
-requests==2.30.0
+requests==2.31.0
 tqdm==4.65.0
 accelerate==0.18.0
 opencv-python==4.7.0.72
