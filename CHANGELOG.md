@@ -3,9 +3,12 @@
 ## Update for 05/28/2023
 
 - settings search option
-- fully common save/zip/delete (new) options in all tabs
+- fully common save/zip/delete (new) options in all tabs  
+  which (again) meant as rework of process image tab  
 - system info live gpu memory and load graphs for nvidia gpus
+- better controlnet interface
 - minor style changes
+- add new k-diffusion sampler
 
 ## Update for 05/26/2023
 

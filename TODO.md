@@ -11,10 +11,8 @@ Stuff to be added...
 
 - Update `Wiki`
 - Create new `GitHub` hooks/actions for CI/CD  
-- Reload browser on server restart
 - Import core repos
 - Improve core `Stability-AI` code: <https://github.com/vladmandic/automatic/discussions/795>
-- Improve core `k-Diffusion` code
 
 ## Investigate
 
