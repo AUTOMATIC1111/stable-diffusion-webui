@@ -1011,18 +1011,21 @@ def train(args, train_epoch_callback=None):
             print("Use DreamBooth method.")
             list_repeats = args.repeats_times
             class_tokens = args.trigger_words
+            list_reg_repeats = []
             reg_tokens = []
             list_train_data_dirs = args.list_train_data_dir
             list_reg_data_dirs = []
             if args.reg_data_dir is not None:
                 list_reg_data_dirs = args.list_reg_data_dir
                 reg_tokens = args.reg_tokens
+                list_reg_repeats = args.list_reg_repeats
+
             # print("111",list_repeats,class_tokens,reg_tokens)
             user_config = {
                 "datasets": [
                     # {"subsets": config_util.generate_dreambooth_subsets_config_by_subdirs(args.train_data_dir, args.reg_data_dir)}
                     {"subsets": config_util.generate_dreambooth_subsets_config_by_args(
-                        list_repeats, class_tokens, list_train_data_dirs, reg_tokens, list_reg_data_dirs)}
+                        list_repeats, class_tokens, list_train_data_dirs, list_reg_repeats, reg_tokens, list_reg_data_dirs)}
                 ]
             }
         else:
@@ -1710,24 +1713,28 @@ def setup_parser() -> argparse.ArgumentParser:
         "--training_comment", type=str, default=None, help="arbitrary comment string stored in metadata"
     )
     parser.add_argument(
-        "--repeats_times", type=list, default="",
+        "--repeats_times", type=list, default=[""],
         help="repeat times of source images for traing"
     )
     parser.add_argument(
-        "--trigger_words", type=list, default="",
+        "--trigger_words", type=list, default=[""],
         help="unique token(trigger word) for lora"
     )
     parser.add_argument(
-        "--reg_tokens", type=list, default="",
+        "--reg_tokens", type=list, default=[""],
         help="lora class type,for example, a ly2 dog,ly2 is class_token and dog is reg_token"
     )
     parser.add_argument(
-        "--list_train_data_dir", type=list, default="",
+        "--list_train_data_dir", type=list, default=[""],
         help="list for train_data folder name"
     )
     parser.add_argument(
-        "--list_reg_data_dir", type=list, default="",
+        "--list_reg_data_dir", type=list, default=[""],
         help="list for reg_data folder name"
+    )
+    parser.add_argument(
+        "--list_reg_repeats", type=list, default=[""],
+        help="repeat times of source images for reg images"
     )
 
     return parser
@@ -1739,24 +1746,30 @@ def train_callback(epoch, avg_loss):
 
 # 训练函数接口
 def train_with_params(pretrained_model_name_or_path, network_weights, train_data_dir, reg_data_dir, output_name,
-                      save_model_as, num_repeats, save_every_n_epochs=2, trigger_words=None, reg_tokens=None,
-                      list_train_data_dir=None, list_reg_data_dir=None, batch_size=1, epoch=20, resolution="512",
-                      clip_skip=1, network_dim=32, network_alpha=32, learning_rate=0.0001, unet_lr=0.0001,
-                      text_encoder_lr=0.00001, optimizer_type="AdamW8bit", network_train_unet_only=False,
-                      network_train_text_encoder_only=False, seed=1, network_module="networks.lora",
-                      caption_extension=".txt", output_dir="./output", logging_dir="./logs", save_last_n_epochs=10,
-                      lr_scheduler_num_cycles=1, lr_scheduler="cosine_with_restarts", callback=None):
+                      save_model_as,
+                      save_every_n_epochs=2, trigger_words=[], reg_tokens=[], list_train_data_dir=[],
+                      list_reg_data_dir=[], num_repeats=[],list_reg_repeats=[],
+                      batch_size=1, epoch=20,
+                      resolution="512", clip_skip=1, network_dim=32, network_alpha=32, learning_rate=0.0001,
+                      unet_lr=0.0001,
+                      text_encoder_lr=0.00001, optimizer_type="AdamW8bit",
+                      network_train_unet_only=False, network_train_text_encoder_only=False, seed=1,
+                      network_module="networks.lora", caption_extension=".txt", output_dir="./output",
+                      logging_dir="./logs", save_last_n_epochs=10, lr_scheduler_num_cycles=1,
+                      lr_scheduler="cosine_with_restarts",
+                      multires_noise_iterations=None, multires_noise_discount=0.3,
+                      otherargs=[]):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
-    args = parser.parse_args(['--save_model_as=safetensors', '--enable_bucket'])
+    args = parser.parse_args(['--save_model_as=safetensors', '--enable_bucket', '--xformers'])
     # args = train_util.read_config_from_file(args, parser)
 
     args.pretrained_model_name_or_path = pretrained_model_name_or_path
-    if network_weights:
+    if network_weights != None and network_weights != "":
         args.network_weights = network_weights
 
     args.train_data_dir = train_data_dir
-    if reg_data_dir is not None and reg_data_dir != "":
+    if reg_data_dir is not None and reg_data_dir != "" and reg_data_dir != []:
         args.reg_data_dir = reg_data_dir
         args.reg_tokens = reg_tokens or []
         args.list_reg_data_dir = list_reg_data_dir or []
@@ -1766,7 +1779,8 @@ def train_with_params(pretrained_model_name_or_path, network_weights, train_data
     args.save_every_n_epochs = save_every_n_epochs
     args.list_train_data_dir = list_train_data_dir or []
     args.repeats_times = num_repeats
-    args.batch_size = batch_size
+    args.list_reg_repeats = list_reg_repeats
+    args.train_batch_size = batch_size
     args.max_train_epochs = epoch
     args.resolution = resolution
     args.clip_skip = clip_skip
@@ -1786,10 +1800,12 @@ def train_with_params(pretrained_model_name_or_path, network_weights, train_data
     args.save_last_n_epochs = save_last_n_epochs
     args.lr_scheduler_num_cycles = lr_scheduler_num_cycles
     args.lr_scheduler = lr_scheduler
-
+    args.multires_noise_iterations = multires_noise_iterations
+    args.multires_noise_discount = multires_noise_discount
+    
     #####默认设置
     args.enable_bucket = True
-
+    args.network_args = otherargs
     return train(args, callback)
 
 
@@ -1804,15 +1820,20 @@ if __name__ == "__main__":
     train_with_params(pretrained_model_name_or_path="/data/qll/anything-v4.5-pruned.ckpt",
                       network_weights="",  # "output/y1s1_100v3.safetensors",
                       train_data_dir="/data/qll/pics/y1s1_512_wd",
-                      reg_data_dir="",
-                      output_name="y1s1_512wd", save_model_as="safetensors",
-                      trigger_words=["y1s1"], save_every_n_epochs=2,
-                      reg_tokens=[""], list_train_data_dir=["/data/qll/pics/y1s1_512_wd/tag"],
-                      list_reg_data_dir=[""],
-                      num_repeats=["5"], batch_size=4, epoch=20, resolution="512", clip_skip=2, network_dim=32,
-                      network_alpha=16,
-                      learning_rate=0.0001, unet_lr=0.0001, text_encoder_lr=0.00005, optimizer_type="Lion",
+                      output_dir="/data/qll/stable-diffusion-webui/models/Lora/",
+                      reg_data_dir=["/data/qll/pics/minglan/"],
+                      output_name="minglan-body-head-lycoris-multires-reg", save_model_as="safetensors",
+                      trigger_words=["minglan","minglan"], save_every_n_epochs=2,
+                      reg_tokens=[""], list_train_data_dir=["/data/qll/pics/minglan/head512x512","/data/qll/pics/minglan/upperbody512x768"],
+                      list_reg_data_dir=["/data/qll/pics/minglan/reg"],
+                      num_repeats=["15","30"], list_reg_repeats=["3"],
+                      batch_size=1, epoch=20, resolution="512,768", clip_skip=2, network_dim=128, network_alpha=64,
+                      learning_rate=1e-4, unet_lr=1e-4, text_encoder_lr=1e-5, optimizer_type="AdamW8bit",
                       network_train_text_encoder_only=False,
-                      network_train_unet_only=False, seed=1, network_module="networks.lora")
+                      network_train_unet_only=False, seed=1, network_module="lycoris.kohya",
+                      lr_scheduler="cosine_with_restarts",
+                      multires_noise_iterations=8,multires_noise_discount=0.3,
+                      otherargs=["conv_dim=128","conv_alpha=64","unit=8","dropout=0","algo=lora","--xformers"]
+                      )
 
 # python train_network_qll.py --pretrained_model_name_or_path "/data/qll/qianzai_ai_draw/v1-5-pruned-emaonly.ckpt" --train_data_dir "/data/qll/lora_pictures/train_ironman" --output_name im2 --resolution 512 --network_module "networks.lora" --network_dim 32 --xformers  --caption_extension ".txt" --prior_loss_weight 1 --output_dir "./output" --logging_dir "./logs" --repeats_times "20" --class_tokens iiiiimqll --output_name iiiiimqll --list_train_data_dir "/data/qll/lora_pictures/train_ironman/10_immmmmman"
