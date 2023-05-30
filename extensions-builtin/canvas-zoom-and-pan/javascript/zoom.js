@@ -261,10 +261,13 @@ onUiLoaded(async() => {
             //Reset Zoom
             targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
 
+            // Get scrollbar width to right-align the image
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
             // Get element and screen dimensions
             const elementWidth = targetElement.offsetWidth;
             const elementHeight = targetElement.offsetHeight;
-            const screenWidth = window.innerWidth;
+            const screenWidth = window.innerWidth - scrollbarWidth;
             const screenHeight = window.innerHeight;
 
             // Get element's coordinates relative to the page
