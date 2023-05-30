@@ -17,7 +17,7 @@ import os
 import random
 import gradio as gr
 from typing import Tuple
-from tools.file import find_files_from_dir
+from tools.file import find_files_from_dir, zip_uncompress
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1"
@@ -311,7 +311,13 @@ def create_upload_others():
             file_path = os.path.join(folder, os.path.basename(file_obj.orig_name))
         os.makedirs(folder, exist_ok=True)
         shutil.copy(file_obj.name, file_path)
-        return file_path
+
+        base, ex = os.path.splitext(file_path)
+        if ex.lower() == '.zip':
+            dst = os.path.join(folder, base+'_zip')
+            os.makedirs()
+            zip_uncompress(file_path, )
+        return os.path.join(os.getcwd(), file_path)
 
     def update_visible(asset_type):
         visible = asset_type == '插件物料'

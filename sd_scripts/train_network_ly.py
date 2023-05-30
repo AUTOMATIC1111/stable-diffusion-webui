@@ -1746,30 +1746,25 @@ def train_callback(epoch, avg_loss):
 
 # 训练函数接口
 def train_with_params(pretrained_model_name_or_path, network_weights, train_data_dir, reg_data_dir, output_name,
-                      save_model_as,
-                      save_every_n_epochs=2, trigger_words=[], reg_tokens=[], list_train_data_dir=[],
-                      list_reg_data_dir=[], num_repeats=[],list_reg_repeats=[],
-                      batch_size=1, epoch=20,
-                      resolution="512", clip_skip=1, network_dim=32, network_alpha=32, learning_rate=0.0001,
-                      unet_lr=0.0001,
-                      text_encoder_lr=0.00001, optimizer_type="AdamW8bit",
-                      network_train_unet_only=False, network_train_text_encoder_only=False, seed=1,
-                      network_module="networks.lora", caption_extension=".txt", output_dir="./output",
-                      logging_dir="./logs", save_last_n_epochs=10, lr_scheduler_num_cycles=1,
-                      lr_scheduler="cosine_with_restarts",
-                      multires_noise_iterations=None, multires_noise_discount=0.3,
-                      otherargs=[]):
+                      save_model_as, num_repeats, save_every_n_epochs=2, trigger_words=None, reg_tokens=None,
+                      list_train_data_dir=None, list_reg_data_dir=None, batch_size=1, epoch=20, resolution="512",
+                      clip_skip=1, network_dim=32, network_alpha=32, learning_rate=0.0001, unet_lr=0.0001,
+                      text_encoder_lr=0.00001, optimizer_type="AdamW8bit", network_train_unet_only=False,
+                      network_train_text_encoder_only=False, seed=1, network_module="networks.lora",
+                      caption_extension=".txt", output_dir="./output", logging_dir="./logs", save_last_n_epochs=10,
+                      lr_scheduler_num_cycles=1, lr_scheduler="cosine_with_restarts", multires_noise_iterations=None,
+                      multires_noise_discount=0.3, otherargs=None, list_reg_repeats=None, callback=None):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
     args = parser.parse_args(['--save_model_as=safetensors', '--enable_bucket', '--xformers'])
     # args = train_util.read_config_from_file(args, parser)
 
     args.pretrained_model_name_or_path = pretrained_model_name_or_path
-    if network_weights != None and network_weights != "":
+    if network_weights:
         args.network_weights = network_weights
 
     args.train_data_dir = train_data_dir
-    if reg_data_dir is not None and reg_data_dir != "" and reg_data_dir != []:
+    if reg_data_dir is not None and reg_data_dir != "":
         args.reg_data_dir = reg_data_dir
         args.reg_tokens = reg_tokens or []
         args.list_reg_data_dir = list_reg_data_dir or []
@@ -1805,7 +1800,7 @@ def train_with_params(pretrained_model_name_or_path, network_weights, train_data
     
     #####默认设置
     args.enable_bucket = True
-    args.network_args = otherargs
+    args.network_args = otherargs or []
     return train(args, callback)
 
 
