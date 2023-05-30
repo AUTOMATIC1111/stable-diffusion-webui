@@ -84,7 +84,7 @@ class CFGDenoiser(torch.nn.Module):
 
         # at self.image_cfg_scale == 1.0 produced results for edit model are the same as with normal sampling,
         # so is_edit_model is set to False to support AND composition.
-        is_edit_model = shared.sd_model.cond_stage_key == "edit" and self.image_cfg_scale is not None and self.image_cfg_scale != 1.0
+        is_edit_model = (shared.sd_model is not None) and hasattr(shared.sd_model, 'cond_stage_key') and (shared.sd_model.cond_stage_key == "edit") and (self.image_cfg_scale is not None) and (self.image_cfg_scale != 1.0)
 
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         uncond = prompt_parser.reconstruct_cond_batch(uncond, self.step)
@@ -212,9 +212,9 @@ class TorchHijack:
             if noise.shape == x.shape:
                 return noise
 
-        # if opts.randn_source == "CPU" or x.device.type == 'mps':
-        #    return torch.randn_like(x, device=devices.cpu).to(x.device)
-        # else:
+        if x.device.type == 'mps':
+            return torch.randn_like(x, device=devices.cpu).to(x.device)
+        else:
             return torch.randn_like(x)
 
 
@@ -247,7 +247,6 @@ class KDiffusionSampler:
             raise sd_samplers_common.InterruptedException
 
         state.sampling_step = step
-        shared.total_tqdm.update()
 
     def launch_sampling(self, steps, func):
         state.sampling_steps = steps
@@ -312,7 +311,13 @@ class KDiffusionSampler:
             return None
 
         from k_diffusion.sampling import BrownianTreeNoiseSampler
-        sigma_min, sigma_max = sigmas[sigmas > 0].min(), sigmas.max()
+        positive_sigmas = sigmas[sigmas > 0]
+        if positive_sigmas.numel() > 0:
+            sigma_min = positive_sigmas.min(dim=0)[0]
+        else:
+            sigma_min = 0
+        sigma_max = sigmas.max()
+
         current_iter_seeds = p.all_seeds[p.iteration * p.batch_size:(p.iteration + 1) * p.batch_size]
         return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
 
