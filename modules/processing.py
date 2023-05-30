@@ -17,7 +17,7 @@ from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
 from installer import git_commit
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts # pylint: disable=unused-import
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts, sd_samplers_common # pylint: disable=unused-import
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state, log, backend, Backend
 import modules.shared as shared
@@ -424,6 +424,12 @@ def fix_seed(p):
 
 def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
     index = position_in_batch + iteration * p.batch_size
+
+    uses_ensd = opts.eta_noise_seed_delta != 0
+    if uses_ensd:
+        uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
+
+
     generation_params = {
         "Steps": p.steps,
         "Sampler": p.sampler_name,
@@ -441,7 +447,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Denoising strength": getattr(p, 'denoising_strength', None),
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": p.clip_skip,
-        "ENSD": None if opts.eta_noise_seed_delta == 0 else opts.eta_noise_seed_delta,
+        "ENSD": opts.eta_noise_seed_delta if uses_ensd else None,
         "Init image hash": getattr(p, 'init_img_hash', None),
         "Version": git_commit,
         "Token merging ratio": None if not (opts.token_merging or cmd_opts.token_merging) or opts.token_merging_hr_only else opts.token_merging_ratio,
