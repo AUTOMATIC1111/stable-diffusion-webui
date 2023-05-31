@@ -119,13 +119,14 @@ function create_submit_args(args) {
 }
 
 function showSubmitButtons(tabname, show) {
-  gradioApp().getElementById(`${tabname}_interrupt`).style.display = show ? 'none' : 'block';
-  gradioApp().getElementById(`${tabname}_skip`).style.display = show ? 'none' : 'block';
+  // gradioApp().getElementById(`${tabname}_interrupt`).style.display = show ? 'none' : 'block';
+  // gradioApp().getElementById(`${tabname}_skip`).style.display = show ? 'none' : 'block';
   // gradioApp().getElementById(tabname+'_interrupt').style.display = "block"
   // gradioApp().getElementById(tabname+'_skip').style.display = "block"
 }
 
 function submit(...args) {
+  console.log('submit txt2img:', args);
   rememberGallerySelection('txt2img_gallery');
   showSubmitButtons('txt2img', false);
   const id = randomId();
@@ -137,6 +138,7 @@ function submit(...args) {
 }
 
 function submit_img2img(...args) {
+  console.log('submit img2img:', args);
   rememberGallerySelection('img2img_gallery');
   showSubmitButtons('img2img', false);
   const id = randomId();

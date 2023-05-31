@@ -1,5 +1,10 @@
 # Change Log for SD.Next
 
+## Update for 05/31/2023
+
+- add pause option next to stop/skip
+- redesign action box to be uniform accross all themes
+
 ## Update for 05/30/2023
 
 Another bigger one...And more to come in the next few days...
