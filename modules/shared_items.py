@@ -40,3 +40,20 @@ def refresh_unet_list():
 
     modules.sd_unet.list_unets()
 
+
+ui_reorder_categories_builtin_items = [
+    "inpaint",
+    "sampler",
+    "checkboxes",
+    "hires_fix",
+    "dimensions",
+    "cfg",
+    "seed",
+    "batch",
+    "override_settings",
+]
+
+
+def ui_reorder_categories():
+    yield from ui_reorder_categories_builtin_items
+    yield "scripts"
