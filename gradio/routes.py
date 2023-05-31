@@ -196,9 +196,9 @@ class App(FastAPI):
         def login(form_data: OAuth2PasswordRequestForm = Depends()):
             username, password = form_data.username, form_data.password
             if app.auth is None:
-                if app.reverse_proxy:
-                    base_path = "/" + os.getenv("Endpoint", "")
-                    return RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
+                # if app.reverse_proxy:
+                #     base_path = "/" + os.getenv("Endpoint", "")
+                #     return RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
                 return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
             if callable(app.auth):
                 expire_time_or_auth = app.auth(username, password)
@@ -214,9 +214,9 @@ class App(FastAPI):
                 app.tokens[token] = username
                 response = JSONResponse(content={"success": True})
                 # 有nginx的情况。
-                if app.reverse_proxy:
-                    base_path = "/" + os.getenv("Endpoint", "")
-                    response = RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
+                # if app.reverse_proxy:
+                #     base_path = "/" + os.getenv("Endpoint", "")
+                #     response = RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
                 exp = expire_time_or_auth - int(time.time()) if isinstance(expire_time_or_auth,
                                                                            int) and expire_time_or_auth > 0 else 3600 * 24
                 if exp > 24 * 3600 * 4:
@@ -233,33 +233,6 @@ class App(FastAPI):
             else:
                 raise HTTPException(status_code=400, detail="Incorrect credentials.")
 
-
-        @app.post("/tk")
-        @app.post("/tk/")
-        def login_with_tk(request: fastapi.Request):
-            token = request.cookies.get("access-token") or \
-                    request.cookies.get("access-token-unsecure")
-            ticket = request.query_params.get('tick')
-            # 已经登录
-            if app.tokens.get(token):
-                return RedirectResponse(url='/', status_code=status.HTTP_302_FOUND)
-            else:
-                # 带有TICK
-                if ticket:
-                    user = valid_tk(ticket)
-                    if user:
-                        token = secrets.token_urlsafe(32)
-                        response = RedirectResponse(url='/', status_code=status.HTTP_302_FOUND)
-                        response.set_cookie(
-                            key="access-token", value=token, httponly=True
-                        )
-                        response.set_cookie(
-                            key="access-token-unsecure", value=token, httponly=True
-                        )
-
-                        app.tokens[token] = user
-                        return response
-                raise HTTPException(status_code=400, detail="Incorrect credentials.")
 
         ###############
         # Main Routes
