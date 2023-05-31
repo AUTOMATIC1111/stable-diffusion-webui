@@ -11,7 +11,7 @@ parser.add_argument("--skip-python-version-check", action='store_true', help="la
 parser.add_argument("--skip-torch-cuda-test", action='store_true', help="launch.py argument: do not check if CUDA is able to work properly")
 parser.add_argument("--reinstall-xformers", action='store_true', help="launch.py argument: install the appropriate version of xformers even if you have some version already installed")
 parser.add_argument("--reinstall-torch", action='store_true', help="launch.py argument: install the appropriate version of torch even if you have some version already installed")
-parser.add_argument("--update-check", action='store_true', help="launch.py argument: chck for updates at startup")
+parser.add_argument("--update-check", action='store_true', help="launch.py argument: check for updates at startup")
 parser.add_argument("--test-server", action='store_true', help="launch.py argument: configure server for testing")
 parser.add_argument("--skip-prepare-environment", action='store_true', help="launch.py argument: skip all environment preparation")
 parser.add_argument("--skip-install", action='store_true', help="launch.py argument: skip installation of packages")
