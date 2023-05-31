@@ -388,7 +388,7 @@ def create_sampler_and_steps_selection(choices, tabname):
 
 
 def ordered_ui_categories():
-    user_order = {x.strip(): i * 2 + 1 for i, x in enumerate(shared.opts.ui_reorder)}
+    user_order = {x.strip(): i * 2 + 1 for i, x in enumerate(shared.opts.ui_reorder_list)}
 
     for _, category in sorted(enumerate(shared_items.ui_reorder_categories()), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category

@@ -474,7 +474,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that appear at the top of page rather than in settings tab").needs_restart(),
     "ui_tab_order": OptionInfo([], "UI tab order", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
-    "ui_reorder": OptionInfo([], "txt2img/img2img UI item order", ui_components.DropdownMulti, lambda: {"choices": list(shared_items.ui_reorder_categories())}).info("selected items appear first").needs_restart(),
+    "ui_reorder_list": OptionInfo([], "txt2img/img2img UI item order", ui_components.DropdownMulti, lambda: {"choices": list(shared_items.ui_reorder_categories())}).info("selected items appear first").needs_restart(),
     "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires sampler selection").needs_restart(),
     "hires_fix_show_prompts": OptionInfo(False, "Hires fix: show hires prompt and negative prompt").needs_restart(),
     "disable_token_counters": OptionInfo(False, "Disable prompt token counters").needs_restart(),
@@ -626,8 +626,8 @@ class Options:
             self.data['quicksettings_list'] = [i.strip() for i in self.data.get('quicksettings').split(',')]
 
         # 1.4.0 ui_reorder
-        if isinstance(self.data.get('ui_reorder'), str):
-            self.data['ui_reorder'] = [i.strip() for i in self.data.get('ui_reorder').split(',')]
+        if isinstance(self.data.get('ui_reorder'), str) and self.data.get('ui_reorder') and "ui_reorder_list" not in self.data:
+            self.data['ui_reorder_list'] = [i.strip() for i in self.data.get('ui_reorder').split(',')]
 
         bad_settings = 0
         for k, v in self.data.items():
