@@ -4,7 +4,7 @@ import torch
 import k_diffusion.sampling
 from modules import prompt_parser, devices, sd_samplers_common
 
-from modules.shared import opts, state
+from modules.shared import opts, state, cmd_opts
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
@@ -319,7 +319,10 @@ class KDiffusionSampler:
         sigma_max = sigmas.max()
 
         current_iter_seeds = p.all_seeds[p.iteration * p.batch_size:(p.iteration + 1) * p.batch_size]
-        return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
+        if cmd_opts.use_ipex: #Remove this after Intel adds support for torch.Generator()
+            return BrownianTreeNoiseSampler(x.to("cpu"), sigma_min, sigma_max, seed=current_iter_seeds, transform=lambda x: x.to("cpu"), transform_last=lambda x: x.to("xpu"))
+        else:
+            return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
 
     def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
         steps, t_enc = sd_samplers_common.setup_img2img_steps(p, steps)
