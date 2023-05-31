@@ -193,7 +193,7 @@ def parse_download_url(url: str, cover: str) -> Tuple[str, str]:
 def create_upload_model_ui():
     gr.Label("你可以提供下载链接(本地文件需先上传服务器并提供外网访问URL)，选择模型类型并上传提示OK后完成", label=None)
     # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
-    radio_ctl = gr.Radio(["Lora", "Stable-diffusion"],
+    radio_ctl = gr.Radio(["Lora", "Stable-diffusion", "VAE"],
                          value="Lora",
                          label="选择模型类型:")
     with gr.Tabs(elem_id="tabs") as tabs:
@@ -316,7 +316,7 @@ def create_upload_others():
 
         base, ex = os.path.splitext(file_path)
         if ex.lower() == '.zip':
-            dst = os.path.join(folder, 'dec_'+base)
+            dst = os.path.join(folder, 'dec_' + base)
             os.makedirs(dst, exist_ok=True)
             zip_uncompress(file_path, dst)
             file_path = dst
