@@ -136,6 +136,25 @@ def list_models():
                     checkpoint_info.register()
 
 
+def update_model_hashes():
+    txt = []
+    lst = [ckpt for ckpt in checkpoints_list.values() if ckpt.hash is None]
+    shared.log.info(f'Models list: short hash missing for {len(lst)} out of {len(checkpoints_list)} models')
+    for ckpt in lst:
+        ckpt.hash = model_hash(ckpt.filename)
+        txt.append(f'Calculated short hash: <b>{ckpt.title}</b> {ckpt.hash}')
+    txt.append(f'Updated short hashes for <b>{len(lst)}</b> out of <b>{len(checkpoints_list)}</b> models')
+    lst = [ckpt for ckpt in checkpoints_list.values() if ckpt.sha256 is None or ckpt.shorthash is None]
+    shared.log.info(f'Models list: full hash missing for {len(lst)} out of {len(checkpoints_list)} models')
+    for ckpt in lst:
+        ckpt.sha256 = hashes.sha256(ckpt.filename, f"checkpoint/{ckpt.name}")
+        ckpt.shorthash = ckpt.sha256[0:10]
+        txt.append(f'Calculated full hash: <b>{ckpt.title}</b> {ckpt.shorthash}')
+    txt.append(f'Updated full hashes for <b>{len(lst)}</b> out of <b>{len(checkpoints_list)}</b> models')
+    txt = '<br>'.join(txt)
+    return txt
+
+
 def get_closet_checkpoint_match(search_string):
     checkpoint_info = checkpoint_aliases.get(search_string, None)
     if checkpoint_info is not None:

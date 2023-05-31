@@ -934,6 +934,7 @@ def create_ui():
                                 discard_weights = gr.Textbox(value="", label="Discard weights with matching name", elem_id="modelmerger_discard_weights")
                             with gr.Row():
                                 modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
+                                model_checkhash = gr.Button(elem_id="modelmerger_hash", value="Calculate hash for all models (may take a long time)", variant='primary')
 
                         with gr.Column(variant='compact', elem_id="modelmerger_results_container"):
                             with gr.Group(elem_id="modelmerger_results_panel"):
@@ -1519,6 +1520,7 @@ def create_ui():
                 modelmerger_result,
             ]
         )
+        model_checkhash.click(fn=sd_models.update_model_hashes, inputs=[], outputs=[modelmerger_result])
 
     ui_config_file = cmd_opts.ui_config
     ui_settings = {}

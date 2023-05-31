@@ -17,8 +17,7 @@ def dump_cache():
 
 
 def cache(subsection):
-    global cache_data
-
+    global cache_data # pylint: disable=global-statement
     if cache_data is None:
         with filelock.FileLock(f"{cache_filename}.lock"):
             if not os.path.isfile(cache_filename):
@@ -26,10 +25,8 @@ def cache(subsection):
             else:
                 with open(cache_filename, "r", encoding="utf8") as file:
                     cache_data = json.load(file)
-
     s = cache_data.get(subsection, {})
     cache_data[subsection] = s
-
     return s
 
 
@@ -86,4 +83,3 @@ def addnet_hash_safetensors(b):
     for chunk in iter(lambda: b.read(blksize), b""):
         hash_sha256.update(chunk)
     return hash_sha256.hexdigest()
-
