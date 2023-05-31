@@ -9,7 +9,6 @@ from ldm.util import default
 from einops import rearrange
 
 from modules import shared, errors, devices, sub_quadratic_attention
-from modules.errors import print_error
 from modules.hypernetworks import hypernetwork
 
 import ldm.modules.attention
@@ -139,7 +138,7 @@ if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
         import xformers.ops
         shared.xformers_available = True
     except Exception:
-        print_error("Cannot import xformers", exc_info=True)
+        errors.report("Cannot import xformers", exc_info=True)
 
 
 def get_available_vram():

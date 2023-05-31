@@ -3,11 +3,7 @@ import textwrap
 import traceback
 
 
-def print_error(
-    message: str,
-    *,
-    exc_info: bool = False,
-) -> None:
+def report(message: str, *, exc_info: bool = False) -> None:
     """
     Print an error message to stderr, with optional traceback.
     """
@@ -15,7 +11,7 @@ def print_error(
         print("***", line, file=sys.stderr)
     if exc_info:
         print(textwrap.indent(traceback.format_exc(), "    "), file=sys.stderr)
-        print("---")
+        print("---", file=sys.stderr)
 
 
 def print_error_explanation(message):

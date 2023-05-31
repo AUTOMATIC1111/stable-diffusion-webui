@@ -5,11 +5,11 @@ from typing import Optional, Dict, Any
 from fastapi import FastAPI
 from gradio import Blocks
 
-from modules.errors import print_error
+from modules import errors
 
 
 def report_exception(c, job):
-    print_error(f"Error executing callback {job} for {c.script}", exc_info=True)
+    errors.report(f"Error executing callback {job} for {c.script}", exc_info=True)
 
 
 class ImageSaveParams:

@@ -9,8 +9,7 @@ import torch
 import tqdm
 from einops import rearrange, repeat
 from ldm.util import default
-from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint
-from modules.errors import print_error
+from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint, errors
 from modules.textual_inversion import textual_inversion, logging
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
@@ -329,7 +328,7 @@ def load_hypernetwork(name):
         hypernetwork.load(path)
         return hypernetwork
     except Exception:
-        print_error(f"Error loading hypernetwork {path}", exc_info=True)
+        errors.report(f"Error loading hypernetwork {path}", exc_info=True)
         return None
 
 
@@ -766,7 +765,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
     except Exception:
-        print_error("Exception in training hypernetwork", exc_info=True)
+        errors.report("Exception in training hypernetwork", exc_info=True)
     finally:
         pbar.leave = False
         pbar.close()

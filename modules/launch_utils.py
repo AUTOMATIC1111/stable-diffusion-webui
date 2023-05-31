@@ -7,8 +7,7 @@ import platform
 import json
 from functools import lru_cache
 
-from modules import cmd_args
-from modules.errors import print_error
+from modules import cmd_args, errors
 from modules.paths_internal import script_path, extensions_dir
 
 args, _ = cmd_args.parser.parse_known_args()
@@ -189,7 +188,7 @@ def run_extension_installer(extension_dir):
 
         print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env))
     except Exception as e:
-        print_error(str(e))
+        errors.report(str(e))
 
 
 def list_extensions(settings_file):
@@ -200,7 +199,7 @@ def list_extensions(settings_file):
             with open(settings_file, "r", encoding="utf8") as file:
                 settings = json.load(file)
     except Exception:
-        print_error("Could not load settings", exc_info=True)
+        errors.report("Could not load settings", exc_info=True)
 
     disabled_extensions = set(settings.get('disabled_extensions', []))
     disable_all_extensions = settings.get('disable_all_extensions', 'none')

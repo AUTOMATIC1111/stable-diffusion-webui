@@ -11,7 +11,6 @@ from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
 
 from modules import devices, paths, shared, lowvram, modelloader, errors
-from modules.errors import print_error
 
 blip_image_eval_size = 384
 clip_model_name = 'ViT-L/14'
@@ -216,7 +215,7 @@ class InterrogateModels:
                             res += f", {match}"
 
         except Exception:
-            print_error("Error interrogating", exc_info=True)
+            errors.report("Error interrogating", exc_info=True)
             res += "<error>"
 
         self.unload()
