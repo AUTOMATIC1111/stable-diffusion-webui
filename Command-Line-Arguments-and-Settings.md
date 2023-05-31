@@ -128,7 +128,7 @@ Use `--port xxxx` to make the server listen on a specific port, xxxx being the w
 --disable-safe-unpickle | None | False				| disable checking pytorch models for malicious code |
 --ngrok | NGROK | None         				 | ngrok authtoken, alternative to gradio --share
 --ngrok-region | NGROK_REGION | us			 | The region in which ngrok should start.
---update-check | None | None | On startup, notifies whether or not your webui version (commit) is up-to-date with che current master brach.
+--update-check | None | None | On startup, notifies whether or not your webui version (commit) is up-to-date with check current master brach.
 --update-all-extensions | None | None | On startup, it pulls the latest updates for all extensions you have installed.
 --reinstall-xformers | None | False | force reinstall xformers. Useful for upgrading - but remove it after upgrading or you'll reinstall xformers perpetually. |
 --reinstall-torch | None | False | force reinstall torch. Useful for upgrading - but remove it after upgrading or you'll reinstall torch perpetually. |
