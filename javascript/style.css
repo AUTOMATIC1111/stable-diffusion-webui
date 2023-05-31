@@ -1,4 +1,5 @@
 :root, .dark{ --checkbox-label-gap: 0.25em 0.1em; --section-header-text-size: 12pt; --block-background-fill: transparent;}
+a { font-weight: bold; cursor: pointer; }
 div.gradio-container{ max-width: unset !important; }
 div.form{ border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 0.5em; }
 div.compact{ gap: 1em; }
@@ -48,6 +49,12 @@ button.custom-button{
     text-align: center;
 }
 
+/* remove footer */
+footer { display: none !important; }
+
+/* themes */
+.theme-preview { display: none; position: fixed; border: 4px solid var(--neutral-600); box-shadow: 2px 2px 2px 2px var(--neutral-700); top: 0; bottom: 0; left: 0; right: 0; margin: auto; max-width: 75vw; z-index: 999; }
+
 /* txt2img/img2img specific */
 .block.token-counter{
     position: absolute;
@@ -85,45 +92,22 @@ button.custom-button{
     align-self: end;
 }
 
-.performance {
-    font-size: 0.85em;
-    color: #444;
-}
-
-.performance p{
-    display: inline-block;
-    color: var(--primary-100) !important
-}
-
-.performance .time {
-    margin-right: 0;
-}
-
-#txt2img_generate, #img2img_generate {
-    min-height: 4.5em;
-}
+.performance { font-size: 0.85em; color: #444; }
+.performance p { display: inline-block; color: var(--primary-100) !important }
+.performance .time { margin-right: 0; }
 
 @media screen and (min-width: 2500px) {
-    #txt2img_gallery, #img2img_gallery {
-        min-height: 768px;
-    }
+    #txt2img_gallery, #img2img_gallery { min-height: 768px; }
 }
 
-a{
-  font-weight: bold;
-  cursor: pointer;
-}
-
-#txt2img_gallery img, #img2img_gallery img, #extras_gallery img {
-    object-fit: scale-down;
-    width: -webkit-fill-available !important;
-}
-#txt2img_actions_column, #img2img_actions_column {
-    gap: 0.5em;
-}
-#txt2img_tools, #img2img_tools{
-    gap: 0.4em;
-}
+#txt2img_gallery img, #img2img_gallery img, #extras_gallery img { object-fit: scale-down; width: -webkit-fill-available !important; }
+#txt2img_actions_column, #img2img_actions_column { gap: 0.5em; }
+#txt2img_generate_line1 > button, #img2img_generate_line1 > button { height: 2.2em; line-height: 0; }
+#txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button { height: 2.2em; line-height: 0; min-width: unset; display: block !important; }
+#txt2img_generate_line2 { display: flex; }
+#txt2img_tools > div, #img2img_tools > div { justify-content: space-around; margin-top: 0.5em; margin-bottom: 0em; }
+#txt2img_tools > div > button, #img2img_tools > div > button { scale: 120%; }
+#refresh_txt2img_styles, #refresh_img2img_styles { height: 2.46em; margin-left: -8px; }
 
 .interrogate-col{
     min-width: 0 !important;
@@ -132,28 +116,6 @@ a{
 }
 .interrogate-col > button{
     flex: 1;
-}
-
-.generate-box{
-    position: relative;
-}
-.gradio-button.generate-box-skip, .gradio-button.generate-box-interrupt{
-    position: absolute;
-    width: 50%;
-    height: 100%;
-    display: none;
-    background: #b4c0cc;
-}
-.gradio-button.generate-box-skip:hover, .gradio-button.generate-box-interrupt:hover{
-    background: #c2cfdb;
-}
-.gradio-button.generate-box-interrupt{
-    left: 0;
-    border-radius: 0.5rem 0 0 0.5rem;
-}
-.gradio-button.generate-box-skip{
-    right: 0;
-    border-radius: 0 0.5rem 0.5rem 0;
 }
 
 #txtimg_hr_finalres{
@@ -508,81 +470,20 @@ table.settings-value-table td{
 
 /* extensions */
 
-#tab_extensions table{
-    border-collapse: collapse;
-}
+#tab_extensions table{ border-collapse: collapse; }
+#tab_extensions table td, #tab_extensions table th { border: 1px solid #ccc; padding: 0.25em 0.5em; }
+#tab_extensions table input[type="checkbox"] { margin-right: 0.5em; appearance: checkbox; }
+#tab_extensions button{ max-width: 16em; }
+#tab_extensions input[disabled="disabled"]{ opacity: 0.5; }
+.extension-tag{ font-weight: bold; font-size: 95%; }
+#extensions .name{ font-size: 1.1rem }
+#extensions .type{ opacity: 0.5; font-size: 90%; text-align: center; }
+#extensions .version{ opacity: 0.7; }
+#extensions .info{ margin: 0; }
+#extensions .date{ opacity: 0.85; font-size: 90%; }
+.extension-button { font-size: 95% !important; width: 6em; }
 
-#tab_extensions table td, #tab_extensions table th{
-    border: 1px solid #ccc;
-    padding: 0.25em 0.5em;
-}
-
-#tab_extensions table input[type="checkbox"]{
-    margin-right: 0.5em;
-    appearance: checkbox;
-}
-
-#tab_extensions button{
-    max-width: 16em;
-}
-
-#tab_extensions input[disabled="disabled"]{
-    opacity: 0.5;
-}
-
-.extension-tag{
-    font-weight: bold;
-    font-size: 95%;
-}
-
-#extensions .name{
-  font-size: 1.1rem
-}
-
-#extensions .type{
-  opacity: 0.5;
-  font-size: 90%;
-  text-align: center;
-}
-
-#extensions .version{
-  opacity: 0.7;
-}
-
-#extensions .info{
-    margin: 0;
-}
-
-#extensions .date{
-    opacity: 0.85;
-    font-size: 90%;
-}
-
-.extension-button {
-  font-size: 95% !important;
-  width: 6em;
-}
-
-/* replace original footer with ours */
-
-footer {
-    display: none !important;
-}
-
-#footer{
-    text-align: center;
-}
-
-#footer div{
-    display: inline-block;
-}
-
-#footer .versions{
-    font-size: 85%;
-    opacity: 0.85;
-}
-
-/* extra networks UI */
+/* extra networks */
 .extra-networks > div > [id *= '_extra_']{ margin: 0.3em; }
 .extra-network-subdirs{ padding: 0.2em 0.35em; }
 .extra-network-subdirs button{ margin: 0 0.15em; }
@@ -591,7 +492,6 @@ footer {
 .extra-network-cards .nocards, .extra-network-thumbs .nocards{ margin: 1.25em 0.5em 0.5em 0.5em; }
 .extra-network-cards .nocards h1, .extra-network-thumbs .nocards h1{ font-size: 1.5em; margin-bottom: 1em; }
 .extra-network-cards .nocards li, .extra-network-thumbs .nocards li{ margin-left: 0.5em; }
-
 .extra-network-cards .card .metadata-button, .extra-network-thumbs .card .metadata-button{
     display: none;
     position: absolute;
@@ -605,7 +505,6 @@ footer {
 .extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{ display: inline-block; }
 .extra-network-thumbs { display: flex; flex-flow: row wrap; gap: 10px; }
 .extra-network-cards .card .additional a:hover, .extra-network-thumbs .card .additional a:hover { color: darkorange }
-
 .extra-network-thumbs .card {
     display: inline-block;
     height: 9em;
@@ -616,7 +515,6 @@ footer {
     background-position: center center;
     position: relative;
 }
-
 .extra-network-cards .card .additional, .extra-network-thumbs .card .additional { white-space: nowrap; overflow: hidden; }
 .extra-network-thumbs .card:hover .additional a { display: inline-block; }
 .extra-network-thumbs .actions .name {
@@ -631,7 +529,6 @@ footer {
     background: rgba(0,0,0,.5);
     color: white;
 }
-
 .extra-network-thumbs .card:hover .actions .name { white-space: normal; word-break: break-all; }
 .extra-network-cards .card{
     display: inline-block;
@@ -647,10 +544,8 @@ footer {
     cursor: pointer;
     background-image: url('../html/card-no-preview.png')
 }
-
 .extra-network-cards .card:hover { box-shadow: 0 0 2px 0.3em rgba(0, 128, 255, 0.35); }
 .extra-network-cards .card .actions .additional, .extra-network-thumbs .card .actions .additional{ display: none; }
-
 .extra-network-cards .card .actions{
     position: absolute;
     bottom: 0;
@@ -661,7 +556,6 @@ footer {
     box-shadow: 0 0 0.25em 0.25em rgba(0,0,0,0.5);
     text-shadow: 0 0 0.2em black;
 }
-
 .extra-network-cards .card .actions *{ color: white; }
 .extra-network-cards .card .actions:hover { box-shadow: 0 0 0.75em 0.75em rgba(0,0,0,0.5) !important; }
 .extra-network-cards .card .actions .name { font-size: 1.7em; font-weight: bold; line-break: anywhere; }
@@ -671,63 +565,21 @@ footer {
 .extra-network-cards .card ul{ margin: 0.25em 0 0.75em 0.25em; cursor: unset; }
 .extra-network-cards .card ul a{ cursor: pointer; }
 .extra-network-cards .card ul a:hover{ color: red; }
-.theme-preview { display: none; position: fixed; border: 4px solid var(--neutral-600); box-shadow: 2px 2px 2px 2px var(--neutral-700); top: 0; bottom: 0; left: 0; right: 0; margin: auto; max-width: 75vw; z-index: 999; }
 
+/* controlnet */
+.controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type { display: grid; grid-auto-flow: row; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+fieldset.controlnet_resize_mode_radio .wrap:last-of-type, fieldset.controlnet_control_mode_radio .wrap:last-of-type { flex-direction: column; }
+div.controlnet_preprocessor_model { display: grid; grid-auto-flow: row; grid-template-columns: 1fr max-content; }
+div.controlnet_preprocessor_model button.gradio-button { align-self: center; }
+div.controlnet_weight_steps > div.form { display: grid; grid-template: repeat(2, 1fr) / repeat(2, 1fr); }
+div.controlnet_weight_steps .controlnet_control_weight_slider { grid-column: 1 / -1; }
+div.controlnet_image_controls { display: grid; grid-template-columns: repeat(4, 1fr); }
+div.controlnet_image_controls .controlnet_invert_warning { grid-column: 1 / -1; }
+div.controlnet_image_controls button { justify-self: center; }
+div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: row; }
+
+/* specific elements */
+#modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
 #scripts_alwayson_txt2img, #scripts_alwayson_img2img { display: grid }
-
 #extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
 #extras_upscale { margin-top: 10px }
-
-.controlnet_control_type .controlnet_control_type_filter_group .wrap:last-of-type {
-    display: grid;
-    grid-auto-flow: row;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-div.controlnet_preprocessor_model {
-    display: grid;
-    grid-auto-flow: row;
-    grid-template-columns: 1fr max-content;
-}
-
-div.controlnet_preprocessor_model button.gradio-button {
-    align-self: center;
-}
-
-fieldset.controlnet_resize_mode_radio .wrap:last-of-type,
-fieldset.controlnet_control_mode_radio .wrap:last-of-type {
-    flex-direction: column;
-}
-
-div.controlnet_weight_steps > div.form {
-    display: grid;
-    grid-template: repeat(2, 1fr) / repeat(2, 1fr);
-}
-
-div.controlnet_weight_steps .controlnet_control_weight_slider {
-    grid-column: 1 / -1;
-}
-div.controlnet_image_controls {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-}
-
-div.controlnet_image_controls .controlnet_invert_warning {
-    grid-column: 1 / -1;
-}
-
-div.controlnet_image_controls button {
-    justify-self: center;
-}
-
-div.controlnet_main_options {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-auto-flow: row;
-}
-
-#modelmerger_interp_description { margin-top: 1em; margin-bottom: 1em; }
-
-.thumbnail-item > img {
-
-}

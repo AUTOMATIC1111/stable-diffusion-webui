@@ -39,9 +39,9 @@ def create_ui():
             with gr.Row(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
                 interrupt = gr.Button('Stop', elem_id=f"{id_part}_interrupt", variant='secondary')
+                interrupt.click(fn=lambda: shared.state.interrupt(), inputs=[], outputs=[])
                 skip = gr.Button('Skip', elem_id=f"{id_part}_skip", variant='secondary')
                 skip.click(fn=lambda: shared.state.skip(), inputs=[], outputs=[])
-                interrupt.click(fn=lambda: shared.state.interrupt(), inputs=[], outputs=[])
             result_images, generation_info, html_info, html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
             gr.HTML('File metadata')
             exif_info = gr.HTML(elem_id="pnginfo_html_info")

@@ -76,6 +76,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             res = extra_outputs_array + [f"<div class='error'>{html.escape(type(e).__name__+': '+str(e))}</div>"]
         shared.state.skipped = False
         shared.state.interrupted = False
+        shared.state.paused = False
         shared.state.job_count = 0
         if not add_stats:
             return tuple(res)

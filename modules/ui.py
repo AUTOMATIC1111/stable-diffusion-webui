@@ -237,23 +237,27 @@ def create_toprow(is_img2img):
                 button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
                 button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
         with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
-            with gr.Row(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
-                interrupt = gr.Button('Stop', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
-                skip = gr.Button('Skip', elem_id=f"{id_part}_skip", elem_classes="generate-box-skip")
+            with gr.Row(elem_id=f"{id_part}_generate_line1"):
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
-                skip.click(fn=lambda: modules.shared.state.skip(), inputs=[], outputs=[])
+            with gr.Row(elem_id=f"{id_part}_generate_line2"):
+                interrupt = gr.Button('Stop', elem_id=f"{id_part}_interrupt")
                 interrupt.click(fn=lambda: modules.shared.state.interrupt(), inputs=[], outputs=[])
+                skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
+                skip.click(fn=lambda: modules.shared.state.skip(), inputs=[], outputs=[])
+                pause = gr.Button('Pause', elem_id=f"{id_part}_pause")
+                pause.click(fn=lambda: modules.shared.state.pause(), inputs=[], outputs=[])
             with gr.Row(elem_id=f"{id_part}_tools"):
                 paste = ToolButton(value=paste_symbol, elem_id="paste")
                 clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
                 extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks")
                 prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
                 save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
+                clear_prompt_button.click(fn=lambda *x: x, _js="confirm_clear_prompt", inputs=[prompt, negative_prompt], outputs=[prompt, negative_prompt])
+            with gr.Row(elem_id=f"{id_part}_counters"):
                 token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])
                 token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
                 negative_token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_negative_token_counter", elem_classes=["token-counter"])
                 negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
-                clear_prompt_button.click(fn=lambda *x: x, _js="confirm_clear_prompt", inputs=[prompt, negative_prompt], outputs=[prompt, negative_prompt])
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in modules.shared.prompt_styles.styles.items()], value=[], multiselect=True)
                 create_refresh_button(prompt_styles, modules.shared.prompt_styles.reload, lambda: {"choices": [k for k, v in modules.shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")

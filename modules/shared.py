@@ -86,6 +86,7 @@ def reload_hypernetworks():
 class State:
     skipped = False
     interrupted = False
+    paused = False
     job = ""
     job_no = 0
     job_count = 0
@@ -103,12 +104,16 @@ class State:
     server_start = None
 
     def skip(self):
-        log.debug('Skip requested')
+        log.debug('Requested skip')
         self.skipped = True
 
     def interrupt(self):
-        log.debug('Interrupt requested')
+        log.debug('Requested interrupt')
         self.interrupted = True
+
+    def pause(self):
+        self.paused = not self.paused
+        log.debug(f'Requested {"pause" if self.paused else "continue"}')
 
     def nextjob(self):
         if opts.live_previews_enable and opts.show_progress_every_n_steps == -1:
@@ -142,6 +147,7 @@ class State:
         self.id_live_preview = 0
         self.skipped = False
         self.interrupted = False
+        self.paused = False
         self.textinfo = None
         self.time_start = time.time()
         devices.torch_gc()
@@ -149,6 +155,7 @@ class State:
     def end(self):
         self.job = ""
         self.job_count = 0
+        self.paused = False
         devices.torch_gc()
 
     def set_current_image(self):

@@ -64,6 +64,13 @@ class VanillaStableDiffusionSampler:
     def before_sample(self, x, ts, cond, unconditional_conditioning):
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException
+        if state.paused:
+            shared.log.debug('Sampling paused')
+            while state.paused:
+                if state.interrupted or state.skipped:
+                    raise sd_samplers_common.InterruptedException
+                import time
+                time.sleep(0.1)
 
         if self.stop_at is not None and self.step > self.stop_at:
             raise sd_samplers_common.InterruptedException
