@@ -227,11 +227,12 @@ def check_python():
         log.error(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.{supported_minors}")
         if not args.ignore:
             exit(1)
-    git_cmd = os.environ.get('GIT', "git")
-    if shutil.which(git_cmd) is None:
-        log.error('Git not found')
-        if not args.ignore:
-            exit(1)
+    if not args.skip_git:
+        git_cmd = os.environ.get('GIT', "git")
+        if shutil.which(git_cmd) is None:
+            log.error('Git not found')
+            if not args.ignore:
+                exit(1)
     else:
         git_version = git('--version', folder=None, ignore=False)
         log.debug(f'Git {git_version.replace("git version", "").strip()}')
