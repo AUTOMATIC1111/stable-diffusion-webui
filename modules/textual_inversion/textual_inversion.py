@@ -1,6 +1,4 @@
 import os
-import sys
-import traceback
 from collections import namedtuple
 
 import torch
@@ -16,6 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint
 import modules.textual_inversion.dataset
+from modules.errors import print_error
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
@@ -120,16 +119,29 @@ class EmbeddingDatabase:
         self.embedding_dirs.clear()
 
     def register_embedding(self, embedding, model):
-        self.word_embeddings[embedding.name] = embedding
+        return self.register_embedding_by_name(embedding, model, embedding.name)
 
-        ids = model.cond_stage_model.tokenize([embedding.name])[0]
-
+    def register_embedding_by_name(self, embedding, model, name):
+        ids = model.cond_stage_model.tokenize([name])[0]
         first_id = ids[0]
         if first_id not in self.ids_lookup:
             self.ids_lookup[first_id] = []
-
-        self.ids_lookup[first_id] = sorted(self.ids_lookup[first_id] + [(ids, embedding)], key=lambda x: len(x[0]), reverse=True)
-
+        if name in self.word_embeddings:
+            # remove old one from the lookup list
+            lookup = [x for x in self.ids_lookup[first_id] if x[1].name!=name]
+        else:
+            lookup = self.ids_lookup[first_id]
+        if embedding is not None:
+            lookup += [(ids, embedding)]
+        self.ids_lookup[first_id] = sorted(lookup, key=lambda x: len(x[0]), reverse=True)
+        if embedding is None:
+            # unregister embedding with specified name
+            if name in self.word_embeddings:
+                del self.word_embeddings[name]
+            if len(self.ids_lookup[first_id])==0:
+                del self.ids_lookup[first_id]
+            return None
+        self.word_embeddings[name] = embedding
         return embedding
 
     def get_expected_shape(self):
@@ -207,8 +219,7 @@ class EmbeddingDatabase:
 
                     self.load_from_file(fullfn, fn)
                 except Exception:
-                    print(f"Error loading embedding {fn}:", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
+                    print_error(f"Error loading embedding {fn}", exc_info=True)
                     continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
@@ -632,8 +643,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
         filename = os.path.join(shared.cmd_opts.embeddings_dir, f'{embedding_name}.pt')
         save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, remove_cached_checksum=True)
     except Exception:
-        print(traceback.format_exc(), file=sys.stderr)
-        pass
+        print_error("Error training embedding", exc_info=True)
     finally:
         pbar.leave = False
         pbar.close()

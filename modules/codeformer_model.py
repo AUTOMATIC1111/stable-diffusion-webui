@@ -1,6 +1,4 @@
 import os
-import sys
-import traceback
 
 import cv2
 import torch
@@ -8,6 +6,7 @@ import torch
 import modules.face_restoration
 import modules.shared
 from modules import shared, devices, modelloader
+from modules.errors import print_error
 from modules.paths import models_path
 
 # codeformer people made a choice to include modified basicsr library to their project which makes
@@ -105,8 +104,8 @@ def setup_model(dirname):
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output
                         torch.cuda.empty_cache()
-                    except Exception as error:
-                        print(f'\tFailed inference for CodeFormer: {error}', file=sys.stderr)
+                    except Exception:
+                        print_error('Failed inference for CodeFormer', exc_info=True)
                         restored_face = tensor2img(cropped_face_t, rgb2bgr=True, min_max=(-1, 1))
 
                     restored_face = restored_face.astype('uint8')
@@ -135,7 +134,6 @@ def setup_model(dirname):
         shared.face_restorers.append(codeformer)
 
     except Exception:
-        print("Error setting up CodeFormer:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        print_error("Error setting up CodeFormer", exc_info=True)
 
    # sys.path = stored_sys_path

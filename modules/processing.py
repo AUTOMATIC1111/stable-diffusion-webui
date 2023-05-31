@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 import sys
@@ -23,7 +24,6 @@ import modules.images as images
 import modules.styles
 import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
-import logging
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
@@ -321,14 +321,13 @@ class StableDiffusionProcessing:
         have been used before. The second element is where the previously
         computed result is stored.
         """
-
-        if cache[0] is not None and (required_prompts, steps) == cache[0]:
+        if cache[0] is not None and (required_prompts, steps, opts.CLIP_stop_at_last_layers, shared.sd_model.sd_checkpoint_info) == cache[0]:
             return cache[1]
 
         with devices.autocast():
             cache[1] = function(shared.sd_model, required_prompts, steps)
 
-        cache[0] = (required_prompts, steps)
+        cache[0] = (required_prompts, steps, opts.CLIP_stop_at_last_layers, shared.sd_model.sd_checkpoint_info)
         return cache[1]
 
     def setup_conds(self):

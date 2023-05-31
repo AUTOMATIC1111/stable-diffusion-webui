@@ -1,10 +1,8 @@
 import json
 import os.path
-import sys
 import threading
 import time
 from datetime import datetime
-import traceback
 
 import git
 
@@ -14,6 +12,7 @@ import shutil
 import errno
 
 from modules import extensions, shared, paths, config_states
+from modules.errors import print_error
 from modules.paths_internal import config_states_dir
 from modules.call_queue import wrap_gradio_gpu_call
 
@@ -46,8 +45,7 @@ def apply_and_restart(disable_list, update_list, disable_all):
         try:
             ext.fetch_and_reset_hard()
         except Exception:
-            print(f"Error getting updates for {ext.name}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            print_error(f"Error getting updates for {ext.name}", exc_info=True)
 
     shared.opts.disabled_extensions = disabled
     shared.opts.disable_all_extensions = disable_all
@@ -113,8 +111,7 @@ def check_updates(id_task, disable_list):
             if 'FETCH_HEAD' not in str(e):
                 raise
         except Exception:
-            print(f"Error checking updates for {ext.name}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            print_error(f"Error checking updates for {ext.name}", exc_info=True)
 
         shared.state.nextjob()
 
@@ -490,8 +487,14 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
 
 
 def preload_extensions_git_metadata():
+    t0 = time.time()
     for extension in extensions.extensions:
         extension.read_info_from_repo()
+    print(
+        f"preload_extensions_git_metadata for "
+        f"{len(extensions.extensions)} extensions took "
+        f"{time.time() - t0:.2f}s"
+    )
 
 
 def create_ui():

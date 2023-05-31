@@ -1,16 +1,15 @@
-import sys
-import traceback
-from collections import namedtuple
 import inspect
+from collections import namedtuple
 from typing import Optional, Dict, Any
 
 from fastapi import FastAPI
 from gradio import Blocks
 
+from modules.errors import print_error
+
 
 def report_exception(c, job):
-    print(f"Error executing callback {job} for {c.script}", file=sys.stderr)
-    print(traceback.format_exc(), file=sys.stderr)
+    print_error(f"Error executing callback {job} for {c.script}", exc_info=True)
 
 
 class ImageSaveParams:
