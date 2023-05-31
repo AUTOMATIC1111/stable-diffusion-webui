@@ -10,12 +10,18 @@ function gradioApp() {
     return elem.shadowRoot ? elem.shadowRoot : elem;
 }
 
+/**
+ * Get the currently selected top-level UI tab button (e.g. the button that says "Extras").
+ */
 function get_uiCurrentTab() {
-    return gradioApp().querySelector('#tabs button.selected');
+    return gradioApp().querySelector('#tabs > .tab-nav > button.selected');
 }
 
+/**
+ * Get the first currently visible top-level UI tab content (e.g. the div hosting the "txt2img" UI).
+ */
 function get_uiCurrentTabContent() {
-    return gradioApp().querySelector('.tabitem[id^=tab_]:not([style*="display: none"])');
+    return gradioApp().querySelector('#tabs > .tabitem[id^=tab_]:not([style*="display: none"])');
 }
 
 var uiUpdateCallbacks = [];
