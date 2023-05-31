@@ -1,7 +1,5 @@
 from __future__ import annotations
 import math
-import sys
-import traceback
 import psutil
 
 import torch
@@ -11,6 +9,7 @@ from ldm.util import default
 from einops import rearrange
 
 from modules import shared, errors, devices, sub_quadratic_attention
+from modules.errors import print_error
 from modules.hypernetworks import hypernetwork
 
 import ldm.modules.attention
@@ -140,8 +139,7 @@ if shared.cmd_opts.xformers or shared.cmd_opts.force_enable_xformers:
         import xformers.ops
         shared.xformers_available = True
     except Exception:
-        print("Cannot import xformers", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        print_error("Cannot import xformers", exc_info=True)
 
 
 def get_available_vram():

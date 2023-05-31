@@ -16,6 +16,7 @@ from secrets import compare_digest
 import modules.shared as shared
 from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing
 from modules.api import models
+from modules.errors import print_error
 from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
 from modules.textual_inversion.textual_inversion import create_embedding, train_embedding
@@ -109,7 +110,6 @@ def api_middleware(app: FastAPI):
         from rich.console import Console
         console = Console()
     except Exception:
-        import traceback
         rich_available = False
 
     @app.middleware("http")
@@ -140,11 +140,12 @@ def api_middleware(app: FastAPI):
             "errors": str(e),
         }
         if not isinstance(e, HTTPException): # do not print backtrace on known httpexceptions
-            print(f"API error: {request.method}: {request.url} {err}")
+            message = f"API error: {request.method}: {request.url} {err}"
             if rich_available:
+                print(message)
                 console.print_exception(show_locals=True, max_frames=2, extra_lines=1, suppress=[anyio, starlette], word_wrap=False, width=min([console.width, 200]))
             else:
-                traceback.print_exc()
+                print_error(message, exc_info=True)
         return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
 
     @app.middleware("http")

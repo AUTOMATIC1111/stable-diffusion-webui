@@ -1,12 +1,11 @@
 import os
-import sys
-import traceback
 
 import numpy as np
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
 from realesrgan import RealESRGANer
 
+from modules.errors import print_error
 from modules.upscaler import Upscaler, UpscalerData
 from modules.shared import cmd_opts, opts
 from modules import modelloader
@@ -36,8 +35,7 @@ class UpscalerRealESRGAN(Upscaler):
                     self.scalers.append(scaler)
 
         except Exception:
-            print("Error importing Real-ESRGAN:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            print_error("Error importing Real-ESRGAN", exc_info=True)
             self.enable = False
             self.scalers = []
 
@@ -76,9 +74,8 @@ class UpscalerRealESRGAN(Upscaler):
                 info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_download_path, progress=True)
 
             return info
-        except Exception as e:
-            print(f"Error making Real-ESRGAN models list: {e}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+        except Exception:
+            print_error("Error making Real-ESRGAN models list", exc_info=True)
         return None
 
     def load_models(self, _):
@@ -135,5 +132,4 @@ def get_realesrgan_models(scaler):
         ]
         return models
     except Exception:
-        print("Error making Real-ESRGAN models list:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        print_error("Error making Real-ESRGAN models list", exc_info=True)
