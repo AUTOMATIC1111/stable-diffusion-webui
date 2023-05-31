@@ -48,6 +48,56 @@ onUiLoaded(async() => {
         let [zoomLevel, panX, panY] = [1, 0, 0];
         let fullScreenMode = false;
 
+        // Create tooltip
+        const toolTipElemnt = targetElement.querySelector(".image-container");
+        const tooltip = document.createElement("div");
+        tooltip.className = "tooltip";
+
+        // Creating an item of information
+        const info = document.createElement("i");
+        info.className = "tooltip-info";
+        info.textContent = "";
+
+        // Create a container for the contents of the tooltip
+        const tooltipContent = document.createElement("div");
+        tooltipContent.className = "tooltip-content";
+
+        // Add info about hotkets
+        const hotkeys = [
+            {key: "Shift + wheel", action: "Zoom canvas"},
+            {
+                key: hotkeysConfig.moveKey.charAt(
+                    hotkeysConfig.moveKey.length - 1
+                ),
+                action: "Move canvas"
+            },
+            {
+                key: hotkeysConfig.resetZoom.charAt(
+                    hotkeysConfig.resetZoom.length - 1
+                ),
+                action: "Reset zoom"
+            },
+            {
+                key: hotkeysConfig.fitToScreen.charAt(
+                    hotkeysConfig.fitToScreen.length - 1
+                ),
+                action: "Fullscreen mode"
+            },
+            {key: "Ctr+wheel", action: "Adjust brush size"}
+        ];
+        hotkeys.forEach(function(hotkey) {
+            const p = document.createElement("p");
+            p.innerHTML = "<b>" + hotkey.key + "</b>" + " - " + hotkey.action;
+            tooltipContent.appendChild(p);
+        });
+
+        // Add information and content elements to the tooltip element
+        tooltip.appendChild(info);
+        tooltip.appendChild(tooltipContent);
+
+        // Add a hint element to the target element
+        toolTipElemnt.appendChild(tooltip);
+
         // In the course of research, it was found that the tag img is very harmful when zooming and creates white canvases. This hack allows you to almost never think about this problem, it has no effect on webui.
         function fixCanvas() {
             const activeTab = getActiveTab(elements).textContent.trim();
@@ -262,7 +312,8 @@ onUiLoaded(async() => {
             targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
 
             // Get scrollbar width to right-align the image
-            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+            const scrollbarWidth =
+                window.innerWidth - document.documentElement.clientWidth;
 
             // Get element and screen dimensions
             const elementWidth = targetElement.offsetWidth;
@@ -315,7 +366,6 @@ onUiLoaded(async() => {
                 [hotkeysConfig.resetZoom]: resetZoom,
                 [hotkeysConfig.overlap]: toggleOverlap,
                 [hotkeysConfig.fitToScreen]: fitToScreen
-                // [hotkeysConfig.moveKey] : moveCanvas,
             };
 
             const action = hotkeyActions[event.code];
@@ -377,13 +427,12 @@ onUiLoaded(async() => {
             }
         });
 
-        /**
-         * Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
-         * @param {MouseEvent} e - The mouse event.
-         */
+        // Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
         function handleMoveKeyDown(e) {
             if (e.code === hotkeysConfig.moveKey) {
-                if (!e.ctrlKey && !e.metaKey) {
+                if (!e.ctrlKey && !e.metaKey && isKeyDownHandlerAttached) {
+                    e.preventDefault();
+                    document.activeElement.blur();
                     isMoving = true;
                 }
             }
@@ -421,6 +470,11 @@ onUiLoaded(async() => {
                 targetElement.style.pointerEvents = "auto";
             }
         }
+
+        // Prevents sticking to the mouse
+        window.onblur = function() {
+            isMoving = false;
+        };
 
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
