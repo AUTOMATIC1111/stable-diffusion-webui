@@ -588,11 +588,15 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
+    if p.scripts is not None:
+        p.scripts.before_process(p)
+
     stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
 
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
-        if sd_models.checkpoint_alisases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+        override_checkpoint = p.override_settings.get('sd_model_checkpoint')
+        if override_checkpoint is not None and sd_models.checkpoint_alisases.get(override_checkpoint) is None:
             p.override_settings.pop('sd_model_checkpoint', None)
             sd_models.reload_model_weights()
 

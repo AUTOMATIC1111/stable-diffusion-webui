@@ -19,6 +19,9 @@ class Script:
     name = None
     """script's internal name derived from title"""
 
+    section = None
+    """name of UI section that the script's controls will be placed into"""
+
     filename = None
     args_from = None
     args_to = None
@@ -76,6 +79,15 @@ class Script:
 
         Usually the processing is done by calling the processing.process_images function.
 
+        args contains all values returned by components from ui()
+        """
+
+        pass
+
+    def before_process(self, p, *args):
+        """
+        This function is called very early before processing begins for AlwaysVisible scripts.
+        You can modify the processing object (p) here, inject hooks, etc.
         args contains all values returned by components from ui()
         """
 
@@ -293,6 +305,7 @@ class ScriptRunner:
         self.titles = []
         self.infotext_fields = []
         self.paste_field_names = []
+        self.inputs = [None]
 
     def initialize_scripts(self, is_img2img):
         from modules import scripts_auto_postprocessing
@@ -320,69 +333,73 @@ class ScriptRunner:
                 self.scripts.append(script)
                 self.selectable_scripts.append(script)
 
-    def setup_ui(self):
+    def create_script_ui(self, script):
         import modules.api.models as api_models
 
+        script.args_from = len(self.inputs)
+        script.args_to = len(self.inputs)
+
+        controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
+
+        if controls is None:
+            return
+
+        script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
+        api_args = []
+
+        for control in controls:
+            control.custom_script_source = os.path.basename(script.filename)
+
+            arg_info = api_models.ScriptArg(label=control.label or "")
+
+            for field in ("value", "minimum", "maximum", "step", "choices"):
+                v = getattr(control, field, None)
+                if v is not None:
+                    setattr(arg_info, field, v)
+
+            api_args.append(arg_info)
+
+        script.api_info = api_models.ScriptInfo(
+            name=script.name,
+            is_img2img=script.is_img2img,
+            is_alwayson=script.alwayson,
+            args=api_args,
+        )
+
+        if script.infotext_fields is not None:
+            self.infotext_fields += script.infotext_fields
+
+        if script.paste_field_names is not None:
+            self.paste_field_names += script.paste_field_names
+
+        self.inputs += controls
+        script.args_to = len(self.inputs)
+
+    def setup_ui_for_section(self, section, scriptlist=None):
+        if scriptlist is None:
+            scriptlist = self.alwayson_scripts
+
+        for script in scriptlist:
+            if script.alwayson and script.section != section:
+                continue
+
+            with gr.Group(visible=script.alwayson) as group:
+                self.create_script_ui(script)
+
+            script.group = group
+
+    def prepare_ui(self):
+        self.inputs = [None]
+
+    def setup_ui(self):
         self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
 
-        inputs = [None]
-        inputs_alwayson = [True]
-
-        def create_script_ui(script, inputs, inputs_alwayson):
-            script.args_from = len(inputs)
-            script.args_to = len(inputs)
-
-            controls = wrap_call(script.ui, script.filename, "ui", script.is_img2img)
-
-            if controls is None:
-                return
-
-            script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
-            api_args = []
-
-            for control in controls:
-                control.custom_script_source = os.path.basename(script.filename)
-
-                arg_info = api_models.ScriptArg(label=control.label or "")
-
-                for field in ("value", "minimum", "maximum", "step", "choices"):
-                    v = getattr(control, field, None)
-                    if v is not None:
-                        setattr(arg_info, field, v)
-
-                api_args.append(arg_info)
-
-            script.api_info = api_models.ScriptInfo(
-                name=script.name,
-                is_img2img=script.is_img2img,
-                is_alwayson=script.alwayson,
-                args=api_args,
-            )
-
-            if script.infotext_fields is not None:
-                self.infotext_fields += script.infotext_fields
-
-            if script.paste_field_names is not None:
-                self.paste_field_names += script.paste_field_names
-
-            inputs += controls
-            inputs_alwayson += [script.alwayson for _ in controls]
-            script.args_to = len(inputs)
-
-        for script in self.alwayson_scripts:
-            with gr.Group() as group:
-                create_script_ui(script, inputs, inputs_alwayson)
-
-            script.group = group
+        self.setup_ui_for_section(None)
 
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
-        inputs[0] = dropdown
+        self.inputs[0] = dropdown
 
-        for script in self.selectable_scripts:
-            with gr.Group(visible=False) as group:
-                create_script_ui(script, inputs, inputs_alwayson)
-
-            script.group = group
+        self.setup_ui_for_section(None, self.selectable_scripts)
 
         def select_script(script_index):
             selected_script = self.selectable_scripts[script_index - 1] if script_index>0 else None
@@ -407,6 +424,7 @@ class ScriptRunner:
         )
 
         self.script_load_ctr = 0
+
         def onload_script_visibility(params):
             title = params.get('Script', None)
             if title:
@@ -417,10 +435,10 @@ class ScriptRunner:
             else:
                 return gr.update(visible=False)
 
-        self.infotext_fields.append( (dropdown, lambda x: gr.update(value=x.get('Script', 'None'))) )
-        self.infotext_fields.extend( [(script.group, onload_script_visibility) for script in self.selectable_scripts] )
+        self.infotext_fields.append((dropdown, lambda x: gr.update(value=x.get('Script', 'None'))))
+        self.infotext_fields.extend([(script.group, onload_script_visibility) for script in self.selectable_scripts])
 
-        return inputs
+        return self.inputs
 
     def run(self, p, *args):
         script_index = args[0]
@@ -439,6 +457,14 @@ class ScriptRunner:
         shared.total_tqdm.clear()
 
         return processed
+
+    def before_process(self, p):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.before_process(p, *script_args)
+            except Exception:
+                errors.report(f"Error running before_process: {script.filename}", exc_info=True)
 
     def process(self, p):
         for script in self.alwayson_scripts:

@@ -55,5 +55,15 @@ ui_reorder_categories_builtin_items = [
 
 
 def ui_reorder_categories():
+    from modules import scripts
+
     yield from ui_reorder_categories_builtin_items
+
+    sections = {}
+    for script in scripts.scripts_txt2img.scripts + scripts.scripts_img2img.scripts:
+        if isinstance(script.section, str):
+            sections[script.section] = 1
+
+    yield from sections
+
     yield "scripts"

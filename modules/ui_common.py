@@ -10,8 +10,11 @@ import subprocess as sp
 from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.images
+from modules.ui_components import ToolButton
+
 
 folder_symbol = '\U0001f4c2'  # 📂
+refresh_symbol = '\U0001f504'  # 🔄
 
 
 def update_generation_info(generation_info, html_info, img_index):
@@ -216,3 +219,23 @@ Requested path was: {f}
                 ))
 
             return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
+
+
+def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+    def refresh():
+        refresh_method()
+        args = refreshed_args() if callable(refreshed_args) else refreshed_args
+
+        for k, v in args.items():
+            setattr(refresh_component, k, v)
+
+        return gr.update(**(args or {}))
+
+    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
+    refresh_button.click(
+        fn=refresh,
+        inputs=[],
+        outputs=[refresh_component]
+    )
+    return refresh_button
+

@@ -6,15 +6,17 @@ from functools import reduce
 import warnings
 
 import gradio as gr
-import gradio.routes
 import gradio.utils
 import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
-from modules.paths import script_path, data_path
+from modules.paths import script_path
+from modules.ui_common import create_refresh_button
+from modules.ui_gradio_extensions import reload_javascript
+
 
 from modules.shared import opts, cmd_opts
 
@@ -33,6 +35,8 @@ from modules.textual_inversion import textual_inversion
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.extras
+
+create_setting_component = ui_settings.create_setting_component
 
 warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
 
@@ -366,25 +370,6 @@ def apply_setting(key, value):
     return getattr(opts, key)
 
 
-def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
-    def refresh():
-        refresh_method()
-        args = refreshed_args() if callable(refreshed_args) else refreshed_args
-
-        for k, v in args.items():
-            setattr(refresh_component, k, v)
-
-        return gr.update(**(args or {}))
-
-    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
-    refresh_button.click(
-        fn=refresh,
-        inputs=[],
-        outputs=[refresh_component]
-    )
-    return refresh_button
-
-
 def create_output_panel(tabname, outdir):
     return ui_common.create_output_panel(tabname, outdir)
 
@@ -407,16 +392,6 @@ def ordered_ui_categories():
 
     for _, category in sorted(enumerate(shared_items.ui_reorder_categories()), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category
-
-
-def get_value_for_setting(key):
-    value = getattr(opts, key)
-
-    info = opts.data_labels[key]
-    args = info.component_args() if callable(info.component_args) else info.component_args or {}
-    args = {k: v for k, v in args.items() if k not in {'precision'}}
-
-    return gr.update(value=value, **args)
 
 
 def create_override_settings_dropdown(tabname, row):
@@ -454,6 +429,8 @@ def create_ui():
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
+                modules.scripts.scripts_txt2img.prepare_ui()
+
                 for category in ordered_ui_categories():
                     if category == "sampler":
                         steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
@@ -521,6 +498,9 @@ def create_ui():
                     elif category == "scripts":
                         with FormGroup(elem_id="txt2img_script_container"):
                             custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
+
+                    else:
+                        modules.scripts.scripts_txt2img.setup_ui_for_section(category)
 
             hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
 
@@ -778,6 +758,8 @@ def create_ui():
                 with FormRow():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
+                modules.scripts.scripts_img2img.prepare_ui()
+
                 for category in ordered_ui_categories():
                     if category == "sampler":
                         steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
@@ -887,6 +869,8 @@ def create_ui():
                                     inputs=[],
                                     outputs=[inpaint_controls, mask_alpha],
                                 )
+                    else:
+                        modules.scripts.scripts_img2img.setup_ui_for_section(category)
 
             img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
 
@@ -1460,195 +1444,10 @@ def create_ui():
             outputs=[],
         )
 
-    def create_setting_component(key, is_quicksettings=False):
-        def fun():
-            return opts.data[key] if key in opts.data else opts.data_labels[key].default
-
-        info = opts.data_labels[key]
-        t = type(info.default)
-
-        args = info.component_args() if callable(info.component_args) else info.component_args
-
-        if info.component is not None:
-            comp = info.component
-        elif t == str:
-            comp = gr.Textbox
-        elif t == int:
-            comp = gr.Number
-        elif t == bool:
-            comp = gr.Checkbox
-        else:
-            raise Exception(f'bad options item type: {t} for key {key}')
-
-        elem_id = f"setting_{key}"
-
-        if info.refresh is not None:
-            if is_quicksettings:
-                res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
-            else:
-                with FormRow():
-                    res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                    create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
-        else:
-            res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-
-        return res
-
     loadsave = ui_loadsave.UiLoadsave(cmd_opts.ui_config_file)
 
-    components = []
-    component_dict = {}
-    shared.settings_components = component_dict
-
-    script_callbacks.ui_settings_callback()
-    opts.reorder()
-
-    def run_settings(*args):
-        changed = []
-
-        for key, value, comp in zip(opts.data_labels.keys(), args, components):
-            assert comp == dummy_component or opts.same_type(value, opts.data_labels[key].default), f"Bad value for setting {key}: {value}; expecting {type(opts.data_labels[key].default).__name__}"
-
-        for key, value, comp in zip(opts.data_labels.keys(), args, components):
-            if comp == dummy_component:
-                continue
-
-            if opts.set(key, value):
-                changed.append(key)
-
-        try:
-            opts.save(shared.config_filename)
-        except RuntimeError:
-            return opts.dumpjson(), f'{len(changed)} settings changed without save: {", ".join(changed)}.'
-        return opts.dumpjson(), f'{len(changed)} settings changed{": " if len(changed) > 0 else ""}{", ".join(changed)}.'
-
-    def run_settings_single(value, key):
-        if not opts.same_type(value, opts.data_labels[key].default):
-            return gr.update(visible=True), opts.dumpjson()
-
-        if not opts.set(key, value):
-            return gr.update(value=getattr(opts, key)), opts.dumpjson()
-
-        opts.save(shared.config_filename)
-
-        return get_value_for_setting(key), opts.dumpjson()
-
-    with gr.Blocks(analytics_enabled=False) as settings_interface:
-        with gr.Row():
-            with gr.Column(scale=6):
-                settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
-            with gr.Column():
-                restart_gradio = gr.Button(value='Reload UI', variant='primary', elem_id="settings_restart_gradio")
-
-        result = gr.HTML(elem_id="settings_result")
-
-        quicksettings_names = opts.quicksettings_list
-        quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
-
-        quicksettings_list = []
-
-        previous_section = None
-        current_tab = None
-        current_row = None
-        with gr.Tabs(elem_id="settings"):
-            for i, (k, item) in enumerate(opts.data_labels.items()):
-                section_must_be_skipped = item.section[0] is None
-
-                if previous_section != item.section and not section_must_be_skipped:
-                    elem_id, text = item.section
-
-                    if current_tab is not None:
-                        current_row.__exit__()
-                        current_tab.__exit__()
-
-                    gr.Group()
-                    current_tab = gr.TabItem(elem_id=f"settings_{elem_id}", label=text)
-                    current_tab.__enter__()
-                    current_row = gr.Column(variant='compact')
-                    current_row.__enter__()
-
-                    previous_section = item.section
-
-                if k in quicksettings_names and not shared.cmd_opts.freeze_settings:
-                    quicksettings_list.append((i, k, item))
-                    components.append(dummy_component)
-                elif section_must_be_skipped:
-                    components.append(dummy_component)
-                else:
-                    component = create_setting_component(k)
-                    component_dict[k] = component
-                    components.append(component)
-
-            if current_tab is not None:
-                current_row.__exit__()
-                current_tab.__exit__()
-
-            with gr.TabItem("Defaults", id="defaults", elem_id="settings_tab_defaults"):
-                loadsave.create_ui()
-
-            with gr.TabItem("Actions", id="actions", elem_id="settings_tab_actions"):
-                request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
-                download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
-                reload_script_bodies = gr.Button(value='Reload custom script bodies (No ui updates, No restart)', variant='secondary', elem_id="settings_reload_script_bodies")
-                with gr.Row():
-                    unload_sd_model = gr.Button(value='Unload SD checkpoint to free VRAM', elem_id="sett_unload_sd_model")
-                    reload_sd_model = gr.Button(value='Reload the last SD checkpoint back into VRAM', elem_id="sett_reload_sd_model")
-
-            with gr.TabItem("Licenses", id="licenses", elem_id="settings_tab_licenses"):
-                gr.HTML(shared.html("licenses.html"), elem_id="licenses")
-
-            gr.Button(value="Show all pages", elem_id="settings_show_all_pages")
-
-
-        def unload_sd_weights():
-            modules.sd_models.unload_model_weights()
-
-        def reload_sd_weights():
-            modules.sd_models.reload_model_weights()
-
-        unload_sd_model.click(
-            fn=unload_sd_weights,
-            inputs=[],
-            outputs=[]
-        )
-
-        reload_sd_model.click(
-            fn=reload_sd_weights,
-            inputs=[],
-            outputs=[]
-        )
-
-        request_notifications.click(
-            fn=lambda: None,
-            inputs=[],
-            outputs=[],
-            _js='function(){}'
-        )
-
-        download_localization.click(
-            fn=lambda: None,
-            inputs=[],
-            outputs=[],
-            _js='download_localization'
-        )
-
-        def reload_scripts():
-            modules.scripts.reload_script_body_only()
-            reload_javascript()  # need to refresh the html page
-
-        reload_script_bodies.click(
-            fn=reload_scripts,
-            inputs=[],
-            outputs=[]
-        )
-
-        restart_gradio.click(
-            fn=shared.state.request_restart,
-            _js='restart_reload',
-            inputs=[],
-            outputs=[],
-        )
+    settings = ui_settings.UiSettings()
+    settings.create_ui(loadsave, dummy_component)
 
     interfaces = [
         (txt2img_interface, "txt2img", "txt2img"),
@@ -1660,7 +1459,7 @@ def create_ui():
     ]
 
     interfaces += script_callbacks.ui_tabs_callback()
-    interfaces += [(settings_interface, "Settings", "settings")]
+    interfaces += [(settings.interface, "Settings", "settings")]
 
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
@@ -1670,10 +1469,7 @@ def create_ui():
         shared.tab_names.append(label)
 
     with gr.Blocks(theme=shared.gradio_theme, analytics_enabled=False, title="Stable Diffusion") as demo:
-        with gr.Row(elem_id="quicksettings", variant="compact"):
-            for _i, k, _item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
-                component = create_setting_component(k, is_quicksettings=True)
-                component_dict[k] = component
+        settings.add_quicksettings()
 
         parameters_copypaste.connect_paste_params_buttons()
 
@@ -1704,48 +1500,11 @@ def create_ui():
         footer = footer.format(versions=versions_html())
         gr.HTML(footer, elem_id="footer")
 
-        text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
-        settings_submit.click(
-            fn=wrap_gradio_call(run_settings, extra_outputs=[gr.update()]),
-            inputs=components,
-            outputs=[text_settings, result],
-        )
-
-        for _i, k, _item in quicksettings_list:
-            component = component_dict[k]
-            info = opts.data_labels[k]
-
-            change_handler = component.release if hasattr(component, 'release') else component.change
-            change_handler(
-                fn=lambda value, k=k: run_settings_single(value, key=k),
-                inputs=[component],
-                outputs=[component, text_settings],
-                show_progress=info.refresh is not None,
-            )
+        settings.add_functionality(demo)
 
         update_image_cfg_scale_visibility = lambda: gr.update(visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
-        text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
+        settings.text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
         demo.load(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
-
-        button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
-        button_set_checkpoint.click(
-            fn=lambda value, _: run_settings_single(value, key='sd_model_checkpoint'),
-            _js="function(v){ var res = desiredCheckpointName; desiredCheckpointName = ''; return [res || v, null]; }",
-            inputs=[component_dict['sd_model_checkpoint'], dummy_component],
-            outputs=[component_dict['sd_model_checkpoint'], text_settings],
-        )
-
-        component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
-
-        def get_settings_values():
-            return [get_value_for_setting(key) for key in component_keys]
-
-        demo.load(
-            fn=get_settings_values,
-            inputs=[],
-            outputs=[component_dict[k] for k in component_keys],
-            queue=False,
-        )
 
         def modelmerger(*args):
             try:
@@ -1779,7 +1538,7 @@ def create_ui():
                 primary_model_name,
                 secondary_model_name,
                 tertiary_model_name,
-                component_dict['sd_model_checkpoint'],
+                settings.component_dict['sd_model_checkpoint'],
                 modelmerger_result,
             ]
         )
@@ -1791,70 +1550,6 @@ def create_ui():
     interp_description.value = update_interp_description(interp_method.value)
 
     return demo
-
-
-def webpath(fn):
-    if fn.startswith(script_path):
-        web_path = os.path.relpath(fn, script_path).replace('\\', '/')
-    else:
-        web_path = os.path.abspath(fn)
-
-    return f'file={web_path}?{os.path.getmtime(fn)}'
-
-
-def javascript_html():
-    # Ensure localization is in `window` before scripts
-    head = f'<script type="text/javascript">{localization.localization_js(shared.opts.localization)}</script>\n'
-
-    script_js = os.path.join(script_path, "script.js")
-    head += f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
-
-    for script in modules.scripts.list_scripts("javascript", ".js"):
-        head += f'<script type="text/javascript" src="{webpath(script.path)}"></script>\n'
-
-    for script in modules.scripts.list_scripts("javascript", ".mjs"):
-        head += f'<script type="module" src="{webpath(script.path)}"></script>\n'
-
-    if cmd_opts.theme:
-        head += f'<script type="text/javascript">set_theme(\"{cmd_opts.theme}\");</script>\n'
-
-    return head
-
-
-def css_html():
-    head = ""
-
-    def stylesheet(fn):
-        return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
-
-    for cssfile in modules.scripts.list_files_with_name("style.css"):
-        if not os.path.isfile(cssfile):
-            continue
-
-        head += stylesheet(cssfile)
-
-    if os.path.exists(os.path.join(data_path, "user.css")):
-        head += stylesheet(os.path.join(data_path, "user.css"))
-
-    return head
-
-
-def reload_javascript():
-    js = javascript_html()
-    css = css_html()
-
-    def template_response(*args, **kwargs):
-        res = shared.GradioTemplateResponseOriginal(*args, **kwargs)
-        res.body = res.body.replace(b'</head>', f'{js}</head>'.encode("utf8"))
-        res.body = res.body.replace(b'</body>', f'{css}</body>'.encode("utf8"))
-        res.init_headers()
-        return res
-
-    gradio.routes.templates.TemplateResponse = template_response
-
-
-if not hasattr(shared, 'GradioTemplateResponseOriginal'):
-    shared.GradioTemplateResponseOriginal = gradio.routes.templates.TemplateResponse
 
 
 def versions_html():
