@@ -3,9 +3,8 @@ import sys
 import threading
 import traceback
 
-import git
-
 from modules import shared
+from modules.gitpython_hack import Repo
 from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
 extensions = []
@@ -54,7 +53,7 @@ class Extension:
         repo = None
         try:
             if os.path.exists(os.path.join(self.path, ".git")):
-                repo = git.Repo(self.path)
+                repo = Repo(self.path)
         except Exception:
             print(f"Error reading github repository info from {self.path}:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
@@ -94,7 +93,7 @@ class Extension:
         return res
 
     def check_updates(self):
-        repo = git.Repo(self.path)
+        repo = Repo(self.path)
         for fetch in repo.remote().fetch(dry_run=True):
             if fetch.flags != fetch.HEAD_UPTODATE:
                 self.can_update = True
@@ -116,7 +115,7 @@ class Extension:
         self.status = "latest"
 
     def fetch_and_reset_hard(self, commit='origin'):
-        repo = git.Repo(self.path)
+        repo = Repo(self.path)
         # Fix: `error: Your local changes to the following files would be overwritten by merge`,
         # because WSL2 Docker set 755 file permissions instead of 644, this results to the error.
         repo.git.fetch(all=True)
