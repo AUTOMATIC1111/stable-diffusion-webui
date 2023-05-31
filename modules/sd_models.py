@@ -50,8 +50,9 @@ class CheckpointInfo:
         else: # TODO Diffusers
             repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
             if len(repo) == 0:
-                shared.log.error(f'Cannot find diffuser model: {filename}')
-                return
+                error_message = f'Cannot find diffuser model: {filename}'
+                shared.log.error(error_message)
+                raise ValueError(error_message)
             self.name = repo[0]['name']
             self.hash = repo[0]['hash'][:8]
             self.sha256 = repo[0]['hash']
