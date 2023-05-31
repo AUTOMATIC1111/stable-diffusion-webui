@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from torch.optim.lr_scheduler import LambdaLR
 
 from ldm.modules.ema import LitEma
-from taming.modules.vqvae.quantize import VectorQuantizer2 as VectorQuantizer
+from vqvae_quantize import VectorQuantizer2 as VectorQuantizer
 from ldm.modules.diffusionmodules.model import Encoder, Decoder
 from ldm.util import instantiate_from_config
 

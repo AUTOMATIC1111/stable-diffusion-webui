@@ -249,6 +249,10 @@ class SDModelItem(BaseModel):
     filename: str = Field(title="Filename")
     config: Optional[str] = Field(title="Config file")
 
+class SDVaeItem(BaseModel):
+    model_name: str = Field(title="Model Name")
+    filename: str = Field(title="Filename")
+
 class HypernetworkItem(BaseModel):
     name: str = Field(title="Name")
     path: Optional[str] = Field(title="Path")
