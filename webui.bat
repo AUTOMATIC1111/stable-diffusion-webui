@@ -51,14 +51,20 @@ if EXIST %ACCELERATE% goto :accelerate_launch
 
 :launch
 %PYTHON% launch.py %*
+if %ERRORLEVEL% == 111 goto :restart
 pause
 exit /b
 
 :accelerate_launch
 echo Accelerating
 %ACCELERATE% launch --num_cpu_threads_per_process=6 launch.py
+if %ERRORLEVEL% == 111 goto :restart
 pause
 exit /b
+
+:restart
+echo Restarting...
+goto :accelerate
 
 :show_stdout_stderr
 

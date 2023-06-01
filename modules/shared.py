@@ -841,3 +841,9 @@ def walk_files(path, allowed_extensions=None):
                 continue
 
             yield os.path.join(root, filename)
+
+
+def restart_program():
+    """immediately stops the process with exit code 111, which webui.bat/webui.sh interpret as a command to start webui again"""
+
+    os._exit(111)
