@@ -6,6 +6,7 @@
  * fix some fields not applying in xyz plot
  * fix "hires. fix" prompt sharing same labels with txt2img_prompt
  * fix lora hashes not being added properly to infotex if there is only one lora
+ * fix --use-cpu failing to work properly at startup
 
 ## 1.3.0
 
