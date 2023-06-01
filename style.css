@@ -420,6 +420,12 @@ table.popup-table .muted{
     color: #aaa;
 }
 
+table.popup-table .link{
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: bold;
+}
+
 .ui-defaults-none{
     color: #aaa !important;
 }

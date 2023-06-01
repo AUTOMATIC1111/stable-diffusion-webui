@@ -1,4 +1,5 @@
 import inspect
+import os
 from collections import namedtuple
 from typing import Optional, Dict, Any
 
@@ -123,7 +124,7 @@ def app_started_callback(demo: Optional[Blocks], app: FastAPI):
     for c in callback_map['callbacks_app_started']:
         try:
             c.callback(demo, app)
-            timer.startup_timer.record(c.script)
+            timer.startup_timer.record(os.path.basename(c.script))
         except Exception:
             report_exception(c, 'app_started_callback')
 

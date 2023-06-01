@@ -3,11 +3,29 @@ function createRow(table, cellName, items) {
     var tr = document.createElement('tr');
     var res = [];
 
-    items.forEach(function(x) {
+    items.forEach(function(x, i) {
+        if (x === undefined) {
+            res.push(null);
+            return;
+        }
+
         var td = document.createElement(cellName);
         td.textContent = x;
         tr.appendChild(td);
         res.push(td);
+
+        var colspan = 1;
+        for (var n = i + 1; n < items.length; n++) {
+            if (items[n] !== undefined) {
+                break;
+            }
+
+            colspan += 1;
+        }
+
+        if (colspan > 1) {
+            td.colSpan = colspan;
+        }
     });
 
     table.appendChild(tr);
@@ -15,7 +33,7 @@ function createRow(table, cellName, items) {
     return res;
 }
 
-function showProfile(path, cutoff = 0.0005) {
+function showProfile(path, cutoff = 0.05) {
     requestGet(path, {}, function(data) {
         var table = document.createElement('table');
         table.className = 'popup-table';
@@ -38,7 +56,7 @@ function showProfile(path, cutoff = 0.0005) {
             return !(a < b || b < a);
         }
 
-        var addLevel = function(level, parent) {
+        var addLevel = function(level, parent, hide) {
             var matching = items.filter(function(x) {
                 return x.parts[level] && !x.parts[level + 1] && arraysEqual(x.parts.slice(0, level), parent);
             });
@@ -47,12 +65,10 @@ function showProfile(path, cutoff = 0.0005) {
             });
             var othersTime = 0;
             var othersList = [];
+            var othersRows = [];
+            var childrenRows = [];
             sorted.forEach(function(x) {
-                if (x.time < cutoff) {
-                    othersTime += x.time;
-                    othersList.push(x.parts[level]);
-                    return;
-                }
+                var visible = x.time >= cutoff && !hide;
 
                 var cells = [];
                 for (var i = 0; i < maxLength; i++) {
@@ -64,7 +80,32 @@ function showProfile(path, cutoff = 0.0005) {
                     cols[i].className = 'muted';
                 }
 
-                addLevel(level + 1, parent.concat([x.parts[level]]));
+                var tr = cols[0].parentNode;
+                if (!visible) {
+                    tr.classList.add("hidden");
+                }
+
+                if (x.time >= cutoff) {
+                    childrenRows.push(tr);
+                } else {
+                    othersTime += x.time;
+                    othersList.push(x.parts[level]);
+                    othersRows.push(tr);
+                }
+
+                var children = addLevel(level + 1, parent.concat([x.parts[level]]), true);
+                if (children.length > 0) {
+                    var cell = cols[level];
+                    var onclick = function() {
+                        cell.classList.remove("link");
+                        cell.removeEventListener("click", onclick);
+                        children.forEach(function(x) {
+                            x.classList.remove("hidden");
+                        });
+                    };
+                    cell.classList.add("link");
+                    cell.addEventListener("click", onclick);
+                }
             });
 
             if (othersTime > 0) {
@@ -73,14 +114,35 @@ function showProfile(path, cutoff = 0.0005) {
                     cells.push(parent[i]);
                 }
                 cells.push(othersTime.toFixed(3));
+                cells[level] = 'others';
                 var cols = createRow(table, 'td', cells);
                 for (i = 0; i < level; i++) {
                     cols[i].className = 'muted';
                 }
 
-                cols[level].textContent = 'others';
-                cols[level].title = othersList.join(", ");
+                var cell = cols[level];
+                var tr = cell.parentNode;
+                var onclick = function() {
+                    tr.classList.add("hidden");
+                    cell.classList.remove("link");
+                    cell.removeEventListener("click", onclick);
+                    othersRows.forEach(function(x) {
+                        x.classList.remove("hidden");
+                    });
+                };
+
+                cell.title = othersList.join(", ");
+                cell.classList.add("link");
+                cell.addEventListener("click", onclick);
+
+                if (hide) {
+                    tr.classList.add("hidden");
+                }
+
+                childrenRows.push(tr);
             }
+
+            return childrenRows;
         };
 
         addLevel(0, []);
