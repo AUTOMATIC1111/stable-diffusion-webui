@@ -36,18 +36,20 @@ function isSingleLetter(value) {
 // Create hotkeyConfig from opts
 function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
     const result = {};
+    const usedKeys = new Set();
+
     for (const key in defaultHotkeysConfig) {
-        if (hotkeysConfigOpts[key] && isSingleLetter(hotkeysConfigOpts[key])) {
-            // If the property passes the test, add 'Key' before it and save it
-            result[key] = "Key" + hotkeysConfigOpts[key].toUpperCase();
+        if (hotkeysConfigOpts[key] && isSingleLetter(hotkeysConfigOpts[key]) && !usedKeys.has(hotkeysConfigOpts[key].toUpperCase())) {
+            // If the property passed the test and has not yet been used, add 'Key' before it and save it
+            result[key] = 'Key' + hotkeysConfigOpts[key].toUpperCase();
+            usedKeys.add(hotkeysConfigOpts[key].toUpperCase());
         } else {
-            // Если свойство не прошло проверку, сохраняем значение по умолчанию
-            console.error(
-                `Hotkey: "${hotkeysConfigOpts[key]}" for ${key}, must contain only 1 letter. The default hotkey is set: ${defaultHotkeysConfig[key][3]}`
-            );
+            // If the property does not pass the test or has already been used, we keep the default value
+            console.error(`Hotkey: ${hotkeysConfigOpts[key]} for ${key} is repeated and conflicts with another hotkey or is not 1 letter. The default hotkey is used: ${defaultHotkeysConfig[key]}`);
             result[key] = defaultHotkeysConfig[key];
         }
     }
+
     return result;
 }
 
