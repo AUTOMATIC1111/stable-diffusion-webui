@@ -81,6 +81,23 @@ body:
         - CPU
         - Other GPUs
   - type: dropdown
+    id: cross_attention_opt
+    attributes:
+      label: Cross attention optimization
+      description: What cross attention optimization are you using, Settings -> Optimizations -> Cross attention optimization
+      multiple: false
+      options:
+        - Automatic
+        - xformers
+        - sdp-no-mem
+        - sdp
+        - Doggettx
+        - V1 
+        - InvokeAI
+        - "None "
+    validations:
+      required: true
+  - type: dropdown
     id: browsers
     attributes:
       label: What browsers do you use to access the UI ?
