@@ -210,8 +210,10 @@ while [[ "$return_code" -eq "111" ]]; do
         printf "Accelerating launch.py..."
         printf "\n%s\n" "${delimiter}"
         prepare_tcmalloc
-        accelerate launch --num_cpu_threads_per_process=6 "${LAUNCH_SCRIPT}" "$@"
-        return_code=$?
+        accelerate launch --quiet --num_cpu_threads_per_process=6 "${LAUNCH_SCRIPT}" "$@"
+        if [[ "$return_code" -eq "1" ]]; then
+            return_code="111"
+        fi
     else
         printf "\n%s\n" "${delimiter}"
         printf "Launching launch.py..."
