@@ -1,13 +1,11 @@
 import copy
 import random
-import sys
-import traceback
 import shlex
 
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import sd_samplers
+from modules import sd_samplers, errors
 from modules.processing import Processed, process_images
 from modules.shared import state
 
@@ -136,8 +134,7 @@ class Script(scripts.Script):
                 try:
                     args = cmdargs(line)
                 except Exception:
-                    print(f"Error parsing line {line} as commandline:", file=sys.stderr)
-                    print(traceback.format_exc(), file=sys.stderr)
+                    errors.report(f"Error parsing line {line} as commandline", exc_info=True)
                     args = {"prompt": line}
             else:
                 args = {"prompt": line}

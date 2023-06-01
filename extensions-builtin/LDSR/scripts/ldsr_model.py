@@ -1,12 +1,10 @@
 import os
-import sys
-import traceback
 
 from basicsr.utils.download_util import load_file_from_url
 
 from modules.upscaler import Upscaler, UpscalerData
 from ldsr_model_arch import LDSR
-from modules import shared, script_callbacks
+from modules import shared, script_callbacks, errors
 import sd_hijack_autoencoder  # noqa: F401
 import sd_hijack_ddpm_v1  # noqa: F401
 
@@ -51,10 +49,8 @@ class UpscalerLDSR(Upscaler):
 
         try:
             return LDSR(model, yaml)
-
         except Exception:
-            print("Error importing LDSR:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.report("Error importing LDSR", exc_info=True)
         return None
 
     def do_upscale(self, img, path):

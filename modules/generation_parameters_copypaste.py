@@ -35,7 +35,7 @@ def reset():
 
 
 def quote(text):
-    if ',' not in str(text) and '\n' not in str(text):
+    if ',' not in str(text) and '\n' not in str(text) and ':' not in str(text):
         return text
 
     return json.dumps(text, ensure_ascii=False)
@@ -306,6 +306,18 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "RNG" not in res:
         res["RNG"] = "GPU"
 
+    if "Schedule type" not in res:
+        res["Schedule type"] = "Automatic"
+
+    if "Schedule max sigma" not in res:
+        res["Schedule max sigma"] = 0
+
+    if "Schedule min sigma" not in res:
+        res["Schedule min sigma"] = 0
+
+    if "Schedule rho" not in res:
+        res["Schedule rho"] = 0
+
     return res
 
 
@@ -318,6 +330,10 @@ infotext_to_setting_name_mapping = [
     ('Conditional mask weight', 'inpainting_mask_weight'),
     ('Model hash', 'sd_model_checkpoint'),
     ('ENSD', 'eta_noise_seed_delta'),
+    ('Schedule type', 'k_sched_type'),
+    ('Schedule max sigma', 'sigma_max'),
+    ('Schedule min sigma', 'sigma_min'),
+    ('Schedule rho', 'rho'),
     ('Noise multiplier', 'initial_noise_multiplier'),
     ('Eta', 'eta_ancestral'),
     ('Eta DDIM', 'eta_ddim'),

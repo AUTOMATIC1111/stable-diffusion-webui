@@ -1,11 +1,8 @@
 import os
-import sys
 import threading
-import traceback
 
-import git
-
-from modules import shared
+from modules import shared, errors
+from modules.gitpython_hack import Repo
 from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
 extensions = []
@@ -54,10 +51,9 @@ class Extension:
         repo = None
         try:
             if os.path.exists(os.path.join(self.path, ".git")):
-                repo = git.Repo(self.path)
+                repo = Repo(self.path)
         except Exception:
-            print(f"Error reading github repository info from {self.path}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.report(f"Error reading github repository info from {self.path}", exc_info=True)
 
         if repo is None or repo.bare:
             self.remote = None
@@ -65,14 +61,15 @@ class Extension:
             try:
                 self.status = 'unknown'
                 self.remote = next(repo.remote().urls, None)
-                self.commit_date = repo.head.commit.committed_date
+                commit = repo.head.commit
+                self.commit_date = commit.committed_date
                 if repo.active_branch:
                     self.branch = repo.active_branch.name
-                self.commit_hash = repo.head.commit.hexsha
-                self.version = repo.git.describe("--always", "--tags")  # compared to `self.commit_hash[:8]` this takes about 30% more time total but since we run it in parallel we don't care
+                self.commit_hash = commit.hexsha
+                self.version = self.commit_hash[:8]
 
-            except Exception as ex:
-                print(f"Failed reading extension data from Git repository ({self.name}): {ex}", file=sys.stderr)
+            except Exception:
+                errors.report(f"Failed reading extension data from Git repository ({self.name})", exc_info=True)
                 self.remote = None
 
         self.have_info_from_repo = True
@@ -93,7 +90,7 @@ class Extension:
         return res
 
     def check_updates(self):
-        repo = git.Repo(self.path)
+        repo = Repo(self.path)
         for fetch in repo.remote().fetch(dry_run=True):
             if fetch.flags != fetch.HEAD_UPTODATE:
                 self.can_update = True
@@ -115,7 +112,7 @@ class Extension:
         self.status = "latest"
 
     def fetch_and_reset_hard(self, commit='origin'):
-        repo = git.Repo(self.path)
+        repo = Repo(self.path)
         # Fix: `error: Your local changes to the following files would be overwritten by merge`,
         # because WSL2 Docker set 755 file permissions instead of 644, this results to the error.
         repo.git.fetch(all=True)

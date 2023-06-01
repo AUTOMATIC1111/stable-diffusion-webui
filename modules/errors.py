@@ -1,5 +1,17 @@
 import sys
+import textwrap
 import traceback
+
+
+def report(message: str, *, exc_info: bool = False) -> None:
+    """
+    Print an error message to stderr, with optional traceback.
+    """
+    for line in message.splitlines():
+        print("***", line, file=sys.stderr)
+    if exc_info:
+        print(textwrap.indent(traceback.format_exc(), "    "), file=sys.stderr)
+        print("---", file=sys.stderr)
 
 
 def print_error_explanation(message):
@@ -12,9 +24,13 @@ def print_error_explanation(message):
     print('=' * max_len, file=sys.stderr)
 
 
-def display(e: Exception, task):
+def display(e: Exception, task, *, full_traceback=False):
     print(f"{task or 'error'}: {type(e).__name__}", file=sys.stderr)
-    print(traceback.format_exc(), file=sys.stderr)
+    te = traceback.TracebackException.from_exception(e)
+    if full_traceback:
+        # include frames leading up to the try-catch block
+        te.stack = traceback.StackSummary(traceback.extract_stack()[:-2] + te.stack)
+    print(*te.format(), sep="", file=sys.stderr)
 
     message = str(e)
     if "copying a param with shape torch.Size([640, 1024]) from checkpoint, the shape in current model is torch.Size([640, 768])" in message:

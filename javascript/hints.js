@@ -116,17 +116,25 @@ var titles = {
     "Negative Guidance minimum sigma": "Skip negative prompt for steps where image is already mostly denoised; the higher this value, the more skips there will be; provides increased performance in exchange for minor quality reduction."
 };
 
-function updateTooltipForSpan(span) {
-    if (span.title) return; // already has a title
+function updateTooltip(element) {
+    if (element.title) return; // already has a title
 
-    let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
+    let text = element.textContent;
+    let tooltip = localization[titles[text]] || titles[text];
 
     if (!tooltip) {
-        tooltip = localization[titles[span.value]] || titles[span.value];
+        let value = element.value;
+        if (value) tooltip = localization[titles[value]] || titles[value];
     }
 
     if (!tooltip) {
-        for (const c of span.classList) {
+        // Gradio dropdown options have `data-value`.
+        let dataValue = element.dataset.value;
+        if (dataValue) tooltip = localization[titles[dataValue]] || titles[dataValue];
+    }
+
+    if (!tooltip) {
+        for (const c of element.classList) {
             if (c in titles) {
                 tooltip = localization[titles[c]] || titles[c];
                 break;
@@ -135,34 +143,53 @@ function updateTooltipForSpan(span) {
     }
 
     if (tooltip) {
-        span.title = tooltip;
+        element.title = tooltip;
     }
 }
 
-function updateTooltipForSelect(select) {
-    if (select.onchange != null) return;
+// Nodes to check for adding tooltips.
+const tooltipCheckNodes = new Set();
+// Timer for debouncing tooltip check.
+let tooltipCheckTimer = null;
 
-    select.onchange = function() {
-        select.title = localization[titles[select.value]] || titles[select.value] || "";
-    };
+function processTooltipCheckNodes() {
+    for (const node of tooltipCheckNodes) {
+        updateTooltip(node);
+    }
+    tooltipCheckNodes.clear();
 }
 
-var observedTooltipElements = {SPAN: 1, BUTTON: 1, SELECT: 1, P: 1};
-
-onUiUpdate(function(m) {
-    m.forEach(function(record) {
-        record.addedNodes.forEach(function(node) {
-            if (observedTooltipElements[node.tagName]) {
-                updateTooltipForSpan(node);
+onUiUpdate(function(mutationRecords) {
+    for (const record of mutationRecords) {
+        if (record.type === "childList" && record.target.classList.contains("options")) {
+            // This smells like a Gradio dropdown menu having changed,
+            // so let's enqueue an update for the input element that shows the current value.
+            let wrap = record.target.parentNode;
+            let input = wrap?.querySelector("input");
+            if (input) {
+                input.title = ""; // So we'll even have a chance to update it.
+                tooltipCheckNodes.add(input);
             }
-            if (node.tagName == "SELECT") {
-                updateTooltipForSelect(node);
+        }
+        for (const node of record.addedNodes) {
+            if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains("hide")) {
+                if (!node.title) {
+                    if (
+                        node.tagName === "SPAN" ||
+                        node.tagName === "BUTTON" ||
+                        node.tagName === "P" ||
+                        node.tagName === "INPUT" ||
+                        (node.tagName === "LI" && node.classList.contains("item")) // Gradio dropdown item
+                    ) {
+                        tooltipCheckNodes.add(node);
+                    }
+                }
+                node.querySelectorAll('span, button, p').forEach(n => tooltipCheckNodes.add(n));
             }
-
-            if (node.querySelectorAll) {
-                node.querySelectorAll('span, button, select, p').forEach(updateTooltipForSpan);
-                node.querySelectorAll('select').forEach(updateTooltipForSelect);
-            }
-        });
-    });
+        }
+    }
+    if (tooltipCheckNodes.size) {
+        clearTimeout(tooltipCheckTimer);
+        tooltipCheckTimer = setTimeout(processTooltipCheckNodes, 1000);
+    }
 });

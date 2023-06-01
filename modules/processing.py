@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import os
 import sys
@@ -13,7 +14,7 @@ from skimage import exposure
 from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -23,7 +24,6 @@ import modules.images as images
 import modules.styles
 import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
-import logging
 from ldm.data.util import AddMiDaS
 from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 
@@ -321,14 +321,13 @@ class StableDiffusionProcessing:
         have been used before. The second element is where the previously
         computed result is stored.
         """
-
-        if cache[0] is not None and (required_prompts, steps) == cache[0]:
+        if cache[0] is not None and (required_prompts, steps, opts.CLIP_stop_at_last_layers, shared.sd_model.sd_checkpoint_info) == cache[0]:
             return cache[1]
 
         with devices.autocast():
             cache[1] = function(shared.sd_model, required_prompts, steps)
 
-        cache[0] = (required_prompts, steps)
+        cache[0] = (required_prompts, steps, opts.CLIP_stop_at_last_layers, shared.sd_model.sd_checkpoint_info)
         return cache[1]
 
     def setup_conds(self):
@@ -589,11 +588,15 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
+    if p.scripts is not None:
+        p.scripts.before_process(p)
+
     stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
 
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
-        if sd_models.checkpoint_alisases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+        override_checkpoint = p.override_settings.get('sd_model_checkpoint')
+        if override_checkpoint is not None and sd_models.checkpoint_alisases.get(override_checkpoint) is None:
             p.override_settings.pop('sd_model_checkpoint', None)
             sd_models.reload_model_weights()
 
@@ -673,6 +676,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             # for OSX, loading the model during sampling changes the generated picture, so it is loaded here
             if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN":
                 sd_vae_approx.model()
+
+            sd_unet.apply_unet()
 
         if state.job_count == -1:
             state.job_count = p.n_iter

@@ -1,10 +1,8 @@
 import html
-import sys
 import threading
-import traceback
 import time
 
-from modules import shared, progress
+from modules import shared, progress, errors
 
 queue_lock = threading.Lock()
 
@@ -56,16 +54,14 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         try:
             res = list(func(*args, **kwargs))
         except Exception as e:
-            # When printing out our debug argument list, do not print out more than a MB of text
-            max_debug_str_len = 131072 # (1024*1024)/8
-
-            print("Error completing request", file=sys.stderr)
-            argStr = f"Arguments: {args} {kwargs}"
-            print(argStr[:max_debug_str_len], file=sys.stderr)
-            if len(argStr) > max_debug_str_len:
-                print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
-
-            print(traceback.format_exc(), file=sys.stderr)
+            # When printing out our debug argument list,
+            # do not print out more than a 100 KB of text
+            max_debug_str_len = 131072
+            message = "Error completing request"
+            arg_str = f"Arguments: {args} {kwargs}"[:max_debug_str_len]
+            if len(arg_str) > max_debug_str_len:
+                arg_str += f" (Argument list truncated at {max_debug_str_len}/{len(arg_str)} characters)"
+            errors.report(f"{message}\n{arg_str}", exc_info=True)
 
             shared.state.job = ""
             shared.state.job_count = 0
@@ -108,4 +104,3 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         return tuple(res)
 
     return f
-
