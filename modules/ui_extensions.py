@@ -49,7 +49,7 @@ def apply_and_restart(disable_list, update_list, disable_all):
     shared.opts.disabled_extensions = disabled
     shared.opts.disable_all_extensions = disable_all
     shared.opts.save(shared.config_filename)
-    shared.state.request_restart()
+    shared.restart_program()
 
 
 def save_config_state(name):

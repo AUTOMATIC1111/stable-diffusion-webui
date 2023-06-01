@@ -841,3 +841,24 @@ def walk_files(path, allowed_extensions=None):
                 continue
 
             yield os.path.join(root, filename)
+
+
+def restart_program():
+    import psutil
+
+    try:
+        p = psutil.Process(os.getpid())
+
+        for handle in p.open_files():
+            if handle.fd != -1:
+                os.close(handle.fd)
+
+        for handle in p.connections():
+            if handle.fd != -1:
+                os.close(handle.fd)
+
+    except Exception as e:
+        errors.display(e, "closing handles")
+
+    python = sys.executable
+    os.execl(python, python, *sys.argv)
