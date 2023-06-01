@@ -135,7 +135,7 @@ class CFGDenoiser(torch.nn.Module):
 
         # TODO add infotext entry
         if shared.opts.pad_cond_uncond and tensor.shape[1] != uncond.shape[1]:
-            empty = torch.zeros_like(shared.sd_model.cond_stage_model_empty_prompt)
+            empty = shared.sd_model.cond_stage_model_empty_prompt
             num_repeats = (tensor.shape[1] - uncond.shape[1]) // empty.shape[1]
 
             if num_repeats < 0:
