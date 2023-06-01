@@ -57,7 +57,7 @@ exit /b
 
 :accelerate_launch
 echo Accelerating
-%ACCELERATE% launch --num_cpu_threads_per_process=6 launch.py
+%ACCELERATE% launch --quiet --num_cpu_threads_per_process=6 launch.py
 if %ERRORLEVEL% == 1 goto :restart
 pause
 exit /b
