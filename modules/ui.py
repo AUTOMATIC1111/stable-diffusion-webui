@@ -237,7 +237,7 @@ def create_toprow(is_img2img):
                 button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
                 button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
         with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
-            with gr.Row(elem_id=f"{id_part}_generate_line1"):
+            with gr.Row(elem_id=f"{id_part}_generate_box"):
                 submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
             with gr.Row(elem_id=f"{id_part}_generate_line2"):
                 interrupt = gr.Button('Stop', elem_id=f"{id_part}_interrupt")
@@ -245,7 +245,7 @@ def create_toprow(is_img2img):
                 skip = gr.Button('Skip', elem_id=f"{id_part}_skip")
                 skip.click(fn=lambda: modules.shared.state.skip(), inputs=[], outputs=[])
                 pause = gr.Button('Pause', elem_id=f"{id_part}_pause")
-                pause.click(fn=lambda: modules.shared.state.pause(), inputs=[], outputs=[])
+                pause.click(fn=lambda: modules.shared.state.pause(), _js='checkPaused', inputs=[], outputs=[])
             with gr.Row(elem_id=f"{id_part}_tools"):
                 paste = ToolButton(value=paste_symbol, elem_id="paste")
                 clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")

@@ -82,17 +82,25 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
 
     is_batch = mode == 5
     if mode == 0:  # img2img
+        if init_img is None:
+            return
         image = init_img.convert("RGB")
         mask = None
     elif mode == 1:  # img2img sketch
+        if sketch is None:
+            return
         image = sketch.convert("RGB")
         mask = None
     elif mode == 2:  # inpaint
+        if init_img_with_mask is None:
+            return
         image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
         alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
         mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
         image = image.convert("RGB")
     elif mode == 3:  # inpaint sketch
+        if inpaint_color_sketch is None:
+            return
         image = inpaint_color_sketch
         orig = inpaint_color_sketch_orig or inpaint_color_sketch
         pred = np.any(np.array(image) != np.array(orig), axis=-1)
@@ -102,6 +110,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         image = Image.composite(image.filter(blur), orig, mask.filter(blur))
         image = image.convert("RGB")
     elif mode == 4:  # inpaint upload mask
+        if init_img_inpaint is None:
+            return
         image = init_img_inpaint
         mask = init_mask_inpaint
     else:
@@ -113,6 +123,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
             assert image, "Can't scale by because no image is selected"
             width = int(image.width * scale_by)
             height = int(image.height * scale_by)
+    else:
+        return
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 

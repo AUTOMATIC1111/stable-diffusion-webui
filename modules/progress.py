@@ -42,9 +42,10 @@ class ProgressRequest(BaseModel):
     id_live_preview: int = Field(default=-1, title="Live preview image ID", description="id of last received last preview image")
 
 
-class ProgressResponse(BaseModel):
+class InternalProgressResponse(BaseModel):
     active: bool = Field(title="Whether the task is being worked on right now")
     queued: bool = Field(title="Whether the task is in queue")
+    paused: bool = Field(title="Whether the task is paused")
     completed: bool = Field(title="Whether the task has already finished")
     progress: float = Field(default=None, title="Progress", description="The progress with a range of 0 to 1")
     eta: float = Field(default=None, title="ETA in secs")
@@ -54,15 +55,16 @@ class ProgressResponse(BaseModel):
 
 
 def setup_progress_api(app):
-    return app.add_api_route("/internal/progress", progressapi, methods=["POST"], response_model=ProgressResponse)
+    return app.add_api_route("/internal/progress", progressapi, methods=["POST"], response_model=InternalProgressResponse)
 
 
 def progressapi(req: ProgressRequest):
     active = req.id_task == current_task
     queued = req.id_task in pending_tasks
     completed = req.id_task in finished_tasks
+    paused = shared.state.paused
     if not active:
-        return ProgressResponse(active=active, queued=queued, completed=completed, id_live_preview=-1, textinfo="Queued..." if queued else "Waiting...")
+        return InternalProgressResponse(active=active, queued=queued, paused=paused, completed=completed, id_live_preview=-1, textinfo="Queued..." if queued else "Waiting...")
     progress = 0
     job_count, job_no = shared.state.job_count, shared.state.job_no
     sampling_steps, sampling_step = shared.state.sampling_steps, shared.state.sampling_step
@@ -88,4 +90,4 @@ def progressapi(req: ProgressRequest):
             live_preview = None
     else:
         live_preview = None
-    return ProgressResponse(active=active, queued=queued, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)
+    return InternalProgressResponse(active=active, queued=queued, paused=paused, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)

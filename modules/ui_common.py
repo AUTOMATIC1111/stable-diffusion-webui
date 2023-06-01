@@ -161,7 +161,7 @@ def create_output_panel(tabname, outdir):
                 html_log = gr.HTML(elem_id=f'html_log_{tabname}')
                 generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
                 generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
-                generation_info_button.click(fn=update_generation_info, _js="function(x, y, z){ return [x, y, selected_gallery_index()] }", show_progress=False,
+                generation_info_button.click(fn=update_generation_info, _js="(x, y, z) => [x, y, selected_gallery_index()]", show_progress=False,
                     inputs=[generation_info, html_info, html_info],
                     outputs=[html_info, html_info],
                 )

@@ -926,9 +926,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         shared.state.nextjob()
         img2img_sampler_name = self.sampler_name
         force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
-        if self.sampler_name in ['PLMS']:
-            img2img_sampler_name = force_latent_upscaler if force_latent_upscaler != 'None' else shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
+        if force_latent_upscaler != 'None' and force_latent_upscaler != 'PLMS':
+            img2img_sampler_name = force_latent_upscaler
+        elif shared.opts.fallback_sampler != 'PLMS':
+            img2img_sampler_name =  shared.opts.fallback_sampler
+        else:
+            img2img_sampler_name = 'UniPC'
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
+        print('HERE', force_latent_upscaler, img2img_sampler_name, self.sampler)
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
         noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
         # GC now before running the next img2img to prevent running out of memory
@@ -942,7 +947,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 # clean patch done by first pass. (clobbering the first patch might be fine? this might be excessive)
                 tomesd.remove_patch(self.sd_model)
                 log.debug('Temporarily removed token merging optimizations in preparation for next pass')
-
             sd_models.apply_token_merging(sd_model=self.sd_model, hr=True)
             log.debug('Applied token merging for high-res pass')
         samples = self.sampler.sample_img2img(self, samples, noise, conditioning, unconditional_conditioning, steps=self.hr_second_pass_steps or self.steps, image_conditioning=image_conditioning)

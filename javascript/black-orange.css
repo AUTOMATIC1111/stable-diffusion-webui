@@ -75,7 +75,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { background-color: black; box-shadow: 4px 4px 4px 0px #333333  !important; }
 #txt2img_prompt > label > textarea, #txt2img_neg_prompt > label > textarea, #img2img_prompt > label > textarea, #img2img_neg_prompt > label > textarea { font-size: 1.2rem; }
 #img2img_settings { min-width: calc(2 * var(--left-column)); max-width: calc(2 * var(--left-column)); background-color: #111111; padding-top: 16px; }
-#interrogate, #deepbooru { margin: 16px 0px 16px 0px; max-width: 100px; max-height: 74px; font-weight: normal; font-size: 14px; }
+#interrogate, #deepbooru { margin: 0 0px 10px 0px; max-width: 80px; max-height: 80px; font-weight: normal; font-size: 0.95em; }
 #lightboxModal { background-color: rgba(20, 20, 20, 0.8) }
 #quicksettings .gr-button-tool { font-size: 1.6rem; box-shadow: none; margin-left: -20px; margin-top: -2px; height: 2.4em; }
 #quicksettings > div, #quicksettings > fieldset { min-width: 24em; max-width: 26em; line-height: 2em; }

@@ -118,20 +118,11 @@ function create_submit_args(args) {
   return res;
 }
 
-function showSubmitButtons(tabname, show) {
-  // gradioApp().getElementById(`${tabname}_interrupt`).style.display = show ? 'none' : 'block';
-  // gradioApp().getElementById(`${tabname}_skip`).style.display = show ? 'none' : 'block';
-  // gradioApp().getElementById(tabname+'_interrupt').style.display = "block"
-  // gradioApp().getElementById(tabname+'_skip').style.display = "block"
-}
-
 function submit(...args) {
   console.log('submit txt2img:', args);
   rememberGallerySelection('txt2img_gallery');
-  showSubmitButtons('txt2img', false);
   const id = randomId();
-  const atEnd = () => showSubmitButtons('txt2img', true);
-  requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), atEnd);
+  requestProgress(id, gradioApp().getElementById('txt2img_gallery'));
   const res = create_submit_args(args);
   res[0] = id;
   return res;
@@ -140,10 +131,8 @@ function submit(...args) {
 function submit_img2img(...args) {
   console.log('submit img2img:', args);
   rememberGallerySelection('img2img_gallery');
-  showSubmitButtons('img2img', false);
   const id = randomId();
-  const atEnd = () => showSubmitButtons('img2img', true);
-  requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), atEnd);
+  requestProgress(id, gradioApp().getElementById('img2img_gallery'));
   const res = create_submit_args(args);
   res[0] = id;
   res[1] = get_tab_index('mode_img2img');
@@ -152,7 +141,6 @@ function submit_img2img(...args) {
 
 function modelmerger(...args) {
   const id = randomId();
-  requestProgress(id, gradioApp().getElementById('modelmerger_results_panel'), null);
   const res = create_submit_args(args);
   res[0] = id;
   return res;
@@ -429,17 +417,14 @@ function reconnect_ui() {
   const api_logo = Array.from(gradioApp().querySelectorAll('img')).filter((el) => el?.src?.endsWith('api-logo.svg'));
   if (api_logo.length > 0) api_logo[0].remove();
 
-  const el1 = gradioApp().getElementById('txt2img_gallery_container');
-  const el2 = gradioApp().getElementById('txt2img_gallery');
+  const gallery = gradioApp().getElementById('txt2img_gallery');
   const task_id = localStorage.getItem('task');
-  if (!el1 || !el2) return;
+  if (!gallery) return;
   clearInterval(start_check);
   if (task_id) {
     console.debug('task check:', task_id);
     rememberGallerySelection('txt2img_gallery');
-    showSubmitButtons('txt2img', false);
-    const atEnd = () => showSubmitButtons('txt2img', true);
-    requestProgress(task_id, el1, el2, atEnd, null, true);
+    requestProgress(task_id, gallery, null, null, true);
   }
 
   const sd_model = gradioApp().getElementById('setting_sd_model_checkpoint');

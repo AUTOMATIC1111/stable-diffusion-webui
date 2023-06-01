@@ -16,11 +16,7 @@ function extensions_check(info, extensions_disabled_list, search_text, sort_colu
   gradioApp().querySelectorAll('#extensions input[type="checkbox"]').forEach((x) => {
     if (x.name.startsWith('enable_') && !x.checked) disable.push(x.name.substring(7));
   });
-  // gradioApp().querySelectorAll('#extensions .extension_status').forEach((x) => {
-  //    x.innerHTML = 'Loading...';
-  // });
   const id = randomId();
-  // requestProgress(id, gradioApp().getElementById('extensions_installed_top'), null, null, null, false);
   return [id, JSON.stringify(disable), search_text, sort_column];
 }
 
