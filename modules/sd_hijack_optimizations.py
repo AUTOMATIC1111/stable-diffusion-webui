@@ -23,11 +23,10 @@ if shared.opts.cross_attention_optimization == "xFormers":
 
 def get_available_vram():
     if shared.cmd_opts.use_ipex:
-        stats = torch.xpu.memory_stats("xpu")
+        stats = torch.xpu.memory_stats(shared.device)
         mem_active = stats['active_bytes.all.current']
         mem_reserved = stats['reserved_bytes.all.current']
-        #-128MB for the OS and other.
-        mem_free_xpu = torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated() - (128*1024*1024)
+        mem_free_xpu = torch.xpu.get_device_properties(shared.device).total_memory - torch.xpu.memory_allocated()
         mem_free_torch = mem_reserved - mem_active
         mem_free_total = mem_free_xpu + mem_free_torch
         return mem_free_total
@@ -185,11 +184,10 @@ def einsum_op_tensor_mem(q, k, v, max_tensor_mb):
 
 def einsum_op_cuda(q, k, v):
     if shared.cmd_opts.use_ipex:
-        stats = torch.xpu.memory_stats("xpu")
+        stats = torch.xpu.memory_stats(q.device)
         mem_active = stats['active_bytes.all.current']
         mem_reserved = stats['reserved_bytes.all.current']
-        #-128MB for the OS and other.
-        mem_free_xpu = torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated() - (128*1024*1024)
+        mem_free_xpu = torch.xpu.get_device_properties(q.device).total_memory - torch.xpu.memory_allocated()
         mem_free_torch = mem_reserved - mem_active
         mem_free_total = mem_free_xpu + mem_free_torch
         # Divide factor of safety as there's copying and fragmentation

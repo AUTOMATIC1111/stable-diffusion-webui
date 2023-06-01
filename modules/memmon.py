@@ -24,7 +24,7 @@ class MemUsageMonitor(threading.Thread):
             #torch.cuda.is_available() reports False when using IPEX.
             if shared.cmd_opts.use_ipex:
                 self.cuda_mem_get_info()
-                torch.xpu.memory_stats("xpu")
+                torch.xpu.memory_stats(self.device)
             else:
                 self.disabled = True
         else:
@@ -36,8 +36,7 @@ class MemUsageMonitor(threading.Thread):
 
     def cuda_mem_get_info(self):
         if shared.cmd_opts.use_ipex:
-            #-128MB for the OS and other.
-            return [(torch.xpu.get_device_properties("xpu").total_memory - torch.xpu.memory_allocated() - (128*1024*1024)), torch.xpu.get_device_properties("xpu").total_memory]
+            return [(torch.xpu.get_device_properties(self.device).total_memory - torch.xpu.memory_allocated()), torch.xpu.get_device_properties(self.device).total_memory]
         else:
             index = self.device.index if self.device.index is not None else torch.cuda.current_device()
             return torch.cuda.mem_get_info(index)
@@ -71,7 +70,7 @@ class MemUsageMonitor(threading.Thread):
             self.data["total"] = total
             try:
                 if shared.cmd_opts.use_ipex:
-                    torch_stats = torch.xpu.memory_stats("xpu")
+                    torch_stats = torch.xpu.memory_stats(self.device)
                 else:
                     torch_stats = torch.cuda.memory_stats(self.device)
                 self.data["active"] = torch_stats["active.all.current"]

@@ -1,6 +1,7 @@
 import os
 import psutil
 import torch
+from modules import shared
 
 def memory_stats():
     def gb(val: float):
@@ -27,8 +28,8 @@ def memory_stats():
     except:
         pass
     try:
-        gpu = { 'used': gb(torch.xpu.memory_allocated()), 'total': gb(torch.xpu.get_device_properties("xpu").total_memory) }
-        s = dict(torch.xpu.memory_stats("xpu"))
+        gpu = { 'used': gb(torch.xpu.memory_allocated()), 'total': gb(torch.xpu.get_device_properties(shared.device).total_memory) }
+        s = dict(torch.xpu.memory_stats())
         mem.update({
             'gpu': gpu,
             'retries': s['num_alloc_retries'],
