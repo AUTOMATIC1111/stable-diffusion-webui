@@ -14,13 +14,59 @@ function getActiveTab(elements, all = false) {
     }
 }
 
+// Wait until opts loaded
+async function waitForOpts() {
+    return new Promise(resolve => {
+        const checkInterval = setInterval(() => {
+            if (window.opts && Object.keys(window.opts).length !== 0) {
+                clearInterval(checkInterval);
+                resolve(window.opts);
+            }
+        }, 100);
+    });
+}
+
+// Check is hotkey valid
+function isSingleLetter(value) {
+    return (
+        typeof value === "string" && value.length === 1 && /[a-z]/i.test(value)
+    );
+}
+
+// Create hotkeyConfig from opts
+function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
+    const result = {};
+    for (const key in defaultHotkeysConfig) {
+        if (hotkeysConfigOpts[key] && isSingleLetter(hotkeysConfigOpts[key])) {
+            // If the property passes the test, add 'Key' before it and save it
+            result[key] = "Key" + hotkeysConfigOpts[key].toUpperCase();
+        } else {
+            // Если свойство не прошло проверку, сохраняем значение по умолчанию
+            console.error(
+                `Hotkey: "${hotkeysConfigOpts[key]}" for ${key}, must contain only 1 letter. The default hotkey is set: ${defaultHotkeysConfig[key][3]}`
+            );
+            result[key] = defaultHotkeysConfig[key];
+        }
+    }
+    return result;
+}
+
+// Main
 onUiLoaded(async() => {
-    const hotkeysConfig = {
-        resetZoom: "KeyR",
-        fitToScreen: "KeyS",
-        moveKey: "KeyF",
-        overlap: "KeyO"
+    const hotkeysConfigOpts = await waitForOpts();
+
+    // Default config
+    const defaultHotkeysConfig = {
+        canvas_hotkey_reset: "KeyR",
+        canvas_hotkey_fullscreen: "KeyS",
+        canvas_hotkey_move: "KeyF",
+        canvas_hotkey_overlap: "KeyO"
     };
+
+    const hotkeysConfig = createHotkeyConfig(
+        defaultHotkeysConfig,
+        hotkeysConfigOpts
+    );
 
     let isMoving = false;
     let mouseX, mouseY;
@@ -65,25 +111,25 @@ onUiLoaded(async() => {
         // Add info about hotkets
         const hotkeys = [
             {key: "Shift + wheel", action: "Zoom canvas"},
+            {key: "Ctr+wheel", action: "Adjust brush size"},
             {
-                key: hotkeysConfig.moveKey.charAt(
-                    hotkeysConfig.moveKey.length - 1
-                ),
-                action: "Move canvas"
-            },
-            {
-                key: hotkeysConfig.resetZoom.charAt(
-                    hotkeysConfig.resetZoom.length - 1
+                key: hotkeysConfig.canvas_hotkey_reset.charAt(
+                    hotkeysConfig.canvas_hotkey_reset.length - 1
                 ),
                 action: "Reset zoom"
             },
             {
-                key: hotkeysConfig.fitToScreen.charAt(
-                    hotkeysConfig.fitToScreen.length - 1
+                key: hotkeysConfig.canvas_hotkey_fullscreen.charAt(
+                    hotkeysConfig.canvas_hotkey_fullscreen.length - 1
                 ),
                 action: "Fullscreen mode"
             },
-            {key: "Ctr+wheel", action: "Adjust brush size"}
+            {
+                key: hotkeysConfig.canvas_hotkey_move.charAt(
+                    hotkeysConfig.canvas_hotkey_move.length - 1
+                ),
+                action: "Move canvas"
+            }
         ];
         hotkeys.forEach(function(hotkey) {
             const p = document.createElement("p");
@@ -363,9 +409,9 @@ onUiLoaded(async() => {
         // Handle keydown events
         function handleKeyDown(event) {
             const hotkeyActions = {
-                [hotkeysConfig.resetZoom]: resetZoom,
-                [hotkeysConfig.overlap]: toggleOverlap,
-                [hotkeysConfig.fitToScreen]: fitToScreen
+                [hotkeysConfig.canvas_hotkey_reset]: resetZoom,
+                [hotkeysConfig.canvas_hotkey_overlap]: toggleOverlap,
+                [hotkeysConfig.canvas_hotkey_fullscreen]: fitToScreen
             };
 
             const action = hotkeyActions[event.code];
@@ -429,7 +475,7 @@ onUiLoaded(async() => {
 
         // Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
         function handleMoveKeyDown(e) {
-            if (e.code === hotkeysConfig.moveKey) {
+            if (e.code === hotkeysConfig.canvas_hotkey_move) {
                 if (!e.ctrlKey && !e.metaKey && isKeyDownHandlerAttached) {
                     e.preventDefault();
                     document.activeElement.blur();
@@ -439,7 +485,7 @@ onUiLoaded(async() => {
         }
 
         function handleMoveKeyUp(e) {
-            if (e.code === hotkeysConfig.moveKey) {
+            if (e.code === hotkeysConfig.canvas_hotkey_move) {
                 isMoving = false;
             }
         }
