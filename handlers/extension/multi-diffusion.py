@@ -65,15 +65,12 @@ class MultiDiffusionFormatter(AlwaysonScriptArgsFormatter):
 
             return obj
 
-        if is_img2img:
-            if isinstance(args, dict):
-                md_script_args = obj_to_array(args)
-            else:
-                md_script_args = []
-                for x in args:
-                    md_script_args.extend(obj_to_array(x))
-        else:
+        if isinstance(args, dict):
             md_script_args = obj_to_array(args)
+        else:
+            md_script_args = []
+            for x in args:
+                md_script_args.extend(obj_to_array(x))
         return md_script_args
 
 

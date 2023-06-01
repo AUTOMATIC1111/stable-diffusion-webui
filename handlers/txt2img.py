@@ -16,13 +16,14 @@ from worker.task import TaskType, TaskProgress, Task, TaskStatus
 from modules.processing import StableDiffusionProcessingTxt2Img, process_images, Processed
 from handlers.utils import init_script_args, get_selectable_script, init_default_script_args, \
     load_sd_model_weights, save_processed_images, get_tmp_local_path, get_model_local_path
-from modules import sd_models
+from handlers.extension.controlnet import exec_control_net_annotator
 from handlers.img2img import Img2ImgTaskHandler, AlwaysonScriptsType
 
 
 class Txt2ImgMinorTaskType(IntEnum):
     Default = 0
     Txt2Img = 1
+    RunControlnetAnnotator = 100
 
 
 class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
@@ -61,6 +62,9 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
                  embeddings: typing.Sequence[str] = None,  # embeddings，用户和系统全部mbending列表
                  compress_pnginfo: bool = True,  # 使用GZIP压缩图片信息（默认开启）
+                 hr_sampler_name: str = None,  # hr sampler
+                 hr_prompt: str = None,
+                 hr_negative_prompt: str = None,
                  **kwargs):
         override_settings = create_override_settings_dict(override_settings_texts or [])
 
@@ -200,3 +204,6 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         minor_type = Txt2ImgMinorTaskType(task.minor_type)
         if minor_type <= Txt2ImgMinorTaskType.Txt2Img:
             yield from self._exec_txt2img(task)
+        elif minor_type == Txt2ImgMinorTaskType.RunControlnetAnnotator:
+            yield from exec_control_net_annotator(task)
+

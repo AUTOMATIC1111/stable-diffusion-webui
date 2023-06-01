@@ -10,12 +10,12 @@ import time
 import traceback
 import typing
 import numpy as np
+import modules.scripts
 from PIL import Image
 from collections.abc import Iterable
-from modules.scripts import scripts_img2img
 from handlers.formatter import AlwaysonScriptArgsFormatter
 from handlers.utils import get_tmp_local_path, Tmp, upload_files, strip_model_hash, upload_pil_image
-from worker.task import TaskProgress, Task, TaskStatus
+from worker.task import TaskProgress, Task, TaskStatus, TaskType
 
 ControlNet = 'ControlNet'
 FreePreprocessors = [
@@ -117,7 +117,9 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
         yield progress
     else:
         control_net_script = None
-        for script in scripts_img2img.alwayson_scripts:
+        scripts_runner = modules.scripts.scripts_img2img \
+            if task.task_type == TaskType.Image2Image else modules.scripts.scripts_txt2img
+        for script in scripts_runner.alwayson_scripts:
             if 'ControlNet' != script.title():
                 continue
             control_net_script = script

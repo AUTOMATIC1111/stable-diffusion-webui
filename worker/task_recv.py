@@ -132,26 +132,31 @@ class TaskReceiver:
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
 
-        with redis_lock.Lock(rds, "task-lock-" + queue_name, expire=5) as locker:
-            for _ in range(retry):
-                now = int(time.time() * 1000)
-                # min 最小为当前时间（ms）- VIP最大等级*放大系数（VIP提前执行权重）- 任务过期时间（1天）
-                # max 为当前时间（ms） + 偏移量1秒
-                min, max = -1, now + 1000
-                values = rds.zrangebyscore(
-                    queue_name, min, max, start=0, num=1)
-                task = None
-                if values:
-                    for v in values:
-                        task = self.search_task_with_id(rds, v)
-                        if task:
-                            break
-                    rds.zrem(queue_name, *values)
-                if task:
-                    return task
-                elif not values:
-                    rand = random.randint(0, 5) * 0.1
-                    time.sleep(rand)
+        try:
+            with redis_lock.Lock(rds, "task-lock-" + queue_name, expire=30000) as locker:
+                for _ in range(retry):
+                    now = int(time.time() * 1000)
+                    # min 最小为当前时间（ms）- VIP最大等级*放大系数（VIP提前执行权重）- 任务过期时间（1天）
+                    # max 为当前时间（ms） + 偏移量1秒
+                    min, max = -1, now + 1000
+                    values = rds.zrangebyscore(
+                        queue_name, min, max, start=0, num=1)
+                    task = None
+                    if values:
+                        for v in values:
+                            task = self.search_task_with_id(rds, v)
+                            if task:
+                                break
+                        rds.zrem(queue_name, *values)
+                    if task:
+                        return task
+                    elif not values:
+                        rand = random.randint(0, 5) * 0.1
+                        time.sleep(rand)
+        except redis_lock.NotAcquired:
+            pass
+        except Exception as err:
+            logger.exception("cannot get task from redis")
 
     def _get_queue_task(self, *model_hash: str):
         for sha256 in model_hash:
