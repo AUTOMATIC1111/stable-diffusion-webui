@@ -359,7 +359,8 @@ def download_user_assets():
         if not os.path.exists('user-asset'):
             os.makedirs('user-asset', exist_ok=True)
         for fn in os.listdir('user-asset'):
-            files.append(os.path.join('user-asset', fn))
+            if not os.path.isdir(fn):
+                files.append(os.path.join('user-asset', fn))
         if not files:
             files = None
         return files
