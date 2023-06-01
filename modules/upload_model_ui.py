@@ -249,10 +249,18 @@ def create_rm_model_ui():
 
     def list_models(relative):
         models = []
+        parentPath = 'user-models'
+
+        ##判断用户模型根目录存在。不存在则创建目录
+        if not os.path.exists(parentPath):
+            os.makedirs(parentPath, exist_ok=True)
+
         relative = os.path.join('user-models', relative)
+        ## 判断文件目录不存在则创建目录
+        if not os.path.exists(relative):
+            os.makedirs(relative, exist_ok=True)
         for fn in find_files_from_dir(relative, 'safetensors', 'ckpt', 'pt'):
             index = fn.index(relative)
-
             models.append([fn[index:]])
         if not models:
             models = None
@@ -347,6 +355,9 @@ def download_user_assets():
 
     def list_files():
         files = []
+        ## 判断文件目录不存在则创建目录
+        if not os.path.exists('user-asset'):
+            os.makedirs('user-asset', exist_ok=True)
         for fn in os.listdir('user-asset'):
             files.append(os.path.join('user-asset', fn))
         if not files:
