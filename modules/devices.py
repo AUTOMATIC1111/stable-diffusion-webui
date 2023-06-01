@@ -145,7 +145,6 @@ def set_cuda_params():
 
 args = cmd_args.parser.parse_args()
 if args.use_ipex:
-    print(args.device_id)
     if args.device_id is not None:
         cpu = torch.device(f"xpu:{args.device_id}") #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
     else:
