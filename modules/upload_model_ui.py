@@ -193,7 +193,7 @@ def parse_download_url(url: str, cover: str) -> Tuple[str, str]:
 def create_upload_model_ui():
     gr.Label("你可以提供下载链接(本地文件需先上传服务器并提供外网访问URL)，选择模型类型并上传提示OK后完成", label=None)
     # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
-    radio_ctl = gr.Radio(["Lora", "Stable-diffusion"],
+    radio_ctl = gr.Radio(["Lora", "Stable-diffusion", "VAE"],
                          value="Lora",
                          label="选择模型类型:")
     with gr.Tabs(elem_id="tabs") as tabs:
@@ -249,10 +249,18 @@ def create_rm_model_ui():
 
     def list_models(relative):
         models = []
+        parentPath = 'user-models'
+
+        ##判断用户模型根目录存在。不存在则创建目录
+        if not os.path.exists(parentPath):
+            os.makedirs(parentPath, exist_ok=True)
+
         relative = os.path.join('user-models', relative)
+        ## 判断文件目录不存在则创建目录
+        if not os.path.exists(relative):
+            os.makedirs(relative, exist_ok=True)
         for fn in find_files_from_dir(relative, 'safetensors', 'ckpt', 'pt'):
             index = fn.index(relative)
-
             models.append([fn[index:]])
         if not models:
             models = None
@@ -316,7 +324,7 @@ def create_upload_others():
 
         base, ex = os.path.splitext(file_path)
         if ex.lower() == '.zip':
-            dst = os.path.join(folder, 'dec_'+base)
+            dst = os.path.join(folder, 'dec_' + base)
             os.makedirs(dst, exist_ok=True)
             zip_uncompress(file_path, dst)
             file_path = dst
@@ -347,8 +355,12 @@ def download_user_assets():
 
     def list_files():
         files = []
+        ## 判断文件目录不存在则创建目录
+        if not os.path.exists('user-asset'):
+            os.makedirs('user-asset', exist_ok=True)
         for fn in os.listdir('user-asset'):
-            files.append(os.path.join('user-asset', fn))
+            if not os.path.isdir(fn):
+                files.append(os.path.join('user-asset', fn))
         if not files:
             files = None
         return files
