@@ -57,7 +57,7 @@ Below is partial list of all available parameters, run `webui --help` for the fu
       --upgrade                        Upgrade main repository to latest version, default: False
       --safe                           Run in safe mode with no user extensions
 
-<br>![screenshot](javascript/black-orange.jpg)<br>
+<br>![screenshot](html/black-orange.jpg)<br>
 
 ## Notes
 

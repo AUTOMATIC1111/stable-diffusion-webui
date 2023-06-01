@@ -9,7 +9,7 @@ __pycache__
 /webui-user.bat
 /webui-user.sh
 /html/extensions.json
-/javascript/themes.json
+/html/themes.json
 node_modules
 pnpm-lock.yaml
 package-lock.json

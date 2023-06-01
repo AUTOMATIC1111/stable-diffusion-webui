@@ -237,10 +237,11 @@ def list_samplers():
     return modules.sd_samplers.all_samplers
 
 def list_themes():
-    if not os.path.exists(os.path.join('javascript', 'themes.json')):
+    fn = os.path.join('html', 'themes.json')
+    if not os.path.exists(fn):
         refresh_themes()
-    if os.path.exists(os.path.join('javascript', 'themes.json')):
-        with open(os.path.join('javascript', 'themes.json'), mode='r', encoding='utf=8') as f:
+    if os.path.exists(fn):
+        with open(fn, mode='r', encoding='utf=8') as f:
             res = json.loads(f.read())
     else:
         res = []
@@ -254,7 +255,8 @@ def refresh_themes():
         req = requests.get('https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json', timeout=5)
         if req.status_code == 200:
             res = req.json()
-            with open(os.path.join('javascript', 'themes.json'), mode='w', encoding='utf=8') as f:
+            fn = os.path.join('html', 'themes.json')
+            with open(fn, mode='w', encoding='utf=8') as f:
                 f.write(json.dumps(res))
         else:
             log.error('Error refreshing UI themes')

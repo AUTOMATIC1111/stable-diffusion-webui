@@ -401,10 +401,10 @@ function preview_theme() {
   if (name === 'black-orange' || name.startsWith('gradio/')) {
     const el = document.getElementById('theme-preview') || create_theme_element();
     el.style.display = el.style.display === 'block' ? 'none' : 'block';
-    if (name === 'black-orange') el.src = '/file=javascript/black-orange.jpg';
-    else el.src = `/file=javascript/${name.replace('/', '-')}.jpg`;
+    if (name === 'black-orange') el.src = '/file=html/black-orange.jpg';
+    else el.src = `/file=html/${name.replace('/', '-')}.jpg`;
   } else {
-    fetch('/file=javascript/themes.json')
+    fetch('/file=html/themes.json')
       .then((r) => r.json())
       .then((themes) => {
         const theme = themes.find((t) => t.id === name);

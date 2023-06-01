@@ -5,6 +5,10 @@
 - redesign action box to be uniform accross all themes
 - add pause option next to stop/skip
 - redesign progress bar
+- enable more image formats  
+  note: not all are understood by browser so previews and images may appear as blank  
+  unless you have some browser extensions that can handle them  
+  but they do get stored correctly. and cant beat raw quality of 32-bit tiff or psd :)
 
 ## Update for 05/30/2023
 

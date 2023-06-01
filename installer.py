@@ -203,13 +203,16 @@ def update(folder):
 # clone git repository
 def clone(url, folder, commithash=None):
     if os.path.exists(folder):
+        if args.skip_update:
+            return
         if commithash is None:
-            return
-        current_hash = git('rev-parse HEAD', folder).strip()
-        if current_hash != commithash:
-            git('fetch', folder)
-            git(f'checkout {commithash}', folder)
-            return
+            update(folder)
+        else:
+            current_hash = git('rev-parse HEAD', folder).strip()
+            if current_hash != commithash:
+                git('fetch', folder)
+                git(f'checkout {commithash}', folder)
+                return
     else:
         log.info(f'Cloning repository: {url}')
         git(f'clone "{url}" "{folder}"')

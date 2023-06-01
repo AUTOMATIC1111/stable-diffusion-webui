@@ -134,7 +134,7 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
     image = srcimage.copy()
     fontsize = 32
     if textfont is None:
-        textfont = opts.font or 'javascript/roboto.ttf'
+        textfont = opts.font or 'html/roboto.ttf'
 
     factor = 1.5
     gradient = Image.new('RGBA', (1, image.size[1]), color=(0, 0, 0, 0))

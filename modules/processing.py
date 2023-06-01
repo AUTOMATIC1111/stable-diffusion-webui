@@ -933,7 +933,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         else:
             img2img_sampler_name = 'UniPC'
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
-        print('HERE', force_latent_upscaler, img2img_sampler_name, self.sampler)
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
         noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
         # GC now before running the next img2img to prevent running out of memory

@@ -214,9 +214,12 @@ def start_ui():
     if cmd_opts.auth:
         gradio_auth_creds += [x.strip() for x in cmd_opts.auth.strip('"').replace('\n', '').split(',') if x.strip()]
     if cmd_opts.auth_file:
-        with open(cmd_opts.auth_file, 'r', encoding="utf8") as file:
-            for line in file.readlines():
-                gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
+        if not os.path.exists(cmd_opts.auth_file):
+            log.error(f"Invalid path to auth file: '{cmd_opts.auth_file}'")
+        else:
+            with open(cmd_opts.auth_file, 'r', encoding="utf8") as file:
+                for line in file.readlines():
+                    gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
     import installer
     app, local_url, share_url = shared.demo.launch(
