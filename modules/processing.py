@@ -713,7 +713,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         p.restore_faces = False
                         info=infotext(n, i)
                         p.restore_faces = orig
-                        images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=info, p=p, suffix="-before-face-restoration")
+                        images.save_image(Image.fromarray(x_sample), path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=opts.samples_format, info=info, p=p, suffix="-before-face-restoration")
                     x_sample = modules.face_restoration.restore_faces(x_sample)
                 image = Image.fromarray(x_sample)
                 if p.scripts is not None:
@@ -727,7 +727,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         info=infotext(n, i)
                         p.color_corrections = orig
                         image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                        images.save_image(image_without_cc, p.outpath_samples, "", seeds[i], prompts[i], opts.samples_format, info=info, p=p, suffix="-before-color-correction")
+                        images.save_image(image_without_cc, path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=opts.samples_format, info=info, p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
                 if opts.samples_save and not p.do_not_save_samples:

@@ -60,28 +60,39 @@ def decode_base64_to_image(encoding):
         shared.log.warning(f'API cannot decode image: {e}')
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
 
-def encode_pil_to_base64(image):
-    with io.BytesIO() as output_bytes:
-        if shared.opts.samples_format.lower() == 'png':
-            use_metadata = False
-            encoded_metadata = PngImagePlugin.PngInfo()
-            for k, v in image.info.items():
-                if isinstance(k, str) and isinstance(v, str):
-                    encoded_metadata.add_text(k, v)
-                    use_metadata = True
-            image.save(output_bytes, format="PNG", pnginfo=(encoded_metadata if use_metadata else None), quality=shared.opts.jpeg_quality)
 
-        elif shared.opts.samples_format.lower() in ("jpg", "jpeg", "webp"):
-            parameters = image.info.get('parameters', None)
-            exif_bytes = piexif.dump({
-                "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(parameters or "", encoding="unicode") }
-            })
-            if shared.opts.samples_format.lower() in ("jpg", "jpeg"):
-                image.save(output_bytes, format="JPEG", exif = exif_bytes, quality=shared.opts.jpeg_quality)
-            else:
-                image.save(output_bytes, format="WEBP", exif = exif_bytes, quality=shared.opts.jpeg_quality)
-        else:
-            raise HTTPException(status_code=500, detail="Invalid image format")
+def save_image(image, fn, ext):
+    # actual save
+    parameters = image.info.get('parameters', None)
+    image_format = Image.registered_extensions()[f'.{ext}']
+    if image_format == 'PNG':
+        pnginfo_data = PngImagePlugin.PngInfo()
+        for k, v in image.info.items():
+            pnginfo_data.add_text(k, str(v))
+        image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, pnginfo=pnginfo_data)
+    elif image_format == 'JPEG':
+        if image.mode == 'RGBA':
+            shared.log.warning('Saving RGBA image as JPEG: Alpha channel will be lost')
+            image = image.convert("RGB")
+        elif image.mode == 'I;16':
+            image = image.point(lambda p: p * 0.0038910505836576).convert("L")
+        exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(parameters or "", encoding="unicode") } })
+        image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, exif=exif_bytes)
+    elif image_format == 'WEBP':
+        if image.mode == 'I;16':
+            image = image.point(lambda p: p * 0.0038910505836576).convert("RGB")
+        exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(parameters or "", encoding="unicode") } })
+        image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, lossless=shared.opts.webp_lossless, exif=exif_bytes)
+    else:
+        # shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
+        image.save(fn, format=image_format, quality=shared.opts.jpeg_quality)
+
+
+def encode_pil_to_base64(image):
+    # TODO jpeg
+    print('HERE1', vars(image))
+    with io.BytesIO() as output_bytes:
+        save_image(image, output_bytes, shared.opts.samples_format)
         bytes_data = output_bytes.getvalue()
     return base64.b64encode(bytes_data)
 

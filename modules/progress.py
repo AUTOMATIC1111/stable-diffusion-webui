@@ -77,17 +77,11 @@ def progressapi(req: ProgressRequest):
     predicted_duration = elapsed_since_start / progress if progress > 0 else None
     eta = predicted_duration - elapsed_since_start if predicted_duration is not None else None
     id_live_preview = req.id_live_preview
+    live_preview = None
     shared.state.set_current_image()
-    if shared.opts.live_previews_enable and shared.state.id_live_preview != req.id_live_preview:
-        image = shared.state.current_image
-        if image is not None:
-            buffered = io.BytesIO()
-            fmt = 'jpeg' if shared.opts.samples_format == 'jpg' else shared.opts.samples_format
-            image.save(buffered, format=fmt)
-            live_preview = f'data:image/{fmt};base64,{base64.b64encode(buffered.getvalue()).decode("ascii")}'
-            id_live_preview = shared.state.id_live_preview
-        else:
-            live_preview = None
-    else:
-        live_preview = None
+    if shared.opts.live_previews_enable and (shared.state.id_live_preview != req.id_live_preview) and (shared.state.current_image is not None):
+        buffered = io.BytesIO()
+        shared.state.current_image.save(buffered, format='jpeg')
+        live_preview = f'data:image/jpeg;base64,{base64.b64encode(buffered.getvalue()).decode("ascii")}'
+        id_live_preview = shared.state.id_live_preview
     return InternalProgressResponse(active=active, queued=queued, paused=paused, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)

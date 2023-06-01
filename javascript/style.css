@@ -101,6 +101,8 @@ footer { display: none !important; }
 }
 
 #txt2img_gallery img, #img2img_gallery img, #extras_gallery img { object-fit: scale-down; width: -webkit-fill-available !important; }
+
+#txt2img_generate_box, #img2img_generate_box { gap: 0.5em; flex-wrap: wrap-reverse; }
 #txt2img_actions_column, #img2img_actions_column { gap: 0.5em; }
 #txt2img_generate_box > button, #img2img_generate_box > button { height: 2.2em; line-height: 0; }
 #txt2img_generate_line2, #img2img_generate_line2 { display: flex; }

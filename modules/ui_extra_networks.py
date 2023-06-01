@@ -3,11 +3,8 @@ import html
 import os.path
 import urllib.parse
 from pathlib import Path
-from PIL import PngImagePlugin
 import gradio as gr
-
 from modules import shared
-from modules.images import read_info_from_image
 from modules.generation_parameters_copypaste import image_from_url_text
 from modules.ui_components import ToolButton
 
@@ -156,9 +153,7 @@ class ExtraNetworksPage:
         """
         Find a preview PNG for a given path (without extension) and call link_preview on it.
         """
-        preview_extensions = ["png", "jpg", "webp"]
-        if shared.opts.samples_format not in preview_extensions:
-            preview_extensions.append(shared.opts.samples_format)
+        preview_extensions = ["jpg", "png", "webp", "tiff", "jp2", "psd"]
         potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
         for file in potential_files:
             if os.path.isfile(file):
@@ -265,19 +260,13 @@ def setup_ui(ui, gallery):
         index = len(images) - 1 if index >= len(images) else index
         img_info = images[index if index >= 0 else 0]
         image = image_from_url_text(img_info)
-        geninfo, _items = read_info_from_image(image)
         is_allowed = False
         for extra_page in ui.stored_extra_pages:
             if any([path_is_parent(x, filename) for x in extra_page.allowed_directories_for_previews()]):
                 is_allowed = True
                 break
         assert is_allowed, f'writing to {filename} is not allowed'
-        if geninfo:
-            pnginfo_data = PngImagePlugin.PngInfo()
-            pnginfo_data.add_text('parameters', geninfo)
-            image.save(filename, pnginfo=pnginfo_data)
-        else:
-            image.save(filename)
+        image.save(filename)
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
     ui.button_save_preview.click(

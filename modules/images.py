@@ -431,6 +431,7 @@ def atomically_save_image():
     while True:
         image, filename, extension, params, exifinfo_data, txt_fullfn = save_queue.get()
         fn = filename + extension
+        filename = filename.strip()
         image_format = Image.registered_extensions()[extension]
         shared.log.debug(f'Saving image: {image_format} {fn} {image.size}')
         # actual save
@@ -453,7 +454,7 @@ def atomically_save_image():
             exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
             image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, lossless=shared.opts.webp_lossless, exif=exif_bytes)
         else:
-            shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
+            # shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
             image.save(fn, format=image_format, quality=shared.opts.jpeg_quality)
         # additional metadata saved in files
         if shared.opts.save_txt and len(exifinfo_data) > 0:

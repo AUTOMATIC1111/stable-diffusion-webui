@@ -123,8 +123,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
             assert image, "Can't scale by because no image is selected"
             width = int(image.width * scale_by)
             height = int(image.height * scale_by)
-    else:
-        return
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
 

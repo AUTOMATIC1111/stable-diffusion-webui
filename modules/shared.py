@@ -319,11 +319,11 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
 
 options_templates.update(options_section(('saving-images', "Image Options"), {
     "samples_save": OptionInfo(True, "Always save all generated images"),
-    "samples_format": OptionInfo('jpg', 'File format for images'),
+    "samples_format": OptionInfo('jpg', 'File format for generated images', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2", "psd"]}),
     "samples_filename_pattern": OptionInfo("[seed]-[prompt_spaces]", "Images filename pattern", component_args=hide_dirs),
     "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
-    "grid_format": OptionInfo('jpg', 'File format for grids'),
+    "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2", "psd"]}),
     "grid_extended_filename": OptionInfo(True, "Add extended info (seed, prompt) to filename when saving grid"),
     "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
     "grid_prevent_empty_spots": OptionInfo(True, "Prevent empty spots in grid (when set to autodetect)"),

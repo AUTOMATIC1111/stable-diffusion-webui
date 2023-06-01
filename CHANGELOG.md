@@ -2,8 +2,9 @@
 
 ## Update for 05/31/2023
 
-- add pause option next to stop/skip
 - redesign action box to be uniform accross all themes
+- add pause option next to stop/skip
+- redesign progress bar
 
 ## Update for 05/30/2023
 
