@@ -21,7 +21,7 @@ class ExtraOptionsSection(scripts.Script):
         self.setting_names = []
 
         with gr.Blocks() as interface:
-            with gr.Accordion("Options", open=False) if shared.opts.extra_options_accordion and len(shared.opts.extra_options) > 0 else gr.Group(), gr.Row():
+            with gr.Accordion("Options", open=False) if shared.opts.extra_options_accordion and shared.opts.extra_options else gr.Group(), gr.Row():
                 for setting_name in shared.opts.extra_options:
                     with FormColumn():
                         comp = ui_settings.create_setting_component(setting_name)

@@ -74,7 +74,7 @@ def forward_old(self: sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase, text
 
     self.hijack.comments += hijack_comments
 
-    if len(used_custom_terms) > 0:
+    if used_custom_terms:
         embedding_names = ", ".join(f"{word} [{checksum}]" for word, checksum in used_custom_terms)
         self.hijack.comments.append(f"Used embeddings: {embedding_names}")
 

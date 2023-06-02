@@ -121,8 +121,7 @@ class Script(scripts.Script):
         return [checkbox_iterate, checkbox_iterate_batch, prompt_txt]
 
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str):
-        lines = [x.strip() for x in prompt_txt.splitlines()]
-        lines = [x for x in lines if len(x) > 0]
+        lines = [x for x in (x.strip() for x in prompt_txt.splitlines()) if x]
 
         p.do_not_save_grid = True
 

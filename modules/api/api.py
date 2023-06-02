@@ -280,7 +280,7 @@ class Api:
             script_args[0] = selectable_idx + 1
 
         # Now check for always on scripts
-        if request.alwayson_scripts and (len(request.alwayson_scripts) > 0):
+        if request.alwayson_scripts:
             for alwayson_script_name in request.alwayson_scripts.keys():
                 alwayson_script = self.get_script(alwayson_script_name, script_runner)
                 if alwayson_script is None:

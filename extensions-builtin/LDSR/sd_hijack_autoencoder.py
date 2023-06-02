@@ -91,8 +91,9 @@ class VQModel(pl.LightningModule):
                     del sd[k]
         missing, unexpected = self.load_state_dict(sd, strict=False)
         print(f"Restored from {path} with {len(missing)} missing and {len(unexpected)} unexpected keys")
-        if len(missing) > 0:
+        if missing:
             print(f"Missing Keys: {missing}")
+        if unexpected:
             print(f"Unexpected Keys: {unexpected}")
 
     def on_train_batch_end(self, *args, **kwargs):

@@ -251,7 +251,7 @@ class EmbeddingDatabase:
         if self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
             print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
-            if len(self.skipped_embeddings) > 0:
+            if self.skipped_embeddings:
                 print(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
 
     def find_embedding_at_position(self, tokens, offset):
