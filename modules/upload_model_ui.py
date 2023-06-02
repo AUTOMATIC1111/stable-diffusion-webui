@@ -20,6 +20,7 @@ import os
 import random
 import gradio as gr
 from typing import Tuple
+from gradio import EventData, SelectData
 from tools.file import find_files_from_dir, zip_uncompress
 import time
 
