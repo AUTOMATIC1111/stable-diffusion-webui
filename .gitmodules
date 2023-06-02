@@ -8,10 +8,6 @@
   path = extensions-builtin/stable-diffusion-webui-images-browser
   url = https://github.com/AlUlkesh/stable-diffusion-webui-images-browser
   ignore = dirty
-[submodule "extensions-builtin/sd-webui-model-converter"]
-  path = extensions-builtin/sd-webui-model-converter
-  url = https://github.com/Akegarasu/sd-webui-model-converter
-  ignore = dirty
 [submodule "extensions-builtin/sd-dynamic-thresholding"]
   path = extensions-builtin/sd-dynamic-thresholding
   url = https://github.com/mcmonkeyprojects/sd-dynamic-thresholding
@@ -44,3 +40,6 @@
 	path = extensions-builtin/multidiffusion-upscaler-for-automatic1111
 	url = https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111
   ignore = dirty
+[submodule "extensions-builtin/sd-webui-agent-scheduler"]
+	path = extensions-builtin/sd-webui-agent-scheduler
+	url = https://github.com/ArtVentureX/sd-webui-agent-scheduler
