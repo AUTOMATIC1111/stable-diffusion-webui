@@ -77,6 +77,7 @@ def thumbnail(infile, outfile, scale=0.1, w=0, h=0, quality=70):
 
     img.thumbnail((w, h))
     img.save(outfile, optimize=True, quality=quality)
+    img.close()
 
 
 def plt_show(img, title=None):

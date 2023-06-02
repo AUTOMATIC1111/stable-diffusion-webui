@@ -9,6 +9,7 @@ import copy
 import os.path
 import shutil
 
+from PIL import Image
 from loguru import logger
 from worker.dumper import dumper
 from worker.task import Task
@@ -56,6 +57,7 @@ def exec_preprocess_task(job: Task):
             processed_dir = target_dir
         p = TaskProgress.new_running(job, 'upload thumbnail', 80)
         yield p
+        resolution = get_batch_image_size(processed_dir)
         images = build_thumbnail_tag(processed_dir)
         p = TaskProgress.new_running(job, 'upload thumbnail', 90)
         yield p
@@ -63,7 +65,8 @@ def exec_preprocess_task(job: Task):
         keys = upload_files(True, new_zip)
         task_result = {
             'images': list(images),
-            'processed_key': keys[0] if keys else None
+            'processed_key': keys[0] if keys else None,
+            'resolution': resolution,
         }
         p = TaskProgress.new_finish(job, task_result)
         yield p
@@ -149,3 +152,13 @@ def copy_captions(src, dst):
         os.makedirs(os.path.join(dst, dirname), exist_ok=True)
         shutil.copy(file, os.path.join(dst, basename))
 
+
+def get_batch_image_size(target_dir):
+    current = None
+    for image_path in find_files_from_dir(target_dir, *ImagesEx):
+        with Image.open(image_path) as image:
+            if not current:
+                current = image.size
+            elif current != image.size:
+                return None
+    return [x for x in current]

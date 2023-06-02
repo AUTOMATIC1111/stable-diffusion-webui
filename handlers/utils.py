@@ -221,6 +221,10 @@ def load_sd_model_weights(filename, sha256=None):
     return reload_model_weights(info=checkpoint)
 
 
+def close_pil(image: Image):
+    image.close()
+
+
 def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
                           script_dir: str, task_id: str, clean_upload_files: bool = True):
     if not output_dir:

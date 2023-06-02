@@ -112,6 +112,7 @@ class State:
     current_latent = None
     current_image = None
     current_image_sampling_step = 0
+    current_latent_changed_callback = None
     id_live_preview = 0
     textinfo = None
     time_start = None
@@ -205,6 +206,7 @@ class State:
     def end(self):
         self.job = ""
         self.job_count = 0
+        self.current_latent_changed_callback = None
 
         devices.torch_gc()
 

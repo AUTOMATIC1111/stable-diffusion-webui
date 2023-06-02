@@ -213,7 +213,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             batch_size=batch_size,
             n_iter=n_iter,
             steps=steps,
-            cfg_scale=cfg_scale, # 7
+            cfg_scale=cfg_scale,  # 7
             width=width,
             height=height,
             restore_faces=restore_faces,
@@ -224,10 +224,10 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             inpainting_fill=inpainting_fill,
             resize_mode=resize_mode,
             denoising_strength=denoising_strength,
-            image_cfg_scale=image_cfg_scale, # 1.5
-            inpaint_full_res=inpaint_full_res, # 0
-            inpaint_full_res_padding=inpaint_full_res_padding, # 32
-            inpainting_mask_invert=inpainting_mask_invert, # 0
+            image_cfg_scale=image_cfg_scale,  # 1.5
+            inpaint_full_res=inpaint_full_res,  # 0
+            inpaint_full_res_padding=inpaint_full_res_padding,  # 32
+            inpainting_mask_invert=inpainting_mask_invert,  # 0
             override_settings=override_settings,
             do_not_save_samples=False
         )
@@ -249,6 +249,20 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             self.script_args = script_args
         else:
             self.script_args = tuple(script_args)
+
+    def close(self):
+        super(Img2ImgTask, self).close()
+        for img in self.init_images:
+            img.close()
+        if self.mask:
+            self.mask.close()
+        for obj in self.script_args:
+            if hasattr(obj, 'close'):
+                obj.close()
+            if isinstance(obj, dict):
+                for v in obj.values():
+                    if hasattr(v, 'close'):
+                        v.close()
 
     @classmethod
     def from_task(cls, task: Task, default_script_arg_img2img: typing.Sequence):
@@ -372,7 +386,7 @@ class Img2ImgTaskHandler(TaskHandler):
 
         t = Img2ImgTask.from_task(task, self.default_script_args)
         progress = TaskProgress.new_running(task, "generate image...", 0)
-        t.progress_callback = lambda x: self._update_running_progress(progress, x)
+        shared.state.current_latent_changed_callback = lambda: self._update_preview(progress)
         return t
 
     def _get_local_checkpoint(self, task: Task):
@@ -468,12 +482,28 @@ class Img2ImgTaskHandler(TaskHandler):
         if v > 99:
             v = 99
         progress.task_progress = v
+        self._set_task_status(progress)
+
+    def _update_preview(self, progress: TaskProgress):
+        if shared.state.sampling_step - shared.state.current_image_sampling_step < 5:
+            return
+        p = 0.01
+
+        if shared.state.job_count > 0:
+            p += shared.state.job_no / shared.state.job_count
+        if shared.state.sampling_steps > 0:
+            p += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
+
+        time_since_start = time.time() - shared.state.time_start
+        eta = (time_since_start / p)
+        progress.eta_relative = eta - time_since_start
+        progress.task_progress = min(p, 0.99) * 100
         shared.state.set_current_image()
         if shared.state.current_image:
             current = encode_pil_to_base64(shared.state.current_image, 60)
             if current:
                 progress.preview = current
-
+            print("\n>>set preview!!\n")
         self._set_task_status(progress)
 
     def _exec_interrogate(self, task: Task):

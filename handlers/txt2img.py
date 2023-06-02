@@ -115,6 +115,15 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         self.loras = lora_models
         self.embedding = embeddings
 
+    def close(self):
+        for obj in self.script_args:
+            if hasattr(obj, 'close'):
+                obj.close()
+            if isinstance(obj, dict):
+                for v in obj.values():
+                    if hasattr(v, 'close'):
+                        v.close()
+
     @classmethod
     def from_task(cls, task: Task, default_script_args: typing.Sequence):
         base_model_path = task['base_model_path']
@@ -166,8 +175,7 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         self._refresh_default_script_args()
         t = Txt2ImgTask.from_task(task, self.default_script_args)
         progress = TaskProgress.new_running(task, "generate image...", 0)
-        t.progress_callback = lambda x: self._update_running_progress(progress, x)
-
+        shared.state.current_latent_changed_callback = lambda: self._update_preview(progress)
         return t
 
     def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
@@ -206,4 +214,3 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
             yield from self._exec_txt2img(task)
         elif minor_type == Txt2ImgMinorTaskType.RunControlnetAnnotator:
             yield from exec_control_net_annotator(task)
-
