@@ -18,7 +18,7 @@ samplers_map = {}
 
 
 def find_sampler_config(name):
-    if name is not None:
+    if name is not None and name != 'None':
         config = all_samplers_map.get(name, None)
     else:
         config = all_samplers[0]
@@ -27,7 +27,9 @@ def find_sampler_config(name):
 
 def create_sampler(name, model):
     config = find_sampler_config(name)
-    assert config is not None, f'bad sampler name: {name}'
+    if config is None:
+        shared.log.error(f'Attempting to use unknown sampler: {name}')
+        config = all_samplers[0]
     if backend == Backend.ORIGINAL:
         sampler = config.constructor(model)
         sampler.config = config

@@ -48,3 +48,14 @@ Tech that can be integrated as part of the core workflow...
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
 - <https://towardsdatascience.com/mastering-memoization-in-python-dcdd8b435189>
 - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...20ae71f>
+- <https://github.com/vladmandic/automatic/issues/1056>
+- kubernetes dnsname
+- rife
+- add sd-webui-agent-scheduler: <https://github.com/vladmandic/automatic/issues/559> <https://github.com/ArtVentureX/sd-webui-agent-scheduler/issues/2>
+- remove sd-webui-model-converter
+- update training to use interrogator
+- update training to use rembg
+- <https://github.com/vladmandic/automatic/discussions/1246>
+- shared.info
+- hints
+- import-hooks

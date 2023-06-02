@@ -42,7 +42,7 @@ div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { backgr
 .extra-networks .tab-nav .search { max-height: 2em; }
 .extra-network-cards .card .actions .name { font-weight: 400; font-size: 1.2rem; }
 .extra-network-cards .card { width: 18em; height: 12em; box-shadow: none; }
-.extra-network-cards .card:hover { transform: scale(1.5); transition: all 0.3s ease; z-index: 99; box-shadow: none; }
+.extra-network-cards .card:hover { transform: scale(1.15); transition: all 0.2s ease; z-index: 99; box-shadow: none; }
 svg.feather.feather-image, .feather .feather-image { display: none }
 .gap-2 { padding-top: 8px; }
 .gr-box > div > div > input.gr-text-input { right: 0; width: 4em; padding: 0; top: -12px; border: none; max-height: 20px; }
