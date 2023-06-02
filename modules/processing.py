@@ -147,6 +147,7 @@ class StableDiffusionProcessing:
         self.is_hr_pass = False
         opts.data['clip_skip'] = clip_skip
 
+
     @property
     def sd_model(self):
         return shared.sd_model

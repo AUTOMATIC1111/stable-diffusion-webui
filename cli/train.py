@@ -120,7 +120,7 @@ def parse_args():
 
 def prepare_server():
     try:
-        server_status = util.Map(sdapi.progress())
+        server_status = util.Map(sdapi.progresssync())
         server_state = server_status['state']
     except:
         log.error(f'server error: {server_status}')

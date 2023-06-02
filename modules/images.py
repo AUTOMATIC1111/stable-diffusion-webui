@@ -465,14 +465,10 @@ def atomically_save_image():
         if shared.opts.save_log_fn != '' and len(exifinfo_data) > 0:
             try:
                 with open(os.path.join(paths.data_path, shared.opts.save_log_fn), mode='a+', encoding='utf-8') as f:
-                    try:
-                        entries = json.load(f)
-                    except:
-                        entries = []
-                    f.seek(0)
-                    entries.append({ 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo_data })
-                    json.dump(entries, f, indent=4)
-                    del entries
+                    entry = { 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo_data }
+                    json.dump(entry, f)
+                    f.write(os.linesep)
+                    shared.log.debug(f'Log file updated: {os.path.join(paths.data_path, shared.opts.save_log_fn)}')
             except Exception as e:
                 shared.log.warning(f'Failed to save log file: {shared.opts.save_log_fn} {e}')
         save_queue.task_done()

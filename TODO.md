@@ -49,13 +49,16 @@ Tech that can be integrated as part of the core workflow...
 - <https://towardsdatascience.com/mastering-memoization-in-python-dcdd8b435189>
 - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...20ae71f>
 - <https://github.com/vladmandic/automatic/issues/1056>
-- kubernetes dnsname
-- rife
-- add sd-webui-agent-scheduler: <https://github.com/vladmandic/automatic/issues/559> <https://github.com/ArtVentureX/sd-webui-agent-scheduler/issues/2>
-- remove sd-webui-model-converter
-- update training to use interrogator
-- update training to use rembg
+- update `train.py` to use `interrogator`
+- update `train.py` to use `rembg`
 - <https://github.com/vladmandic/automatic/discussions/1246>
 - shared.info
 - hints
-- import-hooks
+
+shutdown instance -> edit
+and on the right hand side you'll see kubernetes config for the instance
+which also includes dns name for the instance
+    external-dns.alpha.kubernetes.io/hostname: sdnext-a6000.tenant-91a92d-prod.coreweave.cloud
+
+ui -> namespaces -> tenant-91a92d-prod
+dns name for the instance is <instance-name>.<tenant-id>.coreweave.cloud

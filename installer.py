@@ -9,6 +9,7 @@ import subprocess
 import io
 import pstats
 import cProfile
+import pkg_resources
 
 try:
     from modules.cmd_args import parser
@@ -98,7 +99,6 @@ def print_profile(profile: cProfile.Profile, msg: str):
 
 # check if package is installed
 def installed(package, friendly: str = None):
-    import pkg_resources
     ok = True
     try:
         if friendly:
@@ -132,6 +132,23 @@ def installed(package, friendly: str = None):
         return False
 
 
+def pip(arg: str, ignore: bool = False):
+    arg = arg.replace('>=', '==')
+    log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("--force", "").replace("  ", " ").strip()}')
+    log.debug(f"Running pip: {arg}")
+    result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    txt = result.stdout.decode(encoding="utf8", errors="ignore")
+    if len(result.stderr) > 0:
+        txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
+    txt = txt.strip()
+    if result.returncode != 0 and not ignore:
+        global errors # pylint: disable=global-statement
+        errors += 1
+        log.error(f'Error running pip: {arg}')
+        log.debug(f'Pip output: {txt}')
+    return txt
+
+
 # install package using pip if not already installed
 def install(package, friendly: str = None, ignore: bool = False):
     if args.reinstall:
@@ -139,25 +156,8 @@ def install(package, friendly: str = None, ignore: bool = False):
         quick_allowed = False
     if args.use_ipex and package == "pytorch_lightning==1.9.4":
         package = "pytorch_lightning==1.8.6"
-
-    def pip(arg: str):
-        arg = arg.replace('>=', '==')
-        log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("--force", "").replace("  ", " ").strip()}')
-        log.debug(f"Running pip: {arg}")
-        result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        txt = result.stdout.decode(encoding="utf8", errors="ignore")
-        if len(result.stderr) > 0:
-            txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
-        txt = txt.strip()
-        if result.returncode != 0 and not ignore:
-            global errors # pylint: disable=global-statement
-            errors += 1
-            log.error(f'Error running pip: {arg}')
-            log.debug(f'Pip output: {txt}')
-        return txt
-
     if args.reinstall or not installed(package, friendly):
-        pip(f"install --upgrade {package}")
+        pip(f"install --upgrade {package}", ignore=ignore)
 
 
 # execute git command
@@ -311,7 +311,6 @@ def check_torch():
                 try:
                     if args.use_directml and allow_directml:
                         import torch_directml # pylint: disable=import-error
-                        import pkg_resources
                         version = pkg_resources.get_distribution("torch-directml")
                         log.info(f'Torch backend: DirectML ({version})')
                         for i in range(0, torch_directml.device_count()):
@@ -327,6 +326,11 @@ def check_torch():
     try:
         if 'xformers' in xformers_package:
             install(f'--no-deps {xformers_package}', ignore=True)
+        else:
+            x = pkg_resources.working_set.by_key.get('xformers', None)
+            if x is not None:
+                log.warning(f'Not used, uninstalling: {x}')
+                pip('uninstall xformers --yes --quiet', ignore=True)
     except Exception as e:
         log.debug(f'Cannot install xformers package: {e}')
     try:
@@ -428,7 +432,6 @@ def install_extensions():
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
-    import pkg_resources
     pkg_resources._initialize_master_working_set() # pylint: disable=protected-access
     pkgs = [f'{p.project_name}=={p._version}' for p in pkg_resources.working_set] # pylint: disable=protected-access,not-an-iterable
     log.debug(f'Installed packages: {len(pkgs)}')

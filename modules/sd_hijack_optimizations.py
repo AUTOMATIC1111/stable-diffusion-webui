@@ -1,3 +1,4 @@
+import sys
 import math
 import psutil
 
@@ -19,6 +20,11 @@ if shared.opts.cross_attention_optimization == "xFormers":
         shared.xformers_available = True
     except Exception:
         pass
+else:
+    if sys.modules.get("xformers", None) is not None:
+        shared.log.debug('Unloading xFormers')
+    sys.modules["xformers"] = None
+    sys.modules["xformers.ops"] = None
 
 
 def get_available_vram():

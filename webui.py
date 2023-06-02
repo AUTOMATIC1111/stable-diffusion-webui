@@ -27,7 +27,6 @@ warnings.filterwarnings(action="ignore", category=FutureWarning)
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 startup_timer.record("torch")
 
-from modules import import_hook # pylint: disable=W0611,C0411,C0412
 from fastapi import FastAPI # pylint: disable=W0611,C0411
 import gradio # pylint: disable=W0611,C0411
 startup_timer.record("gradio")

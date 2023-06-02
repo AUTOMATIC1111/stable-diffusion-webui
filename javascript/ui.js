@@ -118,21 +118,23 @@ function create_submit_args(args) {
   return res;
 }
 
+function showSubmitButtons(tabname, show) {}
+
 function submit(...args) {
-  console.log('submit txt2img:', args);
+  console.log('Submit txt2img:', args);
   rememberGallerySelection('txt2img_gallery');
   const id = randomId();
-  requestProgress(id, gradioApp().getElementById('txt2img_gallery'));
+  requestProgress(id, null, gradioApp().getElementById('txt2img_gallery'));
   const res = create_submit_args(args);
   res[0] = id;
   return res;
 }
 
 function submit_img2img(...args) {
-  console.log('submit img2img:', args);
+  console.log('Submit img2img:', args);
   rememberGallerySelection('img2img_gallery');
   const id = randomId();
-  requestProgress(id, gradioApp().getElementById('img2img_gallery'));
+  requestProgress(id, null, gradioApp().getElementById('img2img_gallery'));
   const res = create_submit_args(args);
   res[0] = id;
   res[1] = get_tab_index('mode_img2img');
@@ -424,7 +426,7 @@ function reconnect_ui() {
   if (task_id) {
     console.debug('task check:', task_id);
     rememberGallerySelection('txt2img_gallery');
-    requestProgress(task_id, gallery, null, null, true);
+    requestProgress(task_id, null, gallery, null, null, true);
   }
 
   const sd_model = gradioApp().getElementById('setting_sd_model_checkpoint');
