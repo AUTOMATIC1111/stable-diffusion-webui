@@ -12,6 +12,7 @@ import types
 import typing
 import traceback
 import uuid
+import logging
 
 import requests
 import shutil
@@ -20,6 +21,7 @@ import random
 import gradio as gr
 from typing import Tuple
 from tools.file import find_files_from_dir, zip_uncompress
+import time
 
 USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) Chrome/22.0.1207.1 Safari/537.1"
@@ -322,9 +324,9 @@ def create_upload_others():
         os.makedirs(folder, exist_ok=True)
         shutil.copy(file_obj.name, file_path)
 
-        base, ex = os.path.splitext(file_path)
-        if ex.lower() == '.zip':
-            dst = os.path.join(folder, 'dec_' + base)
+        # base, ex = os.path.splitext(file_path)
+        if file_path.lower() == '.zip':
+            dst = os.path.join(folder, 'dec_' + folder)
             os.makedirs(dst, exist_ok=True)
             zip_uncompress(file_path, dst)
             file_path = dst
@@ -350,29 +352,93 @@ def create_upload_others():
 
 
 def download_user_assets():
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(asctime)s] [%(module)s | %(filename)s | line:%(lineno)d] [%(levelname)s] : %(message)s'
+    )
     gr.Label("你可以管理个人物料空间下的文件", label=None)
+    radio_ctl = gr.Radio(["用户空间", "插件物料"],
+                         value="用户空间",
+                         show_label=False)
     refresh_btn = gr.Button('刷新文件列表')
 
-    def list_files():
+    def list_files_io(radio_ctl):
+        time.sleep(1)
+        base_name = "user-asset"
+        if radio_ctl == "插件物料":
+            base_name = "extensions"
         files = []
         ## 判断文件目录不存在则创建目录
-        if not os.path.exists('user-asset'):
-            os.makedirs('user-asset', exist_ok=True)
-        for fn in os.listdir('user-asset'):
-            if not os.path.isdir(fn):
-                files.append(os.path.join('user-asset', fn))
+        if not os.path.exists(base_name):
+            os.makedirs(base_name, exist_ok=True)
+        for fn in os.listdir(base_name):
+            if not os.path.isdir(os.path.join(base_name, fn)):
+                files.append(os.path.join(base_name, fn))
+        logging.info("list_files_io=" + str(files))
         if not files:
             files = None
         return files
 
-    f = gr.Files(label='选择文件下载:', interactive=True, selectable=True)
+    def list_file_name(radio_ctl):
+        all_file = list_files_io(radio_ctl)
+        models = []
+        if all_file:
+            for file in all_file:
+                file_name = os.path.basename(file)
+                models.append([file_name])
+        logging.info("list_file_name=" + str(models))
+        if not models:
+            models = None
+        return gr.DataFrame.update(
+            value=models
+        )
+
+    def remove_file(radio_ctl, state, model_set):
+        logging.info(f'del row {state}, value: {model_set[state]}')
+        base_dir = "user-asset"
+        if radio_ctl == "插件物料":
+            base_dir = "extensions"
+        file_name = model_set[state][0]
+        file_path = os.path.join(base_dir, file_name)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+            # 判断是否有解压的文件,如果有，删除解压的文件
+            base_name = file_name.split(".")[0]
+            unzip_file_path = os.path.join(base_dir, "dec_" + base_dir, base_name)
+            logging.info(" have zip : " + str(os.path.exists(unzip_file_path)))
+            if os.path.isdir(unzip_file_path):
+                logging.info("del dir " + unzip_file_path)
+                shutil.rmtree(unzip_file_path)
+        if not model_set:
+            model_set = None
+        return gr.DataFrame.update(
+            value=model_set
+        )
+
+    def selected(x, ind: SelectData):
+        logging.info(f'select {ind.selected}, {ind.index}, {ind.target}')
+        return ind.index[0]
+
+    files_io = gr.Files(label='选择文件下载:', interactive=True, selectable=True)
+
+    model_set = gr.DataFrame(
+        label='选择要删除的文件',
+        headers=["文件名"],
+        components=[gr.Textbox(show_label=False, visible=False)],
+        selectable=True,
+        type='array', col_count=1
+    )
+    ##点击刷新文件列表
+    refresh_btn.click(list_files_io, inputs=radio_ctl, outputs=files_io)
+    refresh_btn.click(list_file_name, inputs=radio_ctl, outputs=model_set)
+
+    ##删除文件
+    state = gr.State()
     remove = gr.Button('删除选中文件')
-
-    def remove_file(file_obj):
-        print(file_obj)
-
-    remove.click(remove_file, inputs=f)
-    refresh_btn.click(list_files, outputs=f)
+    model_set.select(fn=selected, inputs=model_set, outputs=state)
+    remove.click(remove_file, inputs=[radio_ctl, state, model_set], outputs=model_set)
+    remove.click(list_file_name, inputs=radio_ctl, outputs=model_set)
+    remove.click(list_files_io, inputs=radio_ctl, outputs=files_io)
 
 
 def append_upload_model_ui(interfaces: typing.List):
