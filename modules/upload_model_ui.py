@@ -20,6 +20,7 @@ import os
 import random
 import gradio as gr
 from typing import Tuple
+from gradio import EventData, SelectData
 from tools.file import find_files_from_dir, zip_uncompress
 import time
 
@@ -324,8 +325,8 @@ def create_upload_others():
         os.makedirs(folder, exist_ok=True)
         shutil.copy(file_obj.name, file_path)
 
-        # base, ex = os.path.splitext(file_path)
-        if file_path.lower() == '.zip':
+        base, ex = os.path.splitext(file_path)
+        if ex.lower() == '.zip':
             dst = os.path.join(folder, 'dec_' + folder)
             os.makedirs(dst, exist_ok=True)
             zip_uncompress(file_path, dst)
