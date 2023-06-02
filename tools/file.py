@@ -20,35 +20,34 @@ def getdirsize(dir):
 
 
 def zip_uncompress(src, dst):
-    zip_file = zipfile.ZipFile(src)
-    zip_list = zip_file.namelist()
-
-    if os.path.isdir(dst):
-        shutil.rmtree(dst)
-    os.makedirs(dst, exist_ok=True)
-    # for f in zip_list:
-    #     zip_file.extract(f, dst)
-    #     right_file = f.encode('cp437').decode('utf-8')
-    #     os.rename(f, right_file)
-    zip_file.extractall(path=dst)
-    # 判断时需需要重复解包  并且针对zipfile解包的中文乱码问题进行修正
-    for f in zip_list:
-        # 常见的有两种编码，使用异常处理语句
-        try:
-            new_zip_file = f.encode('cp437').decode('gbk')
-        except:
+    if os.path.isfile(src) and src.endswith(".zip"):
+        zip_file = zipfile.ZipFile(src)
+        zip_list = zip_file.namelist()
+        if os.path.isdir(dst):
+            print("del " + dst)
+            shutil.rmtree(dst)
+        os.makedirs(dst, exist_ok=True)
+        zip_file.extractall(path=dst)
+        # 判断时需需要重复解包  并且针对zipfile解包的中文乱码问题进行修正
+        for f in zip_list:
+            # 常见的有两种编码，使用异常处理语句
             try:
-                new_zip_file = f.encode('cp437').decode('utf-8')
+                new_zip_file = f.encode('cp437').decode('gbk')
             except:
-                new_zip_file = None
-        if not new_zip_file:
-            print(f"cannot encode file name:{f}")
-        else:
-            try:
-                os.rename(os.path.join(dst, f), os.path.join(dst, new_zip_file))
-            except Exception as ex:
-                print(f"cannot rename {os.path.join(dst, f)} to {os.path.join(dst, new_zip_file)}")
-                pass
+                try:
+                    new_zip_file = f.encode('cp437').decode('utf-8')
+                except:
+                    new_zip_file = None
+            if not new_zip_file:
+                print(f"cannot encode file name:{f}")
+            else:
+                try:
+                    os.rename(os.path.join(dst, f), os.path.join(dst, new_zip_file))
+                except Exception as ex:
+                    print(f"cannot rename {os.path.join(dst, f)} to {os.path.join(dst, new_zip_file)}")
+                    pass
+    else:
+        print("The uploaded file is not a ZIP package")
 
 
 def zip_compress(src, dst, filter=None):
