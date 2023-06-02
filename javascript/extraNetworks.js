@@ -10,7 +10,7 @@ function setupExtraNetworksForTab(tabname) {
     search.classList.add('search');
     sort.classList.add('sort');
     sortOrder.classList.add('sortorder');
-    sort.dataset.sortkey = 'sortDefault'
+    sort.dataset.sortkey = 'sortDefault';
     tabs.appendChild(search);
     tabs.appendChild(sort);
     tabs.appendChild(sortOrder);
@@ -35,42 +35,45 @@ function setupExtraNetworksForTab(tabname) {
 
     var applySort = function() {
         var reverse = sortOrder.classList.contains("sortReverse");
-        var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort","").replaceAll(" ", "_").replace(/_+$/, "").trim();
-        sortKey = sortKey ? "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1) : ""
-        var sortKeyStore = sortKey ? sortKey + (reverse ? "Reverse" : "") : ""
-        if (!sortKey || sortKeyStore == sort.dataset.sortkey)
+        var sortKey = sort.querySelector("input").value.toLowerCase().replace("sort", "").replaceAll(" ", "_").replace(/_+$/, "").trim();
+        sortKey = sortKey ? "sort" + sortKey.charAt(0).toUpperCase() + sortKey.slice(1) : "";
+        var sortKeyStore = sortKey ? sortKey + (reverse ? "Reverse" : "") : "";
+        if (!sortKey || sortKeyStore == sort.dataset.sortkey) {
             return;
+        }
 
         sort.dataset.sortkey = sortKeyStore;
 
-        var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card')
+        var cards = gradioApp().querySelectorAll('#' + tabname + '_extra_tabs div.card');
         cards.forEach(function(card) {
             card.originalParentElement = card.parentElement;
-        })
+        });
         var sortedCards = Array.from(cards);
         sortedCards.sort(function(cardA, cardB) {
             var a = cardA.dataset[sortKey];
             var b = cardB.dataset[sortKey];
-            if (!isNaN(a) && !isNaN(b))
+            if (!isNaN(a) && !isNaN(b)) {
                 return parseInt(a) - parseInt(b);
+            }
 
             return (a < b ? -1 : (a > b ? 1 : 0));
-        })
-        if (reverse)
+        });
+        if (reverse) {
             sortedCards.reverse();
+        }
         cards.forEach(function(card) {
             card.remove();
-        })
+        });
         sortedCards.forEach(function(card) {
             card.originalParentElement.appendChild(card);
-        })
-    }
+        });
+    };
 
     search.addEventListener("input", applyFilter);
     applyFilter();
     ["change", "blur", "click"].forEach(function(evt) {
         sort.querySelector("input").addEventListener(evt, applySort);
-    })
+    });
     sortOrder.addEventListener("click", function() {
         sortOrder.classList.toggle("sortReverse");
         applySort();
