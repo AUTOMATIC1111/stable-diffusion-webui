@@ -734,12 +734,22 @@ footer {
 .extra-network-subdirs button{
     margin: 0 0.15em;
 }
-.extra-networks .tab-nav .search{
+.extra-networks .tab-nav .search,
+.extra-networks .tab-nav .sort,
+.extra-networks .tab-nav .sortorder{
     display: inline-block;
-    max-width: 16em;
     margin: 0.3em;
     align-self: center;
+}
+
+.extra-networks .tab-nav .search {
     width: 16em;
+    max-width: 16em;
+}
+
+.extra-networks .tab-nav .sort {
+    width: 12em;
+    max-width: 12em;
 }
 
 #txt2img_extra_view, #img2img_extra_view {
