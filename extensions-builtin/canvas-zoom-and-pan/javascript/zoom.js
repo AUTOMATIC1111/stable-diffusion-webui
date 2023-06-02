@@ -73,9 +73,10 @@ onUiLoaded(async() => {
         canvas_hotkey_fullscreen: "KeyS",
         canvas_hotkey_move: "KeyF",
         canvas_hotkey_overlap: "KeyO",
-        canvas_show_tooltip: true
+        canvas_show_tooltip: true,
+        canvas_swap_controls: false
     };
-
+    // swap the actions for ctr + wheel and shift + wheel
     const hotkeysConfig = createHotkeyConfig(
         defaultHotkeysConfig,
         hotkeysConfigOpts
@@ -124,9 +125,12 @@ onUiLoaded(async() => {
             tooltipContent.className = "tooltip-content";
 
             // Add info about hotkets
+            const zoomKey = hotkeysConfig.canvas_swap_controls ? "Ctrl" : "Shift";
+            const adjustKey = hotkeysConfig.canvas_swap_controls ? "Shift" : "Ctrl";
+
             const hotkeys = [
-                {key: "Shift + wheel", action: "Zoom canvas"},
-                {key: "Ctr+wheel", action: "Adjust brush size"},
+                {key: `${zoomKey} + wheel`, action: "Zoom canvas"},
+                {key: `${adjustKey} + wheel`, action: "Adjust brush size"},
                 {
                     key: hotkeysConfig.canvas_hotkey_reset.charAt(
                         hotkeysConfig.canvas_hotkey_reset.length - 1
@@ -277,7 +281,10 @@ onUiLoaded(async() => {
 
         // Change the zoom level based on user interaction
         function changeZoomLevel(operation, e) {
-            if (e.shiftKey) {
+            if (
+                (!hotkeysConfig.canvas_swap_controls && e.shiftKey) ||
+                (hotkeysConfig.canvas_swap_controls && e.ctrlKey)
+            ) {
                 e.preventDefault();
 
                 let zoomPosX, zoomPosY;
@@ -487,7 +494,11 @@ onUiLoaded(async() => {
             changeZoomLevel(operation, e);
 
             // Handle brush size adjustment with ctrl key pressed
-            if (e.ctrlKey || e.metaKey) {
+            if (
+                (hotkeysConfig.canvas_swap_controls && e.shiftKey) ||
+                (!hotkeysConfig.canvas_swap_controls &&
+                    (e.ctrlKey || e.metaKey))
+            ) {
                 e.preventDefault();
 
                 // Increase or decrease brush size based on scroll direction
