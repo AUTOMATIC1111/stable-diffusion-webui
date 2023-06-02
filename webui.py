@@ -469,9 +469,6 @@ def webui():
         startup_timer.record("scripts unloaded callback")
         initialize_rest(reload_script_modules=True)
 
-        modules.sd_hijack.list_optimizers()
-        startup_timer.record("scripts list_optimizers")
-
 
 if __name__ == "__main__":
     if cmd_opts.nowebui:
