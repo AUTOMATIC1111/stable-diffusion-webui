@@ -54,7 +54,7 @@ function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
         } else {
             // If the property does not pass the test or has already been used, we keep the default value
             console.error(
-                `Hotkey: ${hotkeysConfigOpts[key]} for ${key} is repeated and conflicts with another hotkey or is not 1 letter. The default hotkey is used: ${defaultHotkeysConfig[key]}`
+                `Hotkey: ${hotkeysConfigOpts[key]} for ${key} is repeated and conflicts with another hotkey or is not 1 letter. The default hotkey is used: ${defaultHotkeysConfig[key][3]}`
             );
             result[key] = defaultHotkeysConfig[key];
         }
