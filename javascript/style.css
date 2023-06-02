@@ -274,8 +274,8 @@ div#extras_scale_to_tab div.form{
 .livePreview{
     position: absolute;
     z-index: 300;
-    background-color: white;
-    margin: -4px;
+    background-color: transparent;
+    width: -webkit-fill-available;
 }
 
 .dark .livePreview{

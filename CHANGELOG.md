@@ -1,14 +1,21 @@
 # Change Log for SD.Next
 
-## Update for 05/31/2023
+## Update for 06/02/2023
 
-- redesign action box to be uniform accross all themes
-- add pause option next to stop/skip
-- redesign progress bar
+Some quality-of-life improvements while working on larger stuff in the background...
+
+- redesign action box to be uniform accross all themes  
+- add **pause** option next to stop/skip  
+- redesigned progress bar  
+- add new built-in extension: **agent-scheduler**  
+  very elegant way to getting full queing capabilies, thank @artventurdev  
 - enable more image formats  
   note: not all are understood by browser so previews and images may appear as blank  
   unless you have some browser extensions that can handle them  
-  but they do get stored correctly. and cant beat raw quality of 32-bit tiff or psd :)
+  but they are saved correctly. and cant beat raw quality of 32-bit `tiff` or `psd` :)  
+- change in behavior: `xformers` will be uninstalled on startup if they are not active  
+  if you do have `xformers` selected as your desired cross-optimization method, then they will be used  
+  reason is that a lot of libaries try to blindy import xformers even if they are not selected or not functional  
 
 ## Update for 05/30/2023
 
