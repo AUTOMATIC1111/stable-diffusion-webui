@@ -68,7 +68,8 @@ def git_tag():
     try:
         return subprocess.check_output([git, "describe", "--tags"], shell=False, encoding='utf8').strip()
     except Exception:
-        return "<none>"
+        with open(os.path.dirname(os.path.abspath(__file__)) + "/../CHANGELOG.md") as file:
+            return next((line.strip() for line in file if line.strip()), "<none>")
 
 
 def run(command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live) -> str:
