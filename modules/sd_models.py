@@ -194,27 +194,17 @@ checkpoint_dict_replacements = {
 }
 
 
-def transform_checkpoint_dict_key(k):
-    for text, replacement in checkpoint_dict_replacements.items():
-        if k.startswith(text):
-            k = replacement + k[len(text):]
-
-    return k
-
-
 def get_state_dict_from_checkpoint(pl_sd):
     pl_sd = pl_sd.pop("state_dict", pl_sd)
     pl_sd.pop("state_dict", None)
 
-    sd = {}
-    for k, v in pl_sd.items():
-        new_key = transform_checkpoint_dict_key(k)
-
-        if new_key is not None:
-            sd[new_key] = v
-
-    pl_sd.clear()
-    pl_sd.update(sd)
+    state_dict_keys = pl_sd.keys()
+    for key in state_dict_keys:
+        for text, replacement in checkpoint_dict_replacements.items():
+            if key.startswith(text):
+                new_key = replacement + key[len(text):]
+                value = pl_sd.pop(key)
+                pl_sd[new_key] = value
 
     return pl_sd
 
