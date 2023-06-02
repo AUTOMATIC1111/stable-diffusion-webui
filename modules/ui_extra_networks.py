@@ -210,10 +210,12 @@ class ExtraNetworksPage:
         """
         List of default keys used for sorting in the UI.
         """
+        pth = Path(path)
+        stat = pth.stat()
         return {
-            "date_created": int(Path(path).stat().st_ctime or 0),
-            "date_modified": int(Path(path).stat().st_mtime or 0),
-            "name": Path(path).name.lower(),
+            "date_created": int(stat.st_ctime or 0),
+            "date_modified": int(stat.st_mtime or 0),
+            "name": pth.name.lower(),
         }
 
     def find_preview(self, path):
