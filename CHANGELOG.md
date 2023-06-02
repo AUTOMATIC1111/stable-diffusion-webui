@@ -1,3 +1,9 @@
+## 1.3.2
+
+### Bug Fixes:
+ * fix files served out of tmp directory even if they are saved to disk
+ * fix postprocessing overwriting parameters
+
 ## 1.3.1
 
 ### Features:
