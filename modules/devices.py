@@ -148,7 +148,7 @@ if args.use_ipex:
     if args.device_id is not None:
         cpu = torch.device(f"xpu:{args.device_id}") #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
     else:
-        cpu = torch.device("xpu") 
+        cpu = torch.device("xpu")
 else:
     cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None

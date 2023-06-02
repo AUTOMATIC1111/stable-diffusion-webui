@@ -227,7 +227,7 @@ def start_ui():
         server_port=cmd_opts.port if cmd_opts.port != 7860 else None,
         ssl_keyfile=cmd_opts.tls_keyfile,
         ssl_certfile=cmd_opts.tls_certfile,
-        ssl_verify=False if cmd_opts.tls_selfsign else True,
+        ssl_verify=not cmd_opts.tls_selfsign,
         debug=False,
         auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
         inbrowser=cmd_opts.autolaunch,

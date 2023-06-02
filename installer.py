@@ -132,9 +132,10 @@ def installed(package, friendly: str = None):
         return False
 
 
-def pip(arg: str, ignore: bool = False):
+def pip(arg: str, ignore: bool = False, quiet: bool = False):
     arg = arg.replace('>=', '==')
-    log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("--force", "").replace("  ", " ").strip()}')
+    if not quiet:
+        log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("--force", "").replace("  ", " ").strip()}')
     log.debug(f"Running pip: {arg}")
     result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     txt = result.stdout.decode(encoding="utf8", errors="ignore")
@@ -229,13 +230,13 @@ def check_python():
     if not (int(sys.version_info.major) == 3 and int(sys.version_info.minor) in supported_minors):
         log.error(f"Incompatible Python version: {sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro} required 3.{supported_minors}")
         if not args.ignore:
-            exit(1)
+            sys.exit(1)
     if not args.skip_git:
         git_cmd = os.environ.get('GIT', "git")
         if shutil.which(git_cmd) is None:
             log.error('Git not found')
             if not args.ignore:
-                exit(1)
+                sys.exit(1)
     else:
         git_version = git('--version', folder=None, ignore=False)
         log.debug(f'Git {git_version.replace("git version", "").strip()}')
@@ -320,7 +321,7 @@ def check_torch():
         except Exception as e:
             log.error(f'Could not load torch: {e}')
             if not args.ignore:
-                exit(1)
+                sys.exit(1)
     if args.version:
         return
     try:
@@ -330,7 +331,7 @@ def check_torch():
             x = pkg_resources.working_set.by_key.get('xformers', None)
             if x is not None:
                 log.warning(f'Not used, uninstalling: {x}')
-                pip('uninstall xformers --yes --quiet', ignore=True)
+                pip('uninstall xformers --yes --quiet', ignore=True, quiet=True)
     except Exception as e:
         log.debug(f'Cannot install xformers package: {e}')
     try:
@@ -575,11 +576,11 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
     if not os.path.exists('.git'):
         log.error('Not a git repository')
         if not args.ignore:
-            exit(1)
+            sys.exit(1)
     # status = git('status')
     # if 'branch' not in status:
     #    log.error('Cannot get git repository status')
-    #    exit(1)
+    #    sys.exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
     if args.version:
@@ -647,7 +648,7 @@ def check_timestamp():
     except Exception as e:
         log.error(f'Error getting local repository version: {e}')
         if not args.ignore:
-            exit(1)
+            sys.exit(1)
     log.debug(f'Repository update time: {time.ctime(int(version_time))}')
     if setup_time == -1:
         return False
