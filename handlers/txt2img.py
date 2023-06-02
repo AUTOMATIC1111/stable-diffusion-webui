@@ -103,6 +103,9 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             outpath_samples=f"output/{user_id}/txt2img/samples/",
             outpath_scripts=f"output/{user_id}/txt2img/scripts/",
             outpath_grids=f"output/{user_id}/txt2img/grids/",
+            hr_sampler_name=hr_sampler_name,
+            hr_prompt=hr_prompt,
+            hr_negative_prompt=hr_negative_prompt
         )
 
         self.scripts = modules.scripts.scripts_txt2img
@@ -171,10 +174,9 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         self.default_script_args = init_default_script_args(modules.scripts.scripts_txt2img)
         self._default_script_args_load_t = time.time()
 
-    def _build_txt2img_arg(self, task: Task) -> Txt2ImgTask:
+    def _build_txt2img_arg(self, progress: TaskProgress) -> Txt2ImgTask:
         self._refresh_default_script_args()
-        t = Txt2ImgTask.from_task(task, self.default_script_args)
-        progress = TaskProgress.new_running(task, "generate image...", 0)
+        t = Txt2ImgTask.from_task(progress.task, self.default_script_args)
         shared.state.current_latent_changed_callback = lambda: self._update_preview(progress)
         return t
 
@@ -183,7 +185,7 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         load_sd_model_weights(base_model_path, task.model_hash)
         progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run t2i...')
         yield progress
-        process_args = self._build_txt2img_arg(task)
+        process_args = self._build_txt2img_arg(progress)
         self._set_little_models(process_args)
         progress.status = TaskStatus.Running
         progress.task_desc = f't2i task({task.id}) running'

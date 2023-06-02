@@ -238,18 +238,21 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
             def set_default(item):
                 image, mask = None, None
                 if item.get('enabled', False):
-                    image = get_tmp_local_path(item['image']['image'])
-                    image = Image.open(image).convert('RGBA')
-                    size = image.size
-                    image = np.array(image)
+                    image = get_tmp_local_path(item['image']['image']) if item['image']['image'] else None
+                    image = Image.open(image).convert('RGBA') if image else None
+                    size = image.size if image else None
+                    image = np.array(image) if image else None
                     mask = item['image'].get('mask')
-                    if not mask:
+                    if image is not None:
                         shape = list(size)
                         shape.append(4)  # rgba
                         mask = np.full(shape, 255)
-                    else:
+                    elif mask:
                         mask = get_tmp_local_path(item['image']['mask'])
                         mask = np.array(Image.open(mask))
+                    else:
+                        mask = np.full((512, 512, 4), 255)
+
                 control_unit = {
                     'enabled': item.get('enabled', False),
                     'guess_mode': item.get('guess_mode', False),

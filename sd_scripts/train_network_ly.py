@@ -1,916 +1,3 @@
-1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-22
-23
-24
-25
-26
-27
-28
-29
-30
-31
-32
-33
-34
-35
-36
-37
-38
-39
-40
-41
-42
-43
-44
-45
-46
-47
-48
-49
-50
-51
-52
-53
-54
-55
-56
-57
-58
-59
-60
-61
-62
-63
-64
-65
-66
-67
-68
-69
-70
-71
-72
-73
-74
-75
-76
-77
-78
-79
-80
-81
-82
-83
-84
-85
-86
-87
-88
-89
-90
-91
-92
-93
-94
-95
-96
-97
-98
-99
-100
-101
-102
-103
-104
-105
-106
-107
-108
-109
-110
-111
-112
-113
-114
-115
-116
-117
-118
-119
-120
-121
-122
-123
-124
-125
-126
-127
-128
-129
-130
-131
-132
-133
-134
-135
-136
-137
-138
-139
-140
-141
-142
-143
-144
-145
-146
-147
-148
-149
-150
-151
-152
-153
-154
-155
-156
-157
-158
-159
-160
-161
-162
-163
-164
-165
-166
-167
-168
-169
-170
-171
-172
-173
-174
-175
-176
-177
-178
-179
-180
-181
-182
-183
-184
-185
-186
-187
-188
-189
-190
-191
-192
-193
-194
-195
-196
-197
-198
-199
-200
-201
-202
-203
-204
-205
-206
-207
-208
-209
-210
-211
-212
-213
-214
-215
-216
-217
-218
-219
-220
-221
-222
-223
-224
-225
-226
-227
-228
-229
-230
-231
-232
-233
-234
-235
-236
-237
-238
-239
-240
-241
-242
-243
-244
-245
-246
-247
-248
-249
-250
-251
-252
-253
-254
-255
-256
-257
-258
-259
-260
-261
-262
-263
-264
-265
-266
-267
-268
-269
-270
-271
-272
-273
-274
-275
-276
-277
-278
-279
-280
-281
-282
-283
-284
-285
-286
-287
-288
-289
-290
-291
-292
-293
-294
-295
-296
-297
-298
-299
-300
-301
-302
-303
-304
-305
-306
-307
-308
-309
-310
-311
-312
-313
-314
-315
-316
-317
-318
-319
-320
-321
-322
-323
-324
-325
-326
-327
-328
-329
-330
-331
-332
-333
-334
-335
-336
-337
-338
-339
-340
-341
-342
-343
-344
-345
-346
-347
-348
-349
-350
-351
-352
-353
-354
-355
-356
-357
-358
-359
-360
-361
-362
-363
-364
-365
-366
-367
-368
-369
-370
-371
-372
-373
-374
-375
-376
-377
-378
-379
-380
-381
-382
-383
-384
-385
-386
-387
-388
-389
-390
-391
-392
-393
-394
-395
-396
-397
-398
-399
-400
-401
-402
-403
-404
-405
-406
-407
-408
-409
-410
-411
-412
-413
-414
-415
-416
-417
-418
-419
-420
-421
-422
-423
-424
-425
-426
-427
-428
-429
-430
-431
-432
-433
-434
-435
-436
-437
-438
-439
-440
-441
-442
-443
-444
-445
-446
-447
-448
-449
-450
-451
-452
-453
-454
-455
-456
-457
-458
-459
-460
-461
-462
-463
-464
-465
-466
-467
-468
-469
-470
-471
-472
-473
-474
-475
-476
-477
-478
-479
-480
-481
-482
-483
-484
-485
-486
-487
-488
-489
-490
-491
-492
-493
-494
-495
-496
-497
-498
-499
-500
-501
-502
-503
-504
-505
-506
-507
-508
-509
-510
-511
-512
-513
-514
-515
-516
-517
-518
-519
-520
-521
-522
-523
-524
-525
-526
-527
-528
-529
-530
-531
-532
-533
-534
-535
-536
-537
-538
-539
-540
-541
-542
-543
-544
-545
-546
-547
-548
-549
-550
-551
-552
-553
-554
-555
-556
-557
-558
-559
-560
-561
-562
-563
-564
-565
-566
-567
-568
-569
-570
-571
-572
-573
-574
-575
-576
-577
-578
-579
-580
-581
-582
-583
-584
-585
-586
-587
-588
-589
-590
-591
-592
-593
-594
-595
-596
-597
-598
-599
-600
-601
-602
-603
-604
-605
-606
-607
-608
-609
-610
-611
-612
-613
-614
-615
-616
-617
-618
-619
-620
-621
-622
-623
-624
-625
-626
-627
-628
-629
-630
-631
-632
-633
-634
-635
-636
-637
-638
-639
-640
-641
-642
-643
-644
-645
-646
-647
-648
-649
-650
-651
-652
-653
-654
-655
-656
-657
-658
-659
-660
-661
-662
-663
-664
-665
-666
-667
-668
-669
-670
-671
-672
-673
-674
-675
-676
-677
-678
-679
-680
-681
-682
-683
-684
-685
-686
-687
-688
-689
-690
-691
-692
-693
-694
-695
-696
-697
-698
-699
-700
-701
-702
-703
-704
-705
-706
-707
-708
-709
-710
-711
-712
-713
-714
-715
-716
-717
-718
-719
-720
-721
-722
-723
-724
-725
-726
-727
-728
-729
-730
-731
-732
-733
-734
-735
-736
-737
-738
-739
-740
-741
-742
-743
-744
-745
-746
-747
-748
-749
-750
-751
-752
-753
-754
-755
-756
-757
-758
-759
-760
-761
-762
-763
-764
-765
-766
-767
-768
-769
-770
-771
-772
-773
-774
-775
-776
-777
-778
-779
-780
-781
-782
-783
-784
-785
-786
-787
-788
-789
-790
-791
-792
-793
-794
-795
-796
-797
-798
-799
-800
-801
-802
-803
-804
-805
-806
-807
-808
-809
-810
-811
-812
-813
-814
-815
-816
-817
-818
-819
-820
-821
-822
-823
-824
-825
-826
-827
-828
-829
-830
-831
-832
-833
-834
-835
-836
-837
-838
-839
-840
-841
-842
-843
-844
-845
-846
-847
-848
-849
-850
-851
-852
-853
-854
-855
-856
-857
-858
-859
-860
-861
-862
-863
-864
-865
-866
-867
-868
-869
-870
-871
-872
-873
-874
-875
-876
-877
-878
-879
-880
-881
-882
-883
-884
-885
-886
-887
-888
-889
-890
-891
-892
-893
-894
-895
-896
-897
-898
-899
-900
-901
-902
-903
-904
-905
-906
-907
-908
-909
-910
-911
-912
-913
 from torch.nn.parallel import DistributedDataParallel as DDP
 import importlib
 import argparse
@@ -939,7 +26,8 @@ from sd_scripts.library.config_util import (
 )
 import sd_scripts.library.huggingface_util as huggingface_util
 import sd_scripts.library.custom_train_functions as custom_train_functions
-from sd_scripts.library.custom_train_functions import apply_snr_weight, get_weighted_text_embeddings, pyramid_noise_like, \
+from sd_scripts.library.custom_train_functions import apply_snr_weight, get_weighted_text_embeddings, \
+    pyramid_noise_like, \
     apply_noise_offset
 
 
@@ -1025,7 +113,8 @@ def train(args, train_epoch_callback=None):
                 "datasets": [
                     # {"subsets": config_util.generate_dreambooth_subsets_config_by_subdirs(args.train_data_dir, args.reg_data_dir)}
                     {"subsets": config_util.generate_dreambooth_subsets_config_by_args(
-                        list_repeats, class_tokens, list_train_data_dirs, list_reg_repeats, reg_tokens, list_reg_data_dirs)}
+                        list_repeats, class_tokens, list_train_data_dirs, list_reg_repeats, reg_tokens,
+                        list_reg_data_dirs)}
                 ]
             }
         else:
@@ -1745,27 +834,134 @@ def train_callback(epoch, avg_loss):
 
 
 # 训练函数接口
-def train_with_params(pretrained_model_name_or_path, network_weights, train_data_dir, reg_data_dir, output_name,
-                      save_model_as, num_repeats, save_every_n_epochs=2, trigger_words=None, reg_tokens=None,
-                      list_train_data_dir=None, list_reg_data_dir=None, batch_size=1, epoch=20, resolution="512",
-                      clip_skip=1, network_dim=32, network_alpha=32, learning_rate=0.0001, unet_lr=0.0001,
-                      text_encoder_lr=0.00001, optimizer_type="AdamW8bit", network_train_unet_only=False,
-                      network_train_text_encoder_only=False, seed=1, network_module="networks.lora",
-                      caption_extension=".txt", output_dir="./output", logging_dir="./logs", save_last_n_epochs=10,
-                      lr_scheduler_num_cycles=1, lr_scheduler="cosine_with_restarts", multires_noise_iterations=None,
-                      multires_noise_discount=0.3, otherargs=None, list_reg_repeats=None, callback=None):
+def train_with_params(pretrained_model_name_or_path,
+                      network_weights,
+                      train_data_dir,
+                      reg_data_dir,
+                      output_name,
+                      save_model_as="safetensors",
+                      v2=False,
+                      v_parameterization=False,
+                      output_dir="./output",
+                      logging_dir="./logs",
+                      save_every_n_epochs=2,
+                      save_last_n_epochs=10,
+                      save_precision=None,
+                      trigger_words=None,
+                      max_token_length=75,  # max token length of text encoder (default for 75, 150 or 225)
+                      reg_tokens=None,
+                      list_train_data_dir=None,
+                      list_reg_data_dir=None,
+                      num_repeats=None,
+                      list_reg_repeats=None,
+                      batch_size=1,
+                      resolution="512,512",  # 64的倍数
+                      cache_latents=False,
+                      # cache latents to main memory to reduce VRAM usage (augmentations must be disabled)
+                      cache_latents_to_disk=False,
+                      # cache latents to disk to reduce VRAM usage (augmentations must be disabled)
+                      enable_bucket=True,  # enable buckets for multi aspect ratio training
+                      min_bucket_reso=256,  # 范围自己定，minimum resolution for buckets
+                      max_bucket_reso=1024,  # 范围自己定，maximum resolution for buckets
+                      bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended
+                      bucket_no_upscale=False,  # 秋叶版没有这个,make bucket for each image without upscaling
+                      token_warmup_min=1,  # 秋叶版没有这个,start learning at N tags (token means comma separated strinfloatgs)
+                      token_warmup_step=0,
+                      # 秋叶版没有这个,tag length reaches maximum on N steps (or N*max_train_steps if N<1)
+                      caption_extension=".txt",
+                      caption_dropout_rate=0.0,  # Rate out dropout caption(0.0~1.0)
+                      caption_dropout_every_n_epochs=0,  # Dropout all captions every N epochs
+                      caption_tag_dropout_rate=0.0,  # Rate out dropout comma separated tokens(0.0~1.0)
+                      shuffle_caption=False,  # shuffle comma-separated caption
+                      weighted_captions=False,  # 使用带权重的 token，不推荐与 shuffle_caption 一同开启
+                      keep_tokens=0,
+                      # keep heading N tokens when shuffling caption tokens (token means comma separated strings)
+                      color_aug=False,  # 秋叶版没有这个,enable weak color augmentation
+                      flip_aug=False,  # 秋叶版没有这个,enable horizontal flip augmentation
+                      face_crop_aug_range=None,
+                      # 秋叶版没有这个,enable face-centered crop augmentation and its range (e.g. 2.0,4.0)
+                      random_crop=False,
+                      # 秋叶版没有这个,enable random crop (for style training in face-centered crop augmentation)
+                      lowram=True,
+                      # enable low RAM optimization. e.g. load models to VRAM instead of RAM (for machines which have bigger VRAM than RAM such as Colab and Kaggle)
+                      mem_eff_attn=False,  # use memory efficient attention for CrossAttention
+                      xformers=True,  # 如果mem_eff_attn为True则xformers设置无效
+                      vae=None,  # 秋叶版没有这个,path to checkpoint of vae to replace
+                      max_data_loader_n_workers=8,
+                      # 秋叶版没有这个,max num workers for DataLoader (lower is less main RAM usage, faster epoch start and slower data loading)
+                      persistent_data_loader_workers=True,
+                      # persistent DataLoader workers (useful for reduce time gap between epoch, but may use more memory)
+                      max_train_steps=1600,  # 秋叶版没有这个,
+                      epoch=10,  # 整数，随便填
+                      gradient_checkpointing=True,
+                      gradient_accumulation_steps=1,
+                      # 整数，随便填, Number of updates steps to accumulate before performing a backward/update pass
+                      mixed_precision="no",  # 是否使用混精度
+                      full_fp16=True,  # fp16 training including gradients
+                      enable_preview=False,  # 和下面这几个参数一起的
+                      sample_prompts=None,  # file for prompts to generate sample images
+                      sample_sampler="ddim",
+                      # ["ddim","pndm","lms","euler","euler_a","heun","dpm_2","dpm_2_a","dpmsolver","dpmsolver++","dpmsingle","k_lms","k_euler","k_euler_a","k_dpm_2","k_dpm_2_a",]
+                      sample_every_n_epochs=None,
+                      network_module="networks.lora",
+                      network_train_unet_only=False,
+                      network_train_text_encoder_only=False,
+                      network_dim=32,  # 4的倍数，<=256
+                      network_alpha=16,  # 小于等于network_dim,可以不是4的倍数
+                      clip_skip=1,  # 0-12
+                      # network额外参数
+                      conv_dim=None,
+                      # lycoris才有，# 4的倍数, 适用于lora,dylora。如果是dylora,则"conv_dim must be same as network_dim",
+                      conv_alpha=None,  # lycoris才有，<=conv_dim, 适用于lora,dylora
+                      unit=8,  # 秋叶版没有
+                      dropout=0,  # dropout 概率, 0 为不使用 dropout, 越大则 dropout 越多，推荐 0~0.5， LoHa/LoKr/(IA)^3暂时不支持
+                      algo='lora',  # 可选['lora','loha','lokr','ia3']
+                      enable_block_weights=False,  # 让下面几个参数有效
+                      block_dims=None,  # lora,
+                      block_alphas=None,  # lora,
+                      conv_block_dims=None,  # lora,
+                      conv_block_alphas=None,  # lora,
+                      down_lr_weight=None,  # lora
+                      mid_lr_weight=None,  # lora
+                      up_lr_weight=None,  # lora
+                      block_lr_zero_threshold=0.0,  # float型，分层学习率置 0 阈值
+                      optimizer_type="AdamW8bit",
+                      # AdamW (default), AdamW8bit, Lion8bit, Lion, SGDNesterov, SGDNesterov8bit, DAdaptation(DAdaptAdam), DAdaptAdaGrad, DAdaptAdan, DAdaptSGD, AdaFactor
+                      weight_decay=None,  # optimizer_args,优化器内部的参数，权重衰减系数，不建议随便改
+                      betas=None,  # optimizer_args,优化器内部的参数，不建议随便改
+                      max_grad_norm=1.0,  # Max gradient norm, 0 for no clipping
+                      learning_rate=0.0001,
+                      unet_lr=0.0001,
+                      text_encoder_lr=0.00001,
+                      lr_scheduler="cosine_with_restarts",
+                      # linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup, adafactor
+                      lr_scheduler_num_cycles=1,  # Number of restarts for cosine scheduler with restarts
+                      lr_warmup_steps=0,  # Number of steps for the warmup in the lr scheduler
+                      lr_scheduler_power=1,  # Polynomial power for polynomial scheduler
+                      seed=1,
+                      prior_loss_weight=1.0,  # loss weight for regularization images
+                      min_snr_gamma=None,  # float型，最小信噪比伽马值，如果启用推荐为 5
+                      noise_offset=None,  # enable noise offset with this value (if enabled, around 0.1 is recommended)
+                      adaptive_noise_scale=None,
+                      # 与noise_offset配套使用；add `latent mean absolute value * this value` to noise_offset (disabled if None, default)
+                      multires_noise_iterations=None,  # 整数，多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
+                      multires_noise_discount=0.3,  # 多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
+                      config_file=None,  # using .toml instead of args to pass hyperparameter
+                      output_config=False,  # output command line args to given .toml file
+                      ):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
-    args = parser.parse_args(['--save_model_as=safetensors', '--enable_bucket', '--xformers'])
-    # args = train_util.read_config_from_file(args, parser)
+    args = parser.parse_args()
+    args = train_util.read_config_from_file(args, parser)
 
     args.pretrained_model_name_or_path = pretrained_model_name_or_path
     if network_weights:
         args.network_weights = network_weights
 
-    args.train_data_dir = train_data_dir
-    if reg_data_dir is not None and reg_data_dir != "":
-        args.reg_data_dir = reg_data_dir
+    args.train_data_dir = train_data_dir or []
+    if reg_data_dir is not None and reg_data_dir != "" and reg_data_dir != []:
+        print("reg data dir:", reg_data_dir)
+        args.reg_data_dir = reg_data_dir or []
         args.reg_tokens = reg_tokens or []
         args.list_reg_data_dir = list_reg_data_dir or []
     args.output_name = output_name
@@ -1773,35 +969,115 @@ def train_with_params(pretrained_model_name_or_path, network_weights, train_data
     args.trigger_words = trigger_words or []
     args.save_every_n_epochs = save_every_n_epochs
     args.list_train_data_dir = list_train_data_dir or []
-    args.repeats_times = num_repeats
-    args.list_reg_repeats = list_reg_repeats
+    args.repeats_times = num_repeats or []
+    args.list_reg_repeats = list_reg_repeats or []
     args.train_batch_size = batch_size
     args.max_train_epochs = epoch
     args.resolution = resolution
     args.clip_skip = clip_skip
     args.network_dim = network_dim
     args.network_alpha = network_alpha
+
     args.learning_rate = learning_rate
     args.unet_lr = unet_lr
     args.text_encoder_lr = text_encoder_lr
     args.optimizer_type = optimizer_type
+    args.lr_scheduler_num_cycles = lr_scheduler_num_cycles
+    args.lr_scheduler = lr_scheduler
+
     args.network_train_unet_only = network_train_unet_only
     args.network_train_text_encoder_only = network_train_text_encoder_only
     args.seed = seed
-    args.network_module = network_module
-    args.caption_extension = caption_extension
+
     args.output_dir = output_dir
     args.logging_dir = logging_dir
     args.save_last_n_epochs = save_last_n_epochs
-    args.lr_scheduler_num_cycles = lr_scheduler_num_cycles
-    args.lr_scheduler = lr_scheduler
+
+    args.v2 = v2
+    args.v_parameterization = v_parameterization
+
+    if enable_bucket:
+        args.enable_bucket = enable_bucket
+        args.min_bucket_reso = min_bucket_reso
+        args.max_bucket_reso = max_bucket_reso
+        args.bucket_reso_steps = bucket_reso_steps
+        args.bucket_no_upscale = bucket_no_upscale
+
+    args.network_module = network_module
+    if args.network_args is None:
+        args.network_args = []
+    if network_module == "lycoris.kohya":
+        if conv_dim is not None:
+            args.network_args.append(f"conv_dim={conv_dim}")
+        if conv_alpha is not None:
+            args.network_args.append(f"conv_alpha={conv_alpha}")
+        if dropout is not None:
+            args.network_args.append(f"dropout={dropout}")
+        args.network_args.append(f"algo={algo}")
+    elif network_module == "networks.dylora":
+        args.network_args.append(f"unit={unit}")
+    elif network_module == "networks.lora":
+        if conv_dim is not None:
+            args.network_args.append(f"conv_dim={conv_dim}")
+        if conv_alpha is not None:
+            args.network_args.append(f"conv_alpha={conv_alpha}")
+        if dropout is not None:
+            args.network_args.append(f"dropout={dropout}")
+        if block_dims is not None:
+            args.network_args.append(f"block_dims={block_dims}")
+        if block_alphas is not None:
+            args.network_args.append(f"block_alphas={block_alphas}")
+        if conv_block_dims is not None:
+            args.network_args.append(f"conv_block_dims={conv_block_dims}")
+        if conv_block_alphas is not None:
+            args.network_args.append(f"conv_block_alphas={conv_block_alphas}")
+    if enable_block_weights:
+        if down_lr_weight is not None:
+            args.network_args.append(f"down_lr_weight={down_lr_weight}")
+        if up_lr_weight is not None:
+            args.network_args.append(f"up_lr_weight={up_lr_weight}")
+        if mid_lr_weight is not None:
+            args.network_args.append(f"mid_lr_weight={mid_lr_weight}")
+        if block_lr_zero_threshold is not None:
+            args.network_args.append(
+                f"block_lr_zero_threshold={block_lr_zero_threshold}")
+
+    if enable_preview:
+        args.sample_prompts = sample_prompts
+        args.sample_sampler = sample_sampler
+        args.sample_every_n_epochs = sample_every_n_epochs
+
+    args.caption_extension = caption_extension
+    args.shuffle_caption = shuffle_caption
+    args.token_warmup_min = token_warmup_min
+    args.token_warmup_step = token_warmup_step
+    args.keep_tokens = keep_tokens
+    args.weighted_captions = weighted_captions
+
+    args.max_token_length = max_token_length
+    args.caption_dropout_rate = caption_dropout_rate
+    args.caption_dropout_every_n_epochs = caption_dropout_every_n_epochs
+    args.caption_tag_dropout_rate = caption_tag_dropout_rate
+
+    args.prior_loss_weight = prior_loss_weight
+    args.min_snr_gamma = min_snr_gamma
+    args.noise_offset = noise_offset
     args.multires_noise_iterations = multires_noise_iterations
     args.multires_noise_discount = multires_noise_discount
-    
-    #####默认设置
-    args.enable_bucket = True
-    args.network_args = otherargs or []
-    return train(args, callback)
+    args.gradient_checkpointing = gradient_checkpointing
+    args.gradient_accumulation_steps = gradient_accumulation_steps
+    args.mixed_precision = mixed_precision
+    if noise_offset is not None:
+        args.adaptive_noise_scale = adaptive_noise_scale
+
+    args.xformers = xformers
+    args.lowram = lowram
+    args.cache_latents = cache_latents
+    args.cache_latents_to_disk = cache_latents_to_disk
+    args.persistent_data_loader_workers = persistent_data_loader_workers
+
+    # print("network_args:",args.network_args)
+    return train(args, train_callback)
 
 
 if __name__ == "__main__":
@@ -1809,26 +1085,23 @@ if __name__ == "__main__":
     #
     # args = parser.parse_args()
     # args = train_util.read_config_from_file(args, parser)
-    #
-    # train(args)
-
-    train_with_params(pretrained_model_name_or_path="/data/qll/anything-v4.5-pruned.ckpt",
+    train_with_params(pretrained_model_name_or_path=r"D:\qll\models\final-prune.ckpt",
                       network_weights="",  # "output/y1s1_100v3.safetensors",
-                      train_data_dir="/data/qll/pics/y1s1_512_wd",
-                      output_dir="/data/qll/stable-diffusion-webui/models/Lora/",
-                      reg_data_dir=["/data/qll/pics/minglan/"],
-                      output_name="minglan-body-head-lycoris-multires-reg", save_model_as="safetensors",
-                      trigger_words=["minglan","minglan"], save_every_n_epochs=2,
-                      reg_tokens=[""], list_train_data_dir=["/data/qll/pics/minglan/head512x512","/data/qll/pics/minglan/upperbody512x768"],
-                      list_reg_data_dir=["/data/qll/pics/minglan/reg"],
-                      num_repeats=["15","30"], list_reg_repeats=["3"],
-                      batch_size=1, epoch=20, resolution="512,768", clip_skip=2, network_dim=128, network_alpha=64,
-                      learning_rate=1e-4, unet_lr=1e-4, text_encoder_lr=1e-5, optimizer_type="AdamW8bit",
-                      network_train_text_encoder_only=False,
-                      network_train_unet_only=False, seed=1, network_module="lycoris.kohya",
+                      train_data_dir=r"D:\qll\pics",
+                      reg_data_dir="",
+                      output_name="xhx-lion-0.0002", save_model_as="safetensors",
+                      trigger_words=["xhx"], save_every_n_epochs=2,
+                      reg_tokens=[""], list_train_data_dir=[r"D:\qll\pics\naked-xiong-withtags"],
+                      list_reg_data_dir=[""],
+                      num_repeats=["8"], batch_size=4, epoch=20, resolution="512", clip_skip=2, network_dim=32,
+                      network_alpha=16,
+                      learning_rate=0.0002,  # 0.00005,
+                      unet_lr=0.0002,  # 0.00005,
+                      text_encoder_lr=0.0001,  # 0.000005,
+                      optimizer_type="Lion",  # "AdamW",
                       lr_scheduler="cosine_with_restarts",
-                      multires_noise_iterations=8,multires_noise_discount=0.3,
-                      otherargs=["conv_dim=128","conv_alpha=64","unit=8","dropout=0","algo=lora","--xformers"]
-                      )
 
+                      network_train_text_encoder_only=False,
+                      network_train_unet_only=False, seed=1, network_module="networks.lora")
+    # train(args)
 # python train_network_qll.py --pretrained_model_name_or_path "/data/qll/qianzai_ai_draw/v1-5-pruned-emaonly.ckpt" --train_data_dir "/data/qll/lora_pictures/train_ironman" --output_name im2 --resolution 512 --network_module "networks.lora" --network_dim 32 --xformers  --caption_extension ".txt" --prior_loss_weight 1 --output_dir "./output" --logging_dir "./logs" --repeats_times "20" --class_tokens iiiiimqll --output_name iiiiimqll --list_train_data_dir "/data/qll/lora_pictures/train_ironman/10_immmmmman"

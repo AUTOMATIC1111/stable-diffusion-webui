@@ -380,12 +380,11 @@ class Img2ImgTaskHandler(TaskHandler):
         self.default_script_args = init_default_script_args(modules.scripts.scripts_img2img)
         self._default_script_args_load_t = time.time()
 
-    def _build_img2img_arg(self, task: Task) -> Img2ImgTask:
+    def _build_img2img_arg(self, progress: TaskProgress) -> Img2ImgTask:
         # 可不使用定时刷新，直接初始化。
         self._refresh_default_script_args()
 
-        t = Img2ImgTask.from_task(task, self.default_script_args)
-        progress = TaskProgress.new_running(task, "generate image...", 0)
+        t = Img2ImgTask.from_task(progress.task, self.default_script_args)
         shared.state.current_latent_changed_callback = lambda: self._update_preview(progress)
         return t
 
@@ -424,7 +423,7 @@ class Img2ImgTaskHandler(TaskHandler):
         progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run i2i...')
         yield progress
         # 参数有使用到sd_model因此在切换模型后再构造参数。
-        process_args = self._build_img2img_arg(task)
+        process_args = self._build_img2img_arg(progress)
         self._set_little_models(process_args)
         # if process_args.loras:
         #     # 设置LORA，具体实施在modules/exta_networks.py 中activate函数。
@@ -504,6 +503,8 @@ class Img2ImgTaskHandler(TaskHandler):
             if current:
                 progress.preview = current
             print("\n>>set preview!!\n")
+        else:
+            print('has prev')
         self._set_task_status(progress)
 
     def _exec_interrogate(self, task: Task):
