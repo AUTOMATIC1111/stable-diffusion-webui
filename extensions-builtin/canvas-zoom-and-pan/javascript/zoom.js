@@ -39,13 +39,23 @@ function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
     const usedKeys = new Set();
 
     for (const key in defaultHotkeysConfig) {
-        if (hotkeysConfigOpts[key] && isSingleLetter(hotkeysConfigOpts[key]) && !usedKeys.has(hotkeysConfigOpts[key].toUpperCase())) {
+        if (typeof hotkeysConfigOpts[key] === "boolean") {
+            result[key] = hotkeysConfigOpts[key];
+            continue;
+        }
+        if (
+            hotkeysConfigOpts[key] &&
+            isSingleLetter(hotkeysConfigOpts[key]) &&
+            !usedKeys.has(hotkeysConfigOpts[key].toUpperCase())
+        ) {
             // If the property passed the test and has not yet been used, add 'Key' before it and save it
-            result[key] = 'Key' + hotkeysConfigOpts[key].toUpperCase();
+            result[key] = "Key" + hotkeysConfigOpts[key].toUpperCase();
             usedKeys.add(hotkeysConfigOpts[key].toUpperCase());
         } else {
             // If the property does not pass the test or has already been used, we keep the default value
-            console.error(`Hotkey: ${hotkeysConfigOpts[key]} for ${key} is repeated and conflicts with another hotkey or is not 1 letter. The default hotkey is used: ${defaultHotkeysConfig[key]}`);
+            console.error(
+                `Hotkey: ${hotkeysConfigOpts[key]} for ${key} is repeated and conflicts with another hotkey or is not 1 letter. The default hotkey is used: ${defaultHotkeysConfig[key]}`
+            );
             result[key] = defaultHotkeysConfig[key];
         }
     }
@@ -62,7 +72,8 @@ onUiLoaded(async() => {
         canvas_hotkey_reset: "KeyR",
         canvas_hotkey_fullscreen: "KeyS",
         canvas_hotkey_move: "KeyF",
-        canvas_hotkey_overlap: "KeyO"
+        canvas_hotkey_overlap: "KeyO",
+        canvas_show_tooltip: true
     };
 
     const hotkeysConfig = createHotkeyConfig(
@@ -97,54 +108,63 @@ onUiLoaded(async() => {
         let fullScreenMode = false;
 
         // Create tooltip
-        const toolTipElemnt = targetElement.querySelector(".image-container");
-        const tooltip = document.createElement("div");
-        tooltip.className = "tooltip";
+        function createTooltip() {
+            const toolTipElemnt =
+                targetElement.querySelector(".image-container");
+            const tooltip = document.createElement("div");
+            tooltip.className = "tooltip";
 
-        // Creating an item of information
-        const info = document.createElement("i");
-        info.className = "tooltip-info";
-        info.textContent = "";
+            // Creating an item of information
+            const info = document.createElement("i");
+            info.className = "tooltip-info";
+            info.textContent = "";
 
-        // Create a container for the contents of the tooltip
-        const tooltipContent = document.createElement("div");
-        tooltipContent.className = "tooltip-content";
+            // Create a container for the contents of the tooltip
+            const tooltipContent = document.createElement("div");
+            tooltipContent.className = "tooltip-content";
 
-        // Add info about hotkets
-        const hotkeys = [
-            {key: "Shift + wheel", action: "Zoom canvas"},
-            {key: "Ctr+wheel", action: "Adjust brush size"},
-            {
-                key: hotkeysConfig.canvas_hotkey_reset.charAt(
-                    hotkeysConfig.canvas_hotkey_reset.length - 1
-                ),
-                action: "Reset zoom"
-            },
-            {
-                key: hotkeysConfig.canvas_hotkey_fullscreen.charAt(
-                    hotkeysConfig.canvas_hotkey_fullscreen.length - 1
-                ),
-                action: "Fullscreen mode"
-            },
-            {
-                key: hotkeysConfig.canvas_hotkey_move.charAt(
-                    hotkeysConfig.canvas_hotkey_move.length - 1
-                ),
-                action: "Move canvas"
-            }
-        ];
-        hotkeys.forEach(function(hotkey) {
-            const p = document.createElement("p");
-            p.innerHTML = "<b>" + hotkey.key + "</b>" + " - " + hotkey.action;
-            tooltipContent.appendChild(p);
-        });
+            // Add info about hotkets
+            const hotkeys = [
+                {key: "Shift + wheel", action: "Zoom canvas"},
+                {key: "Ctr+wheel", action: "Adjust brush size"},
+                {
+                    key: hotkeysConfig.canvas_hotkey_reset.charAt(
+                        hotkeysConfig.canvas_hotkey_reset.length - 1
+                    ),
+                    action: "Reset zoom"
+                },
+                {
+                    key: hotkeysConfig.canvas_hotkey_fullscreen.charAt(
+                        hotkeysConfig.canvas_hotkey_fullscreen.length - 1
+                    ),
+                    action: "Fullscreen mode"
+                },
+                {
+                    key: hotkeysConfig.canvas_hotkey_move.charAt(
+                        hotkeysConfig.canvas_hotkey_move.length - 1
+                    ),
+                    action: "Move canvas"
+                }
+            ];
+            hotkeys.forEach(function(hotkey) {
+                const p = document.createElement("p");
+                p.innerHTML =
+                    "<b>" + hotkey.key + "</b>" + " - " + hotkey.action;
+                tooltipContent.appendChild(p);
+            });
 
-        // Add information and content elements to the tooltip element
-        tooltip.appendChild(info);
-        tooltip.appendChild(tooltipContent);
+            // Add information and content elements to the tooltip element
+            tooltip.appendChild(info);
+            tooltip.appendChild(tooltipContent);
 
-        // Add a hint element to the target element
-        toolTipElemnt.appendChild(tooltip);
+            // Add a hint element to the target element
+            toolTipElemnt.appendChild(tooltip);
+        }
+
+        //Show tool tip if setting enable
+        if (hotkeysConfig.canvas_show_tooltip) {
+            createTooltip();
+        }
 
         // In the course of research, it was found that the tag img is very harmful when zooming and creates white canvases. This hack allows you to almost never think about this problem, it has no effect on webui.
         function fixCanvas() {
