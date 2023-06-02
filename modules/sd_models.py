@@ -198,13 +198,14 @@ def get_state_dict_from_checkpoint(pl_sd):
     pl_sd = pl_sd.pop("state_dict", pl_sd)
     pl_sd.pop("state_dict", None)
 
-    state_dict_keys = pl_sd.keys()
+    state_dict_keys = list(pl_sd.keys())
     for key in state_dict_keys:
         for text, replacement in checkpoint_dict_replacements.items():
             if key.startswith(text):
                 new_key = replacement + key[len(text):]
                 value = pl_sd.pop(key)
                 pl_sd[new_key] = value
+                break
 
     return pl_sd
 
