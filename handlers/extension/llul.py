@@ -5,8 +5,11 @@
 # @Site    :
 # @File    : llul.py
 # @Software: Hifive
+import collections
 import os.path
 import typing
+import tempfile
+from handlers.utils import get_tmp_local_path
 from handlers.formatter import AlwaysonScriptArgsFormatter
 
 LLuL = 'LLuL'
@@ -20,8 +23,33 @@ class LLuLFormatter(AlwaysonScriptArgsFormatter):
     def format(self, is_img2img: bool, args: typing.Union[typing.Sequence[typing.Any], typing.Mapping]) \
             -> typing.Sequence[typing.Any]:
         def obj_to_array(obj: typing.Mapping) -> typing.Sequence:
-            # 如果是[OBJ1, OBJ2]形式的，需要转换为ARRAY
+            #   enabled,
+            #             multiply,
+            #             weight,
+            #             understand,
+            #             layers,
+            #             apply_to,
+            #             start_steps,
+            #             max_steps,
+            #             up,
+            #             up_aa,
+            #             down,
+            #             down_aa,
+            #             intp,
+            #             x,
+            #             y,
+            #             force_float,
+            #             use_mask,
+            #             mask,
+            #             add_area_image,
+
             if isinstance(obj, dict):
+                mask = obj.get('mask')
+                if mask:
+                    tmp_file = get_tmp_local_path(mask)
+                    TmpFileObj = collections.namedtuple('TmpFileObj', 'name')
+                    mask = TmpFileObj(tmp_file)
+
                 return [obj['enabled'],
                         obj['multiply'],
                         obj['weight'],
@@ -35,9 +63,13 @@ class LLuLFormatter(AlwaysonScriptArgsFormatter):
                         obj['down'],
                         obj['down_aa'],
                         obj['intp'],
-                        str(obj['x']),
-                        str(obj['y']),
-                        obj['force_float']]
+                        str(int(obj['x'])),
+                        str(int(obj['y'])),
+                        obj['force_float'],
+                        obj.get('use_mask', False),
+                        mask,
+                        obj.get('add_area_image', True),
+                        ]
             return obj
 
         llul_script_args = args

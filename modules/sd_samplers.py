@@ -17,6 +17,13 @@ samplers_map = {}
 def find_sampler_config(name):
     if name is not None:
         config = all_samplers_map.get(name, None)
+        if not config:
+            raw_name = name.lower().replace(' ', '+')
+            for name, sampler in all_samplers_map.items():
+                if name.lower().replace(' ', '+') == raw_name:
+                    config = sampler
+                    break
+
     else:
         config = all_samplers[0]
 

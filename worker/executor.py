@@ -79,6 +79,7 @@ class TaskExecutor(Thread):
                         self.queue.put(task)
                 else:
                     self.not_busy.wait()
+        logger.info("=======> task receiver quit!!!!!!")
 
     def run(self) -> None:
         self._get_task()
