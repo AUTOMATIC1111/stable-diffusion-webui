@@ -33,7 +33,7 @@ class ExtraNetworkParams:
                 self.positional.append(item)
 
     def __eq__(self, other):
-        return self.items == other.items and self.positional == other.positional and self.named == other.named
+        return self.items == other.items
 
 
 class ExtraNetwork:
