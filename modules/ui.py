@@ -79,6 +79,7 @@ extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 restore_progress_symbol = '\U0001F300' # 🌀
 detect_image_size_symbol = '\U0001F4D0'  # 📐
+up_down_symbol = '\u2195\ufe0f' # ↕️
 
 
 def plaintext_to_html(text):

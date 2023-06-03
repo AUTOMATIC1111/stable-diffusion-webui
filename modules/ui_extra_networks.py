@@ -4,6 +4,7 @@ from pathlib import Path
 
 from modules import shared
 from modules.images import read_info_from_image, save_image_with_geninfo
+from modules.ui import up_down_symbol
 import gradio as gr
 import json
 import html
@@ -185,6 +186,8 @@ class ExtraNetworksPage:
         if search_only and shared.opts.extra_networks_hidden_models == "Never":
             return ""
 
+        sort_keys = " ".join([html.escape(f'data-sort-{k}={v}') for k, v in item.get("sort_keys", {}).items()]).strip()
+
         args = {
             "background_image": background_image,
             "style": f"'display: none; {height}{width}'",
@@ -198,9 +201,22 @@ class ExtraNetworksPage:
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
             "search_only": " search_only" if search_only else "",
+            "sort_keys": sort_keys,
         }
 
         return self.card_page.format(**args)
+
+    def get_sort_keys(self, path):
+        """
+        List of default keys used for sorting in the UI.
+        """
+        pth = Path(path)
+        stat = pth.stat()
+        return {
+            "date_created": int(stat.st_ctime or 0),
+            "date_modified": int(stat.st_mtime or 0),
+            "name": pth.name.lower(),
+        }
 
     def find_preview(self, path):
         """
@@ -296,6 +312,8 @@ def create_ui(container, button, tabname):
                 page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + json.dumps(tabname) + '); return []}', inputs=[], outputs=[])
 
     gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
+    gr.Dropdown(choices=['Default Sort', 'Date Created', 'Date Modified', 'Name'], value='Default Sort', elem_id=tabname+"_extra_sort", multiselect=False, visible=False, show_label=False, interactive=True)
+    gr.Button(up_down_symbol, elem_id=tabname+"_extra_sortorder")
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
