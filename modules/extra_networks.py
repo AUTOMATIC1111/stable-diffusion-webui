@@ -32,6 +32,9 @@ class ExtraNetworkParams:
             else:
                 self.positional.append(item)
 
+    def __eq__(self, other):
+        return self.items == other.items and self.positional == other.positional and self.named == other.named
+
 
 class ExtraNetwork:
     def __init__(self, name):
