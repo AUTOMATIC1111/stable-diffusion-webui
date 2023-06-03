@@ -434,7 +434,6 @@ def atomically_save_image():
         filename = filename.strip()
         if extension[0] != '.': # add dot if missing
             extension = '.' + extension
-        print('image_format', extension)
         try:
             image_format = Image.registered_extensions()[extension]
         except Exception:

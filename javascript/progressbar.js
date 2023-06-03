@@ -45,7 +45,6 @@ function checkPaused(state) {
 }
 
 function setProgress(res) {
-  console.log(res);
   elements = ['txt2img_generate', 'img2img_generate', 'extras_generate']
   const progress = (res?.progress || 0)
   const perc = res && (progress > 0) ? `${Math.round(100.0 * progress)}%` : ''

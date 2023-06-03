@@ -73,6 +73,7 @@ def apply_checkpoint(p, x, xs):
         shared.log.warning(f"XYZ grid: unknown checkpoint: {x}")
     else:
         sd_models.reload_model_weights(shared.sd_model, info)
+        p.override_settings['sd_model_checkpoint'] = info.name
 
 
 def confirm_checkpoints(p, xs):
