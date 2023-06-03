@@ -8,6 +8,10 @@ from statistics import stdev, mean
 from rich import progress
 import tqdm
 import torch
+try:
+    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+except:
+    pass
 from torch import einsum
 from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
 from einops import rearrange, repeat
@@ -590,7 +594,12 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
             print(e)
 
     if shared.cmd_opts.use_ipex:
-        scaler = torch.xpu.amp.GradScaler()
+        scaler = ipex.cpu.autocast._grad_scaler.GradScaler()
+        #Remove these after Intel adds support for float16 training:
+        if shared.opts.cuda_dtype == 'BF16':
+            shared.sd_model = shared.sd_model.bfloat16()
+        elif shared.opts.cuda_dtype == 'FP32':
+            shared.sd_model = shared.sd_model.float32()
     else:
         scaler = torch.cuda.amp.GradScaler()
 
