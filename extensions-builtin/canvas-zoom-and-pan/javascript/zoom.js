@@ -103,7 +103,14 @@ onUiLoaded(async() => {
 
     const elements = await getElements();
 
-    function applyZoomAndPan(targetElement, elemId) {
+    function applyZoomAndPan(elemId) {
+        const targetElement = gradioApp().querySelector(elemId);
+
+        if (!targetElement) {
+            console.log("Element not found");
+            return;
+        }
+
         targetElement.style.transformOrigin = "0 0";
         let [zoomLevel, panX, panY] = [1, 0, 0];
         let fullScreenMode = false;
@@ -558,7 +565,11 @@ onUiLoaded(async() => {
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
 
-    applyZoomAndPan(elements.sketch, elementIDs.sketch);
-    applyZoomAndPan(elements.inpaint, elementIDs.inpaint);
-    applyZoomAndPan(elements.inpaintSketch, elementIDs.inpaintSketch);
+    applyZoomAndPan(elementIDs.sketch);
+    applyZoomAndPan(elementIDs.inpaint);
+    applyZoomAndPan(elementIDs.inpaintSketch);
+
+
+    // Make the function global so that other extensions can take advantage of this solution
+    window.applyZoomAndPan = applyZoomAndPan;
 });
