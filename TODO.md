@@ -55,3 +55,4 @@ Tech that can be integrated as part of the core workflow...
 - localization
 - docker
 - port `p.all_hr_prompts`
+- test `lyco_patch_lora`

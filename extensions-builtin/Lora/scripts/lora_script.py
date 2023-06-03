@@ -61,11 +61,6 @@ shared.options_templates.update(shared.options_section(('extra_networks', "Extra
 }))
 
 
-shared.options_templates.update(shared.options_section(('compatibility', "Compatibility"), {
-    "lora_functional": shared.OptionInfo(False, "Lora: use old method that takes longer when you have multiple Loras active and produces same results as kohya-ss/sd-webui-additional-networks extension"),
-}))
-
-
 def create_lora_json(obj: lora.LoraOnDisk):
     return {
         "name": obj.name,

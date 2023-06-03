@@ -90,6 +90,7 @@ def compatibility_args(opts, args):
     group.add_argument("--sub-quad-chunk-threshold", help=argparse.SUPPRESS, default=opts.sub_quad_chunk_threshold)
     group.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     group.add_argument("--lyco-dir", help=argparse.SUPPRESS, default=opts.lyco_dir)
+    group.add_argument("--lyco-patch-lora", help=argparse.SUPPRESS, default=opts.lyco_patch_lora)
     group.add_argument("--enable-console-prompts", help=argparse.SUPPRESS, action='store_true', default=False)
     group.add_argument("--safe", help=argparse.SUPPRESS, action='store_true', default=False)
 
