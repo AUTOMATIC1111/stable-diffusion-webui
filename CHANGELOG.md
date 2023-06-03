@@ -1,5 +1,9 @@
 # Change Log for SD.Next
 
+## Update for 06/03/2023
+
+- new vae decode method to help with larger batch sizes, thanks @bigdog
+
 ## Update for 06/02/2023
 
 Some quality-of-life improvements while working on larger stuff in the background...

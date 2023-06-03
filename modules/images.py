@@ -432,7 +432,14 @@ def atomically_save_image():
         image, filename, extension, params, exifinfo_data, txt_fullfn = save_queue.get()
         fn = filename + extension
         filename = filename.strip()
-        image_format = Image.registered_extensions()[extension]
+        if extension[0] != '.': # add dot if missing
+            extension = '.' + extension
+        print('image_format', extension)
+        try:
+            image_format = Image.registered_extensions()[extension]
+        except Exception:
+            shared.log.warning(f'Unknown image format: {extension}')
+            image_format = 'JPEG'
         shared.log.debug(f'Saving image: {image_format} {fn} {image.size}')
         # actual save
         if image_format == 'PNG':
@@ -452,14 +459,23 @@ def atomically_save_image():
             if image.mode == 'I;16':
                 image = image.point(lambda p: p * 0.0038910505836576).convert("RGB")
             exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data or "", encoding="unicode") } })
-            image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, lossless=shared.opts.webp_lossless, exif=exif_bytes)
+            try:
+                image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, lossless=shared.opts.webp_lossless, exif=exif_bytes)
+            except Exception as e:
+                shared.log.warning(f'Image save failed: {fn} {e}')
         else:
             # shared.log.warning(f'Unrecognized image format: {extension} attempting save as {image_format}')
-            image.save(fn, format=image_format, quality=shared.opts.jpeg_quality)
+            try:
+                image.save(fn, format=image_format, quality=shared.opts.jpeg_quality)
+            except Exception as e:
+                shared.log.warning(f'Image save failed: {fn} {e}')
         # additional metadata saved in files
         if shared.opts.save_txt and len(exifinfo_data) > 0:
-            with open(txt_fullfn, "w", encoding="utf8") as file:
-                file.write(f"{exifinfo_data}\n")
+            try:
+                with open(txt_fullfn, "w", encoding="utf8") as file:
+                    file.write(f"{exifinfo_data}\n")
+            except Exception as e:
+                shared.log.warning(f'Image description save failed: {txt_fullfn} {e}')
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
             file.write(exifinfo_data)
         if shared.opts.save_log_fn != '' and len(exifinfo_data) > 0:

@@ -52,3 +52,6 @@ Tech that can be integrated as part of the core workflow...
 - <https://github.com/vladmandic/automatic/discussions/1246>
 - shared.info
 - hints
+- localization
+- docker
+- port `p.all_hr_prompts`
