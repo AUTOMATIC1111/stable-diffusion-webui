@@ -14,13 +14,73 @@ function getActiveTab(elements, all = false) {
     }
 }
 
+// Wait until opts loaded
+async function waitForOpts() {
+    return new Promise(resolve => {
+        const checkInterval = setInterval(() => {
+            if (window.opts && Object.keys(window.opts).length !== 0) {
+                clearInterval(checkInterval);
+                resolve(window.opts);
+            }
+        }, 100);
+    });
+}
+
+// Check is hotkey valid
+function isSingleLetter(value) {
+    return (
+        typeof value === "string" && value.length === 1 && /[a-z]/i.test(value)
+    );
+}
+
+// Create hotkeyConfig from opts
+function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
+    const result = {};
+    const usedKeys = new Set();
+
+    for (const key in defaultHotkeysConfig) {
+        if (typeof hotkeysConfigOpts[key] === "boolean") {
+            result[key] = hotkeysConfigOpts[key];
+            continue;
+        }
+        if (
+            hotkeysConfigOpts[key] &&
+            isSingleLetter(hotkeysConfigOpts[key]) &&
+            !usedKeys.has(hotkeysConfigOpts[key].toUpperCase())
+        ) {
+            // If the property passed the test and has not yet been used, add 'Key' before it and save it
+            result[key] = "Key" + hotkeysConfigOpts[key].toUpperCase();
+            usedKeys.add(hotkeysConfigOpts[key].toUpperCase());
+        } else {
+            // If the property does not pass the test or has already been used, we keep the default value
+            console.error(
+                `Hotkey: ${hotkeysConfigOpts[key]} for ${key} is repeated and conflicts with another hotkey or is not 1 letter. The default hotkey is used: ${defaultHotkeysConfig[key][3]}`
+            );
+            result[key] = defaultHotkeysConfig[key];
+        }
+    }
+
+    return result;
+}
+
+// Main
 onUiLoaded(async() => {
-    const hotkeysConfig = {
-        resetZoom: "KeyR",
-        fitToScreen: "KeyS",
-        moveKey: "KeyF",
-        overlap: "KeyO"
+    const hotkeysConfigOpts = await waitForOpts();
+
+    // Default config
+    const defaultHotkeysConfig = {
+        canvas_hotkey_reset: "KeyR",
+        canvas_hotkey_fullscreen: "KeyS",
+        canvas_hotkey_move: "KeyF",
+        canvas_hotkey_overlap: "KeyO",
+        canvas_show_tooltip: true,
+        canvas_swap_controls: false
     };
+    // swap the actions for ctr + wheel and shift + wheel
+    const hotkeysConfig = createHotkeyConfig(
+        defaultHotkeysConfig,
+        hotkeysConfigOpts
+    );
 
     let isMoving = false;
     let mouseX, mouseY;
@@ -47,6 +107,68 @@ onUiLoaded(async() => {
         targetElement.style.transformOrigin = "0 0";
         let [zoomLevel, panX, panY] = [1, 0, 0];
         let fullScreenMode = false;
+
+        // Create tooltip
+        function createTooltip() {
+            const toolTipElemnt =
+                targetElement.querySelector(".image-container");
+            const tooltip = document.createElement("div");
+            tooltip.className = "tooltip";
+
+            // Creating an item of information
+            const info = document.createElement("i");
+            info.className = "tooltip-info";
+            info.textContent = "";
+
+            // Create a container for the contents of the tooltip
+            const tooltipContent = document.createElement("div");
+            tooltipContent.className = "tooltip-content";
+
+            // Add info about hotkets
+            const zoomKey = hotkeysConfig.canvas_swap_controls ? "Ctrl" : "Shift";
+            const adjustKey = hotkeysConfig.canvas_swap_controls ? "Shift" : "Ctrl";
+
+            const hotkeys = [
+                {key: `${zoomKey} + wheel`, action: "Zoom canvas"},
+                {key: `${adjustKey} + wheel`, action: "Adjust brush size"},
+                {
+                    key: hotkeysConfig.canvas_hotkey_reset.charAt(
+                        hotkeysConfig.canvas_hotkey_reset.length - 1
+                    ),
+                    action: "Reset zoom"
+                },
+                {
+                    key: hotkeysConfig.canvas_hotkey_fullscreen.charAt(
+                        hotkeysConfig.canvas_hotkey_fullscreen.length - 1
+                    ),
+                    action: "Fullscreen mode"
+                },
+                {
+                    key: hotkeysConfig.canvas_hotkey_move.charAt(
+                        hotkeysConfig.canvas_hotkey_move.length - 1
+                    ),
+                    action: "Move canvas"
+                }
+            ];
+            hotkeys.forEach(function(hotkey) {
+                const p = document.createElement("p");
+                p.innerHTML =
+                    "<b>" + hotkey.key + "</b>" + " - " + hotkey.action;
+                tooltipContent.appendChild(p);
+            });
+
+            // Add information and content elements to the tooltip element
+            tooltip.appendChild(info);
+            tooltip.appendChild(tooltipContent);
+
+            // Add a hint element to the target element
+            toolTipElemnt.appendChild(tooltip);
+        }
+
+        //Show tool tip if setting enable
+        if (hotkeysConfig.canvas_show_tooltip) {
+            createTooltip();
+        }
 
         // In the course of research, it was found that the tag img is very harmful when zooming and creates white canvases. This hack allows you to almost never think about this problem, it has no effect on webui.
         function fixCanvas() {
@@ -159,7 +281,10 @@ onUiLoaded(async() => {
 
         // Change the zoom level based on user interaction
         function changeZoomLevel(operation, e) {
-            if (e.shiftKey) {
+            if (
+                (!hotkeysConfig.canvas_swap_controls && e.shiftKey) ||
+                (hotkeysConfig.canvas_swap_controls && e.ctrlKey)
+            ) {
                 e.preventDefault();
 
                 let zoomPosX, zoomPosY;
@@ -262,7 +387,8 @@ onUiLoaded(async() => {
             targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
 
             // Get scrollbar width to right-align the image
-            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+            const scrollbarWidth =
+                window.innerWidth - document.documentElement.clientWidth;
 
             // Get element and screen dimensions
             const elementWidth = targetElement.offsetWidth;
@@ -312,10 +438,9 @@ onUiLoaded(async() => {
         // Handle keydown events
         function handleKeyDown(event) {
             const hotkeyActions = {
-                [hotkeysConfig.resetZoom]: resetZoom,
-                [hotkeysConfig.overlap]: toggleOverlap,
-                [hotkeysConfig.fitToScreen]: fitToScreen
-                // [hotkeysConfig.moveKey] : moveCanvas,
+                [hotkeysConfig.canvas_hotkey_reset]: resetZoom,
+                [hotkeysConfig.canvas_hotkey_overlap]: toggleOverlap,
+                [hotkeysConfig.canvas_hotkey_fullscreen]: fitToScreen
             };
 
             const action = hotkeyActions[event.code];
@@ -369,7 +494,11 @@ onUiLoaded(async() => {
             changeZoomLevel(operation, e);
 
             // Handle brush size adjustment with ctrl key pressed
-            if (e.ctrlKey || e.metaKey) {
+            if (
+                (hotkeysConfig.canvas_swap_controls && e.shiftKey) ||
+                (!hotkeysConfig.canvas_swap_controls &&
+                    (e.ctrlKey || e.metaKey))
+            ) {
                 e.preventDefault();
 
                 // Increase or decrease brush size based on scroll direction
@@ -377,20 +506,19 @@ onUiLoaded(async() => {
             }
         });
 
-        /**
-         * Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
-         * @param {MouseEvent} e - The mouse event.
-         */
+        // Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
         function handleMoveKeyDown(e) {
-            if (e.code === hotkeysConfig.moveKey) {
-                if (!e.ctrlKey && !e.metaKey) {
+            if (e.code === hotkeysConfig.canvas_hotkey_move) {
+                if (!e.ctrlKey && !e.metaKey && isKeyDownHandlerAttached) {
+                    e.preventDefault();
+                    document.activeElement.blur();
                     isMoving = true;
                 }
             }
         }
 
         function handleMoveKeyUp(e) {
-            if (e.code === hotkeysConfig.moveKey) {
+            if (e.code === hotkeysConfig.canvas_hotkey_move) {
                 isMoving = false;
             }
         }
@@ -421,6 +549,11 @@ onUiLoaded(async() => {
                 targetElement.style.pointerEvents = "auto";
             }
         }
+
+        // Prevents sticking to the mouse
+        window.onblur = function() {
+            isMoving = false;
+        };
 
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
