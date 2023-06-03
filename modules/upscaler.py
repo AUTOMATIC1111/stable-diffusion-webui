@@ -53,8 +53,8 @@ class Upscaler:
 
     def upscale(self, img: PIL.Image, scale, selected_model: str = None):
         self.scale = scale
-        dest_w = round((img.width * scale - 4) / 8) * 8 if img.width * scale % 8 != 0 else img.width * scale
-        dest_h = round((img.height * scale - 4) / 8) * 8 if img.height * scale % 8 != 0 else img.height * scale
+        dest_w = int((img.width * scale) // 8 * 8)
+        dest_h = int((img.height * scale) // 8 * 8)
 
         for _ in range(3):
             shape = (img.width, img.height)
