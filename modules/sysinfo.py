@@ -88,9 +88,8 @@ def format_traceback(tb):
 def get_exceptions():
     try:
         from modules import errors
-        items = [x for x in reversed(errors.exception_records)]
 
-        return [{"exception": str(e), "traceback": format_traceback(tb)} for e, tb in items]
+        return [{"exception": str(e), "traceback": format_traceback(tb)} for e, tb in reversed(errors.exception_records)]
     except Exception as e:
         return str(e)
 
