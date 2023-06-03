@@ -922,7 +922,18 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             decoded_samples = torch.from_numpy(np.array(batch_images))
             decoded_samples = decoded_samples.to(shared.device)
             decoded_samples = 2. * decoded_samples - 1.
-            samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
+            if shared.opts.sd_vae_sliced_encode:
+                samples = torch.stack([
+                    self.sd_model.get_first_stage_encoding(
+                        self.sd_model.encode_first_stage(torch.unsqueeze(decoded_sample, 0))
+                    )[0]
+                    for decoded_sample
+                    in decoded_samples
+                ])
+            else:
+                samples = self.sd_model.get_first_stage_encoding(
+                        self.sd_model.encode_first_stage(decoded_samples)
+                    )
             image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
         shared.state.nextjob()
         img2img_sampler_name = self.sampler_name
