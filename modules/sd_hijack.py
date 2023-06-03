@@ -68,6 +68,8 @@ def apply_optimizations():
 
     if selection == "None":
         matching_optimizer = None
+    elif selection == "Automatic" and shared.cmd_opts.disable_opt_split_attention:
+        matching_optimizer = None
     elif matching_optimizer is None:
         matching_optimizer = optimizers[0]
 

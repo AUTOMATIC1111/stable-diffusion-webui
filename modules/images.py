@@ -493,9 +493,12 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
         existing_pnginfo['parameters'] = geninfo
 
     if extension.lower() == '.png':
-        pnginfo_data = PngImagePlugin.PngInfo()
-        for k, v in (existing_pnginfo or {}).items():
-            pnginfo_data.add_text(k, str(v))
+        if opts.enable_pnginfo:
+            pnginfo_data = PngImagePlugin.PngInfo()
+            for k, v in (existing_pnginfo or {}).items():
+                pnginfo_data.add_text(k, str(v))
+        else:
+            pnginfo_data = None
 
         image.save(filename, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
 

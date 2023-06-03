@@ -313,8 +313,6 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
         timer.record("apply half()")
 
-    devices.dtype = torch.float32 if shared.cmd_opts.no_half else torch.float16
-    devices.dtype_vae = torch.float32 if shared.cmd_opts.no_half or shared.cmd_opts.no_half_vae else torch.float16
     devices.dtype_unet = model.model.diffusion_model.dtype
     devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
