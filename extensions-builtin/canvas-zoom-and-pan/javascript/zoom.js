@@ -14,6 +14,23 @@ function getActiveTab(elements, all = false) {
     }
 }
 
+// Get tab ID
+function getTabId(elements,elementIDs) {
+    const activeTab = getActiveTab(elements);
+    const tabIdLookup = {
+      Sketch: elementIDs.sketch,
+      "Inpaint sketch": elementIDs.inpaintSketch,
+      Inpaint: elementIDs.inpaint,
+    };
+    return tabIdLookup[activeTab.innerText];
+  }
+
+  // Get Active main tab to prevent "Undo" on text2img from being disabled
+  function getActiveMainTab() {
+    const selectedTab = document.querySelector("#tabs .tab-nav button.selected");
+    return selectedTab;
+  }
+
 // Wait until opts loaded
 async function waitForOpts() {
     return new Promise(resolve => {
@@ -63,6 +80,43 @@ function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
     return result;
 }
 
+    /**
+     * The restoreImgRedMask function displays a red mask around an image to indicate the aspect ratio.
+     * If the image display property is set to 'none', the mask breaks. To fix this, the function
+     * temporarily sets the display property to 'block' and then hides the mask again after 300 milliseconds
+     * to avoid breaking the canvas. Additionally, the function adjusts the mask to work correctly on
+     * very long images.
+    */
+
+    function restoreImgRedMask(elements,elementIDs) {
+        const mainTabId = getTabId(elements,elementIDs);
+  
+        if (!mainTabId) return;
+  
+        const mainTab = document.querySelector(mainTabId);
+        const img = mainTab.querySelector("img");
+        const imageARPreview = document.querySelector("#imageARPreview");
+  
+        if (!img || !imageARPreview) return;
+  
+        imageARPreview.style.transform = "";
+        if (parseFloat(mainTab.style.width) > 865) {
+          const transformValues = mainTab.style.transform.match(/[-+]?[0-9]*\.?[0-9]+/g).map(Number);
+          const [posX, posY , zoom] = transformValues;
+  
+          imageARPreview.style.transformOrigin = "0 0"
+          imageARPreview.style.transform = `scale(${zoom})`;
+        }
+  
+        if (img.style.display !== "none") return;
+  
+        img.style.display = "block";
+  
+        setTimeout(() => {
+          img.style.display = "none";
+        }, 300);
+      }
+  
 // Main
 onUiLoaded(async() => {
     const hotkeysConfigOpts = await waitForOpts();
@@ -89,7 +143,8 @@ onUiLoaded(async() => {
         sketch: "#img2img_sketch",
         inpaint: "#img2maskimg",
         inpaintSketch: "#inpaint_sketch",
-        img2imgTabs: "#mode_img2img .tab-nav"
+        img2imgTabs: "#mode_img2img .tab-nav",
+        rangeGroup: "#img2img_column_size",
     };
 
     async function getElements() {
@@ -102,6 +157,17 @@ onUiLoaded(async() => {
     }
 
     const elements = await getElements();
+
+    // Apply functionality to the range inputs
+    const rangeInputs = elements.rangeGroup
+    ? elements.rangeGroup.querySelectorAll("input")
+    : [document.querySelector("#img2img_width input[type='range']"), document.querySelector("#img2img_height input[type='range']")];
+
+    rangeInputs.forEach((input) => {
+      if (input) {
+        input.addEventListener("input",() => restoreImgRedMask(elements,elementIDs));
+      }
+      });
 
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
