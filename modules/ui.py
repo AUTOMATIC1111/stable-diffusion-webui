@@ -1,3 +1,4 @@
+import datetime
 import json
 import mimetypes
 import os
@@ -11,7 +12,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path
 from modules.ui_common import create_refresh_button
@@ -1598,3 +1599,15 @@ def setup_ui_api(app):
     app.add_api_route("/internal/ping", lambda: {}, methods=["GET"])
 
     app.add_api_route("/internal/profile-startup", lambda: timer.startup_record, methods=["GET"])
+
+    def download_sysinfo(attachment=False):
+        from fastapi.responses import PlainTextResponse
+
+        text = sysinfo.get()
+        filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.txt"
+
+        return PlainTextResponse(text, headers={'Content-Disposition': f'{"attachment" if attachment else "inline"}; filename="{filename}"'})
+
+    app.add_api_route("/internal/sysinfo", download_sysinfo, methods=["GET"])
+    app.add_api_route("/internal/sysinfo-download", lambda: download_sysinfo(attachment=True), methods=["GET"])
+

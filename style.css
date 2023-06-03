@@ -450,6 +450,16 @@ table.popup-table .link{
     opacity: 0.75;
 }
 
+#sysinfo_download a{
+    font-size: 24pt;
+    text-decoration: underline;
+}
+
+#sysinfo_validity{
+    font-size: 18pt;
+}
+
+
 /* live preview */
 .progressDiv{
     position: relative;
