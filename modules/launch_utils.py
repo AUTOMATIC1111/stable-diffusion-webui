@@ -244,6 +244,12 @@ def prepare_environment():
     codeformer_commit_hash = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
+    try:
+        # the existance of this file is a signal to webui.sh/bat that webui needs to be restarted when it stops execution
+        os.remove(os.path.join(script_path, "tmp", "restart"))
+    except OSError:
+        pass
+
     if not args.skip_python_version_check:
         check_python_version()
 

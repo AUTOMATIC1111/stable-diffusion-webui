@@ -51,12 +51,14 @@ if EXIST %ACCELERATE% goto :accelerate_launch
 
 :launch
 %PYTHON% launch.py %*
+if EXIST tmp/restart goto :skip_venv
 pause
 exit /b
 
 :accelerate_launch
 echo Accelerating
 %ACCELERATE% launch --num_cpu_threads_per_process=6 launch.py
+if EXIST tmp/restart goto :skip_venv
 pause
 exit /b
 

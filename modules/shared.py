@@ -841,3 +841,12 @@ def walk_files(path, allowed_extensions=None):
                 continue
 
             yield os.path.join(root, filename)
+
+
+def restart_program():
+    """creates file tmp/restart and immediately stops the process, which webui.bat/webui.sh interpret as a command to start webui again"""
+
+    with open(os.path.join(script_path, "tmp", "restart"), "w"):
+        pass
+
+    os._exit(0)
