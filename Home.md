@@ -20,6 +20,7 @@
 - [Online Services](Online-Services)
 - [Localization](Localization)
 - [Custom Filename Name and Subdirectory](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Images-Filename-Name-and-Subdirectory)
+- [Change model folder location e.g. external disk](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Change-model-folder-location)
 - [API](API)
 - [Tests](Tests)
 - [Guides and Tutorials](Guides-and-Tutorials)
