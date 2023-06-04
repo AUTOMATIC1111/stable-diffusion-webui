@@ -237,7 +237,8 @@ div#extras_scale_to_tab div.form{
     grid-template-columns: repeat(auto-fill, .3em minmax(10em, 1fr));
     flex: 1 0 auto;
     width: 11em;
-    align-self: flex-start
+    align-self: flex-start;
+    gap: var(--spacing-md);
 }
 
 #settings > div.tab-nav button{

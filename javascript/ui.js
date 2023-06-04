@@ -261,8 +261,7 @@ onUiLoaded(function(){
     tab_nav_buttons = gradioApp().querySelectorAll('#settings > .tab-nav > button')
     tab_elements = gradioApp().querySelectorAll('#settings > div:not(.tab-nav)')
 
-    // Add mutation observer to to all tab items
-    // HACK to keep gradio from closing when showing all pages
+    // HACK Add mutation observer to keep gradio from closing setting tabs when showing all pages
     const observer = new MutationObserver(function(mutations) {
         const show_all_pages_dummy = gradioApp().getElementById('settings_show_all_pages')
         if (show_all_pages_dummy.style.display == "none") 
@@ -287,8 +286,6 @@ onUiLoaded(function(){
         new_indicator.className = "modification-indicator"
         new_indicator.disabled = true
         new_indicator.onclick = () => onSettingsModificationIndicatorClicked(elem.id)
-
-        // Add a modification indicator to the toplevel tab button
         tab_nav_element.insertBefore(new_indicator, tab_nav_buttons[index])
 
         // Add the tab content to the wrapper
@@ -297,10 +294,6 @@ onUiLoaded(function(){
         // Add the mutation observer to the tab element
         observer.observe(elem, { attributes: true, attributeFilter: ['style'] })
     })
-
-
-    // Add the dirtyable class to the tab nav element
-    tab_nav_element.classList.add('dirtyable')
 })
 
 
