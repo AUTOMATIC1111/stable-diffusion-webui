@@ -192,11 +192,11 @@ function recalculate_prompts_img2img(){
 
 opts = {}
 opts_metadata = {}
-opts_tabs = {}
 function updateOpts(json_string){
     let settings_data = JSON.parse(json_string)
     opts = settings_data.values
     opts_metadata = settings_data.metadata
+    opts_tabs = {}
     Object.entries(opts_metadata).forEach(([opt, meta]) => {
         opts_tabs[meta.tab_name] ||= {}
         let unsaved = (opts_tabs[meta.tab_name].unsaved_keys ||= new Set())
