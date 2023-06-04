@@ -145,8 +145,15 @@ def set_cuda_params():
 
 args = cmd_args.parser.parse_args()
 if args.use_ipex:
+    #Fix broken function in ipex 1.13.120+xpu
+    from modules.sd_hijack_utils import CondFunc
+    CondFunc('torch.nn.modules.GroupNorm.forward',
+        lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
+        lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
+    
+    #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
     if args.device_id is not None:
-        cpu = torch.device(f"xpu:{args.device_id}") #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
+        cpu = torch.device(f"xpu:{args.device_id}")
     else:
         cpu = torch.device("xpu")
 else:
