@@ -450,8 +450,11 @@ table.popup-table .link{
     opacity: 0.75;
 }
 
-#sysinfo_download a{
+#sysinfo_download a.sysinfo_big_link{
     font-size: 24pt;
+}
+
+#sysinfo_download a{
     text-decoration: underline;
 }
 

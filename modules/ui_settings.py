@@ -158,7 +158,7 @@ class UiSettings:
                     loadsave.create_ui()
 
                 with gr.TabItem("Sysinfo", id="sysinfo", elem_id="settings_tab_sysinfo"):
-                    gr.HTML('<a href="./internal/sysinfo-download" download>Download system info</a>', elem_id="sysinfo_download")
+                    gr.HTML('<a href="./internal/sysinfo-download" class="sysinfo_big_link" download>Download system info</a><br /><a href="./internal/sysinfo">(or open as text in a new page)</a>', elem_id="sysinfo_download")
 
                     with gr.Row():
                         with gr.Column(scale=1):
