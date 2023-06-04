@@ -622,13 +622,14 @@ onUiLoaded(async() => {
                 panSpeed = 3.5;
             }
 
-            elemData[elemId].panX =
-                elemData[elemId].panX + movementX * panSpeed;
-            elemData[elemId].panY =
-                elemData[elemId].panY + movementY * panSpeed;
+            elemData[elemId].panX += movementX * panSpeed;
+            elemData[elemId].panY += movementY * panSpeed;
 
-            targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${elemData[elemId].zoomLevel})`;
-            toggleOverlap("on");
+            // Delayed redraw of an element
+            requestAnimationFrame(() => {
+                targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${elemData[elemId].zoomLevel})`;
+                toggleOverlap("on");
+            });
         }
 
         function handleMoveByKey(e) {
