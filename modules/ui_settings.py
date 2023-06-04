@@ -1,6 +1,6 @@
 import gradio as gr
 
-from modules import ui_common, shared, script_callbacks, scripts, sd_models
+from modules import ui_common, shared, script_callbacks, scripts, sd_models, sysinfo
 from modules.call_queue import wrap_gradio_call
 from modules.shared import opts
 from modules.ui_components import FormRow
@@ -157,6 +157,17 @@ class UiSettings:
                 with gr.TabItem("Defaults", id="defaults", elem_id="settings_tab_defaults"):
                     loadsave.create_ui()
 
+                with gr.TabItem("Sysinfo", id="sysinfo", elem_id="settings_tab_sysinfo"):
+                    gr.HTML('<a href="./internal/sysinfo-download" class="sysinfo_big_link" download>Download system info</a><br /><a href="./internal/sysinfo">(or open as text in a new page)</a>', elem_id="sysinfo_download")
+
+                    with gr.Row():
+                        with gr.Column(scale=1):
+                            sysinfo_check_file = gr.File(label="Check system info for validity", type='binary')
+                        with gr.Column(scale=1):
+                            sysinfo_check_output = gr.HTML("", elem_id="sysinfo_validity")
+                        with gr.Column(scale=100):
+                            pass
+
                 with gr.TabItem("Actions", id="actions", elem_id="settings_tab_actions"):
                     request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications")
                     download_localization = gr.Button(value='Download localization template', elem_id="download_localization")
@@ -213,6 +224,21 @@ class UiSettings:
                 _js='restart_reload',
                 inputs=[],
                 outputs=[],
+            )
+
+            def check_file(x):
+                if x is None:
+                    return ''
+
+                if sysinfo.check(x.decode('utf8', errors='ignore')):
+                    return 'Valid'
+
+                return 'Invalid'
+
+            sysinfo_check_file.change(
+                fn=check_file,
+                inputs=[sysinfo_check_file],
+                outputs=[sysinfo_check_output],
             )
 
         self.interface = settings_interface
