@@ -97,24 +97,28 @@ class ExtraNetworksPage:
 {html.escape(subdir if subdir!="" else "all")}
 </button>
 """ for subdir in subdirs])
-        for item in self.list_items():
-            metadata = item.get("metadata")
-            if metadata:
-                self.metadata[item["name"]] = metadata
-            items_html += self.create_html_for_item(item, tabname)
-        if items_html == '':
-            dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
-            items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
-        self_name_id = self.name.replace(" ", "_")
-        res = f"""
-<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
-{subdirs_html}
-</div>
-<div id='{tabname}_{self_name_id}_cards' class='extra-network-{view}'>
-{items_html}
-</div>
-"""
-        return res
+        try:
+            for item in self.list_items():
+                metadata = item.get("metadata")
+                if metadata:
+                    self.metadata[item["name"]] = metadata
+                items_html += self.create_html_for_item(item, tabname)
+            if items_html == '':
+                dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
+                items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
+            self_name_id = self.name.replace(" ", "_")
+            res = f"""
+                <div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
+                    {subdirs_html}
+                </div>
+                <div id='{tabname}_{self_name_id}_cards' class='extra-network-{view}'>
+                    {items_html}
+                </div>
+                """
+            return res
+        except Exception as e:
+            shared.log.error(f'Extra networks page error: {e}')
+            return ''
 
     def list_items(self):
         raise NotImplementedError()
