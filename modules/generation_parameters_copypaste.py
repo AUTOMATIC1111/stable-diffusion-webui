@@ -265,6 +265,14 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         else:
             prompt += ("" if prompt == "" else "\n") + line
 
+    if shared.opts.infotext_styles != "Ignore":
+        found_styles, prompt, negative_prompt = shared.prompt_styles.extract_styles_from_prompt(prompt, negative_prompt)
+
+        if shared.opts.infotext_styles == "Apply":
+            res["Styles array"] = found_styles
+        elif shared.opts.infotext_styles == "Apply if any" and found_styles:
+            res["Styles array"] = found_styles
+
     res["Prompt"] = prompt
     res["Negative prompt"] = negative_prompt
 
