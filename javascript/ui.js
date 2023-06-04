@@ -191,11 +191,13 @@ function recalculate_prompts_img2img(){
 }
 
 opts = {}
-stored_opts = new Set()
-function parseOpts(json_string){
+opts_metadata = {changed_tab_items: {}, is_default: {}}
+function updateOpts(json_string){
     let settings_data = JSON.parse(json_string)
     opts = settings_data.values
-    stored_opts = new Set(settings_data.stored_values)
+    Object.keys(opts).forEach(function(key){
+        opts_metadata.is_default[key] = settings_data.stored_keys.indexOf(key) != -1
+    })
 }
 
 onUiUpdate(function(){
@@ -204,14 +206,14 @@ onUiUpdate(function(){
     if(json_elem == null) return;
     var textarea = json_elem.querySelector('textarea')
     var jsdata = textarea.value
-    parseOpts(jsdata)
+    updateOpts(jsdata)
     executeCallbacks(optionsChangedCallbacks);
     Object.defineProperty(textarea, 'value', {
         set: function(newValue) {
             var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
             var oldValue = valueProp.get.call(textarea);
             valueProp.set.call(textarea, newValue);
-            if (oldValue != newValue) parseOpts(textarea.value)
+            if (oldValue != newValue) updateOpts(textarea.value)
             executeCallbacks(optionsChangedCallbacks);
         },
         get: function() {
@@ -296,7 +298,6 @@ onUiLoaded(function(){
     })
 })
 
-dirty_opts = {}
 function markIfModified(setting_name, value) {
     let elem = gradioApp().getElementById("modification_indicator_"+setting_name)
     if(elem == null) return;
@@ -307,7 +308,7 @@ function markIfModified(setting_name, value) {
         elem.title = `Click to revert to previous value: ${previous_value_json}`
     }
 
-    let unsaved_value = !stored_opts.has(setting_name)
+    let unsaved_value = !opts_metadata.is_default[setting_name]
     if (unsaved_value) {
         elem.title = 'Unsaved value, apply settings to save.';
     }
@@ -315,24 +316,16 @@ function markIfModified(setting_name, value) {
     let is_dirty = unsaved_value || changed_value
     elem.disabled = !is_dirty
 
-    // Get parent tab element
     let tab_element = elem.closest('[id^="settings_"]')
     if (tab_element == null) return;
     let tab_name = tab_element.id
-    if (dirty_opts[tab_name] == undefined) {
-        dirty_opts[tab_name] = new Set()
-    }
-    is_dirty ? dirty_opts[tab_name].add(setting_name) : dirty_opts[tab_name].delete(setting_name)
-    let is_tab_dirty = dirty_opts[tab_name].size > 0
+    let dirty_tab_items = (opts_metadata.changed_tab_items[tab_name] ||= new Set())
+    changed_value ? dirty_tab_items.add(setting_name) : dirty_tab_items.delete(setting_name)
 
     // Set the indicator on the tab nav element
-    let tab_nav_indicator = gradioApp().querySelector('#settings > .tab-nav > #modification_indicator_'+tab_name)
-    tab_nav_indicator.disabled = !is_tab_dirty
-    if (dirty_opts[tab_name].size > 1) {
-        tab_nav_indicator.title = `Click to reset ${dirty_opts[tab_name].size} unapplied changes in this tab.`
-    } else if (dirty_opts[tab_name].size == 1) {
-        tab_nav_indicator.title = `Click to reset 1 unapplied change in this tab.`
-    }
+    let tab_nav_indicator = gradioApp().getElementById('modification_indicator_'+tab_name)
+    tab_nav_indicator.disabled = dirty_tab_items.size == 0
+    tab_nav_indicator.title = `Click to reset ${dirty_tab_items.size} unapplied change${dirty_tab_items.size > 1 ? 's': ''} in this tab.`
 }
 
 function onSettingComponentChanged(setting_name, value) {
@@ -341,7 +334,7 @@ function onSettingComponentChanged(setting_name, value) {
 }
 
 function onSettingsModificationIndicatorClicked(tab_name) {
-    dirty_opts[tab_name].forEach(function(setting_name){
+    opts_metadata.changed_tab_items[tab_name].forEach(function(setting_name){
         // Click each setting's modification indicator
         gradioApp().getElementById("modification_indicator_"+setting_name).click()
     })
