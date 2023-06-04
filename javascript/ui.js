@@ -191,20 +191,27 @@ function recalculate_prompts_img2img(){
 }
 
 opts = {}
+stored_opts = {}
+function parseOpts(json_string){
+    let settings_data = JSON.parse(json_string)
+    opts = settings_data.values
+    stored_opts = new Set(settings_data.stored_values)
+}
+
 onUiUpdate(function(){
     if(Object.keys(opts).length != 0) return;
     json_elem = gradioApp().getElementById('settings_json')
     if(json_elem == null) return;
     var textarea = json_elem.querySelector('textarea')
     var jsdata = textarea.value
-    opts = JSON.parse(jsdata)
+    parseOpts(jsdata)
     executeCallbacks(optionsChangedCallbacks);
     Object.defineProperty(textarea, 'value', {
         set: function(newValue) {
             var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
             var oldValue = valueProp.get.call(textarea);
             valueProp.set.call(textarea, newValue);
-            if (oldValue != newValue) opts = JSON.parse(textarea.value)
+            if (oldValue != newValue) parseOpts(textarea.value)
             executeCallbacks(optionsChangedCallbacks);
         },
         get: function() {
@@ -304,11 +311,18 @@ function markIfModified(setting_name, value) {
     if(elem == null) return;
     // Use JSON.stringify to compare nested objects (e.g. arrays for checkbox-groups)
     let previous_value_json = JSON.stringify(opts[setting_name])
-    let is_new_value = JSON.stringify(value) != previous_value_json
-    elem.disabled = !is_new_value
-    if (is_new_value) {
+    let changed_value = JSON.stringify(value) != previous_value_json
+    if (changed_value) {
         elem.title = `Click to revert to previous value: ${previous_value_json}`
     }
+
+    let unsaved_value = !stored_opts.has(setting_name)
+    if (unsaved_value) {
+        elem.title = 'Unsaved value, apply settings to save.';
+    }
+    // TODO properly propagate unsaved value message to tab indicator / color marker differntly?
+    let is_dirty = unsaved_value || changed_value
+    elem.disabled = !is_dirty
 
     // Get parent tab element
     let tab_element = elem.closest('[id^="settings_"]')
@@ -317,11 +331,7 @@ function markIfModified(setting_name, value) {
     if (dirty_opts[tab_name] == undefined) {
         dirty_opts[tab_name] = new Set()
     }
-    if (is_new_value) {
-        dirty_opts[tab_name].add(setting_name)
-    } else {
-        dirty_opts[tab_name].delete(setting_name)
-    }
+    is_dirty ? dirty_opts[tab_name].add(setting_name) : dirty_opts[tab_name].delete(setting_name)
     let is_tab_dirty = dirty_opts[tab_name].size > 0
 
     // Set the indicator on the tab nav element

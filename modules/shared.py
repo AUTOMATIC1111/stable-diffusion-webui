@@ -544,7 +544,7 @@ class Options:
 
     def dumpjson(self):
         d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
-        return json.dumps(d)
+        return json.dumps({"values": d, "stored_values": list(self.data.keys())})
 
     def add_option(self, key, info):
         self.data_labels[key] = info
