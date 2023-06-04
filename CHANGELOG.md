@@ -3,6 +3,9 @@
 ## Update for 06/03/2023
 
 - new vae decode method to help with larger batch sizes, thanks @bigdog
+- profiling of scripts/extensions callbacks
+- additional exception handling so bad exception does not crash main app
+- additional background removal models
 
 ## Update for 06/02/2023
 

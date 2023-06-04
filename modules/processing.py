@@ -924,34 +924,26 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             decoded_samples = 2. * decoded_samples - 1.
             if shared.opts.sd_vae_sliced_encode and len(decoded_samples) > 1:
                 samples = torch.stack([
-                    self.sd_model.get_first_stage_encoding(
-                        self.sd_model.encode_first_stage(torch.unsqueeze(decoded_sample, 0))
-                    )[0]
+                    self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(torch.unsqueeze(decoded_sample, 0)))[0]
                     for decoded_sample
                     in decoded_samples
                 ])
             else:
-                samples = self.sd_model.get_first_stage_encoding(
-                        self.sd_model.encode_first_stage(decoded_samples)
-                    )
+                samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
             image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
         shared.state.nextjob()
         img2img_sampler_name = self.sampler_name
         force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
         if force_latent_upscaler != 'None' and force_latent_upscaler != 'PLMS':
             img2img_sampler_name = force_latent_upscaler
-        elif shared.opts.fallback_sampler != 'PLMS':
-            img2img_sampler_name =  shared.opts.fallback_sampler
-        else:
-            img2img_sampler_name = 'UniPC'
+        if img2img_sampler_name == 'PLMS':
+            img2img_sampler_name =  shared.opts.fallback_sampler if shared.opts.fallback_sampler != 'PLMS' else 'UniPC'
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
         noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
-        # GC now before running the next img2img to prevent running out of memory
         x = None
-        devices.torch_gc()
+        devices.torch_gc() # GC now before running the next img2img to prevent running out of memory
         # apply token merging optimizations from tomesd for high-res pass
-        # check if hr_only so we are not redundantly patching
         if (cmd_opts.token_merging or opts.token_merging) and (opts.token_merging_hr_only or opts.token_merging_ratio_hr != opts.token_merging_ratio):
             # case where user wants to use separate merge ratios
             if not opts.token_merging_hr_only:

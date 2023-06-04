@@ -9,6 +9,7 @@ from threading import Thread
 from modules import timer, errors
 
 startup_timer = timer.Timer()
+local_url = None
 
 import torch # pylint: disable=C0411
 try:
@@ -221,6 +222,7 @@ def start_ui():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
     import installer
+    global local_url
     app, local_url, share_url = shared.demo.launch(
         share=cmd_opts.share,
         server_name=server_name,
@@ -230,7 +232,7 @@ def start_ui():
         ssl_verify=not cmd_opts.tls_selfsign,
         debug=False,
         auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
-        inbrowser=cmd_opts.autolaunch,
+        # inbrowser=cmd_opts.autolaunch,
         prevent_thread_lock=True,
         max_threads=64,
         show_api=True,
@@ -260,7 +262,6 @@ def start_ui():
         _mounted_app = gradio.mount_gradio_app(app, shared.demo, path=f"/{cmd_opts.subpath}")
         shared.log.info(f'Redirector mounted: /{cmd_opts.subpath}')
 
-    cmd_opts.autolaunch = False
     startup_timer.record("launch")
 
     modules.progress.setup_progress_api(app)
@@ -270,12 +271,22 @@ def start_ui():
     modules.script_callbacks.app_started_callback(shared.demo, app)
     startup_timer.record("scripts app_started_callback")
 
+    time_setup = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_setup.items() if v > 0.001]
+    shared.log.debug(f'Scripts setup: {time_setup}s')
+    time_component = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_component.items() if v > 0.001]
+    shared.log.debug(f'Scripts components: {time_component}s')
+
 
 def webui():
     start_common()
     start_ui()
     load_model()
     log.info(f"Startup time: {startup_timer.summary()}")
+    if cmd_opts.autolaunch and local_url is not None:
+        cmd_opts.autolaunch = False
+        shared.log.info('Launching browser')
+        import webbrowser
+        webbrowser.open(local_url, new=2, autoraise=True)
     return shared.demo.server
 
 

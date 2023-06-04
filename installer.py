@@ -50,6 +50,7 @@ args = Dot({
 })
 git_commit = "unknown"
 
+
 # setup console and file logging
 def setup_logging(clean=False):
     try:
@@ -714,7 +715,10 @@ def extensions_preload(force = False):
             from modules.paths_internal import extensions_builtin_dir, extensions_dir
             extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
             for ext_dir in extension_folders:
+                t0 = time.time()
                 preload_extensions(ext_dir, parser)
+                t1 = time.time()
+                log.debug(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
         except:
             log.error('Error running extension preloading')
     if args.profile:

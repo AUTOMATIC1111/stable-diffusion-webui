@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import time
 from collections import namedtuple
 import gradio as gr
 from modules import paths, script_callbacks, extensions, script_loading, scripts_postprocessing, errors
@@ -8,6 +9,8 @@ from installer import log
 
 
 AlwaysVisible = object()
+time_component = {}
+time_setup = {}
 
 
 class PostprocessImageArgs:
@@ -313,22 +316,28 @@ class ScriptRunner:
             inputs_alwayson += [script.alwayson for _ in controls]
             script.args_to = len(inputs)
 
+        s = []
         with gr.Group(elem_id='scripts_alwayson_img2img' if self.is_img2img else 'scripts_alwayson_txt2img'):
             for script in self.alwayson_scripts:
+                t0 = time.time()
                 elem_id = f'script_{"txt2img" if script.is_txt2img else "img2img"}_{script.title().lower().replace(" ", "_")}'
                 with gr.Group(elem_id=elem_id) as group:
                     create_script_ui(script, inputs, inputs_alwayson)
                 script.group = group
+                time_setup[script.title()] = time_setup.get(script.title(), 0) + (time.time()-t0)
 
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
         inputs[0] = dropdown
+        s = []
         for script in self.selectable_scripts:
             with gr.Group(visible=False) as group:
+                t0 = time.time()
                 create_script_ui(script, inputs, inputs_alwayson)
+                time_setup[script.title()] = time_setup.get(script.title(), 0) + (time.time()-t0)
             script.group = group
 
         def select_script(script_index):
-            selected_script = self.selectable_scripts[script_index - 1] if script_index>0 else None
+            selected_script = self.selectable_scripts[script_index - 1] if script_index > 0 else None
             return [gr.update(visible=selected_script == s) for s in self.selectable_scripts]
 
         def init_field(title):
@@ -363,82 +372,105 @@ class ScriptRunner:
         if script is None:
             return None
         parsed = p.per_script_args.get(script.title(), args[script.args_from:script.args_to])
-        log.debug(f'Script run: {script.title()}')
+        t0 = time.time()
         processed = script.run(p, *parsed)
+        log.debug(f'Script run: {script.title()}:{round(time.time()-t0, 2)}s')
         return processed
 
     def process(self, p, **kwargs):
-        log.debug(f'Script process: {[s.title() for s in self.alwayson_scripts]}')
+        s = []
         for script in self.alwayson_scripts:
             try:
-                # log.debug(f'Script process start: {script.title()}')
+                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.process(p, *args, **kwargs)
-                # log.debug(f'Script process end  : {script.title()}')
+                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script process: {script.filename}')
+        log.debug(f'Script process: {s}')
 
     def before_process_batch(self, p, **kwargs):
-        log.debug(f'Script before-process-batch: {[s.title() for s in self.alwayson_scripts]}')
+        s = []
         for script in self.alwayson_scripts:
             try:
+                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.before_process_batch(p, *args, **kwargs)
+                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script before process batch: {script.filename}')
+        log.debug(f'Script before-process-batch: {s}')
 
     def process_batch(self, p, **kwargs):
-        log.debug(f'Script process-batch: {[s.title() for s in self.alwayson_scripts]}')
+        s = []
         for script in self.alwayson_scripts:
             try:
+                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.process_batch(p, *args, **kwargs)
+                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script process batch: {script.filename}')
+        log.debug(f'Script process-batch: {s}')
 
     def postprocess(self, p, processed):
-        log.debug(f'Script postprocess: {[s.title() for s in self.alwayson_scripts]}')
+        s = []
         for script in self.alwayson_scripts:
             try:
+                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.postprocess(p, processed, *args)
+                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script postprocess: {script.filename}')
+        log.debug(f'Script postprocess: {s}')
 
     def postprocess_batch(self, p, images, **kwargs):
-        log.debug(f'Script postprocess-batch: {[s.title() for s in self.alwayson_scripts]}')
+        s = []
         for script in self.alwayson_scripts:
             try:
+                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.postprocess_batch(p, *args, images=images, **kwargs)
+                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script before postprocess batch: {script.filename}')
+        log.debug(f'Script postprocess-batch: {s}')
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
-        log.debug(f'Script postprocess-image: {[s.title() for s in self.alwayson_scripts]}')
+        s = []
         for script in self.alwayson_scripts:
             try:
+                t0 = time.time()
                 args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
                 script.postprocess_image(p, pp, *args)
+                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
             except Exception as e:
                 errors.display(e, f'Running script postprocess image: {script.filename}')
+        log.debug(f'Script postprocess-image: {s}')
 
     def before_component(self, component, **kwargs):
         for script in self.scripts:
             try:
+                t0 = time.time()
                 script.before_component(component, **kwargs)
+                time_component[script.title()] = time_component.get(script.title(), 0) + (time.time()-t0)
             except Exception as e:
                 errors.display(e, f'Running script before component: {script.filename}')
 
     def after_component(self, component, **kwargs):
         for script in self.scripts:
             try:
+                t0 = time.time()
                 script.after_component(component, **kwargs)
+                time_component[script.title()] = time_component.get(script.title(), 0) + (time.time()-t0)
             except Exception as e:
                 errors.display(e, f'Running script after component: {script.filename}')
 
     def reload_sources(self, cache):
+        s = []
         for si, script in list(enumerate(self.scripts)):
+            t0 = time.time()
             args_from = script.args_from
             args_to = script.args_to
             filename = script.filename
@@ -452,6 +484,9 @@ class ScriptRunner:
                     self.scripts[si].filename = filename
                     self.scripts[si].args_from = args_from
                     self.scripts[si].args_to = args_to
+            s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
+        log.debug(f'Script reload-sources: {s}')
+
 
 scripts_txt2img = ScriptRunner()
 scripts_img2img = ScriptRunner()
