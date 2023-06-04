@@ -191,7 +191,7 @@ function recalculate_prompts_img2img(){
 }
 
 opts = {}
-stored_opts = {}
+stored_opts = new Set()
 function parseOpts(json_string){
     let settings_data = JSON.parse(json_string)
     opts = settings_data.values
