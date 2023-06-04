@@ -265,15 +265,14 @@ onUiLoaded(function(){
     // HACK to keep gradio from closing when showing all pages
     const observer = new MutationObserver(function(mutations) {
         const show_all_pages_dummy = gradioApp().getElementById('settings_show_all_pages')
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                if (show_all_pages_dummy.style.display != "none") {
-                    gradioApp().querySelectorAll('#settings [id^="settings_"]').forEach(function(elem){
-                        elem.style.display = "block";
-                    })
-                }
-            }
-        })
+        if (show_all_pages_dummy.style.display == "none") 
+            return;
+        function mutation_on_style(mut) {
+            return mut.type === 'attributes' && mut.attributeName === 'style'
+        }
+        if (mutations.some(mutation_on_style)) {
+            tab_elements.forEach((elem) => elem.style.display = "block")
+        }
     })
 
     // Add a wrapper for the tab content (everything but the tab nav)
