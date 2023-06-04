@@ -6,14 +6,18 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: [3.8, 3.9, 3.10]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: Set up Python 3.10
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10.6
+          python-version: ${{ matrix.python-version }}
           cache: pip
           cache-dependency-path: |
             **/requirements*txt
@@ -61,10 +65,4 @@ jobs:
         if: always()
         with:
           name: output
-          path: output.txt
-      - name: Upload coverage HTML
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: htmlcov
           path: htmlcov
