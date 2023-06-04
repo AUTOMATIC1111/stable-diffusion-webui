@@ -280,6 +280,18 @@ div#extras_scale_to_tab div.form{
     visibility: hidden;
 }
 
+#settings .modification-indicator.unsaved {
+    background: var(--color-accent-soft);
+}
+
+#settings .modification-indicator.changed {
+    background: var(--color-accent);
+}
+
+#settings .modification-indicator.changed.unsaved {
+    background-image: linear-gradient(var(--color-accent) 25%, var(--color-accent-soft) 75%);
+}
+
 #settings_result{
     height: 1.4em;
     margin: 0 1.2em;

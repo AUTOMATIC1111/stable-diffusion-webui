@@ -191,12 +191,16 @@ function recalculate_prompts_img2img(){
 }
 
 opts = {}
-opts_metadata = {changed_tab_items: {}, is_default: {}}
+opts_metadata = {}
+opts_tabs = {}
 function updateOpts(json_string){
     let settings_data = JSON.parse(json_string)
     opts = settings_data.values
-    Object.keys(opts).forEach(function(key){
-        opts_metadata.is_default[key] = settings_data.stored_keys.indexOf(key) != -1
+    opts_metadata = settings_data.metadata
+    Object.entries(opts_metadata).forEach(([opt, meta]) => {
+        opts_tabs[meta.tab_name] ||= {}
+        let unsaved = (opts_tabs[meta.tab_name].unsaved_keys ||= new Set())
+        if (!meta.is_stored) unsaved.add(opt)
     })
 }
 
@@ -283,11 +287,12 @@ onUiLoaded(function(){
 
     tab_elements.forEach(function(elem, index){
         // Add a modification indicator to the toplevel tab button
+        let tab_name = elem.id.replace("settings_", "")
         let new_indicator = document.createElement('button')
-        new_indicator.id = "modification_indicator_"+elem.id
+        new_indicator.id = "modification_indicator_"+tab_name
         new_indicator.className = "modification-indicator"
         new_indicator.disabled = true
-        new_indicator.onclick = () => onSettingsModificationIndicatorClicked(elem.id)
+        new_indicator.onclick = () => onSettingsModificationIndicatorClicked(tab_name)
         tab_nav_element.insertBefore(new_indicator, tab_nav_buttons[index])
 
         // Add the tab content to the wrapper
@@ -308,24 +313,29 @@ function markIfModified(setting_name, value) {
         elem.title = `Click to revert to previous value: ${previous_value_json}`
     }
 
-    let unsaved_value = !opts_metadata.is_default[setting_name]
-    if (unsaved_value) {
+    is_unsaved = !opts_metadata[setting_name].is_stored
+    if (is_unsaved) {
         elem.title = 'Unsaved value, apply settings to save.';
     }
-    // TODO properly propagate unsaved value message to tab indicator / color marker differntly?
-    let is_dirty = unsaved_value || changed_value
-    elem.disabled = !is_dirty
+    elem.disabled = !(is_unsaved || changed_value)
+    elem.classList.toggle('changed', changed_value)
+    elem.classList.toggle('unsaved', is_unsaved)
 
-    let tab_element = elem.closest('[id^="settings_"]')
-    if (tab_element == null) return;
-    let tab_name = tab_element.id
-    let dirty_tab_items = (opts_metadata.changed_tab_items[tab_name] ||= new Set())
-    changed_value ? dirty_tab_items.add(setting_name) : dirty_tab_items.delete(setting_name)
+    let tab_name = opts_metadata[setting_name].tab_name
+    let changed_items = (opts_tabs[tab_name].changed ||= new Set())
+    changed_value ? changed_items.add(setting_name) : changed_items.delete(setting_name)
+    let unsaved = opts_tabs[tab_name].unsaved_keys
 
     // Set the indicator on the tab nav element
     let tab_nav_indicator = gradioApp().getElementById('modification_indicator_'+tab_name)
-    tab_nav_indicator.disabled = dirty_tab_items.size == 0
-    tab_nav_indicator.title = `Click to reset ${dirty_tab_items.size} unapplied change${dirty_tab_items.size > 1 ? 's': ''} in this tab.`
+    tab_nav_indicator.disabled = (changed_items.size == 0) && (unsaved.size == 0)
+    tab_nav_indicator.title = '';
+    tab_nav_indicator.classList.toggle('changed', changed_items.size > 0)
+    tab_nav_indicator.classList.toggle('unsaved', unsaved.size > 0)
+    if (changed_items.size > 0)
+        tab_nav_indicator.title += `Click to reset ${changed_items.size} unapplied change${changed_items.size > 1 ? 's': ''} in this tab.\n`
+    if (unsaved.size > 0)
+        tab_nav_indicator.title += `Apply settings to save ${unsaved.size} unsaved value${unsaved.size > 1 ? 's':''}.`;
 }
 
 function onSettingComponentChanged(setting_name, value) {
@@ -334,7 +344,7 @@ function onSettingComponentChanged(setting_name, value) {
 }
 
 function onSettingsModificationIndicatorClicked(tab_name) {
-    opts_metadata.changed_tab_items[tab_name].forEach(function(setting_name){
+    opts_tabs[tab_name].changed.forEach(function(setting_name){
         // Click each setting's modification indicator
         gradioApp().getElementById("modification_indicator_"+setting_name).click()
     })
