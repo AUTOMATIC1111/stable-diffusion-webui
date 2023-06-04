@@ -1,5 +1,3 @@
-// Main
-
 // Helper functions
 // Get active tab
 function getActiveTab(elements, all = false) {
@@ -15,21 +13,23 @@ function getActiveTab(elements, all = false) {
 }
 
 // Get tab ID
-function getTabId(elements,elementIDs) {
+function getTabId(elements, elementIDs) {
     const activeTab = getActiveTab(elements);
     const tabIdLookup = {
-      Sketch: elementIDs.sketch,
-      "Inpaint sketch": elementIDs.inpaintSketch,
-      Inpaint: elementIDs.inpaint,
+        "Sketch": elementIDs.sketch,
+        "Inpaint sketch": elementIDs.inpaintSketch,
+        "Inpaint": elementIDs.inpaint
     };
     return tabIdLookup[activeTab.innerText];
-  }
+}
 
-  // Get Active main tab to prevent "Undo" on text2img from being disabled
-  function getActiveMainTab() {
-    const selectedTab = document.querySelector("#tabs .tab-nav button.selected");
+// Get Active main tab to prevent "Undo" on text2img from being disabled
+function getActiveMainTab() {
+    const selectedTab = gradioApp().querySelector(
+        "#tabs .tab-nav button.selected"
+    );
     return selectedTab;
-  }
+}
 
 // Wait until opts loaded
 async function waitForOpts() {
@@ -80,43 +80,45 @@ function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
     return result;
 }
 
-    /**
-     * The restoreImgRedMask function displays a red mask around an image to indicate the aspect ratio.
-     * If the image display property is set to 'none', the mask breaks. To fix this, the function
-     * temporarily sets the display property to 'block' and then hides the mask again after 300 milliseconds
-     * to avoid breaking the canvas. Additionally, the function adjusts the mask to work correctly on
-     * very long images.
-    */
+/**
+ * The restoreImgRedMask function displays a red mask around an image to indicate the aspect ratio.
+ * If the image display property is set to 'none', the mask breaks. To fix this, the function
+ * temporarily sets the display property to 'block' and then hides the mask again after 300 milliseconds
+ * to avoid breaking the canvas. Additionally, the function adjusts the mask to work correctly on
+ * very long images.
+ */
 
-    function restoreImgRedMask(elements,elementIDs) {
-        const mainTabId = getTabId(elements,elementIDs);
-  
-        if (!mainTabId) return;
-  
-        const mainTab = document.querySelector(mainTabId);
-        const img = mainTab.querySelector("img");
-        const imageARPreview = document.querySelector("#imageARPreview");
-  
-        if (!img || !imageARPreview) return;
-  
-        imageARPreview.style.transform = "";
-        if (parseFloat(mainTab.style.width) > 865) {
-          const transformValues = mainTab.style.transform.match(/[-+]?[0-9]*\.?[0-9]+/g).map(Number);
-          const [posX, posY , zoom] = transformValues;
-  
-          imageARPreview.style.transformOrigin = "0 0"
-          imageARPreview.style.transform = `scale(${zoom})`;
-        }
-  
-        if (img.style.display !== "none") return;
-  
-        img.style.display = "block";
-  
-        setTimeout(() => {
-          img.style.display = "none";
-        }, 300);
-      }
-  
+function restoreImgRedMask(elements, elementIDs) {
+    const mainTabId = getTabId(elements, elementIDs);
+
+    if (!mainTabId) return;
+
+    const mainTab = gradioApp().querySelector(mainTabId);
+    const img = mainTab.querySelector("img");
+    const imageARPreview = gradioApp().querySelector("#imageARPreview");
+
+    if (!img || !imageARPreview) return;
+
+    imageARPreview.style.transform = "";
+    if (parseFloat(mainTab.style.width) > 865) {
+        const transformValues = mainTab.style.transform
+            .match(/[-+]?[0-9]*\.?[0-9]+/g)
+            .map(Number);
+        const [posX, posY, zoom] = transformValues;
+
+        imageARPreview.style.transformOrigin = "0 0";
+        imageARPreview.style.transform = `scale(${zoom})`;
+    }
+
+    if (img.style.display !== "none") return;
+
+    img.style.display = "block";
+
+    setTimeout(() => {
+        img.style.display = "none";
+    }, 300);
+}
+
 // Main
 onUiLoaded(async() => {
     const hotkeysConfigOpts = await waitForOpts();
@@ -138,18 +140,19 @@ onUiLoaded(async() => {
 
     let isMoving = false;
     let mouseX, mouseY;
+    let activeElement;
 
     const elementIDs = {
         sketch: "#img2img_sketch",
         inpaint: "#img2maskimg",
         inpaintSketch: "#inpaint_sketch",
         img2imgTabs: "#mode_img2img .tab-nav",
-        rangeGroup: "#img2img_column_size",
+        rangeGroup: "#img2img_column_size"
     };
 
     async function getElements() {
         const elements = await Promise.all(
-            Object.values(elementIDs).map(id => document.querySelector(id))
+            Object.values(elementIDs).map(id => gradioApp().querySelector(id))
         );
         return Object.fromEntries(
             Object.keys(elementIDs).map((key, index) => [key, elements[index]])
@@ -157,17 +160,20 @@ onUiLoaded(async() => {
     }
 
     const elements = await getElements();
+    const elemData = {};
 
-    // Apply functionality to the range inputs
-    const rangeInputs = elements.rangeGroup
-    ? elements.rangeGroup.querySelectorAll("input")
-    : [document.querySelector("#img2img_width input[type='range']"), document.querySelector("#img2img_height input[type='range']")];
+    // Apply functionality to the range inputs. Restore redmask and correct for long images.
+    const rangeInputs = elements.rangeGroup ? elements.rangeGroup.querySelectorAll("input") :
+        [
+            gradioApp().querySelector("#img2img_width input[type='range']"),
+            gradioApp().querySelector("#img2img_height input[type='range']")
+        ];
 
-    rangeInputs.forEach((input) => {
-      if (input) {
-        input.addEventListener("input",() => restoreImgRedMask(elements,elementIDs));
-      }
-      });
+    rangeInputs.forEach(input => {
+        if (input) {
+            input.addEventListener("input", () => restoreImgRedMask(elements, elementIDs));
+        }
+    });
 
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
@@ -178,7 +184,12 @@ onUiLoaded(async() => {
         }
 
         targetElement.style.transformOrigin = "0 0";
-        let [zoomLevel, panX, panY] = [1, 0, 0];
+
+        elemData[elemId] = {
+            zoom: 1,
+            panX: 0,
+            panY: 0
+        };
         let fullScreenMode = false;
 
         // Create tooltip
@@ -197,7 +208,7 @@ onUiLoaded(async() => {
             const tooltipContent = document.createElement("div");
             tooltipContent.className = "tooltip-content";
 
-            // Add info about hotkets
+            // Add info about hotkeys
             const zoomKey = hotkeysConfig.canvas_swap_controls ? "Ctrl" : "Shift";
             const adjustKey = hotkeysConfig.canvas_swap_controls ? "Shift" : "Ctrl";
 
@@ -205,21 +216,15 @@ onUiLoaded(async() => {
                 {key: `${zoomKey} + wheel`, action: "Zoom canvas"},
                 {key: `${adjustKey} + wheel`, action: "Adjust brush size"},
                 {
-                    key: hotkeysConfig.canvas_hotkey_reset.charAt(
-                        hotkeysConfig.canvas_hotkey_reset.length - 1
-                    ),
+                    key: hotkeysConfig.canvas_hotkey_reset.charAt(hotkeysConfig.canvas_hotkey_reset.length - 1),
                     action: "Reset zoom"
                 },
                 {
-                    key: hotkeysConfig.canvas_hotkey_fullscreen.charAt(
-                        hotkeysConfig.canvas_hotkey_fullscreen.length - 1
-                    ),
+                    key: hotkeysConfig.canvas_hotkey_fullscreen.charAt(hotkeysConfig.canvas_hotkey_fullscreen.length - 1),
                     action: "Fullscreen mode"
                 },
                 {
-                    key: hotkeysConfig.canvas_hotkey_move.charAt(
-                        hotkeysConfig.canvas_hotkey_move.length - 1
-                    ),
+                    key: hotkeysConfig.canvas_hotkey_move.charAt(hotkeysConfig.canvas_hotkey_move.length - 1),
                     action: "Move canvas"
                 }
             ];
@@ -259,12 +264,14 @@ onUiLoaded(async() => {
 
         // Reset the zoom level and pan position of the target element to their initial values
         function resetZoom() {
-            zoomLevel = 1;
-            panX = 0;
-            panY = 0;
+            elemData[elemId] = {
+                zoomLevel: 1,
+                panX: 0,
+                panY: 0
+            };
 
             fixCanvas();
-            targetElement.style.transform = `scale(${zoomLevel}) translate(${panX}px, ${panY}px)`;
+            targetElement.style.transform = `scale(${elemData[elemId].zoomLevel}) translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px)`;
 
             const canvas = gradioApp().querySelector(
                 `${elemId} canvas[key="interface"]`
@@ -342,11 +349,14 @@ onUiLoaded(async() => {
         // Update the zoom level and pan position of the target element based on the values of the zoomLevel, panX and panY variables
         function updateZoom(newZoomLevel, mouseX, mouseY) {
             newZoomLevel = Math.max(0.5, Math.min(newZoomLevel, 15));
-            panX += mouseX - (mouseX * newZoomLevel) / zoomLevel;
-            panY += mouseY - (mouseY * newZoomLevel) / zoomLevel;
+
+            elemData[elemId].panX +=
+                mouseX - (mouseX * newZoomLevel) / elemData[elemId].zoomLevel;
+            elemData[elemId].panY +=
+                mouseY - (mouseY * newZoomLevel) / elemData[elemId].zoomLevel;
 
             targetElement.style.transformOrigin = "0 0";
-            targetElement.style.transform = `translate(${panX}px, ${panY}px) scale(${newZoomLevel})`;
+            targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${newZoomLevel})`;
 
             toggleOverlap("on");
             return newZoomLevel;
@@ -362,9 +372,9 @@ onUiLoaded(async() => {
 
                 let zoomPosX, zoomPosY;
                 let delta = 0.2;
-                if (zoomLevel > 7) {
+                if (elemData[elemId].zoomLevel > 7) {
                     delta = 0.9;
-                } else if (zoomLevel > 2) {
+                } else if (elemData[elemId].zoomLevel > 2) {
                     delta = 0.6;
                 }
 
@@ -372,8 +382,9 @@ onUiLoaded(async() => {
                 zoomPosY = e.clientY;
 
                 fullScreenMode = false;
-                zoomLevel = updateZoom(
-                    zoomLevel + (operation === "+" ? delta : -delta),
+                elemData[elemId].zoomLevel = updateZoom(
+                    elemData[elemId].zoomLevel +
+                        (operation === "+" ? delta : -delta),
                     zoomPosX - targetElement.getBoundingClientRect().left,
                     zoomPosY - targetElement.getBoundingClientRect().top
                 );
@@ -424,9 +435,9 @@ onUiLoaded(async() => {
             targetElement.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
 
             // Update global variables
-            zoomLevel = scale;
-            panX = offsetX;
-            panY = offsetY;
+            elemData[elemId].zoomLevel = scale;
+            elemData[elemId].panX = offsetX;
+            elemData[elemId].panY = offsetY;
 
             fullScreenMode = false;
             toggleOverlap("off");
@@ -500,9 +511,9 @@ onUiLoaded(async() => {
             targetElement.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
 
             // Update global variables
-            zoomLevel = scale;
-            panX = offsetX;
-            panY = offsetY;
+            elemData[elemId].zoomLevel = scale;
+            elemData[elemId].panX = offsetX;
+            elemData[elemId].panY = offsetY;
 
             fullScreenMode = true;
             toggleOverlap("on");
@@ -538,6 +549,8 @@ onUiLoaded(async() => {
             if (!isKeyDownHandlerAttached) {
                 document.addEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = true;
+
+                activeElement = elemId;
             }
         }
 
@@ -545,6 +558,8 @@ onUiLoaded(async() => {
             if (isKeyDownHandlerAttached) {
                 document.removeEventListener("keydown", handleKeyDown);
                 isKeyDownHandlerAttached = false;
+
+                activeElement = null;
             }
         }
 
@@ -601,21 +616,23 @@ onUiLoaded(async() => {
 
         // Detect zoom level and update the pan speed.
         function updatePanPosition(movementX, movementY) {
-            let panSpeed = 1.5;
+            let panSpeed = 2;
 
-            if (zoomLevel > 8) {
-                panSpeed = 2.5;
+            if (elemData[elemId].zoomLevel > 8) {
+                panSpeed = 3.5;
             }
 
-            panX = panX + movementX * panSpeed;
-            panY = panY + movementY * panSpeed;
+            elemData[elemId].panX =
+                elemData[elemId].panX + movementX * panSpeed;
+            elemData[elemId].panY =
+                elemData[elemId].panY + movementY * panSpeed;
 
-            targetElement.style.transform = `translate(${panX}px, ${panY}px) scale(${zoomLevel})`;
+            targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${elemData[elemId].zoomLevel})`;
             toggleOverlap("on");
         }
 
         function handleMoveByKey(e) {
-            if (isMoving) {
+            if (isMoving && elemId === activeElement) {
                 updatePanPosition(e.movementX, e.movementY);
                 targetElement.style.pointerEvents = "none";
             } else {
@@ -634,7 +651,6 @@ onUiLoaded(async() => {
     applyZoomAndPan(elementIDs.sketch);
     applyZoomAndPan(elementIDs.inpaint);
     applyZoomAndPan(elementIDs.inpaintSketch);
-
 
     // Make the function global so that other extensions can take advantage of this solution
     window.applyZoomAndPan = applyZoomAndPan;
