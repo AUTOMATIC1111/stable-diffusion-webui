@@ -983,4 +983,4 @@ It generates an entire prompt from scratch. It is random, but controlled. You si
 https://github.com/Iyashinouta/sd-model-downloader
 
 SD-Webui extension to Download Model from CivitAI and HuggingFace, Recomended for Cloud Users (a.k.a Google Colab, etc.)
-
+![Model Downloader](https://github.com/Iyashinouta/sd-model-downloader/raw/84cfcb9d7b79ff031db9fcb9b2b4805c9293611b/images/instructions.png)
