@@ -402,7 +402,7 @@ def run_extension_installer(folder):
     if not os.path.isfile(path_installer):
         return
     try:
-        log.debug(f"Running extension installer: {folder} / {path_installer}")
+        log.debug(f"Running extension installer: {path_installer}")
         env = os.environ.copy()
         env['PYTHONPATH'] = os.path.abspath(".")
         result = subprocess.run(f'"{sys.executable}" "{path_installer}"', shell=True, env=env, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder)

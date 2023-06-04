@@ -87,23 +87,27 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
   const prevProgress = null;
   const parentGallery = galleryEl ? galleryEl.parentNode : null;
   let livePreview;
-  const img = new Image();
-  if (parentGallery) {
-    livePreview = document.createElement('div');
-    livePreview.className = 'livePreview';
-    parentGallery.insertBefore(livePreview, galleryEl);
-    const rect = galleryEl.getBoundingClientRect();
-    if (rect.width) {
-      livePreview.style.width = `${rect.width}px`;
-      livePreview.style.height = `${rect.height}px`;
+  let img;
+
+  const init = () => {
+    img = new Image();
+    if (parentGallery) {
+      livePreview = document.createElement('div');
+      livePreview.className = 'livePreview';
+      parentGallery.insertBefore(livePreview, galleryEl);
+      const rect = galleryEl.getBoundingClientRect();
+      if (rect.width) {
+        livePreview.style.width = `${rect.width}px`;
+        livePreview.style.height = `${rect.height}px`;
+      }
+      img.onload = function () {
+        livePreview.appendChild(img);
+        if (livePreview.childElementCount > 2) livePreview.removeChild(livePreview.firstElementChild);
+      };
     }
-    img.onload = function () {
-      livePreview.appendChild(img);
-      if (livePreview.childElementCount > 2) livePreview.removeChild(livePreview.firstElementChild);
-    };
   }
 
-  const done = function () {
+  const done = () => {
     console.debug('task end:   ', id_task);
     localStorage.removeItem('task');
     setProgress();
@@ -112,7 +116,7 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
     if (atEnd) atEnd();
   };
 
-  const start = function (id_task, id_live_preview) {
+  const start = (id_task, id_live_preview) => {
     request('./internal/progress', { id_task, id_live_preview }, (res) => {
       lastState = res;
       const elapsedFromStart = (new Date() - dateStart) / 1000;
@@ -122,6 +126,7 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
         return;
       }
       setProgress(res);
+      if (res.live_preview && !livePreview) init();
       if (res.live_preview && galleryEl) img.src = res.live_preview;
       if (onProgress) onProgress(res);
       setTimeout(() => start(id_task, res.id_live_preview), opts.live_preview_refresh_period || 250);
