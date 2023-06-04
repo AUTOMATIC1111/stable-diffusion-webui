@@ -241,6 +241,9 @@ class UpscalerItem(BaseModel):
     model_url: Optional[str] = Field(title="URL")
     scale: Optional[float] = Field(title="Scale")
 
+class LatentUpscalerModeItem(BaseModel):
+    name: str = Field(title="Name")
+
 class SDModelItem(BaseModel):
     title: str = Field(title="Title")
     model_name: str = Field(title="Model Name")
