@@ -315,7 +315,7 @@ function markIfModified(setting_name, value) {
 
     is_unsaved = !opts_metadata[setting_name].is_stored
     if (is_unsaved) {
-        elem.title = 'Unsaved value, apply settings to save.';
+        elem.title = 'Default value (not saved to config)';
     }
     elem.disabled = !(is_unsaved || changed_value)
     elem.classList.toggle('changed', changed_value)
@@ -335,7 +335,7 @@ function markIfModified(setting_name, value) {
     if (changed_items.size > 0)
         tab_nav_indicator.title += `Click to reset ${changed_items.size} unapplied change${changed_items.size > 1 ? 's': ''} in this tab.\n`
     if (unsaved.size > 0)
-        tab_nav_indicator.title += `Apply settings to save ${unsaved.size} unsaved value${unsaved.size > 1 ? 's':''}.`;
+        tab_nav_indicator.title += `${unsaved.size} new default value${unsaved.size > 1 ? 's':''} (not yet saved).`;
 }
 
 function onSettingComponentChanged(setting_name, value) {
