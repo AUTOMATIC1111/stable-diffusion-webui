@@ -249,7 +249,7 @@ onOptionsChanged(function(){
 })
 
 onOptionsChanged(function(){
-    setting_elems = gradioApp().querySelectorAll('#settings [id^="setting_"]')
+    let setting_elems = gradioApp().querySelectorAll('#settings [id^="setting_"]')
     setting_elems.forEach(function(elem){
         setting_name = elem.id.replace("setting_", "")
         markIfModified(setting_name, opts[setting_name])
@@ -257,9 +257,9 @@ onOptionsChanged(function(){
 })
 
 onUiLoaded(function(){
-    tab_nav_element = gradioApp().querySelector('#settings > .tab-nav')
-    tab_nav_buttons = gradioApp().querySelectorAll('#settings > .tab-nav > button')
-    tab_elements = gradioApp().querySelectorAll('#settings > div:not(.tab-nav)')
+    let tab_nav_element = gradioApp().querySelector('#settings > .tab-nav')
+    let tab_nav_buttons = gradioApp().querySelectorAll('#settings > .tab-nav > button')
+    let tab_elements = gradioApp().querySelectorAll('#settings > div:not(.tab-nav)')
 
     // HACK Add mutation observer to keep gradio from closing setting tabs when showing all pages
     const observer = new MutationObserver(function(mutations) {
@@ -296,10 +296,9 @@ onUiLoaded(function(){
     })
 })
 
-
 dirty_opts = {}
 function markIfModified(setting_name, value) {
-    elem = gradioApp().getElementById("modification_indicator_"+setting_name)
+    let elem = gradioApp().getElementById("modification_indicator_"+setting_name)
     if(elem == null) return;
     // Use JSON.stringify to compare nested objects (e.g. arrays for checkbox-groups)
     let previous_value_json = JSON.stringify(opts[setting_name])
@@ -327,7 +326,7 @@ function markIfModified(setting_name, value) {
     let is_tab_dirty = dirty_opts[tab_name].size > 0
 
     // Set the indicator on the tab nav element
-    let tab_nav_indicator = tab_nav_element.querySelector('#modification_indicator_'+tab_name)
+    let tab_nav_indicator = gradioApp().querySelector('#settings > .tab-nav > #modification_indicator_'+tab_name)
     tab_nav_indicator.disabled = !is_tab_dirty
     if (dirty_opts[tab_name].size > 1) {
         tab_nav_indicator.title = `Click to reset ${dirty_opts[tab_name].size} unapplied changes in this tab.`
