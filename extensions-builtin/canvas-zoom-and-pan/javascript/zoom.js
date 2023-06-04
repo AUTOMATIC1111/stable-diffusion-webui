@@ -23,14 +23,6 @@ function getTabId(elements, elementIDs) {
     return tabIdLookup[activeTab.innerText];
 }
 
-// Get Active main tab to prevent "Undo" on text2img from being disabled
-function getActiveMainTab() {
-    const selectedTab = gradioApp().querySelector(
-        "#tabs .tab-nav button.selected"
-    );
-    return selectedTab;
-}
-
 // Wait until opts loaded
 async function waitForOpts() {
     return new Promise(resolve => {
@@ -101,10 +93,13 @@ function restoreImgRedMask(elements, elementIDs) {
 
     imageARPreview.style.transform = "";
     if (parseFloat(mainTab.style.width) > 865) {
-        const transformValues = mainTab.style.transform
-            .match(/[-+]?[0-9]*\.?[0-9]+/g)
-            .map(Number);
-        const [posX, posY, zoom] = transformValues;
+        const transformString = mainTab.style.transform;
+        const scaleMatch = transformString.match(/scale\(([-+]?[0-9]*\.?[0-9]+)\)/);
+        let zoom = 1; // default zoom
+
+        if (scaleMatch && scaleMatch[1]) {
+            zoom = Number(scaleMatch[1]);
+        }
 
         imageARPreview.style.transformOrigin = "0 0";
         imageARPreview.style.transform = `scale(${zoom})`;
@@ -116,7 +111,7 @@ function restoreImgRedMask(elements, elementIDs) {
 
     setTimeout(() => {
         img.style.display = "none";
-    }, 300);
+    }, 400);
 }
 
 // Main
