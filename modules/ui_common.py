@@ -86,20 +86,26 @@ def save_files(js_data, images, do_make_zip, index):
     filenames = []
     fullfns = []
     for image_index, filedata in enumerate(images, start_index):
+        is_grid = image_index < p.index_of_first_image # pylint: disable=no-member
+        i = 0 if is_grid else (image_index - p.index_of_first_image) # pylint: disable=no-member
+        if len(p.all_seeds) <= i: # pylint: disable=no-member
+            p.all_seeds.append(p.seed) # pylint: disable=no-member
+        if len(p.all_prompts) <= i: # pylint: disable=no-member
+            p.all_prompts.append(p.prompt) # pylint: disable=no-member
         if 'name' in filedata and ('tmp' not in filedata['name']) and os.path.isfile(filedata['name']):
             fullfn = filedata['name']
             filenames.append(os.path.basename(fullfn))
             fullfns.append(fullfn)
-            shutil.copy(fullfn, shared.opts.outdir_save)
-            shared.log.info(f"Copying image: {fullfn} -> {shared.opts.outdir_save}")
+            destination = shared.opts.outdir_save
+            if shared.opts.use_save_to_dirs_for_ui:
+                namegen = modules.images.FilenameGenerator(p, seed=p.all_seeds[i], prompt=p.all_prompts[i], image=None)  # pylint: disable=no-member
+                dirname = namegen.apply(shared.opts.directories_filename_pattern or "[prompt_words]").lstrip(' ').rstrip('\\ /')
+                destination = os.path.join(destination, dirname)
+                os.makedirs(destination, exist_ok = True)
+            shutil.copy(fullfn, destination)
+            shared.log.info(f"Copying image: {fullfn} -> {destination}")
         else:
             image = image_from_url_text(filedata)
-            is_grid = image_index < p.index_of_first_image # pylint: disable=no-member
-            i = 0 if is_grid else (image_index - p.index_of_first_image) # pylint: disable=no-member
-            if len(p.all_seeds) <= i: # pylint: disable=no-member
-                p.all_seeds.append(p.seed) # pylint: disable=no-member
-            if len(p.all_prompts) <= i: # pylint: disable=no-member
-                p.all_prompts.append(p.prompt) # pylint: disable=no-member
             fullfn, txt_fullfn = modules.images.save_image(image, shared.opts.outdir_save, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=shared.opts.samples_format, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=shared.opts.use_save_to_dirs_for_ui) # pylint: disable=no-member
             if fullfn is None:
                 continue
