@@ -4,7 +4,7 @@ Second order samplers (Heun, DPM2/a, DPM++ 2S/a, DPM++ SDE / Karras) cause the p
 ## [2023-03-26](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/80b26d2a69617b75d2d01c1e6b7d11445815ed4d) - Apply LoRA by altering layer's weights
 TLDR: produces pictures are a little bit different. If using highres fix, those small differences can be amplified into big ones.
 
-New method introduced in [80b26d2](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/80b26d2a69617b75d2d01c1e6b7d11445815ed4d) allows to pre-calculate new model weights once and then not have to do anything when creating images. With this, adding many loras will incur small performance overhead the first time you apply those loras, and after that will be as fast as if you were making pictures without any loras enabled. Old method slows down generation by a lot with every new lora added.
+New method introduced in [80b26d2a](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/80b26d2a69617b75d2d01c1e6b7d11445815ed4d) allows to pre-calculate new model weights once and then not have to do anything when creating images. With this, adding many loras will incur small performance overhead the first time you apply those loras, and after that will be as fast as if you were making pictures without any loras enabled. Old method slows down generation by a lot with every new lora added.
 
 Differences between produced images are tiny, but if that matters for you (or for some extension you are using), 1.2.0 adds an option to use old method.
 
