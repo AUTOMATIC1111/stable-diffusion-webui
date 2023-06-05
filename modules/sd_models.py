@@ -135,16 +135,14 @@ def list_models():
                     model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
                     shared.opts.data['sd_model_checkpoint'] = "v1-5-pruned-emaonly.safetensors"
                     model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
-                    for filename in sorted(model_list, key=str.lower):
-                        checkpoint_info = CheckpointInfo(filename)
-                        checkpoint_info.register()
                 else:
                     hub_url = "runwayml/stable-diffusion-v1-5"
                     model_list = modelloader.load_diffusers(model_path=model_path, hub_url=hub_url, command_path=shared.opts.diffusers_dir)
-                    for filename in sorted(model_list, key=str.lower):
-                        checkpoint_info = CheckpointInfo(filename)
-                        if checkpoint_info.name is not None:
-                            checkpoint_info.register()
+
+                for filename in sorted(model_list, key=str.lower):
+                    checkpoint_info = CheckpointInfo(filename)
+                    if checkpoint_info.name is not None:
+                        checkpoint_info.register()
 
 
 def update_model_hashes():
