@@ -12,7 +12,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
 
     def list_items(self):
         for name, path in shared.hypernetworks.items():
-            path, ext = os.path.splitext(path)
+            path, _ext = os.path.splitext(path)
             yield {
                 "name": name,
                 "filename": path,

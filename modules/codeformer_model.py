@@ -20,10 +20,8 @@ codeformer = None
 
 
 def setup_model(dirname):
-    global model_path
     if not os.path.exists(model_path):
         os.makedirs(model_path)
-
     path = modules.paths.paths.get("CodeFormer", None)
     if path is None:
         return
@@ -31,7 +29,7 @@ def setup_model(dirname):
     try:
         from torchvision.transforms.functional import normalize
         from modules.codeformer.codeformer_arch import CodeFormer
-        from basicsr.utils import imwrite, img2tensor, tensor2img
+        from basicsr.utils import img2tensor, tensor2img
         from facelib.utils.face_restoration_helper import FaceRestoreHelper
         from facelib.detection.retinaface import retinaface
         from modules.shared import cmd_opts
@@ -74,7 +72,7 @@ def setup_model(dirname):
 
             def send_model_to(self, device):
                 self.net.to(device)
-                self.face_helper.face_det.to(device)
+                self.face_helper.face_det.to(device) # pylint: disable=no-member
                 self.face_helper.face_parse.to(device)
 
             def restore(self, np_image, w=None):
@@ -93,7 +91,7 @@ def setup_model(dirname):
                 self.face_helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
                 self.face_helper.align_warp_face()
 
-                for idx, cropped_face in enumerate(self.face_helper.cropped_faces):
+                for _idx, cropped_face in enumerate(self.face_helper.cropped_faces):
                     cropped_face_t = img2tensor(cropped_face / 255., bgr2rgb=True, float32=True)
                     normalize(cropped_face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
                     cropped_face_t = cropped_face_t.unsqueeze(0).to(devices.device_codeformer)
@@ -103,7 +101,10 @@ def setup_model(dirname):
                             output = self.net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight, adain=True)[0]
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output
-                        torch.cuda.empty_cache()
+                        if cmd_opts.use_ipex:
+                            torch.xpu.empty_cache()
+                        else:
+                            torch.cuda.empty_cache()
                     except Exception as error:
                         print(f'\tFailed inference for CodeFormer: {error}', file=sys.stderr)
                         restored_face = tensor2img(cropped_face_t, rgb2bgr=True, min_max=(-1, 1))
@@ -126,10 +127,10 @@ def setup_model(dirname):
 
                 return restored_img
 
-        global have_codeformer
+        global have_codeformer # pylint: disable=global-statement
         have_codeformer = True
 
-        global codeformer
+        global codeformer # pylint: disable=global-statement
         codeformer = FaceRestorerCodeFormer(dirname)
         shared.face_restorers.append(codeformer)
 

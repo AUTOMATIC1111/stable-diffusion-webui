@@ -1,12 +1,11 @@
 import os
 import sys
-
 import numpy as np
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
-
 from modules.upscaler import Upscaler, UpscalerData
-from modules.shared import cmd_opts, opts, device
+from modules.shared import opts, device
+from modules import modelloader
 import modules.errors as errors
 
 
@@ -16,13 +15,19 @@ class UpscalerRealESRGAN(Upscaler):
         self.model_path = path
         super().__init__()
         try:
-            from basicsr.archs.rrdbnet_arch import RRDBNet
-            from realesrgan import RealESRGANer
-            from realesrgan.archs.srvgg_arch import SRVGGNetCompact
+            from basicsr.archs.rrdbnet_arch import RRDBNet # pylint: disable=unused-import
+            from realesrgan import RealESRGANer # pylint: disable=unused-import
+            from realesrgan.archs.srvgg_arch import SRVGGNetCompact # pylint: disable=unused-import
             self.enable = True
             self.scalers = []
             scalers = self.load_models(path)
+            local_model_paths = self.find_models(ext_filter=[".pth"])
             for scaler in scalers:
+                if scaler.local_data_path.startswith("http"):
+                    filename = modelloader.friendly_name(scaler.local_data_path)
+                    local_model_candidates = [local_model for local_model in local_model_paths if local_model.endswith(f"{filename}.pth")]
+                    if local_model_candidates:
+                        scaler.local_data_path = local_model_candidates[0]
                 if scaler.name in opts.realesrgan_enabled_models:
                     self.scalers.append(scaler)
 
@@ -50,7 +55,7 @@ class UpscalerRealESRGAN(Upscaler):
             scale=info.scale,
             model_path=info.local_data_path,
             model=info.model(),
-            half=not cmd_opts.no_half and not opts.upcast_sampling,
+            half=not opts.no_half and not opts.upcast_sampling,
             tile=opts.ESRGAN_tile,
             tile_pad=opts.ESRGAN_tile_overlap,
             device=device,
@@ -64,11 +69,11 @@ class UpscalerRealESRGAN(Upscaler):
     def load_model(self, path):
         try:
             info = next(iter([scaler for scaler in self.scalers if scaler.data_path == path]), None)
-
             if info is None:
                 print(f"Unable to find model info: {path}")
                 return None
-            info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
+            if info.local_data_path.startswith("http"):
+                info.local_data_path = load_file_from_url(url=info.data_path, model_dir=self.model_path, progress=True)
             return info
         except Exception as e:
             errors.display(e, 'real-esrgan model list')

@@ -70,12 +70,13 @@ def process_text_old(self: sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase,
 
 
 def forward_old(self: sd_hijack_clip.FrozenCLIPEmbedderWithCustomWordsBase, texts):
-    batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, token_count = process_text_old(self, texts)
+    batch_multipliers, remade_batch_tokens, used_custom_terms, hijack_comments, hijack_fixes, _token_count = process_text_old(self, texts)
 
     self.hijack.comments += hijack_comments
 
     if len(used_custom_terms) > 0:
-        self.hijack.comments.append("Used embeddings: " + ", ".join([f'{word} [{checksum}]' for word, checksum in used_custom_terms]))
+        embedding_names = ", ".join(f"{word} [{checksum}]" for word, checksum in used_custom_terms)
+        self.hijack.comments.append(f"Used embeddings: {embedding_names}")
 
     self.hijack.fixes = hijack_fixes
     return self.process_tokens(remade_batch_tokens, batch_multipliers)

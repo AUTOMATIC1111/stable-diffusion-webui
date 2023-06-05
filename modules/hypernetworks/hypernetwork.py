@@ -1,24 +1,25 @@
-import csv
 import datetime
 import glob
 import html
 import os
-import sys
+from collections import deque
 import inspect
-
-import modules.textual_inversion.dataset
-import torch
+from statistics import stdev, mean
+from rich import progress
 import tqdm
+import torch
+try:
+    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+except:
+    pass
+from torch import einsum
+from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
 from einops import rearrange, repeat
 from ldm.util import default
 from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint, errors
+import modules.textual_inversion.dataset
 from modules.textual_inversion import textual_inversion, logging
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
-from torch import einsum
-from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
-
-from collections import defaultdict, deque
-from statistics import stdev, mean
 
 
 optimizer_dict = {optim_name : cls_obj for optim_name, cls_obj in inspect.getmembers(torch.optim, inspect.isclass) if optim_name != "Optimizer"}
@@ -238,14 +239,15 @@ class Hypernetwork:
         if shared.opts.save_optimizer_state and self.optimizer_state_dict:
             optimizer_saved_dict['hash'] = self.shorthash()
             optimizer_saved_dict['optimizer_state_dict'] = self.optimizer_state_dict
-            torch.save(optimizer_saved_dict, filename + '.optim')
+            torch.save(optimizer_saved_dict, f"{filename}.optim")
 
     def load(self, filename):
         self.filename = filename
         if self.name is None:
             self.name = os.path.splitext(os.path.basename(filename))[0]
 
-        state_dict = torch.load(filename, map_location='cpu')
+        with progress.open(filename, 'rb', description=f'Loading hypernetwork: [cyan]{filename}', auto_refresh=True) as f:
+            state_dict = torch.load(f, map_location='cpu')
 
         self.layer_structure = state_dict.get('layer_structure', [1, 2, 1])
         self.optional_info = state_dict.get('optional_info', None)
@@ -539,7 +541,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
         return hypernetwork, filename
 
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
-    
+
     clip_grad = torch.nn.utils.clip_grad_value_ if clip_grad_mode == "value" else torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else None
     if clip_grad:
         clip_grad_sched = LearnRateScheduler(clip_grad_value, steps, initial_step, verbose=False)
@@ -591,8 +593,16 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
             print("Cannot resume from saved optimizer!")
             print(e)
 
-    scaler = torch.cuda.amp.GradScaler()
-    
+    if shared.cmd_opts.use_ipex:
+        scaler = ipex.cpu.autocast._grad_scaler.GradScaler()
+        #Remove these after Intel adds support for float16 training:
+        if shared.opts.cuda_dtype == 'BF16':
+            shared.sd_model = shared.sd_model.bfloat16()
+        elif shared.opts.cuda_dtype == 'FP32':
+            shared.sd_model = shared.sd_model.float32()
+    else:
+        scaler = torch.cuda.amp.GradScaler()
+
     batch_size = ds.batch_size
     gradient_step = ds.gradient_step
     # n steps = batch_size * gradient_step * n image processed
@@ -635,7 +645,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                 if clip_grad:
                     clip_grad_sched.step(hypernetwork.step)
-                
+
                 with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
                     if use_weight:
@@ -656,14 +666,14 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                     _loss_step += loss.item()
                 scaler.scale(loss).backward()
-                
+
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
                 loss_logging.append(_loss_step)
                 if clip_grad:
                     clip_grad(weights, clip_grad_sched.learn_rate)
-                
+
                 scaler.step(optimizer)
                 scaler.update()
                 hypernetwork.step += 1
@@ -671,9 +681,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                 optimizer.zero_grad(set_to_none=True)
                 loss_step = _loss_step
                 _loss_step = 0
-
                 steps_done = hypernetwork.step + 1
-                
                 epoch_num = hypernetwork.step // steps_per_epoch
                 epoch_step = hypernetwork.step % steps_per_epoch
 
@@ -708,7 +716,9 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     hypernetwork.eval()
                     rng_state = torch.get_rng_state()
                     cuda_rng_state = None
-                    if torch.cuda.is_available():
+                    if shared.cmd_opts.use_ipex:
+                        cuda_rng_state = torch.xpu.get_rng_state_all()
+                    elif torch.cuda.is_available():
                         cuda_rng_state = torch.cuda.get_rng_state_all()
                     shared.sd_model.cond_stage_model.to(devices.device)
                     shared.sd_model.first_stage_model.to(devices.device)
@@ -745,7 +755,9 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                         shared.sd_model.cond_stage_model.to(devices.cpu)
                         shared.sd_model.first_stage_model.to(devices.cpu)
                     torch.set_rng_state(rng_state)
-                    if torch.cuda.is_available():
+                    if shared.cmd_opts.use_ipex:
+                        torch.xpu.set_rng_state_all(cuda_rng_state)
+                    elif torch.cuda.is_available():
                         torch.cuda.set_rng_state_all(cuda_rng_state)
                     hypernetwork.train()
                     if image is not None:

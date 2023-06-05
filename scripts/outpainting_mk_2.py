@@ -1,15 +1,12 @@
 import math
-
 import numpy as np
 import skimage
-
-import modules.scripts as scripts
 import gradio as gr
 from PIL import Image, ImageDraw
-
-from modules import images, processing, devices
+import modules.scripts as scripts
+from modules import images
 from modules.processing import Processed, process_images
-from modules.shared import opts, cmd_opts, state
+from modules.shared import opts, state
 
 
 # this function is taken from https://github.com/parlance-zz/g-diffuser-bot
@@ -73,7 +70,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
     num_channels = _np_src_image.shape[2]
 
     np_src_image = _np_src_image[:] * (1. - np_mask_rgb)
-    np_mask_grey = (np.sum(np_mask_rgb, axis=2) / 3.)
+    np_mask_grey = np.sum(np_mask_rgb, axis=2) / 3.
     img_mask = np_mask_grey > 1e-6
     ref_mask = np_mask_grey < 1e-3
 
@@ -90,7 +87,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
 
     noise_window = _get_gaussian_window(width, height, mode=1)  # start with simple gaussian noise
     noise_rgb = rng.random((width, height, num_channels))
-    noise_grey = (np.sum(noise_rgb, axis=2) / 3.)
+    noise_grey = np.sum(noise_rgb, axis=2) / 3.
     noise_rgb *= color_variation  # the colorfulness of the starting noise is blended to greyscale with a parameter
     for c in range(num_channels):
         noise_rgb[:, :, c] += (1. - color_variation) * noise_grey
@@ -278,6 +275,6 @@ class Script(scripts.Script):
                 images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.samples_format, info=res.info, p=p)
 
         if opts.grid_save and not unwanted_grid_because_of_img_count:
-            images.save_image(combined_grid_image, p.outpath_grids, "grid", res.seed, p.prompt, opts.grid_format, info=res.info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
+            images.save_image(combined_grid_image, p.outpath_grids, "grid", res.seed, p.prompt, opts.samples_format, info=res.info, short_filename=not opts.grid_extended_filename, grid=True, p=p)
 
         return res

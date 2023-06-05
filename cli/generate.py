@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 # pylint: disable=no-member
 """generate batches of images from prompts and upscale them
 
@@ -32,9 +32,8 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 from PIL.TiffImagePlugin import ImageFileDirectory_v2
 
-sys.path.append(os.path.join(os.path.dirname(__file__), 'modules'))
-from modules.sdapi import close, get, interrupt, post, session
-from modules.util import Map, log, safestring
+from sdapi import close, get, interrupt, post, session
+from util import Map, log, safestring
 
 
 sd = {}
@@ -121,7 +120,7 @@ def sampler(params, options): # find sampler
 
 
 async def generate(prompt = None, options = None, quiet = False): # pylint: disable=redefined-outer-name
-    global sd
+    global sd # pylint: disable=global-statement
     if options:
         sd = Map(options)
     if prompt is not None:

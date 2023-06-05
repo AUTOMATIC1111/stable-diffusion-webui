@@ -16,7 +16,7 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         selected_tab = gr.State(value=0) # pylint: disable=abstract-class-instantiated
 
         with gr.Column():
-            with FormRow():
+            with FormRow(elem_id="extras_upscale"):
                 with gr.Tabs(elem_id="extras_resize_mode"):
                     with gr.TabItem('Scale by', elem_id="extras_scale_by_tab") as tab_scale_by:
                         upscaling_resize = gr.Slider(minimum=1.0, maximum=8.0, step=0.05, label="Resize", value=4, elem_id="extras_upscaling_resize")
@@ -30,10 +30,10 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
                                 upscaling_crop = gr.Checkbox(label='Crop to fit', value=True, elem_id="extras_upscaling_crop")
 
             with FormRow():
-                extras_upscaler_1 = gr.Dropdown(label='Upscaler 1', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
+                extras_upscaler_1 = gr.Dropdown(label='Upscaler', elem_id="extras_upscaler_1", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
 
             with FormRow():
-                extras_upscaler_2 = gr.Dropdown(label='Upscaler 2', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
+                extras_upscaler_2 = gr.Dropdown(label='Secondary Upscaler', elem_id="extras_upscaler_2", choices=[x.name for x in shared.sd_upscalers], value=shared.sd_upscalers[0].name)
                 extras_upscaler_2_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.001, label="Upscaler 2 visibility", value=0.0, elem_id="extras_upscaler_2_visibility")
 
         upscaling_res_switch_btn.click(lambda w, h: (h, w), inputs=[upscaling_resize_w, upscaling_resize_h], outputs=[upscaling_resize_w, upscaling_resize_h], show_progress=False)
@@ -79,28 +79,25 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         return image
 
     def process(self, pp: scripts_postprocessing.PostprocessedImage, upscale_mode=1, upscale_by=2.0, upscale_to_width=None, upscale_to_height=None, upscale_crop=False, upscaler_1_name=None, upscaler_2_name=None, upscaler_2_visibility=0.0): # pylint: disable=arguments-differ
+
         if upscaler_1_name == "None":
             upscaler_1_name = None
-
         upscaler1 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_1_name]), None)
-        assert upscaler1 or (upscaler_1_name is None), f'could not find upscaler named {upscaler_1_name}'
-
         if not upscaler1:
+            if upscaler_1_name is not None:
+                shared.log.warning(f"Could not find upscaler: {upscaler_1_name or '<empty string>'}")
             return
-
-        if upscaler_2_name == "None":
-            upscaler_2_name = None
-
-        upscaler2 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_2_name and x.name != "None"]), None)
-        assert upscaler2 or (upscaler_2_name is None), f'could not find upscaler named {upscaler_2_name}'
-
         upscaled_image = self.upscale(pp.image, pp.info, upscaler1, upscale_mode, upscale_by, upscale_to_width, upscale_to_height, upscale_crop)
         pp.info["Postprocess upscaler"] = upscaler1.name
 
+        if upscaler_2_name == "None":
+            upscaler_2_name = None
+        upscaler2 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_2_name and x.name != "None"]), None)
+        if not upscaler2 and (upscaler_2_name is not None):
+            shared.log.warning(f"Could not find upscaler: {upscaler_2_name or '<empty string>'}")
         if upscaler2 and upscaler_2_visibility > 0:
             second_upscale = self.upscale(pp.image, pp.info, upscaler2, upscale_mode, upscale_by, upscale_to_width, upscale_to_height, upscale_crop)
             upscaled_image = Image.blend(upscaled_image, second_upscale, upscaler_2_visibility)
-
             pp.info["Postprocess upscaler 2"] = upscaler2.name
 
         pp.image = upscaled_image
@@ -128,7 +125,8 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
             return
 
         upscaler1 = next(iter([x for x in shared.sd_upscalers if x.name == upscaler_name]), None)
-        assert upscaler1, f'could not find upscaler named {upscaler_name}'
+        if upscaler1 is None:
+            shared.log.debug(f"Upscaler not found: {upscaler_name}")
 
         pp.image = self.upscale(pp.image, pp.info, upscaler1, 0, upscale_by, 0, 0, False)
         pp.info["Postprocess upscaler"] = upscaler1.name

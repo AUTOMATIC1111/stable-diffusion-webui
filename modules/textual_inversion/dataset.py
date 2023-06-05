@@ -1,19 +1,16 @@
 import os
+import re
+import random
+from collections import defaultdict
 import numpy as np
 import PIL
 import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader, Sampler
 from torchvision import transforms
-from collections import defaultdict
-from random import shuffle, choices
-
-import random
 import tqdm
-from modules import devices, shared
-import re
-
 from ldm.modules.distributions.distributions import DiagonalGaussianDistribution
+from modules import devices, shared
 
 re_numbers_at_start = re.compile(r"^[-\d]+\s*")
 
@@ -72,7 +69,7 @@ class PersonalizedBase(Dataset):
             except Exception:
                 continue
 
-            text_filename = os.path.splitext(path)[0] + ".txt"
+            text_filename = f"{os.path.splitext(path)[0]}.txt"
             filename = os.path.basename(path)
 
             if os.path.exists(text_filename):
@@ -118,7 +115,7 @@ class PersonalizedBase(Dataset):
                 weight = torch.ones(latent_sample.shape)
             else:
                 weight = None
-            
+
             if latent_sampling_method == "random":
                 entry = DatasetEntry(filename=path, filename_text=filename_text, latent_dist=latent_dist, weight=weight)
             else:
@@ -193,16 +190,16 @@ class GroupedBatchSampler(Sampler):
         b = self.batch_size
 
         for g in self.groups:
-            shuffle(g)
+            random.shuffle(g)
 
         batches = []
         for g in self.groups:
             batches.extend(g[i*b:(i+1)*b] for i in range(len(g) // b))
         for _ in range(self.n_rand_batches):
-            rand_group = choices(self.groups, self.probs)[0]
-            batches.append(choices(rand_group, k=b))
+            rand_group = random.choices(self.groups, self.probs)[0]
+            batches.append(random.choices(rand_group, k=b))
 
-        shuffle(batches)
+        random.shuffle(batches)
 
         yield from batches
 

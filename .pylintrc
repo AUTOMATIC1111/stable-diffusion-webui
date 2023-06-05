@@ -75,16 +75,16 @@ valid-metaclass-classmethod-first-arg=mcs
 [DESIGN]
 exclude-too-few-public-methods=
 ignored-parents=
-max-args=5
-max-attributes=7
-max-bool-expr=5
-max-branches=12
-max-locals=15
-max-parents=7
+max-args=99
+max-attributes=99
+max-bool-expr=99
+max-branches=99
+max-locals=99
+max-parents=99
 max-public-methods=20
-max-returns=6
-max-statements=50
-min-public-methods=2
+max-returns=99
+max-statements=99
+min-public-methods=1
 
 [EXCEPTIONS]
 overgeneral-exceptions=builtins.BaseException,builtins.Exception
@@ -124,26 +124,29 @@ confidence=HIGH,
 # disable=C,R,W
 disable=raw-checker-failed,
         bad-inline-option,
-        locally-disabled,
-        file-ignored,
-        suppressed-message,
-        useless-suppression,
-        deprecated-pragma,
-        use-symbolic-message-instead,
-        line-too-long,
-        missing-function-docstring,
-        missing-module-docstring,
-        missing-class-docstring,
-        logging-fstring-interpolation,
-        import-outside-toplevel,
+        bare-except,
+        broad-exception-caught,
         consider-iterating-dictionary,
-        wrong-import-position,
-        unnecessary-lambda,
         consider-using-dict-items,
         dangerous-default-value,
-        unnecessary-dunder-call,
+        deprecated-pragma,
+        file-ignored,
+        import-outside-toplevel,
         invalid-name,
-        R0801,
+        line-too-long,
+        locally-disabled,
+        logging-fstring-interpolation,
+        missing-class-docstring,
+        missing-function-docstring,
+        missing-module-docstring,
+        duplicate-code,
+        suppressed-message,
+        unnecessary-dunder-call,
+        unnecessary-lambda,
+        use-symbolic-message-instead,
+        too-many-nested-blocks,
+        useless-suppression,
+        wrong-import-position,
 enable=c-extension-no-member
 
 [METHOD_ARGS]

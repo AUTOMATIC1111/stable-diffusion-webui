@@ -1,133 +1,136 @@
+/* global opts */
+let lastState = {};
+
 function rememberGallerySelection(id_gallery) {}
 
 function getGallerySelectedIndex(id_gallery) {}
 
 function request(url, data, handler, errorHandler) {
-    var xhr = new XMLHttpRequest();
-    var url = url;
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                try {
-                    var js = JSON.parse(xhr.responseText);
-                    handler(js)
-                } catch (error) {
-                    console.error(error);
-                    errorHandler()
-                }
-            } else{
-                errorHandler()
-            }
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', url, true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function () {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        try {
+          const js = JSON.parse(xhr.responseText);
+          handler(js);
+        } catch (error) {
+          console.error(error);
+          errorHandler();
         }
-    };
-    var js = JSON.stringify(data);
-    xhr.send(js);
+      } else {
+        errorHandler();
+      }
+    }
+  };
+  const js = JSON.stringify(data);
+  xhr.send(js);
 }
 
 function pad2(x) {
-    return x<10 ? '0'+x : x
+  return x < 10 ? `0${x}` : x;
 }
 
 function formatTime(secs) {
-    if(secs > 3600) return pad2(Math.floor(secs/60/60)) + ":" + pad2(Math.floor(secs/60)%60) + ":" + pad2(Math.floor(secs)%60)
-    else if(secs > 60) return pad2(Math.floor(secs/60)) + ":" + pad2(Math.floor(secs)%60)
-    else return Math.floor(secs) + "s"
+  if (secs > 3600) return `${pad2(Math.floor(secs / 60 / 60))}:${pad2(Math.floor(secs / 60) % 60)}:${pad2(Math.floor(secs) % 60)}`;
+  if (secs > 60) return `${pad2(Math.floor(secs / 60))}:${pad2(Math.floor(secs) % 60)}`;
+  return `${Math.floor(secs)}s`;
 }
 
-function setTitle(progress) {
-    var title = 'Stable Diffusion'
-    if(opts.show_progress_in_title && progress) title = '[' + progress.trim() + '] ' + title;
-    if(document.title != title) document.title =  title;
+function checkPaused(state) {
+  lastState.paused = state ? !state : !lastState.paused;
+  document.getElementById('txt2img_pause').innerText = lastState.paused ? 'Resume' : 'Pause'
+  document.getElementById('img2img_pause').innerText = lastState.paused ? 'Resume' : 'Pause'
+}
+
+function setProgress(res) {
+  elements = ['txt2img_generate', 'img2img_generate', 'extras_generate']
+  const progress = (res?.progress || 0)
+  const perc = res && (progress > 0) ? `${Math.round(100.0 * progress)}%` : ''
+  let sec = res?.eta || 0
+  let eta = '';
+  if (res?.paused) eta = 'Paused';
+  else if (res?.completed || (progress > 0.99)) eta = 'Finishing';
+  else if (sec === 0) eta = 'Starting';
+  else {
+    min = Math.floor(sec / 60);
+    sec = sec % 60;
+    eta = min > 0 ? `ETA: ${Math.round(min)}m ${Math.round(sec)}s` : `ETA: ${Math.round(sec)}s`; 
+  }
+  document.title = 'SD.Next ' + perc;
+  for (elId of elements) {
+    el = document.getElementById(elId);
+    el.innerText = res
+      ? `${perc} ${eta}`
+      : 'Generate';
+    el.style.background = res 
+      ? `linear-gradient(to right, var(--primary-500) 0%, var(--primary-800) ${perc}, var(--neutral-700) ${perc})`
+      : 'var(--button-primary-background-fill)'
+  }
+}
+
+function requestInterrupt() {
+  setProgress();
 }
 
 function randomId() {
-    return "task(" + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7) + Math.random().toString(36).slice(2, 7)+")"
+  return `task(${Math.random().toString(36).slice(2, 7)}${Math.random().toString(36).slice(2, 7)}${Math.random().toString(36).slice(2, 7)})`;
 }
 
-// starts sending progress requests to "/internal/progress" uri, creating progressbar above progressbarContainer element and
-// preview inside gallery element. Cleans up all created stuff when the task is over and calls atEnd.
-// calls onProgress every time there is a progress update
-function requestProgress(id_task, progressbarContainer, gallery, atEnd = null, onProgress = null, once = false) {
-    var hasStarted = false
-    var dateStart = new Date()
-    var prevProgress = null
-    var parentProgressbar = progressbarContainer.parentNode
-    var parentGallery = gallery ? gallery.parentNode : null
-    var divProgress = document.createElement('div')
-    divProgress.className='progressDiv'
-    divProgress.id = 'progressbar'
-    divProgress.style.display = opts.show_progressbar ? "block" : "none"
-    var divInner = document.createElement('div')
-    divInner.className='progress'
-    divProgress.appendChild(divInner)
-    parentProgressbar.insertBefore(divProgress, progressbarContainer)
-    localStorage.setItem('task', id_task);
-    console.debug('task active:', id_task)
+// starts sending progress requests to "/internal/progress" uri, creating progressbar above progressbarContainer element and preview inside gallery element
+// Cleans up all created stuff when the task is over and calls atEnd. calls onProgress every time there is a progress update
+function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgress = null, once = false) {
+  localStorage.setItem('task', id_task);
+  let hasStarted = false;
+  const dateStart = new Date();
+  const prevProgress = null;
+  const parentGallery = galleryEl ? galleryEl.parentNode : null;
+  let livePreview;
+  let img;
+
+  const init = () => {
+    img = new Image();
     if (parentGallery) {
-        var livePreview = document.createElement('div')
-        livePreview.className='livePreview'
-        parentGallery.insertBefore(livePreview, gallery)
+      livePreview = document.createElement('div');
+      livePreview.className = 'livePreview';
+      parentGallery.insertBefore(livePreview, galleryEl);
+      const rect = galleryEl.getBoundingClientRect();
+      if (rect.width) {
+        livePreview.style.width = `${rect.width}px`;
+        livePreview.style.height = `${rect.height}px`;
+      }
+      img.onload = function () {
+        livePreview.appendChild(img);
+        if (livePreview.childElementCount > 2) livePreview.removeChild(livePreview.firstElementChild);
+      };
     }
+  }
 
-    var removeProgressBar = function() {
-        console.debug('task end:   ', id_task)
-        localStorage.removeItem('task');
-        setTitle("")
-        if (divProgress) parentProgressbar.removeChild(divProgress)
-        if (parentGallery) parentGallery.removeChild(livePreview)
-        if (atEnd) atEnd()
-    }
+  const done = () => {
+    console.debug('task end:   ', id_task);
+    localStorage.removeItem('task');
+    setProgress();
+    if (parentGallery && livePreview) parentGallery.removeChild(livePreview);
+    checkPaused(true);
+    if (atEnd) atEnd();
+  };
 
-    var fun = function(id_task, id_live_preview){
-      request("./internal/progress", {"id_task": id_task, "id_live_preview": id_live_preview}, function(res){
-          var elapsedFromStart = (new Date() - dateStart) / 1000
-            if (res.completed) {
-                removeProgressBar()
-                return
-            }
-            var rect = progressbarContainer.getBoundingClientRect()
-            if (rect.width) divProgress.style.width = rect.width + "px";
-            progressText = ""
-            divInner.style.width = ((res.progress || 0) * 100.0) + '%'
-            divInner.style.background = res.progress ? "" : "transparent"
-            if (res.progress > 0) progressText = ((res.progress || 0) * 100.0).toFixed(0) + '%'
-            if (res.eta) progressText += " ETA: " + formatTime(res.eta)
-            setTitle(progressText)
-            if (res.textinfo && res.textinfo.indexOf("\n") == -1) progressText = res.textinfo + " " + progressText
-            divInner.textContent = progressText
-            hasStarted |= res.active
-            if (!res.active && (hasStarted || once)) {
-                removeProgressBar()
-                return
-            }
-            if (res.completed) {
-              removeProgressBar()
-              return
-          }
-          if (elapsedFromStart > 30 && !res.queued && res.progress == prevProgress) {
-                removeProgressBar()
-                return
-            }
-            if (res.live_preview && gallery) {
-                var rect = gallery.getBoundingClientRect()
-                if(rect.width){
-                    livePreview.style.width = rect.width + "px"
-                    livePreview.style.height = rect.height + "px"
-                }
-                var img = new Image();
-                img.onload = function() {
-                    livePreview.appendChild(img)
-                    if (livePreview.childElementCount > 2) livePreview.removeChild(livePreview.firstElementChild)
-                }
-                img.src = res.live_preview;
-            }
-            if (onProgress) onProgress(res)
-            setTimeout(() => fun(id_task, res.id_live_preview), opts.live_preview_refresh_period || 250)
-        }, function() {
-            removeProgressBar()
-        })
-    }
-    fun(id_task, 0)
+  const start = (id_task, id_live_preview) => {
+    request('./internal/progress', { id_task, id_live_preview }, (res) => {
+      lastState = res;
+      const elapsedFromStart = (new Date() - dateStart) / 1000;
+      hasStarted |= res.active;
+      if (res.completed || (!res.active && (hasStarted || once)) || (elapsedFromStart > 30 && !res.queued && res.progress == prevProgress)) {
+        done();
+        return;
+      }
+      setProgress(res);
+      if (res.live_preview && !livePreview) init();
+      if (res.live_preview && galleryEl) img.src = res.live_preview;
+      if (onProgress) onProgress(res);
+      setTimeout(() => start(id_task, res.id_live_preview), opts.live_preview_refresh_period || 250);
+    }, done);
+  };
+  start(id_task, 0);
 }

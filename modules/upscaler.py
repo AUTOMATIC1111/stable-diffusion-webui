@@ -30,7 +30,7 @@ class Upscaler:
         self.img = None
         self.output = None
         self.scale = 1
-        self.half = not shared.cmd_opts.no_half
+        self.half = not shared.opts.no_half
         self.pre_pad = 0
         self.mod_scale = None
 
@@ -40,7 +40,7 @@ class Upscaler:
             os.makedirs(self.model_path, exist_ok=True)
 
         try:
-            import cv2
+            import cv2 # pylint: disable=unused-import
             self.can_tile = True
         except:
             pass
@@ -50,6 +50,7 @@ class Upscaler:
         return img
 
     def upscale(self, img: PIL.Image, scale, selected_model: str = None):
+        shared.log.debug(f'upscale: {img}|{scale}|{selected_model}')
         self.scale = scale
         dest_w = int(img.width * scale)
         dest_h = int(img.height * scale)
@@ -78,7 +79,7 @@ class Upscaler:
         return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path)
 
     def update_status(self, prompt):
-        print(f"\nextras: {prompt}", file=shared.progress_print_out)
+        print(f"\nextras: {prompt}")
 
 
 class UpscalerData:

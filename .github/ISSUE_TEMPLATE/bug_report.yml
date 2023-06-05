@@ -1,7 +1,7 @@
 name: Issue Report
 description: Something is broken
 title: "[Issue]: "
-labels: ["issue"]
+labels: []
 
 body:
   - type: textarea
@@ -23,22 +23,19 @@ body:
         Look at console log and copy the version string from there  
         For example: `Version: f256fb8b Fri Apr 14 17:41:30 2023 -0400`  
 
-        Additionally provide any relevant platorm information (OS, browser, versions)  
+        Additionally provide any relevant platorm information:  
+        - OS details, GPU information, browser used, app versions  
   - type: markdown
     attributes:
       value: |
-        If issue is setup, installation or startup related, please check `setup.log` before reporting  
+        If issue is setup, installation or startup related, please check `webui.log` before reporting  
         And when posting console logs, please use code blocks ( \`\`\` ) to format them insead of uploading screenshots  
-  - type: markdown
-    attributes:
-      value: |
-        Verify that issue persists after restarting server from command line  
-        Restarting from UI or reloading browser is insufficient to create reproducible environment
   - type: markdown
     attributes:
       value: |
         If you have additional extensions installed, try to reproduce the issue with user extensions disabled  
         And if the issue is with compatibility with specific extension, mark it as such when creating the issue  
+        Try running with `--safe` command line flag with disables loading of user-installed extensions  
   - type: markdown
     attributes:
       value: |

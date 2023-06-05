@@ -95,7 +95,7 @@ class NoiseScheduleVP:
         """
 
         if schedule not in ['discrete', 'linear', 'cosine']:
-            raise ValueError("Unsupported noise schedule {}. The schedule needs to be 'discrete' or 'linear' or 'cosine'".format(schedule))
+            raise ValueError(f"Unsupported noise schedule {schedule}. The schedule needs to be 'discrete' or 'linear' or 'cosine'")
 
         self.schedule = schedule
         if schedule == 'discrete':
@@ -367,6 +367,22 @@ def model_wrapper(
     assert guidance_type in ["uncond", "classifier", "classifier-free"]
     return model_fn
 
+def get_time_steps(noise_schedule, skip_type, t_T, t_0, N, device):
+    """Compute the intermediate time steps for sampling.
+    """
+    if skip_type == 'logSNR':
+        lambda_T = noise_schedule.marginal_lambda(torch.tensor(t_T).to(device))
+        lambda_0 = noise_schedule.marginal_lambda(torch.tensor(t_0).to(device))
+        logSNR_steps = torch.linspace(lambda_T.cpu().item(), lambda_0.cpu().item(), N + 1).to(device)
+        return noise_schedule.inverse_lambda(logSNR_steps)
+    elif skip_type == 'time_uniform':
+        return torch.linspace(t_T, t_0, N + 1).to(device)
+    elif skip_type == 'time_quadratic':
+        t_order = 2
+        t = torch.linspace(t_T**(1. / t_order), t_0**(1. / t_order), N + 1).pow(t_order).to(device)
+        return t
+    else:
+        raise ValueError(f"Unsupported skip_type {skip_type}, need to be 'logSNR' or 'time_uniform' or 'time_quadratic'")
 
 class UniPC:
     def __init__(
@@ -455,23 +471,6 @@ class UniPC:
         else:
             return self.noise_prediction_fn(x, t)
 
-    def get_time_steps(self, skip_type, t_T, t_0, N, device):
-        """Compute the intermediate time steps for sampling.
-        """
-        if skip_type == 'logSNR':
-            lambda_T = self.noise_schedule.marginal_lambda(torch.tensor(t_T).to(device))
-            lambda_0 = self.noise_schedule.marginal_lambda(torch.tensor(t_0).to(device))
-            logSNR_steps = torch.linspace(lambda_T.cpu().item(), lambda_0.cpu().item(), N + 1).to(device)
-            return self.noise_schedule.inverse_lambda(logSNR_steps)
-        elif skip_type == 'time_uniform':
-            return torch.linspace(t_T, t_0, N + 1).to(device)
-        elif skip_type == 'time_quadratic':
-            t_order = 2
-            t = torch.linspace(t_T**(1. / t_order), t_0**(1. / t_order), N + 1).pow(t_order).to(device)
-            return t
-        else:
-            raise ValueError("Unsupported skip_type {}, need to be 'logSNR' or 'time_uniform' or 'time_quadratic'".format(skip_type))
-
     def get_orders_and_timesteps_for_singlestep_solver(self, steps, order, skip_type, t_T, t_0, device):
         """
         Get the order of each step for sampling by the singlestep DPM-Solver.
@@ -498,9 +497,9 @@ class UniPC:
             raise ValueError("'order' must be '1' or '2' or '3'.")
         if skip_type == 'logSNR':
             # To reproduce the results in DPM-Solver paper
-            timesteps_outer = self.get_time_steps(skip_type, t_T, t_0, K, device)
+            timesteps_outer = get_time_steps(self.noise_schedule, skip_type, t_T, t_0, K, device)
         else:
-            timesteps_outer = self.get_time_steps(skip_type, t_T, t_0, steps, device)[torch.cumsum(torch.tensor([0,] + orders), 0).to(device)]
+            timesteps_outer = get_time_steps(self.noise_schedule, skip_type, t_T, t_0, steps, device)[torch.cumsum(torch.tensor([0,] + orders), 0).to(device)]
         return timesteps_outer, orders
 
     def denoise_to_zero_fn(self, x, s):
@@ -744,15 +743,16 @@ class UniPC:
 
     def sample(self, x, steps=20, t_start=None, t_end=None, order=3, skip_type='time_uniform',
         method='singlestep', lower_order_final=True, denoise_to_zero=False, solver_type='dpm_solver',
-        atol=0.0078, rtol=0.05, corrector=False,
+        atol=0.0078, rtol=0.05, corrector=False, timesteps=None,
     ):
         t_0 = 1. / self.noise_schedule.total_N if t_end is None else t_end
         t_T = self.noise_schedule.T if t_start is None else t_start
         device = x.device
         if method == 'multistep':
-            assert steps >= order, "UniPC order must be < sampling steps"
-            timesteps = self.get_time_steps(skip_type=skip_type, t_T=t_T, t_0=t_0, N=steps, device=device)
+            if timesteps == None:
+                timesteps = get_time_steps(self.noise_schedule, skip_type=skip_type, t_T=t_T, t_0=t_0, N=steps, device=device)
             #print(f"Running UniPC Sampling with {timesteps.shape[0]} timesteps, order {order}")
+            assert steps >= order, "UniPC order must be < sampling steps"
             assert timesteps.shape[0] - 1 == steps
             with Progress(TextColumn('[cyan]{task.description}'), BarColumn(), TaskProgressColumn(), TimeRemainingColumn(), TimeElapsedColumn()) as progress:
                 task = progress.add_task(description="Initializing", total=steps)

@@ -1,9 +1,7 @@
 from PIL import Image
 import numpy as np
-
-from modules import scripts_postprocessing, gfpgan_model
 import gradio as gr
-
+from modules import scripts_postprocessing, gfpgan_model
 from modules.ui_components import FormRow
 
 

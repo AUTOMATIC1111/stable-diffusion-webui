@@ -11,7 +11,7 @@ import modules.models.diffusion.uni_pc
 
 
 samplers_data_compvis = [
-    sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {}),
+    sd_samplers_common.SamplerData('DDIM', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.ddim.DDIMSampler, model), [], {"default_eta_is_0": True, "uses_ensd": True}),
     sd_samplers_common.SamplerData('PLMS', lambda model: VanillaStableDiffusionSampler(ldm.models.diffusion.plms.PLMSSampler, model), [], {}),
     sd_samplers_common.SamplerData('UniPC', lambda model: VanillaStableDiffusionSampler(modules.models.diffusion.uni_pc.UniPCSampler, model), [], {}),
 ]
@@ -40,7 +40,7 @@ class VanillaStableDiffusionSampler:
 
         self.conditioning_key = sd_model.model.conditioning_key
 
-    def number_of_needed_noises(self, p):
+    def number_of_needed_noises(self, p): # pylint: disable=unused-argument
         return 0
 
     def launch_sampling(self, steps, func):
@@ -55,7 +55,7 @@ class VanillaStableDiffusionSampler:
     def p_sample_ddim_hook(self, x_dec, cond, ts, unconditional_conditioning, *args, **kwargs):
         x_dec, ts, cond, unconditional_conditioning = self.before_sample(x_dec, ts, cond, unconditional_conditioning)
 
-        res = self.orig_p_sample_ddim(x_dec, cond, ts, unconditional_conditioning=unconditional_conditioning, *args, **kwargs)
+        res = self.orig_p_sample_ddim(x_dec, cond, ts, *args, unconditional_conditioning=unconditional_conditioning, **kwargs)
 
         x_dec, ts, cond, unconditional_conditioning, res = self.after_sample(x_dec, ts, cond, unconditional_conditioning, res)
 
@@ -64,6 +64,13 @@ class VanillaStableDiffusionSampler:
     def before_sample(self, x, ts, cond, unconditional_conditioning):
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException
+        if state.paused:
+            shared.log.debug('Sampling paused')
+            while state.paused:
+                if state.interrupted or state.skipped:
+                    raise sd_samplers_common.InterruptedException
+                import time
+                time.sleep(0.1)
 
         if self.stop_at is not None and self.step > self.stop_at:
             raise sd_samplers_common.InterruptedException
@@ -83,7 +90,7 @@ class VanillaStableDiffusionSampler:
         conds_list, tensor = prompt_parser.reconstruct_multicond_batch(cond, self.step)
         unconditional_conditioning = prompt_parser.reconstruct_cond_batch(unconditional_conditioning, self.step)
 
-        assert all([len(conds) == 1 for conds in conds_list]), 'composition via AND is not supported for DDIM/PLMS samplers'
+        assert all(len(conds) == 1 for conds in conds_list), 'composition via AND is not supported for DDIM/PLMS samplers'
         cond = tensor
 
         # for DDIM, shapes must match, we can't just process cond and uncond independently;
@@ -97,7 +104,10 @@ class VanillaStableDiffusionSampler:
             unconditional_conditioning = unconditional_conditioning[:, :cond.shape[1]]
 
         if self.mask is not None:
-            img_orig = self.sampler.model.q_sample(self.init_latent, ts)
+            encode_fn = self.sampler.model.q_sample
+            if self.is_unipc:
+                encode_fn = self.sampler.stochastic_encode
+            img_orig = encode_fn(self.init_latent, ts)
             x = img_orig * self.mask + self.nmask * x
 
         # Wrap the image conditioning back up since the DDIM code can accept the dict directly.
@@ -125,11 +135,14 @@ class VanillaStableDiffusionSampler:
             self.update_step(res[1])
         return x, ts, cond, uncond, res
 
-    def unipc_after_update(self, x, model_x):
+    def unipc_after_update(self, x, model_x): # pylint: disable=unused-argument
         self.update_step(x)
 
     def initialize(self, p):
-        self.eta = p.eta if p.eta is not None else shared.opts.eta_ddim
+        if self.is_ddim:
+            self.eta = p.eta if p.eta is not None else shared.opts.eta_ddim
+        else:
+            self.eta = 0.0
         if self.eta != 0.0:
             p.extra_generation_params["Eta DDIM"] = self.eta
 
@@ -162,7 +175,7 @@ class VanillaStableDiffusionSampler:
                 num_steps = shared.opts.uni_pc_order
             valid_step = 999 / (1000 // num_steps)
             if valid_step == math.floor(valid_step):
-                return int(valid_step) + 1
+                return min(int(valid_step) + 1, num_steps)
 
         return num_steps
 

@@ -1,4 +1,3 @@
-import glob
 import os
 import shutil
 import importlib
@@ -7,6 +6,48 @@ from urllib.parse import urlparse
 from modules import shared
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
+
+diffuser_repos = []
+
+def load_diffusers(model_path: str, command_path: str = None):
+    import huggingface_hub as hf
+    places = []
+    places.append(model_path)
+    if command_path is not None and command_path != model_path and os.path.isdir(command_path):
+        places.append(command_path)
+    diffuser_repos.clear()
+    output = []
+    try:
+        for place in places:
+            res = hf.scan_cache_dir(cache_dir=place)
+            for r in list(res.repos):
+                diffuser_repos.append({ 'name': r.repo_id, 'filename': r.repo_id, 'path': str(r.repo_path), 'size': r.size_on_disk, 'mtime': r.last_modified, 'hash': list(r.revisions)[-1].commit_hash })
+                output.append(str(r.repo_id))
+    except Exception as e:
+        shared.log.error(f"Error listing diffusers: {place} {e}")
+    shared.log.debug(f'Scanning diffusers cache: {len(output)} {model_path} {command_path}')
+    return output
+
+
+def find_diffuser(name: str):
+    import huggingface_hub as hf
+
+    if name in diffuser_repos:
+        return name
+    if shared.cmd_opts.no_download:
+        return None
+    api = hf.HfApi()
+    filt = hf.ModelFilter(
+        model_name=name,
+        task='text-to-image',
+        tags='stable-diffusion',
+        library=['diffusers', 'stable-diffusion'],
+    )
+    models = list(api.list_models(filter=filt, full=True, limit=50, sort="downloads", direction=-1))
+    shared.log.debug(f'Searching diffusers models: {name} {len(models) > 0}')
+    if len(models) > 0:
+        return models[0].modelId
+    return None
 
 
 def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
@@ -20,42 +61,21 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
+    places = []
+    places.append(model_path)
+    if command_path is not None and command_path != model_path and os.path.isdir(command_path):
+        places.append(command_path)
     output = []
-
-    if ext_filter is None:
-        ext_filter = []
-
     try:
-        places = []
-
-        if command_path is not None and command_path != model_path:
-            pretrained_path = os.path.join(command_path, 'experiments/pretrained_models')
-            if os.path.exists(pretrained_path):
-                print(f"Appending path: {pretrained_path}")
-                places.append(pretrained_path)
-            elif os.path.exists(command_path):
-                places.append(command_path)
-
-        places.append(model_path)
-
         for place in places:
-            if os.path.exists(place):
-                for file in glob.iglob(os.path.join(place, '**/**'), recursive=True):
-                    full_path = file
-                    if os.path.isdir(full_path):
-                        continue
-                    if os.path.islink(full_path) and not os.path.exists(full_path):
-                        print(f"Skipping broken symlink: {full_path}")
-                        continue
-                    if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
-                        continue
-                    if len(ext_filter) != 0:
-                        _model_name, extension = os.path.splitext(file)
-                        if extension not in ext_filter:
-                            continue
-                    if file not in output:
-                        output.append(full_path)
-
+            for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
+                if os.path.islink(full_path) and not os.path.exists(full_path):
+                    print(f"Skipping broken symlink: {full_path}")
+                    continue
+                if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
+                    continue
+                if full_path not in output:
+                    output.append(full_path)
         if model_url is not None and len(output) == 0:
             if download_name is not None:
                 from basicsr.utils.download_util import load_file_from_url
@@ -63,10 +83,8 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                 output.append(dl)
             else:
                 output.append(model_url)
-
-    except Exception:
-        pass
-
+    except Exception as e:
+        shared.log.error(f"Error listing models: {places} {e}")
     return output
 
 
@@ -131,20 +149,6 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
         pass
 
 
-builtin_upscaler_classes = []
-forbidden_upscaler_classes = set()
-
-
-def list_builtin_upscalers():
-    load_upscalers()
-    builtin_upscaler_classes.clear()
-    builtin_upscaler_classes.extend(Upscaler.__subclasses__())
-
-def forbid_loaded_nonbuiltin_upscalers():
-    for cls in Upscaler.__subclasses__():
-        if cls not in builtin_upscaler_classes:
-            forbidden_upscaler_classes.add(cls)
-
 
 def load_upscalers():
     # We can only do this 'magic' method to dynamically load upscalers if they are referenced,
@@ -161,10 +165,16 @@ def load_upscalers():
 
     datas = []
     commandline_options = vars(shared.cmd_opts)
-    for cls in Upscaler.__subclasses__():
-        if cls in forbidden_upscaler_classes:
-            continue
+    # some of upscaler classes will not go away after reloading their modules, and we'll end
+    # up with two copies of those classes. The newest copy will always be the last in the list,
+    # so we go from end to beginning and ignore duplicates
+    used_classes = {}
+    for cls in reversed(Upscaler.__subclasses__()):
+        classname = str(cls)
+        if classname not in used_classes:
+            used_classes[classname] = cls
 
+    for cls in reversed(used_classes.values()):
         name = cls.__name__
         cmd_name = f"{name.lower().replace('upscaler', '')}_models_path"
         scaler = cls(commandline_options.get(cmd_name, None))

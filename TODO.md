@@ -4,35 +4,26 @@
 
 Stuff to be fixed...
 
-- Move Restart Server from WebUI to Launch and reload modules
-- Mdularize `cli` scripts
 
 ## Features
 
 Stuff to be added...
 
-- Update README
-- Add Gradio theme maker
-- Transformers version
-- Create new GitHub hooks/actions for CI/CD  
-- Redo Extensions tab: see <https://vladmandic.github.io/sd-extension-manager/pages/extensions.html>
-- Stream-load models as option for slow storage
-- Auto-test `torch.layer_norm` for FP16
+- Update `Wiki`
+- Create new `GitHub` hooks/actions for CI/CD  
+- Import core repos
+- Update `train.py` to use `interrogator`
+- Update `train.py` to use `rembg`
 
 ## Investigate
 
 Stuff to be investigated...
 
-- Torch Compile
-- `Torch-DirectML`
-- `TensorRT`
-- [Temporal Weighing](https://github.com/comfyanonymous/ComfyUI/discussions/473)
-
 ## Merge PRs
 
 Pick & merge PRs from main repo...
 
-- Merge backlog: <https://github.com/vladmandic/automatic/pulls>
+- Compare commits: <https://github.com/vladmandic/automatic/compare/e59ebe25..b6289d5>
 
 ## Models
 
@@ -50,10 +41,18 @@ Tech that can be integrated as part of the core workflow...
 - [Null-text inversion](https://github.com/ouhenio/null-text-inversion-colab)
 - [Custom diffusion](https://github.com/guaneec/custom-diffusion-webui), [Custom diffusion](https://www.cs.cmu.edu/~custom-diffusion/)
 - [Dream artist](https://github.com/7eu7d7/DreamArtist-sd-webui-extension)
+- [QuickEmbedding](https://github.com/ethansmith2000/QuickEmbedding)
+- `TensorRT`
 
 ## Random
 
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
-
-### Pending Code Updates
-
+- <https://towardsdatascience.com/mastering-memoization-in-python-dcdd8b435189>
+- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...20ae71f>
+- <https://github.com/vladmandic/automatic/discussions/1246>
+- shared.info
+- hints
+- localization
+- docker
+- port `p.all_hr_prompts`
+- test `lyco_patch_lora`

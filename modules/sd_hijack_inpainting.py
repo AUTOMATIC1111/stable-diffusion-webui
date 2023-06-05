@@ -4,11 +4,10 @@ import ldm.models.diffusion.ddpm
 import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
 
-from ldm.models.diffusion.ddpm import LatentDiffusion
-from ldm.models.diffusion.plms import PLMSSampler
-from ldm.models.diffusion.ddim import DDIMSampler, noise_like
+from ldm.models.diffusion.ddpm import LatentDiffusion # pylint: disable=unused-import
+from ldm.models.diffusion.plms import PLMSSampler # pylint: disable=unused-import
+from ldm.models.diffusion.ddim import DDIMSampler, noise_like # pylint: disable=unused-import
 from ldm.models.diffusion.sampling_util import norm_thresholding
-
 
 @torch.no_grad()
 def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=False, quantize_denoised=False,
@@ -63,7 +62,6 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
         if quantize_denoised:
             pred_x0, _, *_ = self.model.first_stage_model.quantize(pred_x0)
         if dynamic_threshold is not None:
-            from ldm.models.diffusion.sampling_util import norm_thresholding
             pred_x0 = norm_thresholding(pred_x0, dynamic_threshold)
         # direction pointing to x_t
         dir_xt = (1. - a_prev - sigma_t**2).sqrt() * e_t

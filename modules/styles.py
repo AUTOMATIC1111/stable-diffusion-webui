@@ -1,11 +1,9 @@
 # We need this so Python doesn't complain about the unknown StableDiffusionProcessing-typehint at runtime
 from __future__ import annotations
-
 import csv
 import os
 import os.path
 import typing
-import collections.abc as abc
 import tempfile
 import shutil
 
@@ -49,16 +47,17 @@ class StyleDatabase:
         self.styles.clear()
 
         if not os.path.exists(self.path):
-            print(f'Creating styles database: {self.path}')
             self.save_styles(self.path)
 
         with open(self.path, "r", encoding="utf-8-sig", newline='') as file:
             reader = csv.DictReader(file)
             for row in reader:
-                # Support loading old CSV format with "name, text"-columns
-                prompt = row["prompt"] if "prompt" in row else row["text"]
-                negative_prompt = row.get("negative_prompt", "")
-                self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
+                try:
+                    prompt = row["prompt"] if "prompt" in row else row["text"]
+                    negative_prompt = row.get("negative_prompt", "")
+                    self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
+                except:
+                    pass
 
     def get_style_prompts(self, styles):
         return [self.styles.get(x, self.no_style).prompt for x in styles]
@@ -74,6 +73,9 @@ class StyleDatabase:
 
     def save_styles(self, path: str) -> None:
         # Write to temporary file first, so we don't nuke the file if something goes wrong
+        basedir = os.path.dirname(path)
+        if basedir is not None and len(basedir) > 0:
+            os.makedirs(basedir, exist_ok=True)
         fd, temp_path = tempfile.mkstemp(".csv")
         with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:
             # _fields is actually part of the public API: typing.NamedTuple is a replacement for collections.NamedTuple,

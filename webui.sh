@@ -81,10 +81,25 @@ else
     exit 1
 fi
 
+#Set OneAPI environmet if it's not set by the user
+if [[ "$@" == *"--use-ipex"* ]] && ! [ -x "$(command -v sycl-ls)" ]
+then
+    echo "Setting OneAPI environment"
+    if [[ -z "$ONEAPI_ROOT" ]]
+    then
+        ONEAPI_ROOT=/opt/intel/oneapi
+    fi
+    source $ONEAPI_ROOT/setvars.sh
+fi
+
 if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]
 then
-    echo "Accelerating launch.py..."
+    echo "Launching accelerate launch.py..."
     exec accelerate launch --num_cpu_threads_per_process=6 launch.py "$@"
+elif [[ -z "${first_launch}" ]] && [ -x "$(command -v ipexrun)" ] && [ -x "$(command -v numactl)" ] && [[ "$@" == *"--use-ipex"* ]]
+then
+    echo "Launching ipexrun launch.py..."
+    exec ipexrun launch.py "$@"
 else
     echo "Launching launch.py..."
     exec "${python_cmd}" launch.py "$@"

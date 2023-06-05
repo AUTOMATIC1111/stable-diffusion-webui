@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 
 import torch
-import torch.hub
+import torch.hub # pylint: disable=ungrouped-imports
 
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
@@ -24,13 +24,13 @@ def category_types():
 
 
 def download_default_clip_interrogate_categories(content_dir):
-    print("Downloading CLIP categories...")
+    shared.log.info("Downloading CLIP categories...")
 
-    tmpdir = content_dir + "_tmp"
+    tmpdir = f"{content_dir}_tmp"
     cat_types = ["artists", "flavors", "mediums", "movements"]
 
     try:
-        os.makedirs(tmpdir)
+        os.makedirs(tmpdir, exist_ok=True)
         for category_type in cat_types:
             torch.hub.download_url_to_file(f"https://raw.githubusercontent.com/pharmapsychotic/clip-interrogator/main/clip_interrogator/data/{category_type}.txt", os.path.join(tmpdir, f"{category_type}.txt"))
         os.rename(tmpdir, content_dir)
@@ -39,7 +39,7 @@ def download_default_clip_interrogate_categories(content_dir):
         errors.display(e, "downloading default CLIP interrogate categories")
     finally:
         if os.path.exists(tmpdir):
-            os.remove(tmpdir)
+            os.removedirs(tmpdir)
 
 
 class InterrogateModels:
@@ -118,14 +118,14 @@ class InterrogateModels:
     def load(self):
         if self.blip_model is None:
             self.blip_model = self.load_blip_model()
-            if not shared.cmd_opts.no_half and not self.running_on_cpu:
+            if not shared.opts.no_half and not self.running_on_cpu:
                 self.blip_model = self.blip_model.half()
 
         self.blip_model = self.blip_model.to(devices.device_interrogate)
 
         if self.clip_model is None:
             self.clip_model, self.clip_preprocess = self.load_clip_model()
-            if not shared.cmd_opts.no_half and not self.running_on_cpu:
+            if not shared.opts.no_half and not self.running_on_cpu:
                 self.clip_model = self.clip_model.half()
 
         self.clip_model = self.clip_model.to(devices.device_interrogate)
@@ -211,7 +211,7 @@ class InterrogateModels:
                         if shared.opts.interrogate_return_ranks:
                             res += f", ({match}:{score/100:.3f})"
                         else:
-                            res += ", " + match
+                            res += f", {match}"
 
         except Exception as e:
             errors.display(e, 'interrogate')

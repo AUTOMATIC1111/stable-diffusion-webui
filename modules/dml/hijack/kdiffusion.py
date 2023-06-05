@@ -1,8 +1,8 @@
 import torch
 from tqdm.auto import tqdm
-
-from modules.shared import device
 from k_diffusion import sampling
+from modules.shared import device
+
 
 def dpm_solver_adaptive(self, x, t_start, t_end, order=3, rtol=0.05, atol=0.0078, h_init=0.05, pcoeff=0., icoeff=1., dcoeff=0., accept_safety=0.81, eta=0., s_noise=1., noise_sampler=None):
     noise_sampler = sampling.default_noise_sampler(x) if noise_sampler is None else noise_sampler
