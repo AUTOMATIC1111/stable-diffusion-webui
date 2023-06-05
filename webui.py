@@ -407,6 +407,9 @@ def webui():
         if cmd_opts.add_stop_route:
             app.add_route("/_stop", stop_route, methods=["POST"])
 
+        # after initial launch, disable --autolaunch for subsequent restarts
+        cmd_opts.autolaunch = False
+
         startup_timer.record("gradio launch")
 
         # gradio uses a very open CORS policy via app.user_middleware, which makes it possible for
