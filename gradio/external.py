@@ -51,7 +51,7 @@ def load(
         name: the name of the model (e.g. "gpt2" or "facebook/bart-base") or space (e.g. "flax-community/spanish-gpt2"), can include the `src` as prefix (e.g. "models/facebook/bart-base")
         src: the source of the model: `models` or `spaces` (or leave empty if source is provided as a prefix in `name`)
         api_key: Deprecated. Please use the `hf_token` parameter instead.
-        hf_token: optional access token for loading private Hugging Face Hub models or spaces. Find your token here: https://huggingface.co/settings/tokens
+        hf_token: optional access token for loading private Hugging Face Hub models or spaces. Find your token here: https://huggingface.co/settings/tokens.  Warning: only provide this if you are loading a trusted private Space as it can be read by the Space you are loading.
         alias: optional string used as the name of the loaded model instead of the default name (only applies if loading a Space running Gradio 2.x)
     Returns:
         a Gradio Blocks object for the given model
@@ -500,7 +500,6 @@ def from_spaces_interface(
     iframe_url: str,
     **kwargs,
 ) -> Interface:
-
     config = streamline_spaces_interface(config)
     api_url = f"{iframe_url}/api/predict/"
     headers = {"Content-Type": "application/json"}

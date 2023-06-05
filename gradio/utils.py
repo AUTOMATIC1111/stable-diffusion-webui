@@ -39,9 +39,6 @@ from markdown_it import MarkdownIt
 from mdit_py_plugins.dollarmath.index import dollarmath_plugin
 from mdit_py_plugins.footnote.index import footnote_plugin
 from pydantic import BaseModel, parse_obj_as
-from pygments import highlight
-from pygments.formatters import HtmlFormatter
-from pygments.lexers import get_lexer_by_name
 
 import gradio
 from gradio.context import Context
@@ -619,7 +616,8 @@ def validate_url(possible_url: str) -> bool:
     headers = {"User-Agent": "gradio (https://gradio.app/; team@gradio.app)"}
     try:
         head_request = requests.head(possible_url, headers=headers)
-        if head_request.status_code == 405:
+        # some URLs, such as AWS S3 presigned URLs, return a 405 or a 403 for HEAD requests
+        if head_request.status_code == 405 or head_request.status_code == 403:
             return requests.get(possible_url, headers=headers).ok
         return head_request.ok
     except Exception:
@@ -847,12 +845,16 @@ def is_in_or_equal(path_1: str | Path, path_2: str | Path):
     True if path_1 is a descendant (i.e. located within) path_2 or if the paths are the
     same, returns False otherwise.
     Parameters:
-        path_1: str or Path (can be a file or directory)
+        path_1: str or Path (should be a file)
         path_2: str or Path (can be a file or directory)
     """
-    return (abspath(path_2) in abspath(path_1).parents) or abspath(path_1) == abspath(
-        path_2
-    )
+    path_1, path_2 = abspath(path_1), abspath(path_2)
+    try:
+        if str(path_1.relative_to(path_2)).startswith(".."):  # prevent path traversal
+            return False
+    except ValueError:
+        return False
+    return True
 
 
 def get_serializer_name(block: Block) -> str | None:
@@ -890,16 +892,6 @@ def get_serializer_name(block: Block) -> str | None:
         return cls.__name__
 
 
-def highlight_code(code, name, attrs):
-    try:
-        lexer = get_lexer_by_name(name)
-    except Exception:
-        lexer = get_lexer_by_name("text")
-    formatter = HtmlFormatter()
-
-    return highlight(code, lexer, formatter)
-
-
 def get_markdown_parser() -> MarkdownIt:
     md = (
         MarkdownIt(
@@ -908,7 +900,6 @@ def get_markdown_parser() -> MarkdownIt:
                 "linkify": True,
                 "typographer": True,
                 "html": True,
-                "highlight": highlight_code,
             },
         )
         .use(dollarmath_plugin, renderer=tex2svg, allow_digits=False)

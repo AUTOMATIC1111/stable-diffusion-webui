@@ -1,0 +1,2 @@
+import{T as c}from"./Textbox-8be76163.js";import"./index-8c3da1d9.js";/* empty css                                                  */import"./Button-62634b34.js";/* empty css                                                    */import"./BlockTitle-338c46c0.js";import"./Info-b95ed9db.js";import"./Copy-fd383441.js";const n=["static","dynamic"],d=t=>({type:{payload:"string"},description:{payload:"text string"},example_data:t.value||"hello world"});export{c as Component,d as document,n as modes};
+//# sourceMappingURL=index-2c75c8ef.js.map

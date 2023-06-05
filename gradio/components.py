@@ -20,7 +20,7 @@ from copy import deepcopy
 from enum import Enum
 from pathlib import Path
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Callable, Dict, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict
 
 import aiofiles
 import altair as alt
@@ -217,14 +217,16 @@ class IOComponent(Component):
         if callable(load_fn):
             self.attach_load_event(load_fn, every)
 
-    def hash_file(self, file_path: str, chunk_num_blocks: int = 128) -> str:
+    @staticmethod
+    def hash_file(file_path: str, chunk_num_blocks: int = 128) -> str:
         sha1 = hashlib.sha1()
         with open(file_path, "rb") as f:
             for chunk in iter(lambda: f.read(chunk_num_blocks * sha1.block_size), b""):
                 sha1.update(chunk)
         return sha1.hexdigest()
 
-    def hash_url(self, url: str, chunk_num_blocks: int = 128) -> str:
+    @staticmethod
+    def hash_url(url: str, chunk_num_blocks: int = 128) -> str:
         sha1 = hashlib.sha1()
         remote = urllib.request.urlopen(url)
         max_file_size = 100 * 1024 * 1024  # 100MB
@@ -237,7 +239,14 @@ class IOComponent(Component):
             sha1.update(data)
         return sha1.hexdigest()
 
-    def hash_base64(self, base64_encoding: str, chunk_num_blocks: int = 128) -> str:
+    @staticmethod
+    def hash_bytes(bytes: bytes):
+        sha1 = hashlib.sha1()
+        sha1.update(bytes)
+        return sha1.hexdigest()
+
+    @staticmethod
+    def hash_base64(base64_encoding: str, chunk_num_blocks: int = 128) -> str:
         sha1 = hashlib.sha1()
         for i in range(0, len(base64_encoding), chunk_num_blocks * sha1.block_size):
             data = base64_encoding[i : i + chunk_num_blocks * sha1.block_size]
@@ -251,9 +260,8 @@ class IOComponent(Component):
         temp_dir = Path(self.DEFAULT_TEMP_DIR) / temp_dir
         temp_dir.mkdir(exist_ok=True, parents=True)
 
-        f = tempfile.NamedTemporaryFile(delete=False, dir=temp_dir)
-        f.name = client_utils.strip_invalid_filename_characters(Path(file_path).name)
-        full_temp_file_path = str(utils.abspath(temp_dir / f.name))
+        name = client_utils.strip_invalid_filename_characters(Path(file_path).name)
+        full_temp_file_path = str(utils.abspath(temp_dir / name))
 
         if not Path(full_temp_file_path).exists():
             shutil.copy2(file_path, full_temp_file_path)
@@ -267,15 +275,14 @@ class IOComponent(Component):
         )  # Since the full file is being uploaded anyways, there is no benefit to hashing the file.
         temp_dir = Path(upload_dir) / temp_dir
         temp_dir.mkdir(exist_ok=True, parents=True)
-        output_file_obj = tempfile.NamedTemporaryFile(delete=False, dir=temp_dir)
 
         if file.filename:
             file_name = Path(file.filename).name
-            output_file_obj.name = client_utils.strip_invalid_filename_characters(
-                file_name
-            )
+            name = client_utils.strip_invalid_filename_characters(file_name)
+        else:
+            name = f"tmp{secrets.token_hex(5)}"
 
-        full_temp_file_path = str(utils.abspath(temp_dir / output_file_obj.name))
+        full_temp_file_path = str(utils.abspath(temp_dir / name))
 
         async with aiofiles.open(full_temp_file_path, "wb") as output_file:
             while True:
@@ -292,10 +299,9 @@ class IOComponent(Component):
         temp_dir = self.hash_url(url)
         temp_dir = Path(self.DEFAULT_TEMP_DIR) / temp_dir
         temp_dir.mkdir(exist_ok=True, parents=True)
-        f = tempfile.NamedTemporaryFile(delete=False, dir=temp_dir)
 
-        f.name = client_utils.strip_invalid_filename_characters(Path(url).name)
-        full_temp_file_path = str(utils.abspath(temp_dir / f.name))
+        name = client_utils.strip_invalid_filename_characters(Path(url).name)
+        full_temp_file_path = str(utils.abspath(temp_dir / name))
 
         if not Path(full_temp_file_path).exists():
             with requests.get(url, stream=True) as r, open(
@@ -323,8 +329,7 @@ class IOComponent(Component):
             file_name = f"file.{guess_extension}"
         else:
             file_name = "file"
-        f = tempfile.NamedTemporaryFile(delete=False, dir=temp_dir)
-        f.name = file_name  # type: ignore
+
         full_temp_file_path = str(utils.abspath(temp_dir / file_name))  # type: ignore
 
         if not Path(full_temp_file_path).exists():
@@ -334,6 +339,36 @@ class IOComponent(Component):
 
         self.temp_files.add(full_temp_file_path)
         return full_temp_file_path
+
+    def pil_to_temp_file(self, img: _Image.Image, dir: str, format="png") -> str:
+        bytes_data = processing_utils.encode_pil_to_bytes(img, format)
+        temp_dir = Path(dir) / self.hash_bytes(bytes_data)
+        temp_dir.mkdir(exist_ok=True, parents=True)
+        filename = str(temp_dir / f"image.{format}")
+        img.save(filename, pnginfo=processing_utils.get_pil_metadata(img))
+        return filename
+
+    def img_array_to_temp_file(self, arr: np.ndarray, dir: str) -> str:
+        pil_image = _Image.fromarray(
+            processing_utils._convert(arr, np.uint8, force_copy=False)
+        )
+        return self.pil_to_temp_file(pil_image, dir, format="png")
+
+    def audio_to_temp_file(
+        self, data: np.ndarray, sample_rate: int, dir: str, format: str
+    ):
+        temp_dir = Path(dir) / self.hash_bytes(data.tobytes())
+        temp_dir.mkdir(exist_ok=True, parents=True)
+        filename = str(temp_dir / f"audio.{format}")
+        processing_utils.audio_to_file(sample_rate, data, filename, format=format)
+        return filename
+
+    def file_bytes_to_file(self, data: bytes, dir: str, file_name: str):
+        path = Path(dir) / self.hash_bytes(data)
+        path.mkdir(exist_ok=True, parents=True)
+        path = path / Path(file_name).name
+        path.write_bytes(data)
+        return path
 
     def get_config(self):
         config = {
@@ -1758,12 +1793,11 @@ class Image(
         elif self.type == "numpy":
             return np.array(im)
         elif self.type == "filepath":
-            file_obj = tempfile.NamedTemporaryFile(
-                delete=False,
-                suffix=(f".{fmt.lower()}" if fmt is not None else ".png"),
+            path = self.pil_to_temp_file(
+                im, dir=self.DEFAULT_TEMP_DIR, format=fmt or "png"
             )
-            im.save(file_obj.name)
-            return self.make_temp_copy_if_needed(file_obj.name)
+            self.temp_files.add(path)
+            return path
         else:
             raise ValueError(
                 "Unknown type: "
@@ -2259,8 +2293,7 @@ class Video(
         # HTML5 only support vtt format
         if Path(subtitle).suffix == ".srt":
             temp_file = tempfile.NamedTemporaryFile(
-                delete=False,
-                suffix=".vtt",
+                delete=False, suffix=".vtt", dir=self.DEFAULT_TEMP_DIR
             )
 
             srt_to_vtt(subtitle, temp_file.name)
@@ -2483,7 +2516,9 @@ class Audio(
             # Handle the leave one outs
             leave_one_out_data = np.copy(data)
             leave_one_out_data[start:stop] = 0
-            file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+            file = tempfile.NamedTemporaryFile(
+                delete=False, suffix=".wav", dir=self.DEFAULT_TEMP_DIR
+            )
             processing_utils.audio_to_file(sample_rate, leave_one_out_data, file.name)
             out_data = client_utils.encode_file_to_base64(file.name)
             leave_one_out_sets.append(out_data)
@@ -2494,7 +2529,9 @@ class Audio(
             token = np.copy(data)
             token[0:start] = 0
             token[stop:] = 0
-            file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+            file = tempfile.NamedTemporaryFile(
+                delete=False, suffix=".wav", dir=self.DEFAULT_TEMP_DIR
+            )
             processing_utils.audio_to_file(sample_rate, token, file.name)
             token_data = client_utils.encode_file_to_base64(file.name)
             file.close()
@@ -2525,7 +2562,7 @@ class Audio(
             masked_input = np.copy(zero_input)
             for t, b in zip(token_data, binary_mask_vector):
                 masked_input = masked_input + t * int(b)
-            file = tempfile.NamedTemporaryFile(delete=False)
+            file = tempfile.NamedTemporaryFile(delete=False, dir=self.DEFAULT_TEMP_DIR)
             processing_utils.audio_to_file(sample_rate, masked_input, file.name)
             masked_data = client_utils.encode_file_to_base64(file.name)
             file.close()
@@ -2546,11 +2583,9 @@ class Audio(
             return {"name": y, "data": None, "is_file": True}
         if isinstance(y, tuple):
             sample_rate, data = y
-            file = tempfile.NamedTemporaryFile(suffix=f".{self.format}", delete=False)
-            processing_utils.audio_to_file(
-                sample_rate, data, file.name, format=self.format
+            file_path = self.audio_to_temp_file(
+                data, sample_rate, dir=self.DEFAULT_TEMP_DIR, format=self.format
             )
-            file_path = str(utils.abspath(file.name))
             self.temp_files.add(file_path)
         else:
             file_path = self.make_temp_copy_if_needed(y)
@@ -2720,14 +2755,21 @@ class File(
             )
             if self.type == "file":
                 if is_file:
-                    temp_file_path = self.make_temp_copy_if_needed(file_name)
-                    file = tempfile.NamedTemporaryFile(delete=False)
-                    file.name = temp_file_path
-                    file.orig_name = file_name  # type: ignore
+                    path = self.make_temp_copy_if_needed(file_name)
                 else:
-                    file = client_utils.decode_base64_to_file(data, file_path=file_name)
-                    file.orig_name = file_name  # type: ignore
-                    self.temp_files.add(str(utils.abspath(file.name)))
+                    data, _ = client_utils.decode_base64_to_binary(data)
+                    path = self.file_bytes_to_file(
+                        data, dir=self.DEFAULT_TEMP_DIR, file_name=file_name
+                    )
+                    path = str(utils.abspath(path))
+                    self.temp_files.add(path)
+
+                # Creation of tempfiles here
+                file = tempfile.NamedTemporaryFile(
+                    delete=False, dir=self.DEFAULT_TEMP_DIR
+                )
+                file.name = path
+                file.orig_name = file_name  # type: ignore
                 return file
             elif (
                 self.type == "binary" or self.type == "bytes"
@@ -2777,13 +2819,14 @@ class File(
                 for file in y
             ]
         else:
-            return {
+            d = {
                 "orig_name": Path(y).name,
                 "name": self.make_temp_copy_if_needed(y),
                 "size": Path(y).stat().st_size,
                 "data": None,
                 "is_file": True,
             }
+            return d
 
     def style(
         self,
@@ -3472,14 +3515,19 @@ class UploadButton(Clickable, Uploadable, IOComponent, FileSerializable):
             )
             if self.type == "file":
                 if is_file:
-                    temp_file_path = self.make_temp_copy_if_needed(file_name)
-                    file = tempfile.NamedTemporaryFile(delete=False)
-                    file.name = temp_file_path
-                    file.orig_name = file_name  # type: ignore
+                    path = self.make_temp_copy_if_needed(file_name)
                 else:
-                    file = client_utils.decode_base64_to_file(data, file_path=file_name)
-                    file.orig_name = file_name  # type: ignore
-                    self.temp_files.add(str(utils.abspath(file.name)))
+                    data, _ = client_utils.decode_base64_to_binary(data)
+                    path = self.file_bytes_to_file(
+                        data, dir=self.DEFAULT_TEMP_DIR, file_name=file_name
+                    )
+                    path = str(utils.abspath(path))
+                    self.temp_files.add(path)
+                file = tempfile.NamedTemporaryFile(
+                    delete=False, dir=self.DEFAULT_TEMP_DIR
+                )
+                file.name = path
+                file.orig_name = file_name  # type: ignore
                 return file
             elif self.type == "bytes":
                 if is_file:
@@ -4068,11 +4116,11 @@ class AnnotatedImage(Selectable, IOComponent, JSONSerializable):
             base_img_path = base_img
             base_img = np.array(_Image.open(base_img))
         elif isinstance(base_img, np.ndarray):
-            base_file = processing_utils.save_array_to_file(base_img)
-            base_img_path = str(utils.abspath(base_file.name))
+            base_file = self.img_array_to_temp_file(base_img, dir=self.DEFAULT_TEMP_DIR)
+            base_img_path = str(utils.abspath(base_file))
         elif isinstance(base_img, _Image.Image):
-            base_file = processing_utils.save_pil_to_file(base_img)
-            base_img_path = str(utils.abspath(base_file.name))
+            base_file = self.pil_to_temp_file(base_img, dir=self.DEFAULT_TEMP_DIR)
+            base_img_path = str(utils.abspath(base_file))
             base_img = np.array(base_img)
         else:
             raise ValueError(
@@ -4116,8 +4164,10 @@ class AnnotatedImage(Selectable, IOComponent, JSONSerializable):
 
             colored_mask_img = _Image.fromarray((colored_mask).astype(np.uint8))
 
-            mask_file = processing_utils.save_pil_to_file(colored_mask_img)
-            mask_file_path = str(utils.abspath(mask_file.name))
+            mask_file = self.pil_to_temp_file(
+                colored_mask_img, dir=self.DEFAULT_TEMP_DIR
+            )
+            mask_file_path = str(utils.abspath(mask_file))
             self.temp_files.add(mask_file_path)
 
             sections.append(
@@ -4404,12 +4454,12 @@ class Gallery(IOComponent, GallerySerializable, Selectable):
             if isinstance(img, (tuple, list)):
                 img, caption = img
             if isinstance(img, np.ndarray):
-                file = processing_utils.save_array_to_file(img)
-                file_path = str(utils.abspath(file.name))
+                file = self.img_array_to_temp_file(img, dir=self.DEFAULT_TEMP_DIR)
+                file_path = str(utils.abspath(file))
                 self.temp_files.add(file_path)
             elif isinstance(img, _Image.Image):
-                file = processing_utils.save_pil_to_file(img)
-                file_path = str(utils.abspath(file.name))
+                file = self.pil_to_temp_file(img, dir=self.DEFAULT_TEMP_DIR)
+                file_path = str(utils.abspath(file))
                 self.temp_files.add(file_path)
             elif isinstance(img, str):
                 if utils.validate_url(img):
@@ -4443,7 +4493,8 @@ class Gallery(IOComponent, GallerySerializable, Selectable):
         """
         This method can be used to change the appearance of the gallery component.
         Parameters:
-            grid: ('grid' has been renamed to 'columns') Represents the number of images that should be shown in one row, for each of the six standard screen sizes (<576px, <768px, <992px, <1200px, <1400px, >1400px). if fewer that 6 are given then the last will be used for all subsequent breakpoints            columns: Represents the number of columns in the image grid, for each of the six standard screen sizes (<576px, <768px, <992px, <1200px, <1400px, >1400px). if fewer that 6 are given then the last will be used for all subsequent breakpoints
+            grid: ('grid' has been renamed to 'columns') Represents the number of images that should be shown in one row, for each of the six standard screen sizes (<576px, <768px, <992px, <1200px, <1400px, >1400px). if fewer that 6 are given then the last will be used for all subsequent breakpoints
+            columns: Represents the number of columns in the image grid, for each of the six standard screen sizes (<576px, <768px, <992px, <1200px, <1400px, >1400px). if fewer that 6 are given then the last will be used for all subsequent breakpoints
             rows: Represents the number of rows in the image grid, for each of the six standard screen sizes (<576px, <768px, <992px, <1200px, <1400px, >1400px). if fewer that 6 are given then the last will be used for all subsequent breakpoints
             height: Height of the gallery.
             container: If True, will place gallery in a container - providing some extra padding around the border.
@@ -4526,7 +4577,6 @@ class Chatbot(Changeable, Selectable, IOComponent, JSONSerializable):
             warnings.warn(
                 "The 'color_map' parameter has been deprecated.",
             )
-        self.md = utils.get_markdown_parser()
         self.select: EventListenerMethod
         """
         Event listener for when the user selects message from Chatbot.
@@ -4628,9 +4678,6 @@ class Chatbot(Changeable, Selectable, IOComponent, JSONSerializable):
             }
         elif isinstance(chat_message, str):
             chat_message = inspect.cleandoc(chat_message)
-            chat_message = cast(str, self.md.render(chat_message))
-            if chat_message.startswith("<p>") and chat_message.endswith("</p>\n"):
-                chat_message = chat_message[3:-5]
             return chat_message
         else:
             raise ValueError(f"Invalid message for Chatbot component: {chat_message}")

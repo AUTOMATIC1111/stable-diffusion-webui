@@ -114,7 +114,10 @@ def launched_analytics(blocks: gradio.Blocks, data: dict[str, Any]) -> None:
 
     for x in blocks.dependencies:
         targets_telemetry = targets_telemetry + [
-            str(blocks.blocks[y]) for y in x["targets"]
+            # Sometimes the target can be the Blocks object itself, so we need to check if its in blocks.blocks
+            str(blocks.blocks[y])
+            for y in x["targets"]
+            if y in blocks.blocks
         ]
         inputs_telemetry = inputs_telemetry + [
             str(blocks.blocks[y]) for y in x["inputs"]

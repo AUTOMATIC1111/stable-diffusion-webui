@@ -8,9 +8,9 @@ import inspect
 import json
 import mimetypes
 import os
+import posixpath
 import secrets
 import tempfile
-import time
 import traceback
 from asyncio import TimeoutError as AsyncTimeOutError
 from collections import defaultdict
@@ -113,13 +113,14 @@ class App(FastAPI):
         self.lock = asyncio.Lock()
         self.queue_token = secrets.token_urlsafe(32)
         self.startup_events_triggered = False
-        self.reverse_proxy = os.getenv("Endpoint", "") != ""
-        self.last_event_ts = time.time()
-        self.startup_ts = self.last_event_ts
         self.uploaded_file_dir = os.environ.get("GRADIO_TEMP_DIR") or str(
             Path(tempfile.gettempdir()) / "gradio"
         )
-        super().__init__(**kwargs, docs_url=None, redoc_url=None)
+        # Allow user to manually set `docs_url` and `redoc_url`
+        # when instantiating an App; when they're not set, disable docs and redoc.
+        kwargs.setdefault("docs_url", None)
+        kwargs.setdefault("redoc_url", None)
+        super().__init__(**kwargs)
 
     def configure_app(self, blocks: gradio.Blocks) -> None:
         auth = blocks.auth
@@ -145,8 +146,22 @@ class App(FastAPI):
         return self.blocks
 
     @staticmethod
-    def create_app(blocks: gradio.Blocks) -> App:
-        app = App(default_response_class=ORJSONResponse)
+    def build_proxy_request(url_path):
+        url = httpx.URL(url_path)
+        is_hf_url = url.host.endswith(".hf.space")
+        headers = {}
+        if Context.hf_token is not None and is_hf_url:
+            headers["Authorization"] = f"Bearer {Context.hf_token}"
+        rp_req = client.build_request("GET", url, headers=headers)
+        return rp_req
+
+    @staticmethod
+    def create_app(
+        blocks: gradio.Blocks, app_kwargs: Dict[str, Any] | None = None
+    ) -> App:
+        app_kwargs = app_kwargs or {}
+        app_kwargs.setdefault("default_response_class", ORJSONResponse)
+        app = App(**app_kwargs)
         app.configure_app(blocks)
 
         app.add_middleware(
@@ -182,8 +197,7 @@ class App(FastAPI):
         @app.get("/token")
         @app.get("/token/")
         def get_token(request: fastapi.Request) -> dict:
-            token = request.cookies.get("access-token") or \
-                    request.cookies.get("access-token-unsecure")
+            token = request.cookies.get("access-token")
             return {"token": token, "user": app.tokens.get(token)}
 
         @app.get("/app_id")
@@ -196,9 +210,6 @@ class App(FastAPI):
         def login(form_data: OAuth2PasswordRequestForm = Depends()):
             username, password = form_data.username, form_data.password
             if app.auth is None:
-                # if app.reverse_proxy:
-                #     base_path = "/" + os.getenv("Endpoint", "")
-                #     return RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
                 return RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)
             if callable(app.auth):
                 expire_time_or_auth = app.auth(username, password)
@@ -214,9 +225,7 @@ class App(FastAPI):
                 app.tokens[token] = username
                 response = JSONResponse(content={"success": True})
                 # 有nginx的情况。
-                # if app.reverse_proxy:
-                #     base_path = "/" + os.getenv("Endpoint", "")
-                #     response = RedirectResponse(url=base_path, status_code=status.HTTP_302_FOUND)
+                import time
                 exp = expire_time_or_auth - int(time.time()) if isinstance(expire_time_or_auth,
                                                                            int) and expire_time_or_auth > 0 else 3600 * 24
                 if exp > 24 * 3600 * 4:
@@ -232,7 +241,6 @@ class App(FastAPI):
                 return response
             else:
                 raise HTTPException(status_code=400, detail="Incorrect credentials.")
-
 
         ###############
         # Main Routes
@@ -290,20 +298,6 @@ class App(FastAPI):
             config["root"] = root_path
             return config
 
-        @app.get('/system/time', response_class=JSONResponse)
-        async def last_opt_ts():
-            now = time.time()
-            return JSONResponse(content={
-                'data': {
-                    "last_time": int(app.last_event_ts),
-                    "idle_time": int(now - app.last_event_ts),
-                    "run_time": int(now - app.startup_ts)
-                },
-                'msg': 'ok',
-                'status': 200
-            }
-            )
-
         @app.get("/static/{path:path}")
         def static_resource(path: str):
             static_file = safe_join(STATIC_PATH_LIB, path)
@@ -326,11 +320,7 @@ class App(FastAPI):
         @app.get("/proxy={url_path:path}", dependencies=[Depends(login_check)])
         async def reverse_proxy(url_path: str):
             # Adapted from: https://github.com/tiangolo/fastapi/issues/1788
-            url = httpx.URL(url_path)
-            headers = {}
-            if Context.hf_token is not None:
-                headers["Authorization"] = f"Bearer {Context.hf_token}"
-            rp_req = client.build_request("GET", url, headers=headers)
+            rp_req = app.build_proxy_request(url_path)
             rp_resp = await client.send(rp_req, stream=True)
             return StreamingResponse(
                 rp_resp.aiter_raw(),
@@ -339,75 +329,55 @@ class App(FastAPI):
                 background=BackgroundTask(rp_resp.aclose),
             )
 
-        @app.head("/file={path_or_url:path}")
-        @app.get("/file={path_or_url:path}")
+        @app.head("/file={path_or_url:path}", dependencies=[Depends(login_check)])
+        @app.get("/file={path_or_url:path}", dependencies=[Depends(login_check)])
         async def file(path_or_url: str, request: fastapi.Request):
-            _, ex = os.path.splitext(path_or_url)
-            ex = ex.lower()
-
-            def is_front_file():
-                front_files = {'.js', '.html', '.css', '.htm'}
-                return ex in front_files
-
-            def check_token():
-                token = request.cookies.get("access-token", "")
-                user = app.tokens.get(token)
-                if app.auth is None or not (user is None):
-                    return True
-                return False
-
-            if not is_front_file() and not check_token():
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
-                )
             blocks = app.get_blocks()
             if utils.validate_url(path_or_url):
                 return RedirectResponse(
                     url=path_or_url, status_code=status.HTTP_302_FOUND
                 )
+
             abs_path = utils.abspath(path_or_url)
+
             in_blocklist = any(
                 utils.is_in_or_equal(abs_path, blocked_path)
                 for blocked_path in blocks.blocked_paths
             )
-            if in_blocklist:
-                raise HTTPException(403, f"File not allowed: {path_or_url}.")
+            is_dotfile = any(part.startswith(".") for part in abs_path.parts)
+            is_dir = abs_path.is_dir()
 
-            in_app_dir = utils.abspath(app.cwd) in abs_path.parents
+            if in_blocklist or is_dotfile or is_dir:
+                raise HTTPException(403, f"File not allowed: {path_or_url}.")
+            if not abs_path.exists():
+                raise HTTPException(404, f"File not found: {path_or_url}.")
+
+            in_app_dir = utils.is_in_or_equal(abs_path, app.cwd)
             created_by_app = str(abs_path) in set().union(*blocks.temp_file_sets)
-            in_file_dir = any(
+            in_allowlist = any(
                 utils.is_in_or_equal(abs_path, allowed_path)
                 for allowed_path in blocks.allowed_paths
             )
-            was_uploaded = utils.abspath(app.uploaded_file_dir) in abs_path.parents
+            was_uploaded = utils.is_in_or_equal(abs_path, app.uploaded_file_dir)
 
-            if in_app_dir or created_by_app or in_file_dir or was_uploaded:
-                if not abs_path.exists():
-                    raise HTTPException(404, "File not found")
-                if abs_path.is_dir():
-                    raise HTTPException(403)
+            if not (in_app_dir or created_by_app or in_allowlist or was_uploaded):
+                raise HTTPException(403, f"File not allowed: {path_or_url}.")
 
-                range_val = request.headers.get("Range", "").strip()
-                if range_val.startswith("bytes=") and "-" in range_val:
-                    range_val = range_val[6:]
-                    start, end = range_val.split("-")
-                    if start.isnumeric() and end.isnumeric():
-                        start = int(start)
-                        end = int(end)
-                        response = ranged_response.RangedFileResponse(
-                            abs_path,
-                            ranged_response.OpenRange(start, end),
-                            dict(request.headers),
-                            stat_result=os.stat(abs_path),
-                        )
-                        return response
-                return FileResponse(abs_path, headers={"Accept-Ranges": "bytes"})
-
-            else:
-                raise HTTPException(
-                    403,
-                    f"File cannot be fetched: {path_or_url}. All files must contained within the Gradio python app working directory, or be a temp file created by the Gradio python app.",
-                )
+            range_val = request.headers.get("Range", "").strip()
+            if range_val.startswith("bytes=") and "-" in range_val:
+                range_val = range_val[6:]
+                start, end = range_val.split("-")
+                if start.isnumeric() and end.isnumeric():
+                    start = int(start)
+                    end = int(end)
+                    response = ranged_response.RangedFileResponse(
+                        abs_path,
+                        ranged_response.OpenRange(start, end),
+                        dict(request.headers),
+                        stat_result=os.stat(abs_path),
+                    )
+                    return response
+            return FileResponse(abs_path, headers={"Accept-Ranges": "bytes"})
 
         @app.get("/file/{path:path}", dependencies=[Depends(login_check)])
         async def file_deprecated(path: str, request: fastapi.Request):
@@ -455,7 +425,7 @@ class App(FastAPI):
             dependency = app.get_blocks().dependencies[fn_index_inferred]
             target = dependency["targets"][0] if len(dependency["targets"]) else None
             event_data = EventData(
-                app.get_blocks().blocks[target] if target else None,
+                app.get_blocks().blocks.get(target) if target else None,
                 body.event_data,
             )
             batch = dependency["batch"]
@@ -584,8 +554,6 @@ class App(FastAPI):
             # set the token into Event to allow using the same token for call_prediction
             event.token = token
             event.session_hash = session_info["session_hash"]
-            # set last opt time
-            app.last_event_ts = time.time()
 
             # Continuous events are not put in the queue  so that they do not
             # occupy the queue's resource as they are expected to run forever
@@ -609,20 +577,6 @@ class App(FastAPI):
                 await asyncio.sleep(1)
                 if websocket.application_state == WebSocketState.DISCONNECTED:
                     return
-
-        @app.get('/system/time', response_class=JSONResponse)
-        async def last_opt_ts():
-            now = time.time()
-            return JSONResponse(content={
-                'data': {
-                    "last_time": int(app.last_event_ts),
-                    "idle_time": int(now - app.last_event_ts),
-                    "run_time": int(now - app.startup_ts)
-                },
-                'msg': 'ok',
-                'status': 200
-            }
-            )
 
         @app.get(
             "/queue/status",
@@ -684,7 +638,7 @@ def safe_join(directory: str, path: str) -> str:
     if path == "":
         raise HTTPException(400)
 
-    filename = os.path.normpath(path)
+    filename = posixpath.normpath(path)
     fullpath = os.path.join(directory, filename)
     if (
         any(sep in filename for sep in _os_alt_seps)

@@ -256,7 +256,7 @@ class Examples:
                 targets = self.inputs_with_examples + self.outputs
             else:
                 targets = self.inputs_with_examples
-            self.dataset.click(
+            load_input_event = self.dataset.click(
                 load_example,
                 inputs=[self.dataset],
                 outputs=targets,  # type: ignore
@@ -267,7 +267,7 @@ class Examples:
             if self.run_on_click and not self.cache_examples:
                 if self.fn is None:
                     raise ValueError("Cannot run_on_click if no function is provided")
-                self.dataset.click(
+                load_input_event.then(
                     self.fn,
                     inputs=self.inputs,  # type: ignore
                     outputs=self.outputs,  # type: ignore
@@ -522,7 +522,6 @@ class Progress(Iterable):
 
 
 def create_tracker(root_blocks, event_id, fn, track_tqdm):
-
     progress = Progress(_callback=root_blocks._queue.set_progress, _event_id=event_id)
     if not track_tqdm:
         return progress, fn

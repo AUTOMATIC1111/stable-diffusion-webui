@@ -225,6 +225,7 @@ class Tab(BlockContext, Selectable):
 TabItem = Tab
 
 
+@document()
 class Group(BlockContext):
     """
     Group is a layout element within Blocks which groups together children so that

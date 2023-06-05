@@ -40,7 +40,7 @@ from gradio.exceptions import DuplicateBlockError, InvalidApiNameError
 from gradio.helpers import EventData, create_tracker, skip, special_args
 from gradio.themes import Default as DefaultTheme
 from gradio.themes import ThemeClass as Theme
-from gradio.tunneling import CURRENT_TUNNELS
+from gradio.tunneling import BINARY_PATH, CURRENT_TUNNELS
 from gradio.utils import (
     GRADIO_VERSION,
     TupleNoPrint,
@@ -1448,7 +1448,7 @@ Received outputs:
         Parameters:
             name: Class Method - the name of the model (e.g. "gpt2" or "facebook/bart-base") or space (e.g. "flax-community/spanish-gpt2"), can include the `src` as prefix (e.g. "models/facebook/bart-base")
             src: Class Method - the source of the model: `models` or `spaces` (or leave empty if source is provided as a prefix in `name`)
-            api_key: Class Method - optional access token for loading private Hugging Face Hub models or spaces. Find your token here: https://huggingface.co/settings/tokens
+            api_key: Class Method - optional access token for loading private Hugging Face Hub models or spaces. Find your token here: https://huggingface.co/settings/tokens. Warning: only provide this if you are loading a trusted private Space as it can be read by the Space you are loading.
             alias: Class Method - optional string used as the name of the loaded model instead of the default name (only applies if loading a Space running Gradio 2.x)
             fn: Instance Method - the function to wrap an interface around. Often a machine learning model's prediction function. Each parameter of the function corresponds to one input component, and the function should return a single value or a tuple of values, with each element in the tuple corresponding to one output component.
             inputs: Instance Method - List of gradio.components to use as inputs. If the function takes no inputs, this should be an empty list.
@@ -1482,7 +1482,9 @@ Received outputs:
                 name=name, src=src, hf_token=api_key, alias=alias, **kwargs
             )
         else:
-            return self_or_cls.set_event_trigger(
+            from gradio.events import Dependency
+
+            dep, dep_index = self_or_cls.set_event_trigger(
                 event_name="load",
                 fn=fn,
                 inputs=inputs,
@@ -1498,7 +1500,8 @@ Received outputs:
                 max_batch_size=max_batch_size,
                 every=every,
                 no_target=True,
-            )[0]
+            )
+            return Dependency(self_or_cls, dep, dep_index)
 
     def clear(self):
         """Resets the layout of the Blocks object."""
@@ -1615,6 +1618,7 @@ Received outputs:
         blocked_paths: list[str] | None = None,
         root_path: str = "",
         _frontend: bool = True,
+        app_kwargs: dict[str, Any] | None = None,
     ) -> tuple[FastAPI, str, str]:
         """
         Launches a simple web server that serves the demo. Can also be used to create a
@@ -1648,6 +1652,7 @@ Received outputs:
             allowed_paths: List of complete filepaths or parent directories that gradio is allowed to serve (in addition to the directory containing the gradio python file). Must be absolute paths. Warning: if you provide directories, any files in these directories or their subdirectories are accessible to all users of your app.
             blocked_paths: List of complete filepaths or parent directories that gradio is not allowed to serve (i.e. users of your app are not allowed to access). Must be absolute paths. Warning: takes precedence over `allowed_paths` and all other directories exposed by Gradio by default.
             root_path: The root path (or "mount point") of the application, if it's not served from the root ("/") of the domain. Often used when the application is behind a reverse proxy that forwards requests to the application. For example, if the application is served at "https://example.com/myapp", the `root_path` should be set to "/myapp".
+            app_kwargs: Additional keyword arguments to pass to the underlying FastAPI app as a dictionary of parameter keys and argument values. For example, `{"docs_url": "/docs"}`
         Returns:
             app: FastAPI app object that is running the demo
             local_url: Locally accessible link to the demo
@@ -1747,6 +1752,7 @@ Received outputs:
                 ssl_keyfile,
                 ssl_certfile,
                 ssl_keyfile_password,
+                app_kwargs=app_kwargs,
             )
             self.server_name = server_name
             self.local_url = local_url
@@ -1839,7 +1845,7 @@ Received outputs:
                     analytics.error_analytics("Not able to set up tunnel")
                 self.share_url = None
                 self.share = False
-                print(strings.en["COULD_NOT_GET_SHARE_LINK"])
+                print(strings.en["COULD_NOT_GET_SHARE_LINK"].format(BINARY_PATH))
         else:
             if not (quiet):
                 print(strings.en["PUBLIC_SHARE_TRUE"])

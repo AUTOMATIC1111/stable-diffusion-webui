@@ -30,7 +30,6 @@ def get_theme_assets(space_info: huggingface_hub.hf_api.SpaceInfo) -> list[Theme
 def get_matching_version(
     assets: list[ThemeAsset], expression: str | None
 ) -> ThemeAsset | None:
-
     expression = expression or "*"
 
     # Return most recent version that matches
