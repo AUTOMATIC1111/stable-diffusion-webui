@@ -9,12 +9,12 @@ import subprocess
 import io
 import pstats
 import cProfile
+import argparse
 import pkg_resources
 
 try:
     from modules.cmd_args import parser
 except:
-    import argparse
     parser = argparse.ArgumentParser(description="SD.Next", conflict_handler='resolve', formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=55, indent_increment=2, width=200))
 
 class Dot(dict): # dot notation access to dictionary attributes
@@ -441,6 +441,8 @@ def install_extensions():
     extensions_duplicates = []
     extensions_enabled = []
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+    if args.base:
+        extension_folders = []
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
@@ -552,6 +554,8 @@ def check_extensions():
     newest_all = os.path.getmtime('requirements.txt')
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+    if args.base:
+        extension_folders = []
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
@@ -686,6 +690,7 @@ def add_args():
     group.add_argument('--version', default = False, action='store_true', help = "Print version information")
     group.add_argument('--ignore', default = False, action='store_true', help = "Ignore any errors and attempt to continue")
     group.add_argument('--safe', default = False, action='store_true', help = "Run in safe mode with no user extensions")
+    group.add_argument('--base', default = False, action='store_true', help = argparse.SUPPRESS)
 
 
 def parse_args():
@@ -714,6 +719,8 @@ def extensions_preload(force = False):
             from modules.script_loading import preload_extensions
             from modules.paths_internal import extensions_builtin_dir, extensions_dir
             extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+            if args.base:
+                extension_folders = []
             for ext_dir in extension_folders:
                 t0 = time.time()
                 preload_extensions(ext_dir, parser)

@@ -1,4 +1,3 @@
-/* global opts */
 let lastState = {};
 
 function rememberGallerySelection(id_gallery) {}

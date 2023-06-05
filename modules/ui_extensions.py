@@ -432,7 +432,7 @@ def create_ui():
                     outputs=[extensions_table, info],
                 )
             with gr.TabItem("Manual install", id="install_from_url"):
-                install_url = gr.Text(label="URL for extension's git repository")
+                install_url = gr.Text(label="Extension GIT repository URL")
                 install_branch = gr.Text(label="Specific branch name", placeholder="Leave empty for default main branch")
                 install_dirname = gr.Text(label="Local directory name", placeholder="Leave empty for auto")
                 install_button = gr.Button(value="Install", variant="primary")

@@ -1,4 +1,4 @@
-onUiUpdate(() => {
+onAfterUiUpdate(() => {
   gradioApp().querySelectorAll('span, button, select, p').forEach((span) => {
     tooltip = titles[span.textContent];
     if (!tooltip) tooltip = titles[span.value];
@@ -22,7 +22,7 @@ onUiUpdate(() => {
 /*
 // dump elements 
 const elements = [
-  ...Array.from(gradioApp().querySelectorAll('button')).map(el => ({id: el.id, text: el.textContent, title: el.title })),
-  ...Array.from(gradioApp().querySelectorAll('label > span')).map(el => ({id: el.id, text: el.textContent, title: el.title })),
+  ...Array.from(gradioApp().querySelectorAll('button')).map(el => ({id: el.id, text: el.textContent, localized: '', hint: el.title })),
+  ...Array.from(gradioApp().querySelectorAll('label > span')).map(el => ({id: el.id, text: el.textContent, localized: '', hint: el.title })),
 ];
 */

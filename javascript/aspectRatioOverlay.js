@@ -1,5 +1,3 @@
-/* global gradioApp, onUiUpdate, get_tab_index */
-
 let currentWidth = null;
 let currentHeight = null;
 let arFrameTimeout = setTimeout(() => {}, 0);
@@ -52,7 +50,7 @@ function dimensionChange(e, is_width, is_height) {
   }
 }
 
-onUiUpdate(() => {
+onAfterUiUpdate(() => {
   const arPreviewRect = gradioApp().querySelector('#imageARPreview');
   if (arPreviewRect) arPreviewRect.style.display = 'none';
   const tabImg2img = gradioApp().querySelector('#tab_img2img');

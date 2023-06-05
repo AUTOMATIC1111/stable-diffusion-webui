@@ -6,7 +6,7 @@ import asyncio
 import logging
 import warnings
 from threading import Thread
-from modules import timer, errors
+from modules import timer, errors, paths # pylint: disable=unused-import
 
 startup_timer = timer.Timer()
 local_url = None
@@ -241,8 +241,8 @@ def start_ui():
             "version": f'0.0.{installer.git_commit}',
             "title": "SD.Next",
             "description": "SD.Next",
-            "docs_url": "/docs",
-            "redocs_url": "/redocs",
+            # "docs_url": "/docs",
+            # "redocs_url": "/redocs",
             "swagger_ui_parameters": {
                 "displayOperationId": True,
                 "showCommonExtensions": True,

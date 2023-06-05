@@ -1,5 +1,3 @@
-/* global gradioApp, uiCurrentTab, onUiUpdate, get_uiCurrentTabContent */
-
 const contextMenuInit = () => {
   let eventListenerApplied = false;
   const menuSpecs = new Map();
@@ -137,4 +135,4 @@ const addContextMenuEventListener = initResponse[2];
 }());
 // End example Context Menu Items
 
-onUiUpdate(() => addContextMenuEventListener());
+onAfterUiUpdate(() => addContextMenuEventListener());

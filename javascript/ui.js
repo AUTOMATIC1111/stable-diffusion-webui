@@ -1,5 +1,3 @@
-/* global gradioApp, onUiUpdate, opts */
-
 window.opts = {};
 window.localization = {};
 let tabSelected = '';
@@ -201,7 +199,7 @@ function register_drag_drop() {
   });
 }
 
-onUiUpdate(() => {
+onAfterUiUpdate(() => {
   sort_ui_elements();
   if (Object.keys(opts).length !== 0) return;
   const json_elem = gradioApp().getElementById('settings_json');
@@ -415,6 +413,8 @@ function preview_theme() {
   }
 }
 
+let uiLoaded = false;
+
 function reconnect_ui() {
   const api_logo = Array.from(gradioApp().querySelectorAll('img')).filter((el) => el?.src?.endsWith('api-logo.svg'));
   if (api_logo.length > 0) api_logo[0].remove();
@@ -428,6 +428,7 @@ function reconnect_ui() {
     rememberGallerySelection('txt2img_gallery');
     requestProgress(task_id, null, gallery, null, null, true);
   }
+  uiLoaded = true;
 
   const sd_model = gradioApp().getElementById('setting_sd_model_checkpoint');
   let loadingStarted = 0;

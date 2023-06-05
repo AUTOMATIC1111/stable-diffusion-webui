@@ -2,12 +2,16 @@
 
 ## Update for 06/03/2023
 
-- added extra networks to xyz grid options  
-  now you can have more fun with all your loras :)
-- new vae decode method to help with larger batch sizes, thanks @bigdog
-- profiling of scripts/extensions callbacks
-- additional exception handling so bad exception does not crash main app
-- additional background removal models
+- added extra networks to **xyz grid** options  
+  now you can have more fun with all your embeddings and loras :)  
+- new **vae decode** method to help with larger batch sizes, thanks @bigdog  
+- new setting -> lora -> **use lycoris to handle all lora types**  
+  this is still experimental, but the goal is to obsolete old built-in lora module  
+  as it doesn't understand many new loras and built-in lyco module can handle it all  
+- optimize browser page loading  
+- profiling of scripts/extensions callbacks  
+- additional exception handling so bad exception does not crash main app  
+- additional background removal models  
 
 ## Update for 06/02/2023
 

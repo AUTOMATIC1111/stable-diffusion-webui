@@ -3,7 +3,7 @@
 let lastHeadImg = null;
 let notificationButton = null;
 
-onUiUpdate(function () {
+onAfterUiUpdate(function () {
   if (!notificationButton) {
     notificationButton = gradioApp().getElementById('request_notifications');
     if (notificationButton) notificationButton.addEventListener('click', (evt) => Notification.requestPermission(), true);

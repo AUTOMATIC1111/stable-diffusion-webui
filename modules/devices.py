@@ -154,7 +154,7 @@ def set_cuda_params():
         dtype_vae = torch.float32
         dtype_unet = torch.float32
     if shared.opts.no_half_vae: # set dtype again as no-half-vae options take priority
-        shared.log.info('Torch override VAE dtype: no-half-vae set')
+        shared.log.info('Torch override VAE dtype: no-half set')
         dtype_vae = torch.float32
     unet_needs_upcast = shared.opts.upcast_sampling
     shared.log.debug(f'Desired Torch parameters: dtype={shared.opts.cuda_dtype} no-half={shared.opts.no_half} no-half-vae={shared.opts.no_half_vae} upscast={shared.opts.upcast_sampling}')
