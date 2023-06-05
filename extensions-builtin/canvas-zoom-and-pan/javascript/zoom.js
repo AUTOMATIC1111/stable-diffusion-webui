@@ -1,4 +1,17 @@
 onUiLoaded(async() => {
+    const elementIDs = {
+        img2imgTabs: "#mode_img2img .tab-nav",
+        inpaint: "#img2maskimg",
+        inpaintSketch: "#inpaint_sketch",
+        rangeGroup: "#img2img_column_size",
+        sketch: "#img2img_sketch",
+    };
+    const tabNameToElementId = {
+        "Inpaint sketch": elementIDs.inpaintSketch,
+        "Inpaint": elementIDs.inpaint,
+        "Sketch": elementIDs.sketch,
+    };
+
     // Helper functions
     // Get active tab
     function getActiveTab(elements, all = false) {
@@ -14,14 +27,9 @@ onUiLoaded(async() => {
     }
 
     // Get tab ID
-    function getTabId(elements, elementIDs) {
+    function getTabId(elements) {
         const activeTab = getActiveTab(elements);
-        const tabIdLookup = {
-            "Sketch": elementIDs.sketch,
-            "Inpaint sketch": elementIDs.inpaintSketch,
-            "Inpaint": elementIDs.inpaint
-        };
-        return tabIdLookup[activeTab.innerText];
+        return tabNameToElementId[activeTab.innerText];
     }
 
     // Wait until opts loaded
@@ -80,8 +88,8 @@ onUiLoaded(async() => {
      * to avoid breaking the canvas. Additionally, the function adjusts the mask to work correctly on
      * very long images.
      */
-    function restoreImgRedMask(elements, elementIDs) {
-        const mainTabId = getTabId(elements, elementIDs);
+    function restoreImgRedMask(elements) {
+        const mainTabId = getTabId(elements);
 
         if (!mainTabId) return;
 
@@ -135,14 +143,6 @@ onUiLoaded(async() => {
     let mouseX, mouseY;
     let activeElement;
 
-    const elementIDs = {
-        sketch: "#img2img_sketch",
-        inpaint: "#img2maskimg",
-        inpaintSketch: "#inpaint_sketch",
-        img2imgTabs: "#mode_img2img .tab-nav",
-        rangeGroup: "#img2img_column_size"
-    };
-
     async function getElements() {
         const elements = await Promise.all(
             Object.values(elementIDs).map(id => gradioApp().querySelector(id))
@@ -164,7 +164,7 @@ onUiLoaded(async() => {
 
     rangeInputs.forEach(input => {
         if (input) {
-            input.addEventListener("input", () => restoreImgRedMask(elements, elementIDs));
+            input.addEventListener("input", () => restoreImgRedMask(elements));
         }
     });
 
