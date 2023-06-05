@@ -1,121 +1,125 @@
-// Helper functions
-// Get active tab
-function getActiveTab(elements, all = false) {
-    const tabs = elements.img2imgTabs.querySelectorAll("button");
-
-    if (all) return tabs;
-
-    for (let tab of tabs) {
-        if (tab.classList.contains("selected")) {
-            return tab;
-        }
-    }
-}
-
-// Get tab ID
-function getTabId(elements, elementIDs) {
-    const activeTab = getActiveTab(elements);
-    const tabIdLookup = {
-        "Sketch": elementIDs.sketch,
-        "Inpaint sketch": elementIDs.inpaintSketch,
-        "Inpaint": elementIDs.inpaint
-    };
-    return tabIdLookup[activeTab.innerText];
-}
-
-// Wait until opts loaded
-async function waitForOpts() {
-    return new Promise(resolve => {
-        const checkInterval = setInterval(() => {
-            if (window.opts && Object.keys(window.opts).length !== 0) {
-                clearInterval(checkInterval);
-                resolve(window.opts);
-            }
-        }, 100);
-    });
-}
-
-// Check is hotkey valid
-function isSingleLetter(value) {
-    return (
-        typeof value === "string" && value.length === 1 && /[a-z]/i.test(value)
-    );
-}
-
-// Create hotkeyConfig from opts
-function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
-    const result = {};
-    const usedKeys = new Set();
-
-    for (const key in defaultHotkeysConfig) {
-        if (typeof hotkeysConfigOpts[key] === "boolean") {
-            result[key] = hotkeysConfigOpts[key];
-            continue;
-        }
-        if (
-            hotkeysConfigOpts[key] &&
-            isSingleLetter(hotkeysConfigOpts[key]) &&
-            !usedKeys.has(hotkeysConfigOpts[key].toUpperCase())
-        ) {
-            // If the property passed the test and has not yet been used, add 'Key' before it and save it
-            result[key] = "Key" + hotkeysConfigOpts[key].toUpperCase();
-            usedKeys.add(hotkeysConfigOpts[key].toUpperCase());
-        } else {
-            // If the property does not pass the test or has already been used, we keep the default value
-            console.error(
-                `Hotkey: ${hotkeysConfigOpts[key]} for ${key} is repeated and conflicts with another hotkey or is not 1 letter. The default hotkey is used: ${defaultHotkeysConfig[key][3]}`
-            );
-            result[key] = defaultHotkeysConfig[key];
-        }
-    }
-
-    return result;
-}
-
-/**
- * The restoreImgRedMask function displays a red mask around an image to indicate the aspect ratio.
- * If the image display property is set to 'none', the mask breaks. To fix this, the function
- * temporarily sets the display property to 'block' and then hides the mask again after 300 milliseconds
- * to avoid breaking the canvas. Additionally, the function adjusts the mask to work correctly on
- * very long images.
- */
-
-function restoreImgRedMask(elements, elementIDs) {
-    const mainTabId = getTabId(elements, elementIDs);
-
-    if (!mainTabId) return;
-
-    const mainTab = gradioApp().querySelector(mainTabId);
-    const img = mainTab.querySelector("img");
-    const imageARPreview = gradioApp().querySelector("#imageARPreview");
-
-    if (!img || !imageARPreview) return;
-
-    imageARPreview.style.transform = "";
-    if (parseFloat(mainTab.style.width) > 865) {
-        const transformString = mainTab.style.transform;
-        const scaleMatch = transformString.match(/scale\(([-+]?[0-9]*\.?[0-9]+)\)/);
-        let zoom = 1; // default zoom
-
-        if (scaleMatch && scaleMatch[1]) {
-            zoom = Number(scaleMatch[1]);
-        }
-
-        imageARPreview.style.transformOrigin = "0 0";
-        imageARPreview.style.transform = `scale(${zoom})`;
-    }
-
-    if (img.style.display !== "none") return;
-
-    img.style.display = "block";
-
-    setTimeout(() => {
-        img.style.display = "none";
-    }, 400);
-}
-
-// Main
 onUiLoaded(async() => {
+    const elementIDs = {
+        img2imgTabs: "#mode_img2img .tab-nav",
+        inpaint: "#img2maskimg",
+        inpaintSketch: "#inpaint_sketch",
+        rangeGroup: "#img2img_column_size",
+        sketch: "#img2img_sketch",
+    };
+    const tabNameToElementId = {
+        "Inpaint sketch": elementIDs.inpaintSketch,
+        "Inpaint": elementIDs.inpaint,
+        "Sketch": elementIDs.sketch,
+    };
+
+    // Helper functions
+    // Get active tab
+    function getActiveTab(elements, all = false) {
+        const tabs = elements.img2imgTabs.querySelectorAll("button");
+
+        if (all) return tabs;
+
+        for (let tab of tabs) {
+            if (tab.classList.contains("selected")) {
+                return tab;
+            }
+        }
+    }
+
+    // Get tab ID
+    function getTabId(elements) {
+        const activeTab = getActiveTab(elements);
+        return tabNameToElementId[activeTab.innerText];
+    }
+
+    // Wait until opts loaded
+    async function waitForOpts() {
+        for (;;) {
+            if (window.opts && Object.keys(window.opts).length) {
+                return window.opts;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+    }
+
+    // Check is hotkey valid
+    function isSingleLetter(value) {
+        return (
+            typeof value === "string" && value.length === 1 && /[a-z]/i.test(value)
+        );
+    }
+
+    // Create hotkeyConfig from opts
+    function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
+        const result = {};
+        const usedKeys = new Set();
+
+        for (const key in defaultHotkeysConfig) {
+            if (typeof hotkeysConfigOpts[key] === "boolean") {
+                result[key] = hotkeysConfigOpts[key];
+                continue;
+            }
+            if (
+                hotkeysConfigOpts[key] &&
+                isSingleLetter(hotkeysConfigOpts[key]) &&
+                !usedKeys.has(hotkeysConfigOpts[key].toUpperCase())
+            ) {
+                // If the property passed the test and has not yet been used, add 'Key' before it and save it
+                result[key] = "Key" + hotkeysConfigOpts[key].toUpperCase();
+                usedKeys.add(hotkeysConfigOpts[key].toUpperCase());
+            } else {
+                // If the property does not pass the test or has already been used, we keep the default value
+                console.error(
+                    `Hotkey: ${hotkeysConfigOpts[key]} for ${key} is repeated and conflicts with another hotkey or is not 1 letter. The default hotkey is used: ${defaultHotkeysConfig[key][3]}`
+                );
+                result[key] = defaultHotkeysConfig[key];
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * The restoreImgRedMask function displays a red mask around an image to indicate the aspect ratio.
+     * If the image display property is set to 'none', the mask breaks. To fix this, the function
+     * temporarily sets the display property to 'block' and then hides the mask again after 300 milliseconds
+     * to avoid breaking the canvas. Additionally, the function adjusts the mask to work correctly on
+     * very long images.
+     */
+    function restoreImgRedMask(elements) {
+        const mainTabId = getTabId(elements);
+
+        if (!mainTabId) return;
+
+        const mainTab = gradioApp().querySelector(mainTabId);
+        const img = mainTab.querySelector("img");
+        const imageARPreview = gradioApp().querySelector("#imageARPreview");
+
+        if (!img || !imageARPreview) return;
+
+        imageARPreview.style.transform = "";
+        if (parseFloat(mainTab.style.width) > 865) {
+            const transformString = mainTab.style.transform;
+            const scaleMatch = transformString.match(/scale\(([-+]?[0-9]*\.?[0-9]+)\)/);
+            let zoom = 1; // default zoom
+
+            if (scaleMatch && scaleMatch[1]) {
+                zoom = Number(scaleMatch[1]);
+            }
+
+            imageARPreview.style.transformOrigin = "0 0";
+            imageARPreview.style.transform = `scale(${zoom})`;
+        }
+
+        if (img.style.display !== "none") return;
+
+        img.style.display = "block";
+
+        setTimeout(() => {
+            img.style.display = "none";
+        }, 400);
+    }
+
     const hotkeysConfigOpts = await waitForOpts();
 
     // Default config
@@ -137,38 +141,22 @@ onUiLoaded(async() => {
     let mouseX, mouseY;
     let activeElement;
 
-    const elementIDs = {
-        sketch: "#img2img_sketch",
-        inpaint: "#img2maskimg",
-        inpaintSketch: "#inpaint_sketch",
-        img2imgTabs: "#mode_img2img .tab-nav",
-        rangeGroup: "#img2img_column_size"
-    };
-
-    async function getElements() {
-        const elements = await Promise.all(
-            Object.values(elementIDs).map(id => gradioApp().querySelector(id))
-        );
-        return Object.fromEntries(
-            Object.keys(elementIDs).map((key, index) => [key, elements[index]])
-        );
-    }
-
-    const elements = await getElements();
+    const elements = Object.fromEntries(Object.keys(elementIDs).map((id) => [
+        id,
+        gradioApp().querySelector(elementIDs[id]),
+    ]));
     const elemData = {};
 
     // Apply functionality to the range inputs. Restore redmask and correct for long images.
-    const rangeInputs = elements.rangeGroup ? elements.rangeGroup.querySelectorAll("input") :
+    const rangeInputs = elements.rangeGroup ? Array.from(elements.rangeGroup.querySelectorAll("input")) :
         [
             gradioApp().querySelector("#img2img_width input[type='range']"),
             gradioApp().querySelector("#img2img_height input[type='range']")
         ];
 
-    rangeInputs.forEach(input => {
-        if (input) {
-            input.addEventListener("input", () => restoreImgRedMask(elements, elementIDs));
-        }
-    });
+    for (const input of rangeInputs) {
+        input?.addEventListener("input", () => restoreImgRedMask(elements));
+    }
 
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
@@ -223,12 +211,11 @@ onUiLoaded(async() => {
                     action: "Move canvas"
                 }
             ];
-            hotkeys.forEach(function(hotkey) {
+            for (const hotkey of hotkeys) {
                 const p = document.createElement("p");
-                p.innerHTML =
-                    "<b>" + hotkey.key + "</b>" + " - " + hotkey.action;
+                p.innerHTML = `<b>${hotkey.key}</b> - ${hotkey.action}`;
                 tooltipContent.appendChild(p);
-            });
+            }
 
             // Add information and content elements to the tooltip element
             tooltip.appendChild(info);
