@@ -164,9 +164,9 @@ def verify_args():
     if not os.path.isfile(args.model):
         log.error(f'cannot find loaded model: {args.model}')
         exit(1)
-    if not os.path.exists(args.ckpt_dir) or not os.path.isdir(args.ckpt_dir):
-        log.error(f'cannot find models folder: {args.ckpt_dir}')
-        exit(1)
+    # if not os.path.exists(args.ckpt_dir) or not os.path.isdir(args.ckpt_dir):
+    #     log.error(f'cannot find models folder: {args.ckpt_dir}')
+    #     exit(1)
     if not os.path.exists(args.input) or not os.path.isdir(args.input):
         log.error(f'cannot find training folder: {args.input}')
         exit(1)
