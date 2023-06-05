@@ -222,30 +222,39 @@ function extraNetworksShowMetadata(text) {
     popup(elem);
 }
 
-function requestGet(url, data, handler, errorHandler) {
-    var xhr = new XMLHttpRequest();
-    var args = Object.keys(data).map(function(k) {
-        return encodeURIComponent(k) + '=' + encodeURIComponent(data[k]);
-    }).join('&');
-    xhr.open("GET", url + "?" + args, true);
-
-    xhr.onreadystatechange = function() {
-        if (xhr.readyState === 4) {
-            if (xhr.status === 200) {
-                try {
-                    var js = JSON.parse(xhr.responseText);
-                    handler(js);
-                } catch (error) {
-                    console.error(error);
-                    errorHandler();
-                }
-            } else {
-                errorHandler();
-            }
+/**
+ * Do a GET request to the given URL with the given query parameters and return JSON.
+ *
+ * If `handler` is given, it will be called with JSON data.
+ * If `errorHandler` is given, it will be called with an error and the response (if any).
+ *
+ * In any case, the return value is a `Promise` that resolves to the JSON response (or is rejected with an error).
+ *
+ * @param url The URL to GET. Relative URLs are considered relative to the current page.
+ * @param queryParams Optional query params to slap on the URL.
+ * @param handler Optional callback for the JSON response.
+ * @param errorHandler Optional callback for the error.
+ * @returns {Promise} A `Promise` that resolves to the JSON response (or is rejected with an error).
+ */
+async function requestGet(url, queryParams = undefined, handler = undefined, errorHandler = undefined) {
+    let response;
+    try {
+        const u = new URL(url, window.location.href);
+        for (const [key, value] of Object.entries(queryParams ?? {})) {
+            if (value) u.searchParams.set(key, String(value));
         }
-    };
-    var js = JSON.stringify(data);
-    xhr.send(js);
+        response = await fetch(u);
+        if (!response.ok) {
+            throw new Error(`GET ${u}: ${response.status} ${response.statusText}`);
+        }
+        const jsonPromise = response.json();
+        handler?.(await jsonPromise);
+        return jsonPromise;
+    } catch (error) {
+        console.error(error);
+        errorHandler?.(error, response);
+        throw error;
+    }
 }
 
 function extraNetworksRequestMetadata(event, extraPage, cardName) {
