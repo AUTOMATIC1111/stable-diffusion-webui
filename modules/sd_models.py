@@ -108,7 +108,8 @@ def list_models():
     if shared.backend == shared.Backend.ORIGINAL:
         model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     else:
-        model_list = modelloader.load_diffusers(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
+        model_path = os.path.join(models_path, 'Diffusers')
+        model_list = modelloader.load_diffusers(model_path=model_path, command_path=shared.opts.diffusers_dir)
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         if checkpoint_info.name is not None:
@@ -125,16 +126,25 @@ def list_models():
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
     shared.log.info(f'Available models: {shared.opts.ckpt_dir} {len(checkpoints_list)}')
+
     if len(checkpoints_list) == 0:
         if not shared.cmd_opts.no_download:
             key = input('Download the default model? (y/N) ')
             if key.lower().startswith('y'):
-                model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
-                shared.opts.data['sd_model_checkpoint'] = "v1-5-pruned-emaonly.safetensors"
-                model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
-                for filename in sorted(model_list, key=str.lower):
-                    checkpoint_info = CheckpointInfo(filename)
-                    checkpoint_info.register()
+                if shared.backend == shared.Backend.ORIGINAL:
+                    model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
+                    shared.opts.data['sd_model_checkpoint'] = "v1-5-pruned-emaonly.safetensors"
+                    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+                    for filename in sorted(model_list, key=str.lower):
+                        checkpoint_info = CheckpointInfo(filename)
+                        checkpoint_info.register()
+                else:
+                    hub_url = "runwayml/stable-diffusion-v1-5"
+                    model_list = modelloader.load_diffusers(model_path=model_path, hub_url=hub_url, command_path=shared.opts.diffusers_dir)
+                    for filename in sorted(model_list, key=str.lower):
+                        checkpoint_info = CheckpointInfo(filename)
+                        if checkpoint_info.name is not None:
+                            checkpoint_info.register()
 
 
 def update_model_hashes():
