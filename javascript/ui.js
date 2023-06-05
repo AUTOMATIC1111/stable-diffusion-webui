@@ -313,19 +313,20 @@ onOptionsChanged(function() {
 
 let txt2img_textarea, img2img_textarea = undefined;
 
-function restart_reload() {
+async function restart_reload() {
     document.body.innerHTML = '<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
 
-    var requestPing = function() {
-        requestGet("./internal/ping", {}, function(data) {
+    // Wait for `ping` endpoint to be available (again), then reload the page.
+    for (;;) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        try {
+            await requestGet("./internal/ping", {t: +new Date()});
             location.reload();
-        }, function() {
-            setTimeout(requestPing, 500);
-        });
-    };
-
-    setTimeout(requestPing, 2000);
-
+        } catch (e) {
+            // Ignore errors, just try again soon
+        }
+    }
+    // eslint-disable-next-line no-unreachable
     return [];
 }
 

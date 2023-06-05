@@ -39,24 +39,29 @@ onOptionsChanged(function() {
     });
 });
 
-function settingsHintsShowQuicksettings() {
-    requestGet("./internal/quicksettings-hint", {}, function(data) {
-        var table = document.createElement('table');
-        table.className = 'popup-table';
+async function settingsHintsShowQuicksettings() {
+    let data;
+    try {
+        data = await requestGet("./internal/quicksettings-hint");
+    } catch (e) {
+        console.error(`Error fetching quicksettings-hint`, e);
+        return;
+    }
+    var table = document.createElement('table');
+    table.className = 'popup-table';
 
-        data.forEach(function(obj) {
-            var tr = document.createElement('tr');
-            var td = document.createElement('td');
-            td.textContent = obj.name;
-            tr.appendChild(td);
+    data.forEach(function(obj) {
+        var tr = document.createElement('tr');
+        var td = document.createElement('td');
+        td.textContent = obj.name;
+        tr.appendChild(td);
 
-            td = document.createElement('td');
-            td.textContent = obj.label;
-            tr.appendChild(td);
+        td = document.createElement('td');
+        td.textContent = obj.label;
+        tr.appendChild(td);
 
-            table.appendChild(tr);
-        });
-
-        popup(table);
+        table.appendChild(tr);
     });
+
+    popup(table);
 }

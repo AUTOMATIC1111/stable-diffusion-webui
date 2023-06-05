@@ -1,4 +1,3 @@
-
 function createRow(table, cellName, items) {
     var tr = document.createElement('tr');
     var res = [];
@@ -149,8 +148,7 @@ function renderProfilerPopupFromData(data, cutoff) {
     popup(table);
 }
 
-function showProfile(path, cutoff = 0.05) {
-    requestGet(path, {}, function(data) {
-        renderProfilerPopupFromData(data, cutoff);
-    });
+async function showProfile(path, cutoff = 0.05) {
+    const data = await requestGet(path);
+    renderProfilerPopupFromData(data, cutoff);
 }

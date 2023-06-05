@@ -257,18 +257,18 @@ async function requestGet(url, queryParams = undefined, handler = undefined, err
     }
 }
 
-function extraNetworksRequestMetadata(event, extraPage, cardName) {
-    var showError = function() {
-        extraNetworksShowMetadata("there was an error getting metadata");
-    };
-
-    requestGet("./sd_extra_networks/metadata", {page: extraPage, item: cardName}, function(data) {
-        if (data && data.metadata) {
-            extraNetworksShowMetadata(data.metadata);
-        } else {
-            showError();
-        }
-    }, showError);
-
+async function extraNetworksRequestMetadata(event, extraPage, cardName) {
+    let data;
+    try {
+        data = await requestGet("./sd_extra_networks/metadata", {page: extraPage, item: cardName});
+    } catch (e) {
+        extraNetworksShowMetadata(`there was an error getting metadata: ${e}`);
+        return;
+    }
+    if (data?.metadata) {
+        extraNetworksShowMetadata(data.metadata);
+    } else {
+        extraNetworksShowMetadata("response doesn't contain metadata");
+    }
     event.stopPropagation();
 }
