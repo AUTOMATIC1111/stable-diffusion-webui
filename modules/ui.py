@@ -1421,7 +1421,7 @@ def create_ui():
     for _interface, label, _ifid in interfaces:
         modules.shared.tab_names.append(label)
 
-    with gr.Blocks(theme=modules.shared.gradio_theme, analytics_enabled=False, title="SD.Next") as demo:
+    with gr.Blocks(theme=modules.shared.gradio_theme, analytics_enabled=False, title="SD.Next", allowed_paths=[cmd_opts.data_dir]) as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
             for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
