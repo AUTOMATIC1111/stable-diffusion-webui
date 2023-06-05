@@ -71,3 +71,4 @@ s3fs
 pygments
 oss2
 tomesd
+esdk-obs-python

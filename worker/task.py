@@ -107,6 +107,7 @@ class Task(UserDict):
             return self.get(key, default=default)
 
 
+
 class TaskType(IntEnum):
     Txt2Image = 1
     Image2Image = 2

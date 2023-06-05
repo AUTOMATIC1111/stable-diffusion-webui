@@ -167,6 +167,7 @@ class TrainLoraNetConfig(SerializationObj):
         self.learning_rate = task.value('learning_rate', default=0.0001)
         self.lr_scheduler = task.value('lr_scheduler', default='constant')
         self.lr_scheduler_num_cycles = task.value('lr_scheduler_num_cycles', default=1)
+        self.lr_scheduler_power = task.get('lr_scheduler_power', 1)  # Polynomial power for polynomial scheduler
         train_module = task.value('train_module', default='')
         train_module = train_module.lower()
         self.network_train_text_encoder_only = train_module == 'encoder'
@@ -181,12 +182,89 @@ class TrainLoraNetConfig(SerializationObj):
         return v
 
 
+class AdvancedConfig(SerializationObj):
+
+    def set_property_value(self, task: Task, name: str, default: typing.Any = None, requires: bool = False):
+        v = task.value(name, default, requires)
+        setattr(self, name, v)
+
+    def __init__(self, task: Task):
+        self.v2 = task.get('v2', False)
+        self.v_parameterization = task.get('v_parameterization', False)
+        self.save_precision = task.get('save_precision', None)
+        self.max_token_length = task.get('max_token_length', 75)  # (default for 75, 150 or 225)
+        self.reg_tokens = task.get('reg_tokens', None)
+        self.list_reg_data_dir = task.get('list_reg_data_dir', None)
+        self.list_reg_repeats = task.get('list_reg_repeats', None)
+        self.cache_latents = task.get('cache_latents', False)
+        self.cache_latents_to_disk = task.get('cache_latents_to_disk', False)
+        self.enable_bucket = task.get('enable_bucket', True)
+        self.min_bucket_reso = task.get('min_bucket_reso', 256)
+        self.max_bucket_reso = task.get('max_bucket_reso', 1024)
+        self.bucket_reso_steps = task.get('bucket_reso_steps', 64)
+        self.token_warmup_min = task.get('token_warmup_min', 1)
+        self.token_warmup_step = task.get('token_warmup_step', 0)
+        self.caption_dropout_rate = task.get('caption_dropout_rate', 0)
+        self.caption_dropout_every_n_epochs = task.get('caption_dropout_every_n_epochs', 0)
+        self.caption_tag_dropout_rate = task.get('caption_tag_dropout_rate', 0.0)  # 0~1
+        self.shuffle_caption = task.get('shuffle_caption', False)  # shuffle comma-separated caption
+        self.weighted_captions = task.get('weighted_captions', False)  # 使用带权重的 token，不推荐与 shuffle_caption 一同开启
+        self.keep_tokens = task.get('keep_tokens', 0)
+        self.color_aug = task.get('color_aug', False)
+        self.flip_aug = task.get('flip_aug', False)
+        self.face_crop_aug_range = task.get('face_crop_aug_range', None)
+        self.random_crop = task.get('random_crop', False)
+        self.lowram = task.get('lowram', True)
+        self.mem_eff_attn = task.get('mem_eff_attn', False)
+        self.xformers = task.get('xformers', True)
+        self.vae = task.get('vae', None)
+        self.set_property_value(task, 'max_data_loader_n_workers', 8)
+        self.set_property_value(task, 'persistent_data_loader_workers', True)
+        self.set_property_value(task, 'max_train_steps', 1600)
+        self.set_property_value(task, 'gradient_checkpointing', True)
+        self.set_property_value(task, 'gradient_accumulation_steps', 1)
+        self.set_property_value(task, 'mixed_precision', 'no')
+        self.set_property_value(task, 'full_fp16', True)
+        self.set_property_value(task, 'enable_preview', False)
+        self.set_property_value(task, 'sample_prompts', None)
+        self.set_property_value(task, 'sample_sampler',
+                                       'ddim')  # ["ddim","pndm","lms","euler","euler_a","heun","dpm_2","dpm_2_a","dpmsolver","dpmsolver++","dpmsingle","k_lms","k_euler","k_euler_a","k_dpm_2","k_dpm_2_a",]
+        self.set_property_value(task, 'sample_every_n_epochs', None)
+        self.set_property_value(task, 'network_module', "networks.lora")
+        self.set_property_value(task, 'conv_dim', None)
+        self.set_property_value(task, 'conv_alpha')
+        self.set_property_value(task, 'unit', 8)
+        self.set_property_value(task, 'dropout', 0)
+        self.set_property_value(task, 'algo', 'lora')  # ['lora','loha','lokr','ia3']
+        self.set_property_value(task, 'enable_block_weights', False)
+        self.set_property_value(task, 'block_dims', None)
+        self.set_property_value(task, 'block_alphas', None)
+        self.set_property_value(task, 'conv_block_dims', None)
+        self.set_property_value(task, 'conv_block_alphas')
+        self.set_property_value(task, 'down_lr_weight')
+        self.set_property_value(task, 'mid_lr_weight')
+        self.set_property_value(task, 'up_lr_weight')
+        self.set_property_value(task, 'block_lr_zero_threshold', 0.0)
+        self.set_property_value(task, 'optimizer_type', 'AdamW8bit')
+        self.set_property_value(task, 'weight_decay')
+        self.set_property_value(task, 'betas')
+        self.set_property_value(task, 'max_grad_norm', 1.0)
+        self.set_property_value(task, 'up_lr_weight')
+        self.set_property_value(task, 'prior_loss_weight', 1.0)
+        self.set_property_value(task, 'min_snr_gamma')
+        self.set_property_value(task, 'noise_offset')
+        self.set_property_value(task, 'adaptive_noise_scale')
+        self.set_property_value(task, 'multires_noise_iterations')
+        self.set_property_value(task, 'multires_noise_discount', 0.3)
+
+
 class TrainLoraParams(SerializationObj):
 
     def __init__(self, task: Task):
         self.base = TrainLoraBaseConfig(task)
         self.train = TrainLoraTrainConfig(task)
         self.net = TrainLoraNetConfig(task)
+        self.advanced = AdvancedConfig(task)
 
 
 class TrainLoraTask(UserDict):
@@ -311,6 +389,7 @@ class TrainLoraTask(UserDict):
                 num_repeats.append(params.train.num_repeats)
 
         key = self.hash_id[:32]
+
         kwargs = {
             'output_dir': self.output_dir,
             'pretrained_model_name_or_path': base_model,
@@ -333,11 +412,16 @@ class TrainLoraTask(UserDict):
             'unet_lr': params.net.unet_lr,
             'text_encoder_lr': params.net.text_encoder_lr,
             'optimizer_type': params.net.optimizer_type,
-            'network_train_unet_only': params.net.network_train_text_encoder_only,
-            'network_train_text_encoder_only': params.net.network_train_unet_only,
+            'network_train_unet_only': params.net.network_train_unet_only,
+            'network_train_text_encoder_only': params.net.network_train_text_encoder_only,
             'reg_data_dir': '',
             'save_last_n_epochs': save_last_n_epochs,
+            'caption_extension': ".txt",
+            'lr_scheduler': params.net.lr_scheduler,
+            'lr_scheduler_num_cycles': params.net.lr_scheduler_num_cycles,
+
         }
+        kwargs.update(params.advanced.to_dict())
 
         return kwargs
 
