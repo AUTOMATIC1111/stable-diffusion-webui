@@ -102,6 +102,7 @@ class State:
     time_start = None
     need_restart = False
     server_start = None
+    oom = False
 
     def skip(self):
         log.debug('Requested skip')
@@ -496,8 +497,10 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple Loras", gr.Checkbox, { "visible": False }),
 }))
 
-# options_templates.update(options_section(('lora', "Lora"), {
-# }))
+options_templates.update(options_section(('lora', "Lora"), {
+    "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all Lora types", gr.Checkbox, { "visible": True }), # TODO: lyco-patch-lora
+    "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple Loras", gr.Checkbox, { "visible": True }),
+}))
 
 options_templates.update(options_section(('face-restoration', "Face restoration"), {
     "face_restoration_model": OptionInfo("CodeFormer", "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in face_restorers]}),

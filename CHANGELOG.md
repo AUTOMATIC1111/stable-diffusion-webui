@@ -2,6 +2,8 @@
 
 ## Update for 06/03/2023
 
+- added extra networks to xyz grid options  
+  now you can have more fun with all your loras :)
 - new vae decode method to help with larger batch sizes, thanks @bigdog
 - profiling of scripts/extensions callbacks
 - additional exception handling so bad exception does not crash main app

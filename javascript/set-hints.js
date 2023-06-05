@@ -18,3 +18,11 @@ onUiUpdate(() => {
 	    select.onchange = () => select.title = titles[select.value] || '';
   });
 });
+
+/*
+// dump elements 
+const elements = [
+  ...Array.from(gradioApp().querySelectorAll('button')).map(el => ({id: el.id, text: el.textContent, title: el.title })),
+  ...Array.from(gradioApp().querySelectorAll('label > span')).map(el => ({id: el.id, text: el.textContent, title: el.title })),
+];
+*/

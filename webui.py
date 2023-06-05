@@ -222,7 +222,7 @@ def start_ui():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
     import installer
-    global local_url
+    global local_url # pylint: disable=global-statement
     app, local_url, share_url = shared.demo.launch(
         share=cmd_opts.share,
         server_name=server_name,
