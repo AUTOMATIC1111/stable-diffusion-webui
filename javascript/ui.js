@@ -260,15 +260,18 @@ onUiUpdate(() => {
   const settings_search = gradioApp().querySelectorAll('#settings_search > label > textarea')[0];
   settings_search.oninput = (e) => {
     setTimeout(() => {
-      gradioApp().querySelectorAll('#settings > div').forEach((elem) => {
+      gradioApp().querySelectorAll('#settings > .tab-content > .tabitem').forEach((elem) => {
         if (elem.id === 'settings_tab_licenses') return;
         elem.style.display = 'block';
       });
       gradioApp().querySelectorAll('#tab_settings .tabitem').forEach((section) => {
-        section.querySelectorAll('.block').forEach((setting) => {
+        section.querySelectorAll('.dirtyable').forEach((setting) => {
           const visible = setting.innerText.toLowerCase().includes(e.target.value.toLowerCase()) || setting.id.toLowerCase().includes(e.target.value.toLowerCase());
-          if (setting.parentElement.classList.contains('form')) setting.parentElement.style.display = visible ? 'flex' : 'none';
-          else setting.style.display = visible ? 'block' : 'none';
+          if (!visible) {
+            setting.style.display = 'none'
+          } else {
+            setting.style.removeProperty('display')
+          }
         });
       });
     }, 50);
