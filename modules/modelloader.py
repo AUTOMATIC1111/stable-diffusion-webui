@@ -9,9 +9,16 @@ from modules.paths import script_path, models_path
 
 diffuser_repos = []
 
-def load_diffusers(model_path: str, command_path: str = None):
+def load_diffusers(model_path: str, hub_url: str = None, command_path: str = None):
     import huggingface_hub as hf
+    from diffusers import DiffusionPipeline
+
     places = []
+
+    # download repo
+    if hub_url is not None:
+        DiffusionPipeline.download(hub_url, cache_dir=model_path)
+
     places.append(model_path)
     if command_path is not None and command_path != model_path and os.path.isdir(command_path):
         places.append(command_path)
