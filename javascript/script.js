@@ -42,7 +42,7 @@ function onOptionsChanged(callback) {
 }
 
 function executeCallbacks(queue, arg) {
-  if (!uiLoaded) return
+  // if (!uiLoaded) return
   for (const callback of queue) {
       try {
           callback(arg);

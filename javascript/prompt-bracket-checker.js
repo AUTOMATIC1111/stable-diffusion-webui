@@ -34,7 +34,7 @@ function setupBracketChecking(id_prompt, id_counter) {
     }
 }
 
-onUiLoaded(function() {
+onAfterUiUpdate(function() {
     setupBracketChecking('txt2img_prompt', 'txt2img_token_counter');
     setupBracketChecking('txt2img_neg_prompt', 'txt2img_negative_token_counter');
     setupBracketChecking('img2img_prompt', 'img2img_token_counter');

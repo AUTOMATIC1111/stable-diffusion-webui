@@ -112,8 +112,7 @@ class ExtraNetworksPage:
         subdirs_html = "".join([f"""
             <button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
                 {html.escape(subdir if subdir!="" else "all")}
-            </button>
-        """ for subdir in subdirs])
+            </button>""" for subdir in subdirs])
         try:
             self.items = list(self.list_items())
             self.create_xyz_grid()
@@ -232,20 +231,20 @@ def create_ui(container, button, tabname):
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
     with gr.Tabs(elem_id=tabname+"_extra_tabs"):
+        ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=True)
+        ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
+        button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
+        button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
         for page in ui.stored_extra_pages:
+            ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
+            ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
+            ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
+            ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
+            ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_")):
                 page_elem = gr.HTML(page.create_html(ui.tabname))
                 page_elem.change(fn=lambda: None, _js=f'() => refreshExtraNetworks("{tabname}")', inputs=[], outputs=[])
                 ui.pages.append(page_elem)
-    ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
-    ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
-    button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
-    button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
-    ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
-    ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
-    ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
-    ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
-    ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
