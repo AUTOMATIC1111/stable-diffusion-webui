@@ -34,14 +34,12 @@ onUiLoaded(async() => {
 
     // Wait until opts loaded
     async function waitForOpts() {
-        return new Promise(resolve => {
-            const checkInterval = setInterval(() => {
-                if (window.opts && Object.keys(window.opts).length !== 0) {
-                    clearInterval(checkInterval);
-                    resolve(window.opts);
-                }
-            }, 100);
-        });
+        for (;;) {
+            if (window.opts && Object.keys(window.opts).length) {
+                return window.opts;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
     }
 
     // Check is hotkey valid
