@@ -1300,8 +1300,8 @@ def create_ui():
             res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
 
         if not is_quicksettings:
-            res.change(fn=None, inputs=res, _js=f'(val) => onSettingComponentChanged("{key}", val)')
-            dirty_indicator.click(fn=None, outputs=res, _js=f'() => onModificationIndicatorClicked("{key}")')
+            res.change(fn=None, inputs=res, _js=f'(val) => markIfModified("{key}", val)')
+            dirty_indicator.click(fn=lambda: getattr(opts, key), outputs=res, show_progress=False)
             dirtyable_setting.__exit__()
 
         return res

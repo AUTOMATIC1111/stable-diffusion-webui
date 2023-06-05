@@ -371,21 +371,11 @@ function markIfModified(setting_name, value) {
         tab_nav_indicator.title += `${unsaved.size} new default value${unsaved.size > 1 ? 's':''} (not yet saved).`;
 }
 
-function onSettingComponentChanged(setting_name, value) {
-    markIfModified(setting_name, value)
-    return []
-}
-
 function onSettingsModificationIndicatorClicked(tab_name) {
     opts_tabs[tab_name].changed.forEach(function(setting_name){
         // Click each setting's modification indicator
         gradioApp().getElementById("modification_indicator_"+setting_name).click()
     })
-}
-
-function onModificationIndicatorClicked(setting_name) {
-    markIfModified(setting_name, opts[setting_name])
-    return JSON.parse(JSON.stringify(opts[setting_name]));
 }
 
 let txt2img_textarea;
