@@ -11,7 +11,7 @@ import html
 import shutil
 import errno
 
-from modules import extensions, shared, paths, config_states, errors
+from modules import extensions, shared, paths, config_states, errors, restart
 from modules.paths_internal import config_states_dir
 from modules.call_queue import wrap_gradio_gpu_call
 
@@ -49,7 +49,11 @@ def apply_and_restart(disable_list, update_list, disable_all):
     shared.opts.disabled_extensions = disabled
     shared.opts.disable_all_extensions = disable_all
     shared.opts.save(shared.config_filename)
-    shared.restart_program()
+
+    if restart.is_restartable():
+        restart.restart_program()
+    else:
+        restart.stop_program()
 
 
 def save_config_state(name):
@@ -508,7 +512,8 @@ def create_ui():
             with gr.TabItem("Installed", id="installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):
-                    apply = gr.Button(value="Apply and restart UI", variant="primary")
+                    apply_label = ("Apply and restart UI" if restart.is_restartable() else "Apply and quit")
+                    apply = gr.Button(value=apply_label, variant="primary")
                     check = gr.Button(value="Check for updates")
                     extensions_disable_all = gr.Radio(label="Disable all extensions", choices=["none", "extra", "all"], value=shared.opts.disable_all_extensions, elem_id="extensions_disable_all")
                     extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
