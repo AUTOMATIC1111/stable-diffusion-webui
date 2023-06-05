@@ -150,17 +150,15 @@ onUiLoaded(async() => {
     const elemData = {};
 
     // Apply functionality to the range inputs. Restore redmask and correct for long images.
-    const rangeInputs = elements.rangeGroup ? elements.rangeGroup.querySelectorAll("input") :
+    const rangeInputs = elements.rangeGroup ? Array.from(elements.rangeGroup.querySelectorAll("input")) :
         [
             gradioApp().querySelector("#img2img_width input[type='range']"),
             gradioApp().querySelector("#img2img_height input[type='range']")
         ];
 
-    rangeInputs.forEach(input => {
-        if (input) {
-            input.addEventListener("input", () => restoreImgRedMask(elements));
-        }
-    });
+    for (const input of rangeInputs) {
+        input?.addEventListener("input", () => restoreImgRedMask(elements));
+    }
 
     function applyZoomAndPan(elemId) {
         const targetElement = gradioApp().querySelector(elemId);
@@ -215,12 +213,11 @@ onUiLoaded(async() => {
                     action: "Move canvas"
                 }
             ];
-            hotkeys.forEach(function(hotkey) {
+            for (const hotkey of hotkeys) {
                 const p = document.createElement("p");
-                p.innerHTML =
-                    "<b>" + hotkey.key + "</b>" + " - " + hotkey.action;
+                p.innerHTML = `<b>${hotkey.key}</b> - ${hotkey.action}`;
                 tooltipContent.appendChild(p);
-            });
+            }
 
             // Add information and content elements to the tooltip element
             tooltip.appendChild(info);
