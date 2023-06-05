@@ -333,7 +333,8 @@ def install_extension_from_url(dirname, url, branch_name=None):
     assert not os.path.exists(target_dir), f'Extension directory already exists: {target_dir}'
 
     normalized_url = normalize_git_url(url)
-    assert len([x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url]) == 0, 'Extension with this URL is already installed'
+    if any(x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url):
+        raise Exception(f'Extension with this URL is already installed: {url}')
 
     tmpdir = os.path.join(paths.data_path, "tmp", dirname)
 
@@ -449,7 +450,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
         existing = installed_extension_urls.get(normalize_git_url(url), None)
         extension_tags = extension_tags + ["installed"] if existing else extension_tags
 
-        if len([x for x in extension_tags if x in tags_to_hide]) > 0:
+        if any(x for x in extension_tags if x in tags_to_hide):
             hidden += 1
             continue
 

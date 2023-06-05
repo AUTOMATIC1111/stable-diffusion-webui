@@ -406,7 +406,7 @@ class FilenameGenerator:
 
         prompt_no_style = self.prompt
         for style in shared.prompt_styles.get_style_prompts(self.p.styles):
-            if len(style) > 0:
+            if style:
                 for part in style.split("{prompt}"):
                     prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')
 
@@ -415,7 +415,7 @@ class FilenameGenerator:
         return sanitize_filename_part(prompt_no_style, replace_spaces=False)
 
     def prompt_words(self):
-        words = [x for x in re_nonletters.split(self.prompt or "") if len(x) > 0]
+        words = [x for x in re_nonletters.split(self.prompt or "") if x]
         if len(words) == 0:
             words = ["empty"]
         return sanitize_filename_part(" ".join(words[0:opts.directories_max_prompt_words]), replace_spaces=False)
@@ -423,7 +423,7 @@ class FilenameGenerator:
     def datetime(self, *args):
         time_datetime = datetime.datetime.now()
 
-        time_format = args[0] if len(args) > 0 and args[0] != "" else self.default_time_format
+        time_format = args[0] if (args and args[0] != "") else self.default_time_format
         try:
             time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
         except pytz.exceptions.UnknownTimeZoneError:

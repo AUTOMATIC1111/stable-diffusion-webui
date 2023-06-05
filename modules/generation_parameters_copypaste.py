@@ -55,7 +55,7 @@ def image_from_url_text(filedata):
     if filedata is None:
         return None
 
-    if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
+    if type(filedata) == list and filedata and type(filedata[0]) == dict and filedata[0].get("is_file", False):
         filedata = filedata[0]
 
     if type(filedata) == dict and filedata.get("is_file", False):
@@ -445,7 +445,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
 
             vals_pairs = [f"{k}: {v}" for k, v in vals.items()]
 
-            return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=len(vals_pairs) > 0)
+            return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=bool(vals_pairs))
 
         paste_fields = paste_fields + [(override_settings_component, paste_settings)]
 
@@ -462,5 +462,3 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         outputs=[],
         show_progress=False,
     )
-
-

@@ -77,27 +77,27 @@ def focal_point(im, settings):
     pois = []
 
     weight_pref_total = 0
-    if len(corner_points) > 0:
+    if corner_points:
       weight_pref_total += settings.corner_points_weight
-    if len(entropy_points) > 0:
+    if entropy_points:
       weight_pref_total += settings.entropy_points_weight
-    if len(face_points) > 0:
+    if face_points:
       weight_pref_total += settings.face_points_weight
 
     corner_centroid = None
-    if len(corner_points) > 0:
+    if corner_points:
       corner_centroid = centroid(corner_points)
       corner_centroid.weight = settings.corner_points_weight / weight_pref_total
       pois.append(corner_centroid)
 
     entropy_centroid = None
-    if len(entropy_points) > 0:
+    if entropy_points:
       entropy_centroid = centroid(entropy_points)
       entropy_centroid.weight = settings.entropy_points_weight / weight_pref_total
       pois.append(entropy_centroid)
 
     face_centroid = None
-    if len(face_points) > 0:
+    if face_points:
       face_centroid = centroid(face_points)
       face_centroid.weight = settings.face_points_weight / weight_pref_total
       pois.append(face_centroid)
@@ -187,7 +187,7 @@ def image_face_points(im, settings):
         except Exception:
           continue
 
-        if len(faces) > 0:
+        if faces:
           rects = [[f[0], f[1], f[0] + f[2], f[1] + f[3]] for f in faces]
           return [PointOfInterest((r[0] +r[2]) // 2, (r[1] + r[3]) // 2, size=abs(r[0]-r[2]), weight=1/len(rects)) for r in rects]
     return []
