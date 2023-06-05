@@ -103,8 +103,9 @@ def test_bf16():
         return True
     try:
         import torch.nn.functional as F
-        image = torch.randn(1, 4, 32, 32).to(device="cuda", dtype=torch.bfloat16)
+        image = torch.randn(1, 4, 32, 32).to(device=device, dtype=torch.bfloat16)
         _out = F.interpolate(image, size=(64, 64), mode="nearest")
+        return True
     except:
         shared.log.warning('Torch BF16 test failed: Fallback to FP16 operations')
         return False
@@ -140,7 +141,7 @@ def set_cuda_params():
         dtype = torch.bfloat16 if bf16_ok else torch.float16
         dtype_vae = torch.bfloat16 if bf16_ok else torch.float16
         dtype_unet = torch.bfloat16 if bf16_ok else torch.float16
-    if shared.opts.cuda_dtype == 'FP16' or dtype == torch.bfloat16:
+    if shared.opts.cuda_dtype == 'FP16' or dtype == torch.float16:
         fp16_ok = test_fp16()
         dtype = torch.float16 if fp16_ok else torch.float32
         dtype_vae = torch.float16 if fp16_ok else torch.float32
