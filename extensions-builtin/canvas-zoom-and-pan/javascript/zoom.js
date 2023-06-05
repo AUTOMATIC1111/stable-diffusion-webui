@@ -143,16 +143,10 @@ onUiLoaded(async() => {
     let mouseX, mouseY;
     let activeElement;
 
-    async function getElements() {
-        const elements = await Promise.all(
-            Object.values(elementIDs).map(id => gradioApp().querySelector(id))
-        );
-        return Object.fromEntries(
-            Object.keys(elementIDs).map((key, index) => [key, elements[index]])
-        );
-    }
-
-    const elements = await getElements();
+    const elements = Object.fromEntries(Object.keys(elementIDs).map((id) => [
+        id,
+        gradioApp().querySelector(elementIDs[id]),
+    ]));
     const elemData = {};
 
     // Apply functionality to the range inputs. Restore redmask and correct for long images.
