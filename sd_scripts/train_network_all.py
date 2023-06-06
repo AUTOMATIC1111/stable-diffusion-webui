@@ -831,13 +831,17 @@ def train_callback(epoch, avg_loss):
     print(epoch, avg_loss)
 
 
+def train_with_jsons(config_file_path, callback):
+    parser = setup_parser()
+    args = parser.parse_args()
+    args.config_file = config_file_path
+    args = train_util.read_config_from_json(args, parser)
+    train(args, callback)
 
 
 # 训练函数接口
 def train_with_params(pretrained_model_name_or_path,
                       network_weights,
-                      train_data_dir,
-                      reg_data_dir,
                       output_name,
                       save_model_as="safetensors",
                       v2=False,
@@ -960,24 +964,22 @@ def train_with_params(pretrained_model_name_or_path,
                       multires_noise_discount=0.3,  # 多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
 
                       config_file=None,  # using .toml instead of args to pass hyperparameter
-                      output_config=False,  # output command line args to given .toml file
+                      output_config=False,  # output command line args to given .json file
                       ):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
     args = parser.parse_args()
-    args = train_util.read_config_from_file(args, parser)
+    #args = train_util.read_config_from_file(args, parser)
 
     args.pretrained_model_name_or_path = pretrained_model_name_or_path
     if network_weights != None and network_weights != "":
         args.network_weights = network_weights
 
-    args.train_data_dir = train_data_dir or []
-    if reg_data_dir is not None and reg_data_dir != "" and reg_data_dir != []:
-        print("reg data dir:", reg_data_dir)
-        args.reg_data_dir = reg_data_dir or []
+    if list_reg_data_dir is not None and list_reg_data_dir != "" and list_reg_data_dir != []:
         args.reg_tokens = reg_tokens or []
         args.list_reg_data_dir = list_reg_data_dir or []
-    args.output_name = output_name
+
+    args.output_name = output_name if output_name!="" and output_name!=-1 else None
     args.save_model_as = save_model_as
     args.trigger_words = trigger_words or []
     args.save_every_n_epochs = save_every_n_epochs
@@ -992,81 +994,81 @@ def train_with_params(pretrained_model_name_or_path,
     args.network_alpha = network_alpha
 
     args.learning_rate = learning_rate
-    args.unet_lr = unet_lr
-    args.text_encoder_lr = text_encoder_lr
-    args.optimizer_type = optimizer_type
-    args.lr_scheduler_num_cycles = lr_scheduler_num_cycles
-    args.lr_scheduler = lr_scheduler
+    args.unet_lr = unet_lr if unet_lr!="" and unet_lr!=-1 else None
+    args.text_encoder_lr = text_encoder_lr if text_encoder_lr!="" and text_encoder_lr!=-1 else None
+    args.optimizer_type = optimizer_type if optimizer_type!="" and optimizer_type!=-1 else None
+    args.lr_scheduler_num_cycles = lr_scheduler_num_cycles if lr_scheduler_num_cycles!="" and lr_scheduler_num_cycles!=-1 else None
+    args.lr_scheduler = lr_scheduler if lr_scheduler!="" and lr_scheduler!=-1 else None
 
-    args.network_train_unet_only = network_train_unet_only
-    args.network_train_text_encoder_only = network_train_text_encoder_only
+    args.network_train_unet_only = network_train_unet_only if network_train_unet_only!="" and network_train_unet_only!=-1 else None
+    args.network_train_text_encoder_only = network_train_text_encoder_only if network_train_text_encoder_only!="" and network_train_text_encoder_only!=-1 else None
     args.seed = seed
 
-    args.output_dir = output_dir
-    args.logging_dir = logging_dir
-    args.save_last_n_epochs = save_last_n_epochs
+    args.output_dir = output_dir if output_dir!="" and output_dir!=-1 else None
+    args.logging_dir = logging_dir if logging_dir!="" and logging_dir!=-1 else None
+    args.save_last_n_epochs = save_last_n_epochs if save_last_n_epochs!="" and save_last_n_epochs!=-1 else None
 
-    args.v2 = v2
-    args.v_parameterization = v_parameterization
+    args.v2 = v2 if v2!="" and v2!=-1 else None
+    args.v_parameterization = v_parameterization if v_parameterization!="" and v_parameterization!=-1 else None
 
     if enable_bucket:
-        args.enable_bucket = enable_bucket
-        args.min_bucket_reso = min_bucket_reso
-        args.max_bucket_reso = max_bucket_reso
-        args.bucket_reso_steps = bucket_reso_steps
-        args.bucket_no_upscale = bucket_no_upscale
+        args.enable_bucket = enable_bucket if enable_bucket!="" and enable_bucket!=-1 else None
+        args.min_bucket_reso = min_bucket_reso if min_bucket_reso!="" and min_bucket_reso!=-1 else None
+        args.max_bucket_reso = max_bucket_reso if max_bucket_reso!="" and max_bucket_reso!=-1 else None
+        args.bucket_reso_steps = bucket_reso_steps if bucket_reso_steps!="" and bucket_reso_steps!=-1 else None
+        args.bucket_no_upscale = bucket_no_upscale if bucket_no_upscale!="" and bucket_no_upscale!=-1 else None
 
     args.network_module = network_module
     if args.network_args is None:
         args.network_args = []
     if network_module == "lycoris.kohya":
-        if conv_dim is not None: args.network_args.append(f"conv_dim={conv_dim}")
-        if conv_alpha is not None: args.network_args.append(f"conv_alpha={conv_alpha}")
-        if dropout is not None: args.network_args.append(f"dropout={dropout}")
+        if conv_dim is not None and conv_dim!=-1 and conv_dim!="": args.network_args.append(f"conv_dim={conv_dim}")
+        if conv_alpha is not None and conv_alpha!=-1 and conv_alpha!="": args.network_args.append(f"conv_alpha={conv_alpha}")
+        if dropout is not None and dropout!=-1 and dropout!="": args.network_args.append(f"dropout={dropout}")
         args.network_args.append(f"algo={algo}")
     elif network_module == "networks.dylora":
         args.network_args.append(f"unit={unit}")
     elif network_module == "networks.lora":
-        if conv_dim is not None: args.network_args.append(f"conv_dim={conv_dim}")
-        if conv_alpha is not None: args.network_args.append(f"conv_alpha={conv_alpha}")
-        if dropout is not None: args.network_args.append(f"dropout={dropout}")
-        if block_dims is not None: args.network_args.append(f"block_dims={block_dims}")
-        if block_alphas is not None: args.network_args.append(f"block_alphas={block_alphas}")
-        if conv_block_dims is not None: args.network_args.append(f"conv_block_dims={conv_block_dims}")
-        if conv_block_alphas is not None: args.network_args.append(f"conv_block_alphas={conv_block_alphas}")
+        if conv_dim is not None and conv_dim!=-1 and conv_dim!="": args.network_args.append(f"conv_dim={conv_dim}")
+        if conv_alpha is not None and conv_alpha!=-1 and conv_alpha!="": args.network_args.append(f"conv_alpha={conv_alpha}")
+        if dropout is not None and dropout!=-1 and dropout!="": args.network_args.append(f"dropout={dropout}")
+        if block_dims is not None and block_dims!=-1 and block_dims!="": args.network_args.append(f"block_dims={block_dims}")
+        if block_alphas is not None and block_alphas!=-1 and block_alphas!="": args.network_args.append(f"block_alphas={block_alphas}")
+        if conv_block_dims is not None and conv_block_dims!=-1 and conv_block_dims!="": args.network_args.append(f"conv_block_dims={conv_block_dims}")
+        if conv_block_alphas is not None and conv_block_alphas!=-1 and conv_block_alphas!="": args.network_args.append(f"conv_block_alphas={conv_block_alphas}")
     if enable_block_weights:
-        if down_lr_weight is not None: args.network_args.append(f"down_lr_weight={down_lr_weight}")
-        if up_lr_weight is not None: args.network_args.append(f"up_lr_weight={up_lr_weight}")
-        if mid_lr_weight is not None: args.network_args.append(f"mid_lr_weight={mid_lr_weight}")
-        if block_lr_zero_threshold is not None: args.network_args.append(f"block_lr_zero_threshold={block_lr_zero_threshold}")
+        if down_lr_weight is not None and down_lr_weight!=-1 and down_lr_weight!="": args.network_args.append(f"down_lr_weight={down_lr_weight}")
+        if up_lr_weight is not None and up_lr_weight!=-1 and up_lr_weight!="": args.network_args.append(f"up_lr_weight={up_lr_weight}")
+        if mid_lr_weight is not None and mid_lr_weight!=-1 and mid_lr_weight!="": args.network_args.append(f"mid_lr_weight={mid_lr_weight}")
+        if block_lr_zero_threshold is not None and block_lr_zero_threshold!=-1 and block_lr_zero_threshold!="": args.network_args.append(f"block_lr_zero_threshold={block_lr_zero_threshold}")
 
     if enable_preview:
-        args.sample_prompts = sample_prompts
-        args.sample_sampler = sample_sampler
-        args.sample_every_n_epochs = sample_every_n_epochs
+        args.sample_prompts = sample_prompts if sample_prompts!="" and sample_prompts!=-1 else None
+        args.sample_sampler = sample_sampler if sample_sampler!="" and sample_sampler!=-1 else None
+        args.sample_every_n_epochs = sample_every_n_epochs if sample_every_n_epochs!="" and sample_every_n_epochs!=-1 else None
 
-    args.caption_extension = caption_extension
-    args.shuffle_caption = shuffle_caption
-    args.token_warmup_min = token_warmup_min
-    args.token_warmup_step = token_warmup_step
-    args.keep_tokens = keep_tokens
-    args.weighted_captions = weighted_captions
+    args.caption_extension = caption_extension if caption_extension!="" and caption_extension!=-1 else None
+    args.shuffle_caption = shuffle_caption if shuffle_caption!="" and shuffle_caption!=-1 else None
+    args.token_warmup_min = token_warmup_min if token_warmup_min!="" and token_warmup_min!=-1 else None
+    args.token_warmup_step = token_warmup_step if token_warmup_step!="" and token_warmup_step!=-1 else None
+    args.keep_tokens = keep_tokens if keep_tokens!="" and keep_tokens!=-1 else None
+    args.weighted_captions = weighted_captions if weighted_captions!="" and weighted_captions!=-1 else None
 
-    args.max_token_length = max_token_length
-    args.caption_dropout_rate = caption_dropout_rate
-    args.caption_dropout_every_n_epochs = caption_dropout_every_n_epochs
-    args.caption_tag_dropout_rate = caption_tag_dropout_rate
+    args.max_token_length = max_token_length if max_token_length!="" and max_token_length!=-1 else None
+    args.caption_dropout_rate = caption_dropout_rate if caption_dropout_rate!="" and caption_dropout_rate!=-1 else None
+    args.caption_dropout_every_n_epochs = caption_dropout_every_n_epochs if caption_dropout_every_n_epochs!="" and caption_dropout_every_n_epochs!=-1 else None
+    args.caption_tag_dropout_rate = caption_tag_dropout_rate if caption_tag_dropout_rate!="" and caption_tag_dropout_rate!=-1 else None
 
-    args.prior_loss_weight = prior_loss_weight
-    args.min_snr_gamma = min_snr_gamma
-    args.noise_offset = noise_offset
-    args.multires_noise_iterations = multires_noise_iterations
-    args.multires_noise_discount = multires_noise_discount
-    args.gradient_checkpointing = gradient_checkpointing
-    args.gradient_accumulation_steps = gradient_accumulation_steps
-    args.mixed_precision = mixed_precision
+    args.prior_loss_weight = prior_loss_weight if prior_loss_weight!="" and prior_loss_weight!=-1 else None
+    args.min_snr_gamma = min_snr_gamma if min_snr_gamma!="" and min_snr_gamma!=-1 else None
+    args.noise_offset = noise_offset if noise_offset!="" and noise_offset!=-1 else None
+    args.multires_noise_iterations = multires_noise_iterations if multires_noise_iterations!="" and multires_noise_iterations!=-1 else None
+    args.multires_noise_discount = multires_noise_discount if multires_noise_discount!="" and multires_noise_discount!=-1 else None
+    args.gradient_checkpointing = gradient_checkpointing if gradient_checkpointing!="" and gradient_checkpointing!=-1 else None
+    args.gradient_accumulation_steps = gradient_accumulation_steps if gradient_accumulation_steps!="" and gradient_accumulation_steps!=-1 else None
+    args.mixed_precision = mixed_precision if mixed_precision!="" and mixed_precision!=-1 else None
     if noise_offset is not None:
-        args.adaptive_noise_scale = adaptive_noise_scale
+        args.adaptive_noise_scale = adaptive_noise_scale if adaptive_noise_scale!="" and adaptive_noise_scale!=-1 else None
 
     args.xformers = xformers
     args.lowram = lowram
@@ -1074,6 +1076,10 @@ def train_with_params(pretrained_model_name_or_path,
     args.cache_latents_to_disk = cache_latents_to_disk
     args.persistent_data_loader_workers = persistent_data_loader_workers
 
+    args.config_file = config_file if config_file!="" and config_file!=-1 else None
+    args.output_config = output_config if output_config!="" and output_config!=-1 else None
+    if output_config is not None:
+        args = train_util.read_config_from_json(args, parser)
     # print("network_args:",args.network_args)
     return train(args, train_callback)
 

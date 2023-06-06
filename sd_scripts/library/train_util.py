@@ -2420,6 +2420,73 @@ def read_config_from_file(args: argparse.Namespace, parser: argparse.ArgumentPar
 
     return args
 
+def read_config_from_json(args: argparse.Namespace, parser: argparse.ArgumentParser):
+    # if not args.config_file:
+    #     return args
+    print("read_config_from_json")
+    config_path = args.config_file + ".json" if not args.config_file.endswith(".json") else args.config_file
+
+    if args.output_config:
+        # check if config file exists
+        if os.path.exists(config_path):
+            print(f"Config file already exists. Aborting... / 出力先の設定ファイルが既に存在します: {config_path}")
+            exit(1)
+
+        # convert args to dictionary
+        args_dict = vars(args)
+
+        # remove unnecessary keys
+        for key in ["config_file", "output_config", "wandb_api_key"]:
+            if key in args_dict:
+                del args_dict[key]
+
+        # get default args from parser
+        default_args = vars(parser.parse_args([]))
+
+        # remove default values: cannot use args_dict.items directly because it will be changed during iteration
+        for key, value in list(args_dict.items()):
+            if key in default_args and value == default_args[key]:
+                del args_dict[key]
+
+        # convert Path to str in dictionary
+        for key, value in args_dict.items():
+            if isinstance(value, pathlib.Path):
+                args_dict[key] = str(value)
+
+        # convert to json and output to file
+        with open(config_path, "w") as f:
+            json.dump(args_dict, f)
+
+        print(f"Saved config file / 設定ファイルを保存しました: {config_path}")
+        exit(0)
+
+    if not os.path.exists(config_path):
+        print(f"{config_path} not found.")
+        exit(1)
+
+    print(f"Loading settings from {config_path}...")
+    with open(config_path, "r") as f:
+        config_dict = json.load(f)
+
+    # combine all sections into one
+    ignore_nesting_dict = {}
+    for section_name, section_dict in config_dict.items():
+        # if value is not dict, save key and value as is
+        if not isinstance(section_dict, dict):
+            ignore_nesting_dict[section_name] = section_dict
+            continue
+
+        # if value is dict, save all key and value into one dict
+        for key, value in section_dict.items():
+            if value!="" and value!=-1:
+                ignore_nesting_dict[key] = value
+
+    config_args = argparse.Namespace(**ignore_nesting_dict)
+    args = parser.parse_args(namespace=config_args)
+    # args.config_file = os.path.splitext(args.config_file)[0]
+    print(args.config_file)
+
+    return args
 
 # endregion
 
