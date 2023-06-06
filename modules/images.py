@@ -488,10 +488,6 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
 
     image_format = Image.registered_extensions()[extension]
 
-    existing_pnginfo = existing_pnginfo or {}
-    if opts.enable_pnginfo:
-        existing_pnginfo['parameters'] = geninfo
-
     if extension.lower() == '.png':
         if opts.enable_pnginfo:
             pnginfo_data = PngImagePlugin.PngInfo()
