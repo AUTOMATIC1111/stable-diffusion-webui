@@ -1,15 +1,13 @@
 import os
-
 import numpy as np
 import torch
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
 from tqdm import tqdm
-
-from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import opts, state
 from swinir_model_arch import SwinIR as net
 from swinir_model_arch_v2 import Swin2SR as net2
+from modules import modelloader, devices, script_callbacks, shared
+from modules.shared import opts, state
 from modules.upscaler import Upscaler, UpscalerData
 
 
@@ -36,8 +34,8 @@ class UpscalerSwinIR(Upscaler):
             scalers.append(model_data)
         self.scalers = scalers
 
-    def do_upscale(self, img, model_file):
-        model = self.load_model(model_file)
+    def do_upscale(self, img, selected_model):
+        model = self.load_model(selected_model)
         if model is None:
             return img
         model = model.to(device_swinir, dtype=devices.dtype)
