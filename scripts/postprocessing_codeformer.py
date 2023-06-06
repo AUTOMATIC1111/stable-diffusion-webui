@@ -12,7 +12,7 @@ class ScriptPostprocessingCodeFormer(scripts_postprocessing.ScriptPostprocessing
     def ui(self):
         with FormRow():
             codeformer_visibility = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="CodeFormer visibility", value=0.0, elem_id="extras_codeformer_visibility")
-            codeformer_weight = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="CodeFormer weight (0 = max), 1 = min)", value=0.2, elem_id="extras_codeformer_weight")
+            codeformer_weight = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label="CodeFormer weight (0 = max, 1 = min)", value=0.2, elem_id="extras_codeformer_weight")
 
         return {
             "codeformer_visibility": codeformer_visibility,

@@ -251,6 +251,14 @@ def list_themes():
     return themes
 
 
+def lora_disable():
+    if opts.lora_disable:
+        if 'Lora' not in opts.disabled_extensions:
+            opts.data['disabled_extensions'].append('Lora')
+    else:
+        opts.data['disabled_extensions'] = [x for x in opts.disabled_extensions if x != 'Lora']
+
+
 def refresh_themes():
     try:
         req = requests.get('https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json', timeout=5)
@@ -326,6 +334,9 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Path to directory with stable diffusion diffusers"),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
+    "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with Lora network(s)"),
+    "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
+    "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "Path to user-defined styles file"),
     "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Embeddings directory for textual inversion"),
     "hypernetwork_dir": OptionInfo(os.path.join(paths.models_path, 'hypernetworks'), "Hypernetwork directory"),
     "codeformer_models_path": OptionInfo(os.path.join(paths.models_path, 'Codeformer'), "Path to directory with codeformer model file(s)"),
@@ -337,9 +348,6 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "swinir_models_path": OptionInfo(os.path.join(paths.models_path, 'SwinIR'), "Path to directory with SwinIR model file(s)"),
     "ldsr_models_path": OptionInfo(os.path.join(paths.models_path, 'LDSR'), "Path to directory with LDSR model file(s)"),
     "clip_models_path": OptionInfo(os.path.join(paths.models_path, 'CLIP'), "Path to directory with CLIP model file(s)"),
-    "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with Lora network(s)"),
-    "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
-    "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "Path to user-defined styles file"),
 }))
 
 options_templates.update(options_section(('saving-images', "Image Options"), {
@@ -489,16 +497,15 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
     "realesrgan_enabled_models": OptionInfo(["R-ESRGAN 4x+", "R-ESRGAN 4x+ Anime6B"], "Real-ESRGAN available models", gr.CheckboxGroup, lambda: {"choices": shared_items.realesrgan_models_names()}),
     "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers (0 = no tiling)", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
-    "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers. 0 = no tiling.", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SCUNET upscalers. Low values = visible seam.", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),    
+    "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers (0 = no tiling)", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
+    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SCUNET upscalers (low values = visible seam)", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),    
     "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution rather than first pass"),
     "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
-    "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all Lora types", gr.Checkbox, { "visible": False }), # TODO: lyco-patch-lora
-    "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple Loras", gr.Checkbox, { "visible": False }),
 }))
 
 options_templates.update(options_section(('lora', "Lora"), {
     "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all Lora types", gr.Checkbox, { "visible": True }), # TODO: lyco-patch-lora
+    "lora_disable": OptionInfo(False, "Disable built-in Lora handler", gr.Checkbox, { "visible": True }, onchange=lora_disable),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple Loras", gr.Checkbox, { "visible": True }),
 }))
 
@@ -519,10 +526,10 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
 
 options_templates.update(options_section(('token_merging', 'Token Merging'), {
     "token_merging": OptionInfo(False, "Enable redundant token merging via tomesd for speed and memory improvements", gr.Checkbox),
-    "token_merging_ratio": OptionInfo(0.5, "Token merging Ratio. Higher merging ratio = faster generation, smaller VRAM usage, lower quality.", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
-    "token_merging_hr_only": OptionInfo(True, "Apply only to high-res fix pass. Disabling can yield a ~20-35% speedup on contemporary resolutions.", gr.Checkbox),
-    "token_merging_ratio_hr": OptionInfo(0.5, "Merging Ratio (high-res pass) - If 'Apply only to high-res' is enabled, this will always be the ratio used.", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
-    "token_merging_random": OptionInfo(False, "Use random perturbations - Can improve outputs for certain samplers. For others, it may cause visual artifacting.", gr.Checkbox),
+    "token_merging_ratio": OptionInfo(0.5, "Token merging Ratio. Higher merging ratio = faster generation, smaller VRAM usage, lower quality", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_hr_only": OptionInfo(True, "Apply only to high-res fix pass. Disabling can yield a ~20-35% speedup on contemporary resolutions", gr.Checkbox),
+    "token_merging_ratio_hr": OptionInfo(0.5, "Merging Ratio for high-res pass", gr.Slider, {"minimum": 0, "maximum": 0.9, "step": 0.1}),
+    "token_merging_random": OptionInfo(False, "Use random perturbations - Can improve outputs for certain samplers. For others, it may cause visual artifacting", gr.Checkbox),
     "token_merging_merge_attention": OptionInfo(True, "Merge attention (Recommend on)", gr.Checkbox),
     "token_merging_merge_cross_attention": OptionInfo(False, "Merge cross attention (Recommend off)", gr.Checkbox),
     "token_merging_merge_mlp": OptionInfo(False, "Merge mlp (Strongly recommend off)", gr.Checkbox),
