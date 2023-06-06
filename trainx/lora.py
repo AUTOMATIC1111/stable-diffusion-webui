@@ -14,7 +14,7 @@ import psutil
 from Crypto.Hash import SHA256
 from loguru import logger
 from worker.task import Task, TaskType, TaskProgress, TrainEpoch
-from sd_scripts.train_network_ly import train_with_params
+from sd_scripts.train_network_all import train_with_params
 from .typex import TrainLoraTask
 from .utils import upload_files
 from worker.task_send import RedisSender
