@@ -93,7 +93,7 @@ footer { display: none !important; }
 }
 
 .performance { font-size: 0.85em; color: #444; }
-.performance p { display: inline-block; color: var(--primary-100) !important }
+.performance p { display: inline-block; color: var(--body-text-color-subdued) !important }
 .performance .time { margin-right: 0; }
 
 @media screen and (min-width: 2500px) {
@@ -585,3 +585,4 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 #scripts_alwayson_txt2img, #scripts_alwayson_img2img { display: grid }
 #extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
 #extras_upscale { margin-top: 10px }
+#refresh_tac_refreshTempFiles { display: none; }
