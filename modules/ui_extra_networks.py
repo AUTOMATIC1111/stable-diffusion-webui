@@ -235,12 +235,12 @@ def create_ui(container, button, tabname):
         ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
         button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
         button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
+        ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
+        ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
+        ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
+        ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
+        ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
         for page in ui.stored_extra_pages:
-            ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
-            ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
-            ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
-            ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
-            ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_")):
                 page_elem = gr.HTML(page.create_html(ui.tabname))
                 page_elem.change(fn=lambda: None, _js=f'() => refreshExtraNetworks("{tabname}")', inputs=[], outputs=[])
@@ -289,6 +289,7 @@ def setup_ui(ui, gallery):
                 break
         assert is_allowed, f'writing to {filename} is not allowed'
         image.save(filename)
+        shared.log.info(f'Extra network save preview: {filename}')
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
     ui.button_save_preview.click(
@@ -304,12 +305,11 @@ def setup_ui(ui, gallery):
         filename = filename[0:lastDotIndex]+".description.txt"
         if descrip != "":
             try:
-                f = open(filename,'w', encoding='utf-8')
-            except OSError:
-                print ("Could not open file to write: " + filename)
-            with f:
-                f.write(descrip)
-                f.close()
+                with open(filename,'w', encoding='utf-8') as f:
+                    f.write(descrip)
+                shared.log.info(f'Extra network save description: {filename}')
+            except Exception as e:
+                shared.log.error(f'Extra network save preview: {filename} {e}')
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
     ui.button_save_description.click(

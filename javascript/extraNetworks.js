@@ -72,6 +72,7 @@ function cardClicked(tabname, textToAdd, allowNegativePrompt) {
 }
 
 function saveCardPreview(event, tabname, filename) {
+  console.log('saveCardPreview', event, tabname, filename)
   const textarea = gradioApp().querySelector(`#${tabname}_preview_filename  > label > textarea`);
   const button = gradioApp().getElementById(`${tabname}_save_preview`);
   textarea.value = filename;
