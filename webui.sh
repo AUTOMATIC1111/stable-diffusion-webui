@@ -112,10 +112,10 @@ then
 fi
 
 # Check prerequisites
-pyv="$(python -c 'import sys; print(".".join(map(str, sys.version_info[0:2])))')"
+pyv="$(${python_cmd} -c 'import sys; print(".".join(map(str, sys.version_info[0:2])))')"
 gpu_info=$(lspci 2>/dev/null | grep -E "VGA|Display")
 case "$gpu_info" in
-    *"Navi 1"*|*"Navi 2"*) 
+    *"Navi 1"*) 
         if [[ $(bc <<< "$pyv <= 3.10") -eq 1 ]] 
         then
             export HSA_OVERRIDE_GFX_VERSION=10.3.0
@@ -126,19 +126,12 @@ case "$gpu_info" in
             exit 1
         fi
     ;;
-    *"Renoir"*) 
-        if [[ $(bc <<< "$pyv <= 3.10") -eq 1 ]]
-        then
-            export HSA_OVERRIDE_GFX_VERSION=9.0.0
-            # Renoir users will still use torch 1.13 because 2.0 does not seem to work.
-            export TORCH_COMMAND="pip install torch==1.13.1+rocm5.2 torchvision==0.14.1+rocm5.2 --index-url https://download.pytorch.org/whl/rocm5.2"
-            printf "\n%s\n" "${delimiter}"
-            printf "Experimental support for Renoir: make sure to have at least 4GB of VRAM and 10GB of RAM or enable cpu mode: --use-cpu all --no-half"
-            printf "\n%s\n" "${delimiter}"
-        else
-            printf "\e[1m\e[31mERROR: Renoir GPUs must be using at max python 3.10, aborting...\e[0m"
-            exit 1
-        fi
+    *"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
+    ;;
+    *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
+        printf "\n%s\n" "${delimiter}"
+        printf "Experimental support for Renoir: make sure to have at least 4GB of VRAM and 10GB of RAM or enable cpu mode: --use-cpu all --no-half"
+        printf "\n%s\n" "${delimiter}"
     ;;
     *)
     ;;
