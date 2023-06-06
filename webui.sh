@@ -122,7 +122,7 @@ case "$gpu_info" in
             # Navi users will still use torch 1.13 because 2.0 does not seem to work.
             export TORCH_COMMAND="pip install torch==1.13.1+rocm5.2 torchvision==0.14.1+rocm5.2 --index-url https://download.pytorch.org/whl/rocm5.2"
         else
-            printf "\e[1m\e[31mERROR: Navi GPUs must be using at max python 3.10, aborting...\e[0m"
+            printf "\e[1m\e[31mERROR: RX 5000 series GPUs must be using at max python 3.10, aborting...\e[0m"
             exit 1
         fi
     ;;
