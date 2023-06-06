@@ -108,6 +108,7 @@ def list_models():
     if shared.backend == shared.Backend.ORIGINAL:
         model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     else:
+        global model_path # pylint: disable=global-statement
         model_path = os.path.join(models_path, 'Diffusers')
         model_list = modelloader.load_diffusers(model_path=model_path, command_path=shared.opts.diffusers_dir)
     for filename in sorted(model_list, key=str.lower):
