@@ -9,7 +9,6 @@ from PIL import PngImagePlugin
 
 from modules import shared
 
-
 Savedfile = namedtuple("Savedfile", ["name"])
 
 
@@ -44,7 +43,12 @@ def save_pil_to_file(self, pil_image, dir=None):
 
     if shared.opts.temp_dir != "":
         dir = shared.opts.temp_dir
-
+    ##添加临时路径判断，无/tmp/gradio 路径则创建
+    if dir[:4] == '/tmp':
+        try:
+            os.mkdir("/tmp/gradio")
+        except:
+            pass
     use_metadata = False
     metadata = PngImagePlugin.PngInfo()
     for key, value in pil_image.info.items():
