@@ -13,6 +13,7 @@ installer.ensure_base_requirements()
 installer.add_args()
 installer.parse_args()
 installer.setup_logging(False)
+installer.read_options()
 installer.extensions_preload(force=False)
 
 import modules.cmd_args

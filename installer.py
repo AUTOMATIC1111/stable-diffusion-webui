@@ -120,7 +120,7 @@ def installed(package, friendly: str = None):
             ok = ok and spec is not None
             if ok:
                 version = pkg_resources.get_distribution(p[0]).version
-                log.debug(f"Package version found: {p[0]} {version}")
+                # log.debug(f"Package version found: {p[0]} {version}")
                 if len(p) > 1:
                     ok = ok and version == p[1]
                     if not ok:
@@ -419,14 +419,17 @@ def run_extension_installer(folder):
 
 # get list of all enabled extensions
 def list_extensions(folder):
-    disabled_extensions = opts.get('disable_all_extensions', 'none')
-    if disabled_extensions != 'none':
-        log.debug(f'Disabled extensions: {disabled_extensions}')
+    name = os.path.basename(folder)
+    disabled_extensions_all = opts.get('disable_all_extensions', 'none')
+    if disabled_extensions_all != 'none':
+        log.info(f'Disabled {name}: {disabled_extensions_all}')
         return []
-    disabled_extensions = set(opts.get('disabled_extensions', []))
+    disabled_extensions = opts.get('disabled_extensions', [])
     if len(disabled_extensions) > 0:
-        log.debug(f'Disabled extensions: {disabled_extensions}')
-    return [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
+        log.info(f'Disabled {name}: {disabled_extensions}')
+    enabled_extensions = [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
+    log.info(f'Enabled {name}: {enabled_extensions}')
+    return enabled_extensions
 
 
 # run installer for each installed and enabled extension and optionally update them
@@ -572,7 +575,7 @@ def check_extensions():
                 ts = os.path.getmtime(os.path.join(extension_dir, f))
                 newest = max(newest, ts)
             newest_all = max(newest_all, newest)
-            log.debug(f'Extension version: {time.ctime(newest)} {folder}{os.pathsep}{ext}')
+            # log.debug(f'Extension version: {time.ctime(newest)} {folder}{os.pathsep}{ext}')
     return round(newest_all)
 
 
@@ -712,7 +715,7 @@ def extensions_preload(force = False):
                     if 'Setup complete without errors' in line:
                         setup_time = int(line.split(' ')[-1])
     if setup_time > 0 or force:
-        log.info('Running extension preloading')
+        # log.info('Running extension preloading')
         if args.safe:
             log.info('Running in safe mode without user extensions')
         try:
@@ -725,7 +728,7 @@ def extensions_preload(force = False):
                 t0 = time.time()
                 preload_extensions(ext_dir, parser)
                 t1 = time.time()
-                log.debug(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
+                log.info(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
         except:
             log.error('Error running extension preloading')
     if args.profile:
@@ -753,7 +756,6 @@ def read_options():
 def run_setup():
     # setup_logging(args.upgrade)
     log.info('Starting SD.Next')
-    read_options()
     check_python()
     if args.reset:
         git_reset()
