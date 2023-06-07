@@ -68,17 +68,22 @@ def delete_files(js_data, images, _do_make_zip, index):
 def save_files(js_data, images, do_make_zip, index):
     os.makedirs(shared.opts.outdir_save, exist_ok=True)
 
-    class MyObject: #quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
+    class PObject: #quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
         def __init__(self, d=None):
             if d is not None:
                 for key, value in d.items():
                     setattr(self, key, value)
-
+            self.seed = getattr(self, 'seed', None) or getattr(self, 'Seed', None)
+            self.prompt = getattr(self, 'prompt', None) or getattr(self, 'Prompt', None)
+            self.all_seeds = getattr(self, 'all_seeds', [self.seed])
+            self.all_prompts = getattr(self, 'all_prompts', [self.prompt])
+            self.infotexts = getattr(self, 'infotext', [json.dumps(d)])
+            self.index_of_first_image = getattr(self, 'index_of_first_image', 0)
     try:
         data = json.loads(js_data)
     except Exception:
-        data = { 'index_of_first_image': 0 }
-    p = MyObject(data)
+        data = {}
+    p = PObject(data)
     start_index = 0
     if index > -1 and shared.opts.save_selected_only and (index >= data['index_of_first_image']):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only # pylint: disable=no-member
         images = [images[index]]

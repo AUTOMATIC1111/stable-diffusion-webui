@@ -403,8 +403,8 @@ class FilenameGenerator:
                 elif replacement is not None:
                     res += text + str(replacement)
                     continue
-            res += f'{text}[{pattern}]'
-            res = res.split('?')[0]
+            res += f'{text}'
+            res = res.split('?')[0].strip()
         return res
 
 

@@ -1,3 +1,4 @@
+import json
 import gradio as gr
 from modules import scripts_postprocessing, scripts, shared, gfpgan_model, codeformer_model, ui_common, postprocessing, call_queue # pylint: disable=unused-import
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -13,8 +14,8 @@ def wrap_pnginfo(image):
 
 def submit_click(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs):
 
-    result_images, geninfo, _js_info = postprocessing.run_postprocessing(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs)
-    return result_images, geninfo, '{}', ''
+    result_images, geninfo, js_info = postprocessing.run_postprocessing(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs)
+    return result_images, geninfo, json.dumps(js_info), ''
 
 
 def create_ui():
