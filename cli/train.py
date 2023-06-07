@@ -87,6 +87,10 @@ def parse_args():
     global args # pylint: disable=global-statement
     parser = argparse.ArgumentParser(description = 'SD.Next Train')
 
+
+    group_server = parser.add_argument_group('Server')
+    group_server.add_argument('--server', type=str, default='http://127.0.0.1:7860', required=False, help='server url, default: %(default)s')
+
     group_main = parser.add_argument_group('Main')
     group_main.add_argument('--type', type=str, choices=['embedding', 'ti', 'lora', 'lyco', 'dreambooth', 'hypernetwork'], default=None, required=True, help='training type')
     group_main.add_argument('--model', type=str, default='', required=False, help='base model to use for training, default: current loaded model')
@@ -375,10 +379,8 @@ def process_inputs():
 
 if __name__ == '__main__':
     log.info('SD.Next train script')
-    server_options = util.Map(sdapi.options())
-    from rich import print
-    print(server_options)
     parse_args()
+    sdapi.sd_url = args.server
     setup_logging()
     prepare_server()
     verify_args()
