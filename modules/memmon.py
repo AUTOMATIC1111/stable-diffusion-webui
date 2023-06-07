@@ -6,19 +6,15 @@ import torch
 
 
 class MemUsageMonitor(threading.Thread):
-    run_flag = None
-    device = None
-    disabled = False
-    opts = None
-    data = None
+    run_flag: threading.Event
+    device: torch.device
+    disabled: bool
+    data: defaultdict
 
-    def __init__(self, name, device, opts):
-        threading.Thread.__init__(self)
-        self.name = name
+    def __init__(self, *, name="MemMon", device: torch.device, poll_rate: float = 8):
+        super().__init__(name=name, daemon=True)
+        self.poll_rate = poll_rate
         self.device = device
-        self.opts = opts
-
-        self.daemon = True
         self.run_flag = threading.Event()
         self.data = defaultdict(int)
 
@@ -43,7 +39,7 @@ class MemUsageMonitor(threading.Thread):
             torch.cuda.reset_peak_memory_stats()
             self.data.clear()
 
-            if self.opts.memmon_poll_rate <= 0:
+            if self.poll_rate <= 0:
                 self.run_flag.clear()
                 continue
 
@@ -53,7 +49,7 @@ class MemUsageMonitor(threading.Thread):
                 free, total = self.cuda_mem_get_info()
                 self.data["min_free"] = min(self.data["min_free"], free)
 
-                time.sleep(1 / self.opts.memmon_poll_rate)
+                time.sleep(1 / self.poll_rate)
 
     def dump_debug(self):
         print(self, 'recorded data:')
@@ -69,7 +65,7 @@ class MemUsageMonitor(threading.Thread):
 
         print(torch.cuda.memory_summary())
 
-    def monitor(self):
+    def monitor(self) -> None:
         self.run_flag.set()
 
     def read(self):
@@ -87,6 +83,5 @@ class MemUsageMonitor(threading.Thread):
 
         return self.data
 
-    def stop(self):
+    def stop(self) -> None:
         self.run_flag.clear()
-        return self.read()

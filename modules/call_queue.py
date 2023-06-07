@@ -49,8 +49,8 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
     @wraps(func)
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
-        run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
-        if run_memmon:
+        if add_stats:
+            shared.mem_mon.poll_rate = shared.opts.memmon_poll_rate
             shared.mem_mon.monitor()
         t = time.perf_counter()
 
@@ -75,6 +75,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             error_message = f'{type(e).__name__}: {e}'
             res = extra_outputs_array + [f"<div class='error'>{html.escape(error_message)}</div>"]
 
+        shared.mem_mon.stop()
         shared.state.skipped = False
         shared.state.interrupted = False
         shared.state.job_count = 0
@@ -89,8 +90,8 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         if elapsed_m > 0:
             elapsed_text = f"{elapsed_m}m "+elapsed_text
 
-        if run_memmon:
-            mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.stop().items()}
+        if add_stats:
+            mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.read().items()}
             active_peak = mem_stats['active_peak']
             reserved_peak = mem_stats['reserved_peak']
             sys_peak = mem_stats['system_peak']

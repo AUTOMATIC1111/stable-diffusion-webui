@@ -815,7 +815,7 @@ class TotalTQDM:
 
 total_tqdm = TotalTQDM()
 
-mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
+mem_mon = modules.memmon.MemUsageMonitor(device=device, poll_rate=opts.memmon_poll_rate)
 mem_mon.start()
 
 
