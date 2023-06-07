@@ -191,7 +191,7 @@ class AdvancedConfig(SerializationObj):
     def __init__(self, task: Task):
         self.v2 = task.get('v2', False)
         self.v_parameterization = task.get('v_parameterization', False)
-        self.save_precision = task.get('save_precision', None)
+        self.save_precision = task.get('save_precision', None) or 'fp16'
         self.max_token_length = task.get('max_token_length', 75)  # (default for 75, 150 or 225)
         self.reg_tokens = task.get('reg_tokens', None)
         self.list_reg_data_dir = task.get('list_reg_data_dir', None)
@@ -235,7 +235,7 @@ class AdvancedConfig(SerializationObj):
         if network_module and not str(network_module).startswith('networks'):
             setattr(self, 'network_module', 'networks.' + network_module)
         self.set_property_value(task, 'conv_dim', None)
-        self.set_property_value(task, 'conv_alpha')
+        self.set_property_value(task, 'conv_alpha', None)
         self.set_property_value(task, 'unit', 8)
         self.set_property_value(task, 'dropout', 0)
         self.set_property_value(task, 'algo', 'lora')  # ['lora','loha','lokr','ia3']
@@ -248,11 +248,9 @@ class AdvancedConfig(SerializationObj):
         self.set_property_value(task, 'mid_lr_weight')
         self.set_property_value(task, 'up_lr_weight')
         self.set_property_value(task, 'block_lr_zero_threshold', 0.0)
-        self.set_property_value(task, 'optimizer_type', 'AdamW8bit')
         self.set_property_value(task, 'weight_decay')
         self.set_property_value(task, 'betas')
         self.set_property_value(task, 'max_grad_norm', 1.0)
-        self.set_property_value(task, 'up_lr_weight')
         self.set_property_value(task, 'prior_loss_weight', 1.0)
         self.set_property_value(task, 'min_snr_gamma')
         self.set_property_value(task, 'noise_offset')

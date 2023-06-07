@@ -965,21 +965,21 @@ def train_with_params(pretrained_model_name_or_path,
 
                       config_file=None,  # using .toml instead of args to pass hyperparameter
                       output_config=False,  # output command line args to given .json file
-                      ):
+                      callback=None):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
     args = parser.parse_args()
     #args = train_util.read_config_from_file(args, parser)
 
     args.pretrained_model_name_or_path = pretrained_model_name_or_path
-    if network_weights != None and network_weights != "":
+    if network_weights:
         args.network_weights = network_weights
 
-    if list_reg_data_dir is not None and list_reg_data_dir != "" and list_reg_data_dir != []:
+    if list_reg_data_dir:
         args.reg_tokens = reg_tokens or []
         args.list_reg_data_dir = list_reg_data_dir or []
 
-    args.output_name = output_name if output_name!="" and output_name!=-1 else None
+    args.output_name = output_name if output_name != "" and output_name != -1 else None
     args.save_model_as = save_model_as
     args.trigger_words = trigger_words or []
     args.save_every_n_epochs = save_every_n_epochs
@@ -1081,9 +1081,7 @@ def train_with_params(pretrained_model_name_or_path,
     if output_config is not None:
         args = train_util.read_config_from_json(args, parser)
     # print("network_args:",args.network_args)
-    return train(args, train_callback)
-
-
+    return train(args, callback)
 
 
 if __name__ == "__main__":
