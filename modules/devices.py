@@ -169,6 +169,9 @@ if args.use_ipex:
     CondFunc('torch.nn.modules.GroupNorm.forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
         lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
+    CondFunc('torch.nn.modules.Linear.forward',
+        lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
+        lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
 
     #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
     if args.device_id is not None:
