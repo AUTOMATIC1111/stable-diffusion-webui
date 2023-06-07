@@ -243,7 +243,7 @@ class EmbeddingDatabase:
             self.previously_displayed_embeddings = displayed_embeddings
             shared.log.info(f"Embeddings loaded: {len(self.word_embeddings)} {[k for k in self.word_embeddings.keys()]}")
             if len(self.skipped_embeddings) > 0:
-                shared.log.info(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
+                shared.log.info(f"Embeddings skipped: {len(self.skipped_embeddings)} {[k for k in self.skipped_embeddings.keys()]}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]

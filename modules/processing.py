@@ -933,7 +933,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
         shared.state.nextjob()
         img2img_sampler_name = self.sampler_name
-        force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
+        force_latent_upscaler = shared.opts.data.get('force_latent_sampler')
         if force_latent_upscaler != 'None' and force_latent_upscaler != 'PLMS':
             img2img_sampler_name = force_latent_upscaler
         if img2img_sampler_name == 'PLMS':
@@ -981,7 +981,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_conditioning = None
 
     def init(self, all_prompts, all_seeds, all_subseeds):
-        force_latent_upscaler = shared.opts.data.get('xyz_fallback_sampler')
+        force_latent_upscaler = shared.opts.data.get('force_latent_sampler')
         if self.sampler_name in ['PLMS']:
             self.sampler_name = force_latent_upscaler if force_latent_upscaler != 'None' else shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)

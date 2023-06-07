@@ -139,7 +139,7 @@ def list_extensions():
                 shared.log.info(f'Skipping conflicting extension: {path}')
                 continue
             extension_names.append(extension_dirname)
-            extension_paths.append((extension_dirname, path, dirname == dirname))
+            extension_paths.append((extension_dirname, path, dirname == extensions_builtin_dir))
     for dirname, path, is_builtin in extension_paths:
         extension = Extension(name=dirname, path=path, enabled=dirname not in shared.opts.disabled_extensions, is_builtin=is_builtin)
         extensions.append(extension)

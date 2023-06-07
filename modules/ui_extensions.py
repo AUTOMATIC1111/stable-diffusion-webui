@@ -261,7 +261,7 @@ def search_extensions(search_text, sort_column):
 
 
 def refresh_extensions_list_from_data(search_text, sort_column):
-    shared.log.debug(f'Extensions manager: refresh list search="{search_text}" sort="{sort_column}"')
+    # shared.log.debug(f'Extensions manager: refresh list search="{search_text}" sort="{sort_column}"')
     code = """
         <table id="extensions">
             <colgroup>

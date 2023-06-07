@@ -291,6 +291,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_checkpoint_cache": OptionInfo(0, "Number of cached model checkpoints", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAE checkpoints", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "Select VAE", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
+    "sd_model_dict": OptionInfo('None', "Stable Diffusion checkpoint dict", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_vae_sliced_encode": OptionInfo(False, "Enable splitting of hires batch processing"),
     "stream_load": OptionInfo(False, "When loading models attempt stream loading optimized for slow or network storage"),
     "model_reuse_dict": OptionInfo(False, "When loading models attempt to reuse previous model dictionary"),
@@ -440,7 +441,7 @@ options_templates.update(options_section(('ui', "Live previews"), {
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
     "show_samplers": OptionInfo(["Euler a", "UniPC", "DDIM", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
     "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
-    "xyz_fallback_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
+    "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     "eta_ancestral": OptionInfo(1.0, "Noise multiplier for ancestral samplers (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
@@ -504,7 +505,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
 }))
 
 options_templates.update(options_section(('lora', "Lora"), {
-    "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all Lora types", gr.Checkbox, { "visible": True }), # TODO: lyco-patch-lora
+    "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all Lora types", gr.Checkbox, { "visible": True }),
     "lora_disable": OptionInfo(False, "Disable built-in Lora handler", gr.Checkbox, { "visible": True }, onchange=lora_disable),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple Loras", gr.Checkbox, { "visible": True }),
 }))

@@ -190,8 +190,8 @@ def model_hash(filename):
         return 'NOHASH'
 
 
-def select_checkpoint():
-    model_checkpoint = shared.opts.sd_model_checkpoint
+def select_checkpoint(model=True):
+    model_checkpoint = shared.opts.sd_model_checkpoint if model else shared.opts.sd_model_dict
     checkpoint_info = checkpoint_aliases.get(model_checkpoint, None)
     if checkpoint_info is not None:
         shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
@@ -300,7 +300,8 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     shared.log.debug(f'Model weights loading: {memory_stats()}')
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("hash")
-    shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
+    if model_data.sd_dict == 'None':
+        shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
     if state_dict is None:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
     model.load_state_dict(state_dict, strict=False)
@@ -398,6 +399,7 @@ sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_w
 class SdModelData:
     def __init__(self):
         self.sd_model = None
+        self.sd_dict = 'None'
         self.initial = True
         self.lock = threading.Lock()
 
@@ -406,7 +408,7 @@ class SdModelData:
             with self.lock:
                 try:
                     if shared.backend == shared.Backend.ORIGINAL:
-                        load_model()
+                        reload_model_weights()
                     elif shared.backend == shared.Backend.DIFFUSERS:
                         load_diffuser()
                     else:
@@ -552,15 +554,21 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     shared.log.info(f'Model load finished: {memory_stats()}')
 
 
-def reload_model_weights(sd_model=None, info=None):
+def reload_model_weights(sd_model=None, info=None, reuse_dict=False):
+    load_dict = shared.opts.sd_model_dict != model_data.sd_dict
     global skip_next_load # pylint: disable=global-statement
     if skip_next_load:
         shared.log.debug('Reload model weights skip')
         skip_next_load = False
         return
-    shared.log.debug(f'Reload model weights: {sd_model is not None} {info}')
     from modules import lowvram, sd_hijack
-    checkpoint_info = info or select_checkpoint()
+    checkpoint_info = info or select_checkpoint(model=not load_dict) # are we selecting model or dictionary
+    next_checkpoint_info = info or select_checkpoint(model=load_dict) if load_dict else None
+    if load_dict:
+        shared.log.debug(f'Model dict: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
+    else:
+        model_data.sd_dict = 'None'
+        shared.log.debug(f'Reload model weights: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
     if not sd_model:
         sd_model = model_data.sd_model
     if sd_model is None:  # previous model load failed
@@ -573,7 +581,7 @@ def reload_model_weights(sd_model=None, info=None):
             lowvram.send_everything_to_cpu()
         else:
             sd_model.to(devices.cpu)
-    if shared.opts.model_reuse_dict and sd_model is not None:
+    if reuse_dict or (shared.opts.model_reuse_dict and sd_model is not None):
         shared.log.info('Reusing previous model dictionary')
         sd_hijack.model_hijack.undo_hijack(sd_model)
     else:
@@ -590,6 +598,10 @@ def reload_model_weights(sd_model=None, info=None):
             load_model(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer)
         else:
             load_diffuser(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer)
+        if load_dict and next_checkpoint_info is not None:
+            model_data.sd_dict = shared.opts.sd_model_dict
+            shared.opts.data["sd_model_checkpoint"] = next_checkpoint_info.title
+            reload_model_weights(reuse_dict=True) # ok we loaded dict now lets redo and load model on top of it
         return model_data.sd_model
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
@@ -615,8 +627,8 @@ def unload_model_weights(sd_model=None, _info=None):
             sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
         model_data.sd_model = None
         sd_model = None
-    devices.torch_gc(force=True)
-    shared.log.debug(f'Model weights unloaded: {memory_stats()}')
+        devices.torch_gc(force=True)
+        shared.log.debug(f'Model weights unloaded: {memory_stats()}')
     return sd_model
 
 

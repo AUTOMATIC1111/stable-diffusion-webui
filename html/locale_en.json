@@ -256,9 +256,11 @@
     {"id":"","label":"random","localized":"","hint":""}
   ],
   "settings": [
+    {"id":"","label":"Stable Diffusion checkpoint","localized":"","hint":"Select model checkpoint to use"},
+    {"id":"","label":"Stable Diffusion checkpoint dict","localized":"","hint":"Select model from which to extract dictionary only"},
     {"id":"","label":"Number of cached model checkpoints","localized":"","hint":""},
     {"id":"","label":"Number of cached VAE checkpoints","localized":"","hint":""},
-    {"id":"","label":"Select VAE","localized":"","hint":""},
+    {"id":"","label":"Select VAE","localized":"","hint":"Select variable auto-encoder to work with model when rendering images"},
     {"id":"","label":"Enable splitting of hires batch processing","localized":"","hint":""},
     {"id":"","label":"When loading models attempt stream loading optimized for slow or network storage","localized":"","hint":""},
     {"id":"","label":"When loading models attempt to reuse previous model dictionary","localized":"","hint":""},
@@ -513,7 +515,6 @@
     {"id":"","label":"Resize to ","localized":"","hint":""},
     {"id":"","label":"Resize by ","localized":"","hint":""},
     {"id":"","label":"Use via API ","localized":"","hint":""},
-    {"id":"","label":"Stable Diffusion checkpoint","localized":"","hint":""},
     {"id":"","label":"Styles","localized":"","hint":""},
     {"id":"","label":"Put variable parts at start of prompt","localized":"","hint":""},
     {"id":"","label":"Use different seed for each picture","localized":"","hint":""},

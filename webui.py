@@ -85,7 +85,7 @@ def check_rollback_vae():
 
 
 def initialize():
-    log.debug('Entering Initialize')
+    log.debug('Entering initialize')
     check_rollback_vae()
 
     modules.sd_vae.refresh_vae_list()
@@ -104,6 +104,7 @@ def initialize():
     gfpgan.setup_model(opts.gfpgan_models_path)
     startup_timer.record("gfpgan")
 
+    log.debug('Loading scripts')
     modules.scripts.load_scripts()
     startup_timer.record("scripts")
 
@@ -157,6 +158,7 @@ def load_model():
     else:
         shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
+    shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.state.end()
     startup_timer.record("checkpoint")
 
@@ -282,6 +284,11 @@ def webui():
     start_ui()
     load_model()
     log.info(f"Startup time: {startup_timer.summary()}")
+
+    # override all loggers to use the same handlers as the main logger
+    for logger in [logging.getLogger(name) for name in logging.root.manager.loggerDict]: # pylint: disable=no-member
+        logger.handlers = log.handlers
+
     if cmd_opts.autolaunch and local_url is not None:
         cmd_opts.autolaunch = False
         shared.log.info('Launching browser')

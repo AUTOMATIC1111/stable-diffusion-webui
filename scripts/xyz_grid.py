@@ -121,7 +121,7 @@ def apply_fallback(p, x, xs):
     if sampler_name is None:
         shared.log.warning(f"XYZ grid: unknown sampler: {x}")
     else:
-        shared.opts.data["xyz_fallback_sampler"] = sampler_name
+        shared.opts.data["force_latent_sampler"] = sampler_name
 
 
 def apply_uni_pc_order(p, x, xs):
@@ -209,6 +209,7 @@ axis_options = [
     AxisOption("Nothing", str, do_nothing, fmt=format_nothing),
     AxisOption("Checkpoint name", str, apply_checkpoint, fmt=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: list(sd_models.checkpoints_list)),
     AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: ['None'] + list(sd_vae.vae_dict)),
+    AxisOption("Dict name", str, apply_checkpoint, fmt=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: ['None'] + list(sd_models.checkpoints_list)),
     AxisOption("Prompt S/R", str, apply_prompt, fmt=format_value),
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
     AxisOptionTxt2Img("Sampler", str, apply_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
@@ -351,8 +352,9 @@ class SharedSettingsStackHelper(object):
         self.token_merging_ratio = shared.opts.token_merging_ratio
         self.token_merging_random = shared.opts.token_merging_random
         self.sd_model_checkpoint = shared.opts.sd_model_checkpoint
+        self.sd_model_dict = shared.opts.sd_model_dict
         self.sd_vae_checkpoint = shared.opts.sd_vae
-        self.xyz_fallback_sampler = shared.opts.xyz_fallback_sampler
+        self.force_latent_sampler = shared.opts.force_latent_sampler
 
     def __exit__(self, exc_type, exc_value, tb):
         #Restore overriden settings after plot generation.
@@ -361,8 +363,9 @@ class SharedSettingsStackHelper(object):
         shared.opts.data["token_merging_ratio_hr"] = self.token_merging_ratio_hr
         shared.opts.data["token_merging_ratio"] = self.token_merging_ratio
         shared.opts.data["token_merging_random"] = self.token_merging_random
-        shared.opts.data["xyz_fallback_sampler"] = self.xyz_fallback_sampler
-        if self.sd_model_checkpoint != shared.opts.sd_model_checkpoint:
+        shared.opts.data["force_latent_sampler"] = self.force_latent_sampler
+        if (self.sd_model_checkpoint != shared.opts.sd_model_checkpoint) or (self.sd_model_dict != shared.opts.sd_model_dict):
+            shared.opts.data["sd_model_dict"] = self.sd_model_dict
             shared.opts.data["sd_model_checkpoint"] = self.sd_model_checkpoint
             sd_models.reload_model_weights()
         if self.sd_vae_checkpoint != shared.opts.sd_vae:

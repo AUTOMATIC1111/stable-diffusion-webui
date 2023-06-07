@@ -4,29 +4,32 @@ import time
 import shlex
 import logging
 import subprocess
+import installer
+
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
 sys.argv += shlex.split(commandline_args)
-
-import installer
-installer.ensure_base_requirements()
-installer.add_args()
-installer.parse_args()
-installer.setup_logging(False)
-installer.read_options()
-installer.extensions_preload(force=False)
-
-import modules.cmd_args
-args, _ = modules.cmd_args.parser.parse_known_args()
-import modules.paths_internal
-script_path = modules.paths_internal.script_path
-extensions_dir = modules.paths_internal.extensions_dir
+args = None
+parser = None
+script_path = None
+extensions_dir = None
 git = os.environ.get('GIT', "git")
 index_url = os.environ.get('INDEX_URL', "")
 stored_commit_hash = None
 dir_repos = "repositories"
 python = sys.executable # used by some extensions to run python
 skip_install = False # parsed by some extensions
+
+
+def init_modules():
+    global parser, args, script_path, extensions_dir # pylint: disable=global-statement
+    import modules.cmd_args
+    parser = modules.cmd_args.parser
+    installer.add_args(parser)
+    args, _ = parser.parse_known_args()
+    import modules.paths_internal
+    script_path = modules.paths_internal.script_path
+    extensions_dir = modules.paths_internal.extensions_dir
 
 
 def commit_hash(): # compatbility function
@@ -134,17 +137,22 @@ def start_server(immediate=True, server=None):
 
 
 if __name__ == "__main__":
-    if args.version:
-        installer.add_args()
-        installer.log.info('SD.Next version information')
-        installer.check_python()
-        installer.check_version()
-        installer.check_torch()
-        exit(0)
+    installer.ensure_base_requirements()
+    init_modules() # setup argparser and default folders
+    installer.args = args
+    installer.setup_logging(False)
+    installer.log.info('Starting SD.Next')
+    installer.check_python()
+    installer.check_version()
+    installer.set_environment()
+    installer.check_torch()
+    installer.install_requirements()
+    installer.install_packages()
+    installer.extensions_preload(parser) # adds additional args from extensions
+    args = installer.parse_args(parser)
+    installer.read_options()
     installer.run_setup()
-    installer.extensions_preload(force=True)
     installer.log.info(f"Server arguments: {sys.argv[1:]}")
-    installer.log.debug('Starting WebUI')
     logging.disable(logging.NOTSET if args.debug else logging.DEBUG)
 
     instance = start_server(immediate=True, server=None)

@@ -12,10 +12,6 @@ import cProfile
 import argparse
 import pkg_resources
 
-try:
-    from modules.cmd_args import parser
-except:
-    parser = argparse.ArgumentParser(description="SD.Next", conflict_handler='resolve', formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=55, indent_increment=2, width=200))
 
 class Dot(dict): # dot notation access to dictionary attributes
     __getattr__ = dict.get
@@ -69,8 +65,6 @@ def setup_logging(clean=False):
         "traceback.border.syntax_error": "black",
         "inspect.value.border": "black",
     }))
-    # logging.getLogger("urllib3").setLevel(logging.ERROR)
-    # logging.getLogger("httpx").setLevel(logging.ERROR)
     level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', filename=log_file, filemode='a', encoding='utf-8', force=True)
     log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`
@@ -81,6 +75,9 @@ def setup_logging(clean=False):
     while log.hasHandlers() and len(log.handlers) > 0:
         log.removeHandler(log.handlers[0])
     log.addHandler(rh)
+    logging.getLogger("urllib3").setLevel(logging.ERROR)
+    logging.getLogger("httpx").setLevel(logging.ERROR)
+    logging.getLogger("ControlNet").handlers = log.handlers
 
 
 def print_profile(profile: cProfile.Profile, msg: str):
@@ -351,7 +348,7 @@ def install_packages():
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
-    log.info('Installing packages')
+    log.info('Verifying packages')
     # gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     # openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
     # install(gfpgan_package, 'gfpgan')
@@ -593,6 +590,8 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
     log.info(f'Version: {ver}')
     if args.version:
         return
+    if args.skip_git:
+        return
     commit = git('rev-parse HEAD')
     global git_commit # pylint: disable=global-statement
     git_commit = commit[:7]
@@ -673,7 +672,7 @@ def check_timestamp():
     return ok
 
 
-def add_args():
+def add_args(parser):
     group = parser.add_argument_group('Setup options')
     group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
@@ -696,43 +695,35 @@ def add_args():
     group.add_argument('--base', default = False, action='store_true', help = argparse.SUPPRESS)
 
 
-def parse_args():
+def parse_args(parser):
     # command line args
     global args # pylint: disable=global-statement
     args = parser.parse_args()
+    return args
 
 
-def extensions_preload(force = False):
+def extensions_preload(parser):
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
-    setup_time = 0
-    if not force:
-        if os.path.isfile(log_file):
-            with open(log_file, 'r', encoding='utf8') as f:
-                lines = f.readlines()
-                for line in lines:
-                    if 'Setup complete without errors' in line:
-                        setup_time = int(line.split(' ')[-1])
-    if setup_time > 0 or force:
-        # log.info('Running extension preloading')
-        if args.safe:
-            log.info('Running in safe mode without user extensions')
-        try:
-            from modules.script_loading import preload_extensions
-            from modules.paths_internal import extensions_builtin_dir, extensions_dir
-            extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
-            if args.base:
-                extension_folders = []
-            for ext_dir in extension_folders:
-                t0 = time.time()
-                preload_extensions(ext_dir, parser)
-                t1 = time.time()
-                log.info(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
-        except:
-            log.error('Error running extension preloading')
+    if args.safe:
+        log.info('Running in safe mode without user extensions')
+    try:
+        from modules.script_loading import preload_extensions
+        from modules.paths_internal import extensions_builtin_dir, extensions_dir
+        extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+        if args.base:
+            extension_folders = []
+        for ext_dir in extension_folders:
+            t0 = time.time()
+            preload_extensions(ext_dir, parser)
+            t1 = time.time()
+            log.info(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
+    except:
+        log.error('Error running extension preloading')
     if args.profile:
         print_profile(pr, 'Preload')
+
 
 def git_reset():
     log.warning('Running GIT reset')
@@ -752,22 +743,13 @@ def read_options():
             opts = json.load(file)
 
 
-# entry method when used as module
 def run_setup():
-    # setup_logging(args.upgrade)
-    log.info('Starting SD.Next')
-    check_python()
     if args.reset:
         git_reset()
     if args.skip_git:
         log.info('Skipping GIT operations')
-    check_version()
-    set_environment()
     if args.reinstall:
         log.info('Forcing reinstall of all packages')
-    check_torch()
-    install_requirements()
-    install_packages()
     if check_timestamp():
         log.info('No changes detected: Quick launch active')
         return
@@ -782,10 +764,3 @@ def run_setup():
     else:
         log.warning(f'Setup complete with errors: {errors}')
         log.warning(f'See log file for more details: {log_file}')
-
-
-if __name__ == "__main__":
-    add_args()
-    ensure_base_requirements()
-    parse_args()
-    run_setup()
