@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import contextlib
 from functools import lru_cache
@@ -67,11 +69,16 @@ def enable_tf32():
         torch.backends.cudnn.allow_tf32 = True
 
 
-
 errors.run(enable_tf32, "Enabling TF32")
 
 cpu = torch.device("cpu")
-device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
+
+device: torch.device | None = None
+device_interrogate: torch.device | None = None
+device_gfpgan: torch.device | None = None
+device_esrgan: torch.device | None
+device_codeformer: torch.device | None = None
+
 dtype = torch.float16
 dtype_vae = torch.float16
 dtype_unet = torch.float16
