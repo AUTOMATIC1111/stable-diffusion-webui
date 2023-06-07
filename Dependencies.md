@@ -6,7 +6,7 @@
     - Linux (Arch-based): `sudo pacman -S wget git python3`
 2. Code from this repository:
     - preferred way: using git: `git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git`.
-        - This way is referred because it lets you update by just running `git pull`.
+        - This way is preferred because it lets you update by just running `git pull`.
         - Those commands can be used from command line window that opens after you right click in Explorer and select "Git Bash here".
     - alternative way: use the "Code" (green button) -> "Download ZIP" option on the main page of the repo.
         - You still need to install git even if you choose this.
