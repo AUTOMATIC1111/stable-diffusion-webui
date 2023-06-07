@@ -609,7 +609,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     with torch.no_grad(), ema_scope_context():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
-            if shared.opts.live_previews_enable and opts.show_progress_type == "Approx NN" and backend == Backend.ORIGINAL:
+            if shared.opts.live_previews_enable and opts.show_progress_type == "Approximate NN" and backend == Backend.ORIGINAL:
                 sd_vae_approx.model()
         if state.job_count == -1:
             state.job_count = p.n_iter
