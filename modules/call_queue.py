@@ -52,7 +52,7 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         if add_stats:
             shared.mem_mon.poll_rate = shared.opts.memmon_poll_rate
             shared.mem_mon.monitor()
-        t = time.perf_counter()
+        start_time = time.perf_counter()
 
         try:
             res = list(func(*args, **kwargs))
@@ -75,35 +75,16 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
             error_message = f'{type(e).__name__}: {e}'
             res = extra_outputs_array + [f"<div class='error'>{html.escape(error_message)}</div>"]
 
+        mem_stats = shared.mem_mon.read()
         shared.mem_mon.stop()
         shared.state.skipped = False
         shared.state.interrupted = False
         shared.state.job_count = 0
 
-        if not add_stats:
-            return tuple(res)
-
-        elapsed = time.perf_counter() - t
-        elapsed_m = int(elapsed // 60)
-        elapsed_s = elapsed % 60
-        elapsed_text = f"{elapsed_s:.2f}s"
-        if elapsed_m > 0:
-            elapsed_text = f"{elapsed_m}m "+elapsed_text
-
         if add_stats:
-            mem_stats = {k: -(v//-(1024*1024)) for k, v in shared.mem_mon.read().items()}
-            active_peak = mem_stats['active_peak']
-            reserved_peak = mem_stats['reserved_peak']
-            sys_peak = mem_stats['system_peak']
-            sys_total = mem_stats['total']
-            sys_pct = round(sys_peak/max(sys_total, 1) * 100, 2)
-
-            vram_html = f"<p class='vram'>Torch active/reserved: {active_peak}/{reserved_peak} MiB, <wbr>Sys VRAM: {sys_peak}/{sys_total} MiB ({sys_pct}%)</p>"
-        else:
-            vram_html = ''
-
-        # last item is always HTML
-        res[-1] += f"<div class='performance'><p class='time'>Time taken: <wbr>{elapsed_text}</p>{vram_html}</div>"
+            # last item is always HTML
+            from modules.performance_stats import format_performance_html
+            res[-1] += format_performance_html(start_time=start_time, mem_stats=mem_stats)
 
         return tuple(res)
 
