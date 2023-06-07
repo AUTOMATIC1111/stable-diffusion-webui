@@ -95,7 +95,7 @@ def parse_args():
 
     group_data = parser.add_argument_group('Dataset')
     group_data.add_argument('--input', type=str, default=None, required=True, help='input folder with training images')
-    group_data.add_argument('--output', type=str, default='', required=False, help='where to store processed images, default is system temp/train')
+    group_data.add_argument('--interim', type=str, default='', required=False, help='where to store processed images, default is system temp/train')
     group_data.add_argument('--process', type=str, default='original,interrogate,resize,square', required=False, help=f'list of possible processing steps: {valid_steps}, default: %(default)s')
 
     group_train = parser.add_argument_group('Train')
@@ -176,8 +176,8 @@ def verify_args():
     if not os.path.exists(args.lyco_dir) or not os.path.isdir(args.lyco_dir):
         log.error(f'cannot find lyco folder: {args.lyco_dir}')
         exit(1)
-    if args.output != '':
-        args.process_dir = args.output
+    if args.interim != '':
+        args.process_dir = args.interim
     else:
         args.process_dir = os.path.join(tempfile.gettempdir(), 'train', args.name)
     log.debug(f'args: {vars(args)}')
@@ -375,6 +375,9 @@ def process_inputs():
 
 if __name__ == '__main__':
     log.info('SD.Next train script')
+    server_options = util.Map(sdapi.options())
+    from rich import print
+    print(server_options)
     parse_args()
     setup_logging()
     prepare_server()

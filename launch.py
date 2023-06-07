@@ -142,6 +142,7 @@ if __name__ == "__main__":
     installer.args = args
     installer.setup_logging(False)
     installer.log.info('Starting SD.Next')
+    installer.read_options()
     installer.check_python()
     installer.check_version()
     installer.set_environment()
@@ -150,7 +151,6 @@ if __name__ == "__main__":
     installer.install_packages()
     installer.extensions_preload(parser) # adds additional args from extensions
     args = installer.parse_args(parser)
-    installer.read_options()
     installer.run_setup()
     installer.log.info(f"Server arguments: {sys.argv[1:]}")
     logging.disable(logging.NOTSET if args.debug else logging.DEBUG)

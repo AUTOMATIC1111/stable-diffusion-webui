@@ -225,6 +225,21 @@ def start_ui():
 
     import installer
     global local_url # pylint: disable=global-statement
+    gradio_kwargs = {
+            "version": f'0.0.{installer.git_commit}',
+            "title": "SD.Next",
+            "description": "SD.Next",
+    }
+    if cmd_opts.docs:
+        gradio_kwargs.update({
+            "docs_url": "/docs",
+            "redocs_url": "/redocs",
+            "swagger_ui_parameters": {
+                "displayOperationId": True,
+                "showCommonExtensions": True,
+                "deepLinking": False,
+            }
+        })
     app, local_url, share_url = shared.demo.launch(
         share=cmd_opts.share,
         server_name=server_name,
@@ -239,21 +254,11 @@ def start_ui():
         max_threads=64,
         show_api=True,
         favicon_path='html/logo.ico',
-        app_kwargs={
-            "version": f'0.0.{installer.git_commit}',
-            "title": "SD.Next",
-            "description": "SD.Next",
-            # "docs_url": "/docs",
-            # "redocs_url": "/redocs",
-            "swagger_ui_parameters": {
-                "displayOperationId": True,
-                "showCommonExtensions": True,
-                "deepLinking": False,
-            },
-        }
+        app_kwargs=gradio_kwargs,
     )
     shared.log.info(f'Local URL: {local_url}')
-    shared.log.info(f'API Docs: {local_url[:-1]}/docs') # {local_url[:-1]}?view=api
+    if cmd_opts.docs:
+        shared.log.info(f'API Docs: {local_url[:-1]}/docs') # {local_url[:-1]}?view=api
     if share_url is not None:
         shared.log.info(f'Share URL: {share_url}')
     shared.log.debug(f'Gradio registered functions: {len(shared.demo.fns)}')

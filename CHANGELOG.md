@@ -1,5 +1,15 @@
 # Change Log for SD.Next
 
+## Update for 06/07/2023
+
+- reworked **installer** sequence  
+  as some extensions are loading packages directly from their preload sequence  
+  which was preventing some optimizations to take effect  
+  i hope this does not cause regressions, but if it does, please report  
+- experimental `sd_model_dict` setting which allows you to load model dictionary  
+  from one model and apply weights from another model specified in `sd_model_checkpoint`  
+  results? who am i to judge :)
+
 ## Update for 06/05/2023
 
 Few new features and extra handling for broken extensions  
