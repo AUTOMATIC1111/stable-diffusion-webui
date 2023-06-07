@@ -20,8 +20,9 @@ def format_vram_html(mem_stats: dict[str, int | None]) -> str:
     mem_stats_mb = {k: -(v // -(1024 * 1024)) for k, v in mem_stats.items()}
     vram_bits = []
 
-    active_peak = mem_stats_mb.get("active_peak")
-    reserved_peak = mem_stats_mb.get("reserved_peak")
+    # CUDA uses active_peak/reserved_peak, MPS uses max_active/max_active_cached
+    active_peak = mem_stats_mb.get("active_peak") or mem_stats_mb.get("max_active")
+    reserved_peak = mem_stats_mb.get("reserved_peak") or mem_stats_mb.get("max_active_cached")
     if active_peak and reserved_peak:
         vram_bits.append(f"Torch active/reserved: {active_peak}/{reserved_peak} MiB")
 

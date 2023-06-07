@@ -56,3 +56,12 @@ class CudaMemUsageAPI(MemUsageAPI):
             "reserved_peak": torch_stats["reserved_bytes.all.peak"],
             "system_peak": total - self.min.get("free", total),
         }
+
+
+class MPSMemUsageAPI(MemUsageAPI):
+    def get_stats(self) -> dict[str, int | None]:
+        from torch.mps import current_allocated_memory, driver_allocated_memory
+        return {
+            "active": current_allocated_memory(),
+            "active_cached": driver_allocated_memory(),
+        }

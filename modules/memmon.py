@@ -26,6 +26,8 @@ class MemUsageMonitor(threading.Thread):
         try:
             if device.type == "cuda":
                 self.api = mem_usage.CudaMemUsageAPI(device)
+            elif device.type == "mps":
+                self.api = mem_usage.MPSMemUsageAPI(device)
             else:
                 raise ValueError(f"Unsupported device type: {device.type}")
         except Exception as e:
