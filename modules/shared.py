@@ -416,7 +416,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_extra_networks_tab_reorder": OptionInfo("Checkpoints, Lora, LyCORIS, Textual Inversion, Hypernetworks", "Extra networks tab order"),
 }))
 
-options_templates.update(options_section(('ui', "Live previews"), {
+options_templates.update(options_section(('live-preview', "Live previews"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
