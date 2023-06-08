@@ -45,15 +45,37 @@ USER_AGENTS = [
 ]
 
 
+def mode_list(model_type, file_type):
+    model = 'user-models'
+    target_dir = os.path.join(model, model_type)
+    file_list = os.listdir(target_dir)
+    paths = []
+    for fileName in file_list:
+        without_ex, ex = os.path.splitext(fileName)
+        if file_type == 'png' and ex == '.png':
+            paths.append(os.path.join(target_dir, fileName))
+        if file_type == 'model' and ex != '.png':
+            paths.append(os.path.join(target_dir, fileName))
+    print(paths)
+    return paths
+
+
 def upload_asset(file_obj, model_type):
     model = 'user-models'
     target_dir = os.path.join(model, model_type)
     os.makedirs(target_dir, exist_ok=True)
     upload_path = os.path.join(target_dir, os.path.basename(file_obj.orig_name))
     shutil.move(file_obj.name, upload_path)
-    if os.path.exists(upload_path):
-        return "ok"
-    return "upload falied"
+    return mode_list(model_type, 'model')
+
+
+def upload_asset_png(file_obj, model_type):
+    model = 'user-models'
+    target_dir = os.path.join(model, model_type)
+    os.makedirs(target_dir, exist_ok=True)
+    upload_path = os.path.join(target_dir, os.path.basename(file_obj.orig_name))
+    shutil.move(file_obj.name, upload_path)
+    return mode_list(model_type, 'png')
 
 
 def http_request(url, method='GET', headers=None, cookies=None, data=None, timeout=30, proxy=None, stream=False):
@@ -201,29 +223,25 @@ def create_upload_model_ui():
                          label="选择模型类型:")
     with gr.Tabs(elem_id="tabs") as tabs:
         with gr.TabItem('模型文件上传', elem_id='tab_upload_file'):
-            gr.Label(None, label="通过模型文件上传，模型文件较大，请耐心等待:")
+            gr.Textbox("通过模型文件上传，模型文件较大，请耐心等待:", interactive=False, show_label=False)
             upload_ctl = gr.File(label="本地上传模型文件:")
             upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
+
         with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
             url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai,samba页面地址直接解析")
             model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
             url_img_ctl = gr.Textbox(label="从URL下载封面:",
                                      placeholder="输入封面下载链接，civitai自动解析无需手动添加,samba默认自动拉取同名PNG资源")
             btn = gr.Button(value="开始下载")
-
-    result = gr.Label(label="上传结果:")
+            result = gr.Textbox(label="上传结果:")
     upload_ctl.upload(fn=upload_asset,
                       inputs=[upload_ctl, radio_ctl],
-                      outputs=[result],
+                      outputs=upload_ctl,
                       show_progress=True)
-    # upload_ctl.change(
-    #     inputs=[upload_ctl, radio_ctl],
-    #     outputs=[result],
-    #     show_progress=True)
 
-    upload_img_ctl.upload(fn=upload_asset,
+    upload_img_ctl.upload(fn=upload_asset_png,
                           inputs=[upload_img_ctl, radio_ctl],
-                          outputs=[result],
+                          outputs=upload_img_ctl,
                           show_progress=True)
     btn.click(request_model_url,
               inputs=[url_txt_ctl, radio_ctl, model_name_ctl, url_img_ctl],
@@ -232,24 +250,6 @@ def create_upload_model_ui():
 
 
 def create_rm_model_ui():
-    gr.Label("你可以对自己空间模型进行管理", label=None)
-    # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
-    radio_ctl = gr.Radio(["Lora", "Stable-diffusion"],
-                         label="选择模型类型:")
-    # model_set = gr.Dataset(
-    #     label='选择要删除的文件',
-    #     headers=["文件名", "路径"],
-    #     components=[gr.Textbox(show_label=False, visible=False), gr.Textbox(show_label=False, visible=False)]
-    # )
-    state = gr.State()
-    model_frame = gr.Dataframe(
-        headers=["路径"],
-        datatype=["str"],
-        col_count=1,
-        type='array'
-    )
-    confirm = gr.Button('删除选中文件')
-
     def list_models(relative):
         models = []
         parentPath = 'user-models'
@@ -269,6 +269,21 @@ def create_rm_model_ui():
             models = None
 
         return models
+
+    gr.Label("你可以对自己空间模型进行管理", label=None)
+    # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
+    radio_ctl = gr.Radio(["Lora", "Stable-diffusion", "VAE"], value='Lora',
+                         label="选择模型类型:")
+    ##设置model_frame初始值
+    state = gr.State()
+    model_frame = gr.Dataframe(
+        value=list_models(radio_ctl.value),
+        headers=["路径"],
+        datatype=["str"],
+        col_count=1,
+        type='array'
+    )
+    confirm = gr.Button('删除选中文件')
 
     def set_ds(relative):
         models = list_models(relative)
