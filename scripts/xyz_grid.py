@@ -364,8 +364,9 @@ class SharedSettingsStackHelper(object):
         shared.opts.data["token_merging_ratio"] = self.token_merging_ratio
         shared.opts.data["token_merging_random"] = self.token_merging_random
         shared.opts.data["force_latent_sampler"] = self.force_latent_sampler
-        if (self.sd_model_checkpoint != shared.opts.sd_model_checkpoint) or (self.sd_model_dict != shared.opts.sd_model_dict):
+        if (self.sd_model_dict != shared.opts.sd_model_dict):
             shared.opts.data["sd_model_dict"] = self.sd_model_dict
+        if (self.sd_model_checkpoint != shared.opts.sd_model_checkpoint):
             shared.opts.data["sd_model_checkpoint"] = self.sd_model_checkpoint
             sd_models.reload_model_weights()
         if self.sd_vae_checkpoint != shared.opts.sd_vae:

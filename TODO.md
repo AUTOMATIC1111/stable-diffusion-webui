@@ -43,6 +43,7 @@ Tech that can be integrated as part of the core workflow...
 - [Dream artist](https://github.com/7eu7d7/DreamArtist-sd-webui-extension)
 - [QuickEmbedding](https://github.com/ethansmith2000/QuickEmbedding)
 - [DataComp CLiP](https://github.com/mlfoundations/open_clip/blob/main/docs/datacomp_models.md)
+- [ClipSeg](https://github.com/timojl/clipseg)
 - `TensorRT`
 
 ## Random
@@ -58,4 +59,3 @@ Tech that can be integrated as part of the core workflow...
 - port `p.all_hr_prompts`
 - test `lyco_patch_lora`
 - fix `lyco` logging
-- git diff index

@@ -350,7 +350,9 @@ def check_modified_files():
     try:
         res = git('status --porcelain')
         files = [x[2:].strip() for x in res.split('\n')]
-        log.warning(f'Modified files: {files}')
+        files = [x for x in files if len(x) > 0 and not x.startswith('extensions')]
+        if len(files) > 0:
+            log.warning(f'Modified files: {files}')
     except:
         pass
 
