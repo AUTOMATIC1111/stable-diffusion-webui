@@ -151,7 +151,7 @@ class TaskReceiver:
                 if task:
                     return task
                 elif not values:
-                    rand = random.randint(0, 10) * 0.1
+                    rand = random.randint(0, 10) * 1
                     time.sleep(rand)
         except redis_lock.NotAcquired:
             pass
