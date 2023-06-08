@@ -1,4 +1,3 @@
-/* global gradioApp, onUiUpdate */
 // A full size 'lightbox' preview modal shown when left clicking on gallery previews
 function closeModal() {
   gradioApp().getElementById('lightboxModal').style.display = 'none';
@@ -143,7 +142,7 @@ function galleryImageHandler(e) {
   e.onclick = showGalleryImage;
 }
 
-onUiUpdate(() => {
+onAfterUiUpdate(() => {
   fullImg_preview = gradioApp().querySelectorAll('.gradio-gallery > div > img');
   if (fullImg_preview != null) fullImg_preview.forEach(setupImageForLightbox);
   updateOnBackgroundChange();

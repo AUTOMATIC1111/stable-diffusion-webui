@@ -62,7 +62,8 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
             basename = os.path.splitext(os.path.basename(name))[0]
         else:
             basename = ''
-        _geninfo, items = images.read_info_from_image(image)
+        geninfo, items = images.read_info_from_image(image)
+        params = generation_parameters_copypaste.parse_generation_parameters(geninfo)
         for k, v in items.items():
             pp.image.info[k] = v
         if 'parameters' in items:
@@ -75,7 +76,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
             outputs.append(pp.image)
 
     devices.torch_gc()
-    return outputs, ui_common.infotext_to_html(infotext), pp.image.info
+    return outputs, ui_common.infotext_to_html(infotext), params
 
 
 def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, save_output: bool = True): #pylint: disable=unused-argument

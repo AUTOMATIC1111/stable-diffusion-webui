@@ -28,7 +28,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        If issue is setup, installation or startup related, please check `webui.log` before reporting  
+        If issue is setup, installation or startup related, please check `sdnext.log` before reporting  
         And when posting console logs, please use code blocks ( \`\`\` ) to format them insead of uploading screenshots  
   - type: markdown
     attributes:

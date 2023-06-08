@@ -1,4 +1,3 @@
-/* global gradioApp, get_tab_index */
 window.onload = (function () {
   window.addEventListener('drop', (e) => {
     const target = e.composedPath()[0];

@@ -3,6 +3,10 @@ import html
 import csv
 from collections import namedtuple
 import torch
+try:
+    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+except:
+    pass
 from tqdm import tqdm
 import safetensors.torch
 import numpy as np
@@ -239,7 +243,7 @@ class EmbeddingDatabase:
             self.previously_displayed_embeddings = displayed_embeddings
             shared.log.info(f"Embeddings loaded: {len(self.word_embeddings)} {[k for k in self.word_embeddings.keys()]}")
             if len(self.skipped_embeddings) > 0:
-                shared.log.info(f"Textual inversion embeddings skipped({len(self.skipped_embeddings)}): {', '.join(self.skipped_embeddings.keys())}")
+                shared.log.info(f"Embeddings skipped: {len(self.skipped_embeddings)} {[k for k in self.skipped_embeddings.keys()]}")
 
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
@@ -433,7 +437,10 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
             shared.log.info("No saved optimizer exists in checkpoint")
 
     if shared.cmd_opts.use_ipex:
-        scaler = torch.xpu.amp.GradScaler()
+        scaler = ipex.cpu.autocast._grad_scaler.GradScaler() #scaler.step(optimizer): PI_ERROR_INVALID_ARG_VALUE
+        shared.sd_model = shared.sd_model.to(dtype=torch.float32)
+        shared.sd_model.train()
+        shared.sd_model, optimizer = ipex.optimize(shared.sd_model, optimizer=optimizer, dtype=devices.dtype)
     else:
         scaler = torch.cuda.amp.GradScaler()
 

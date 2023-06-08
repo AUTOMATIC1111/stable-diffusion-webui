@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys
 import huggingface_hub as hf
 from rich import print # pylint: disable=redefined-builtin

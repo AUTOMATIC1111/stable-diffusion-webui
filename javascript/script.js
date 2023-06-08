@@ -13,33 +13,48 @@ function get_uiCurrentTabContent() {
   return gradioApp().querySelector('.tabitem[id^=tab_]:not([style*="display: none"])');
 }
 
-uiUpdateCallbacks = [];
-uiLoadedCallbacks = [];
-uiTabChangeCallbacks = [];
-optionsChangedCallbacks = [];
+const uiAfterUpdateCallbacks = [];
+const uiUpdateCallbacks = [];
+const uiLoadedCallbacks = [];
+const uiTabChangeCallbacks = [];
+const optionsChangedCallbacks = [];
 let uiCurrentTab = null;
+let uiAfterUpdateTimeout = null;
+
+function onAfterUiUpdate(callback) {
+  uiAfterUpdateCallbacks.push(callback);
+}
 
 function onUiUpdate(callback) {
   uiUpdateCallbacks.push(callback);
 }
+
 function onUiLoaded(callback) {
   uiLoadedCallbacks.push(callback);
 }
+
 function onUiTabChange(callback) {
   uiTabChangeCallbacks.push(callback);
 }
+
 function onOptionsChanged(callback) {
   optionsChangedCallbacks.push(callback);
 }
 
-function runCallback(x, m) {
-  try {
-    x(m);
-  } catch (e) { (console.error || console.log).call(console, e.message, e); }
+function executeCallbacks(queue, arg) {
+  // if (!uiLoaded) return
+  for (const callback of queue) {
+      try {
+          callback(arg);
+      } catch (e) {
+          console.error("error running callback", callback, ":", e);
+      }
+  }
 }
 
-function executeCallbacks(queue, m) {
-  queue.forEach((x) => { runCallback(x, m); });
+function scheduleAfterUiUpdateCallbacks() {
+  clearTimeout(uiAfterUpdateTimeout);
+  uiAfterUpdateTimeout = setTimeout(() => executeCallbacks(uiAfterUpdateCallbacks, 500));
 }
 
 let executedOnLoaded = false;
@@ -51,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
       executeCallbacks(uiLoadedCallbacks);
     }
     executeCallbacks(uiUpdateCallbacks, m);
+    scheduleAfterUiUpdateCallbacks();
     const newTab = get_uiCurrentTab();
     if (newTab && (newTab !== uiCurrentTab)) {
       uiCurrentTab = newTab;

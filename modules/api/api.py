@@ -89,7 +89,6 @@ def save_image(image, fn, ext):
 
 
 def encode_pil_to_base64(image):
-    # TODO jpeg
     with io.BytesIO() as output_bytes:
         save_image(image, output_bytes, shared.opts.samples_format)
         bytes_data = output_bytes.getvalue()

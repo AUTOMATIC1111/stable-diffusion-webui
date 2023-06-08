@@ -9,13 +9,9 @@ import subprocess
 import io
 import pstats
 import cProfile
+import argparse
 import pkg_resources
 
-try:
-    from modules.cmd_args import parser
-except:
-    import argparse
-    parser = argparse.ArgumentParser(description="SD.Next", conflict_handler='resolve', formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=55, indent_increment=2, width=200))
 
 class Dot(dict): # dot notation access to dictionary attributes
     __getattr__ = dict.get
@@ -24,7 +20,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-log_file = os.path.join(os.path.dirname(__file__), 'webui.log')
+log_file = os.path.join(os.path.dirname(__file__), 'sdnext.log')
 quick_allowed = True
 errors = 0
 opts = {}
@@ -69,8 +65,6 @@ def setup_logging(clean=False):
         "traceback.border.syntax_error": "black",
         "inspect.value.border": "black",
     }))
-    # logging.getLogger("urllib3").setLevel(logging.ERROR)
-    # logging.getLogger("httpx").setLevel(logging.ERROR)
     level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', filename=log_file, filemode='a', encoding='utf-8', force=True)
     log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`
@@ -81,6 +75,9 @@ def setup_logging(clean=False):
     while log.hasHandlers() and len(log.handlers) > 0:
         log.removeHandler(log.handlers[0])
     log.addHandler(rh)
+    logging.getLogger("urllib3").setLevel(logging.ERROR)
+    logging.getLogger("httpx").setLevel(logging.ERROR)
+    logging.getLogger("ControlNet").handlers = log.handlers
 
 
 def print_profile(profile: cProfile.Profile, msg: str):
@@ -120,7 +117,7 @@ def installed(package, friendly: str = None):
             ok = ok and spec is not None
             if ok:
                 version = pkg_resources.get_distribution(p[0]).version
-                log.debug(f"Package version found: {p[0]} {version}")
+                # log.debug(f"Package version found: {p[0]} {version}")
                 if len(p) > 1:
                     ok = ok and version == p[1]
                     if not ok:
@@ -346,12 +343,24 @@ def check_torch():
         print_profile(pr, 'Torch')
 
 
+# check modified files
+def check_modified_files():
+    if args.skip_git:
+        return
+    try:
+        res = git('status --porcelain')
+        files = [x[2:].strip() for x in res.split('\n')]
+        log.warning(f'Modified files: {files}')
+    except:
+        pass
+
+
 # install required packages
 def install_packages():
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
-    log.info('Installing packages')
+    log.info('Verifying packages')
     # gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     # openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
     # install(gfpgan_package, 'gfpgan')
@@ -418,15 +427,21 @@ def run_extension_installer(folder):
         log.error(f'Exception running extension installer: {e}')
 
 # get list of all enabled extensions
-def list_extensions(folder):
-    disabled_extensions = opts.get('disable_all_extensions', 'none')
-    if disabled_extensions != 'none':
-        log.debug(f'Disabled extensions: {disabled_extensions}')
+def list_extensions(folder, quiet=False):
+    name = os.path.basename(folder)
+    disabled_extensions_all = opts.get('disable_all_extensions', 'none')
+    if disabled_extensions_all != 'none':
+        if not quiet:
+            log.info(f'Disabled {name}: {disabled_extensions_all}')
         return []
-    disabled_extensions = set(opts.get('disabled_extensions', []))
+    disabled_extensions = opts.get('disabled_extensions', [])
     if len(disabled_extensions) > 0:
-        log.debug(f'Disabled extensions: {disabled_extensions}')
-    return [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
+        if not quiet:
+            log.info(f'Disabled {name}: {disabled_extensions}')
+    enabled_extensions = [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
+    if not quiet:
+        log.info(f'Enabled {name}: {enabled_extensions}')
+    return enabled_extensions
 
 
 # run installer for each installed and enabled extension and optionally update them
@@ -441,10 +456,12 @@ def install_extensions():
     extensions_duplicates = []
     extensions_enabled = []
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+    if args.base:
+        extension_folders = []
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
-        extensions = list_extensions(folder)
+        extensions = list_extensions(folder, quiet=True)
         log.debug(f'Extensions all: {extensions}')
         for ext in extensions:
             if ext in extensions_enabled:
@@ -552,6 +569,8 @@ def check_extensions():
     newest_all = os.path.getmtime('requirements.txt')
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+    if args.base:
+        extension_folders = []
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
@@ -568,7 +587,7 @@ def check_extensions():
                 ts = os.path.getmtime(os.path.join(extension_dir, f))
                 newest = max(newest, ts)
             newest_all = max(newest_all, newest)
-            log.debug(f'Extension version: {time.ctime(newest)} {folder}{os.pathsep}{ext}')
+            # log.debug(f'Extension version: {time.ctime(newest)} {folder}{os.pathsep}{ext}')
     return round(newest_all)
 
 
@@ -578,13 +597,11 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
         log.error('Not a git repository')
         if not args.ignore:
             sys.exit(1)
-    # status = git('status')
-    # if 'branch' not in status:
-    #    log.error('Cannot get git repository status')
-    #    sys.exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
     if args.version:
+        return
+    if args.skip_git:
         return
     commit = git('rev-parse HEAD')
     global git_commit # pylint: disable=global-statement
@@ -666,7 +683,7 @@ def check_timestamp():
     return ok
 
 
-def add_args():
+def add_args(parser):
     group = parser.add_argument_group('Setup options')
     group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
@@ -686,43 +703,38 @@ def add_args():
     group.add_argument('--version', default = False, action='store_true', help = "Print version information")
     group.add_argument('--ignore', default = False, action='store_true', help = "Ignore any errors and attempt to continue")
     group.add_argument('--safe', default = False, action='store_true', help = "Run in safe mode with no user extensions")
+    group.add_argument('--base', default = False, action='store_true', help = argparse.SUPPRESS)
 
 
-def parse_args():
+def parse_args(parser):
     # command line args
     global args # pylint: disable=global-statement
     args = parser.parse_args()
+    return args
 
 
-def extensions_preload(force = False):
+def extensions_preload(parser):
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
-    setup_time = 0
-    if not force:
-        if os.path.isfile(log_file):
-            with open(log_file, 'r', encoding='utf8') as f:
-                lines = f.readlines()
-                for line in lines:
-                    if 'Setup complete without errors' in line:
-                        setup_time = int(line.split(' ')[-1])
-    if setup_time > 0 or force:
-        log.info('Running extension preloading')
-        if args.safe:
-            log.info('Running in safe mode without user extensions')
-        try:
-            from modules.script_loading import preload_extensions
-            from modules.paths_internal import extensions_builtin_dir, extensions_dir
-            extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
-            for ext_dir in extension_folders:
-                t0 = time.time()
-                preload_extensions(ext_dir, parser)
-                t1 = time.time()
-                log.debug(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
-        except:
-            log.error('Error running extension preloading')
+    if args.safe:
+        log.info('Running in safe mode without user extensions')
+    try:
+        from modules.script_loading import preload_extensions
+        from modules.paths_internal import extensions_builtin_dir, extensions_dir
+        extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+        if args.base:
+            extension_folders = []
+        for ext_dir in extension_folders:
+            t0 = time.time()
+            preload_extensions(ext_dir, parser)
+            t1 = time.time()
+            log.info(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
+    except:
+        log.error('Error running extension preloading')
     if args.profile:
         print_profile(pr, 'Preload')
+
 
 def git_reset():
     log.warning('Running GIT reset')
@@ -740,43 +752,3 @@ def read_options():
     if os.path.isfile(args.config):
         with open(args.config, "r", encoding="utf8") as file:
             opts = json.load(file)
-
-
-# entry method when used as module
-def run_setup():
-    # setup_logging(args.upgrade)
-    log.info('Starting SD.Next')
-    read_options()
-    check_python()
-    if args.reset:
-        git_reset()
-    if args.skip_git:
-        log.info('Skipping GIT operations')
-    check_version()
-    set_environment()
-    if args.reinstall:
-        log.info('Forcing reinstall of all packages')
-    check_torch()
-    install_requirements()
-    install_packages()
-    if check_timestamp():
-        log.info('No changes detected: Quick launch active')
-        return
-    log.info("Running setup")
-    log.debug(f"Args: {vars(args)}")
-    install_repositories()
-    install_submodules()
-    install_extensions()
-    update_wiki()
-    if errors == 0:
-        log.debug(f'Setup complete without errors: {round(time.time())}')
-    else:
-        log.warning(f'Setup complete with errors: {errors}')
-        log.warning(f'See log file for more details: {log_file}')
-
-
-if __name__ == "__main__":
-    add_args()
-    ensure_base_requirements()
-    parse_args()
-    run_setup()

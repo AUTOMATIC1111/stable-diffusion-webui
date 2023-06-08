@@ -1,11 +1,34 @@
 # Change Log for SD.Next
 
-## Update for 06/03/2023
+## Update for 06/07/2023
 
-- new vae decode method to help with larger batch sizes, thanks @bigdog
-- profiling of scripts/extensions callbacks
-- additional exception handling so bad exception does not crash main app
-- additional background removal models
+- reworked **installer** sequence  
+  as some extensions are loading packages directly from their preload sequence  
+  which was preventing some optimizations to take effect  
+  i hope this does not cause regressions, but if it does, please report  
+- experimental `sd_model_dict` setting which allows you to load model dictionary  
+  from one model and apply weights from another model specified in `sd_model_checkpoint`  
+  results? who am i to judge :)
+
+## Update for 06/05/2023
+
+Few new features and extra handling for broken extensions  
+that caused my phone to go crazy with notifications over the weekend...
+
+- added extra networks to **xyz grid** options  
+  now you can have more fun with all your embeddings and loras :)  
+- new **vae decode** method to help with larger batch sizes, thanks @bigdog  
+- new setting -> lora -> **use lycoris to handle all lora types**  
+  this is still experimental, but the goal is to obsolete old built-in lora module  
+  as it doesn't understand many new loras and built-in lyco module can handle it all  
+- somewhat optimize browser page loading  
+  still slower than i'd want, but gradio is pretty bad at this  
+- profiling of scripts/extensions callbacks  
+  you can now see how much or pre/post processing is done, not just how long generate takes  
+- additional exception handling so bad exception does not crash main app  
+- additional background removal models  
+- some work on bfloat16 which nobody really should be using, but why not 🙂
+
 
 ## Update for 06/02/2023
 

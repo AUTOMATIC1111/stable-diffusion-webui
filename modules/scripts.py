@@ -282,18 +282,21 @@ class ScriptRunner:
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
         for script_class, path, _basedir, _script_module in auto_processing_scripts + scripts_data:
-            script = script_class()
-            script.filename = path
-            script.is_txt2img = not is_img2img
-            script.is_img2img = is_img2img
-            visibility = script.show(script.is_img2img)
-            if visibility == AlwaysVisible:
-                self.scripts.append(script)
-                self.alwayson_scripts.append(script)
-                script.alwayson = True
-            elif visibility:
-                self.scripts.append(script)
-                self.selectable_scripts.append(script)
+            try:
+                script = script_class()
+                script.filename = path
+                script.is_txt2img = not is_img2img
+                script.is_img2img = is_img2img
+                visibility = script.show(script.is_img2img)
+                if visibility == AlwaysVisible:
+                    self.scripts.append(script)
+                    self.alwayson_scripts.append(script)
+                    script.alwayson = True
+                elif visibility:
+                    self.scripts.append(script)
+                    self.selectable_scripts.append(script)
+            except Exception as e:
+                log.error(f'Script initialize: {path} {e}')
 
     def setup_ui(self):
         self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]

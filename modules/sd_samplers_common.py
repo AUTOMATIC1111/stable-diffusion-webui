@@ -22,7 +22,7 @@ def setup_img2img_steps(p, steps=None):
     return steps, t_enc
 
 
-approximation_indexes = {"Full": 0, "Approx NN": 1, "Approx cheap": 2, "TAESD": 3}
+approximation_indexes = {"Full VAE": 0, "Approximate NN": 1, "Approximate simple": 2, "TAESD": 3}
 
 
 def single_sample_to_image(sample, approximation=None):

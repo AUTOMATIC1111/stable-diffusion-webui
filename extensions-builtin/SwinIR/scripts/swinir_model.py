@@ -1,15 +1,13 @@
 import os
-
 import numpy as np
 import torch
 from PIL import Image
 from basicsr.utils.download_util import load_file_from_url
-from tqdm import tqdm
-
-from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import opts, state
+from tqdm.rich import tqdm
 from swinir_model_arch import SwinIR as net
 from swinir_model_arch_v2 import Swin2SR as net2
+from modules import modelloader, devices, script_callbacks, shared
+from modules.shared import opts, state
 from modules.upscaler import Upscaler, UpscalerData
 
 
@@ -36,8 +34,8 @@ class UpscalerSwinIR(Upscaler):
             scalers.append(model_data)
         self.scalers = scalers
 
-    def do_upscale(self, img, model_file):
-        model = self.load_model(model_file)
+    def do_upscale(self, img, selected_model):
+        model = self.load_model(selected_model)
         if model is None:
             return img
         model = model.to(device_swinir, dtype=devices.dtype)
@@ -56,8 +54,7 @@ class UpscalerSwinIR(Upscaler):
             filename = path
         if filename is None or not os.path.exists(filename):
             return None
-        if filename.endswith(".v2.pth"):
-            model = net2(
+        model_v2 = net2(
             upscale=scale,
             in_chans=3,
             img_size=64,
@@ -69,29 +66,33 @@ class UpscalerSwinIR(Upscaler):
             mlp_ratio=2,
             upsampler="nearest+conv",
             resi_connection="1conv",
-            )
-            params = None
-        else:
-            model = net(
-                upscale=scale,
-                in_chans=3,
-                img_size=64,
-                window_size=8,
-                img_range=1.0,
-                depths=[6, 6, 6, 6, 6, 6, 6, 6, 6],
-                embed_dim=240,
-                num_heads=[8, 8, 8, 8, 8, 8, 8, 8, 8],
-                mlp_ratio=2,
-                upsampler="nearest+conv",
-                resi_connection="3conv",
-            )
-            params = "params_ema"
-
+        )
+        model_v1 = net(
+            upscale=scale,
+            in_chans=3,
+            img_size=64,
+            window_size=8,
+            img_range=1.0,
+            depths=[6, 6, 6, 6, 6, 6, 6, 6, 6],
+            embed_dim=240,
+            num_heads=[8, 8, 8, 8, 8, 8, 8, 8, 8],
+            mlp_ratio=2,
+            upsampler="nearest+conv",
+            resi_connection="3conv",
+        )
         pretrained_model = torch.load(filename)
-        if params is not None:
-            model.load_state_dict(pretrained_model[params], strict=True)
-        else:
-            model.load_state_dict(pretrained_model, strict=True)
+        for model in [model_v1, model_v2]:
+            for param in ["params_ema", "params", None]:
+                try:
+                    if param is not None:
+                        model.load_state_dict(pretrained_model[param], strict=True)
+                    else:
+                        model.load_state_dict(pretrained_model, strict=True)
+                    shared.log.info(f'Loaded SwinIR model: {filename} param={param}')
+                    return model
+                except Exception:
+                    pass
+        shared.log.error(f'Could not determine SwinIR model parameters: {filename}')
         return model
 
 
@@ -142,7 +143,7 @@ def inference(img, model, tile, tile_overlap, window_size, scale):
     E = torch.zeros(b, c, h * sf, w * sf, dtype=devices.dtype, device=device_swinir).type_as(img)
     W = torch.zeros_like(E, dtype=devices.dtype, device=device_swinir)
 
-    with tqdm(total=len(h_idx_list) * len(w_idx_list), desc="SwinIR tiles") as pbar:
+    with tqdm(total=len(h_idx_list) * len(w_idx_list), desc="Upscaling SwinIR") as pbar:
         for h_idx in h_idx_list:
             if state.interrupted or state.skipped:
                 break

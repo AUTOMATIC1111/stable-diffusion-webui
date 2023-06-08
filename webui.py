@@ -6,7 +6,7 @@ import asyncio
 import logging
 import warnings
 from threading import Thread
-from modules import timer, errors
+from modules import timer, errors, paths # pylint: disable=unused-import
 
 startup_timer = timer.Timer()
 local_url = None
@@ -85,7 +85,7 @@ def check_rollback_vae():
 
 
 def initialize():
-    log.debug('Entering Initialize')
+    log.debug('Entering initialize')
     check_rollback_vae()
 
     modules.sd_vae.refresh_vae_list()
@@ -104,6 +104,7 @@ def initialize():
     gfpgan.setup_model(opts.gfpgan_models_path)
     startup_timer.record("gfpgan")
 
+    log.debug('Loading scripts')
     modules.scripts.load_scripts()
     startup_timer.record("scripts")
 
@@ -157,6 +158,7 @@ def load_model():
     else:
         shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
+    shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.state.end()
     startup_timer.record("checkpoint")
 
@@ -222,7 +224,22 @@ def start_ui():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
     import installer
-    global local_url
+    global local_url # pylint: disable=global-statement
+    gradio_kwargs = {
+            "version": f'0.0.{installer.git_commit}',
+            "title": "SD.Next",
+            "description": "SD.Next",
+    }
+    if cmd_opts.docs:
+        gradio_kwargs.update({
+            "docs_url": "/docs",
+            "redocs_url": "/redocs",
+            "swagger_ui_parameters": {
+                "displayOperationId": True,
+                "showCommonExtensions": True,
+                "deepLinking": False,
+            }
+        })
     app, local_url, share_url = shared.demo.launch(
         share=cmd_opts.share,
         server_name=server_name,
@@ -237,21 +254,11 @@ def start_ui():
         max_threads=64,
         show_api=True,
         favicon_path='html/logo.ico',
-        app_kwargs={
-            "version": f'0.0.{installer.git_commit}',
-            "title": "SD.Next",
-            "description": "SD.Next",
-            "docs_url": "/docs",
-            "redocs_url": "/redocs",
-            "swagger_ui_parameters": {
-                "displayOperationId": True,
-                "showCommonExtensions": True,
-                "deepLinking": False,
-            },
-        }
+        app_kwargs=gradio_kwargs,
     )
     shared.log.info(f'Local URL: {local_url}')
-    shared.log.info(f'API Docs: {local_url[:-1]}/docs') # {local_url[:-1]}?view=api
+    if cmd_opts.docs:
+        shared.log.info(f'API Docs: {local_url[:-1]}/docs') # {local_url[:-1]}?view=api
     if share_url is not None:
         shared.log.info(f'Share URL: {share_url}')
     shared.log.debug(f'Gradio registered functions: {len(shared.demo.fns)}')
@@ -282,6 +289,11 @@ def webui():
     start_ui()
     load_model()
     log.info(f"Startup time: {startup_timer.summary()}")
+
+    # override all loggers to use the same handlers as the main logger
+    for logger in [logging.getLogger(name) for name in logging.root.manager.loggerDict]: # pylint: disable=no-member
+        logger.handlers = log.handlers
+
     if cmd_opts.autolaunch and local_url is not None:
         cmd_opts.autolaunch = False
         shared.log.info('Launching browser')

@@ -3,6 +3,7 @@ import torch.nn.functional as F
 import math
 import time
 from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn
+from modules import shared
 
 
 class NoiseScheduleVP:
@@ -684,7 +685,12 @@ class UniPC:
                 if order == 2:
                     rhos_p = torch.tensor([0.5], device=b.device)
                 else:
-                    rhos_p = torch.linalg.solve(R[:-1, :-1], b[:-1])
+                    if shared.cmd_opts.use_ipex:
+                        #Running torch.linalg.solve on XPU crashes the GPU.
+                        rhos_p = torch.linalg.solve(R[:-1, :-1].to("cpu"), b[:-1].to("cpu"))
+                        rhos_p = rhos_p.to(b.device)
+                    else:
+                        rhos_p = torch.linalg.solve(R[:-1, :-1], b[:-1])
         else:
             D1s = None
 
@@ -694,7 +700,12 @@ class UniPC:
             if order == 1:
                 rhos_c = torch.tensor([0.5], device=b.device)
             else:
-                rhos_c = torch.linalg.solve(R, b)
+                if shared.cmd_opts.use_ipex:
+                    #Running torch.linalg.solve on XPU crashes the GPU.
+                    rhos_c = torch.linalg.solve(R.to("cpu"), b.to("cpu"))
+                    rhos_c = rhos_c.to(b.device)
+                else:
+                    rhos_c = torch.linalg.solve(R, b)
 
         model_t = None
         if self.predict_x0:

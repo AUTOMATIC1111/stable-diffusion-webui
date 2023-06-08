@@ -4,7 +4,7 @@ import os.path
 import urllib.parse
 from pathlib import Path
 import gradio as gr
-from modules import shared
+from modules import shared, scripts
 from modules.generation_parameters_copypaste import image_from_url_text
 from modules.ui_components import ToolButton
 
@@ -54,9 +54,26 @@ class ExtraNetworksPage:
         self.card_short = shared.html("extra-networks-card-short.html")
         self.allow_negative_prompt = False
         self.metadata = {}
+        self.items = []
 
     def refresh(self):
         pass
+
+    def create_xyz_grid(self):
+        xyz_grid = [x for x in scripts.scripts_data if x.script_class.__module__ == "xyz_grid.py"][0].module
+
+        def add_prompt(p, opt, x):
+            for item in [x for x in self.items if x["name"] == opt]:
+                try:
+                    p.prompt = f'{p.prompt} {eval(item["prompt"])}' # pylint: disable=eval-used
+                except Exception as e:
+                    shared.log.error(f'Cannot evaluate extra network prompt: {item["prompt"]} {e}')
+
+        if not any(self.title in x.label for x in xyz_grid.axis_options):
+            if self.title == 'Checkpoints':
+                return
+            opt = xyz_grid.AxisOption(f"[Network] {self.title}", str, add_prompt, choices=lambda: [x["name"] for x in self.items])
+            xyz_grid.axis_options.append(opt)
 
     def link_preview(self, filename):
         quoted_filename = urllib.parse.quote(filename.replace('\\', '/'))
@@ -93,12 +110,13 @@ class ExtraNetworksPage:
         if subdirs:
             subdirs = {"": 1, **subdirs}
         subdirs_html = "".join([f"""
-<button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
-{html.escape(subdir if subdir!="" else "all")}
-</button>
-""" for subdir in subdirs])
+            <button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
+                {html.escape(subdir if subdir!="" else "all")}
+            </button>""" for subdir in subdirs])
         try:
-            for item in self.list_items():
+            self.items = list(self.list_items())
+            self.create_xyz_grid()
+            for item in self.items:
                 metadata = item.get("metadata")
                 if metadata:
                     self.metadata[item["name"]] = metadata
@@ -213,20 +231,20 @@ def create_ui(container, button, tabname):
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
     with gr.Tabs(elem_id=tabname+"_extra_tabs"):
+        ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=True)
+        ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
+        button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
+        button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
+        ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
+        ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
+        ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
+        ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
+        ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
         for page in ui.stored_extra_pages:
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_")):
                 page_elem = gr.HTML(page.create_html(ui.tabname))
                 page_elem.change(fn=lambda: None, _js=f'() => refreshExtraNetworks("{tabname}")', inputs=[], outputs=[])
                 ui.pages.append(page_elem)
-    ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
-    ui.description_input = gr.TextArea('', show_label=False, elem_id=tabname+"_description_input", placeholder="Save/Replace Extra Network Description...", lines=2)
-    button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
-    button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
-    ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
-    ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
-    ui.button_save_description = gr.Button('Save description', elem_id=tabname+"_save_description", visible=False)
-    ui.button_read_description = gr.Button('Read description', elem_id=tabname+"_read_description", visible=False)
-    ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
@@ -271,6 +289,7 @@ def setup_ui(ui, gallery):
                 break
         assert is_allowed, f'writing to {filename} is not allowed'
         image.save(filename)
+        shared.log.info(f'Extra network save preview: {filename}')
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
     ui.button_save_preview.click(
@@ -286,12 +305,11 @@ def setup_ui(ui, gallery):
         filename = filename[0:lastDotIndex]+".description.txt"
         if descrip != "":
             try:
-                f = open(filename,'w', encoding='utf-8')
-            except OSError:
-                print ("Could not open file to write: " + filename)
-            with f:
-                f.write(descrip)
-                f.close()
+                with open(filename,'w', encoding='utf-8') as f:
+                    f.write(descrip)
+                shared.log.info(f'Extra network save description: {filename}')
+            except Exception as e:
+                shared.log.error(f'Extra network save preview: {filename} {e}')
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
     ui.button_save_description.click(

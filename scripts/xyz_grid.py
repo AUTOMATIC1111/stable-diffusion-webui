@@ -121,7 +121,7 @@ def apply_fallback(p, x, xs):
     if sampler_name is None:
         shared.log.warning(f"XYZ grid: unknown sampler: {x}")
     else:
-        shared.opts.data["xyz_fallback_sampler"] = sampler_name
+        shared.opts.data["force_latent_sampler"] = sampler_name
 
 
 def apply_uni_pc_order(p, x, xs):
@@ -207,35 +207,35 @@ class AxisOptionTxt2Img(AxisOption):
 
 axis_options = [
     AxisOption("Nothing", str, do_nothing, fmt=format_nothing),
-    AxisOption("Seed", int, apply_field("seed")),
-    AxisOption("Var. seed", int, apply_field("subseed")),
-    AxisOption("Var. strength", float, apply_field("subseed_strength")),
-    AxisOption("Steps", int, apply_field("steps")),
-    AxisOptionTxt2Img("Hires steps", int, apply_field("hr_second_pass_steps")),
-    AxisOption("CFG Scale", float, apply_field("cfg_scale")),
-    AxisOptionImg2Img("Image CFG Scale", float, apply_field("image_cfg_scale")),
+    AxisOption("Checkpoint name", str, apply_checkpoint, fmt=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: list(sd_models.checkpoints_list)),
+    AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: ['None'] + list(sd_vae.vae_dict)),
+    AxisOption("Dict name", str, apply_checkpoint, fmt=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: ['None'] + list(sd_models.checkpoints_list)),
     AxisOption("Prompt S/R", str, apply_prompt, fmt=format_value),
-    AxisOption("Prompt order", str_permutations, apply_order, fmt=format_value_join_list),
+    AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
     AxisOptionTxt2Img("Sampler", str, apply_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
     AxisOptionImg2Img("Sampler", str, apply_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers_for_img2img]),
-    AxisOption("Checkpoint name", str, apply_checkpoint, fmt=format_value, confirm=confirm_checkpoints, cost=1.0, choices=lambda: list(sd_models.checkpoints_list)),
-    AxisOption("Sigma Churn", float, apply_field("s_churn")),
-    AxisOption("Sigma min", float, apply_field("s_tmin")),
-    AxisOption("Sigma max", float, apply_field("s_tmax")),
-    AxisOption("Sigma noise", float, apply_field("s_noise")),
-    AxisOption("Eta", float, apply_field("eta")),
+    AxisOption("Seed", int, apply_field("seed")),
+    AxisOption("Steps", int, apply_field("steps")),
+    AxisOption("CFG Scale", float, apply_field("cfg_scale")),
+    AxisOption("Var. seed", int, apply_field("subseed")),
+    AxisOption("Var. strength", float, apply_field("subseed_strength")),
     AxisOption("Clip skip", int, apply_clip_skip),
     AxisOption("Denoising", float, apply_field("denoising_strength")),
+    AxisOptionTxt2Img("Hires steps", int, apply_field("hr_second_pass_steps")),
+    AxisOptionImg2Img("Image CFG Scale", float, apply_field("image_cfg_scale")),
+    AxisOption("Prompt order", str_permutations, apply_order, fmt=format_value_join_list),
+    AxisOption("Sampler Sigma Churn", float, apply_field("s_churn")),
+    AxisOption("Sampler Sigma min", float, apply_field("s_tmin")),
+    AxisOption("Sampler Sigma max", float, apply_field("s_tmax")),
+    AxisOption("Sampler Sigma noise", float, apply_field("s_noise")),
+    AxisOption("Sampler Eta", float, apply_field("eta")),
     AxisOptionTxt2Img("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
-    AxisOptionTxt2Img("Fallback latent upscaler sampler", str, apply_fallback, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
-    AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
-    AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: ['None'] + list(sd_vae.vae_dict)),
-    AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
+    AxisOptionImg2Img("Image Mask Weight", float, apply_field("inpainting_mask_weight")),
     AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
     AxisOption("Face restore", str, apply_face_restore, fmt=format_value),
-    AxisOption("ToMe ratio",float,apply_token_merging_ratio),
-    AxisOption("ToMe ratio for Hires fix",float,apply_token_merging_ratio_hr),
-    AxisOption("ToMe random pertubations",str,apply_token_merging_random, choices = lambda: ["Yes","No"])
+    AxisOption("ToMe ratio",float, apply_token_merging_ratio),
+    AxisOption("ToMe ratio for Hires fix",float, apply_token_merging_ratio_hr),
+    AxisOption("ToMe random pertubations",str, apply_token_merging_random, choices = lambda: ["Yes","No"])
 ]
 
 
@@ -352,8 +352,9 @@ class SharedSettingsStackHelper(object):
         self.token_merging_ratio = shared.opts.token_merging_ratio
         self.token_merging_random = shared.opts.token_merging_random
         self.sd_model_checkpoint = shared.opts.sd_model_checkpoint
+        self.sd_model_dict = shared.opts.sd_model_dict
         self.sd_vae_checkpoint = shared.opts.sd_vae
-        self.xyz_fallback_sampler = shared.opts.xyz_fallback_sampler
+        self.force_latent_sampler = shared.opts.force_latent_sampler
 
     def __exit__(self, exc_type, exc_value, tb):
         #Restore overriden settings after plot generation.
@@ -362,8 +363,9 @@ class SharedSettingsStackHelper(object):
         shared.opts.data["token_merging_ratio_hr"] = self.token_merging_ratio_hr
         shared.opts.data["token_merging_ratio"] = self.token_merging_ratio
         shared.opts.data["token_merging_random"] = self.token_merging_random
-        shared.opts.data["xyz_fallback_sampler"] = self.xyz_fallback_sampler
-        if self.sd_model_checkpoint != shared.opts.sd_model_checkpoint:
+        shared.opts.data["force_latent_sampler"] = self.force_latent_sampler
+        if (self.sd_model_checkpoint != shared.opts.sd_model_checkpoint) or (self.sd_model_dict != shared.opts.sd_model_dict):
+            shared.opts.data["sd_model_dict"] = self.sd_model_dict
             shared.opts.data["sd_model_checkpoint"] = self.sd_model_checkpoint
             sd_models.reload_model_weights()
         if self.sd_vae_checkpoint != shared.opts.sd_vae:
@@ -409,7 +411,7 @@ class Script(scripts.Script):
             include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
             include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
         with gr.Row(variant="compact", elem_id="axis_options"):
-            margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
+            margin_size = gr.Slider(label="Grid margins", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
         with gr.Row(variant="compact", elem_id="swap_axes"):
             swap_xy_axes_button = gr.Button(value="Swap X/Y axes", elem_id="xy_grid_swap_axes_button")
             swap_yz_axes_button = gr.Button(value="Swap Y/Z axes", elem_id="yz_grid_swap_axes_button")

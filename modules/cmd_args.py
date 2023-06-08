@@ -25,6 +25,7 @@ group.add_argument("--freeze", action='store_true', help="Disable editing settin
 group.add_argument("--auth", type=str, help='Set access authentication like "user:pwd,user:pwd""', default=None)
 group.add_argument("--auth-file", type=str, help='Set access authentication using file, default: %(default)s', default=None)
 group.add_argument("--autolaunch", action='store_true', help="Open the UI URL in the system's default browser upon launch", default=False)
+group.add_argument('--docs', default = False, action='store_true', help = "Mount Gradio docs at /docs, default: %(default)s")
 group.add_argument('--api-only', default = False, action='store_true', help = "Run in API only mode without starting UI")
 group.add_argument("--api-log", default=False, action='store_true', help="Enable logging of all API requests, default: %(default)s")
 group.add_argument("--device-id", type=str, help="Select the default CUDA device to use, default: %(default)s", default=None)
@@ -91,6 +92,7 @@ def compatibility_args(opts, args):
     group.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     group.add_argument("--lyco-dir", help=argparse.SUPPRESS, default=opts.lyco_dir)
     group.add_argument("--lyco-patch-lora", help=argparse.SUPPRESS, default=opts.lyco_patch_lora)
+    group.add_argument("--lyco-debug", help=argparse.SUPPRESS, action='store_true', default=False)
     group.add_argument("--enable-console-prompts", help=argparse.SUPPRESS, action='store_true', default=False)
     group.add_argument("--safe", help=argparse.SUPPRESS, action='store_true', default=False)
 

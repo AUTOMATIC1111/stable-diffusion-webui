@@ -594,12 +594,10 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
             print(e)
 
     if shared.cmd_opts.use_ipex:
-        scaler = ipex.cpu.autocast._grad_scaler.GradScaler()
-        #Remove these after Intel adds support for float16 training:
-        if shared.opts.cuda_dtype == 'BF16':
-            shared.sd_model = shared.sd_model.bfloat16()
-        elif shared.opts.cuda_dtype == 'FP32':
-            shared.sd_model = shared.sd_model.float32()
+        scaler = ipex.cpu.autocast._grad_scaler.GradScaler() #scaler.step(optimizer): PI_ERROR_INVALID_ARG_VALUE
+        shared.sd_model = shared.sd_model.to(dtype=torch.float32)
+        shared.sd_model.train()
+        shared.sd_model, optimizer = ipex.optimize(shared.sd_model, optimizer=optimizer, dtype=devices.dtype)           
     else:
         scaler = torch.cuda.amp.GradScaler()
 
