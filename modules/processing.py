@@ -106,6 +106,9 @@ class StableDiffusionProcessing:
     """
     The first set of paramaters: sd_models -> do_not_reload_embeddings represent the minimum required to create a StableDiffusionProcessing
     """
+    cached_uc = [None, None]
+    cached_c = [None, None]
+
     def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
@@ -176,8 +179,8 @@ class StableDiffusionProcessing:
         self.subseeds = None
 
         self.step_multiplier = 1
-        self.cached_uc = [None, None]
-        self.cached_c = [None, None]
+        self.cached_uc = StableDiffusionProcessing.cached_uc
+        self.cached_c = StableDiffusionProcessing.cached_c
         self.uc = None
         self.c = None
 
@@ -289,8 +292,9 @@ class StableDiffusionProcessing:
         self.sampler = None
         self.c = None
         self.uc = None
-        self.cached_c = [None, None]
-        self.cached_uc = [None, None]
+        if not opts.experimental_persistent_cond_cache:
+            StableDiffusionProcessing.cached_c = [None, None]
+            StableDiffusionProcessing.cached_uc = [None, None]
 
     def get_token_merging_ratio(self, for_hr=False):
         if for_hr:
@@ -324,7 +328,6 @@ class StableDiffusionProcessing:
 
         caches is a list with items described above.
         """
-
         for cache in caches:
             if cache[0] is not None and (required_prompts, steps, opts.CLIP_stop_at_last_layers, shared.sd_model.sd_checkpoint_info, extra_network_data) == cache[0]:
                 return cache[1]
@@ -340,7 +343,6 @@ class StableDiffusionProcessing:
     def setup_conds(self):
         sampler_config = sd_samplers.find_sampler_config(self.sampler_name)
         self.step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1
-
         self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, self.negative_prompts, self.steps * self.step_multiplier, [self.cached_uc], self.extra_network_data)
         self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, self.prompts, self.steps * self.step_multiplier, [self.cached_c], self.extra_network_data)
 
@@ -868,6 +870,8 @@ def old_hires_fix_first_pass_dimensions(width, height):
 
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
+    cached_hr_uc = [None, None]
+    cached_hr_c = [None, None]
 
     def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, hr_sampler_name: str = None, hr_prompt: str = '', hr_negative_prompt: str = '', **kwargs):
         super().__init__(**kwargs)
@@ -900,8 +904,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_negative_prompts = None
         self.hr_extra_network_data = None
 
-        self.cached_hr_uc = [None, None]
-        self.cached_hr_c = [None, None]
+        self.cached_hr_uc = StableDiffusionProcessingTxt2Img.cached_hr_uc
+        self.cached_hr_c = StableDiffusionProcessingTxt2Img.cached_hr_c
         self.hr_c = None
         self.hr_uc = None
 
@@ -1079,10 +1083,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         return samples
 
     def close(self):
-        self.cached_hr_uc = [None, None]
-        self.cached_hr_c = [None, None]
+        super().close()
         self.hr_c = None
         self.hr_uc = None
+        if not opts.experimental_persistent_cond_cache:
+            StableDiffusionProcessingTxt2Img.cached_hr_uc = [None, None]
+            StableDiffusionProcessingTxt2Img.cached_hr_c = [None, None]
 
     def setup_prompts(self):
         super().setup_prompts()
