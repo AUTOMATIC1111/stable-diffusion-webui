@@ -22,6 +22,12 @@ body:
       label: URL link of the extension
       description: URL link of the extension
       value: 
+  - type: textarea
+    id: url
+    attributes:
+      label: URL link of the issue reported in the extension repository
+      description: Any extension related issue must also be reported to extension repository as well
+      value: 
   - type: markdown
     attributes:
       value: |
@@ -29,5 +35,5 @@ body:
   - type: markdown
     attributes:
       value: |
-        If issue is extension installation or startup related, please check `webui.log` before reporting  
+        If issue is extension installation or startup related, please check `sdnext.log` before reporting  
         And when posting console logs, please use code blocks ( \`\`\` ) to format them insead of uploading screenshots  

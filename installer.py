@@ -20,7 +20,7 @@ class Dot(dict): # dot notation access to dictionary attributes
 
 
 log = logging.getLogger("sd")
-log_file = os.path.join(os.path.dirname(__file__), 'webui.log')
+log_file = os.path.join(os.path.dirname(__file__), 'sdnext.log')
 quick_allowed = True
 errors = 0
 opts = {}
@@ -343,6 +343,18 @@ def check_torch():
         print_profile(pr, 'Torch')
 
 
+# check modified files
+def check_modified_files():
+    if args.skip_git:
+        return
+    try:
+        res = git('status --porcelain')
+        files = [x[2:].strip() for x in res.split('\n')]
+        log.warning(f'Modified files: {files}')
+    except:
+        pass
+
+
 # install required packages
 def install_packages():
     if args.profile:
@@ -415,17 +427,20 @@ def run_extension_installer(folder):
         log.error(f'Exception running extension installer: {e}')
 
 # get list of all enabled extensions
-def list_extensions(folder):
+def list_extensions(folder, quiet=False):
     name = os.path.basename(folder)
     disabled_extensions_all = opts.get('disable_all_extensions', 'none')
     if disabled_extensions_all != 'none':
-        log.info(f'Disabled {name}: {disabled_extensions_all}')
+        if not quiet:
+            log.info(f'Disabled {name}: {disabled_extensions_all}')
         return []
     disabled_extensions = opts.get('disabled_extensions', [])
     if len(disabled_extensions) > 0:
-        log.info(f'Disabled {name}: {disabled_extensions}')
+        if not quiet:
+            log.info(f'Disabled {name}: {disabled_extensions}')
     enabled_extensions = [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
-    log.info(f'Enabled {name}: {enabled_extensions}')
+    if not quiet:
+        log.info(f'Enabled {name}: {enabled_extensions}')
     return enabled_extensions
 
 
@@ -446,7 +461,7 @@ def install_extensions():
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
-        extensions = list_extensions(folder)
+        extensions = list_extensions(folder, quiet=True)
         log.debug(f'Extensions all: {extensions}')
         for ext in extensions:
             if ext in extensions_enabled:
@@ -582,10 +597,6 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
         log.error('Not a git repository')
         if not args.ignore:
             sys.exit(1)
-    # status = git('status')
-    # if 'branch' not in status:
-    #    log.error('Cannot get git repository status')
-    #    sys.exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
     if args.version:

@@ -58,3 +58,4 @@ Tech that can be integrated as part of the core workflow...
 - port `p.all_hr_prompts`
 - test `lyco_patch_lora`
 - fix `lyco` logging
+- git diff index

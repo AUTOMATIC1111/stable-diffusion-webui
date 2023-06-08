@@ -151,11 +151,13 @@ if __name__ == "__main__":
     installer.check_version()
     installer.set_environment()
     installer.check_torch()
+    installer.check_modified_files()
     if args.reinstall:
         installer.log.info('Forcing reinstall of all packages')
         installer.quick_allowed = False
     if installer.check_timestamp():
         installer.log.info('No changes detected: Quick launch active')
+        installer.check_extensions()
     else:
         installer.install_requirements()
         installer.install_packages()
