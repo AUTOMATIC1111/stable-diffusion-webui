@@ -93,10 +93,12 @@ def save_files(js_data, images, do_make_zip, index):
     for image_index, filedata in enumerate(images, start_index):
         is_grid = image_index < p.index_of_first_image # pylint: disable=no-member
         i = 0 if is_grid else (image_index - p.index_of_first_image) # pylint: disable=no-member
-        if len(p.all_seeds) <= i: # pylint: disable=no-member
-            p.all_seeds.append(p.seed) # pylint: disable=no-member
-        if len(p.all_prompts) <= i: # pylint: disable=no-member
-            p.all_prompts.append(p.prompt) # pylint: disable=no-member
+        while len(p.all_seeds) <= i:
+            p.all_seeds.append(p.seed)
+        while len(p.all_prompts) <= i:
+            p.all_prompts.append(p.prompt)
+        while len(p.infotexts) <= i:
+            p.infotexts.append(p.prompt)
         if 'name' in filedata and ('tmp' not in filedata['name']) and os.path.isfile(filedata['name']):
             fullfn = filedata['name']
             filenames.append(os.path.basename(fullfn))
