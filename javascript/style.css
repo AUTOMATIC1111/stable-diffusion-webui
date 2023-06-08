@@ -272,7 +272,6 @@ div#extras_scale_to_tab div.form{
 #settings .modification-indicator {
     width: 100%;
     height: 100%;
-    background: var(--color-accent);
     border-radius: 1em !important;
     padding: 0;
 }

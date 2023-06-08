@@ -322,14 +322,10 @@ onUiLoaded(function(){
     tab_nav_element.parentElement.insertBefore(tab_content_wrapper, tab_nav_element.nextSibling)
 
     tab_elements.forEach(function(elem, index){
-        // Add a modification indicator to the toplevel tab button
+        // Move the modification indicator to the toplevel tab button
         let tab_name = elem.id.replace("settings_", "")
-        let new_indicator = document.createElement('button')
-        new_indicator.id = "modification_indicator_"+tab_name
-        new_indicator.className = "modification-indicator"
-        new_indicator.disabled = true
-        new_indicator.onclick = () => onSettingsModificationIndicatorClicked(tab_name)
-        tab_nav_element.insertBefore(new_indicator, tab_nav_buttons[index])
+        let indicator = gradioApp().getElementById("modification_indicator_"+tab_name)
+        tab_nav_element.insertBefore(indicator, tab_nav_buttons[index])
 
         // Add the tab content to the wrapper
         tab_content_wrapper.appendChild(elem)
@@ -372,13 +368,6 @@ function markIfModified(setting_name, value) {
         tab_nav_indicator.title += `Click to reset ${changed_items.size} unapplied change${changed_items.size > 1 ? 's': ''} in this tab.\n`
     if (unsaved.size > 0)
         tab_nav_indicator.title += `${unsaved.size} new default value${unsaved.size > 1 ? 's':''} (not yet saved).`;
-}
-
-function onSettingsModificationIndicatorClicked(tab_name) {
-    opts_tabs[tab_name].changed.forEach(function(setting_name){
-        // Click each setting's modification indicator
-        gradioApp().getElementById("modification_indicator_"+setting_name).click()
-    })
 }
 
 let txt2img_textarea;
