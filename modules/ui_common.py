@@ -17,12 +17,13 @@ def update_generation_info(generation_info, html_info, img_index):
     try:
         generation_info = json.loads(generation_info)
         if img_index < 0 or img_index >= len(generation_info["infotexts"]):
-            return html_info, gr.update()
-        html_text = infotext_to_html(generation_info["infotexts"][img_index])
-        return html_text, gr.update()
+            return html_info, generation_info
+        infotext = generation_info["infotexts"][img_index]
+        html_text = infotext_to_html(infotext)
+        return html_text, infotext
     except Exception:
         pass
-    return html_info, gr.update()
+    return html_info, generation_info
 
 
 def plaintext_to_html(text):
@@ -39,7 +40,7 @@ def infotext_to_html(text):
     return res
 
 
-def delete_files(js_data, images, _do_make_zip, index):
+def delete_files(js_data, images, _html_info, _do_make_zip, index):
     try:
         data = json.loads(js_data)
     except Exception:
@@ -65,7 +66,7 @@ def delete_files(js_data, images, _do_make_zip, index):
     return images, plaintext_to_html(f"Deleted: {filenames[0] if len(filenames) > 0 else 'none'}")
 
 
-def save_files(js_data, images, do_make_zip, index):
+def save_files(js_data, images, html_info, do_make_zip, index):
     os.makedirs(shared.opts.outdir_save, exist_ok=True)
 
     class PObject: #quick dictionary to class object conversion. Its necessary due apply_filename_pattern requiring it
@@ -77,7 +78,8 @@ def save_files(js_data, images, do_make_zip, index):
             self.prompt = getattr(self, 'prompt', None) or getattr(self, 'Prompt', None)
             self.all_seeds = getattr(self, 'all_seeds', [self.seed])
             self.all_prompts = getattr(self, 'all_prompts', [self.prompt])
-            self.infotexts = getattr(self, 'infotext', [json.dumps(d)])
+            self.infotext = html_info
+            self.infotexts = getattr(self, 'infotexts', [html_info])
             self.index_of_first_image = getattr(self, 'index_of_first_image', 0)
     try:
         data = json.loads(js_data)
@@ -98,7 +100,7 @@ def save_files(js_data, images, do_make_zip, index):
         while len(p.all_prompts) <= i:
             p.all_prompts.append(p.prompt)
         while len(p.infotexts) <= i:
-            p.infotexts.append(p.prompt)
+            p.infotexts.append(p.infotext)
         if 'name' in filedata and ('tmp' not in filedata['name']) and os.path.isfile(filedata['name']):
             fullfn = filedata['name']
             filenames.append(os.path.basename(fullfn))
@@ -113,7 +115,7 @@ def save_files(js_data, images, do_make_zip, index):
             shared.log.info(f"Copying image: {fullfn} -> {destination}")
         else:
             image = image_from_url_text(filedata)
-            fullfn, txt_fullfn = modules.images.save_image(image, shared.opts.outdir_save, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=shared.opts.samples_format, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=shared.opts.use_save_to_dirs_for_ui) # pylint: disable=no-member
+            fullfn, txt_fullfn = modules.images.save_image(image, shared.opts.outdir_save, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], info=p.infotexts[i], extension=shared.opts.samples_format, grid=is_grid, p=p, save_to_dirs=shared.opts.use_save_to_dirs_for_ui)
             if fullfn is None:
                 continue
             filename = os.path.relpath(fullfn, shared.opts.outdir_save)
@@ -171,23 +173,24 @@ def create_output_panel(tabname, outdir):
             download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
             with gr.Group():
                 html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
+                html_info_raw = gr.Text(elem_id=f'html_info_raw_{tabname}', visible=False)
                 html_log = gr.HTML(elem_id=f'html_log_{tabname}')
                 generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
                 generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
                 generation_info_button.click(fn=update_generation_info, _js="(x, y, z) => [x, y, selected_gallery_index()]", show_progress=False,
                     inputs=[generation_info, html_info, html_info],
-                    outputs=[html_info, html_info],
+                    outputs=[html_info, html_info_raw],
                 )
-                save.click(fn=call_queue.wrap_gradio_call(save_files), _js="(x, y, z, w) => [x, y, false, selected_gallery_index()]", show_progress=False,
-                    inputs=[generation_info, result_gallery, html_info, html_info],
+                save.click(fn=call_queue.wrap_gradio_call(save_files), _js="(x, y, z, q1, q2) => [x, y, z, false, selected_gallery_index()]", show_progress=False,
+                    inputs=[generation_info, result_gallery, html_info, html_info, html_info],
                     outputs=[download_files, html_log],
                 )
-                save_zip.click(fn=call_queue.wrap_gradio_call(save_files), _js="(x, y, z, w) => [x, y, true, selected_gallery_index()]",
-                    inputs=[generation_info, result_gallery, html_info, html_info],
+                save_zip.click(fn=call_queue.wrap_gradio_call(save_files), _js="(x, y, z, q1, q2) => [x, y, z, true, selected_gallery_index()]",
+                    inputs=[generation_info, result_gallery, html_info, html_info, html_info],
                     outputs=[download_files, html_log],
                 )
-                delete.click(fn=call_queue.wrap_gradio_call(delete_files), _js="(x, y, z, w) => [x, y, true, selected_gallery_index()]",
-                    inputs=[generation_info, result_gallery, html_info, html_info],
+                delete.click(fn=call_queue.wrap_gradio_call(delete_files), _js="(x, y, z, q1, q2) => [x, y, z, true, selected_gallery_index()]",
+                    inputs=[generation_info, result_gallery, html_info, html_info, html_info],
                     outputs=[result_gallery, html_log],
                 )
 
