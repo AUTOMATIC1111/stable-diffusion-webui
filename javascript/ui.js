@@ -214,6 +214,19 @@ function updateOpts(json_string){
         if (!meta.is_stored) unsaved.add(opt)
     })
 }
+
+function showAllSettings() {
+  // Try to ensure that the show all settings tab is opened by clicking on its tab button
+  let tab_dirty_indicator = gradioApp().getElementById('modification_indicator_show_all_pages');
+  if (tab_dirty_indicator && tab_dirty_indicator.nextSibling) {
+    tab_dirty_indicator.nextSibling.click();
+  }
+  gradioApp().querySelectorAll('#settings > .tab-content > .tabitem').forEach((elem) => {
+    if (elem.id === 'settings_tab_licenses' || elem.id === 'settings_show_all_pages') return;
+    elem.style.display = 'block';
+  });
+}
+
 onUiUpdate(() => {
   sort_ui_elements();
   if (Object.keys(opts).length !== 0) return;
@@ -256,14 +269,10 @@ onUiUpdate(() => {
   registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
   registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button');
 
-  // TODO: update to setting-improvements branch   
   const settings_search = gradioApp().querySelectorAll('#settings_search > label > textarea')[0];
   settings_search.oninput = (e) => {
     setTimeout(() => {
-      gradioApp().querySelectorAll('#settings > .tab-content > .tabitem').forEach((elem) => {
-        if (elem.id === 'settings_tab_licenses') return;
-        elem.style.display = 'block';
-      });
+      showAllSettings();
       gradioApp().querySelectorAll('#tab_settings .tabitem').forEach((section) => {
         section.querySelectorAll('.dirtyable').forEach((setting) => {
           const visible = setting.innerText.toLowerCase().includes(e.target.value.toLowerCase()) || setting.id.toLowerCase().includes(e.target.value.toLowerCase());
@@ -312,7 +321,7 @@ onUiLoaded(function(){
             return mut.type === 'attributes' && mut.attributeName === 'style'
         }
         if (mutations.some(mutation_on_style)) {
-            tab_elements.forEach((elem) => elem.style.display = "block")
+            showAllSettings();
         }
     })
 
