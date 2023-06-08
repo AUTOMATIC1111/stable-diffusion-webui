@@ -59,7 +59,7 @@ class SdOptimizationSdpNoMem(SdOptimization):
     name = "sdp-no-mem"
     label = "scaled dot product without memory efficient attention"
     cmd_opt = "opt_sdp_no_mem_attention"
-    priority = 90
+    priority = 80
 
     def is_available(self):
         return hasattr(torch.nn.functional, "scaled_dot_product_attention") and callable(torch.nn.functional.scaled_dot_product_attention)
@@ -73,7 +73,7 @@ class SdOptimizationSdp(SdOptimizationSdpNoMem):
     name = "sdp"
     label = "scaled dot product"
     cmd_opt = "opt_sdp_attention"
-    priority = 80
+    priority = 70
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = scaled_dot_product_attention_forward
@@ -116,7 +116,7 @@ class SdOptimizationInvokeAI(SdOptimization):
 class SdOptimizationDoggettx(SdOptimization):
     name = "Doggettx"
     cmd_opt = "opt_split_attention"
-    priority = 20
+    priority = 90
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = split_cross_attention_forward

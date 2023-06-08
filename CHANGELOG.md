@@ -1,3 +1,23 @@
+## 1.3.2
+
+### Bug Fixes:
+ * fix files served out of tmp directory even if they are saved to disk
+ * fix postprocessing overwriting parameters
+
+## 1.3.1
+
+### Features:
+ * revert default cross attention optimization to Doggettx
+
+### Bug Fixes:
+ * fix bug: LoRA don't apply on dropdown list sd_lora
+ * fix png info always added even if setting is not enabled
+ * fix some fields not applying in xyz plot
+ * fix "hires. fix" prompt sharing same labels with txt2img_prompt
+ * fix lora hashes not being added properly to infotex if there is only one lora
+ * fix --use-cpu failing to work properly at startup
+ * make --disable-opt-split-attention command line option work again
+
 ## 1.3.0
 
 ### Features:
