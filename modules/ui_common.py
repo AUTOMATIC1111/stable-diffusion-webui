@@ -85,7 +85,7 @@ def save_files(js_data, images, do_make_zip, index):
         data = {}
     p = PObject(data)
     start_index = 0
-    if index > -1 and shared.opts.save_selected_only and (index >= data['index_of_first_image']):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only # pylint: disable=no-member
+    if index > -1 and shared.opts.save_selected_only and (index >= p.index_of_first_image):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only # pylint: disable=no-member
         images = [images[index]]
         start_index = index
     filenames = []

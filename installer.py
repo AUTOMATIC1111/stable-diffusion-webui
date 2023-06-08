@@ -741,26 +741,3 @@ def read_options():
     if os.path.isfile(args.config):
         with open(args.config, "r", encoding="utf8") as file:
             opts = json.load(file)
-
-
-def run_setup():
-    if args.reset:
-        git_reset()
-    if args.skip_git:
-        log.info('Skipping GIT operations')
-    if args.reinstall:
-        log.info('Forcing reinstall of all packages')
-    if check_timestamp():
-        log.info('No changes detected: Quick launch active')
-        return
-    log.info("Running setup")
-    log.debug(f"Args: {vars(args)}")
-    install_repositories()
-    install_submodules()
-    install_extensions()
-    update_wiki()
-    if errors == 0:
-        log.debug(f'Setup complete without errors: {round(time.time())}')
-    else:
-        log.warning(f'Setup complete with errors: {errors}')
-        log.warning(f'See log file for more details: {log_file}')

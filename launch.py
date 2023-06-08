@@ -144,16 +144,37 @@ if __name__ == "__main__":
     installer.log.info('Starting SD.Next')
     installer.read_options()
     installer.check_python()
+    if args.reset:
+        installer.git_reset()
+    if args.skip_git:
+        installer.log.info('Skipping GIT operations')
     installer.check_version()
     installer.set_environment()
     installer.check_torch()
-    installer.install_requirements()
-    installer.install_packages()
+    if args.reinstall:
+        installer.log.info('Forcing reinstall of all packages')
+        installer.quick_allowed = False
+    if installer.check_timestamp():
+        installer.log.info('No changes detected: Quick launch active')
+    else:
+        installer.install_requirements()
+        installer.install_packages()
+        installer.install_repositories()
+        installer.install_submodules()
+        installer.install_extensions()
+        installer.update_wiki()
+        if installer.errors == 0:
+            installer.log.debug(f'Setup complete without errors: {round(time.time())}')
+        else:
+            installer.log.warning(f'Setup complete with errors: {installer.errors}')
+            installer.log.warning(f'See log file for more details: {installer.log_file}')
     installer.extensions_preload(parser) # adds additional args from extensions
     args = installer.parse_args(parser)
-    installer.run_setup()
+    # installer.run_setup()
+    installer.log.debug(f"Args: {vars(args)}")
     installer.log.info(f"Server arguments: {sys.argv[1:]}")
     logging.disable(logging.NOTSET if args.debug else logging.DEBUG)
+
 
     instance = start_server(immediate=True, server=None)
     while True:
