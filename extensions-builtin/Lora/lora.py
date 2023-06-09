@@ -448,7 +448,11 @@ def list_available_loras():
             continue
 
         name = os.path.splitext(os.path.basename(filename))[0]
-        entry = LoraOnDisk(name, filename)
+        try:
+            entry = LoraOnDisk(name, filename)
+        except OSError:  # should catch FileNotFoundError and PermissionError etc.
+            errors.report(f"Failed to load LoRA {name} from {filename}", exc_info=True)
+            continue
 
         available_loras[name] = entry
 
