@@ -297,6 +297,8 @@ def webui():
 
     # override all loggers to use the same handlers as the main logger
     for logger in [logging.getLogger(name) for name in logging.root.manager.loggerDict]: # pylint: disable=no-member
+        if logger.name.startswith('uvicorn'):
+            continue
         logger.handlers = log.handlers
 
     if cmd_opts.autolaunch and local_url is not None:
