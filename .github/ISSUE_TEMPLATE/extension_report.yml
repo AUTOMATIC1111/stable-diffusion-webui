@@ -23,7 +23,7 @@ body:
       description: URL link of the extension
       value: 
   - type: textarea
-    id: url
+    id: issue
     attributes:
       label: URL link of the issue reported in the extension repository
       description: Any extension related issue must also be reported to extension repository as well
