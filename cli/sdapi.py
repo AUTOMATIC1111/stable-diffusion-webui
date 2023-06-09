@@ -17,6 +17,8 @@ from util import Map, log
 
 
 sd_url = os.environ.get('SDAPI_URL', "http://127.0.0.1:7860") # automatic1111 api url root
+sd_username = os.environ.get('SDAPI_USR', None)
+sd_password = os.environ.get('SDAPI_PWD', None)
 
 use_session = True
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -40,20 +42,15 @@ asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
 
 
 def authsync():
-    sd_username = os.environ.get('SDAPI_USR', None)
-    sd_password = os.environ.get('SDAPI_PWD', None)
     if sd_username is not None and sd_password is not None:
         return requests.auth.HTTPBasicAuth(sd_username, sd_password)
     return None
 
 
 def auth():
-    sd_username = os.environ.get('SDAPI_USR', None)
-    sd_password = os.environ.get('SDAPI_PWD', None)
     if sd_username is not None and sd_password is not None:
         return aiohttp.BasicAuth(sd_username, sd_password)
     return None
-
 
 
 async def result(req):

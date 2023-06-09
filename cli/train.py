@@ -90,6 +90,8 @@ def parse_args():
 
     group_server = parser.add_argument_group('Server')
     group_server.add_argument('--server', type=str, default='http://127.0.0.1:7860', required=False, help='server url, default: %(default)s')
+    group_server.add_argument('--user', type=str, default=None, required=False, help='server url, default: %(default)s')
+    group_server.add_argument('--password', type=str, default=None, required=False, help='server url, default: %(default)s')
 
     group_main = parser.add_argument_group('Main')
     group_main.add_argument('--type', type=str, choices=['embedding', 'ti', 'lora', 'lyco', 'dreambooth', 'hypernetwork'], default=None, required=True, help='training type')
@@ -381,6 +383,10 @@ if __name__ == '__main__':
     log.info('SD.Next train script')
     parse_args()
     sdapi.sd_url = args.server
+    if args.user is not None:
+        sdapi.sd_username = args.user
+    if args.password is not None:
+        sdapi.sd_password = args.password
     setup_logging()
     prepare_server()
     verify_args()
