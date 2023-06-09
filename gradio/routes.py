@@ -11,6 +11,7 @@ import os
 import posixpath
 import secrets
 import tempfile
+import time
 import traceback
 from asyncio import TimeoutError as AsyncTimeOutError
 from collections import defaultdict
@@ -121,6 +122,8 @@ class App(FastAPI):
         kwargs.setdefault("docs_url", None)
         kwargs.setdefault("redoc_url", None)
         super().__init__(**kwargs)
+        self.last_event_ts = time.time()
+        self.startup_ts = self.last_event_ts
 
     def configure_app(self, blocks: gradio.Blocks) -> None:
         auth = blocks.auth
@@ -383,6 +386,20 @@ class App(FastAPI):
         async def file_deprecated(path: str, request: fastapi.Request):
             return await file(path, request)
 
+        @app.get('/system/time', response_class=JSONResponse)
+        async def last_opt_ts():
+            now = time.time()
+            return JSONResponse(content={
+                'data': {
+                    "last_time": int(app.last_event_ts),
+                    "idle_time": int(now - app.last_event_ts),
+                    "run_time": int(now - app.startup_ts)
+                },
+                'msg': 'ok',
+                'status': 200
+            }
+            )
+
         @app.post("/reset/")
         @app.post("/reset")
         async def reset_iterator(body: ResetBody):
@@ -525,6 +542,7 @@ class App(FastAPI):
             token: Optional[str] = Depends(ws_login_check),
         ):
             blocks = app.get_blocks()
+            app.last_event_ts = time.time()
             if app.auth is not None and token is None:
                 await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
                 return

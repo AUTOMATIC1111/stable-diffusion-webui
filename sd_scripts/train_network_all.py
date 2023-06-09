@@ -1075,6 +1075,7 @@ def train_with_params(pretrained_model_name_or_path,
     args.cache_latents = cache_latents
     args.cache_latents_to_disk = cache_latents_to_disk
     args.persistent_data_loader_workers = persistent_data_loader_workers
+    args.save_precision = save_precision
 
     args.config_file = config_file if config_file!="" and config_file!=-1 else None
     args.output_config = output_config if output_config!="" and output_config!=-1 else None
