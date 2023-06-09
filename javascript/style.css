@@ -215,19 +215,31 @@ div#extras_scale_to_tab div.form{
 }
 
 #settings{
-    display: block;
+    display: flex;
+    flex-flow: row wrap;
+    gap: var(--layout-gap);
 }
 
-#settings > div{
+#settings div {
     border: none;
-    margin-left: 10em;
+}
+
+#settings > div.tab-content {
+    flex: 100000 0 75%;
+}
+
+#settings > div.tab-content > div{
+    border: none;
+    padding: 0;
 }
 
 #settings > div.tab-nav{
-    float: left;
-    display: block;
-    margin-left: 0;
-    width: 14em;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, .3em minmax(10em, 1fr));
+    flex: 1 0 auto;
+    width: 11em;
+    align-self: flex-start;
+    gap: var(--spacing-md);
 }
 
 #settings > div.tab-nav button{
@@ -235,10 +247,52 @@ div#extras_scale_to_tab div.form{
     border: none;
     text-align: left;
     white-space: initial;
+    padding: 0;
+}
+
+#settings > div.tab-nav > #settings_show_all_pages {
+    padding: var(--size-2) var(--size-4);
+}
+
+#settings .block.gradio-checkbox {
+    margin: 0;
+    width: auto;
+}
+
+#settings .dirtyable {
+    display: grid;
+    grid-template-columns: .3em auto;
+    gap: .5em;
+}
+
+#settings .dirtyable.hidden {
+    display: none;
+}
+
+#settings .modification-indicator {
+    width: 100%;
+    height: 100%;
+    border-radius: 1em !important;
+    padding: 0;
+}
+
+#settings .modification-indicator:disabled {
+    visibility: hidden;
+}
+
+#settings .modification-indicator.unsaved {
+    background: var(--color-accent-soft);
+}
+
+#settings .modification-indicator.changed {
+    background: var(--color-accent);
+}
+
+#settings .modification-indicator.changed.unsaved {
+    background-image: linear-gradient(var(--color-accent) 25%, var(--color-accent-soft) 75%);
 }
 
 #settings_result{
-    height: 1.4em;
     margin: 0 1.2em;
 }
 

@@ -426,7 +426,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_extra_networks_tab_reorder": OptionInfo("Checkpoints, Lora, LyCORIS, Textual Inversion, Hypernetworks", "Extra networks tab order"),
 }))
 
-options_templates.update(options_section(('ui', "Live previews"), {
+options_templates.update(options_section(('live-preview', "Live previews"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
@@ -644,7 +644,13 @@ class Options:
 
     def dumpjson(self):
         d = {k: self.data.get(k, self.data_labels.get(k).default) for k in self.data_labels.keys()}
-        return json.dumps(d)
+        metadata = {
+            k: {
+                "is_stored": k in self.data,
+                "tab_name": v.section[0]
+            } for k, v in self.data_labels.items()
+        }
+        return json.dumps({"values": d, "metadata": metadata})
 
     def add_option(self, key, info):
         self.data_labels[key] = info
