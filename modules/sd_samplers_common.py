@@ -28,7 +28,9 @@ approximation_indexes = {"Full VAE": 0, "Approximate NN": 1, "Approximate simple
 def single_sample_to_image(sample, approximation=None):
     if approximation is None:
         approximation = approximation_indexes.get(opts.show_progress_type, 0)
-    if approximation == 1:
+    if approximation == 0:
+        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
+    elif approximation == 1:
         x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach() * 0.5 + 0.5
     elif approximation == 2:
         x_sample = sd_vae_approx.cheap_approximation(sample) * 0.5 + 0.5
@@ -36,10 +38,10 @@ def single_sample_to_image(sample, approximation=None):
         x_sample = sample * 1.5
         x_sample = sd_vae_taesd.model()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
     else:
-        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
-    x_sample = torch.clamp(x_sample, min=0.0, max=1.0)
-    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-    x_sample = x_sample.astype(np.uint8)
+        shared.log.warning(f"Unknown image decode type: {approximation}")
+        return Image.new(mode="RGB", size=(512, 512))
+    x_sample = torch.clamp(255 * x_sample, min=0.0, max=255).cpu()
+    x_sample = np.moveaxis(x_sample.numpy(), 0, 2).astype(np.uint8)
     return Image.fromarray(x_sample)
 
 
@@ -53,7 +55,6 @@ def samples_to_image_grid(samples, approximation=None):
 
 def store_latent(decoded):
     state.current_latent = decoded
-
     if opts.live_previews_enable and opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
         if not shared.parallel_processing_allowed:
             shared.state.assign_current_image(sample_to_image(decoded))
