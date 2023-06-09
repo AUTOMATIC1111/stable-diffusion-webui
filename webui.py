@@ -11,6 +11,7 @@ from modules import timer, errors, paths # pylint: disable=unused-import
 startup_timer = timer.Timer()
 local_url = None
 
+errors.log.debug('Loading Torch')
 import torch # pylint: disable=C0411
 try:
     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
@@ -28,17 +29,19 @@ warnings.filterwarnings(action="ignore", category=FutureWarning)
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
 startup_timer.record("torch")
 
+errors.log.debug('Loading Gradio')
 from fastapi import FastAPI # pylint: disable=W0611,C0411
 import gradio # pylint: disable=W0611,C0411
 startup_timer.record("gradio")
 errors.install([gradio])
 
+errors.log.debug('Loading Modules')
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411
 from modules import extra_networks, ui_extra_networks_checkpoints # pylint: disable=C0411,C0412
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
-from modules.call_queue import wrap_queued_call, queue_lock, wrap_gradio_gpu_call # pylint: disable=W0611,C0411
+from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411
 from modules.paths import create_paths
-from modules import shared, extensions, ui_tempdir, ui_extra_networks
+from modules import shared, extensions, ui_tempdir, ui_extra_networks, modelloader
 import modules.devices
 import modules.sd_samplers
 import modules.upscaler
@@ -56,7 +59,6 @@ import modules.script_callbacks
 import modules.textual_inversion.textual_inversion
 import modules.progress
 import modules.ui
-from modules import modelloader
 from modules.shared import cmd_opts, opts, log
 import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware

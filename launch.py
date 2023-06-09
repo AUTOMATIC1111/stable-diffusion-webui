@@ -121,7 +121,9 @@ def start_server(immediate=True, server=None):
         time.sleep(3)
     installer.log.debug(f'Memory {get_memory_stats()} Collected {collected}')
     module_spec = importlib.util.spec_from_file_location('webui', 'webui.py')
+    installer.log.debug(f'Loading module: {module_spec}')
     server = importlib.util.module_from_spec(module_spec)
+    installer.log.debug(f'Starting module: {server}')
     module_spec.loader.exec_module(server)
     if args.test:
         installer.log.info("Test only")
@@ -173,7 +175,7 @@ if __name__ == "__main__":
     installer.extensions_preload(parser) # adds additional args from extensions
     args = installer.parse_args(parser)
     # installer.run_setup()
-    installer.log.debug(f"Args: {vars(args)}")
+    # installer.log.debug(f"Args: {vars(args)}")
     installer.log.info(f"Server arguments: {sys.argv[1:]}")
     logging.disable(logging.NOTSET if args.debug else logging.DEBUG)
 
