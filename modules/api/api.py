@@ -22,7 +22,7 @@ from modules.textual_inversion.textual_inversion import create_embedding, train_
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
-from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights
+from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights,checkpoint_alisases
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
@@ -515,6 +515,11 @@ class Api:
 
     def set_config(self, req: Dict[str, Any]):
         for k, v in req.items():
+            if k == "sd_model_checkpoint":
+                checkpoint_info = checkpoint_alisases.get(v, None)
+                if checkpoint_info is None:
+                    print(f"model [{v}] not founded, skip config saving process")
+                    return 
             shared.opts.set(k, v)
 
         shared.opts.save(shared.config_filename)
