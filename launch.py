@@ -121,7 +121,7 @@ def start_server(immediate=True, server=None):
         time.sleep(3)
     installer.log.debug(f'Memory {get_memory_stats()} Collected {collected}')
     module_spec = importlib.util.spec_from_file_location('webui', 'webui.py')
-    installer.log.debug(f'Loading module: {module_spec}')
+    # installer.log.debug(f'Loading module: {module_spec}')
     server = importlib.util.module_from_spec(module_spec)
     installer.log.debug(f'Starting module: {server}')
     module_spec.loader.exec_module(server)

@@ -116,7 +116,6 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
   };
 
   const start = (id_task, id_live_preview) => {
-    console.log('HERE start', id_task, id_live_preview, opts.live_preview_refresh_period)
     request('./internal/progress', { id_task, id_live_preview }, (res) => {
       lastState = res;
       const elapsedFromStart = (new Date() - dateStart) / 1000;

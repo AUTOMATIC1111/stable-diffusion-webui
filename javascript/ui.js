@@ -119,7 +119,7 @@ function create_submit_args(args) {
 function showSubmitButtons(tabname, show) {}
 
 function submit(...args) {
-  console.log('Submit txt2img:', args);
+  console.log('Submit txt2img');
   rememberGallerySelection('txt2img_gallery');
   const id = randomId();
   requestProgress(id, null, gradioApp().getElementById('txt2img_gallery'));
@@ -129,7 +129,7 @@ function submit(...args) {
 }
 
 function submit_img2img(...args) {
-  console.log('Submit img2img:', args);
+  console.log('Submit img2img');
   rememberGallerySelection('img2img_gallery');
   const id = randomId();
   requestProgress(id, null, gradioApp().getElementById('img2img_gallery'));
