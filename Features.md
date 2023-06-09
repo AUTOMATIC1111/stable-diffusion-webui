@@ -592,6 +592,13 @@ My RTX 3090 makes images about 10% faster when the tab with gradio is not active
 now hides loading progress animation and replaces it with static "Loading..." text, which achieves
 the same effect. Use the `--no-progressbar-hiding` commandline option to revert this and show loading animations.
 
+# Caching Models
+![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/98228077/aaee8ca8-eb9e-4f22-8b7b-dfce51211e63)
+
+If you want faster swapping between models, increase the counter in settings. Webui will keep models you've swapped from in ram. 
+
+Make sure you set the appropriate number according to your remaining available ram. 
+
 # Prompt validation
 Stable Diffusion has a limit for input text length. If your prompt is too long, you will get a
 warning in the text output field, showing which parts of your text were truncated and ignored by the model.
