@@ -43,8 +43,8 @@ body:
   - type: input
     id: commit
     attributes:
-      label: Commit where the problem happens
-      description: Which commit are you running ? (Do not write *Latest version/repo/commit*, as this means nothing and will have changed by the time we read your issue. Rather, copy the **Commit** link at the bottom of the UI, or from the cmd/terminal if you can't launch it.)
+      label: Version or Commit where the problem happens
+      description: "Which webui version or commit are you running ? (Do not write *Latest Version/repo/commit*, as this means nothing and will have changed by the time we read your issue. Rather, copy the **Version: v1.2.3** link at the bottom of the UI, or from the cmd/terminal if you can't launch it.)"
     validations:
       required: true
   - type: dropdown
@@ -80,6 +80,23 @@ body:
         - AMD GPUs (RX 5000 below)
         - CPU
         - Other GPUs
+  - type: dropdown
+    id: cross_attention_opt
+    attributes:
+      label: Cross attention optimization
+      description: What cross attention optimization are you using, Settings -> Optimizations -> Cross attention optimization
+      multiple: false
+      options:
+        - Automatic
+        - xformers
+        - sdp-no-mem
+        - sdp
+        - Doggettx
+        - V1 
+        - InvokeAI
+        - "None "
+    validations:
+      required: true
   - type: dropdown
     id: browsers
     attributes:
