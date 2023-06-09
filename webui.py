@@ -256,8 +256,11 @@ def start_ui():
         max_threads=64,
         show_api=True,
         favicon_path='html/logo.ico',
+        allowed_paths=[os.path.dirname(__file__), cmd_opts.data_dir],
         app_kwargs=gradio_kwargs,
     )
+    if cmd_opts.data_dir is not None:
+        ui_tempdir.register_tmp_file(shared.demo, os.path.join(cmd_opts.data_dir, 'x'))
     shared.log.info(f'Local URL: {local_url}')
     if cmd_opts.docs:
         shared.log.info(f'API Docs: {local_url[:-1]}/docs') # {local_url[:-1]}?view=api
