@@ -284,7 +284,10 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         </thead>
         <tbody>"""
     for ext in extensions_list:
-        extension = [extension for extension in extensions.extensions if extension.git_name == ext['name'] or extension.name == ext['name']]
+        extension = [e for e in extensions.extensions
+                     if (e.name == ext['name'])
+                       or (e.git_name == ext['name'])
+                       or (e.remote == ext['url'])]
         if len(extension) > 0:
             extension[0].read_info_from_repo()
         ext['installed'] = len(extension) > 0
