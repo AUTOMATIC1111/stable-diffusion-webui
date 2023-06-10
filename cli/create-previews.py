@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# pylint: disable=no-member
 import os
 import json
 import time
@@ -12,7 +13,7 @@ from generate import generate # pylint: disable=import-error
 grid = importlib.import_module('image-grid').grid
 
 
-default = 'sd-v15-runwayml.ckpt [cc6cb27103]'
+default = 'best/icbinp-icantbelieveIts-final.safetensors [73f48afbdc]'
 exclude = ['sd-v20', 'sd-v21', 'inpainting', 'pix2pix']
 # used by lora
 prompt = "photo of <keyword> <embedding>, photograph, posing, pose, high detailed, intricate, elegant, sharp focus, skin texture, looking forward, facing camera, 135mm, shot on dslr, canon 5d, 4k, modelshoot style, cinematic lighting"

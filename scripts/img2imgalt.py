@@ -105,8 +105,8 @@ class Script(scripts.Script):
         info = gr.Markdown('''
         * `CFG Scale` should be 2 or lower.
         ''')
-        override_sampler = gr.Checkbox(label="Override `Sampling method` to Euler?(this method is built for it)", value=True, elem_id=self.elem_id("override_sampler"))
-        override_prompt = gr.Checkbox(label="Override `prompt` to the same value as `original prompt`?(and `negative prompt`)", value=True, elem_id=self.elem_id("override_prompt"))
+        override_sampler = gr.Checkbox(label="Override `Sampling method` to Euler", value=True, elem_id=self.elem_id("override_sampler"))
+        override_prompt = gr.Checkbox(label="Override `prompt` to the same value as `original prompt`", value=True, elem_id=self.elem_id("override_prompt"))
         original_prompt = gr.Textbox(label="Original prompt", lines=1, elem_id=self.elem_id("original_prompt"))
         original_negative_prompt = gr.Textbox(label="Original negative prompt", lines=1, elem_id=self.elem_id("original_negative_prompt"))
         override_steps = gr.Checkbox(label="Override `Sampling Steps` to the same value as `Decode steps`?", value=True, elem_id=self.elem_id("override_steps"))
