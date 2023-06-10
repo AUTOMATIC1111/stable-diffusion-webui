@@ -20,11 +20,21 @@ body:
     attributes:
       value: |
         Any issues without version information will be closed  
-        Look at console log and copy the version string from there  
-        For example: `Version: f256fb8b Fri Apr 14 17:41:30 2023 -0400`  
-
-        Additionally provide any relevant platorm information:  
-        - OS details, GPU information, browser used, app versions  
+        Provide any relevant platorm information:  
+        - Application version, OS details, GPU information, browser used  
+        Easiest is to include top part of console log  
+        Example:  
+        ```log
+        Starting SD.Next
+        Python 3.10.6 on Linux
+        Version: abd7d160 Sat Jun 10 07:37:42 2023 -0400
+        nVidia CUDA toolkit detected
+        Torch 2.1.0.dev20230519+cu121
+        Torch backend: nVidia CUDA 12.1 cuDNN 8801
+        Torch detected GPU: NVIDIA GeForce RTX 3060 VRAM 12288 Arch (8, 6) Cores 28
+        Enabled extensions-builtin: [...]
+        Enabled extensions: [...]
+        ```
   - type: markdown
     attributes:
       value: |
@@ -41,3 +51,10 @@ body:
       value: |
         If possible update to latest version before reporting the issue as older versions cannot be properly supported  
         And search existing **issues** and **discussions** before creating a new one  
+  - type: checkboxes
+    attributes:
+      label: Acknowledgements
+      description: 
+      options:
+        - label: I have read the above and searched for existing issues
+          required: true
