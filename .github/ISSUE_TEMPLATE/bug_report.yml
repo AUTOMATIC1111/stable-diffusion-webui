@@ -43,6 +43,10 @@ body:
   - type: markdown
     attributes:
       value: |
+        If issue is with extension compatibility or functionality, stop here and use extension template instead  
+  - type: markdown
+    attributes:
+      value: |
         If you have additional extensions installed, try to reproduce the issue with user extensions disabled  
         And if the issue is with compatibility with specific extension, mark it as such when creating the issue  
         Try running with `--safe` command line flag with disables loading of user-installed extensions  
