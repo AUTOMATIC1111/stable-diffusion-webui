@@ -140,9 +140,7 @@ Original image by Anonymous user from 4chan. Thank you, Anonymous user.
 
 You can find the feature in the img2img tab at the bottom, under Script -> Poor man's outpainting.
 
-Outpainting, unlike normal image generation, seems to profit very much from large step count. A recipe for a good outpainting
-is a good prompt that matches the picture, sliders for denoising and CFG scale set to max, and step count of 50 to 100 with
-Euler ancestral or DPM2 ancestral samplers.
+Outpainting, unlike normal image generation, seems to profit very much from large step count. A recipe for a good outpainting is a good prompt that matches the picture, sliders for denoising and CFG scale set to max, and step count of 50 to 100 with Euler ancestral or DPM2 ancestral samplers.
 
 | 81 steps, Euler A                   | 30 steps, Euler A                     | 10 steps, Euler A                    | 80 steps, Euler A                   |
 |-------------------------------------|---------------------------------------|--------------------------------------|-------------------------------------|
@@ -175,8 +173,7 @@ The masked content field determines content is placed to put into the masked reg
 | ![](images/inpainting-initial-content-mask.png) | ![](images/inpainting-initial-content-fill.png) | ![](images/inpainting-initial-content-original.png) | ![](images/inpainting-initial-content-latent-noise.png) | ![](images/inpainting-initial-content-latent-nothing.png) |
 
 ## Inpaint area
-Normally, inpainting resizes the image to the target resolution specified in the UI. With `Inpaint area: Only masked`
-enabled, only the masked region is resized, and after processing it is pasted back to the original picture.
+Normally, inpainting resizes the image to the target resolution specified in the UI. With `Inpaint area: Only masked` enabled, only the masked region is resized, and after processing it is pasted back to the original picture.
 This allows you to work with large pictures and render the inpainted object at a much larger resolution.
 
 
@@ -229,8 +226,7 @@ To use this feature, select `SD upscale from the scripts dropdown selection` (im
 ![chrome_dl8hcMPYcx](https://user-images.githubusercontent.com/39339941/193300082-be3b8864-3c28-44b7-bb75-f893f92269b6.png)
 
 The input image will be upscaled to twice the original
-width and height, and UI's width and height sliders specify the size of individual tiles. Because of overlap,
-the size of the tile can be very important: 512x512 image needs nine 512x512 tiles (because of overlap), but only
+width and height, and UI's width and height sliders specify the size of individual tiles. Because of overlap, the size of the tile can be very important: 512x512 image needs nine 512x512 tiles (because of overlap), but only
 four 640x640 tiles.
 
 Recommended parameters for upscaling:
@@ -280,8 +276,7 @@ NAI uses my implementation from before 2022-09-29, except they have 1.05 as the 
 
 
 # Loopback
-Selecting the loopback script in img2img allows you to automatically feed output image as input for the next batch. Equivalent to
-saving output image, and replacing the input image with it. Batch count setting controls how many iterations of
+Selecting the loopback script in img2img allows you to automatically feed output image as input for the next batch. Equivalent to saving output image and replacing the input image with it. Batch count setting controls how many iterations of
 this you get.
 
 Usually, when doing this, you would choose one of many images for the next iteration yourself, so the usefulness
@@ -368,8 +363,7 @@ Pick out of multiple sampling methods for txt2img:
 
 # Seed resize
 This function allows you to generate images from known seeds at different resolutions. Normally, when you change resolution,
-the image changes entirely, even if you keep all other parameters including seed. With seed resizing you specify the resolution
-of the original image, and the model will very likely produce something looking very similar to it, even at a different resolution.
+the image changes entirely, even if you keep all other parameters including seed. With seed resizing you specify the resolution of the original image, and the model will very likely produce something looking very similar to it, even at a different resolution.
 In the example below, the leftmost picture is 512x512, and others are produced with exact same parameters but with larger vertical
 resolution.
 
@@ -383,25 +377,21 @@ Ancestral samplers are a little worse at this than the rest.
 You can find this feature by clicking the "Extra" checkbox near the seed.
 
 # Variations
-A Variation strength slider and Variation seed field allow you to specify how much the existing picture should be altered to look
-like a different one. At maximum strength, you will get pictures with the Variation seed, at minimum - pictures with the original Seed (except
-for when using ancestral samplers).
+A Variation strength slider and Variation seed field allow you to specify how much the existing picture should be altered to look like a different one. At maximum strength, you will get pictures with the Variation seed, at minimum - pictures with the original Seed (except for when using ancestral samplers).
 
 ![](images/seed-variations.jpg)
 
 You can find this feature by clicking the "Extra" checkbox near the seed.
 
 # Styles
-Press the "Save prompt as style" button to write your current prompt to styles.csv, the file with a collection of styles. A dropbox to
-the right of the prompt will allow you to choose any style out of previously saved, and automatically append it to your input.
+Press the "Save prompt as style" button to write your current prompt to styles.csv, the file with a collection of styles. A dropbox to the right of the prompt will allow you to choose any style out of previously saved, and automatically append it to your input.
 To delete a style, manually delete it from styles.csv and restart the program.
 
 if you use the special string `{prompt}` in your style, it will substitute anything currently in the prompt into that position, rather than appending the style to your prompt.
 
 # Negative prompt
 
-Allows you to use another prompt of things the model should avoid when generating the picture. This works by using the
-negative prompt for unconditional conditioning in the sampling process instead of an empty string.
+Allows you to use another prompt of things the model should avoid when generating the picture. This works by using the negative prompt for unconditional conditioning in the sampling process instead of an empty string.
 
 Advanced explanation: [Negative prompt](Negative-prompt)
 
@@ -413,25 +403,21 @@ Advanced explanation: [Negative prompt](Negative-prompt)
 
 Originally by: https://github.com/pharmapsychotic/clip-interrogator
 
-CLIP interrogator allows you to retrieve the prompt from an image. The prompt won't allow you to reproduce this
-exact image (and sometimes it won't even be close), but it can be a good start.
+CLIP interrogator allows you to retrieve the prompt from an image. The prompt won't allow you to reproduce this exact image (and sometimes it won't even be close), but it can be a good start.
 
 ![](images/CLIP-interrogate.png)
 
 The first time you run CLIP interrogator it will download a few gigabytes of models.
 
 CLIP interrogator has two parts: one is a BLIP model that creates a text description from the picture.
-Other is a CLIP model that will pick few lines relevant to the picture out of a list. By default, there
-is only one list - a list of artists (from `artists.csv`). You can add more lists by doing the following:
+Other is a CLIP model that will pick few lines relevant to the picture out of a list. By default, there is only one list - a list of artists (from `artists.csv`). You can add more lists by doing the following:
 
  - create `interrogate` directory in the same place as webui
  - put text files in it with a relevant description on each line
 
 For example of what text files to use, see https://github.com/pharmapsychotic/clip-interrogator/tree/main/clip_interrogator/data.
-In fact, you can just take files from there and use them - just skip artists.txt because you already have a list of
-artists in `artists.csv` (or use that too, who's going to stop you). Each file adds one line of text to the final description.
-If you add ".top3." to filename, for example, `flavors.top3.txt`, the three most relevant lines from this file will be
-added to the prompt (other numbers also work).
+In fact, you can just take files from there and use them - just skip artists.txt because you already have a list of artists in `artists.csv` (or use that too, who's going to stop you). Each file adds one line of text to the final description.
+If you add ".top3." to filename, for example, `flavors.top3.txt`, the three most relevant lines from this file will be added to the prompt (other numbers also work).
 
 There are settings relevant to this feature:
  - `Interrogate: keep models in VRAM` - do not unload Interrogate models from memory after using them. For users with a lot of VRAM.
@@ -476,7 +462,7 @@ Here's a more complex example with multiple edits:
 
 The picture at the top was made with the prompt:
 
-`Official portrait of a smiling world war ii general, [male:female:0.99], cheerful, happy, detailed face, 20th century, highly detailed, cinematic lighting, digital art painting by Greg Rutkowski's
+`Official portrait of a smiling world war ii general, [male:female:0.99], cheerful, happy, detailed face, 20th century, highly detailed, cinematic lighting, digital art painting by Greg Rutkowski`
 
 And the number 0.99 is replaced with whatever you see in column labels on the image.
 
@@ -557,8 +543,7 @@ Press the Interrupt button to stop current processing.
 Optimizations for GPUs with low VRAM. This should make it possible to generate 512x512 images on videocards with 4GB memory.
 
 `--lowvram` is a reimplementation of an optimization idea by [basujindal](https://github.com/basujindal/stable-diffusion).
-Model is separated into modules, and only one module is kept in GPU memory; when another module needs to run, the previous
-is removed from GPU memory. The nature of this optimization makes the processing run slower -- about 10 times slower
+Model is separated into modules, and only one module is kept in GPU memory; when another module needs to run, the previous is removed from GPU memory. The nature of this optimization makes the processing run slower -- about 10 times slower
 compared to normal operation on my RTX 3090.
 
 `--medvram` is another optimization that should reduce VRAM usage significantly by not processing conditional and
@@ -588,9 +573,7 @@ generation parameters will be appended to a csv file in the same directory.
 
 # Loading
 Gradio's loading graphic has a very negative effect on the processing speed of the neural network.
-My RTX 3090 makes images about 10% faster when the tab with gradio is not active. By default, the UI
-now hides loading progress animation and replaces it with static "Loading..." text, which achieves
-the same effect. Use the `--no-progressbar-hiding` commandline option to revert this and show loading animations.
+My RTX 3090 makes images about 10% faster when the tab with gradio is not active. By default, the UI now hides loading progress animation and replaces it with static "Loading..." text, which achieves the same effect. Use the `--no-progressbar-hiding` commandline option to revert this and show loading animations.
 
 # Caching Models
 ![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/98228077/aaee8ca8-eb9e-4f22-8b7b-dfce51211e63)
@@ -600,18 +583,13 @@ If you want faster swapping between models, increase the counter in settings. We
 Make sure you set the appropriate number according to your remaining available ram. 
 
 # Prompt validation
-Stable Diffusion has a limit for input text length. If your prompt is too long, you will get a
-warning in the text output field, showing which parts of your text were truncated and ignored by the model.
+Stable Diffusion has a limit for input text length. If your prompt is too long, you will get a warning in the text output field, showing which parts of your text were truncated and ignored by the model.
 
-# Png info
-Adds information about generation parameters to PNG as a text chunk. You
-can view this information later using any software that supports viewing
-PNG chunk info, for example: https://www.nayuki.io/page/png-file-chunk-inspector
+# PNG info
+Adds information about generation parameters to PNG as a text chunk. You can view this information later using any software that supports viewing PNG chunk info, for example: https://www.nayuki.io/page/png-file-chunk-inspector
 
 # Settings
-A tab with settings, allows you to use UI to edit more than half of parameters that previously
-were commandline. Settings are saved to config.js file. Settings that remain as commandline
-options are ones that are required at startup.
+A tab with settings, allows you to use UI to edit more than half of parameters that previously were commandline. Settings are saved to `config.js`. Settings that remain as commandline options are ones that are required at startup.
 
 # Filenames format
 The `Images filename pattern` field in the Settings tab allows customization of generated txt2img and img2img images filenames. This pattern defines the generation parameters you want to include in filenames and their order. The supported tags are:
@@ -629,12 +607,9 @@ If you leave this field empty, the default pattern will be applied (`[seed]-[pro
 Please note that the tags are actually replaced inside the pattern. It means that you can also add non-tags words to this pattern, to make filenames even more explicit. For example: `s=[seed],p=[prompt_spaces]`
 
 # User scripts
-If the program is launched with `--allow-code` option, an extra text input field for script code
-is available at the bottom of the page, under Scripts -> Custom code. It allows you to input python
-code that will do the work with the image.
+If the program is launched with `--allow-code` option, an extra text input field for script code is available at the bottom of the page, under Scripts -> Custom code. It allows you to input python code that will do the work with the image.
 
-In code, access parameters from web UI using the `p` variable, and provide outputs for web UI
-using the `display(images, seed, info)` function. All globals from the script are also accessible.
+In code, access parameters from web UI using the `p` variable, and provide outputs for web UI using the `display(images, seed, info)` function. All globals from the script are also accessible.
 
 A simple script that would just process the image and output it normally:
 
