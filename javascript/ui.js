@@ -199,6 +199,32 @@ function register_drag_drop() {
   });
 }
 
+opts = {}
+opts_metadata = {}
+function updateOpts(json_string){
+    let settings_data = JSON.parse(json_string)
+    opts = settings_data.values
+    opts_metadata = settings_data.metadata
+    opts_tabs = {}
+    Object.entries(opts_metadata).forEach(([opt, meta]) => {
+        opts_tabs[meta.tab_name] ||= {}
+        let unsaved = (opts_tabs[meta.tab_name].unsaved_keys ||= new Set())
+        if (!meta.is_stored) unsaved.add(opt)
+    })
+}
+
+function showAllSettings() {
+  // Try to ensure that the show all settings tab is opened by clicking on its tab button
+  let tab_dirty_indicator = gradioApp().getElementById('modification_indicator_show_all_pages');
+  if (tab_dirty_indicator && tab_dirty_indicator.nextSibling) {
+    tab_dirty_indicator.nextSibling.click();
+  }
+  gradioApp().querySelectorAll('#settings > .tab-content > .tabitem').forEach((elem) => {
+    if (elem.id === 'settings_tab_licenses' || elem.id === 'settings_show_all_pages') return;
+    elem.style.display = 'block';
+  });
+}
+
 onAfterUiUpdate(() => {
   sort_ui_elements();
   if (Object.keys(opts).length !== 0) return;
@@ -207,7 +233,7 @@ onAfterUiUpdate(() => {
   json_elem.parentElement.style.display = 'none';
   const textarea = json_elem.querySelector('textarea');
   const jsdata = textarea.value;
-  opts = JSON.parse(jsdata);
+  updateOpts(jsdata);
   executeCallbacks(optionsChangedCallbacks);
   register_drag_drop();
 
@@ -216,7 +242,7 @@ onAfterUiUpdate(() => {
       const valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
       const oldValue = valueProp.get.call(textarea);
       valueProp.set.call(textarea, newValue);
-      if (oldValue !== newValue) opts = JSON.parse(textarea.value);
+      if (oldValue !== newValue) updateOpts(textarea.value);
       executeCallbacks(optionsChangedCallbacks);
     },
     get() {
@@ -240,28 +266,19 @@ onAfterUiUpdate(() => {
   registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
   registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
   registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button');
-  const show_all_pages = gradioApp().getElementById('settings_show_all_pages');
-  const settings_tabs = gradioApp().querySelector('#settings div');
-  if (show_all_pages && settings_tabs) {
-    settings_tabs.appendChild(show_all_pages);
-    show_all_pages.onclick = () => {
-      gradioApp().querySelectorAll('#settings > div').forEach((elem) => {
-        elem.style.display = 'block';
-      });
-    };
-  }
+
   const settings_search = gradioApp().querySelectorAll('#settings_search > label > textarea')[0];
   settings_search.oninput = (e) => {
     setTimeout(() => {
-      gradioApp().querySelectorAll('#settings > div').forEach((elem) => {
-        if (elem.id === 'settings_tab_licenses') return;
-        elem.style.display = 'block';
-      });
+      showAllSettings();
       gradioApp().querySelectorAll('#tab_settings .tabitem').forEach((section) => {
-        section.querySelectorAll('.block').forEach((setting) => {
+        section.querySelectorAll('.dirtyable').forEach((setting) => {
           const visible = setting.innerText.toLowerCase().includes(e.target.value.toLowerCase()) || setting.id.toLowerCase().includes(e.target.value.toLowerCase());
-          if (setting.parentElement.classList.contains('form')) setting.parentElement.style.display = visible ? 'flex' : 'none';
-          else setting.style.display = visible ? 'block' : 'none';
+          if (!visible) {
+            setting.style.display = 'none'
+          } else {
+            setting.style.removeProperty('display')
+          }
         });
       });
     }, 50);
@@ -279,6 +296,86 @@ onOptionsChanged(() => {
     elem.href = `https://google.com/search?q=${sd_checkpoint_hash}`;
   }
 });
+
+onOptionsChanged(function(){
+    let setting_elems = gradioApp().querySelectorAll('#settings [id^="setting_"]')
+    setting_elems.forEach(function(elem){
+        setting_name = elem.id.replace("setting_", "")
+        markIfModified(setting_name, opts[setting_name])
+    })
+})
+
+onUiLoaded(function(){
+    let tab_nav_element = gradioApp().querySelector('#settings > .tab-nav')
+    let tab_nav_buttons = gradioApp().querySelectorAll('#settings > .tab-nav > button')
+    let tab_elements = gradioApp().querySelectorAll('#settings > div:not(.tab-nav)')
+
+    // HACK Add mutation observer to keep gradio from closing setting tabs when showing all pages
+    const observer = new MutationObserver(function(mutations) {
+        const show_all_pages_dummy = gradioApp().getElementById('settings_show_all_pages')
+        if (show_all_pages_dummy.style.display == "none") 
+            return;
+        function mutation_on_style(mut) {
+            return mut.type === 'attributes' && mut.attributeName === 'style'
+        }
+        if (mutations.some(mutation_on_style)) {
+            showAllSettings();
+        }
+    })
+
+    // Add a wrapper for the tab content (everything but the tab nav)
+    const tab_content_wrapper = document.createElement('div')
+    tab_content_wrapper.className = "tab-content"
+    tab_nav_element.parentElement.insertBefore(tab_content_wrapper, tab_nav_element.nextSibling)
+
+    tab_elements.forEach(function(elem, index){
+        // Move the modification indicator to the toplevel tab button
+        let tab_name = elem.id.replace("settings_", "")
+        let indicator = gradioApp().getElementById("modification_indicator_"+tab_name)
+        tab_nav_element.insertBefore(indicator, tab_nav_buttons[index])
+
+        // Add the tab content to the wrapper
+        tab_content_wrapper.appendChild(elem)
+
+        // Add the mutation observer to the tab element
+        observer.observe(elem, { attributes: true, attributeFilter: ['style'] })
+    })
+})
+
+function markIfModified(setting_name, value) {
+    let elem = gradioApp().getElementById("modification_indicator_"+setting_name)
+    if(elem == null) return;
+    // Use JSON.stringify to compare nested objects (e.g. arrays for checkbox-groups)
+    let previous_value_json = JSON.stringify(opts[setting_name])
+    let changed_value = JSON.stringify(value) != previous_value_json
+    if (changed_value) {
+        elem.title = `Click to revert to previous value: ${previous_value_json}`
+    }
+
+    is_unsaved = !opts_metadata[setting_name].is_stored
+    if (is_unsaved) {
+        elem.title = 'Default value (not saved to config)';
+    }
+    elem.disabled = !(is_unsaved || changed_value)
+    elem.classList.toggle('changed', changed_value)
+    elem.classList.toggle('unsaved', is_unsaved)
+
+    let tab_name = opts_metadata[setting_name].tab_name
+    let changed_items = (opts_tabs[tab_name].changed ||= new Set())
+    changed_value ? changed_items.add(setting_name) : changed_items.delete(setting_name)
+    let unsaved = opts_tabs[tab_name].unsaved_keys
+
+    // Set the indicator on the tab nav element
+    let tab_nav_indicator = gradioApp().getElementById('modification_indicator_'+tab_name)
+    tab_nav_indicator.disabled = (changed_items.size == 0) && (unsaved.size == 0)
+    tab_nav_indicator.title = '';
+    tab_nav_indicator.classList.toggle('changed', changed_items.size > 0)
+    tab_nav_indicator.classList.toggle('unsaved', unsaved.size > 0)
+    if (changed_items.size > 0)
+        tab_nav_indicator.title += `Click to reset ${changed_items.size} unapplied change${changed_items.size > 1 ? 's': ''} in this tab.\n`
+    if (unsaved.size > 0)
+        tab_nav_indicator.title += `${unsaved.size} new default value${unsaved.size > 1 ? 's':''} (not yet saved).`;
+}
 
 let txt2img_textarea;
 let img2img_textarea;
