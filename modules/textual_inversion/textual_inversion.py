@@ -165,8 +165,7 @@ class EmbeddingDatabase:
         # textual inversion embeddings
         if 'string_to_param' in data:
             param_dict = data['string_to_param']
-            if hasattr(param_dict, '_parameters'):
-                param_dict = getattr(param_dict, '_parameters')  # fix for torch 1.12.1 loading saved file from torch 1.11
+            param_dict = getattr(param_dict, '_parameters', param_dict)  # fix for torch 1.12.1 loading saved file from torch 1.11
             assert len(param_dict) == 1, 'embedding file has multiple terms in it'
             emb = next(iter(param_dict.items()))[1]
         # diffuser concepts
@@ -437,7 +436,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
             shared.log.info("No saved optimizer exists in checkpoint")
 
     if shared.cmd_opts.use_ipex:
-        scaler = ipex.cpu.autocast._grad_scaler.GradScaler() #scaler.step(optimizer): PI_ERROR_INVALID_ARG_VALUE
+        scaler = ipex.cpu.autocast._grad_scaler.GradScaler() #scaler.step(optimizer): PI_ERROR_INVALID_ARG_VALUE # pylint: disable=protected-access
         shared.sd_model = shared.sd_model.to(dtype=torch.float32)
         shared.sd_model.train()
         shared.sd_model, optimizer = ipex.optimize(shared.sd_model, optimizer=optimizer, dtype=devices.dtype)

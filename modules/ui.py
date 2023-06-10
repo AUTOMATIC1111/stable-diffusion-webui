@@ -1048,8 +1048,8 @@ def create_ui():
                         train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
                         create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
 
-                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=[x for x in modules.shared.hypernetworks.keys()])
-                        create_refresh_button(train_hypernetwork_name, modules.shared.reload_hypernetworks, lambda: {"choices": sorted([x for x in modules.shared.hypernetworks.keys()])}, "refresh_train_hypernetwork_name")
+                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=sorted(modules.shared.hypernetworks))
+                        create_refresh_button(train_hypernetwork_name, modules.shared.reload_hypernetworks, lambda: {"choices": sorted(modules.shared.hypernetworks)}, "refresh_train_hypernetwork_name")
 
                     with FormRow():
                         embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005", elem_id="train_embedding_learn_rate")
@@ -1276,8 +1276,6 @@ def create_ui():
         elem_id = f"setting_{key}"
 
         if not is_quicksettings:
-            # FIXME: the visibility is only copied once initially, so if the user changes it, it won't be updated
-            # This can probably be fixed by using a proper wrapper element
             dirtyable_setting = gr.Group(elem_classes="dirtyable", visible=(args or {}).get("visible", True))
             dirtyable_setting.__enter__()
             dirty_indicator = gr.Button(
@@ -1368,7 +1366,7 @@ def create_ui():
         quicksettings_names = opts.quicksettings_list
         quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
         quicksettings_list = []
-        previous_section = None
+        previous_section = []
         tab_item_keys = []
         current_tab = None
         current_row = None
@@ -1377,7 +1375,7 @@ def create_ui():
                 section_must_be_skipped = item.section[0] is None
                 if previous_section != item.section and not section_must_be_skipped:
                     elem_id, text = item.section
-                    if current_tab is not None:
+                    if current_tab is not None and len(previous_section) > 0:
                         create_dirty_indicator(previous_section[0], tab_item_keys)
                         tab_item_keys = []
                         current_row.__exit__()
@@ -1397,7 +1395,7 @@ def create_ui():
                     component_dict[k] = component
                     tab_item_keys.append(k)
                     components.append(component)
-            if current_tab is not None:
+            if current_tab is not None and len(previous_section) > 0:
                 create_dirty_indicator(previous_section[0], tab_item_keys)
                 tab_item_keys = []
                 current_row.__exit__()

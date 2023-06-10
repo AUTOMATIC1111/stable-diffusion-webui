@@ -121,7 +121,6 @@ class TransformerSALayer(nn.Module):
                 tgt_mask: Optional[Tensor] = None,
                 tgt_key_padding_mask: Optional[Tensor] = None,
                 query_pos: Optional[Tensor] = None):
-        
         # self attention
         tgt2 = self.norm1(tgt)
         q = k = self.with_pos_embed(tgt2, query_pos)

@@ -2,6 +2,7 @@ import base64
 import io
 import os
 import re
+import json
 
 from PIL import Image
 import gradio as gr
@@ -34,12 +35,18 @@ def reset():
 
 
 def quote(text):
-    if ',' not in str(text):
+    if ',' not in str(text) and '\n' not in str(text) and ':' not in str(text):
         return text
-    text = str(text)
-    text = text.replace('\\', '\\\\')
-    text = text.replace('"', '\\"')
-    return f'"{text}"'
+    return json.dumps(text, ensure_ascii=False)
+
+
+def unquote(text):
+    if len(text) == 0 or text[0] != '"' or text[-1] != '"':
+        return text
+    try:
+        return json.loads(text)
+    except Exception:
+        return text
 
 
 def image_from_url_text(filedata):
@@ -259,13 +266,16 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     res["Prompt"] = prompt
     res["Negative prompt"] = negative_prompt
     for k, v in re_param.findall(lastline):
-        v = v[1:-1] if len(v) > 0 and v[0] == '"' and v[-1] == '"' else v
+        if v[0] == '"' and v[-1] == '"':
+            v = unquote(v)
         m = re_imagesize.match(v)
         if m is not None:
             res[f"{k}-1"] = m.group(1)
             res[f"{k}-2"] = m.group(2)
         else:
             res[k] = v
+
+
     # Missing CLIP skip means it was set to 1 (the default)
     if "Clip skip" not in res:
         res["Clip skip"] = "1"
