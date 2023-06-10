@@ -16,6 +16,25 @@ body:
       label: Version Platform Description
       description: Describe your platform (program version, OS, browser)
       value: 
+  - type: markdown
+    attributes:
+      value: |
+        Any issues without version information will be closed  
+        Provide any relevant platorm information:  
+        - Application version, OS details, GPU information, browser used  
+        Easiest is to include top part of console log  
+        Example:  
+        ```log
+        Starting SD.Next
+        Python 3.10.6 on Linux
+        Version: abd7d160 Sat Jun 10 07:37:42 2023 -0400
+        nVidia CUDA toolkit detected
+        Torch 2.1.0.dev20230519+cu121
+        Torch backend: nVidia CUDA 12.1 cuDNN 8801
+        Torch detected GPU: NVIDIA GeForce RTX 3060 VRAM 12288 Arch (8, 6) Cores 28
+        Enabled extensions-builtin: [...]
+        Enabled extensions: [...]
+        ```
   - type: textarea
     id: url
     attributes:
@@ -37,3 +56,10 @@ body:
       value: |
         If issue is extension installation or startup related, please check `sdnext.log` before reporting  
         And when posting console logs, please use code blocks ( \`\`\` ) to format them insead of uploading screenshots  
+  - type: checkboxes
+    attributes:
+      label: Acknowledgements
+      description: 
+      options:
+        - label: I have read the above and searched for existing issues
+          required: true
