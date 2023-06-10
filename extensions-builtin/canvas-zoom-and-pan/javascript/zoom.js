@@ -131,7 +131,7 @@ onUiLoaded(async() => {
         canvas_show_tooltip: true,
         canvas_swap_controls: false
     };
-    // swap the actions for ctr + wheel and shift + wheel
+    // swap the actions for ctr + wheel and alt + wheel
     const hotkeysConfig = createHotkeyConfig(
         defaultHotkeysConfig,
         hotkeysConfigOpts
@@ -192,8 +192,8 @@ onUiLoaded(async() => {
             tooltipContent.className = "tooltip-content";
 
             // Add info about hotkeys
-            const zoomKey = hotkeysConfig.canvas_swap_controls ? "Ctrl" : "Shift";
-            const adjustKey = hotkeysConfig.canvas_swap_controls ? "Shift" : "Ctrl";
+            const zoomKey = hotkeysConfig.canvas_swap_controls ? "Ctrl" : "Alt";
+            const adjustKey = hotkeysConfig.canvas_swap_controls ? "Alt" : "Ctrl";
 
             const hotkeys = [
                 {key: `${zoomKey} + wheel`, action: "Zoom canvas"},
@@ -347,7 +347,7 @@ onUiLoaded(async() => {
         // Change the zoom level based on user interaction
         function changeZoomLevel(operation, e) {
             if (
-                (!hotkeysConfig.canvas_swap_controls && e.shiftKey) ||
+                (!hotkeysConfig.canvas_swap_controls && e.altKey) ||
                 (hotkeysConfig.canvas_swap_controls && e.ctrlKey)
             ) {
                 e.preventDefault();
@@ -565,7 +565,7 @@ onUiLoaded(async() => {
 
             // Handle brush size adjustment with ctrl key pressed
             if (
-                (hotkeysConfig.canvas_swap_controls && e.shiftKey) ||
+                (hotkeysConfig.canvas_swap_controls && e.altKey) ||
                 (!hotkeysConfig.canvas_swap_controls &&
                     (e.ctrlKey || e.metaKey))
             ) {
