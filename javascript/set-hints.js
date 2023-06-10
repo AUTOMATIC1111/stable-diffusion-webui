@@ -6,7 +6,6 @@ let locale = {
 
 async function setLocale() {
   if (locale.finished) return;
-  console.log('setLocale');
   if (locale.data.length === 0) {
     const res = await fetch('/file=html/locale_en.json');
     const json = await res.json(); 
@@ -16,11 +15,21 @@ async function setLocale() {
     ...Array.from(gradioApp().querySelectorAll('button')),
     ...Array.from(gradioApp().querySelectorAll('label > span')),
   ];
+  if (elements.length === 0) return;
+  let localized = 0;
+  let hints = 0;
   for (el of elements) {
     const found = locale.data.find(l => l.label === el.textContent);
-    if (found?.localized?.length > 0) el.textContent = found.localized;
-    if (found?.hint?.length > 0) el.title = found.hint;
+    if (found?.localized?.length > 0) {
+      localized++;
+      el.textContent = found.localized;
+    }
+    if (found?.hint?.length > 0) {
+      hints++;
+      el.title = found.hint;
+    }
   }
+  console.log('setLocale', { elements: elements.length, localized, hints, data: locale.data });
   locale.finished = true;
 }
 
