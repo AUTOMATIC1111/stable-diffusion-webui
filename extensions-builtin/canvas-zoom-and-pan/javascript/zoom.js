@@ -514,6 +514,11 @@ onUiLoaded(async() => {
                 event.preventDefault();
                 action(event);
             }
+
+            // Removing the default behavior in the browser for alt key when the handler is attached
+            if (event.altKey) {
+                event.preventDefault();
+            }
         }
 
         // Get Mouse position
