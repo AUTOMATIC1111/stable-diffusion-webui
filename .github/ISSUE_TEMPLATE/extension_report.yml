@@ -35,13 +35,15 @@ body:
         Enabled extensions-builtin: [...]
         Enabled extensions: [...]
         ```
-  - type: textarea
+  - type: input
     id: url
     attributes:
       label: URL link of the extension
       description: URL link of the extension
       value: 
-  - type: textarea
+    validations:
+      required: true
+  - type: input
     id: issue
     attributes:
       label: URL link of the issue reported in the extension repository
