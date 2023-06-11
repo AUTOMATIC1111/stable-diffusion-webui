@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 06/10/2023
+## Update for 06/11/2023
 
 - updated ui labels and hints to improve clarity and provide some extra info  
   this is 1st stage of the process, more to come...  
@@ -11,6 +11,8 @@
   which was preventing some optimizations to take effect  
 - updated **settings** tab functionality, thanks @gegell  
 - **launcher** will now warn if application owned files are modified  
+- add more profiling for scripts/extensions so you can see what takes time  
+  this applies both to initial load as well as execution  
 - experimental `sd_model_dict` setting which allows you to load model dictionary  
   from one model and apply weights from another model specified in `sd_model_checkpoint`  
   results? who am i to judge :)

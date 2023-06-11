@@ -524,7 +524,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
             sd_model = instantiate_from_config(sd_config.model)
     except Exception:
         sd_model = instantiate_from_config(sd_config.model)
-    shared.log.info(f"Model created from config: {checkpoint_config}")
+    shared.log.debug(f"Model created from config: {checkpoint_config}")
     sd_model.used_config = checkpoint_config
     timer.record("create")
     load_model_weights(sd_model, checkpoint_info, state_dict, timer)

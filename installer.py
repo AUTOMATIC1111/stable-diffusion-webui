@@ -222,6 +222,8 @@ def clone(url, folder, commithash=None):
 # check python version
 def check_python():
     supported_minors = [9, 10]
+    if args.quick:
+        return True
     if args.experimental:
         supported_minors.append(11)
     log.info(f'Python {platform.python_version()} on {platform.system()}')
@@ -242,6 +244,8 @@ def check_python():
 
 # check torch version
 def check_torch():
+    if args.quick:
+        return True
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
@@ -345,6 +349,8 @@ def check_torch():
 
 # check modified files
 def check_modified_files():
+    if args.quick:
+        return True
     if args.skip_git:
         return
     try:
@@ -546,7 +552,7 @@ def install_requirements():
 
 # set environment variables controling the behavior of various libraries
 def set_environment():
-    log.info('Setting environment tuning')
+    log.debug('Setting environment tuning')
     os.environ.setdefault('USE_TORCH', '1')
     os.environ.setdefault('TF_CPP_MIN_LOG_LEVEL', '2')
     os.environ.setdefault('ACCELERATE', 'True')
@@ -568,6 +574,8 @@ def set_environment():
 
 
 def check_extensions():
+    if args.quick:
+        return 0
     newest_all = os.path.getmtime('requirements.txt')
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
@@ -601,6 +609,8 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
             sys.exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
+    if args.quick:
+        return True
     if args.version:
         return
     if args.skip_git:
@@ -654,6 +664,8 @@ def update_wiki():
 def check_timestamp():
     if not quick_allowed or not os.path.isfile(log_file):
         return False
+    if args.quick:
+        return True
     if args.skip_git:
         return True
     ok = True
@@ -690,6 +702,7 @@ def add_args(parser):
     group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
+    group.add_argument('--quick', default = False, action='store_true', help = "Run with startup sequence only, default: %(default)s")
     group.add_argument("--use-ipex", default = False, action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s")
     group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
     group.add_argument("--use-cuda", default=False, action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")

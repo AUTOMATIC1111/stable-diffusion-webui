@@ -124,6 +124,7 @@ def start_server(immediate=True, server=None):
     # installer.log.debug(f'Loading module: {module_spec}')
     server = importlib.util.module_from_spec(module_spec)
     installer.log.debug(f'Starting module: {server}')
+    installer.log.info(f"Server arguments: {sys.argv[1:]}")
     module_spec.loader.exec_module(server)
     if args.test:
         installer.log.info("Test only")
@@ -159,7 +160,6 @@ if __name__ == "__main__":
         installer.quick_allowed = False
     if installer.check_timestamp():
         installer.log.info('No changes detected: Quick launch active')
-        installer.check_extensions()
     else:
         installer.install_requirements()
         installer.install_packages()
@@ -176,7 +176,6 @@ if __name__ == "__main__":
     args = installer.parse_args(parser)
     # installer.run_setup()
     # installer.log.debug(f"Args: {vars(args)}")
-    installer.log.info(f"Server arguments: {sys.argv[1:]}")
     logging.disable(logging.NOTSET if args.debug else logging.DEBUG)
 
 

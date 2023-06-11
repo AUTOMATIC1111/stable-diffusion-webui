@@ -154,11 +154,14 @@ def load_model():
     shared.state.begin()
     shared.state.job = 'load model'
     Thread(target=lambda: shared.sd_model).start()
+    # TODO delay load model
+    """
     if shared.sd_model is None:
         log.warning("No stable diffusion model loaded")
         # exit(1)
     else:
         shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
+    """
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.state.end()
@@ -205,7 +208,7 @@ def start_common():
 def start_ui():
     log.debug('Creating UI')
     modules.script_callbacks.before_ui_callback()
-    startup_timer.record("scripts before_ui_callback")
+    startup_timer.record("before-ui")
     shared.demo = modules.ui.create_ui()
     startup_timer.record("ui")
     if cmd_opts.disable_queue:
@@ -281,12 +284,12 @@ def start_ui():
     ui_extra_networks.add_pages_to_demo(app)
 
     modules.script_callbacks.app_started_callback(shared.demo, app)
-    startup_timer.record("scripts app_started_callback")
+    startup_timer.record("app-started")
 
-    time_setup = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_setup.items() if v > 0.001]
-    shared.log.debug(f'Scripts setup: {time_setup}s')
-    time_component = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_component.items() if v > 0.001]
-    shared.log.debug(f'Scripts components: {time_component}s')
+    time_setup = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_setup.items() if v > 0.005]
+    shared.log.debug(f'Scripts setup: {time_setup}')
+    time_component = [f'{k}:{round(v,3)}s' for (k,v) in modules.scripts.time_component.items() if v > 0.005]
+    shared.log.debug(f'Scripts components: {time_component}')
 
 
 def webui():
