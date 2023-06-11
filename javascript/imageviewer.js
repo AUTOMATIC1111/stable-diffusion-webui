@@ -226,6 +226,7 @@ function onUiUpdateIViewer() {
 onUiUpdate(function () {
   if (intervalUiUpdateIViewer != null) clearInterval(intervalUiUpdateIViewer);
   intervalUiUpdateIViewer = setInterval(onUiUpdateIViewer, 500);
+
 });
 
 onUiLoaded(function () {

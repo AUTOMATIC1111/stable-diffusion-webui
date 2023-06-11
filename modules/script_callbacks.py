@@ -1,16 +1,16 @@
-import sys
-import traceback
-from collections import namedtuple
 import inspect
+import os
+from collections import namedtuple
 from typing import Optional, Dict, Any
 
 from fastapi import FastAPI
 from gradio import Blocks
 
+from modules import errors, timer
+
 
 def report_exception(c, job):
-    print(f"Error executing callback {job} for {c.script}", file=sys.stderr)
-    print(traceback.format_exc(), file=sys.stderr)
+    errors.report(f"Error executing callback {job} for {c.script}", exc_info=True)
 
 
 class ImageSaveParams:
@@ -111,6 +111,7 @@ callback_map = dict(
     callbacks_before_ui=[],
     callbacks_on_reload=[],
     callbacks_list_optimizers=[],
+    callbacks_list_unets=[],
 )
 
 
@@ -123,6 +124,7 @@ def app_started_callback(demo: Optional[Blocks], app: FastAPI):
     for c in callback_map['callbacks_app_started']:
         try:
             c.callback(demo, app)
+            timer.startup_timer.record(os.path.basename(c.script))
         except Exception:
             report_exception(c, 'app_started_callback')
 
@@ -271,16 +273,28 @@ def list_optimizers_callback():
     return res
 
 
+def list_unets_callback():
+    res = []
+
+    for c in callback_map['callbacks_list_unets']:
+        try:
+            c.callback(res)
+        except Exception:
+            report_exception(c, 'list_unets')
+
+    return res
+
+
 def add_callback(callbacks, fun):
     stack = [x for x in inspect.stack() if x.filename != __file__]
-    filename = stack[0].filename if len(stack) > 0 else 'unknown file'
+    filename = stack[0].filename if stack else 'unknown file'
 
     callbacks.append(ScriptCallback(filename, fun))
 
 
 def remove_current_script_callbacks():
     stack = [x for x in inspect.stack() if x.filename != __file__]
-    filename = stack[0].filename if len(stack) > 0 else 'unknown file'
+    filename = stack[0].filename if stack else 'unknown file'
     if filename == 'unknown file':
         return
     for callback_list in callback_map.values():
@@ -430,3 +444,10 @@ def on_list_optimizers(callback):
     to it."""
 
     add_callback(callback_map['callbacks_list_optimizers'], callback)
+
+
+def on_list_unets(callback):
+    """register a function to be called when UI is making a list of alternative options for unet.
+    The function will be called with one argument, a list, and shall add objects of type modules.sd_unet.SdUnetOption to it."""
+
+    add_callback(callback_map['callbacks_list_unets'], callback)

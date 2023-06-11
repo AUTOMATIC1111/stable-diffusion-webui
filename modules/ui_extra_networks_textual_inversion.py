@@ -13,7 +13,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     def list_items(self):
-        for embedding in sd_hijack.model_hijack.embedding_db.word_embeddings.values():
+        for index, embedding in enumerate(sd_hijack.model_hijack.embedding_db.word_embeddings.values()):
             path, ext = os.path.splitext(embedding.filename)
             yield {
                 "name": embedding.name,
@@ -23,6 +23,8 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
                 "search_term": self.search_terms_from_path(embedding.filename),
                 "prompt": json.dumps(embedding.name),
                 "local_preview": f"{path}.preview.{shared.opts.samples_format}",
+                "sort_keys": {'default': index, **self.get_sort_keys(embedding.filename)},
+
             }
 
     def allowed_directories_for_previews(self):

@@ -31,7 +31,7 @@ def check_tmp_file(gradio, filename):
     return False
 
 
-def save_pil_to_file(self, pil_image, dir=None):
+def save_pil_to_file(self, pil_image, dir=None, format="png"):
     already_saved_as = getattr(pil_image, 'already_saved_as', None)
     if already_saved_as and os.path.isfile(already_saved_as):
         register_tmp_file(shared.demo, already_saved_as)

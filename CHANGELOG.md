@@ -1,3 +1,80 @@
+## 1.4.0
+
+### Features:
+ * zoom controls for inpainting
+ * run basic torch calculation at startup in parallel to reduce the performance impact of first generation
+ * option to pad prompt/neg prompt to be same length
+ * remove taming_transformers dependency
+ * custom k-diffusion scheduler settings
+ * add an option to show selected settings in main txt2img/img2img UI
+ * sysinfo tab in settings
+ * infer styles from prompts when pasting params into the UI
+ * an option to control the behavior of the above
+
+### Minor:
+ * bump Gradio to 3.32.0
+ * bump xformers to 0.0.20
+ * Add option to disable token counters
+ * tooltip fixes & optimizations
+ * make it possible to configure filename for the zip download
+ * `[vae_filename]` pattern for filenames
+ * Revert discarding penultimate sigma for DPM-Solver++(2M) SDE
+ * change UI reorder setting to multiselect
+ * read version info form CHANGELOG.md if git version info is not available
+ * link footer API to Wiki when API is not active
+ * persistent conds cache (opt-in optimization)
+ 
+### Extensions:
+ * After installing extensions, webui properly restarts the process rather than reloads the UI 
+ * Added VAE listing to web API. Via: /sdapi/v1/sd-vae
+ * custom unet support
+ * Add onAfterUiUpdate callback
+ * refactor EmbeddingDatabase.register_embedding() to allow unregistering
+ * add before_process callback for scripts
+ * add ability for alwayson scripts to specify section and let user reorder those sections
+ 
+### Bug Fixes:
+ * Fix dragging text to prompt
+ * fix incorrect quoting for infotext values with colon in them
+ * fix "hires. fix" prompt sharing same labels with txt2img_prompt
+ * Fix s_min_uncond default type int
+ * Fix for #10643 (Inpainting mask sometimes not working)
+ * fix bad styling for thumbs view in extra networks #10639
+ * fix for empty list of optimizations #10605
+ * small fixes to prepare_tcmalloc for Debian/Ubuntu compatibility
+ * fix --ui-debug-mode exit
+ * patch GitPython to not use leaky persistent processes
+ * fix duplicate Cross attention optimization after UI reload
+ * torch.cuda.is_available() check for SdOptimizationXformers
+ * fix hires fix using wrong conds in second pass if using Loras.
+ * handle exception when parsing generation parameters from png info
+ * fix upcast attention dtype error
+ * forcing Torch Version to 1.13.1 for RX 5000 series GPUs
+ * split mask blur into X and Y components, patch Outpainting MK2 accordingly
+ * don't die when a LoRA is a broken symlink
+ * allow activation of Generate Forever during generation
+
+
+## 1.3.2
+
+### Bug Fixes:
+ * fix files served out of tmp directory even if they are saved to disk
+ * fix postprocessing overwriting parameters
+
+## 1.3.1
+
+### Features:
+ * revert default cross attention optimization to Doggettx
+
+### Bug Fixes:
+ * fix bug: LoRA don't apply on dropdown list sd_lora
+ * fix png info always added even if setting is not enabled
+ * fix some fields not applying in xyz plot
+ * fix "hires. fix" prompt sharing same labels with txt2img_prompt
+ * fix lora hashes not being added properly to infotex if there is only one lora
+ * fix --use-cpu failing to work properly at startup
+ * make --disable-opt-split-attention command line option work again
+
 ## 1.3.0
 
 ### Features:

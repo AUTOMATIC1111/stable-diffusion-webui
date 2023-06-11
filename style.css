@@ -3941,6 +3941,7 @@ div[data-testid="image"] canvas {
   width: 100%;
 }
 
+
 [id^="spotlight"] .autofit {
   object-fit: none;
   width: auto;

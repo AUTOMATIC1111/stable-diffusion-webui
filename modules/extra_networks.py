@@ -26,11 +26,14 @@ class ExtraNetworkParams:
         self.named = {}
 
         for item in self.items:
-            parts = item.split('=', 2)
+            parts = item.split('=', 2) if isinstance(item, str) else [item]
             if len(parts) == 2:
                 self.named[parts[0]] = parts[1]
             else:
                 self.positional.append(item)
+
+    def __eq__(self, other):
+        return self.items == other.items
 
 
 class ExtraNetwork:

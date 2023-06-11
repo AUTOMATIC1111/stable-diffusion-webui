@@ -15,6 +15,8 @@ def send_everything_to_cpu():
 
 
 def setup_for_low_vram(sd_model, use_medvram):
+    sd_model.lowvram = True
+
     parents = {}
 
     def send_me_to_gpu(module, _):
@@ -96,3 +98,7 @@ def setup_for_low_vram(sd_model, use_medvram):
         diff_model.middle_block.register_forward_pre_hook(send_me_to_gpu)
         for block in diff_model.output_blocks:
             block.register_forward_pre_hook(send_me_to_gpu)
+
+
+def is_enabled(sd_model):
+    return getattr(sd_model, 'lowvram', False)

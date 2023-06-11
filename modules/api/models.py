@@ -241,6 +241,9 @@ class UpscalerItem(BaseModel):
     model_url: Optional[str] = Field(title="URL")
     scale: Optional[float] = Field(title="Scale")
 
+class LatentUpscalerModeItem(BaseModel):
+    name: str = Field(title="Name")
+
 class SDModelItem(BaseModel):
     title: str = Field(title="Title")
     model_name: str = Field(title="Model Name")
@@ -248,6 +251,10 @@ class SDModelItem(BaseModel):
     sha256: Optional[str] = Field(title="sha256 hash")
     filename: str = Field(title="Filename")
     config: Optional[str] = Field(title="Config file")
+
+class SDVaeItem(BaseModel):
+    model_name: str = Field(title="Model Name")
+    filename: str = Field(title="Filename")
 
 class HypernetworkItem(BaseModel):
     name: str = Field(title="Name")

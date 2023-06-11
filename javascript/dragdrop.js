@@ -80,6 +80,7 @@ window.document.addEventListener("drop", (e) => {
   e.preventDefault();
   const files = e.dataTransfer.files;
   dropReplaceImage(imgWrap, files);
+
 });
 
 window.addEventListener("paste", (e) => {

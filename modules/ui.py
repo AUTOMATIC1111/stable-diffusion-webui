@@ -1,21 +1,23 @@
+import datetime
 import json
 import mimetypes
 import os
 import sys
-import traceback
 from functools import reduce
 import warnings
 
 import gradio as gr
-import gradio.routes
 import gradio.utils
 import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
-from modules.paths import script_path, data_path
+from modules.paths import script_path
+from modules.ui_common import create_refresh_button
+from modules.ui_gradio_extensions import reload_javascript
+
 
 from modules.shared import opts, cmd_opts
 
@@ -34,6 +36,8 @@ from modules.textual_inversion import textual_inversion
 import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.extras
+
+create_setting_component = ui_settings.create_setting_component
 
 warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
 
@@ -78,6 +82,7 @@ extra_networks_symbol = '\U0001F3B4'  # 🎴
 switch_values_symbol = '\u2B80' # ⮀                                     
 restore_progress_symbol = '\U0001F300' # 🌀
 detect_image_size_symbol = '\U0001F4D0'  # 📐
+up_down_symbol = '\u2195\ufe0f' # ↕️
 
 interogate_bubble_symbol = '\U0001F5E8' # 🗨
 interogate_2bubble_symbol = '\U0001F5EA' # 🗪
@@ -253,9 +258,8 @@ def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: 
                 res = all_seeds[index if 0 <= index < len(all_seeds) else 0]
 
         except json.decoder.JSONDecodeError:
-            if gen_info_string != '':
-                print("Error parsing JSON generation info:", file=sys.stderr)
-                print(gen_info_string, file=sys.stderr)
+            if gen_info_string:
+                errors.report(f"Error parsing JSON generation info: {gen_info_string}")
 
         return [res, gr_show(False)]
 
@@ -398,25 +402,6 @@ def apply_setting(key, value):
     return getattr(opts, key)
 
 
-def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
-    def refresh():
-        refresh_method()
-        args = refreshed_args() if callable(refreshed_args) else refreshed_args
-
-        for k, v in args.items():
-            setattr(refresh_component, k, v)
-
-        return gr.update(**(args or {}))
-
-    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
-    refresh_button.click(
-        fn=refresh,
-        inputs=[],
-        outputs=[refresh_component]
-    )
-    return refresh_button
-
-
 def create_output_panel(tabname, outdir):
     return ui_common.create_output_panel(tabname, outdir)
 
@@ -435,27 +420,17 @@ def create_sampler_and_steps_selection(choices, tabname):
 
 
 def ordered_ui_categories():
-    user_order = {x.strip(): i * 2 + 1 for i, x in enumerate(shared.opts.ui_reorder.split(","))}
+    user_order = {x.strip(): i * 2 + 1 for i, x in enumerate(shared.opts.ui_reorder_list)}
 
-    for _, category in sorted(enumerate(shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
+    for _, category in sorted(enumerate(shared_items.ui_reorder_categories()), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category
-
-
-def get_value_for_setting(key):
-    value = getattr(opts, key)
-
-    info = opts.data_labels[key]
-    args = info.component_args() if callable(info.component_args) else info.component_args or {}
-    args = {k: v for k, v in args.items() if k not in {'precision'}}
-
-    return gr.update(value=value, **args)
 
 
 def create_override_settings_dropdown(tabname, row):
     dropdown = gr.Dropdown([], label="Override settings", visible=False, elem_id=f"{tabname}_override_settings", multiselect=True)
 
     dropdown.change(
-        fn=lambda x: gr.Dropdown.update(visible=len(x) > 0),
+        fn=lambda x: gr.Dropdown.update(visible=bool(x)),
         inputs=[dropdown],
         outputs=[dropdown],
     )
@@ -494,13 +469,13 @@ def create_ui():
                         txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=False)
 
                     with gr.Row(elem_id="txt2img_extra_networks_row", visible=True) as extra_networks:
-                        from modules import ui_extra_networks
-                        extra_networks_ui = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'txt2img')
+                        #from modules import ui_extra_networks
+                        #extra_networks_ui = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'txt2img')
+                        modules.scripts.scripts_txt2img.prepare_ui()
                     
                     #with gr.Accordion("Parameters", open=True):
                                      
-                    for category in ordered_ui_categories():
-                    
+                    for category in ordered_ui_categories():                   
                         if category == "sampler":
                             steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
 
@@ -551,10 +526,10 @@ def create_ui():
                                 with gr.Row(elem_id="txt2img_hires_fix_row4", visible=opts.hires_fix_show_prompts) as hr_prompts_container:
                                     with gr.Column(scale=80):
                                         with gr.Row():
-                                            hr_prompt = gr.Textbox(label="Prompt", elem_id="hires_prompt", show_label=False, lines=3, placeholder="Prompt for hires fix pass.\nLeave empty to use the same prompt as in first pass.", elem_classes=["prompt"])
+                                            hr_prompt = gr.Textbox(label="Hires prompt", elem_id="hires_prompt", show_label=False, lines=3, placeholder="Prompt for hires fix pass.\nLeave empty to use the same prompt as in first pass.", elem_classes=["prompt"])
                                     with gr.Column(scale=80):
                                         with gr.Row():
-                                            hr_negative_prompt = gr.Textbox(label="Negative prompt", elem_id="hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt for hires fix pass.\nLeave empty to use the same negative prompt as in first pass.", elem_classes=["prompt"])
+                                            hr_negative_prompt = gr.Textbox(label="Hires negative prompt", elem_id="hires_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt for hires fix pass.\nLeave empty to use the same negative prompt as in first pass.", elem_classes=["prompt"])
 
 
                         elif category == "batch":
@@ -572,6 +547,9 @@ def create_ui():
                             #with FormRow(elem_id="txt2img_script_container"):
                             #with gr.Group():
                             custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
+
+                    else:
+                        modules.scripts.scripts_txt2img.setup_ui_for_section(category)
 
             hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
 
@@ -663,7 +641,8 @@ def create_ui():
                 outputs=[
                     txt2img_prompt,
                     txt_prompt_img
-                ]
+                ],
+                show_progress=False,
             )
 
             enable_hr.change(
@@ -688,6 +667,7 @@ def create_ui():
                 (subseed_strength, "Variation seed strength"),
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
+                (txt2img_prompt_styles, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
                 (denoising_strength, "Denoising strength"),
                 (enable_hr, lambda d: "Denoising strength" in d),
                 (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d)),
@@ -908,6 +888,7 @@ def create_ui():
                             outputs=[],
                         )
 
+
                     for category in ordered_ui_categories():
                         
                         if category == "sampler":
@@ -952,6 +933,7 @@ def create_ui():
                             #with FormGroup(elem_id="img2img_script_container"):
                             custom_inputs = modules.scripts.scripts_img2img.setup_ui()
 
+
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
@@ -963,7 +945,8 @@ def create_ui():
                 outputs=[
                     img2img_prompt,
                     img2img_prompt_img
-                ]
+                ],
+                show_progress=False,
             )
 
             img2img_args = dict(
@@ -1112,6 +1095,7 @@ def create_ui():
                 (subseed_strength, "Variation seed strength"),
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
+                (img2img_prompt_styles, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
                 (denoising_strength, "Denoising strength"),
                 (mask_blur, "Mask blur"),
                 *modules.scripts.scripts_img2img.infotext_fields
@@ -1764,7 +1748,7 @@ def create_ui():
     ]
 
     interfaces += script_callbacks.ui_tabs_callback()
-    interfaces += [(settings_interface, "Settings", "settings")]
+    interfaces += [(settings.interface, "Settings", "settings")]
 
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
@@ -1839,27 +1823,10 @@ def create_ui():
         footer = footer.format(versions=versions_html())
         gr.HTML(footer)
 
-        text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
-        settings_submit.click(
-            fn=wrap_gradio_call(run_settings, extra_outputs=[gr.update()]),
-            inputs=components,
-            outputs=[text_settings, result],
-        )
-
-        for _i, k, _item in quicksettings_list:
-            component = component_dict[k]
-            info = opts.data_labels[k]
-
-            change_handler = component.release if hasattr(component, 'release') else component.change
-            change_handler(
-                fn=lambda value, k=k: run_settings_single(value, key=k),
-                inputs=[component],
-                outputs=[component, text_settings],
-                show_progress=info.refresh is not None,
-            )
+        settings.add_functionality(demo)
 
         update_image_cfg_scale_visibility = lambda: gr.update(visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
-        text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
+        settings.text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
         demo.load(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
 
         button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
@@ -1892,8 +1859,7 @@ def create_ui():
             try:
                 results = modules.extras.run_modelmerger(*args)
             except Exception as e:
-                print("Error loading/saving model file:", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                errors.report("Error loading/saving model file", exc_info=True)
                 modules.sd_models.list_models()  # to remove the potentially missing models from the list
                 return [*[gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(4)], f"Error merging checkpoints: {e}"]
             return results
@@ -1921,7 +1887,7 @@ def create_ui():
                 primary_model_name,
                 secondary_model_name,
                 tertiary_model_name,
-                component_dict['sd_model_checkpoint'],
+                settings.component_dict['sd_model_checkpoint'],
                 modelmerger_result,
             ]
         )
@@ -1998,7 +1964,6 @@ def reload_javascript():
 if not hasattr(shared, 'GradioTemplateResponseOriginal'):
     shared.GradioTemplateResponseOriginal = gradio.routes.templates.TemplateResponse
 
-
 def versions_html():
     import torch
     import launch
@@ -2039,4 +2004,18 @@ def setup_ui_api(app):
     app.add_api_route("/internal/quicksettings-hint", quicksettings_hint, methods=["GET"], response_model=List[QuicksettingsHint])
 
     app.add_api_route("/internal/ping", lambda: {}, methods=["GET"])
+
+    app.add_api_route("/internal/profile-startup", lambda: timer.startup_record, methods=["GET"])
+
+    def download_sysinfo(attachment=False):
+        from fastapi.responses import PlainTextResponse
+
+        text = sysinfo.get()
+        filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.txt"
+
+        return PlainTextResponse(text, headers={'Content-Disposition': f'{"attachment" if attachment else "inline"}; filename="{filename}"'})
+
+    app.add_api_route("/internal/sysinfo", download_sysinfo, methods=["GET"])
+    app.add_api_route("/internal/sysinfo-download", lambda: download_sysinfo(attachment=True), methods=["GET"])
+
 

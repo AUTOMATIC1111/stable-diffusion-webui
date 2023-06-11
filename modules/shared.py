@@ -6,6 +6,7 @@ import threading
 import time
 
 import gradio as gr
+import torch
 import tqdm
 
 import modules.interrogate
@@ -45,19 +46,6 @@ restricted_opts = {
     "outdir_init_images"
 }
 
-ui_reorder_categories = [
-    "inpaint",
-    "sampler",
-    "checkboxes",
-    "hires_fix",
-    "dimensions",
-    "cfg",
-    "seed",
-    "batch",
-    "override_settings",
-    "scripts",
-]
-
 # https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json
 gradio_hf_hub_themes = [
     "gradio/glass",
@@ -77,6 +65,9 @@ cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or cmd_op
 
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = \
     (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
+
+devices.dtype = torch.float32 if cmd_opts.no_half else torch.float16
+devices.dtype_vae = torch.float32 if cmd_opts.no_half or cmd_opts.no_half_vae else torch.float16
 
 device = devices.device
 weight_load_location = None if cmd_opts.lowram else "cpu"
@@ -271,6 +262,10 @@ class OptionInfo:
         self.comment_after += f"<span class='info'>({info})</span>"
         return self
 
+    def html(self, html):
+        self.comment_after += html
+        return self
+
     def needs_restart(self):
         self.comment_after += " <span class='info'>(requires restart)</span>"
         return self
@@ -317,6 +312,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "grid_extended_filename": OptionInfo(False, "Add extended info (seed, prompt) to filename when saving grid"),
     "grid_only_if_multiple": OptionInfo(True, "Do not save grids consisting of one picture"),
     "grid_prevent_empty_spots": OptionInfo(False, "Prevent empty spots in grid (when set to autodetect)"),
+    "grid_zip_filename_pattern": OptionInfo("", "Archive filename pattern", component_args=hide_dirs).link("wiki", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Images-Filename-Name-and-Subdirectory"),
     "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
 
     "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
@@ -406,6 +402,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_vae_checkpoint_cache": OptionInfo(0, "VAE Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "SD VAE", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list).info("choose VAE model: Automatic = use one with same filename as checkpoint; None = use VAE from checkpoint"),
     "sd_vae_as_default": OptionInfo(True, "Ignore selected VAE for stable diffusion checkpoints that have their own .vae.pt next to them"),
+    "sd_unet": OptionInfo("Automatic", "SD Unet", gr.Dropdown, lambda: {"choices": shared_items.sd_unet_items()}, refresh=shared_items.refresh_unet_list).info("choose Unet model: Automatic = use one with same filename as checkpoint; None = use Unet from checkpoint"),
     "inpainting_mask_weight": OptionInfo(1.0, "Inpainting conditioning mask strength", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "initial_noise_multiplier": OptionInfo(1.0, "Noise multiplier for img2img", gr.Slider, {"minimum": 0.5, "maximum": 1.5, "step": 0.01}),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to img2img results to match original colors."),
@@ -417,17 +414,20 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "comma_padding_backtrack": OptionInfo(20, "Prompt word wrap length limit", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1}).info("in tokens - for texts shorter than specified, if they don't fit into 75 token limit, move them to the next 75 token chunk"),
     "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}).link("wiki", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#clip-skip").info("ignore last layers of CLIP nrtwork; 1 ignores none, 2 ignores one layer"),
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
+
     "sd_max_resolution": OptionInfo(2048, "Max resolution output for txt2img and img2img"),
     "ignore_overrides": OptionInfo([], "Ignore Overrides", gr.CheckboxGroup, lambda: {"choices": [x[0] for x in infotext_to_setting_name_mapping]}),
-    "randn_source": OptionInfo("GPU", "Random number generator source.", gr.Radio, {"choices": ["GPU", "CPU"]}).info("changes seeds drastically; use CPU to produce the same picture across different vidocard vendors"),
+    "randn_source": OptionInfo("GPU", "Random number generator source.", gr.Radio, {"choices": ["GPU", "CPU"]}).info("changes seeds drastically; use CPU to produce the same picture across different videocard vendors"),
 }))
 
 options_templates.update(options_section(('optimizations', "Optimizations"), {
     "cross_attention_optimization": OptionInfo("Automatic", "Cross attention optimization", gr.Dropdown, lambda: {"choices": shared_items.cross_attention_optimizations()}),
-    "s_min_uncond": OptionInfo(0, "Negative Guidance minimum sigma", gr.Slider, {"minimum": 0.0, "maximum": 4.0, "step": 0.01}).link("PR", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9177").info("skip negative prompt for some steps when the image is almost ready; 0=disable, higher=faster"),
+    "s_min_uncond": OptionInfo(0.0, "Negative Guidance minimum sigma", gr.Slider, {"minimum": 0.0, "maximum": 4.0, "step": 0.01}).link("PR", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9177").info("skip negative prompt for some steps when the image is almost ready; 0=disable, higher=faster"),
     "token_merging_ratio": OptionInfo(0.0, "Token merging ratio", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}).link("PR", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9256").info("0=disable, higher=faster"),
     "token_merging_ratio_img2img": OptionInfo(0.0, "Token merging ratio for img2img", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}).info("only applies if non-zero and overrides above"),
     "token_merging_ratio_hr": OptionInfo(0.0, "Token merging ratio for high-res pass", gr.Slider, {"minimum": 0.0, "maximum": 0.9, "step": 0.1}).info("only applies if non-zero and overrides above"),
+    "pad_cond_uncond": OptionInfo(False, "Pad prompt/negative prompt to be same length").info("improves performance when prompt and negative prompt have different lengths; changes seeds"),
+    "experimental_persistent_cond_cache": OptionInfo(False, "persistent cond cache").info("Experimental, keep cond caches across jobs, reduce overhead."),
 }))
 
 options_templates.update(options_section(('compatibility', "Compatibility"), {
@@ -436,6 +436,7 @@ options_templates.update(options_section(('compatibility', "Compatibility"), {
     "no_dpmpp_sde_batch_determinism": OptionInfo(False, "Do not make DPM++ SDE deterministic across different batch sizes."),
     "use_old_hires_fix_width_height": OptionInfo(False, "For hires fix, use width/height sliders to set final resolution rather than first pass (disables Upscale by, Resize width/height to)."),
     "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers."),
+    "hires_fix_use_firstpass_conds": OptionInfo(False, "For hires fix, calculate conds of second pass using extra networks of first pass."),
 }))
 
 options_templates.update(options_section(('interrogate', "Interrogate Options"), {
@@ -493,7 +494,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that appear at the top of page rather than in settings tab").needs_restart(),
     "ui_tab_order": OptionInfo([], "UI tab order", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
-    "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order").needs_restart(),
+    "ui_reorder_list": OptionInfo([], "txt2img/img2img UI item order", ui_components.DropdownMulti, lambda: {"choices": list(shared_items.ui_reorder_categories())}).info("selected items appear first").needs_restart(),
     "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires sampler selection").needs_restart(),
     "hires_fix_show_prompts": OptionInfo(False, "Hires fix: show hires prompt and negative prompt").needs_restart(),
     "quicksettings": OptionInfo("sd_model_checkpoint", "Quicksettings"),
@@ -505,13 +506,21 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_show_range_ticks": OptionInfo(True, "Show ticks for range sliders"),
     "ui_dispatch_input_release": OptionInfo(True, "Dispatch event change on release, for slider and input number components"), 
     "ui_no_slider_layout": OptionInfo(False, "No sliders compact layout mode"), 
+    "disable_token_counters": OptionInfo(False, "Disable prompt token counters").needs_restart(),
 }))
 
 options_templates.update(options_section(('infotext', "Infotext"), {
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "add_model_name_to_info": OptionInfo(True, "Add model name to generation information"),
     "add_version_to_infotext": OptionInfo(True, "Add program version to generation information"),
-    "disable_weights_auto_swap": OptionInfo(True, "When reading generation parameters from text into UI (from PNG info or pasted text), do not change the selected model/checkpoint."),
+    "disable_weights_auto_swap": OptionInfo(True, "Disregard checkpoint information from pasted infotext").info("when reading generation parameters from text into UI"),
+    "infotext_styles": OptionInfo("Apply if any", "Infer styles from prompts of pasted infotext", gr.Radio, {"choices": ["Ignore", "Apply", "Discard", "Apply if any"]}).info("when reading generation parameters from text into UI)").html("""<ul style='margin-left: 1.5em'>
+<li>Ignore: keep prompt and styles dropdown as it is.</li>
+<li>Apply: remove style text from prompt, always replace styles dropdown value with found styles (even if none are found).</li>
+<li>Discard: remove style text from prompt, keep styles dropdown as it is.</li>
+<li>Apply if any: remove style text from prompt; if any styles are found in prompt, put them into styles dropdown, otherwise keep it as it is.</li>
+</ul>"""),
+
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {
@@ -534,6 +543,10 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    'k_sched_type':  OptionInfo("Automatic", "scheduler type", gr.Dropdown, {"choices": ["Automatic", "karras", "exponential", "polyexponential"]}).info("lets you override the noise schedule for k-diffusion samplers; choosing Automatic disables the three parameters below"),
+    'sigma_min': OptionInfo(0.0, "sigma min", gr.Number).info("0 = default (~0.03); minimum noise strength for k-diffusion noise scheduler"),
+    'sigma_max': OptionInfo(0.0, "sigma max", gr.Number).info("0 = default (~14.6); maximum noise strength for k-diffusion noise schedule"),
+    'rho':  OptionInfo(0.0, "rho", gr.Number).info("0 = default (7 for karras, 1 for polyexponential); higher values result in a more steep noise schedule (decreases faster)"),
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}).info("ENSD; does not improve anything, just produces different results for ancestral samplers - only useful for reproducing images"),
     'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma").link("PR", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6044"),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
@@ -648,6 +661,10 @@ class Options:
         # 1.1.1 quicksettings list migration
         if self.data.get('quicksettings') is not None and self.data.get('quicksettings_list') is None:
             self.data['quicksettings_list'] = [i.strip() for i in self.data.get('quicksettings').split(',')]
+
+        # 1.4.0 ui_reorder
+        if isinstance(self.data.get('ui_reorder'), str) and self.data.get('ui_reorder') and "ui_reorder_list" not in self.data:
+            self.data['ui_reorder_list'] = [i.strip() for i in self.data.get('ui_reorder').split(',')]
 
         bad_settings = 0
         for k, v in self.data.items():

@@ -249,26 +249,56 @@ function confirm_clear_prompt(prompt, negative_prompt) {
 }
 
 
-var promptTokecountUpdateFuncs = {};
+var opts = {};
+onAfterUiUpdate(function() {
+    if (Object.keys(opts).length != 0) return;
 
-function recalculatePromptTokens(name) {
-  if (promptTokecountUpdateFuncs[name]) {
-      promptTokecountUpdateFuncs[name]();
-  }
-}
+    var json_elem = gradioApp().getElementById('settings_json');
+    if (json_elem == null) return;
 
-function recalculate_prompts_txt2img() {
-  recalculatePromptTokens('txt2img_prompt');
-  recalculatePromptTokens('txt2img_neg_prompt');
-  return Array.from(arguments);
-}
+    var textarea = json_elem.querySelector('textarea');
+    var jsdata = textarea.value;
+    opts = JSON.parse(jsdata);
 
-function recalculate_prompts_img2img() {
-  recalculatePromptTokens('img2img_prompt');
-  recalculatePromptTokens('img2img_neg_prompt');
-  return Array.from(arguments);
-}
+    executeCallbacks(optionsChangedCallbacks); /*global optionsChangedCallbacks*/
 
+    Object.defineProperty(textarea, 'value', {
+        set: function(newValue) {
+            var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+            var oldValue = valueProp.get.call(textarea);
+            valueProp.set.call(textarea, newValue);
+
+            if (oldValue != newValue) {
+                opts = JSON.parse(textarea.value);
+            }
+
+            executeCallbacks(optionsChangedCallbacks);
+        },
+        get: function() {
+            var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
+            return valueProp.get.call(textarea);
+        }
+    });
+
+    json_elem.parentElement.style.display = "none";
+
+    setupTokenCounters();
+
+    var show_all_pages = gradioApp().getElementById('settings_show_all_pages');
+    var settings_tabs = gradioApp().querySelector('#settings div');
+    if (show_all_pages && settings_tabs) {
+        settings_tabs.appendChild(show_all_pages);
+        show_all_pages.onclick = function() {
+            gradioApp().querySelectorAll('#settings > div').forEach(function(elem) {
+                if (elem.id == "settings_tab_licenses") {
+                    return;
+                }
+
+                elem.style.display = "block";
+            });
+        };
+    }
+});
 
 onOptionsChanged(function() {
   var elem = gradioApp().getElementById('sd_checkpoint_hash');
@@ -283,34 +313,6 @@ onOptionsChanged(function() {
 });
 
 let txt2img_textarea, img2img_textarea = undefined;
-let wait_time = 800;
-let token_timeouts = {};
-
-function update_txt2img_tokens(...args) {
-  update_token_counter("txt2img_token_button");
-  if (args.length == 2) {
-      return args[0];
-  }
-  return args;
-}
-
-function update_img2img_tokens(...args) {
-  update_token_counter(
-      "img2img_token_button"
-  );
-  if (args.length == 2) {
-      return args[0];
-  }
-  return args;
-}
-
-function update_token_counter(button_id) {
-  if (token_timeouts[button_id]) {
-      clearTimeout(token_timeouts[button_id]);
-  }
-  token_timeouts[button_id] = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
-}
-
 var desiredCheckpointName = null;
 function selectCheckpoint(name) {
   desiredCheckpointName = name;
