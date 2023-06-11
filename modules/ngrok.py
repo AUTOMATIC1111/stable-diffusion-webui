@@ -1,37 +1,29 @@
-from pyngrok import ngrok, conf, exception
+import ngrok
 
-def connect(token, port, region):
+# Connect to ngrok for ingress
+def connect(token, port, options):
     account = None
     if token is None:
         token = 'None'
     else:
         if ':' in token:
             # token = authtoken:username:password
-            account = token.split(':')[1] + ':' + token.split(':')[-1]
-            token = token.split(':')[0]
+            token, username, password = token.split(':', 2)
+            account = f"{username}:{password}"
 
-    config = conf.PyngrokConfig(
-        auth_token=token, region=region
-    )
-    
-    # Guard for existing tunnels
-    existing = ngrok.get_tunnels(pyngrok_config=config)
-    if existing:
-        for established in existing:
-            # Extra configuration in the case that the user is also using ngrok for other tunnels
-            if established.config['addr'][-4:] == str(port):
-                public_url = existing[0].public_url
-                print(f'ngrok has already been connected to localhost:{port}! URL: {public_url}\n'
-                    'You can use this link after the launch is complete.')
-                return
-    
+    # For all options see: https://github.com/ngrok/ngrok-py/blob/main/examples/ngrok-connect-full.py
+    if not options.get('authtoken_from_env'):
+        options['authtoken'] = token
+    if account:
+        options['basic_auth'] = account
+    if not options.get('session_metadata'):
+        options['session_metadata'] = 'stable-diffusion-webui'
+
+
     try:
-        if account is None:
-            public_url = ngrok.connect(port, pyngrok_config=config, bind_tls=True).public_url
-        else:
-            public_url = ngrok.connect(port, pyngrok_config=config, bind_tls=True, auth=account).public_url
-    except exception.PyngrokNgrokError:
-        print(f'Invalid ngrok authtoken, ngrok connection aborted.\n'
+        public_url = ngrok.connect(f"127.0.0.1:{port}", **options).url()
+    except Exception as e:
+        print(f'Invalid ngrok authtoken? ngrok connection aborted due to: {e}\n'
               f'Your token: {token}, get the right one on https://dashboard.ngrok.com/get-started/your-authtoken')
     else:
         print(f'ngrok connected to localhost:{port}! URL: {public_url}\n'

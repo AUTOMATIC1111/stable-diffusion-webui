@@ -8,34 +8,36 @@ Default theme
 
 ![anapnoe_uiux](https://user-images.githubusercontent.com/124302297/227973574-6003142d-0c7c-41c6-9966-0792a94549e9.png)
 
-## Features and to do list of ui-ux
-- [x] resizable viewport
-- [x] switchable viewports (DoubleClick on the split handler to swap views) option in settings for default position
-- [x] mobile navigation
-- [x] top header tabs (option setting)
-- [x] hidden tabs (option setting) no need to restart this is a different implementation
-- [x] drag and drop reordable quick settings offcanvas aside view
-- [x] drag and drop images to txt2img and img2img and import generation info parameters along with a preview image
-- [x] ignore - remove overrides when import [multiselect] (option setting)
-- [x] resizable cards for extra networks and number of rows (option setting)
-- [x] lazy loading alternative offcanvas aside view for extra networks (option setting)
-- [x] live preview image fit method (option setting)
-- [x] generated image fit method (option setting)
-- [x] max resolution output for txt2img and img2img (option setting)
-- [x] performant dispatch for gradio's range slider and input number field issue: https://github.com/gradio-app/gradio/issues/3204 (option setting) latest update uses only one instance clone to mediate for the release event
-- [x] ticks input range sliders (option setting)
-- [x] pacman preloader unified colors on reload ui
-- [x] frame border animation when generating images
-- [x] progress bar on top of the page always visible (when scroll for mobile)
-- [x] remix icons 
-- [ ] small arrows next to icons sent to inpaint, extras, img2img etc  
-- [x] style theme configurator extension to customize every aspect of theme in real time with cool global functions to change the hue / saturation / brightness or invert the theme colors
-- [x] pan and zoom in out functionality for sketch, inpaint, inpaint sketch
-- [x] fullscreen support for sketch, inpaint, inpaint sketch  
-- [ ] component gallery navigate to previous generations inside the txt2img, img2img interface
-- [ ] and auto load the current generation settings 
-- [x] better lightbox with zoom in-out mobile gestures support etc.. 
-- [ ] credits/about page display all 300+ contributors so far inside the UI 
+## Features of ui-ux
+- resizable viewport
+- switchable viewports (DoubleClick on the split handler to swap views) option in settings for default position
+- mobile navigation
+- top header tabs (option setting)
+- hidden tabs (option setting) no need to restart this is a different implementation
+- drag and drop reordable quick settings offcanvas aside view
+- drag and drop images to txt2img and img2img and import generation info parameters along with a preview image
+- ignore - remove overrides when import [multiselect] (option setting)
+- resizable cards for extra networks and number of rows (option setting)
+- lazy loading alternative offcanvas aside view for extra networks (option setting)
+- live preview image fit method (option setting)
+- generated image fit method (option setting)
+- max resolution output for txt2img and img2img (option setting)
+- performant dispatch for gradio's range slider and input number field issue: https://github.com/gradio-app/gradio/issues/3204 (option setting) latest update uses only one instance clone to mediate for the release event
+- ticks input range sliders (option setting)
+- pacman preloader unified colors on reload ui
+- frame border animation when generating images
+- progress bar on top of the page always visible (when scroll for mobile)
+- remix icons 
+- style theme configurator extension to customize every aspect of theme in real time with cool global functions to change the hue / saturation / brightness or invert the theme colors
+- pan and zoom in out functionality for sketch, inpaint, inpaint sketch
+- fullscreen support for sketch, inpaint, inpaint sketch  
+- better lightbox with zoom in-out mobile gestures support etc.. 
+
+## TODO
+- small arrows next to icons sent to inpaint, extras, img2img etc  
+- component gallery navigate to previous generations inside the txt2img, img2img interface
+- and auto load the current generation settings 
+- credits/about page display all 300+ contributors so far inside the UI 
 
 Quick Settings aside off-canvas view - drag and drop to custom sort your settings
 
@@ -73,9 +75,9 @@ Mobile 395px width
 - Prompt Matrix
 - Stable Diffusion Upscale
 - Attention, specify parts of text that the model should pay more attention to
-    - a man in a ((tuxedo)) - will pay more attention to tuxedo
-    - a man in a (tuxedo:1.21) - alternative syntax
-    - select text and press ctrl+up or ctrl+down to automatically adjust attention to selected text (code contributed by anonymous user)
+    - a man in a `((tuxedo))` - will pay more attention to tuxedo
+    - a man in a `(tuxedo:1.21)` - alternative syntax
+    - select text and press `Ctrl+Up` or `Ctrl+Down` (or `Command+Up` or `Command+Down` if you're on a MacOS) to automatically adjust attention to selected text (code contributed by anonymous user)
 - Loopback, run img2img processing multiple times
 - X/Y/Z plot, a way to draw a 3 dimensional plot of images with different parameters
 - Textual Inversion
@@ -161,7 +163,6 @@ Alternatively, use online services (like Google Colab):
 - [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
 ### Installation on Windows
-
 1. Install [Python 3.10.6](https://www.python.org/downloads/release/python-3106/) (Newer version of Python does not support torch), checking "Add Python to PATH".
 2. Install [git](https://git-scm.com/download/win).
 3. Download the stable-diffusion-webui-ux repository, for example by running `git clone https://github.com/anapnoe/stable-diffusion-webui-ux.git`.
@@ -221,5 +222,6 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Instruct pix2pix - Tim Brooks (star), Aleksander Holynski (star), Alexei A. Efros (no star) - https://github.com/timothybrooks/instruct-pix2pix
 - Security advice - RyotaK
 - UniPC sampler - Wenliang Zhao - https://github.com/wl-zhao/UniPC
+- TAESD - Ollin Boer Bohan - https://github.com/madebyollin/taesd
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)

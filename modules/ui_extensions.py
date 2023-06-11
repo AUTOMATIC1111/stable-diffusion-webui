@@ -1,6 +1,7 @@
 import json
 import os.path
 import sys
+import threading
 import time
 from datetime import datetime
 import traceback
@@ -51,9 +52,7 @@ def apply_and_restart(disable_list, update_list, disable_all):
     shared.opts.disabled_extensions = disabled
     shared.opts.disable_all_extensions = disable_all
     shared.opts.save(shared.config_filename)
-
-    shared.state.interrupt()
-    shared.state.need_restart = True
+    shared.state.request_restart()
 
 
 def save_config_state(name):
@@ -61,7 +60,8 @@ def save_config_state(name):
     if not name:
         name = "Config"
     current_config_state["name"] = name
-    filename = os.path.join(config_states_dir, datetime.now().strftime("%Y_%m_%d-%H_%M_%S") + "_" + name + ".json")
+    timestamp = datetime.now().strftime('%Y_%m_%d-%H_%M_%S')
+    filename = os.path.join(config_states_dir, f"{timestamp}_{name}.json")
     print(f"Saving backup of webui/extension state to {filename}.")
     with open(filename, "w", encoding="utf-8") as f:
         json.dump(current_config_state, f)
@@ -90,8 +90,7 @@ def restore_config_state(confirmed, config_state_name, restore_type):
     if restore_type == "webui" or restore_type == "both":
         config_states.restore_webui_config(config_state)
 
-    shared.state.interrupt()
-    shared.state.need_restart = True
+    shared.state.request_restart()
 
     return ""
 
@@ -126,7 +125,9 @@ def make_commit_link(commit_hash, remote, text=None):
     if text is None:
         text = commit_hash[:8]
     if remote.startswith("https://github.com/"):
-        href = os.path.join(remote, "commit", commit_hash)
+        if remote.endswith(".git"):
+            remote = remote[:-4]
+        href = remote + "/commit/" + commit_hash
         return f'<a href="{href}" target="_blank">{text}</a>'
     else:
         return text
@@ -139,7 +140,9 @@ def extension_table():
             <tr>
                 <th><abbr title="Use checkbox to enable the extension; it will be enabled or disabled when you click apply button">Extension</abbr></th>
                 <th>URL</th>
-                <th><abbr title="Extension version">Version</abbr></th>
+                <th>Branch</th>
+                <th>Version</th>
+                <th>Date</th>
                 <th><abbr title="Use checkbox to mark the extension for update; it will be updated when you click apply button">Update</abbr></th>
             </tr>
         </thead>
@@ -147,6 +150,7 @@ def extension_table():
     """
 
     for ext in extensions.extensions:
+        ext: extensions.Extension
         ext.read_info_from_repo()
 
         remote = f"""<a href="{html.escape(ext.remote or '')}" target="_blank">{html.escape("built-in" if ext.is_builtin else ext.remote or '')}</a>"""
@@ -168,7 +172,9 @@ def extension_table():
             <tr>
                 <td><label{style}><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
                 <td>{remote}</td>
+                <td>{ext.branch}</td>
                 <td>{version_link}</td>
+                <td>{time.asctime(time.gmtime(ext.commit_date))}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
             </tr>
     """
@@ -339,12 +345,12 @@ def install_extension_from_url(dirname, url, branch_name=None):
         shutil.rmtree(tmpdir, True)
         if not branch_name:
             # if no branch is specified, use the default branch
-            with git.Repo.clone_from(url, tmpdir) as repo:
+            with git.Repo.clone_from(url, tmpdir, filter=['blob:none']) as repo:
                 repo.remote().fetch()
                 for submodule in repo.submodules:
                     submodule.update()
         else:
-            with git.Repo.clone_from(url, tmpdir, branch=branch_name) as repo:
+            with git.Repo.clone_from(url, tmpdir, filter=['blob:none'], branch=branch_name) as repo:
                 repo.remote().fetch()
                 for submodule in repo.submodules:
                     submodule.update()
@@ -466,7 +472,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
                 <td>{html.escape(description)}<p class="info"><span class="date_added">Added: {html.escape(added)}</span></p></td>
                 <td>{install_code}</td>
             </tr>
-        
+
         """
 
         for tag in [x for x in extension_tags if x not in tags]:
@@ -483,13 +489,20 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
     return code, list(tags)
 
 
+def preload_extensions_git_metadata():
+    for extension in extensions.extensions:
+        extension.read_info_from_repo()
+
+
 def create_ui():
     import modules.ui
 
     config_states.list_config_states()
 
+    threading.Thread(target=preload_extensions_git_metadata).start()
+
     with gr.Blocks(analytics_enabled=False) as ui:
-        with gr.Tabs(elem_id="tabs_extensions") as tabs:
+        with gr.Tabs(elem_id="tabs_extensions"):
             with gr.TabItem("Installed", id="installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):
@@ -507,7 +520,8 @@ def create_ui():
 </span>
                     """
                 info = gr.HTML(html)
-                extensions_table = gr.HTML(lambda: extension_table())
+                extensions_table = gr.HTML('Loading...')
+                ui.load(fn=extension_table, inputs=[], outputs=[extensions_table])
 
                 apply.click(
                     fn=apply_and_restart,
@@ -534,9 +548,9 @@ def create_ui():
                     hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
                     sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", ], type="index")
 
-                with gr.Row(): 
+                with gr.Row():
                     search_extensions_text = gr.Text(label="Search").style(container=False)
-                   
+
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
 
@@ -578,9 +592,9 @@ def create_ui():
                 install_result = gr.HTML(elem_id="extension_install_result")
 
                 install_button.click(
-                    fn=modules.ui.wrap_gradio_call(install_extension_from_url, extra_outputs=[gr.update()]),
+                    fn=modules.ui.wrap_gradio_call(lambda *args: [gr.update(), *install_extension_from_url(*args)], extra_outputs=[gr.update(), gr.update()]),
                     inputs=[install_dirname, install_url, install_branch],
-                    outputs=[extensions_table, install_result],
+                    outputs=[install_url, extensions_table, install_result],
                 )
 
             with gr.TabItem("Backup/Restore"):
@@ -594,7 +608,8 @@ def create_ui():
                     config_save_button = gr.Button(value="Save Current Config")
 
                 config_states_info = gr.HTML("")
-                config_states_table = gr.HTML(lambda: update_config_states_table("Current"))
+                config_states_table = gr.HTML("Loading...")
+                ui.load(fn=update_config_states_table, inputs=[config_states_list], outputs=[config_states_table])
 
                 config_save_button.click(fn=save_config_state, inputs=[config_save_name], outputs=[config_states_list, config_states_info])
 
@@ -606,5 +621,6 @@ def create_ui():
                     inputs=[config_states_list],
                     outputs=[config_states_table],
                 )
+
 
     return ui

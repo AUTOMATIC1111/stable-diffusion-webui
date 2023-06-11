@@ -1,10 +1,9 @@
-import glob
 import os
 import re
 import torch
 from typing import Union
 
-from modules import shared, devices, sd_models, errors
+from modules import shared, devices, sd_models, errors, scripts, sd_hijack, hashes
 
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
 
@@ -77,9 +76,9 @@ class LoraOnDisk:
         self.name = name
         self.filename = filename
         self.metadata = {}
+        self.is_safetensors = os.path.splitext(filename)[1].lower() == ".safetensors"
 
-        _, ext = os.path.splitext(filename)
-        if ext.lower() == ".safetensors":
+        if self.is_safetensors:
             try:
                 self.metadata = sd_models.read_metadata_from_safetensors(filename)
             except Exception as e:
@@ -93,14 +92,44 @@ class LoraOnDisk:
             self.metadata = m
 
         self.ssmd_cover_images = self.metadata.pop('ssmd_cover_images', None)  # those are cover images and they are too big to display in UI as text
+        self.alias = self.metadata.get('ss_output_name', self.name)
+
+        self.hash = None
+        self.shorthash = None
+        self.set_hash(
+            self.metadata.get('sshs_model_hash') or
+            hashes.sha256_from_cache(self.filename, "lora/" + self.name, use_addnet_hash=self.is_safetensors) or
+            ''
+        )
+
+    def set_hash(self, v):
+        self.hash = v
+        self.shorthash = self.hash[0:12]
+
+        if self.shorthash:
+            available_lora_hash_lookup[self.shorthash] = self
+
+    def read_hash(self):
+        if not self.hash:
+            self.set_hash(hashes.sha256(self.filename, "lora/" + self.name, use_addnet_hash=self.is_safetensors) or '')
+
+    def get_alias(self):
+        if shared.opts.lora_preferred_name == "Filename" or self.alias.lower() in forbidden_lora_aliases:
+            return self.name
+        else:
+            return self.alias
 
 
 class LoraModule:
-    def __init__(self, name):
+    def __init__(self, name, lora_on_disk: LoraOnDisk):
         self.name = name
+        self.lora_on_disk = lora_on_disk
         self.multiplier = 1.0
         self.modules = {}
         self.mtime = None
+
+        self.mentioned_name = None
+        """the text that was used to add lora to prompt - can be either name or an alias"""
 
 
 class LoraUpDownModule:
@@ -126,11 +155,15 @@ def assign_lora_names_to_compvis_modules(sd_model):
     sd_model.lora_layer_mapping = lora_layer_mapping
 
 
-def load_lora(name, filename):
-    lora = LoraModule(name)
-    lora.mtime = os.path.getmtime(filename)
+def load_lora(name, lora_on_disk):
+    lora = LoraModule(name, lora_on_disk)
+    lora.mtime = os.path.getmtime(lora_on_disk.filename)
 
-    sd = sd_models.read_state_dict(filename)
+    sd = sd_models.read_state_dict(lora_on_disk.filename)
+
+    # this should not be needed but is here as an emergency fix for an unknown error people are experiencing in 1.2.0
+    if not hasattr(shared.sd_model, 'lora_layer_mapping'):
+        assign_lora_names_to_compvis_modules(shared.sd_model)
 
     keys_failed_to_match = {}
     is_sd2 = 'model_transformer_resblocks' in shared.sd_model.lora_layer_mapping
@@ -165,12 +198,14 @@ def load_lora(name, filename):
             module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
         elif type(sd_module) == torch.nn.MultiheadAttention:
             module = torch.nn.Linear(weight.shape[1], weight.shape[0], bias=False)
-        elif type(sd_module) == torch.nn.Conv2d:
+        elif type(sd_module) == torch.nn.Conv2d and weight.shape[2:] == (1, 1):
             module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (1, 1), bias=False)
+        elif type(sd_module) == torch.nn.Conv2d and weight.shape[2:] == (3, 3):
+            module = torch.nn.Conv2d(weight.shape[1], weight.shape[0], (3, 3), bias=False)
         else:
             print(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
             continue
-            assert False, f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}'
+            raise AssertionError(f"Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}")
 
         with torch.no_grad():
             module.weight.copy_(weight)
@@ -182,10 +217,10 @@ def load_lora(name, filename):
         elif lora_key == "lora_down.weight":
             lora_module.down = module
         else:
-            assert False, f'Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha'
+            raise AssertionError(f"Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha")
 
     if len(keys_failed_to_match) > 0:
-        print(f"Failed to match keys when loading Lora {filename}: {keys_failed_to_match}")
+        print(f"Failed to match keys when loading Lora {lora_on_disk.filename}: {keys_failed_to_match}")
 
     return lora
 
@@ -199,30 +234,41 @@ def load_loras(names, multipliers=None):
 
     loaded_loras.clear()
 
-    loras_on_disk = [available_loras.get(name, None) for name in names]
-    if any([x is None for x in loras_on_disk]):
+    loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
+    if any(x is None for x in loras_on_disk):
         list_available_loras()
 
-        loras_on_disk = [available_loras.get(name, None) for name in names]
+        loras_on_disk = [available_lora_aliases.get(name, None) for name in names]
+
+    failed_to_load_loras = []
 
     for i, name in enumerate(names):
         lora = already_loaded.get(name, None)
 
         lora_on_disk = loras_on_disk[i]
+
         if lora_on_disk is not None:
             if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
                 try:
-                    lora = load_lora(name, lora_on_disk.filename)
+                    lora = load_lora(name, lora_on_disk)
                 except Exception as e:
                     errors.display(e, f"loading Lora {lora_on_disk.filename}")
                     continue
 
+            lora.mentioned_name = name
+
+            lora_on_disk.read_hash()
+
         if lora is None:
+            failed_to_load_loras.append(name)
             print(f"Couldn't find Lora with name {name}")
             continue
 
         lora.multiplier = multipliers[i] if multipliers else 1.0
         loaded_loras.append(lora)
+
+    if len(failed_to_load_loras) > 0:
+        sd_hijack.model_hijack.comments.append("Failed to find Loras: " + ", ".join(failed_to_load_loras))
 
 
 def lora_calc_updown(lora, module, target):
@@ -232,12 +278,27 @@ def lora_calc_updown(lora, module, target):
 
         if up.shape[2:] == (1, 1) and down.shape[2:] == (1, 1):
             updown = (up.squeeze(2).squeeze(2) @ down.squeeze(2).squeeze(2)).unsqueeze(2).unsqueeze(3)
+        elif up.shape[2:] == (3, 3) or down.shape[2:] == (3, 3):
+            updown = torch.nn.functional.conv2d(down.permute(1, 0, 2, 3), up).permute(1, 0, 2, 3)
         else:
             updown = up @ down
 
         updown = updown * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
 
         return updown
+
+
+def lora_restore_weights_from_backup(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.MultiheadAttention]):
+    weights_backup = getattr(self, "lora_weights_backup", None)
+
+    if weights_backup is None:
+        return
+
+    if isinstance(self, torch.nn.MultiheadAttention):
+        self.in_proj_weight.copy_(weights_backup[0])
+        self.out_proj.weight.copy_(weights_backup[1])
+    else:
+        self.weight.copy_(weights_backup)
 
 
 def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.MultiheadAttention]):
@@ -264,12 +325,7 @@ def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.Mu
         self.lora_weights_backup = weights_backup
 
     if current_names != wanted_names:
-        if weights_backup is not None:
-            if isinstance(self, torch.nn.MultiheadAttention):
-                self.in_proj_weight.copy_(weights_backup[0])
-                self.out_proj.weight.copy_(weights_backup[1])
-            else:
-                self.weight.copy_(weights_backup)
+        lora_restore_weights_from_backup(self)
 
         for lora in loaded_loras:
             module = lora.modules.get(lora_layer_name, None)
@@ -297,15 +353,48 @@ def lora_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn.Mu
 
             print(f'failed to calculate lora weights for layer {lora_layer_name}')
 
-        setattr(self, "lora_current_names", wanted_names)
+        self.lora_current_names = wanted_names
+
+
+def lora_forward(module, input, original_forward):
+    """
+    Old way of applying Lora by executing operations during layer's forward.
+    Stacking many loras this way results in big performance degradation.
+    """
+
+    if len(loaded_loras) == 0:
+        return original_forward(module, input)
+
+    input = devices.cond_cast_unet(input)
+
+    lora_restore_weights_from_backup(module)
+    lora_reset_cached_weight(module)
+
+    res = original_forward(module, input)
+
+    lora_layer_name = getattr(module, 'lora_layer_name', None)
+    for lora in loaded_loras:
+        module = lora.modules.get(lora_layer_name, None)
+        if module is None:
+            continue
+
+        module.up.to(device=devices.device)
+        module.down.to(device=devices.device)
+
+        res = res + module.up(module.down(input)) * lora.multiplier * (module.alpha / module.up.weight.shape[1] if module.alpha else 1.0)
+
+    return res
 
 
 def lora_reset_cached_weight(self: Union[torch.nn.Conv2d, torch.nn.Linear]):
-    setattr(self, "lora_current_names", ())
-    setattr(self, "lora_weights_backup", None)
+    self.lora_current_names = ()
+    self.lora_weights_backup = None
 
 
 def lora_Linear_forward(self, input):
+    if shared.opts.lora_functional:
+        return lora_forward(self, input, torch.nn.Linear_forward_before_lora)
+
     lora_apply_weights(self)
 
     return torch.nn.Linear_forward_before_lora(self, input)
@@ -318,6 +407,9 @@ def lora_Linear_load_state_dict(self, *args, **kwargs):
 
 
 def lora_Conv2d_forward(self, input):
+    if shared.opts.lora_functional:
+        return lora_forward(self, input, torch.nn.Conv2d_forward_before_lora)
+
     lora_apply_weights(self)
 
     return torch.nn.Conv2d_forward_before_lora(self, input)
@@ -343,24 +435,68 @@ def lora_MultiheadAttention_load_state_dict(self, *args, **kwargs):
 
 def list_available_loras():
     available_loras.clear()
+    available_lora_aliases.clear()
+    forbidden_lora_aliases.clear()
+    available_lora_hash_lookup.clear()
+    forbidden_lora_aliases.update({"none": 1, "Addams": 1})
 
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
 
-    candidates = \
-        glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.pt'), recursive=True) + \
-        glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.safetensors'), recursive=True) + \
-        glob.glob(os.path.join(shared.cmd_opts.lora_dir, '**/*.ckpt'), recursive=True)
-
+    candidates = list(shared.walk_files(shared.cmd_opts.lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
     for filename in sorted(candidates, key=str.lower):
         if os.path.isdir(filename):
             continue
 
         name = os.path.splitext(os.path.basename(filename))[0]
+        entry = LoraOnDisk(name, filename)
 
-        available_loras[name] = LoraOnDisk(name, filename)
+        available_loras[name] = entry
+
+        if entry.alias in available_lora_aliases:
+            forbidden_lora_aliases[entry.alias.lower()] = 1
+
+        available_lora_aliases[name] = entry
+        available_lora_aliases[entry.alias] = entry
+
+
+re_lora_name = re.compile(r"(.*)\s*\([0-9a-fA-F]+\)")
+
+
+def infotext_pasted(infotext, params):
+    if "AddNet Module 1" in [x[1] for x in scripts.scripts_txt2img.infotext_fields]:
+        return  # if the other extension is active, it will handle those fields, no need to do anything
+
+    added = []
+
+    for k in params:
+        if not k.startswith("AddNet Model "):
+            continue
+
+        num = k[13:]
+
+        if params.get("AddNet Module " + num) != "LoRA":
+            continue
+
+        name = params.get("AddNet Model " + num)
+        if name is None:
+            continue
+
+        m = re_lora_name.match(name)
+        if m:
+            name = m.group(1)
+
+        multiplier = params.get("AddNet Weight A " + num, "1.0")
+
+        added.append(f"<lora:{name}:{multiplier}>")
+
+    if added:
+        params["Prompt"] += "\n" + "".join(added)
 
 
 available_loras = {}
+available_lora_aliases = {}
+available_lora_hash_lookup = {}
+forbidden_lora_aliases = {}
 loaded_loras = []
 
 list_available_loras()

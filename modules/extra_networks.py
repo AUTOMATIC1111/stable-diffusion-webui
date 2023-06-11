@@ -14,9 +14,23 @@ def register_extra_network(extra_network):
     extra_network_registry[extra_network.name] = extra_network
 
 
+def register_default_extra_networks():
+    from modules.extra_networks_hypernet import ExtraNetworkHypernet
+    register_extra_network(ExtraNetworkHypernet())
+
+
 class ExtraNetworkParams:
     def __init__(self, items=None):
         self.items = items or []
+        self.positional = []
+        self.named = {}
+
+        for item in self.items:
+            parts = item.split('=', 2)
+            if len(parts) == 2:
+                self.named[parts[0]] = parts[1]
+            else:
+                self.positional.append(item)
 
 
 class ExtraNetwork:
@@ -91,7 +105,7 @@ def deactivate(p, extra_network_data):
     """call deactivate for extra networks in extra_network_data in specified order, then call
     deactivate for all remaining registered networks"""
 
-    for extra_network_name, extra_network_args in extra_network_data.items():
+    for extra_network_name in extra_network_data:
         extra_network = extra_network_registry.get(extra_network_name, None)
         if extra_network is None:
             continue

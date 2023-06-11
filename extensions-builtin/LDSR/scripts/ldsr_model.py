@@ -7,7 +7,8 @@ from basicsr.utils.download_util import load_file_from_url
 from modules.upscaler import Upscaler, UpscalerData
 from ldsr_model_arch import LDSR
 from modules import shared, script_callbacks
-import sd_hijack_autoencoder, sd_hijack_ddpm_v1
+import sd_hijack_autoencoder  # noqa: F401
+import sd_hijack_ddpm_v1  # noqa: F401
 
 
 class UpscalerLDSR(Upscaler):
@@ -44,9 +45,9 @@ class UpscalerLDSR(Upscaler):
         if local_safetensors_path is not None and os.path.exists(local_safetensors_path):
             model = local_safetensors_path
         else:
-            model = local_ckpt_path if local_ckpt_path is not None else load_file_from_url(url=self.model_url, model_dir=self.model_path, file_name="model.ckpt", progress=True)
+            model = local_ckpt_path if local_ckpt_path is not None else load_file_from_url(url=self.model_url, model_dir=self.model_download_path, file_name="model.ckpt", progress=True)
 
-        yaml = local_yaml_path if local_yaml_path is not None else load_file_from_url(url=self.yaml_url, model_dir=self.model_path, file_name="project.yaml", progress=True)
+        yaml = local_yaml_path if local_yaml_path is not None else load_file_from_url(url=self.yaml_url, model_dir=self.model_download_path, file_name="project.yaml", progress=True)
 
         try:
             return LDSR(model, yaml)

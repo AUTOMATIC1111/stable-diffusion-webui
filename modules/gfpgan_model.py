@@ -78,7 +78,7 @@ def setup_model(dirname):
 
     try:
         from gfpgan import GFPGANer
-        from facexlib import detection, parsing
+        from facexlib import detection, parsing  # noqa: F401
         global user_path
         global have_gfpgan
         global gfpgan_constructor

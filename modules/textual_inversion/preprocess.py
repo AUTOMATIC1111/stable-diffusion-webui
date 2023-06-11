@@ -1,13 +1,9 @@
 import os
 from PIL import Image, ImageOps
 import math
-import platform
-import sys
 import tqdm
-import time
 
 from modules import paths, shared, images, deepbooru
-from modules.shared import opts, cmd_opts
 from modules.textual_inversion import autocrop
 
 
@@ -63,9 +59,9 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
     image.save(os.path.join(params.dstdir, f"{basename}.png"))
 
     if params.preprocess_txt_action == 'prepend' and existing_caption:
-        caption = existing_caption + ' ' + caption
+        caption = f"{existing_caption} {caption}"
     elif params.preprocess_txt_action == 'append' and existing_caption:
-        caption = caption + ' ' + existing_caption
+        caption = f"{caption} {existing_caption}"
     elif params.preprocess_txt_action == 'copy' and existing_caption:
         caption = existing_caption
 
@@ -129,7 +125,7 @@ def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, thr
         default=None
     )
     return wh and center_crop(image, *wh)
-    
+
 
 def preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None):
     width = process_width
@@ -174,7 +170,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
         params.src = filename
 
         existing_caption = None
-        existing_caption_filename = os.path.splitext(filename)[0] + '.txt'
+        existing_caption_filename = f"{os.path.splitext(filename)[0]}.txt"
         if os.path.exists(existing_caption_filename):
             with open(existing_caption_filename, 'r', encoding="utf8") as file:
                 existing_caption = file.read()
