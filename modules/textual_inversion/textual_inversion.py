@@ -436,7 +436,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
             shared.log.info("No saved optimizer exists in checkpoint")
 
     if shared.cmd_opts.use_ipex:
-        scaler = ipex.cpu.autocast._grad_scaler.GradScaler() #scaler.step(optimizer): PI_ERROR_INVALID_ARG_VALUE # pylint: disable=protected-access
+        #scaler = ipex.cpu.autocast._grad_scaler.GradScaler()
         shared.sd_model = shared.sd_model.to(dtype=torch.float32)
         shared.sd_model.train()
         shared.sd_model, optimizer = ipex.optimize(shared.sd_model, optimizer=optimizer, dtype=devices.dtype)
@@ -497,14 +497,20 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     del x
                     _loss_step += loss.item()
 
-                scaler.scale(loss).backward()
+                if shared.cmd_opts.use_ipex:
+                    loss.backward()
+                else:
+                    scaler.scale(loss).backward()
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
                 if clip_grad:
                     clip_grad(embedding.vec, clip_grad_sched.learn_rate)
-                scaler.step(optimizer)
-                scaler.update()
+                if shared.cmd_opts.use_ipex:
+                    optimizer.step()
+                else:
+                    scaler.step(optimizer)
+                    scaler.update()
                 embedding.step += 1
                 pbar.update()
                 optimizer.zero_grad(set_to_none=True)
@@ -527,6 +533,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 if images_dir is not None and steps_done % create_image_every == 0:
                     forced_filename = f'{embedding_name}-{steps_done}'
                     last_saved_image = os.path.join(images_dir, forced_filename)
+                    if shared.cmd_opts.use_ipex:
+                        shared.sd_model = shared.sd_model.to(dtype=devices.dtype)
                     shared.sd_model.first_stage_model.to(devices.device)
 
                     p = processing.StableDiffusionProcessingTxt2Img(
@@ -554,6 +562,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     preview_text = p.prompt
                     processed = processing.process_images(p)
                     image = processed.images[0] if len(processed.images) > 0 else None
+
+                    if shared.cmd_opts.use_ipex:
+                        shared.sd_model = shared.sd_model.to(dtype=torch.float32)
 
                     if unload:
                         shared.sd_model.first_stage_model.to(devices.cpu)
