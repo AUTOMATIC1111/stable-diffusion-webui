@@ -13,12 +13,12 @@ There are some configuration options that you may want apply to web UI, in order
 ```bat
 set COMMANDLINE_ARGS=--autolaunch --update-check
 ```
-> Each individual argument need to separated by a space, the above example well configure web UI to auto launch the browser page after it completes loading, and also chack for new version of web UI at launch.
+> Each individual argument need to separated by a space, the above example well configure web UI to auto launch the browser page after it completes loading, and also check for new version of web UI at launch.
 
 ### Troubleshooting
 The default configuration of web UI should run on most modern GPU, but in some cases you may need some extra arguments to allow it to work properly.
 
-1. For GPU with less ammounts of VRAM, you may need `--medvram` or `--lowvram`, these optimizations reduces VRAM requirements but sacrifice performance. If you do not have enough VRAM, web UI may refuse to launch or fail to generate images due to an out-of-memory error. The amount of VRAM required largely depends the desired image resolution, for more details see [Troubleshooting](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Troubleshooting).
+1. For GPU with less amounts of VRAM, you may need `--medvram` or `--lowvram`, these optimizations reduces VRAM requirements but sacrifice performance. If you do not have enough VRAM, web UI may refuse to launch or fail to generate images due to an out-of-memory error. The amount of VRAM required largely depends the desired image resolution, for more details see [Troubleshooting](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Troubleshooting).
 > the [Tiled VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111) extension can help to reduce the VRAM requirement.
 
 2. If your generated results in resulting in a black or green image, try adding `--precision full` and `--no-half`. 
@@ -27,8 +27,8 @@ The default configuration of web UI should run on most modern GPU, but in some c
 
 ### Extra Options
 1. There are several cross attenuation optimization methods such as `--xformers` or `--opt-sdp-attention`, these can drastically increase performance see [Optimizations](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations) for more details, experiment with different options as different hardware are suited for different optimizations. If you wish to measure your system's performance, try using [sd-extension-system-info](https://github.com/vladmandic/sd-extension-system-info) extension which features a benchmarking tool and a [database](https://vladmandic.github.io/sd-extension-system-info/pages/benchmark.html) of user submitted results.
-2. add `--autolaunch` to heve web UI launch the web browser altomaticly after web UI has started up.
-3. add `--update-check` will notify you when theres a new version of webui.
+2. add `--autolaunch` to have web UI launch the web browser automatically after web UI has started up.
+3. add `--update-check` will notify you when there's a new version of webui.
 4. See [Command Line Arguments and Settings
 ](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings) for more configuration options.
 
@@ -334,6 +334,6 @@ At this point, the instructions for the Manual installation may be applied start
         ```
 - Alternative defaults worth trying out:
     1. Try **euler a** (Ancestral Euler) with higher **Sampling Steps** ex: 40 or others with 100. 
-    2. Set "Settings > User interface > Show image creation progress every N sampling steps" to 1 and pick a deterministic **Seed** value. Can visually see how image defusion happens and record a .gif with [ScreenToGif](https://github.com/NickeManarin/ScreenToGif).
+    2. Set "Settings > User interface > Show image creation progress every N sampling steps" to 1 and pick a deterministic **Seed** value. Can visually see how image diffusion happens and record a .gif with [ScreenToGif](https://github.com/NickeManarin/ScreenToGif).
     3. Use **Restore faces**. Generally, better results, but that quality comes at the cost of speed.
 
