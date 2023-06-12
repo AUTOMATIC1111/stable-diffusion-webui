@@ -2,6 +2,7 @@ import ssl
 import time
 import datetime
 import logging
+import asyncio
 from asyncio.exceptions import CancelledError
 import anyio
 import starlette
@@ -36,23 +37,28 @@ def setup_middleware(app: FastAPI, cmd_opts):
 
     @app.middleware("http")
     async def log_and_time(req: Request, call_next):
-        ts = time.time()
-        res: Response = await call_next(req)
-        duration = str(round(time.time() - ts, 4))
-        res.headers["X-Process-Time"] = duration
-        endpoint = req.scope.get('path', 'err')
-        if cmd_opts.api_log and endpoint.startswith('/sdapi'):
-            log.info('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format( # pylint: disable=consider-using-f-string, logging-format-interpolation
-                t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
-                code = res.status_code,
-                ver = req.scope.get('http_version', '0.0'),
-                cli = req.scope.get('client', ('0:0.0.0', 0))[0],
-                prot = req.scope.get('scheme', 'err'),
-                method = req.scope.get('method', 'err'),
-                endpoint = endpoint,
-                duration = duration,
-            ))
-        return res
+        try:
+            ts = time.time()
+            res: Response = await call_next(req)
+            duration = str(round(time.time() - ts, 4))
+            res.headers["X-Process-Time"] = duration
+            endpoint = req.scope.get('path', 'err')
+            if cmd_opts.api_log and endpoint.startswith('/sdapi'):
+                log.info('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format( # pylint: disable=consider-using-f-string, logging-format-interpolation
+                    t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                    code = res.status_code,
+                    ver = req.scope.get('http_version', '0.0'),
+                    cli = req.scope.get('client', ('0:0.0.0', 0))[0],
+                    prot = req.scope.get('scheme', 'err'),
+                    method = req.scope.get('method', 'err'),
+                    endpoint = endpoint,
+                    duration = duration,
+                ))
+            return res
+        except CancelledError:
+            log.warning('WebSocket closed (ignore asyncio.exceptions.CancelledError)')
+        except BaseException as e:
+            return handle_exception(req, e)
 
     def handle_exception(req: Request, e: Exception):
         err = {
@@ -65,15 +71,6 @@ def setup_middleware(app: FastAPI, cmd_opts):
             log.error(f"API error: {req.method}: {req.url} {err}")
             errors.display(e, 'HTTP API', [anyio, fastapi, uvicorn, starlette])
         return JSONResponse(status_code=vars(e).get('status_code', 500), content=jsonable_encoder(err))
-
-    @app.middleware("http")
-    async def exception_handling(req: Request, call_next):
-        try:
-            return await call_next(req)
-        except CancelledError:
-            log.warning('WebSocket closed (ignore asyncio.exceptions.CancelledError)')
-        except BaseException as e:
-            return handle_exception(req, e)
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(req: Request, e: HTTPException):

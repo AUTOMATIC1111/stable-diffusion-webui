@@ -241,12 +241,13 @@ def load_scripts():
             register_scripts_from_module(script_module, scriptfile)
         except Exception as e:
             errors.display(e, f'Loading script: {scriptfile.filename}')
-        current_basedir = paths.script_path
-        time_load[scriptfile.basedir] = time_load.get(scriptfile.basedir, 0) + (time.time()-t0)
-    sys.path = syspath
-    current_basedir = paths.script_path
-    time_load = [f'{os.path.basename(k)}:{round(v,3)}s' for (k,v) in time_load.items() if v > 0.05]
-    log.debug(f'Scripts load: {time_load}')
+        finally:
+            current_basedir = paths.script_path
+            time_load[scriptfile.basedir] = time_load.get(scriptfile.basedir, 0) + (time.time()-t0)
+            sys.path = syspath
+
+    time_summary = [f'{os.path.basename(k)}:{round(v,3)}s' for (k,v) in time_load.items() if v > 0.05]
+    log.debug(f'Scripts load: {time_summary}')
 
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):

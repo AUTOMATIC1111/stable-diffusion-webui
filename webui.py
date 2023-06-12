@@ -179,13 +179,23 @@ def async_policy():
     _BasePolicy = asyncio.WindowsSelectorEventLoopPolicy if sys.platform == "win32" and hasattr(asyncio, "WindowsSelectorEventLoopPolicy") else asyncio.DefaultEventLoopPolicy
 
     class AnyThreadEventLoopPolicy(_BasePolicy):
+        def handle_exception(self, context):
+            msg = context.get("exception", context["message"])
+            log.error(f"AsyncIO loop: {msg}")
+
         def get_event_loop(self) -> asyncio.AbstractEventLoop:
             try:
-                return super().get_event_loop()
+                self.loop = super().get_event_loop()
             except (RuntimeError, AssertionError):
-                loop = self.new_event_loop()
-                self.set_event_loop(loop)
-                return loop
+                self.loop = self.new_event_loop()
+                self.set_event_loop(self.loop)
+            return self.loop
+
+        def __init__(self):
+            super().__init__()
+            self.loop = self.get_event_loop()
+            self.loop.set_exception_handler(self.handle_exception)
+            log.debug(f"Event loop: {self.loop}")
 
     asyncio.set_event_loop_policy(AnyThreadEventLoopPolicy())
 
