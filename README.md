@@ -2,7 +2,7 @@
 ![Last Commit](https://img.shields.io/github/last-commit/vladmandic/automatic?style=flat-square&svg=true)
 ![License](https://img.shields.io/github/license/vladmandic/automatic?style=flat-square&svg=true)
 ![GitHub Status Checks](https://img.shields.io/github/checks-status/vladmandic/automatic/main?style=flat-square&svg=true)
-
+![Discord](https://img.shields.io/discord/1101998836328697867)
 
 # SD.Next
 
