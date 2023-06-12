@@ -248,9 +248,12 @@ def load_loras(names, multipliers=None):
         lora_on_disk = loras_on_disk[i]
 
         if lora_on_disk is not None:
+            if lora is None:
+                lora=cached_loras.get(name,None)    
             if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
                 try:
                     lora = load_lora(name, lora_on_disk)
+                    cached_loras[lora.name] = lora
                 except Exception as e:
                     errors.display(e, f"loading Lora {lora_on_disk.filename}")
                     continue
@@ -498,5 +501,6 @@ available_lora_aliases = {}
 available_lora_hash_lookup = {}
 forbidden_lora_aliases = {}
 loaded_loras = []
+cached_loras={}
 
 list_available_loras()
