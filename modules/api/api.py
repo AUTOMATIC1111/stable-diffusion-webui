@@ -208,8 +208,11 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
-        self.add_api_route("/sdapi/v1/quit-webui", self.quit_webui, methods=["POST"])
-        self.add_api_route("/sdapi/v1/restart-webui", self.restart_webui, methods=["POST"])
+
+        if shared.cmd_opts.add_stop_route:
+            self.add_api_route("/sdapi/v1/quit-webui", self.quit_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/restart-webui", self.restart_webui, methods=["POST"])
+            self.add_api_route("/_stop", self.stop_route, methods=["POST"])
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -724,3 +727,7 @@ class Api:
     def restart_webui(self):
         if restart.is_restartable():
             restart.restart_program()
+
+    def stop_route(request):
+        shared.state.server_command = "stop"
+        return Response("Stopping.")
