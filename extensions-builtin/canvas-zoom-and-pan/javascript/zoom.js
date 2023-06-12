@@ -227,8 +227,6 @@ onUiLoaded(async() => {
         hotkeysConfigOpts
     );
 
-    console.log(hotkeysConfig);
-
     let isMoving = false;
     let mouseX, mouseY;
     let activeElement;
