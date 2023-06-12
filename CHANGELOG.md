@@ -12,11 +12,13 @@
   which was preventing some optimizations to take effect  
 - updated **settings** tab functionality, thanks @gegell  
 - **launcher** will now warn if application owned files are modified  
+  you are free to add any user files, but do not modify app files unless you're sure in what you're doing  
 - add more profiling for scripts/extensions so you can see what takes time  
   this applies both to initial load as well as execution  
 - experimental `sd_model_dict` setting which allows you to load model dictionary  
   from one model and apply weights from another model specified in `sd_model_checkpoint`  
   results? who am i to judge :)
+
 
 ## Update for 06/05/2023
 
