@@ -430,7 +430,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
             shared.log.info("No saved optimizer exists in checkpoint")
 
     if shared.cmd_opts.use_ipex:
-        pass
+        shared.sd_model.train()
+        shared.sd_model, optimizer = torch.xpu.optimize(shared.sd_model.to(dtype=torch.float32), optimizer=optimizer, dtype=devices.dtype) 
     else:
         scaler = torch.cuda.amp.GradScaler()
 

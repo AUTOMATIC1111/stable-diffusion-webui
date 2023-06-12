@@ -590,7 +590,8 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
             print(e)
 
     if shared.cmd_opts.use_ipex:
-        pass
+        shared.sd_model.train()
+        shared.sd_model, optimizer = torch.xpu.optimize(shared.sd_model.to(dtype=torch.float32), optimizer=optimizer, dtype=devices.dtype) 
     else:
         scaler = torch.cuda.amp.GradScaler()
 
