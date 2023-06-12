@@ -1,7 +1,7 @@
 /* generic html tags */
 :root { --font: system-ui, "Segoe UI", "Roboto", "sans-serif"; }
 html { font-size: 16px; }
-body, button, input, select, textarea { font-family: var(--font); overflow-x: hidden; }
+body, button, input, select, textarea { font-family: var(--font);}
 button { font-size: 1.2rem; }
 img { background-color: black; }
 input[type=range] { height: 18px; appearance: none; margin-top: 0; min-width: 160px; background-color: black; width: 100%; background: transparent; }

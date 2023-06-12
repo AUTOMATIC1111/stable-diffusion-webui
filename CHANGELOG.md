@@ -6,6 +6,7 @@
   this is 1st stage of the process, more to come...  
   if you want to join the effort, see <https://github.com/vladmandic/automatic/discussions/1246>
 - new localization and hints engine  
+  how hints are displayed can be selected in settings -> ui  
 - reworked **installer** sequence  
   as some extensions are loading packages directly from their preload sequence  
   which was preventing some optimizations to take effect  

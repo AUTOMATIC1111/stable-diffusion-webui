@@ -199,6 +199,26 @@ div#extras_scale_to_tab div.form{
     overflow-wrap: break-word;
 }
 
+.tooltip {
+  display: block;
+  position: fixed;
+  top: 1em;
+  right: 1em;
+  padding: 0.5em;
+  background: var(--input-background-fill);
+  color: var(--body-text-color);
+  border: 1pt solid var(--button-primary-border-color);
+  width: 22em;
+  min-height: 1.3em;
+  font-size: 0.8em;
+  transition: opacity 0.2s ease-in;
+  opacity: 0;
+}
+
+.tooltip-show {
+  opacity: 1;
+}
+
 /* settings */
 #quicksettings {
     width: fit-content;
@@ -228,16 +248,16 @@ div#extras_scale_to_tab div.form{
     flex: 100000 0 75%;
 }
 
-#settings > div.tab-content > div{
+#settings > div.tab-content > div {
     border: none;
     padding: 0;
 }
 
-#settings > div.tab-nav{
+#settings > div.tab-nav {
     display: grid;
     grid-template-columns: repeat(auto-fill, .3em minmax(10em, 1fr));
     flex: 1 0 auto;
-    width: 11em;
+    width: 12em;
     align-self: flex-start;
     gap: var(--spacing-md);
 }
