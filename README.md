@@ -65,7 +65,7 @@ Below is partial list of all available parameters, run `webui --help` for the fu
 
 - To avoid having this repo rely just on me, I'd love to have additional maintainers with full admin rights. If you're interested, ping me!  
 - In addition to general cross-platform code, desire is to have a lead for each of the main platforms
-This should be fully cross-platform, but I would really love to have additional contibutors and/or maintainers to join and help lead the effords on different platforms  
+This should be fully cross-platform, but I would really love to have additional contibutors and/or maintainers to join and help lead the efforts on different platforms  
 
 ### **Goals**
 
@@ -95,7 +95,7 @@ General goals:
 
 ### **Docs**
 
-- [Radme](README.md)
+- [ReadMe](README.md)
 - [ToDo](TODO.md)  
 - [Changelog](CHANGELOG.md)
 - [CLI Tools](cli/README.md)
