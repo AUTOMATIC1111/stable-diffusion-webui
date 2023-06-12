@@ -8,10 +8,6 @@ from statistics import stdev, mean
 from rich import progress
 import tqdm
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
-    pass
 from torch import einsum
 from torch.nn.init import normal_, xavier_normal_, xavier_uniform_, kaiming_normal_, kaiming_uniform_, zeros_
 from einops import rearrange, repeat
@@ -594,10 +590,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
             print(e)
 
     if shared.cmd_opts.use_ipex:
-        #scaler = ipex.cpu.autocast._grad_scaler.GradScaler()
-        shared.sd_model = shared.sd_model.to(dtype=torch.float32)
-        shared.sd_model.train()
-        shared.sd_model, optimizer = ipex.optimize(shared.sd_model, optimizer=optimizer, dtype=devices.dtype)           
+        pass
     else:
         scaler = torch.cuda.amp.GradScaler()
 
@@ -724,8 +717,6 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                         cuda_rng_state = torch.xpu.get_rng_state_all()
                     elif torch.cuda.is_available():
                         cuda_rng_state = torch.cuda.get_rng_state_all()
-                    if shared.cmd_opts.use_ipex:
-                        shared.sd_model = shared.sd_model.to(dtype=devices.dtype)
                     shared.sd_model.cond_stage_model.to(devices.device)
                     shared.sd_model.first_stage_model.to(devices.device)
 
@@ -756,9 +747,6 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                     processed = processing.process_images(p)
                     image = processed.images[0] if len(processed.images) > 0 else None
-
-                    if shared.cmd_opts.use_ipex:
-                        shared.sd_model = shared.sd_model.to(dtype=torch.float32)
 
                     if unload:
                         shared.sd_model.cond_stage_model.to(devices.cpu)

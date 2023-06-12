@@ -3,10 +3,6 @@ import html
 import csv
 from collections import namedtuple
 import torch
-try:
-    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
-    pass
 from tqdm import tqdm
 import safetensors.torch
 import numpy as np
@@ -436,10 +432,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
             shared.log.info("No saved optimizer exists in checkpoint")
 
     if shared.cmd_opts.use_ipex:
-        #scaler = ipex.cpu.autocast._grad_scaler.GradScaler()
-        shared.sd_model = shared.sd_model.to(dtype=torch.float32)
-        shared.sd_model.train()
-        shared.sd_model, optimizer = ipex.optimize(shared.sd_model, optimizer=optimizer, dtype=devices.dtype)
+        pass
     else:
         scaler = torch.cuda.amp.GradScaler()
 
@@ -533,8 +526,6 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 if images_dir is not None and steps_done % create_image_every == 0:
                     forced_filename = f'{embedding_name}-{steps_done}'
                     last_saved_image = os.path.join(images_dir, forced_filename)
-                    if shared.cmd_opts.use_ipex:
-                        shared.sd_model = shared.sd_model.to(dtype=devices.dtype)
                     shared.sd_model.first_stage_model.to(devices.device)
 
                     p = processing.StableDiffusionProcessingTxt2Img(
@@ -562,9 +553,6 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     preview_text = p.prompt
                     processed = processing.process_images(p)
                     image = processed.images[0] if len(processed.images) > 0 else None
-
-                    if shared.cmd_opts.use_ipex:
-                        shared.sd_model = shared.sd_model.to(dtype=torch.float32)
 
                     if unload:
                         shared.sd_model.first_stage_model.to(devices.cpu)
