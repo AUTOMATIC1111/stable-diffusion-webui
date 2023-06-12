@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 06/11/2023
+## Update for 06/12/2023
 
 - updated ui labels and hints to improve clarity and provide some extra info  
   this is 1st stage of the process, more to come...  
