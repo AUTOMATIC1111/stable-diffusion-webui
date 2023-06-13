@@ -180,6 +180,7 @@ class App(FastAPI):
             token = request.cookies.get("access-token") or request.cookies.get(
                 "access-token-unsecure"
             )
+            app.last_event_ts = time.time()
             return app.tokens.get(token)
 
         @app.get("/login_check")

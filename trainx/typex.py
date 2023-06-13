@@ -259,8 +259,6 @@ class AdvancedConfig(SerializationObj):
         self.set_property_value(task, 'multires_noise_discount', 0.3)
 
 
-
-
 class TrainLoraParams(SerializationObj):
 
     def __init__(self, task: Task):
@@ -434,13 +432,18 @@ class TrainLoraTask(UserDict):
             'lr_scheduler_num_cycles': params.net.lr_scheduler_num_cycles,
 
         }
-        kwargs.update(params.advanced.to_dict())
+        advanced = params.advanced.to_dict()
+        for k, v in advanced.items():
+            if v == -1 or v == '':
+                advanced[k] = None
+
         kwargs.update({
             # reg_tokens, list_reg_data_dir, list_reg_repeats
             'list_reg_repeats': list_reg_repeats,
             'list_reg_data_dir': list_reg_data_dir,
             'reg_tokens': reg_tokens
         })
+        kwargs.update(advanced)
 
         return kwargs
 

@@ -154,7 +154,7 @@ def copy_captions(src, dst):
 
 
 def get_batch_image_size(target_dir):
-    current = None
+    current = []
     for image_path in find_files_from_dir(target_dir, *ImagesEx):
         with Image.open(image_path) as image:
             if not current:
