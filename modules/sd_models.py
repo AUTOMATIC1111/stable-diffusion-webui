@@ -244,8 +244,11 @@ def read_metadata_from_safetensors(filename):
         if not os.path.isfile(sd_metadata_file):
             sd_metadata = {}
         else:
-            with open(sd_metadata_file, "r", encoding="utf8") as file:
-                sd_metadata = json.load(file)
+            try:
+                with open(sd_metadata_file, "r", encoding="utf8") as file:
+                    sd_metadata = json.load(file)
+            except:
+                sd_metadata = {}
     res = sd_metadata.get(filename, None)
     if res is not None:
         return res
