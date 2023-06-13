@@ -11,6 +11,7 @@ from swinir_model_arch import SwinIR
 from swinir_model_arch_v2 import Swin2SR
 from modules.upscaler import Upscaler, UpscalerData
 
+SWINIR_MODEL_URL = "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR-L_x4_GAN.pth"
 
 device_swinir = devices.get_device_for('swinir')
 
@@ -18,9 +19,7 @@ device_swinir = devices.get_device_for('swinir')
 class UpscalerSwinIR(Upscaler):
     def __init__(self, dirname):
         self.name = "SwinIR"
-        self.model_url = "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0" \
-                         "/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR" \
-                         "-L_x4_GAN.pth "
+        self.model_url = SWINIR_MODEL_URL
         self.model_name = "SwinIR 4x"
         self.user_path = dirname
         super().__init__()
