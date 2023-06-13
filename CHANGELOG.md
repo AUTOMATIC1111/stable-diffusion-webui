@@ -12,6 +12,7 @@ Both some **new functionality** as well as **massive merges** from upstream
 - ability to run server without loaded model  
   default is to auto-load model on startup, can be changed in settings -> stable diffusion  
   if disabled, model will be loaded on first request, e.g. when you click generate  
+  this is useful when you want to start server to perform other tasks like upscaling which do not rely on model  
 - updated `accelerate` and `xformers`
 - huge nubmer of changes ported from **A1111** upstream  
   this was a massive merge

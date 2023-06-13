@@ -223,7 +223,7 @@ def clone(url, folder, commithash=None):
 def check_python():
     supported_minors = [9, 10]
     if args.quick:
-        return True
+        return
     if args.experimental:
         supported_minors.append(11)
     log.info(f'Python {platform.python_version()} on {platform.system()}')
@@ -245,7 +245,7 @@ def check_python():
 # check torch version
 def check_torch():
     if args.quick:
-        return True
+        return
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
@@ -350,7 +350,7 @@ def check_torch():
 # check modified files
 def check_modified_files():
     if args.quick:
-        return True
+        return
     if args.skip_git:
         return
     try:
@@ -609,11 +609,7 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
             sys.exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
-    if args.quick:
-        return True
-    if args.version:
-        return
-    if args.skip_git:
+    if args.quick or args.version or args.skip_git:
         return
     commit = git('rev-parse HEAD')
     global git_commit # pylint: disable=global-statement

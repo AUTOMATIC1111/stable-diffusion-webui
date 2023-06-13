@@ -13,7 +13,7 @@ from modules.paths_internal import models_path, script_path, data_path, sd_confi
 import modules.interrogate
 import modules.memmon
 import modules.styles
-import modules.devices as devices
+import modules.devices as devices # pylint: disable=R0402
 import modules.paths_internal as paths
 from installer import log as central_logger # pylint: disable=E0611
 
@@ -558,7 +558,7 @@ class Options:
     def __init__(self):
         self.data = {k: v.default for k, v in self.data_labels.items()}
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key, value): # pylint: disable=inconsistent-return-statements
         if self.data is not None:
             if key in self.data or key in self.data_labels:
                 if cmd_opts.freeze:
@@ -567,11 +567,9 @@ class Options:
                 if cmd_opts.hide_ui_dir_config and key in restricted_opts:
                     log.warning(f'Settings key is restricted: {key}')
                     return
-                else:
-                    self.data[key] = value
+                self.data[key] = value
                 return
-
-        return super(Options, self).__setattr__(key, value)
+        return super(Options, self).__setattr__(key, value) # pylint: disable=super-with-arguments
 
     def __getattr__(self, item):
         if self.data is not None:
@@ -579,7 +577,7 @@ class Options:
                 return self.data[item]
         if item in self.data_labels:
             return self.data_labels[item].default
-        return super(Options, self).__getattribute__(item)
+        return super(Options, self).__getattribute__(item) # pylint: disable=super-with-arguments
 
     def set(self, key, value):
         """sets an option and calls its onchange callback, returning True if the option changed and False otherwise"""
@@ -719,7 +717,7 @@ def reload_gradio_theme(theme_name=None):
     res = 0
     try:
         req = urllib.request.Request("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono", method="HEAD")
-        res = urllib.request.urlopen(req, timeout=3.0).status
+        res = urllib.request.urlopen(req, timeout=3.0).status # pylint: disable=consider-using-with
     except Exception:
         res = 0
     if res != 200:

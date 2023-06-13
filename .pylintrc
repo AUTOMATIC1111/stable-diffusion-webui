@@ -147,6 +147,8 @@ disable=raw-checker-failed,
         too-many-nested-blocks,
         useless-suppression,
         wrong-import-position,
+        import-error,
+        simplifiable-if-expression
 enable=c-extension-no-member
 
 [METHOD_ARGS]

@@ -36,7 +36,7 @@ startup_timer.record("gradio")
 errors.install([gradio])
 
 errors.log.debug('Loading Modules')
-import ldm.modules.encoders.modules # pylint: disable=W0611,C0411
+import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
 from modules import extra_networks, ui_extra_networks_checkpoints # pylint: disable=C0411,C0412
 from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
 from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411
