@@ -6,7 +6,7 @@
  * https://github.com/nextapps-de/spotlight
  */
  /* 
- this library was rewriten by anapnoe to work with https://github.com/anapnoe/stable-diffusion-webui-ux
+ this library was rewritten by anapnoe to work with https://github.com/anapnoe/stable-diffusion-webui-ux
  it supports multi-instancing, enable-disable panzoom functionallity and input type tools
  */
 
