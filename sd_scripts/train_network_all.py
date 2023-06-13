@@ -752,7 +752,11 @@ def train(args, train_epoch_callback=None):
 
 
 def setup_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
+    #parser = argparse.ArgumentParser()
+    parent_parser = argparse.ArgumentParser()
+    subparsers = parent_parser.add_subparsers(title="sys_sub_parsers")
+    parser = subparsers.add_parser("lora_train",
+                                          help="create the lora_train environment")
 
     train_util.add_sd_models_arguments(parser)
     train_util.add_dataset_arguments(parser, True, True, True)
