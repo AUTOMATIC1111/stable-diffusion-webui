@@ -269,7 +269,7 @@ def refresh_themes():
                 f.write(json.dumps(res))
         else:
             log.error('Error refreshing UI themes')
-    except:
+    except Exception:
         log.error('Exception refreshing UI themes')
 
 
@@ -288,6 +288,7 @@ else: # cuda
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_model_checkpoint": OptionInfo(default_checkpoint, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
+    "sd_checkpoint_autoload": OptionInfo(True, "Stable Diffusion checkpoint autoload on server start"),
     "sd_checkpoint_cache": OptionInfo(0, "Number of cached model checkpoints", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAE checkpoints", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "Select VAE", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
@@ -660,10 +661,10 @@ class Options:
         """reorder settings so that all items related to section always go together"""
         section_ids = {}
         settings_items = self.data_labels.items()
-        for k, item in settings_items:
+        for _k, item in settings_items:
             if item.section not in section_ids:
                 section_ids[item.section] = len(section_ids)
-        self.data_labels = {k: v for k, v in sorted(settings_items, key=lambda x: section_ids[x[1].section])}
+        self.data_labels = dict(sorted(settings_items, key=lambda x: section_ids[x[1].section]))
 
     def cast_value(self, key, value):
         """casts an arbitrary to the same type as this setting's value with key
@@ -719,7 +720,7 @@ def reload_gradio_theme(theme_name=None):
     try:
         req = urllib.request.Request("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono", method="HEAD")
         res = urllib.request.urlopen(req, timeout=3.0).status
-    except:
+    except Exception:
         res = 0
     if res != 200:
         log.info('No internet access detected, using default fonts')
@@ -743,7 +744,7 @@ def reload_gradio_theme(theme_name=None):
     else:
         try:
             gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
-        except:
+        except Exception:
             log.error("Theme download error accessing HuggingFace")
             gradio_theme = gr.themes.Default(**default_font_params)
     log.info(f'Loading UI theme: name={theme_name} style={opts.theme_style}')
@@ -794,7 +795,7 @@ def restart_server(restart=True):
         demo.close(verbose=False)
         demo.server.close()
         demo.fns = []
-    except:
+    except Exception:
         pass
     if restart:
         log.info('Server will restart')
@@ -804,9 +805,6 @@ def restore_defaults(restart=True):
     if os.path.exists(cmd_opts.config):
         log.info('Restoring server defaults')
         os.remove(cmd_opts.config)
-    if os.path.exists(cmd_opts.ui_config):
-        log.info('Restoring UI defaults')
-        os.remove(cmd_opts.ui_config)
     restart_server(restart)
 
 
@@ -859,7 +857,7 @@ def get_version():
                 'hash': githash,
                 'url': origin.replace('\n', '') + '/tree/' + branch.replace('\n', '')
             }
-        except:
+        except Exception:
             version = { 'app': 'sd.next' }
     return version
 

@@ -31,7 +31,7 @@ class Exif: # pylint: disable=single-string-used-for-slots
         exif_dict = {}
         try:
             exif_dict = dict(img._getexif().items()) # pylint: disable=protected-access
-        except:
+        except Exception:
             exif_dict = dict(img.info.items())
         for key, val in exif_dict.items():
             if isinstance(val, bytes): # decode bytestring
@@ -65,7 +65,7 @@ class Exif: # pylint: disable=single-string-used-for-slots
                 if len(val) == 0: # remove empty strings
                     val = None
                 return val
-            except:
+            except Exception:
                 pass
         return None
 

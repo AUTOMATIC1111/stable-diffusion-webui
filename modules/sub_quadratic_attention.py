@@ -16,6 +16,7 @@ from typing import Optional, NamedTuple, List
 import torch
 from torch import Tensor
 from torch.utils.checkpoint import checkpoint
+import numpy as np
 
 
 def narrow_trunc(
@@ -201,13 +202,14 @@ def efficient_dot_product_attention(
             value=value,
         )
 
-    # maybe we should use torch.empty_like(query) to allocate storage in-advance,
-    # and pass slices to be mutated, instead of torch.cat()ing the returned slices
-    res = torch.cat([
-        compute_query_chunk_attn(
+    res = torch.zeros_like(query)
+    for i in range(math.ceil(q_tokens / query_chunk_size)):
+        attn_scores = compute_query_chunk_attn(
             query=get_query_chunk(i * query_chunk_size),
             key=key,
             value=value,
-        ) for i in range(math.ceil(q_tokens / query_chunk_size))
-    ], dim=1)
+        )
+
+        res[:, i * query_chunk_size:i * query_chunk_size + attn_scores.shape[1], :] = attn_scores
+
     return res

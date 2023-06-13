@@ -68,14 +68,14 @@ def torch_gc(force=False):
         try:
             with torch.xpu.device(get_cuda_device_string()):
                 torch.xpu.empty_cache()
-        except:
+        except Exception:
             pass
     elif cuda_ok:
         try:
             with torch.cuda.device(get_cuda_device_string()):
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()
-        except:
+        except Exception:
             pass
     shared.log.debug(f'gc: collected={collected} device={torch.device(get_optimal_device_name())} {memstats.memory_stats()}')
 
@@ -89,7 +89,7 @@ def test_fp16():
         _y = layerNorm(x)
         shared.log.debug('Torch FP16 test passed')
         return True
-    except:
+    except Exception:
         shared.log.warning('Torch FP16 test failed: Forcing FP32 operations')
         shared.opts.cuda_dtype = 'FP32'
         shared.opts.no_half = True
@@ -104,7 +104,7 @@ def test_bf16():
         image = torch.randn(1, 4, 32, 32).to(device=device, dtype=torch.bfloat16)
         _out = F.interpolate(image, size=(64, 64), mode="nearest")
         return True
-    except:
+    except Exception:
         shared.log.warning('Torch BF16 test failed: Fallback to FP16 operations')
         return False
 
@@ -116,7 +116,7 @@ def set_cuda_params():
             torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
             torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
             torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
-        except:
+        except Exception:
             pass
         if torch.backends.cudnn.is_available():
             try:
@@ -124,7 +124,7 @@ def set_cuda_params():
                 if shared.opts.cudnn_benchmark:
                     torch.backends.cudnn.benchmark_limit = 0
                 torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
-            except:
+            except Exception:
                 pass
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
     if shared.cmd_opts.use_directml and not shared.cmd_opts.experimental: # TODO DirectML does not have full autocast capabilities

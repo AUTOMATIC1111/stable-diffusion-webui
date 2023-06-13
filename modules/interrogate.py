@@ -3,14 +3,12 @@ import sys
 from collections import namedtuple
 from pathlib import Path
 import re
-
 import torch
 import torch.hub # pylint: disable=ungrouped-imports
-
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
-
 from modules import devices, paths, shared, lowvram, modelloader, errors
+
 
 blip_image_eval_size = 384
 clip_model_name = 'ViT-L/14'
@@ -157,7 +155,7 @@ class InterrogateModels:
             text_array = text_array[0:int(shared.opts.interrogate_clip_dict_limit)]
 
         top_count = min(top_count, len(text_array))
-        text_tokens = clip.tokenize([text for text in text_array], truncate=True).to(devices.device_interrogate)
+        text_tokens = clip.tokenize(list(text_array), truncate=True).to(devices.device_interrogate)
         text_features = self.clip_model.encode_text(text_tokens).type(self.dtype)
         text_features /= text_features.norm(dim=-1, keepdim=True)
 

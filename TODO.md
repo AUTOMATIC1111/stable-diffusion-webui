@@ -23,11 +23,7 @@ Stuff to be investigated...
 
 Pick & merge PRs from main repo...
 
-- <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...baf6946>
-- TODO:
-  - ruff stuff from 05/10/2023
-  - modules/sub_quadratic_attention.py
-  - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/1332c46b71b169b889d7df420f3285d9022da5cc>
+- TODO: <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...baf6946>
 - STATUS: up-to-date 05/13/2023
 
 ## Integration

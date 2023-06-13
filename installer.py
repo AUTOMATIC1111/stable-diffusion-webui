@@ -53,7 +53,7 @@ def setup_logging(clean=False):
         if clean and os.path.isfile(log_file):
             os.remove(log_file)
         time.sleep(0.1) # prevent race condition
-    except:
+    except Exception:
         pass
     from rich.theme import Theme
     from rich.logging import RichHandler
@@ -83,7 +83,7 @@ def setup_logging(clean=False):
 def print_profile(profile: cProfile.Profile, msg: str):
     try:
         from rich import print # pylint: disable=redefined-builtin
-    except:
+    except Exception:
         pass
     profile.disable()
     stream = io.StringIO()
@@ -261,7 +261,7 @@ def check_torch():
     elif allow_cuda and (shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe'))):
         log.info('nVidia CUDA toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision --index-url https://download.pytorch.org/whl/cu118')
-        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.20' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
     elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo') or os.path.exists('/dev/kfd')):
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
@@ -318,7 +318,7 @@ def check_torch():
                         log.info(f'Torch backend: DirectML ({version})')
                         for i in range(0, torch_directml.device_count()):
                             log.info(f'Torch detected GPU: {torch_directml.device_name(i)}')
-                except:
+                except Exception:
                     log.warning("Torch reports CUDA not available")
         except Exception as e:
             log.error(f'Could not load torch: {e}')
@@ -359,7 +359,7 @@ def check_modified_files():
         files = [x for x in files if len(x) > 0 and not x.startswith('extensions') and not x.startswith('wiki') and not x.endswith('.json')]
         if len(files) > 0:
             log.warning(f'Modified files: {files}')
-    except:
+    except Exception:
         pass
 
 
@@ -479,7 +479,7 @@ def install_extensions():
             if not args.skip_update:
                 try:
                     update(os.path.join(folder, ext))
-                except:
+                except Exception:
                     log.error(f'Error updating extension: {os.path.join(folder, ext)}')
             if not args.skip_extensions:
                 run_extension_installer(os.path.join(folder, ext))
@@ -522,7 +522,7 @@ def install_submodules():
             try:
                 name = submodule.split()[1].strip()
                 update(name)
-            except:
+            except Exception:
                 log.error(f'Error updating submodule: {submodule}')
     if args.profile:
         print_profile(pr, 'Submodule')
@@ -656,7 +656,7 @@ def update_wiki():
         try:
             update(os.path.join(os.path.dirname(__file__), "wiki"))
             update(os.path.join(os.path.dirname(__file__), "wiki", "origin-wiki"))
-        except:
+        except Exception:
             log.error('Error updating wiki')
 
 
@@ -745,7 +745,7 @@ def extensions_preload(parser):
             preload_extensions(ext_dir, parser)
             t1 = time.time()
             log.info(f'Extension preload: {round(t1 - t0, 1)}s {ext_dir}')
-    except:
+    except Exception:
         log.error('Error running extension preloading')
     if args.profile:
         print_profile(pr, 'Preload')

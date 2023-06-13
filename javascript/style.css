@@ -405,6 +405,10 @@ div#extras_scale_to_tab div.form{
     padding: 2em;
 }
 
+.ui-defaults-none{
+  color: #aaa !important;
+}
+
 /* fullpage image viewer */
 
 #lightboxModal{

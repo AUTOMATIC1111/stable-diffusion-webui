@@ -183,7 +183,7 @@ if __name__ == "__main__":
     while True:
         try:
             alive = instance.thread.is_alive()
-        except:
+        except Exception:
             alive = False
         if round(time.time()) % 120 == 0:
             installer.log.debug(f'Server alive: {alive} Memory {get_memory_stats()}')

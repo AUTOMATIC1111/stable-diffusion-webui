@@ -102,18 +102,18 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     """
 
     def collect_steps(steps, tree):
-        l = [steps]
+        res = [steps]
         class CollectSteps(lark.Visitor):
             def scheduled(self, tree):
                 tree.children[-1] = float(tree.children[-1])
                 if tree.children[-1] < 1:
                     tree.children[-1] *= steps
                 tree.children[-1] = min(steps, int(tree.children[-1]))
-                l.append(tree.children[-1])
+                res.append(tree.children[-1])
             def alternate(self, tree): # pylint: disable=unused-argument
-                l.extend(range(1, steps+1))
+                res.extend(range(1, steps+1))
         CollectSteps().visit(tree)
-        return sorted(set(l))
+        return sorted(set(res))
 
     def at_step(step, tree):
         class AtStep(lark.Transformer):
@@ -243,12 +243,12 @@ def reconstruct_multicond_batch(c: MulticondLearnedConditioning, current_step):
     param = c.batch[0][0].schedules[0].cond
     tensors = []
     conds_list = []
-    for _batch_no, composable_prompts in enumerate(c.batch):
+    for composable_prompts in c.batch:
         conds_for_batch = []
-        for _cond_index, composable_prompt in enumerate(composable_prompts):
+        for composable_prompt in composable_prompts:
             target_index = 0
-            for current, (end_at, _cond) in enumerate(composable_prompt.schedules):
-                if current_step <= end_at:
+            for current, entry in enumerate(composable_prompt.schedules):
+                if current_step <= entry.end_at_step:
                     target_index = current
                     break
             conds_for_batch.append((len(tensors), composable_prompt.weight))

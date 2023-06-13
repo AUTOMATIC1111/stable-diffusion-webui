@@ -210,7 +210,7 @@ class EmbeddingDatabase:
             return
         if not force_reload:
             need_reload = False
-            for _path, embdir in self.embedding_dirs.items():
+            for embdir in self.embedding_dirs.values():
                 if embdir.has_changed():
                     need_reload = True
                     break
@@ -223,7 +223,7 @@ class EmbeddingDatabase:
         self.skipped_embeddings.clear()
         self.expected_shape = self.get_expected_shape()
 
-        for _path, embdir in self.embedding_dirs.items():
+        for embdir in self.embedding_dirs.values():
             self.load_from_dir(embdir)
             embdir.update()
 
@@ -620,7 +620,7 @@ def save_embedding(embedding, optimizer, checkpoint, embedding_name, filename, r
         embedding.name = embedding_name
         embedding.optimizer_state_dict = optimizer.state_dict()
         embedding.save(filename)
-    except:
+    except Exception:
         embedding.sd_checkpoint = old_sd_checkpoint
         embedding.sd_checkpoint_name = old_sd_checkpoint_name
         embedding.name = old_embedding_name

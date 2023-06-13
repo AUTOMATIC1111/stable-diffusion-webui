@@ -329,7 +329,7 @@ class KDiffusionSampler:
         if cmd_opts.use_ipex: #Remove this after Intel adds support for torch.Generator()
             try:
                 return BrownianTreeNoiseSampler(x.to("cpu"), sigma_min, sigma_max, seed=current_iter_seeds, transform=lambda x: x.to("cpu"), transform_last=lambda x: x.to(shared.device)) # pylint: disable=E1123
-            except:
+            except Exception:
                 print("ERROR    Please apply this patch to repositories/k-diffusion/k_diffusion/sampling.py: https://github.com/crowsonkb/k-diffusion/pull/68/files")
                 return None    
         else:

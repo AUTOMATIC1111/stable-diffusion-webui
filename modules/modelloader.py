@@ -79,7 +79,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
                 if os.path.islink(full_path) and not os.path.exists(full_path):
                     print(f"Skipping broken symlink: {full_path}")
                     continue
-                if ext_blacklist is not None and any([full_path.endswith(x) for x in ext_blacklist]):
+                if ext_blacklist is not None and any(full_path.endswith(x) for x in ext_blacklist):
                     continue
                 if full_path not in output:
                     output.append(full_path)
@@ -147,19 +147,18 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
                     print(f"Moving {file} from {src_path} to {dest_path}.")
                     try:
                         shutil.move(fullpath, dest_path)
-                    except:
+                    except Exception:
                         pass
             if len(os.listdir(src_path)) == 0:
                 print(f"Removing empty folder: {src_path}")
                 shutil.rmtree(src_path, True)
-    except:
+    except Exception:
         pass
 
 
 
 def load_upscalers():
-    # We can only do this 'magic' method to dynamically load upscalers if they are referenced,
-    # so we'll try to import any _model.py files before looking in __subclasses__
+    # We can only do this 'magic' method to dynamically load upscalers if they are referenced, so we'll try to import any _model.py files before looking in __subclasses__
     modules_dir = os.path.join(shared.script_path, "modules")
     for file in os.listdir(modules_dir):
         if "_model.py" in file:
@@ -167,14 +166,12 @@ def load_upscalers():
             full_model = f"modules.{model_name}_model"
             try:
                 importlib.import_module(full_model)
-            except:
+            except Exception:
                 pass
 
     datas = []
     commandline_options = vars(shared.cmd_opts)
-    # some of upscaler classes will not go away after reloading their modules, and we'll end
-    # up with two copies of those classes. The newest copy will always be the last in the list,
-    # so we go from end to beginning and ignore duplicates
+    # some of upscaler classes will not go away after reloading their modules, and we'll end up with two copies of those classes. The newest copy will always be the last in the list, so we go from end to beginning and ignore duplicates
     used_classes = {}
     for cls in reversed(Upscaler.__subclasses__()):
         classname = str(cls)

@@ -4,6 +4,15 @@
 
 - new cache for models/lora/lyco metadata: `metadata.json`  
   drastically reduces disk access on app startup  
+- allow saving of **ui default values**  
+  settings -> ui defaults
+- ability to run server without loaded model  
+  default is to auto-load model on startup, can be changed in settings -> stable diffusion  
+  if disabled, model will be loaded on first request, e.g. when you click generate  
+- updated `accelerate` and `xformers`
+- huge nubmer of changes ported from a1111 upstream  
+  hopefully this does not cause any regressions  
+
 
 ## Update for 06/12/2023
 

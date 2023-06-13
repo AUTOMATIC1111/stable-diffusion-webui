@@ -86,7 +86,7 @@ class Extension:
     def check_updates(self):
         try:
             repo = git.Repo(self.path)
-        except:
+        except Exception:
             self.can_update = False
             return
         for fetch in repo.remote().fetch(dry_run=True):

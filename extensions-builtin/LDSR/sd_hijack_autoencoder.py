@@ -6,9 +6,7 @@ import torch
 import pytorch_lightning as pl
 import torch.nn.functional as F
 from contextlib import contextmanager
-
 from torch.optim.lr_scheduler import LambdaLR
-
 from ldm.modules.ema import LitEma
 from taming.modules.vqvae.quantize import VectorQuantizer2 as VectorQuantizer
 from ldm.modules.diffusionmodules.model import Encoder, Decoder

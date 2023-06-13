@@ -222,7 +222,7 @@ def load_scripts():
     time_load = {}
 
     def register_scripts_from_module(module, scriptfile):
-        for _key, script_class in module.__dict__.items():
+        for script_class in module.__dict__.values():
             if type(script_class) != type:
                 continue
             # log.debug(f'Registering script: {scriptfile.path}')
@@ -487,7 +487,7 @@ class ScriptRunner:
             if module is None:
                 module = script_loading.load_module(script.filename)
                 cache[filename] = module
-            for _key, script_class in module.__dict__.items():
+            for script_class in module.__dict__.values():
                 if type(script_class) == type and issubclass(script_class, Script):
                     self.scripts[si] = script_class()
                     self.scripts[si].filename = filename

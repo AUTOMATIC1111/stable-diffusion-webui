@@ -44,6 +44,7 @@ async function setHints() {
   if (!locale.el) tooltipCreate();
   let localized = 0;
   let hints = 0;
+  locale.finished = true;
   for (el of elements) {
     const found = locale.data.find(l => l.label === el.textContent);
     if (found?.localized?.length > 0) {
@@ -63,8 +64,7 @@ async function setHints() {
       }
     }
   }
-  console.log('set-hints', { type: locale.type, elements: elements.length, localized, hints, data: locale.data });
-  locale.finished = true;
+  console.log('set-hints', { type: locale.type, elements: elements.length, localized, hints, data: locale.data.length });
 }
 
 onAfterUiUpdate(async () => {

@@ -18,7 +18,7 @@ def register_tmp_file(gradio, filename):
 def check_tmp_file(gradio, filename):
     ok = False
     if hasattr(gradio, 'temp_file_sets'):
-        ok = ok or any([filename in fileset for fileset in gradio.temp_file_sets])
+        ok = ok or any(filename in fileset for fileset in gradio.temp_file_sets)
     if shared.opts.outdir_samples != '':
         ok = ok or Path(shared.opts.outdir_samples).resolve() in Path(filename).resolve().parents
     else:

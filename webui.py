@@ -15,7 +15,7 @@ errors.log.debug('Loading Torch')
 import torch # pylint: disable=C0411
 try:
     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
-except:
+except Exception:
     pass
 import torchvision # pylint: disable=W0611,C0411
 import pytorch_lightning # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them # pylint: disable=W0611,C0411
@@ -153,18 +153,12 @@ def initialize():
 def load_model():
     shared.state.begin()
     shared.state.job = 'load model'
-    Thread(target=lambda: shared.sd_model).start()
-    # TODO delay load model
-    """
-    if shared.sd_model is None:
-        log.warning("No stable diffusion model loaded")
-        # exit(1)
-    else:
-        shared.opts.data["sd_model_checkpoint"] = shared.sd_model.sd_checkpoint_info.title
-    """
+    thread = Thread(target=lambda: shared.sd_model)
+    thread.start()
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.state.end()
+    thread.join()
     startup_timer.record("checkpoint")
 
 
@@ -284,7 +278,7 @@ def start_ui():
     setup_middleware(app, cmd_opts)
 
     if cmd_opts.subpath:
-        _mounted_app = gradio.mount_gradio_app(app, shared.demo, path=f"/{cmd_opts.subpath}")
+        gradio.mount_gradio_app(app, shared.demo, path=f"/{cmd_opts.subpath}")
         shared.log.info(f'Redirector mounted: /{cmd_opts.subpath}')
 
     startup_timer.record("launch")
@@ -305,7 +299,12 @@ def start_ui():
 def webui():
     start_common()
     start_ui()
-    load_model()
+    modules.sd_models.write_metadata()
+    if opts.sd_checkpoint_autoload:
+        load_model()
+    else:
+        log.debug('Model auto load disabled')
+
     log.info(f"Startup time: {startup_timer.summary()}")
 
     # override all loggers to use the same handlers as the main logger
@@ -329,6 +328,7 @@ def api_only():
     api = create_api(app)
     api.wants_restart = False
     modules.script_callbacks.app_started_callback(None, app)
+    modules.sd_models.write_metadata()
     log.info(f"Startup time: {startup_timer.summary()}")
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
     return api

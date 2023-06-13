@@ -82,7 +82,7 @@ class LoraOnDisk:
             try:
                 self.metadata = sd_models.read_metadata_from_safetensors(filename)
             except Exception as e:
-                errors.display(e, f"reading lora {filename}")
+                errors.display(e, f"reading lora metadata: {filename}")
 
         if self.metadata:
             m = {}

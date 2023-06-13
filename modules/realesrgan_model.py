@@ -42,7 +42,7 @@ class UpscalerRealESRGAN(Upscaler):
 
         try:
             from realesrgan import RealESRGANer
-        except:
+        except Exception:
             print("Error importing Real-ESRGAN:", file=sys.stderr)
             return img
 

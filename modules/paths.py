@@ -57,8 +57,7 @@ def create_paths(opts):
         if not os.path.exists(folder):
             try:
                 os.makedirs(folder, exist_ok=True)
-                # print('Creating folder:', folder)
-            except:
+            except Exception:
                 pass
 
     def fix_path(folder):

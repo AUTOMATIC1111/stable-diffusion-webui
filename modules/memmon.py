@@ -78,7 +78,7 @@ class MemUsageMonitor(threading.Thread):
                 self.data["reserved"] = torch_stats["reserved_bytes.all.current"]
                 self.data["reserved_peak"] = torch_stats["reserved_bytes.all.peak"]
                 self.data["system_peak"] = total - self.data["min_free"]
-            except:
+            except Exception:
                 self.disabled = True
         return self.data
 

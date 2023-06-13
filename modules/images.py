@@ -150,7 +150,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
             return ImageFont.truetype('html/roboto.ttf', fontsize)
 
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
-        for _i, line in enumerate(lines):
+        for line in lines:
             fnt = initial_fnt
             fontsize = initial_fontsize
             while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
@@ -373,7 +373,7 @@ class FilenameGenerator:
         time_zone_time = time_datetime.astimezone(time_zone)
         try:
             formatted_time = time_zone_time.strftime(time_format)
-        except (ValueError, TypeError) as _:
+        except (ValueError, TypeError):
             formatted_time = time_zone_time.strftime(self.default_time_format)
         return sanitize_filename_part(formatted_time, replace_spaces=False)
 
@@ -418,9 +418,9 @@ def get_next_sequence_number(path, basename):
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            parts = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
-                result = max(int(l[0]), result)
+                result = max(int(parts[0]), result)
             except ValueError:
                 pass
     return result + 1
@@ -600,7 +600,7 @@ def safe_decode_string(s: bytes):
             if len(val) == 0: # remove empty strings
                 val = None
             return val
-        except:
+        except Exception:
             pass
     return None
 

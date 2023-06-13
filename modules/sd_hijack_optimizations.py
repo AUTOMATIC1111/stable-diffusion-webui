@@ -44,7 +44,7 @@ def get_available_vram():
             mem_free_cuda, _ = torch.cuda.mem_get_info(torch.cuda.current_device())
             mem_free_torch = mem_reserved - mem_active
             mem_free_total = mem_free_cuda + mem_free_torch
-        except:
+        except Exception:
             mem_free_total = 1024 * 1024 * 1024
 
         return mem_free_total
@@ -206,7 +206,7 @@ def einsum_op_cuda(q, k, v):
             mem_free_cuda, _ = torch.cuda.mem_get_info(q.device)
             mem_free_torch = mem_reserved - mem_active
             mem_free_total = mem_free_cuda + mem_free_torch
-        except:
+        except Exception:
             mem_free_total = 1024 * 1024 * 1024
         # Divide factor of safety as there's copying and fragmentation
         return einsum_op_tensor_mem(q, k, v, mem_free_total / 3.3 / (1 << 20))
@@ -319,7 +319,6 @@ def sub_quad_attention(q, k, v, q_chunk_size=1024, kv_chunk_size=None, kv_chunk_
     if chunk_threshold_bytes is not None and qk_matmul_size_bytes <= chunk_threshold_bytes:
         # the big matmul fits into our memory limit; do everything in 1 chunk,
         # i.e. send it down the unchunked fast-path
-        query_chunk_size = q_tokens # pylint: disable=unused-variable
         kv_chunk_size = k_tokens
 
     with devices.without_autocast(disable=q.dtype == v.dtype):

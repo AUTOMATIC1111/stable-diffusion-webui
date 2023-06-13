@@ -1,7 +1,7 @@
 from typing import Optional
 import torch
 import torch.nn as nn
-from transformers import XLMRobertaModel,XLMRobertaTokenizer, BertPreTrainedModel, BertModel, BertConfig # pylint: disable=unused-import
+from transformers import XLMRobertaModel,XLMRobertaTokenizer, BertPreTrainedModel, BertConfig
 from transformers.models.xlm_roberta.configuration_xlm_roberta import XLMRobertaConfig
 
 class BertSeriesConfig(BertConfig):

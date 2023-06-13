@@ -11,8 +11,6 @@ easydev
 extcolors
 facexlib
 filetype
-font-roboto
-fonts
 future
 gdown
 gfpgan
@@ -47,7 +45,7 @@ basicsr
 compel
 requests==2.31.0
 tqdm==4.65.0
-accelerate==0.18.0
+accelerate==0.20.3
 opencv-python==4.7.0.72
 diffusers==0.16.1
 einops==0.4.1

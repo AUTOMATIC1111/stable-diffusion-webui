@@ -23,7 +23,7 @@ class DirectML():
             else:
                 return UnknownOptimizer
             return optimizer
-        except:
+        except Exception:
             return UnknownOptimizer
 
     def memory_stats(device: torch.device):

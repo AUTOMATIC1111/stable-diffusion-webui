@@ -65,7 +65,7 @@ def get_memory():
                 'gpu-inactive': inactive,
                 'events': events,
             })
-    except:
+    except Exception:
         pass
     return Map(mem)
 

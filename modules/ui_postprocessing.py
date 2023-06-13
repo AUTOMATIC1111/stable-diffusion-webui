@@ -1,6 +1,6 @@
 import json
 import gradio as gr
-from modules import scripts_postprocessing, scripts, shared, gfpgan_model, codeformer_model, ui_common, postprocessing, call_queue # pylint: disable=unused-import
+from modules import scripts, shared, ui_common, postprocessing, call_queue
 import modules.generation_parameters_copypaste as parameters_copypaste
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call # pylint: disable=unused-import
 from modules.extras import run_pnginfo

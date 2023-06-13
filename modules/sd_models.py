@@ -2,9 +2,11 @@ import collections
 import os.path
 import re
 import io
+import json
 import threading
 from os import mkdir
 from urllib import request
+import filelock
 from rich import progress # pylint: disable=redefined-builtin
 import torch
 import safetensors.torch
@@ -28,6 +30,7 @@ checkpoints_loaded = collections.OrderedDict()
 skip_next_load = False
 sd_metadata_file = os.path.join(paths.data_path, "metadata.json")
 sd_metadata = None
+sd_metadata_pending = 0
 
 
 class CheckpointInfo:
@@ -188,7 +191,7 @@ def model_hash(filename):
             return m.hexdigest()[0:8]
     except FileNotFoundError:
         return 'NOFILE'
-    except:
+    except Exception:
         return 'NOHASH'
 
 
@@ -237,40 +240,62 @@ def get_state_dict_from_checkpoint(pl_sd):
     return pl_sd
 
 
+def write_metadata():
+    def default(obj):
+        shared.log.debug(f"Model metadata not a valid object: {obj}")
+        return str(obj)
+
+    global sd_metadata_pending # pylint: disable=global-statement
+    if sd_metadata_pending == 0:
+        shared.log.debug(f"Model metadata: {sd_metadata_file} no changes")
+        return
+    with filelock.FileLock(f"{sd_metadata_file}.lock"):
+        try:
+            with open(sd_metadata_file, "w", encoding="utf8") as file:
+                json.dump(sd_metadata, file, indent=4, skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True, default=default)
+        except Exception as e:
+            shared.log.error(f"Model metadata save error: {sd_metadata_file} {e}")
+    shared.log.info(f"Model metadata saved: {sd_metadata_file} {sd_metadata_pending}")
+    sd_metadata_pending = 0
+
+
 def read_metadata_from_safetensors(filename):
-    import json
     global sd_metadata # pylint: disable=global-statement
     if sd_metadata is None:
-        if not os.path.isfile(sd_metadata_file):
-            sd_metadata = {}
-        else:
-            try:
-                with open(sd_metadata_file, "r", encoding="utf8") as file:
-                    sd_metadata = json.load(file)
-            except:
+        with filelock.FileLock(f"{sd_metadata_file}.lock"):
+            if not os.path.isfile(sd_metadata_file):
                 sd_metadata = {}
+            else:
+                try:
+                    with open(sd_metadata_file, "r", encoding="utf8") as file:
+                        sd_metadata = json.load(file)
+                except Exception:
+                    sd_metadata = {}
     res = sd_metadata.get(filename, None)
     if res is not None:
         return res
-
     res = {}
-    with open(filename, mode="rb") as file:
-        metadata_len = file.read(8)
-        metadata_len = int.from_bytes(metadata_len, "little")
-        json_start = file.read(2)
-        assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
-        json_data = json_start + file.read(metadata_len-2)
-        json_obj = json.loads(json_data)
-        for k, v in json_obj.get("__metadata__", {}).items():
-            res[k] = v
-            if isinstance(v, str) and v[0:1] == '{':
-                try:
-                    res[k] = json.loads(v)
-                except Exception:
-                    pass
-    sd_metadata[filename] = res
-    with open(sd_metadata_file, "w", encoding="utf8") as file:
-        json.dump(sd_metadata, file, indent=4)
+    try:
+        with open(filename, mode="rb") as file:
+            metadata_len = file.read(8)
+            metadata_len = int.from_bytes(metadata_len, "little")
+            json_start = file.read(2)
+            if metadata_len <= 2 or json_start not in (b'{"', b"{'"):
+                shared.log.error(f"Not a valid safetensors file: {filename}")
+            json_data = json_start + file.read(metadata_len-2)
+            json_obj = json.loads(json_data)
+            for k, v in json_obj.get("__metadata__", {}).items():
+                res[k] = v
+                if isinstance(v, str) and v[0:1] == '{':
+                    try:
+                        res[k] = json.loads(v)
+                    except Exception:
+                        pass
+        sd_metadata[filename] = res
+        global sd_metadata_pending # pylint: disable=global-statement
+        sd_metadata_pending += 1
+    except Exception as e:
+        shared.log.error(f"Error reading metadata from: {filename} {e}")
     return res
 
 

@@ -26,13 +26,13 @@ def get_exif(image):
         for k, v in exif.items():
             key = list(vars(piexif.ExifIFD).keys())[list(vars(piexif.ExifIFD).values()).index(k)]
             res1[key] = piexif.helper.UserComment.load(v)
-    except:
+    except Exception:
         pass
     # using pillow
     res2 = {}
     try:
         res2 = { TAGS[k]: v for k, v in image.getexif().items() if k in TAGS }
-    except:
+    except Exception:
         pass
     return {**res1, **res2}
 
@@ -54,7 +54,7 @@ def get_watermark(image, params):
     decoded = decoder.decode(data, options.method)
     try:
         s = str(decoded, 'UTF-8').replace('\x00', '')
-    except:
+    except Exception:
         s = ''
     return s
 

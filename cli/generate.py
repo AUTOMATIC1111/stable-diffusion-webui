@@ -278,7 +278,7 @@ def args(): # parse cmd arguments
                     data = json.load(f)
                     random = Map(data)
                     log.debug({ 'random template': sd })
-            except:
+            except Exception:
                 log.error({ 'random template error': params.random})
                 exit()
         elif os.path.isfile(os.path.join(home, params.random)):
@@ -287,7 +287,7 @@ def args(): # parse cmd arguments
                     data = json.load(f)
                     random = Map(data)
                     log.debug({ 'random template': sd })
-            except:
+            except Exception:
                 log.error({ 'random template error': params.random})
                 exit()
         else:
