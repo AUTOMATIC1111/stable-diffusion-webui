@@ -407,7 +407,7 @@ class TrainLoraTask(UserDict):
             'output_dir': self.output_dir,
             'pretrained_model_name_or_path': base_model,
             'network_weights': base_lora,
-            'train_data_dir': image_dir,
+            # 'train_data_dir': image_dir,
             'list_train_data_dir': list_train_data_dir,
             'trigger_words': class_tokens,
             'output_name': key,
