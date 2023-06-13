@@ -56,86 +56,95 @@ onUiLoaded(async() => {
         }
     }
 
-
     // Check if hotkey is valid
     function isValidHotkey(value) {
         const specialKeys = ["Ctrl", "Alt", "Shift", "Disable"];
         return (
-        (typeof value === "string" && value.length === 1 && /[a-z]/i.test(value)) ||
-        specialKeys.includes(value)
+            (typeof value === "string" &&
+                value.length === 1 &&
+                /[a-z]/i.test(value)) ||
+            specialKeys.includes(value)
         );
     }
-    
+
     // Normalize hotkey
     function normalizeHotkey(hotkey) {
         return hotkey.length === 1 ? "Key" + hotkey.toUpperCase() : hotkey;
     }
-    
+
     // Format hotkey for display
     function formatHotkeyForDisplay(hotkey) {
         return hotkey.startsWith("Key") ? hotkey.slice(3) : hotkey;
     }
-    
+
     // Create hotkey configuration with the provided options
     function createHotkeyConfig(defaultHotkeysConfig, hotkeysConfigOpts) {
         const result = {}; // Resulting hotkey configuration
         const usedKeys = new Set(); // Set of used hotkeys
-    
+
         // Iterate through defaultHotkeysConfig keys
         for (const key in defaultHotkeysConfig) {
-        const userValue = hotkeysConfigOpts[key]; // User-provided hotkey value
-        const defaultValue = defaultHotkeysConfig[key]; // Default hotkey value
-    
-        // Apply appropriate value for undefined, boolean, or object userValue
-        if (
-            userValue === undefined ||
-            typeof userValue === "boolean" ||
-            typeof userValue === "object" ||
-            userValue === "disable"
-        ) {
-            result[key] = userValue === undefined ? defaultValue : userValue;
-        } else if (isValidHotkey(userValue)) {
-            const normalizedUserValue = normalizeHotkey(userValue);
-    
-            // Check for conflicting hotkeys
-            if (!usedKeys.has(normalizedUserValue)) {
-            usedKeys.add(normalizedUserValue);
-            result[key] = normalizedUserValue;
+            const userValue = hotkeysConfigOpts[key]; // User-provided hotkey value
+            const defaultValue = defaultHotkeysConfig[key]; // Default hotkey value
+
+            // Apply appropriate value for undefined, boolean, or object userValue
+            if (
+                userValue === undefined ||
+                typeof userValue === "boolean" ||
+                typeof userValue === "object" ||
+                userValue === "disable"
+            ) {
+                result[key] =
+                    userValue === undefined ? defaultValue : userValue;
+            } else if (isValidHotkey(userValue)) {
+                const normalizedUserValue = normalizeHotkey(userValue);
+
+                // Check for conflicting hotkeys
+                if (!usedKeys.has(normalizedUserValue)) {
+                    usedKeys.add(normalizedUserValue);
+                    result[key] = normalizedUserValue;
+                } else {
+                    console.error(
+                        `Hotkey: ${formatHotkeyForDisplay(
+                            userValue
+                        )} for ${key} is repeated and conflicts with another hotkey. The default hotkey is used: ${formatHotkeyForDisplay(
+                            defaultValue
+                        )}`
+                    );
+                    result[key] = defaultValue;
+                }
             } else {
-            console.error(
-                `Hotkey: ${formatHotkeyForDisplay(
-                userValue
-                )} for ${key} is repeated and conflicts with another hotkey. The default hotkey is used: ${formatHotkeyForDisplay(
-                defaultValue
-                )}`
-            );
-            result[key] = defaultValue;
+                console.error(
+                    `Hotkey: ${formatHotkeyForDisplay(
+                        userValue
+                    )} for ${key} is not valid. The default hotkey is used: ${formatHotkeyForDisplay(
+                        defaultValue
+                    )}`
+                );
+                result[key] = defaultValue;
             }
-        } else {
-            console.error(
-            `Hotkey: ${formatHotkeyForDisplay(
-                userValue
-            )} for ${key} is not valid. The default hotkey is used: ${formatHotkeyForDisplay(
-                defaultValue
-            )}`
-            );
-            result[key] = defaultValue;
         }
-        }
-    
+
         return result;
     }
 
+    // Disables functions in the config object based on the provided list of function names
     function disableFunctions(config, disabledFunctions) {
-        disabledFunctions.forEach((funcName) => {
-          if (functionMap.hasOwnProperty(funcName)) {
-            const key = functionMap[funcName];
-            config[key] = "disable";
-          }
+        // Bind the hasOwnProperty method to the functionMap object to avoid errors
+        const hasOwnProperty =
+            Object.prototype.hasOwnProperty.bind(functionMap);
+
+        // Loop through the disabledFunctions array and disable the corresponding functions in the config object
+        disabledFunctions.forEach(funcName => {
+            if (hasOwnProperty(funcName)) {
+                const key = functionMap[funcName];
+                config[key] = "disable";
+            }
         });
-      
+
+        // Return the updated config object
         return config;
-      }
+    }
 
     /**
      * The restoreImgRedMask function displays a red mask around an image to indicate the aspect ratio.
@@ -190,7 +199,7 @@ onUiLoaded(async() => {
         canvas_hotkey_fullscreen: "KeyS",
         canvas_hotkey_move: "KeyF",
         canvas_hotkey_overlap: "KeyO",
-        canvas_disabled_functions : [],
+        canvas_disabled_functions: [],
         canvas_show_tooltip: true
     };
 
@@ -200,9 +209,9 @@ onUiLoaded(async() => {
         "Moving canvas": "canvas_hotkey_move",
         "Fullscreen": "canvas_hotkey_fullscreen",
         "Reset Zoom": "canvas_hotkey_reset",
-        "Overlap": "canvas_hotkey_overlap",
-      };
-      
+        "Overlap": "canvas_hotkey_overlap"
+    };
+
     // Loading the configuration from opts
     const preHotkeysConfig = createHotkeyConfig(
         defaultHotkeysConfig,
@@ -213,7 +222,7 @@ onUiLoaded(async() => {
     const hotkeysConfig = disableFunctions(
         preHotkeysConfig,
         preHotkeysConfig.canvas_disabled_functions
-      );
+    );
 
     let isMoving = false;
     let mouseX, mouseY;
@@ -274,36 +283,47 @@ onUiLoaded(async() => {
 
             // Define an array with hotkey information and their actions
             const hotkeysInfo = [
-                { configKey: "canvas_hotkey_zoom", action: "Zoom canvas", keySuffix: " + wheel" },
-                { configKey: "canvas_hotkey_adjust", action: "Adjust brush size", keySuffix: " + wheel" },
-                { configKey: "canvas_hotkey_reset", action: "Reset zoom" },
-                { configKey: "canvas_hotkey_fullscreen", action: "Fullscreen mode" },
-                { configKey: "canvas_hotkey_move", action: "Move canvas" },
-                { configKey: "canvas_hotkey_overlap", action: "Overlap" },
+                {
+                    configKey: "canvas_hotkey_zoom",
+                    action: "Zoom canvas",
+                    keySuffix: " + wheel"
+                },
+                {
+                    configKey: "canvas_hotkey_adjust",
+                    action: "Adjust brush size",
+                    keySuffix: " + wheel"
+                },
+                {configKey: "canvas_hotkey_reset", action: "Reset zoom"},
+                {
+                    configKey: "canvas_hotkey_fullscreen",
+                    action: "Fullscreen mode"
+                },
+                {configKey: "canvas_hotkey_move", action: "Move canvas"},
+                {configKey: "canvas_hotkey_overlap", action: "Overlap"}
             ];
-            
+
             // Create hotkeys array with disabled property based on the config values
-            const hotkeys = hotkeysInfo.map((info) => {
+            const hotkeys = hotkeysInfo.map(info => {
                 const configValue = hotkeysConfig[info.configKey];
-                const key = info.keySuffix
-                ? `${configValue}${info.keySuffix}`
-                : configValue.charAt(configValue.length - 1);
+                const key = info.keySuffix ?
+                    `${configValue}${info.keySuffix}` :
+                    configValue.charAt(configValue.length - 1);
                 return {
-                key,
-                action: info.action,
-                disabled: configValue === "disable",
+                    key,
+                    action: info.action,
+                    disabled: configValue === "disable"
                 };
             });
-              
-              for (const hotkey of hotkeys) {
+
+            for (const hotkey of hotkeys) {
                 if (hotkey.disabled) {
-                  continue;
+                    continue;
                 }
-              
+
                 const p = document.createElement("p");
                 p.innerHTML = `<b>${hotkey.key}</b> - ${hotkey.action}`;
                 tooltipContent.appendChild(p);
-              }
+            }
 
             // Add information and content elements to the tooltip element
             tooltip.appendChild(info);
