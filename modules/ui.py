@@ -12,12 +12,12 @@ import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo
-from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
-from modules.paths import script_path
-from modules.ui_common import create_refresh_button
-from modules.ui_gradio_extensions import reload_javascript
+from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo
+#from modules import sd_hijack, sd_models, localization, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave
 
+
+from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
+from modules.paths import script_path, data_path
 
 from modules.shared import opts, cmd_opts
 
@@ -368,6 +368,23 @@ def create_toprow(is_img2img):
 def setup_progressbar(*args, **kwargs):
     pass
 
+def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+    def refresh():
+        refresh_method()
+        args = refreshed_args() if callable(refreshed_args) else refreshed_args
+
+        for k, v in args.items():
+            setattr(refresh_component, k, v)
+
+        return gr.update(**(args or {}))
+
+    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
+    refresh_button.click(
+        fn=refresh,
+        inputs=[],
+        outputs=[refresh_component]
+    )
+    return refresh_button
 
 def apply_setting(key, value):
     if value is None:
@@ -425,6 +442,14 @@ def ordered_ui_categories():
     for _, category in sorted(enumerate(shared_items.ui_reorder_categories()), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category
 
+def get_value_for_setting(key):
+    value = getattr(opts, key)
+
+    info = opts.data_labels[key]
+    args = info.component_args() if callable(info.component_args) else info.component_args or {}
+    args = {k: v for k, v in args.items() if k not in {'precision'}}
+
+    return gr.update(value=value, **args)
 
 def create_override_settings_dropdown(tabname, row):
     dropdown = gr.Dropdown([], label="Override settings", visible=False, elem_id=f"{tabname}_override_settings", multiselect=True)
@@ -469,9 +494,9 @@ def create_ui():
                         txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=False)
 
                     with gr.Row(elem_id="txt2img_extra_networks_row", visible=True) as extra_networks:
-                        #from modules import ui_extra_networks
-                        #extra_networks_ui = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'txt2img')
-                        modules.scripts.scripts_txt2img.prepare_ui()
+                        from modules import ui_extra_networks
+                        extra_networks_ui = ui_extra_networks.create_ui(extra_networks, extra_networks_button, 'txt2img')
+                        #modules.scripts.scripts_txt2img.prepare_ui()
                     
                     #with gr.Accordion("Parameters", open=True):
                                      
@@ -1630,8 +1655,8 @@ def create_ui():
 
         result = gr.HTML(elem_id="settings_result")
 
-        #quicksettings_names = opts.quicksettings_list
-        quicksettings_names = [x.strip() for x in opts.quicksettings.split(",")]
+        quicksettings_names = opts.quicksettings_list
+        #quicksettings_names = [x.strip() for x in opts.quicksettings.split(",")]
         quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
 
         quicksettings_list = []
@@ -1748,7 +1773,7 @@ def create_ui():
     ]
 
     interfaces += script_callbacks.ui_tabs_callback()
-    interfaces += [(settings.interface, "Settings", "settings")]
+    interfaces += [(settings_interface, "Settings", "settings")]
 
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
@@ -1823,10 +1848,15 @@ def create_ui():
         footer = footer.format(versions=versions_html())
         gr.HTML(footer)
 
-        settings.add_functionality(demo)
+        text_settings = gr.Textbox(elem_id="settings_json", value=lambda: opts.dumpjson(), visible=False)
+        settings_submit.click(
+            fn=wrap_gradio_call(run_settings, extra_outputs=[gr.update()]),
+            inputs=components,
+            outputs=[text_settings, result],
+        )
 
         update_image_cfg_scale_visibility = lambda: gr.update(visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
-        settings.text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
+        text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
         demo.load(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
 
         button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
@@ -1843,7 +1873,33 @@ def create_ui():
             outputs=[component_dict['sd_model_checkpoint'], text_settings],
         )                           
 
+
+        for _i, k, _item in quicksettings_list:
+            component = component_dict[k]
+            info = opts.data_labels[k]
+
+            change_handler = component.release if hasattr(component, 'release') else component.change
+            change_handler(
+                fn=lambda value, k=k: run_settings_single(value, key=k),
+                inputs=[component],
+                outputs=[component, text_settings],
+                show_progress=info.refresh is not None,
+            )
+
+        update_image_cfg_scale_visibility = lambda: gr.update(visible=shared.sd_model and shared.sd_model.cond_stage_key == "edit")
+        text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
+        demo.load(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
+
+        button_set_checkpoint = gr.Button('Change checkpoint', elem_id='change_checkpoint', visible=False)
+        button_set_checkpoint.click(
+            fn=lambda value, _: run_settings_single(value, key='sd_model_checkpoint'),
+            _js="function(v){ var res = desiredCheckpointName; desiredCheckpointName = ''; return [res || v, null]; }",
+            inputs=[component_dict['sd_model_checkpoint'], dummy_component],
+            outputs=[component_dict['sd_model_checkpoint'], text_settings],
+        )
+
         component_keys = [k for k in opts.data_labels.keys() if k in component_dict]
+
 
         def get_settings_values():
             return [get_value_for_setting(key) for key in component_keys]
@@ -1859,7 +1915,8 @@ def create_ui():
             try:
                 results = modules.extras.run_modelmerger(*args)
             except Exception as e:
-                errors.report("Error loading/saving model file", exc_info=True)
+                print("Error loading/saving model file:", file=sys.stderr)
+                print(traceback.format_exc(), file=sys.stderr)
                 modules.sd_models.list_models()  # to remove the potentially missing models from the list
                 return [*[gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(4)], f"Error merging checkpoints: {e}"]
             return results
@@ -1887,7 +1944,7 @@ def create_ui():
                 primary_model_name,
                 secondary_model_name,
                 tertiary_model_name,
-                settings.component_dict['sd_model_checkpoint'],
+                component_dict['sd_model_checkpoint'],
                 modelmerger_result,
             ]
         )
@@ -1913,6 +1970,7 @@ def webpath(fn):
 def javascript_html():
     # Ensure localization is in `window` before scripts
     head = f'<script type="text/javascript">{localization.localization_js(shared.opts.localization)}</script>\n'
+    #head = ""
 
     script_js = os.path.join(script_path, "script.js")
     head += f'<script type="text/javascript" src="{webpath(script_js)}"></script>\n'
@@ -1931,7 +1989,6 @@ def javascript_html():
 
 def css_html():
     head = ""
-
     def stylesheet(fn):
         return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
 

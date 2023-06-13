@@ -659,7 +659,7 @@ class Options:
             self.data = json.load(file)
 
         # 1.1.1 quicksettings list migration
-        if self.data.get('quicksettings') is not None and self.data.get('quicksettings_list') is None:
+        if self.data.get('quicksettings') is not None:
             self.data['quicksettings_list'] = [i.strip() for i in self.data.get('quicksettings').split(',')]
 
         # 1.4.0 ui_reorder

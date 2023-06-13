@@ -7,6 +7,8 @@ function set_theme(theme) {
   */
 }
 
+var selectedTabItemId = "tab_txt2img";
+
 function all_gallery_buttons() {
   var allGalleryButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnails > .thumbnail-item.thumbnail-small');
   var visibleGalleryButtons = [];
@@ -149,6 +151,7 @@ function showRestoreProgressButton(tabname, show) {
   button.style.display = show ? "flex" : "none";
 }
 
+
 function submit() {
   showSubmitButtons('txt2img', false);
 
@@ -217,7 +220,6 @@ function restoreProgressImg2img() {
   return id;
 }
 
-
 onUiLoaded(function() {
   showRestoreProgressButton('txt2img', localStorage.getItem("txt2img_task_id"));
   showRestoreProgressButton('img2img', localStorage.getItem("img2img_task_id"));
@@ -249,138 +251,30 @@ function confirm_clear_prompt(prompt, negative_prompt) {
 }
 
 
+var promptTokecountUpdateFuncs = {};
+
+function recalculatePromptTokens(name) {
+  if (promptTokecountUpdateFuncs[name]) {
+      promptTokecountUpdateFuncs[name]();
+  }
+}
+
+function recalculate_prompts_txt2img() {
+  recalculatePromptTokens('txt2img_prompt');
+  recalculatePromptTokens('txt2img_neg_prompt');
+  return Array.from(arguments);
+}
+
+function recalculate_prompts_img2img() {
+  recalculatePromptTokens('img2img_prompt');
+  recalculatePromptTokens('img2img_neg_prompt');
+  return Array.from(arguments);
+}
+
+
 var opts = {};
-onAfterUiUpdate(function() {
-    if (Object.keys(opts).length != 0) return;
-
-    var json_elem = gradioApp().getElementById('settings_json');
-    if (json_elem == null) return;
-
-    var textarea = json_elem.querySelector('textarea');
-    var jsdata = textarea.value;
-    opts = JSON.parse(jsdata);
-
-    executeCallbacks(optionsChangedCallbacks); /*global optionsChangedCallbacks*/
-
-    Object.defineProperty(textarea, 'value', {
-        set: function(newValue) {
-            var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
-            var oldValue = valueProp.get.call(textarea);
-            valueProp.set.call(textarea, newValue);
-
-            if (oldValue != newValue) {
-                opts = JSON.parse(textarea.value);
-            }
-
-            executeCallbacks(optionsChangedCallbacks);
-        },
-        get: function() {
-            var valueProp = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value');
-            return valueProp.get.call(textarea);
-        }
-    });
-
-    json_elem.parentElement.style.display = "none";
-
-    setupTokenCounters();
-
-    var show_all_pages = gradioApp().getElementById('settings_show_all_pages');
-    var settings_tabs = gradioApp().querySelector('#settings div');
-    if (show_all_pages && settings_tabs) {
-        settings_tabs.appendChild(show_all_pages);
-        show_all_pages.onclick = function() {
-            gradioApp().querySelectorAll('#settings > div').forEach(function(elem) {
-                if (elem.id == "settings_tab_licenses") {
-                    return;
-                }
-
-                elem.style.display = "block";
-            });
-        };
-    }
-});
-
-onOptionsChanged(function() {
-  var elem = gradioApp().getElementById('sd_checkpoint_hash');
-  var sd_checkpoint_hash = opts.sd_checkpoint_hash || "";
-  var shorthash = sd_checkpoint_hash.substring(0, 10);
-
-  if (elem && elem.textContent != shorthash) {
-      elem.textContent = shorthash;
-      elem.title = sd_checkpoint_hash;
-      elem.href = "https://google.com/search?q=" + sd_checkpoint_hash;
-  }
-});
-
-let txt2img_textarea, img2img_textarea = undefined;
-var desiredCheckpointName = null;
-function selectCheckpoint(name) {
-  desiredCheckpointName = name;
-  gradioApp().getElementById('change_checkpoint').click();
-}
-
-function currentImg2imgSourceResolution(w, h, scaleBy) {
-  var img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img');
-  return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy];
-}
-
-function updateImg2imgResizeToTextAfterChangingImage() {
-  // At the time this is called from gradio, the image has no yet been replaced.
-  // There may be a better solution, but this is simple and straightforward so I'm going with it.
-
-  setTimeout(function() {
-      gradioApp().getElementById('img2img_update_resize_to').click();
-  }, 500);
-
-  return [];
-
-}
-
-function setRandomSeed(elem_id) {
-  var input = gradioApp().querySelector("#" + elem_id + " input");
-  if (!input) return [];
-
-  input.value = "-1";
-  updateInput(input);
-  return [];
-}
-
-function switchWidthHeight(tabname) {
-  var width = gradioApp().querySelector("#" + tabname + "_width input[type=number]");
-  var height = gradioApp().querySelector("#" + tabname + "_height input[type=number]");
-  if (!width || !height) return [];
-
-  var tmp = width.value;
-  width.value = height.value;
-  height.value = tmp;
-
-  updateInput(width);
-  updateInput(height);
-  return [];
-}
-
-onUiUpdate(function() {	
-  const theme_menu = gradioApp().querySelector("#theme_menu");
-  function disabled_extensions(value) {   
-    if (value) {
-      theme_menu.classList.remove("hidden");
-    } else {
-      theme_menu.classList.add("hidden");
-    }
-  }
-  const theme_ext = gradioApp().querySelector('#extensions input[name="enable_sd_theme_editor"]');
-  if(theme_ext){
-    disabled_extensions(theme_ext.checked);
-  }
-}) 
-
-let selectedTabItemId = "tab_txt2img";
-let opts = {};
-
-onUiLoaded(function () {
-  showRestoreProgressButton("txt2img", localStorage.getItem("txt2img_task_id"));
-  showRestoreProgressButton("img2img", localStorage.getItem("img2img_task_id"));
-
+onUiUpdate(function() {
+  
   if (Object.keys(opts).length != 0) return;
 
   var json_elem = gradioApp().getElementById("settings_json");
@@ -414,6 +308,8 @@ onUiLoaded(function () {
       return valueProp.get.call(textarea);
     },
   });
+
+  //console.log(opts);
 
   json_elem.parentElement.style.display = "none";
 
@@ -1099,6 +995,7 @@ onUiLoaded(function () {
 
   function tabOpsSave(setting) {
     updateInput(setting);
+    
   }
 
   function tabsHiddenChange() {
@@ -1295,7 +1192,7 @@ onUiLoaded(function () {
     const cEvent = new Event("click"); //submit
     Object.defineProperty(cEvent, "target", { value: settings_submit });
     settings_submit.dispatchEvent(cEvent);
-    //console.log(setting_quicksettings.value);
+    console.log(setting_quicksettings.value);
   }
 
   /* 	
@@ -1965,17 +1862,46 @@ onUiLoaded(function () {
   /* anapnoe ui end */
 });
 
-onOptionsChanged(function () {
-  var elem = gradioApp().getElementById("sd_checkpoint_hash");
+onOptionsChanged(function() {
+  var elem = gradioApp().getElementById('sd_checkpoint_hash');
   var sd_checkpoint_hash = opts.sd_checkpoint_hash || "";
   var shorthash = sd_checkpoint_hash.substring(0, 10);
 
   if (elem && elem.textContent != shorthash) {
-    elem.textContent = shorthash;
-    elem.title = sd_checkpoint_hash;
-    elem.href = "https://google.com/search?q=" + sd_checkpoint_hash;
+      elem.textContent = shorthash;
+      elem.title = sd_checkpoint_hash;
+      elem.href = "https://google.com/search?q=" + sd_checkpoint_hash;
   }
 });
+
+let txt2img_textarea, img2img_textarea = undefined;
+let wait_time = 800;
+let token_timeouts = {};
+
+function update_txt2img_tokens(...args) {
+  update_token_counter("txt2img_token_button");
+  if (args.length == 2) {
+      return args[0];
+  }
+  return args;
+}
+
+function update_img2img_tokens(...args) {
+  update_token_counter(
+      "img2img_token_button"
+  );
+  if (args.length == 2) {
+      return args[0];
+  }
+  return args;
+}
+
+function update_token_counter(button_id) {
+  if (token_timeouts[button_id]) {
+      clearTimeout(token_timeouts[button_id]);
+  }
+  token_timeouts[button_id] = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
+}
 
 
 
@@ -2065,3 +1991,51 @@ window.onload = function () {
     document.body.style.display = "block";
   }, 1000);
 };
+
+var desiredCheckpointName = null;
+function selectCheckpoint(name) {
+    desiredCheckpointName = name;
+    gradioApp().getElementById('change_checkpoint').click();
+}
+
+function currentImg2imgSourceResolution(w, h, scaleBy) {
+    var img = gradioApp().querySelector('#mode_img2img > div[style="display: block;"] img');
+    return img ? [img.naturalWidth, img.naturalHeight, scaleBy] : [0, 0, scaleBy];
+}
+
+function updateImg2imgResizeToTextAfterChangingImage() {
+    // At the time this is called from gradio, the image has no yet been replaced.
+    // There may be a better solution, but this is simple and straightforward so I'm going with it.
+
+    setTimeout(function() {
+        gradioApp().getElementById('img2img_update_resize_to').click();
+    }, 500);
+
+    return [];
+
+}
+
+
+
+function setRandomSeed(elem_id) {
+    var input = gradioApp().querySelector("#" + elem_id + " input");
+    if (!input) return [];
+
+    input.value = "-1";
+    updateInput(input);
+    return [];
+}
+
+function switchWidthHeight(tabname) {
+    var width = gradioApp().querySelector("#" + tabname + "_width input[type=number]");
+    var height = gradioApp().querySelector("#" + tabname + "_height input[type=number]");
+    if (!width || !height) return [];
+
+    var tmp = width.value;
+    width.value = height.value;
+    height.value = tmp;
+
+    updateInput(width);
+    updateInput(height);
+    return [];
+}
