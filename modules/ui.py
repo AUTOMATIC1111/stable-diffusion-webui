@@ -315,7 +315,7 @@ def create_sampler_and_steps_selection(choices, tabname):
 
 def ordered_ui_categories():
     user_order = {x.strip(): i * 2 + 1 for i, x in enumerate(modules.shared.opts.ui_reorder.split(","))}
-    for i, category in sorted(enumerate(modules.shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
+    for _i, category in sorted(enumerate(modules.shared.ui_reorder_categories), key=lambda x: user_order.get(x[1], x[0] * 2 + 0)):
         yield category
 
 
@@ -1452,7 +1452,7 @@ def create_ui():
 
     with gr.Blocks(theme=modules.shared.gradio_theme, analytics_enabled=False, title="SD.Next", allowed_paths=[cmd_opts.data_dir]) as demo:
         with gr.Row(elem_id="quicksettings", variant="compact"):
-            for i, k, item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
+            for _i, k, _item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
 
@@ -1483,7 +1483,7 @@ def create_ui():
         restart_submit.click(fn=lambda x: modules.shared.restart_server(restart=True), _js="restart_reload")
         shutdown_submit.click(fn=lambda x: modules.shared.restart_server(restart=False), _js="restart_reload")
 
-        for i, k, item in quicksettings_list:
+        for _i, k, _item in quicksettings_list:
             component = component_dict[k]
             info = opts.data_labels[k]
 

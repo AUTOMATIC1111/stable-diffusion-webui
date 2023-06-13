@@ -421,7 +421,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_delimiters": OptionInfo(".,\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"), # pylint: disable=anomalous-backslash-in-string
     "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}),
-    "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": [x for x in tab_names]}),
+    "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}),
     "ui_tab_reorder": OptionInfo("From Text, From Image, Process Image", "UI tabs order"),
     "ui_scripts_reorder": OptionInfo("Enable Dynamic Thresholding, ControlNet", "UI scripts order"),
     "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
@@ -501,7 +501,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
     "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers (0 = no tiling)", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
     "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers (0 = no tiling)", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SCUNET upscalers (low values = visible seam)", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),    
+    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SCUNET upscalers (low values = visible seam)", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
     "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution rather than first pass"),
     "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
 }))
@@ -524,7 +524,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_width": OptionInfo(0, "Card width for Extra Networks (px)"),
     "extra_networks_card_height": OptionInfo(0, "Card height for Extra Networks (px)"),
     "extra_networks_add_text_separator": OptionInfo(" ", "Extra text to add before <...> when adding extra network to prompt"),
-    "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None"] + [x for x in hypernetworks.keys()]}, refresh=reload_hypernetworks),
+    "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None"] + list(hypernetworks.keys())}, refresh=reload_hypernetworks),
 }))
 
 options_templates.update(options_section(('token_merging', 'Token Merging'), {

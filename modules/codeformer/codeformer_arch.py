@@ -165,7 +165,7 @@ class CodeFormer(VQAutoEncoder):
                 connect_list=('32', '64', '128', '256'),
                 fix_modules=('quantize', 'generator')):
         super(CodeFormer, self).__init__(512, 64, [1, 2, 2, 4, 4, 8], 'nearest',2, [16], codebook_size)
-      
+
         if fix_modules is not None:
             for module in fix_modules:
                 for param in getattr(self, module).parameters():
@@ -222,7 +222,7 @@ class CodeFormer(VQAutoEncoder):
         enc_feat_dict = {}
         out_list = [self.fuse_encoder_block[f_size] for f_size in self.connect_list]
         for i, block in enumerate(self.encoder.blocks):
-            x = block(x) 
+            x = block(x)
             if i in out_list:
                 enc_feat_dict[str(x.shape[-1])] = x.clone()
 
@@ -267,7 +267,7 @@ class CodeFormer(VQAutoEncoder):
         fuse_list = [self.fuse_generator_block[f_size] for f_size in self.connect_list]
 
         for i, block in enumerate(self.generator.blocks):
-            x = block(x) 
+            x = block(x)
             if i in fuse_list: # fuse after i-th block
                 f_size = str(x.shape[-1])
                 if w>0:

@@ -39,7 +39,7 @@ def get_exif(image):
 
 def set_exif(d: dict):
     ifd = ImageFileDirectory_v2()
-    _TAGS = dict(((v, k) for k, v in TAGS.items())) # enumerate possible exif tags
+    _TAGS = {v: k for k, v in TAGS.items()} # enumerate possible exif tags
     for k, v in d.items():
         ifd[_TAGS[k]] = v
     exif_stream = io.BytesIO()

@@ -21,7 +21,7 @@ all_images_by_type = {}
 
 
 class Result(object):
-    def __init__(self, typ: str, fn: str, tag: str = None, requested: list = []):
+    def __init__(self, typ: str, fn: str, tag: str = None, requested: list = []): # noqa: B006
         self.type = typ
         self.input = fn
         self.output = ''
@@ -139,7 +139,7 @@ def upscale_restore_image(res: Result, upscale: bool = False, restore: bool = Fa
         res.ops.append('upscale')
     if restore:
         kwargs.codeformer_visibility = 1.0
-        kwargs.codeformer_weight: 0.2
+        kwargs.codeformer_weight = 0.2
         res.ops.append('restore')
     if upscale or restore:
         result = sdapi.postsync('/sdapi/v1/extra-single-image', kwargs)
@@ -260,7 +260,7 @@ def save_image(res: Result, folder: str):
     return res
 
 
-def file(filename: str, folder: str, tag = None, requested = []):
+def file(filename: str, folder: str, tag = None, requested = []): # noqa: B006
     # initialize result dict
     res = Result(fn = filename, typ='unknown', tag=tag, requested = requested)
     # open image

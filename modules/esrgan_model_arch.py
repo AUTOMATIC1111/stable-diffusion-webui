@@ -104,7 +104,7 @@ class ResidualDenseBlock_5C(nn.Module):
     Modified options that can be used:
         - "Partial Convolution based Padding" arXiv:1811.11718
         - "Spectral normalization" arXiv:1802.05957
-        - "ICASSP 2020 - ESRGAN+ : Further Improving ESRGAN" N. C. 
+        - "ICASSP 2020 - ESRGAN+ : Further Improving ESRGAN" N. C.
             {Rakotonirina} and A. {Rasoanaivo}
     """
 

@@ -91,7 +91,7 @@ def print_profile(profile: cProfile.Profile, msg: str):
     ps.sort_stats(pstats.SortKey.CUMULATIVE).print_stats(15)
     profile = None
     lines = stream.getvalue().split('\n')
-    lines = [l for l in lines if '<frozen' not in l and '{built-in' not in l and '/logging' not in l and '/rich' not in l]
+    lines = [line for line in lines if '<frozen' not in line and '{built-in' not in line and '/logging' not in line and '/rich' not in line]
     print(f'Profile {msg}:', '\n'.join(lines))
 
 

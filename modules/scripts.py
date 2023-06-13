@@ -325,7 +325,6 @@ class ScriptRunner:
             inputs_alwayson += [script.alwayson for _ in controls]
             script.args_to = len(inputs)
 
-        s = []
         with gr.Group(elem_id='scripts_alwayson_img2img' if self.is_img2img else 'scripts_alwayson_txt2img'):
             for script in self.alwayson_scripts:
                 t0 = time.time()
@@ -337,7 +336,6 @@ class ScriptRunner:
 
         dropdown = gr.Dropdown(label="Script", elem_id="script_list", choices=["None"] + self.titles, value="None", type="index")
         inputs[0] = dropdown
-        s = []
         for script in self.selectable_scripts:
             with gr.Group(visible=False) as group:
                 t0 = time.time()

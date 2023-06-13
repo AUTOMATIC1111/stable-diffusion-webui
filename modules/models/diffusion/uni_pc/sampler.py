@@ -29,10 +29,10 @@ class UniPCSampler(object):
         # first time we have all the info to get the real parameters from the ui
         # value from the hires steps slider:
         num_inference_steps = t[0] + 1
-        approx_denoise_strength = num_inference_steps / self.inflated_steps
+        num_inference_steps / self.inflated_steps
         self.denoise_steps = max(num_inference_steps, shared.opts.uni_pc_order)
 
-        init_timestep = max(self.inflated_steps - self.denoise_steps, 0)
+        max(self.inflated_steps - self.denoise_steps, 0)
 
         # actual number of steps we'll run
 

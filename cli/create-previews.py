@@ -163,8 +163,8 @@ async def lora(params):
     if not os.path.exists(folder):
         log.error({ 'lora directory not found': folder })
         return
-    models1 = [f for f in Path(folder).glob('*.safetensors')]
-    models2 = [f for f in Path(folder).glob('*.ckpt')]
+    models1 = list(Path(folder).glob('*.safetensors'))
+    models2 = list(Path(folder).glob('*.ckpt'))
     models = [f.stem for f in models1 + models2]
     log.info({ 'loras': len(models) })
     for model in models:
@@ -204,8 +204,8 @@ async def lyco(params):
     if not os.path.exists(folder):
         log.error({ 'lyco directory not found': folder })
         return
-    models1 = [f for f in Path(folder).glob('*.safetensors')]
-    models2 = [f for f in Path(folder).glob('*.ckpt')]
+    models1 = list(Path(folder).glob('*.safetensors'))
+    models2 = list(Path(folder).glob('*.ckpt'))
     models = [f.stem for f in models1 + models2]
     log.info({ 'lycos': len(models) })
     for model in models:

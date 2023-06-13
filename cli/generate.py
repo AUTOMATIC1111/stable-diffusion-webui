@@ -72,7 +72,7 @@ def exif(info, i = None, op = 'generate'):
         template += ' | grid {num}'.format(num = sd.generate.batch_size * sd.generate.n_iter) # pylint: disable=consider-using-f-string
     ifd = ImageFileDirectory_v2()
     exif_stream = io.BytesIO()
-    _TAGS = dict(((v, k) for k, v in TAGS.items())) # enumerate possible exif tags
+    _TAGS = {v: k for k, v in TAGS.items()} # enumerate possible exif tags
     ifd[_TAGS['ImageDescription']] = template
     ifd.save(exif_stream)
     val = b'Exif\x00\x00' + exif_stream.getvalue()
@@ -337,7 +337,7 @@ async def main():
         scheduler = sampler(params, options)
         t0 = time.perf_counter()
         data = await generate() # generate returns list of images
-        if not 'image' in data:
+        if 'image' not in data:
             break
         stats.images += len(data.image)
         t1 = time.perf_counter()

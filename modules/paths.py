@@ -36,7 +36,7 @@ path_dirs = [
 
 paths = {}
 
-for d, must_exist, what, options in path_dirs:
+for d, must_exist, what, _options in path_dirs:
     must_exist_path = os.path.abspath(os.path.join(script_path, d, must_exist))
     if not os.path.exists(must_exist_path):
         print(f"Warning: {what} not found at path {must_exist_path}", file=sys.stderr)

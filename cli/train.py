@@ -399,7 +399,7 @@ if __name__ == '__main__':
             train_embedding()
         if args.type == 'lora' or args.type == 'lyco' or args.type == 'dreambooth':
             train_lora()
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
         log.error('interrupt requested')
         sdapi.interrupt()
     mem_stats()

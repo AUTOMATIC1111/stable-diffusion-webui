@@ -752,7 +752,7 @@ class UniPC:
         t_T = self.noise_schedule.T if t_start is None else t_start
         device = x.device
         if method == 'multistep':
-            if timesteps == None:
+            if timesteps is None:
                 timesteps = get_time_steps(self.noise_schedule, skip_type=skip_type, t_T=t_T, t_0=t_0, N=steps, device=device)
             #print(f"Running UniPC Sampling with {timesteps.shape[0]} timesteps, order {order}")
             assert steps >= order, "UniPC order must be < sampling steps"
@@ -773,7 +773,7 @@ class UniPC:
                         if self.after_update is not None:
                             self.after_update(x, model_x)
                         model_prev_list.append(model_x)
-                        t_prev_list.append(vec_t)                      
+                        t_prev_list.append(vec_t)
                         progress.update(task, advance=1, description=f"Progress {round(len(vec_t) * init_order / (time.time() - t), 2)}it/s")
                     # for step in trange(order, steps + 1):
                     for step in range(order, steps + 1):

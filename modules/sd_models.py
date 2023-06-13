@@ -422,7 +422,7 @@ def enable_midas_autodownload():
 
 
 def repair_config(sd_config):
-    if not "use_ema" in sd_config.model.params:
+    if "use_ema" not in sd_config.model.params:
         sd_config.model.params.use_ema = False
     if shared.opts.no_half:
         sd_config.model.params.unet_config.params.use_fp16 = False

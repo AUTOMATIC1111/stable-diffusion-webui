@@ -14,7 +14,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
         sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     def list_items(self):
-        embeddings = [emb for emb in sd_hijack.model_hijack.embedding_db.word_embeddings.values()]
+        embeddings = list(sd_hijack.model_hijack.embedding_db.word_embeddings.values())
         if len(embeddings) == 0: # maybe not loaded yet, so lets just look them up
             for root, _dirs, fns in os.walk(shared.opts.embeddings_dir, followlinks=True):
                 for fn in fns:

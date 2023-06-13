@@ -2,6 +2,9 @@
 
 ## Update for 06/13/2023
 
+One bigger update...
+Both some **new functionality** as well as **massive merges** from upstream  
+
 - new cache for models/lora/lyco metadata: `metadata.json`  
   drastically reduces disk access on app startup  
 - allow saving of **ui default values**  
@@ -10,7 +13,8 @@
   default is to auto-load model on startup, can be changed in settings -> stable diffusion  
   if disabled, model will be loaded on first request, e.g. when you click generate  
 - updated `accelerate` and `xformers`
-- huge nubmer of changes ported from a1111 upstream  
+- huge nubmer of changes ported from **A1111** upstream  
+  this was a massive merge
   hopefully this does not cause any regressions  
 
 

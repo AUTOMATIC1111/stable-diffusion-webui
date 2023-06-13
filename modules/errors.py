@@ -19,7 +19,7 @@ traceback_install(console=console, extra_lines=1, width=console.width, word_wrap
 already_displayed = {}
 
 
-def install(suppress=[]):
+def install(suppress=[]): # noqa: B006
     warnings.filterwarnings("ignore", category=UserWarning)
     pretty_install(console=console)
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=suppress)
@@ -34,7 +34,7 @@ def print_error_explanation(message):
         log.error(line)
 
 
-def display(e: Exception, task, suppress=[]):
+def display(e: Exception, task, suppress=[]): # noqa: B006
     log.error(f"{task or 'error'}: {type(e).__name__}")
     console.print_exception(show_locals=False, max_frames=5, extra_lines=1, suppress=suppress, theme="ansi_dark", word_wrap=False, width=min([console.width, 200]))
 
@@ -53,5 +53,5 @@ def run(code, task):
         display(e, task)
 
 
-def exception(suppress=[]):
+def exception(suppress=[]): # noqa: B006
     console.print_exception(show_locals=False, max_frames=10, extra_lines=2, suppress=suppress, theme="ansi_dark", word_wrap=False, width=min([console.width, 200]))

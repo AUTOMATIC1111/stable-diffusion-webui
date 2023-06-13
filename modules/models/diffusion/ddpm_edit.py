@@ -195,7 +195,7 @@ class DDPM(pl.LightningModule):
                     print(f"{context}: Restored training weights")
 
     def init_from_ckpt(self, path, ignore_keys=None, only_model=False):
-        ignore_keys = ignore_keys or []        
+        ignore_keys = ignore_keys or []
         sd = torch.load(path, map_location="cpu")
         if "state_dict" in list(sd.keys()):
             sd = sd["state_dict"]
@@ -1212,8 +1212,10 @@ class LatentDiffusion(DDPM):
 
             if i % log_every_t == 0 or i == timesteps - 1:
                 intermediates.append(img)
-            if callback: callback(i)
-            if img_callback: img_callback(img, i)
+            if callback:
+                callback(i)
+            if img_callback:
+                img_callback(img, i)
 
         if return_intermediates:
             return img, intermediates
