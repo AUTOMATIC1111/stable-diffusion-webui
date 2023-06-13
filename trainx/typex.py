@@ -427,7 +427,7 @@ class TrainLoraTask(UserDict):
             'optimizer_type': params.net.optimizer_type,
             'network_train_unet_only': params.net.network_train_unet_only,
             'network_train_text_encoder_only': params.net.network_train_text_encoder_only,
-            'reg_data_dir': '',
+            # 'reg_data_dir': '',
             'save_last_n_epochs': save_last_n_epochs,
             'caption_extension': ".txt",
             'lr_scheduler': params.net.lr_scheduler,
