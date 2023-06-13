@@ -1,10 +1,11 @@
 # defaults
 __pycache__
 /cache.json
+/metadata.json
 /config.json
+/ui-config.json
 /params.txt
 /styles.csv
-/ui-config.json
 /user.css
 /webui-user.bat
 /webui-user.sh

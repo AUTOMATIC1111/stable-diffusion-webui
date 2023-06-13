@@ -26,6 +26,8 @@ checkpoints_list = {}
 checkpoint_aliases = {}
 checkpoints_loaded = collections.OrderedDict()
 skip_next_load = False
+sd_metadata_file = os.path.join(paths.data_path, "metadata.json")
+sd_metadata = None
 
 
 class CheckpointInfo:
@@ -237,6 +239,18 @@ def get_state_dict_from_checkpoint(pl_sd):
 
 def read_metadata_from_safetensors(filename):
     import json
+    global sd_metadata # pylint: disable=global-statement
+    if sd_metadata is None:
+        if not os.path.isfile(sd_metadata_file):
+            sd_metadata = {}
+        else:
+            with open(sd_metadata_file, "r", encoding="utf8") as file:
+                sd_metadata = json.load(file)
+    res = sd_metadata.get(filename, None)
+    if res is not None:
+        return res
+
+    res = {}
     with open(filename, mode="rb") as file:
         metadata_len = file.read(8)
         metadata_len = int.from_bytes(metadata_len, "little")
@@ -244,7 +258,6 @@ def read_metadata_from_safetensors(filename):
         assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
         json_data = json_start + file.read(metadata_len-2)
         json_obj = json.loads(json_data)
-        res = {}
         for k, v in json_obj.get("__metadata__", {}).items():
             res[k] = v
             if isinstance(v, str) and v[0:1] == '{':
@@ -252,7 +265,10 @@ def read_metadata_from_safetensors(filename):
                     res[k] = json.loads(v)
                 except Exception:
                     pass
-        return res
+    sd_metadata[filename] = res
+    with open(sd_metadata_file, "w", encoding="utf8") as file:
+        json.dump(sd_metadata, file, indent=4)
+    return res
 
 
 def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unused-argument
@@ -558,7 +574,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False):
     load_dict = shared.opts.sd_model_dict != model_data.sd_dict
     global skip_next_load # pylint: disable=global-statement
     if skip_next_load:
-        shared.log.debug('Reload model weights skip')
+        shared.log.debug('Load model weights skip')
         skip_next_load = False
         return
     from modules import lowvram, sd_hijack
@@ -568,7 +584,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False):
         shared.log.debug(f'Model dict: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
     else:
         model_data.sd_dict = 'None'
-        shared.log.debug(f'Reload model weights: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
+        shared.log.debug(f'Load model weights: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
     if not sd_model:
         sd_model = model_data.sd_model
     if sd_model is None:  # previous model load failed
@@ -606,7 +622,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False):
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
     except Exception:
-        shared.log.error("Failed to load checkpoint, restoring previous")
+        shared.log.error("Load model failed: restoring previous")
         load_model_weights(sd_model, current_checkpoint_info, None, timer)
     finally:
         sd_hijack.model_hijack.hijack(sd_model)
