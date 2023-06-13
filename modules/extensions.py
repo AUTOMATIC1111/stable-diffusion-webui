@@ -1,12 +1,12 @@
 import os
 import sys
+import threading
 import traceback
 
-import time
 import git
 
 from modules import shared
-from modules.paths_internal import extensions_dir, extensions_builtin_dir
+from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
 extensions = []
 
@@ -24,6 +24,8 @@ def active():
 
 
 class Extension:
+    lock = threading.Lock()
+
     def __init__(self, name, path, enabled=True, is_builtin=False):
         self.name = name
         self.path = path
@@ -31,16 +33,24 @@ class Extension:
         self.status = ''
         self.can_update = False
         self.is_builtin = is_builtin
+        self.commit_hash = ''
+        self.commit_date = None
         self.version = ''
+        self.branch = None
         self.remote = None
         self.have_info_from_repo = False
 
     def read_info_from_repo(self):
-        if self.have_info_from_repo:
+        if self.is_builtin or self.have_info_from_repo:
             return
 
-        self.have_info_from_repo = True
+        with self.lock:
+            if self.have_info_from_repo:
+                return
 
+            self.do_read_info_from_repo()
+
+    def do_read_info_from_repo(self):
         repo = None
         try:
             if os.path.exists(os.path.join(self.path, ".git")):
@@ -55,12 +65,18 @@ class Extension:
             try:
                 self.status = 'unknown'
                 self.remote = next(repo.remote().urls, None)
-                head = repo.head.commit
-                ts = time.asctime(time.gmtime(repo.head.commit.committed_date))
-                self.version = f'{head.hexsha[:8]} ({ts})'
+                commit = repo.head.commit
+                self.commit_date = commit.committed_date
+                if repo.active_branch:
+                    self.branch = repo.active_branch.name
+                self.commit_hash = commit.hexsha
+                self.version = self.commit_hash[:8]
 
-            except Exception:
+            except Exception as ex:
+                print(f"Failed reading extension data from Git repository ({self.name}): {ex}", file=sys.stderr)
                 self.remote = None
+
+        self.have_info_from_repo = True
 
     def list_files(self, subdir, extension):
         from modules import scripts
@@ -82,18 +98,30 @@ class Extension:
         for fetch in repo.remote().fetch(dry_run=True):
             if fetch.flags != fetch.HEAD_UPTODATE:
                 self.can_update = True
-                self.status = "behind"
+                self.status = "new commits"
                 return
+
+        try:
+            origin = repo.rev_parse('origin')
+            if repo.head.commit != origin:
+                self.can_update = True
+                self.status = "behind HEAD"
+                return
+        except Exception:
+            self.can_update = False
+            self.status = "unknown (remote error)"
+            return
 
         self.can_update = False
         self.status = "latest"
 
-    def fetch_and_reset_hard(self):
+    def fetch_and_reset_hard(self, commit='origin'):
         repo = git.Repo(self.path)
         # Fix: `error: Your local changes to the following files would be overwritten by merge`,
         # because WSL2 Docker set 755 file permissions instead of 644, this results to the error.
         repo.git.fetch(all=True)
-        repo.git.reset('origin', hard=True)
+        repo.git.reset(commit, hard=True)
+        self.have_info_from_repo = False
 
 
 def list_extensions():

@@ -14,7 +14,7 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return is_img2img
 
-    def ui(self, is_img2img):        
+    def ui(self, is_img2img):
         loops = gr.Slider(minimum=1, maximum=32, step=1, label='Loops', value=4, elem_id=self.elem_id("loops"))
         final_denoising_strength = gr.Slider(minimum=0, maximum=1, step=0.01, label='Final denoising strength', value=0.5, elem_id=self.elem_id("final_denoising_strength"))
         denoising_curve = gr.Dropdown(label="Denoising strength curve", choices=["Aggressive", "Linear", "Lazy"], value="Linear")
@@ -84,7 +84,7 @@ class Script(scripts.Script):
                     p.color_corrections = initial_color_corrections
 
                 if append_interrogation != "None":
-                    p.prompt = original_prompt + ", " if original_prompt != "" else ""
+                    p.prompt = f"{original_prompt}, " if original_prompt else ""
                     if append_interrogation == "CLIP":
                         p.prompt += shared.interrogator.interrogate(p.init_images[0])
                     elif append_interrogation == "DeepBooru":
@@ -104,7 +104,7 @@ class Script(scripts.Script):
 
                 p.seed = processed.seed + 1
                 p.denoising_strength = calculate_denoising_strength(i + 1)
-                
+
                 if state.skipped:
                     break
 
@@ -121,7 +121,7 @@ class Script(scripts.Script):
                 all_images.append(last_image)
 
             p.inpainting_fill = original_inpainting_fill
-                
+
             if state.interrupted:
                     break
 
@@ -132,7 +132,7 @@ class Script(scripts.Script):
 
             if opts.return_grid:
                 grids.append(grid)
-                
+
         all_images = grids + all_images
 
         processed = Processed(p, all_images, initial_seed, initial_info)

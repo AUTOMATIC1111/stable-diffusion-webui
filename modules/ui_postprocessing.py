@@ -1,5 +1,5 @@
 import gradio as gr
-from modules import scripts_postprocessing, scripts, shared, gfpgan_model, codeformer_model, ui_common, postprocessing, call_queue
+from modules import scripts, shared, ui_common, postprocessing, call_queue
 import modules.generation_parameters_copypaste as parameters_copypaste
 
 
@@ -9,13 +9,13 @@ def create_ui():
     with gr.Row().style(equal_height=False, variant='compact'):
         with gr.Column(variant='compact'):
             with gr.Tabs(elem_id="mode_extras"):
-                with gr.TabItem('Single Image', elem_id="extras_single_tab") as tab_single:
+                with gr.TabItem('Single Image', id="single_image", elem_id="extras_single_tab") as tab_single:
                     extras_image = gr.Image(label="Source", source="upload", interactive=True, type="pil", elem_id="extras_image")
 
-                with gr.TabItem('Batch Process', elem_id="extras_batch_process_tab") as tab_batch:
-                    image_batch = gr.File(label="Batch Process", file_count="multiple", interactive=True, type="file", elem_id="extras_image_batch")
+                with gr.TabItem('Batch Process', id="batch_process", elem_id="extras_batch_process_tab") as tab_batch:
+                    image_batch = gr.Files(label="Batch Process", interactive=True, elem_id="extras_image_batch")
 
-                with gr.TabItem('Batch from Directory', elem_id="extras_batch_directory_tab") as tab_batch_dir:
+                with gr.TabItem('Batch from Directory', id="batch_from_directory", elem_id="extras_batch_directory_tab") as tab_batch_dir:
                     extras_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, placeholder="A directory on the same machine where the server is running.", elem_id="extras_batch_input_dir")
                     extras_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, placeholder="Leave blank to save images to the default path.", elem_id="extras_batch_output_dir")
                     show_extras_results = gr.Checkbox(label='Show result images', value=True, elem_id="extras_show_extras_results")

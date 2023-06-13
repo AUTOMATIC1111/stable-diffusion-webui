@@ -61,7 +61,7 @@ class DisableInitialization:
                 if res is None:
                     res = original(url, *args, local_files_only=False, **kwargs)
                 return res
-            except Exception as e:
+            except Exception:
                 return original(url, *args, local_files_only=False, **kwargs)
 
         def transformers_utils_hub_get_from_cache(url, *args, local_files_only=False, **kwargs):

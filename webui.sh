@@ -23,7 +23,7 @@ fi
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]
 then
-    install_dir="/home/$(whoami)"
+    install_dir="$(pwd)"
 fi
 
 # Name of the subdirectory (defaults to stable-diffusion-webui)
@@ -94,6 +94,14 @@ else
     printf "\n%s\n" "${delimiter}"
 fi
 
+if [[ $(getconf LONG_BIT) = 32 ]]
+then
+    printf "\n%s\n" "${delimiter}"
+    printf "\e[1m\e[31mERROR: Unsupported Running on a 32bit OS\e[0m"
+    printf "\n%s\n" "${delimiter}"
+    exit 1
+fi
+
 if [[ -d .git ]]
 then
     printf "\n%s\n" "${delimiter}"
@@ -113,13 +121,13 @@ case "$gpu_info" in
         printf "Experimental support for Renoir: make sure to have at least 4GB of VRAM and 10GB of RAM or enable cpu mode: --use-cpu all --no-half"
         printf "\n%s\n" "${delimiter}"
     ;;
-    *) 
+    *)
     ;;
 esac
 if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
 then
-    export TORCH_COMMAND="pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/rocm5.2"
-fi  
+    export TORCH_COMMAND="pip install torch==2.0.1+rocm5.4.2 torchvision==0.15.2+rocm5.4.2 --index-url https://download.pytorch.org/whl/rocm5.4.2"
+fi
 
 for preq in "${GIT}" "${python_cmd}"
 do
@@ -152,35 +160,57 @@ else
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
 
-printf "\n%s\n" "${delimiter}"
-printf "Create and activate python venv"
-printf "\n%s\n" "${delimiter}"
-cd "${install_dir}"/"${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
-if [[ ! -d "${venv_dir}" ]]
+if [[ -z "${VIRTUAL_ENV}" ]];
 then
-    "${python_cmd}" -m venv "${venv_dir}"
-    first_launch=1
-fi
-# shellcheck source=/dev/null
-if [[ -f "${venv_dir}"/bin/activate ]]
-then
-    source "${venv_dir}"/bin/activate
+    printf "\n%s\n" "${delimiter}"
+    printf "Create and activate python venv"
+    printf "\n%s\n" "${delimiter}"
+    cd "${install_dir}"/"${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
+    if [[ ! -d "${venv_dir}" ]]
+    then
+        "${python_cmd}" -m venv "${venv_dir}"
+        first_launch=1
+    fi
+    # shellcheck source=/dev/null
+    if [[ -f "${venv_dir}"/bin/activate ]]
+    then
+        source "${venv_dir}"/bin/activate
+    else
+        printf "\n%s\n" "${delimiter}"
+        printf "\e[1m\e[31mERROR: Cannot activate python venv, aborting...\e[0m"
+        printf "\n%s\n" "${delimiter}"
+        exit 1
+    fi
 else
     printf "\n%s\n" "${delimiter}"
-    printf "\e[1m\e[31mERROR: Cannot activate python venv, aborting...\e[0m"
+    printf "python venv already activate: ${VIRTUAL_ENV}"
     printf "\n%s\n" "${delimiter}"
-    exit 1
 fi
+
+# Try using TCMalloc on Linux
+prepare_tcmalloc() {
+    if [[ "${OSTYPE}" == "linux"* ]] && [[ -z "${NO_TCMALLOC}" ]] && [[ -z "${LD_PRELOAD}" ]]; then
+        TCMALLOC="$(ldconfig -p | grep -Po "libtcmalloc.so.\d" | head -n 1)"
+        if [[ ! -z "${TCMALLOC}" ]]; then
+            echo "Using TCMalloc: ${TCMALLOC}"
+            export LD_PRELOAD="${TCMALLOC}"
+        else
+            printf "\e[1m\e[31mCannot locate TCMalloc (improves CPU memory usage)\e[0m\n"
+        fi
+    fi
+}
 
 if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]
 then
     printf "\n%s\n" "${delimiter}"
     printf "Accelerating launch.py..."
     printf "\n%s\n" "${delimiter}"
+    prepare_tcmalloc
     exec accelerate launch --num_cpu_threads_per_process=6 "${LAUNCH_SCRIPT}" "$@"
 else
     printf "\n%s\n" "${delimiter}"
     printf "Launching launch.py..."
-    printf "\n%s\n" "${delimiter}"      
+    printf "\n%s\n" "${delimiter}"
+    prepare_tcmalloc
     exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
 fi
