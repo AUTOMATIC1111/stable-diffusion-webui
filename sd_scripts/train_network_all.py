@@ -835,144 +835,149 @@ def train_callback(epoch, avg_loss):
     print(epoch, avg_loss)
 
 
-def train_with_jsons(config_file_path, callback):
+def train_with_file(config_file_path, callback):
     parser = setup_parser()
-    args = parser.parse_args()
+    args = parser.parse_args([])
     args.config_file = config_file_path
-    args = train_util.read_config_from_json(args, parser)
+    if config_file_path.endswith(".json"):
+        args = train_util.read_config_from_json(args, parser)
+    elif config_file_path.endswith(".toml"):
+        args = train_util.read_config_from_file(args, parser)
     train(args, callback)
 
 
 # 训练函数接口
-def train_with_params(pretrained_model_name_or_path,
-                      network_weights,
-                      output_name,
-                      save_model_as="safetensors",
-                      v2=False,
-                      v_parameterization=False,
-                      output_dir="./output",
-                      logging_dir="./logs",
-                      save_every_n_epochs=2,
-                      save_last_n_epochs=10,
-                      save_precision=None,
+def train_with_params(
+        pretrained_model_name_or_path,
+        network_weights,
+        output_name,
+        save_model_as="safetensors",
+        v2=False,
+        v_parameterization=False,
+        output_dir="./output",
+        logging_dir="./logs",
+        save_every_n_epochs=2,
+        save_last_n_epochs=10,
+        save_precision=None,
 
-                      trigger_words=None,
-                      max_token_length=75,  # max token length of text encoder (default for 75, 150 or 225)
-                      reg_tokens=None,
-                      list_train_data_dir=None,
-                      list_reg_data_dir=None,
-                      num_repeats=None,
-                      list_reg_repeats=None,
-                      batch_size=1,
-                      resolution="512,512",  # 64的倍数
-                      cache_latents=False,
-                      # cache latents to main memory to reduce VRAM usage (augmentations must be disabled)
-                      cache_latents_to_disk=False,
-                      # cache latents to disk to reduce VRAM usage (augmentations must be disabled)
-                      enable_bucket=True,  # enable buckets for multi aspect ratio training
-                      min_bucket_reso=256,  # 范围自己定，minimum resolution for buckets
-                      max_bucket_reso=1024,  # 范围自己定，maximum resolution for buckets
-                      bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended
-                      bucket_no_upscale=False,  # 秋叶版没有这个,make bucket for each image without upscaling
-                      token_warmup_min=1,  # 秋叶版没有这个,start learning at N tags (token means comma separated strinfloatgs)
-                      token_warmup_step=0,
-                      # 秋叶版没有这个,tag length reaches maximum on N steps (or N*max_train_steps if N<1)
+        trigger_words=None,
+        max_token_length=75,  # max token length of text encoder (default for 75, 150 or 225)
+        reg_tokens=None,
+        list_train_data_dir=None,
+        list_reg_data_dir=None,
+        num_repeats=None,
+        list_reg_repeats=None,
+        batch_size=1,
+        resolution="512,512",  # 64的倍数
+        cache_latents=False,
+        # cache latents to main memory to reduce VRAM usage (augmentations must be disabled)
+        cache_latents_to_disk=False,
+        # cache latents to disk to reduce VRAM usage (augmentations must be disabled)
+        enable_bucket=True,  # enable buckets for multi aspect ratio training
+        min_bucket_reso=256,  # 范围自己定，minimum resolution for buckets
+        max_bucket_reso=1024,  # 范围自己定，maximum resolution for buckets
+        bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended
+        bucket_no_upscale=False,  # 秋叶版没有这个,make bucket for each image without upscaling
+        token_warmup_min=1,  # 秋叶版没有这个,start learning at N tags (token means comma separated strinfloatgs)
+        token_warmup_step=0,
+        # 秋叶版没有这个,tag length reaches maximum on N steps (or N*max_train_steps if N<1)
 
-                      caption_extension=".txt",
-                      caption_dropout_rate=0.0,  # Rate out dropout caption(0.0~1.0)
-                      caption_dropout_every_n_epochs=0,  # Dropout all captions every N epochs
-                      caption_tag_dropout_rate=0.0,  # Rate out dropout comma separated tokens(0.0~1.0)
-                      shuffle_caption=False,  # shuffle comma-separated caption
-                      weighted_captions=False,  # 使用带权重的 token，不推荐与 shuffle_caption 一同开启
-                      keep_tokens=0,
-                      # keep heading N tokens when shuffling caption tokens (token means comma separated strings)
-                      color_aug=False,  # 秋叶版没有这个,enable weak color augmentation
-                      flip_aug=False,  # 秋叶版没有这个,enable horizontal flip augmentation
-                      face_crop_aug_range=None,
-                      # 秋叶版没有这个,enable face-centered crop augmentation and its range (e.g. 2.0,4.0)
-                      random_crop=False,
-                      # 秋叶版没有这个,enable random crop (for style training in face-centered crop augmentation)
+        caption_extension=".txt",
+        caption_dropout_rate=0.0,  # Rate out dropout caption(0.0~1.0)
+        caption_dropout_every_n_epochs=0,  # Dropout all captions every N epochs
+        caption_tag_dropout_rate=0.0,  # Rate out dropout comma separated tokens(0.0~1.0)
+        shuffle_caption=False,  # shuffle comma-separated caption
+        weighted_captions=False,  # 使用带权重的 token，不推荐与 shuffle_caption 一同开启
+        keep_tokens=0,
+        # keep heading N tokens when shuffling caption tokens (token means comma separated strings)
+        color_aug=False,  # 秋叶版没有这个,enable weak color augmentation
+        flip_aug=False,  # 秋叶版没有这个,enable horizontal flip augmentation
+        face_crop_aug_range=None,
+        # 秋叶版没有这个,enable face-centered crop augmentation and its range (e.g. 2.0,4.0)
+        random_crop=False,
+        # 秋叶版没有这个,enable random crop (for style training in face-centered crop augmentation)
 
-                      lowram=True,
-                      # enable low RAM optimization. e.g. load models to VRAM instead of RAM (for machines which have bigger VRAM than RAM such as Colab and Kaggle)
-                      mem_eff_attn=False,  # use memory efficient attention for CrossAttention
-                      xformers=True,  # 如果mem_eff_attn为True则xformers设置无效
-                      vae=None,  # 秋叶版没有这个,path to checkpoint of vae to replace
-                      max_data_loader_n_workers=8,
-                      # 秋叶版没有这个,max num workers for DataLoader (lower is less main RAM usage, faster epoch start and slower data loading)
-                      persistent_data_loader_workers=True,
-                      # persistent DataLoader workers (useful for reduce time gap between epoch, but may use more memory)
+        lowram=True,
+        # enable low RAM optimization. e.g. load models to VRAM instead of RAM (for machines which have bigger VRAM than RAM such as Colab and Kaggle)
+        mem_eff_attn=False,  # use memory efficient attention for CrossAttention
+        xformers=True,  # 如果mem_eff_attn为True则xformers设置无效
+        vae=None,  # 秋叶版没有这个,path to checkpoint of vae to replace
+        max_data_loader_n_workers=8,
+        # 秋叶版没有这个,max num workers for DataLoader (lower is less main RAM usage, faster epoch start and slower data loading)
+        persistent_data_loader_workers=True,
+        # persistent DataLoader workers (useful for reduce time gap between epoch, but may use more memory)
 
-                      max_train_steps=1600,  # 秋叶版没有这个,
-                      epoch=10,  # 整数，随便填
-                      gradient_checkpointing=True,
-                      gradient_accumulation_steps=1,
-                      # 整数，随便填, Number of updates steps to accumulate before performing a backward/update pass
-                      mixed_precision="no",  # 是否使用混精度
-                      full_fp16=True,  # fp16 training including gradients
+        max_train_steps=1600,  # 秋叶版没有这个,
+        epoch=10,  # 整数，随便填
+        gradient_checkpointing=True,
+        gradient_accumulation_steps=1,
+        # 整数，随便填, Number of updates steps to accumulate before performing a backward/update pass
+        mixed_precision="no",  # 是否使用混精度
+        full_fp16=True,  # fp16 training including gradients
 
-                      enable_preview=False,  # 和下面这几个参数一起的
-                      sample_prompts=None,  # file for prompts to generate sample images
-                      sample_sampler="ddim",
-                      # ["ddim","pndm","lms","euler","euler_a","heun","dpm_2","dpm_2_a","dpmsolver","dpmsolver++","dpmsingle","k_lms","k_euler","k_euler_a","k_dpm_2","k_dpm_2_a",]
-                      sample_every_n_epochs=None,
+        enable_preview=False,  # 和下面这几个参数一起的
+        sample_prompts=None,  # file for prompts to generate sample images
+        sample_sampler="ddim",
+        # ["ddim","pndm","lms","euler","euler_a","heun","dpm_2","dpm_2_a","dpmsolver","dpmsolver++","dpmsingle","k_lms","k_euler","k_euler_a","k_dpm_2","k_dpm_2_a",]
+        sample_every_n_epochs=None,
 
-                      network_module="networks.lora",
-                      network_train_unet_only=False,
-                      network_train_text_encoder_only=False,
-                      network_dim=32,  # 4的倍数，<=256
-                      network_alpha=16,  # 小于等于network_dim,可以不是4的倍数
-                      clip_skip=1,  # 0-12
+        network_module="networks.lora",
+        network_train_unet_only=False,
+        network_train_text_encoder_only=False,
+        network_dim=32,  # 4的倍数，<=256
+        network_alpha=16,  # 小于等于network_dim,可以不是4的倍数
+        clip_skip=1,  # 0-12
 
-                      # network额外参数
-                      conv_dim=None,
-                      # lycoris才有，# 4的倍数, 适用于lora,dylora。如果是dylora,则"conv_dim must be same as network_dim",
-                      conv_alpha=None,  # lycoris才有，<=conv_dim, 适用于lora,dylora
-                      unit=8,  # 秋叶版没有
-                      dropout=0,  # dropout 概率, 0 为不使用 dropout, 越大则 dropout 越多，推荐 0~0.5， LoHa/LoKr/(IA)^3暂时不支持
-                      algo='lora',  # 可选['lora','loha','lokr','ia3']
+        # network额外参数
+        conv_dim=None,
+        # lycoris才有，# 4的倍数, 适用于lora,dylora。如果是dylora,则"conv_dim must be same as network_dim",
+        conv_alpha=None,  # lycoris才有，<=conv_dim, 适用于lora,dylora
+        unit=8,  # 秋叶版没有
+        dropout=0,  # dropout 概率, 0 为不使用 dropout, 越大则 dropout 越多，推荐 0~0.5， LoHa/LoKr/(IA)^3暂时不支持
+        algo='lora',  # 可选['lora','loha','lokr','ia3']
 
-                      enable_block_weights=False,  # 让下面几个参数有效
-                      block_dims=None,  # lora,
-                      block_alphas=None,  # lora,
-                      conv_block_dims=None,  # lora,
-                      conv_block_alphas=None,  # lora,
-                      down_lr_weight=None,  # lora
-                      mid_lr_weight=None,  # lora
-                      up_lr_weight=None,  # lora
-                      block_lr_zero_threshold=0.0,  # float型，分层学习率置 0 阈值
+        enable_block_weights=False,  # 让下面几个参数有效
+        block_dims=None,  # lora,
+        block_alphas=None,  # lora,
+        conv_block_dims=None,  # lora,
+        conv_block_alphas=None,  # lora,
+        down_lr_weight=None,  # lora
+        mid_lr_weight=None,  # lora
+        up_lr_weight=None,  # lora
+        block_lr_zero_threshold=0.0,  # float型，分层学习率置 0 阈值
 
-                      optimizer_type="AdamW8bit",
-                      # AdamW (default), AdamW8bit, Lion8bit, Lion, SGDNesterov, SGDNesterov8bit, DAdaptation(DAdaptAdam), DAdaptAdaGrad, DAdaptAdan, DAdaptSGD, AdaFactor
-                      weight_decay=None,  # optimizer_args,优化器内部的参数，权重衰减系数，不建议随便改
-                      betas=None,  # optimizer_args,优化器内部的参数，不建议随便改
+        optimizer_type="AdamW8bit",
+        # AdamW (default), AdamW8bit, Lion8bit, Lion, SGDNesterov, SGDNesterov8bit, DAdaptation(DAdaptAdam), DAdaptAdaGrad, DAdaptAdan, DAdaptSGD, AdaFactor
+        weight_decay=None,  # weight_decay=0.01 ,optimizer_args,优化器内部的参数，权重衰减系数，不建议随便改
+        betas=None,  # betas=0.9,0.999,optimizer_args,优化器内部的参数，不建议随便改
 
-                      max_grad_norm=1.0,  # Max gradient norm, 0 for no clipping
+        max_grad_norm=1.0,  # Max gradient norm, 0 for no clipping
 
-                      learning_rate=0.0001,
-                      unet_lr=0.0001,
-                      text_encoder_lr=0.00001,
-                      lr_scheduler="cosine_with_restarts",
-                      # linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup, adafactor
-                      lr_scheduler_num_cycles=1,  # Number of restarts for cosine scheduler with restarts
-                      lr_warmup_steps=0,  # Number of steps for the warmup in the lr scheduler
-                      lr_scheduler_power=1,  # Polynomial power for polynomial scheduler
+        learning_rate=0.0001,
+        unet_lr=0.0001,
+        text_encoder_lr=0.00001,
+        lr_scheduler="cosine_with_restarts",
+        # linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup, adafactor
+        lr_scheduler_num_cycles=1,  # Number of restarts for cosine scheduler with restarts
+        lr_warmup_steps=0,  # Number of steps for the warmup in the lr scheduler
+        lr_scheduler_power=1,  # Polynomial power for polynomial scheduler
 
-                      seed=1,
-                      prior_loss_weight=1.0,  # loss weight for regularization images
-                      min_snr_gamma=None,  # float型，最小信噪比伽马值，如果启用推荐为 5
-                      noise_offset=None,  # enable noise offset with this value (if enabled, around 0.1 is recommended)
-                      adaptive_noise_scale=None,
-                      # 与noise_offset配套使用；add `latent mean absolute value * this value` to noise_offset (disabled if None, default)
-                      multires_noise_iterations=None,  # 整数，多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
-                      multires_noise_discount=0.3,  # 多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
+        seed=1,
+        prior_loss_weight=1.0,  # loss weight for regularization images
+        min_snr_gamma=None,  # ,float型，最小信噪比伽马值，如果启用推荐为 5
+        noise_offset=None,  # enable noise offset with this value (if enabled, around 0.1 is recommended)
+        adaptive_noise_scale=None,
+        # 与noise_offset配套使用；add `latent mean absolute value * this value` to noise_offset (disabled if None, default)
+        multires_noise_iterations=None,  # 整数，多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
+        multires_noise_discount=0.3,  # 多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
 
-                      config_file=None,  # using .toml instead of args to pass hyperparameter
-                      output_config=False,  # output command line args to given .json file
-                      callback=None):
+        config_file=None,  # using .toml instead of args to pass hyperparameter
+        output_config=False,  # output command line args to given .json file
+        callback=None,
+                      ):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
-    args = parser.parse_args()
+    args = parser.parse_args([])
     #args = train_util.read_config_from_file(args, parser)
 
     args.pretrained_model_name_or_path = pretrained_model_name_or_path
@@ -1083,8 +1088,11 @@ def train_with_params(pretrained_model_name_or_path,
 
     args.config_file = config_file if config_file!="" and config_file!=-1 else None
     args.output_config = output_config if output_config!="" and output_config!=-1 else None
-    if output_config is not None:
-        args = train_util.read_config_from_json(args, parser)
+    if output_config is not None and config_file is not None:
+        if config_file.endswith(".json"):
+            args = train_util.read_config_from_json(args, parser)
+        elif config_file.endswith(".toml"):
+            args = train_util.read_config_from_file(args, parser)
     # print("network_args:",args.network_args)
     return train(args, callback)
 
@@ -1094,23 +1102,136 @@ if __name__ == "__main__":
     #
     # args = parser.parse_args()
     # args = train_util.read_config_from_file(args, parser)
-    train_with_params(pretrained_model_name_or_path=r"D:\qll\models\final-prune.ckpt",
-                      network_weights="",  # "output/y1s1_100v3.safetensors",
-                      train_data_dir=r"D:\qll\pics",
-                      reg_data_dir="",
-                      output_name="xhx-lion-0.0002", save_model_as="safetensors",
-                      trigger_words=["xhx"], save_every_n_epochs=2,
-                      reg_tokens=[""], list_train_data_dir=[r"D:\qll\pics\naked-xiong-withtags"],
-                      list_reg_data_dir=[""],
-                      num_repeats=["8"], batch_size=4, epoch=20, resolution="512", clip_skip=2, network_dim=32,
-                      network_alpha=16,
-                      learning_rate=0.0002,  # 0.00005,
-                      unet_lr=0.0002,  # 0.00005,
-                      text_encoder_lr=0.0001,  # 0.000005,
-                      optimizer_type="Lion",  # "AdamW",
-                      lr_scheduler="cosine_with_restarts",
+    test_with_file=False
+    if test_with_file:
+        config_file_path = r"E:\qll\sd-scripts\test_config.toml"
+        train_with_file(config_file_path, train_callback)
+    else:
+        train_with_params(
 
-                      network_train_text_encoder_only=False,
-                      network_train_unet_only=False, seed=1, network_module="networks.lora")
+        pretrained_model_name_or_path=r"E:\qll\models\chilloutmix_NiPrunedFp32Fix.safetensors",
+        network_weights="",  # "output/y1s1_100v3.safetensors",
+        output_name="xhx-lion-0.0002",
+        save_model_as="safetensors",
+        v2 = False,
+        v_parameterization = False,
+        output_dir = "./output",
+        logging_dir = "./logs",
+        save_every_n_epochs = 2,
+        save_last_n_epochs = 10,
+        save_precision = None,
+        trigger_words=["xhx"],
+        reg_tokens=[""],
+        list_train_data_dir=[r"E:\qll\pics\hanfu-512x768-tags"],
+        list_reg_data_dir=[""],
+        max_token_length = 75,  # max token length of text encoder (default for 75, 150 or 225)
+        num_repeats=["8"],
+        list_reg_repeats=None,  # ["8"]
+            batch_size=1,
+            resolution="512,512",  # 64的倍数
+            cache_latents=False,
+            # cache latents to main memory to reduce VRAM usage (augmentations must be disabled)
+            cache_latents_to_disk=False,
+            # cache latents to disk to reduce VRAM usage (augmentations must be disabled)
+            enable_bucket=False,  # enable buckets for multi aspect ratio training
+            min_bucket_reso=256,  # 范围自己定，minimum resolution for buckets
+            max_bucket_reso=1024,  # 范围自己定，maximum resolution for buckets
+            bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended
+            bucket_no_upscale=False,  # 秋叶版没有这个,make bucket for each image without upscaling
+            token_warmup_min=1,  # 秋叶版没有这个,start learning at N tags (token means comma separated strinfloatgs)
+            token_warmup_step=0, # 秋叶版没有这个,tag length reaches maximum on N steps (or N*max_train_steps if N<1)
+
+            caption_extension=".txt",
+            caption_dropout_rate=0.0,  # Rate out dropout caption(0.0~1.0)
+            caption_dropout_every_n_epochs=0,  # Dropout all captions every N epochs
+            caption_tag_dropout_rate=0.0,  # Rate out dropout comma separated tokens(0.0~1.0)
+            shuffle_caption=False,  # shuffle comma-separated caption
+            weighted_captions=False,  # 使用带权重的 token，不推荐与 shuffle_caption 一同开启
+            keep_tokens=0,
+            # keep heading N tokens when shuffling caption tokens (token means comma separated strings)
+            color_aug=False,  # 秋叶版没有这个,enable weak color augmentation
+            flip_aug=False,  # 秋叶版没有这个,enable horizontal flip augmentation
+            face_crop_aug_range=None, # 1.0,2.0,4.0
+            # 秋叶版没有这个,enable face-centered crop augmentation and its range (e.g. 2.0,4.0)
+            random_crop=False,
+            # 秋叶版没有这个,enable random crop (for style training in face-centered crop augmentation)
+
+            lowram=True,
+            # enable low RAM optimization. e.g. load models to VRAM instead of RAM (for machines which have bigger VRAM than RAM such as Colab and Kaggle)
+            mem_eff_attn=False,  # use memory efficient attention for CrossAttention
+            xformers=True,  # 如果mem_eff_attn为True则xformers设置无效
+            vae=None,  # 比如：c:\vae.pt, 秋叶版没有这个,path to checkpoint of vae to replace
+            max_data_loader_n_workers=8,
+            # 秋叶版没有这个,max num workers for DataLoader (lower is less main RAM usage, faster epoch start and slower data loading)
+            persistent_data_loader_workers=True,
+            # persistent DataLoader workers (useful for reduce time gap between epoch, but may use more memory)
+
+            max_train_steps=1600,  # 秋叶版没有这个,
+            epoch=10,  # 整数，随便填
+            gradient_checkpointing=True,
+            gradient_accumulation_steps=1,
+            # 整数，随便填, Number of updates steps to accumulate before performing a backward/update pass
+            mixed_precision="no",  # 是否使用混精度
+            full_fp16=True,  # fp16 training including gradients
+
+            enable_preview=False,  # 和下面这几个参数一起的
+            sample_prompts=None,  # 文件路径，比如c:\promts.txt,file for prompts to generate sample images
+            sample_sampler="ddim",
+            # ["ddim","pndm","lms","euler","euler_a","heun","dpm_2","dpm_2_a","dpmsolver","dpmsolver++","dpmsingle","k_lms","k_euler","k_euler_a","k_dpm_2","k_dpm_2_a",]
+            sample_every_n_epochs=None,  # 1,2,3,4,5.....
+
+            network_module="networks.lora",
+            network_train_unet_only=False,
+            network_train_text_encoder_only=False,
+            network_dim=32,  # 4的倍数，<=256
+            network_alpha=16,  # 小于等于network_dim,可以不是4的倍数
+            clip_skip=1,  # 0-12
+
+            # network额外参数
+            conv_dim=None,  # 默认为None，可以填4的倍数，类似于network_dim,
+            # lycoris才有，# 4的倍数, 适用于lora,dylora。如果是dylora,则"conv_dim must be same as network_dim",
+            conv_alpha=None,  # 默认为None，可以填比con_dim小的整数，类似于network_alpha； lycoris才有，<=conv_dim, 适用于lora,dylora
+            unit=8,  # 秋叶版没有
+            dropout=0,  # dropout 概率, 0 为不使用 dropout, 越大则 dropout 越多，推荐 0~0.5， LoHa/LoKr/(IA)^3暂时不支持
+            algo='lora',  # 可选['lora','loha','lokr','ia3']
+
+            enable_block_weights=False,  # 让下面几个参数有效
+            block_dims=None,  # lora,  类似于network_dim,
+            block_alphas=None,  # lora,默认为None，可以填比con_dim小的整数，类似于network_alpha
+            conv_block_dims=None,  # lora,  类似于network_dim,
+            conv_block_alphas=None,  # lora,默认为None，可以填比con_dim小的整数，类似于network_alpha
+            down_lr_weight=None,  # lora, 12位的float List，例如[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+            mid_lr_weight=None,  # lora, 1位float,例如 1.0；
+            up_lr_weight=None,  # lora, 12位的float List，例如[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
+            block_lr_zero_threshold=0.0,  # float型，分层学习率置 0 阈值
+
+            optimizer_type="AdamW8bit",
+            # AdamW (default), AdamW8bit, Lion8bit, Lion, SGDNesterov, SGDNesterov8bit, DAdaptation(DAdaptAdam), DAdaptAdaGrad, DAdaptAdan, DAdaptSGD, AdaFactor
+            weight_decay=None,  # optimizer_args,优化器内部的参数，权重衰减系数，不建议随便改
+            betas=None,  # optimizer_args,优化器内部的参数，不建议随便改
+
+            max_grad_norm=1.0,  # Max gradient norm, 0 for no clipping
+
+            learning_rate=0.0001,
+            unet_lr=0.0001,
+            text_encoder_lr=0.00001,
+            lr_scheduler="cosine_with_restarts",
+            # linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup, adafactor
+            lr_scheduler_num_cycles=1,  # Number of restarts for cosine scheduler with restarts
+            lr_warmup_steps=0,  # Number of steps for the warmup in the lr scheduler
+            lr_scheduler_power=1,  # Polynomial power for polynomial scheduler
+
+            seed=1,
+            prior_loss_weight=1.0,  # loss weight for regularization images
+            min_snr_gamma=None,  # float型，比如5.0，最小信噪比伽马值，如果启用推荐为 5
+            noise_offset=None,  # float型，0.1左右,enable noise offset with this value (if enabled, around 0.1 is recommended)
+            adaptive_noise_scale=None,  #  float型， 1.0
+            # 与noise_offset配套使用；add `latent mean absolute value * this value` to noise_offset (disabled if None, default)
+            multires_noise_iterations=None,  # 整数，多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
+            multires_noise_discount=0.3,  # 多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
+
+            config_file="test_config.toml",  # using .toml instead of args to pass hyperparameter
+            output_config=False,  # output command line args to given .toml file
+        )
     # train(args)
 # python train_network_qll.py --pretrained_model_name_or_path "/data/qll/qianzai_ai_draw/v1-5-pruned-emaonly.ckpt" --train_data_dir "/data/qll/lora_pictures/train_ironman" --output_name im2 --resolution 512 --network_module "networks.lora" --network_dim 32 --xformers  --caption_extension ".txt" --prior_loss_weight 1 --output_dir "./output" --logging_dir "./logs" --repeats_times "20" --class_tokens iiiiimqll --output_name iiiiimqll --list_train_data_dir "/data/qll/lora_pictures/train_ironman/10_immmmmman"
