@@ -15,7 +15,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Attention, specify parts of text that the model should pay more attention to
     - a man in a `((tuxedo))` - will pay more attention to tuxedo
     - a man in a `(tuxedo:1.21)` - alternative syntax
-    - select text and press `Ctrl+Up` or `Ctrl+Down` to automatically adjust attention to selected text (code contributed by anonymous user)
+    - select text and press `Ctrl+Up` or `Ctrl+Down` (or `Command+Up` or `Command+Down` if you're on a MacOS) to automatically adjust attention to selected text (code contributed by anonymous user)
 - Loopback, run img2img processing multiple times
 - X/Y/Z plot, a way to draw a 3 dimensional plot of images with different parameters
 - Textual Inversion
@@ -99,6 +99,12 @@ Alternatively, use online services (like Google Colab):
 
 - [List of Online Services](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Online-Services)
 
+### Installation on Windows 10/11 with NVidia-GPUs using release package
+1. Download `sd.webui.zip` from [v1.0.0-pre](https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases/tag/v1.0.0-pre) and extract it's contents.
+2. Run `update.bat`.
+3. Run `run.bat`.
+> For more details see [Install-and-Run-on-NVidia-GPUs](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs)
+
 ### Automatic Installation on Windows
 1. Install [Python 3.10.6](https://www.python.org/downloads/release/python-3106/) (Newer version of Python does not support torch), checking "Add Python to PATH".
 2. Install [git](https://git-scm.com/download/win).
@@ -158,5 +164,6 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Instruct pix2pix - Tim Brooks (star), Aleksander Holynski (star), Alexei A. Efros (no star) - https://github.com/timothybrooks/instruct-pix2pix
 - Security advice - RyotaK
 - UniPC sampler - Wenliang Zhao - https://github.com/wl-zhao/UniPC
+- TAESD - Ollin Boer Bohan - https://github.com/madebyollin/taesd
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)

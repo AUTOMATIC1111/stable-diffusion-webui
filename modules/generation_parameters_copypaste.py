@@ -1,15 +1,12 @@
 import base64
-import html
 import io
-import math
+import json
 import os
 import re
-from pathlib import Path
 
 import gradio as gr
 from modules.paths import data_path
 from modules import shared, ui_tempdir, script_callbacks
-import tempfile
 from PIL import Image
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
@@ -23,14 +20,14 @@ registered_param_bindings = []
 
 
 class ParamBinding:
-    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=[]):
+    def __init__(self, paste_button, tabname, source_text_component=None, source_image_component=None, source_tabname=None, override_settings_component=None, paste_field_names=None):
         self.paste_button = paste_button
         self.tabname = tabname
         self.source_text_component = source_text_component
         self.source_image_component = source_image_component
         self.source_tabname = source_tabname
         self.override_settings_component = override_settings_component
-        self.paste_field_names = paste_field_names
+        self.paste_field_names = paste_field_names or []
 
 
 def reset():
@@ -38,13 +35,20 @@ def reset():
 
 
 def quote(text):
-    if ',' not in str(text):
+    if ',' not in str(text) and '\n' not in str(text) and ':' not in str(text):
         return text
 
-    text = str(text)
-    text = text.replace('\\', '\\\\')
-    text = text.replace('"', '\\"')
-    return f'"{text}"'
+    return json.dumps(text, ensure_ascii=False)
+
+
+def unquote(text):
+    if len(text) == 0 or text[0] != '"' or text[-1] != '"':
+        return text
+
+    try:
+        return json.loads(text)
+    except Exception:
+        return text
 
 
 def image_from_url_text(filedata):
@@ -251,12 +255,11 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         lines.append(lastline)
         lastline = ''
 
-    for i, line in enumerate(lines):
+    for line in lines:
         line = line.strip()
         if line.startswith("Negative prompt:"):
             done_with_prompt = True
             line = line[16:].strip()
-
         if done_with_prompt:
             negative_prompt += ("" if negative_prompt == "" else "\n") + line
         else:
@@ -266,7 +269,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     res["Negative prompt"] = negative_prompt
 
     for k, v in re_param.findall(lastline):
-        v = v[1:-1] if v[0] == '"' and v[-1] == '"' else v
+        if v[0] == '"' and v[-1] == '"':
+            v = unquote(v)
+
         m = re_imagesize.match(v)
         if m is not None:
             res[f"{k}-1"] = m.group(1)
@@ -285,6 +290,15 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Hires resize-1" not in res:
         res["Hires resize-1"] = 0
         res["Hires resize-2"] = 0
+
+    if "Hires sampler" not in res:
+        res["Hires sampler"] = "Use same sampler"
+
+    if "Hires prompt" not in res:
+        res["Hires prompt"] = ""
+
+    if "Hires negative prompt" not in res:
+        res["Hires negative prompt"] = ""
 
     restore_old_hires_fix_params(res)
 
@@ -312,6 +326,8 @@ infotext_to_setting_name_mapping = [
     ('UniPC skip type', 'uni_pc_skip_type'),
     ('UniPC order', 'uni_pc_order'),
     ('UniPC lower order final', 'uni_pc_lower_order_final'),
+    ('Token merging ratio', 'token_merging_ratio'),
+    ('Token merging ratio hr', 'token_merging_ratio_hr'),
     ('RNG', 'randn_source'),
     ('NGMS', 's_min_uncond'),
 ]

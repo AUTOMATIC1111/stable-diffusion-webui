@@ -98,13 +98,13 @@ class ScriptPostprocessingUpscale(scripts_postprocessing.ScriptPostprocessing):
         assert upscaler2 or (upscaler_2_name is None), f'could not find upscaler named {upscaler_2_name}'
 
         upscaled_image = self.upscale(pp.image, pp.info, upscaler1, upscale_mode, upscale_by, upscale_to_width, upscale_to_height, upscale_crop)
-        pp.info[f"Postprocess upscaler"] = upscaler1.name
+        pp.info["Postprocess upscaler"] = upscaler1.name
 
         if upscaler2 and upscaler_2_visibility > 0:
             second_upscale = self.upscale(pp.image, pp.info, upscaler2, upscale_mode, upscale_by, upscale_to_width, upscale_to_height, upscale_crop)
             upscaled_image = Image.blend(upscaled_image, second_upscale, upscaler_2_visibility)
 
-            pp.info[f"Postprocess upscaler 2"] = upscaler2.name
+            pp.info["Postprocess upscaler 2"] = upscaler2.name
 
         pp.image = upscaled_image
 
@@ -134,4 +134,4 @@ class ScriptPostprocessingUpscaleSimple(ScriptPostprocessingUpscale):
         assert upscaler1, f'could not find upscaler named {upscaler_name}'
 
         pp.image = self.upscale(pp.image, pp.info, upscaler1, 0, upscale_by, 0, 0, False)
-        pp.info[f"Postprocess upscaler"] = upscaler1.name
+        pp.info["Postprocess upscaler"] = upscaler1.name

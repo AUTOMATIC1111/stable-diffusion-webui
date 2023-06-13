@@ -13,15 +13,22 @@ import numpy as np
 import piexif
 import piexif.helper
 from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
-from fonts.ttf import Roboto
 import string
 import json
 import hashlib
 
 from modules import sd_samplers, shared, script_callbacks, errors
-from modules.shared import opts, cmd_opts
+from modules.paths_internal import roboto_ttf_file
+from modules.shared import opts
 
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+
+
+def get_font(fontsize: int):
+    try:
+        return ImageFont.truetype(opts.font or roboto_ttf_file, fontsize)
+    except Exception:
+        return ImageFont.truetype(roboto_ttf_file, fontsize)
 
 
 def image_grid(imgs, batch_size=1, rows=None):
@@ -142,14 +149,8 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
                 lines.append(word)
         return lines
 
-    def get_font(fontsize):
-        try:
-            return ImageFont.truetype(opts.font or Roboto, fontsize)
-        except Exception:
-            return ImageFont.truetype(Roboto, fontsize)
-
     def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
-        for i, line in enumerate(lines):
+        for line in lines:
             fnt = initial_fnt
             fontsize = initial_fontsize
             while drawing.multiline_textsize(line.text, font=fnt)[0] > line.allowed_width and fontsize > 0:
@@ -366,7 +367,7 @@ class FilenameGenerator:
         self.seed = seed
         self.prompt = prompt
         self.image = image
-        
+
     def hasprompt(self, *args):
         lower = self.prompt.lower()
         if self.p is None or self.prompt is None:
@@ -409,13 +410,13 @@ class FilenameGenerator:
         time_format = args[0] if len(args) > 0 and args[0] != "" else self.default_time_format
         try:
             time_zone = pytz.timezone(args[1]) if len(args) > 1 else None
-        except pytz.exceptions.UnknownTimeZoneError as _:
+        except pytz.exceptions.UnknownTimeZoneError:
             time_zone = None
 
         time_zone_time = time_datetime.astimezone(time_zone)
         try:
             formatted_time = time_zone_time.strftime(time_format)
-        except (ValueError, TypeError) as _:
+        except (ValueError, TypeError):
             formatted_time = time_zone_time.strftime(self.default_time_format)
 
         return sanitize_filename_part(formatted_time, replace_spaces=False)
@@ -472,13 +473,49 @@ def get_next_sequence_number(path, basename):
     prefix_length = len(basename)
     for p in os.listdir(path):
         if p.startswith(basename):
-            l = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
+            parts = os.path.splitext(p[prefix_length:])[0].split('-')  # splits the filename (removing the basename first if one is defined, so the sequence number is always the first element)
             try:
-                result = max(int(l[0]), result)
+                result = max(int(parts[0]), result)
             except ValueError:
                 pass
 
     return result + 1
+
+
+def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_pnginfo=None):
+    if extension is None:
+        extension = os.path.splitext(filename)[1]
+
+    image_format = Image.registered_extensions()[extension]
+
+    if extension.lower() == '.png':
+        if opts.enable_pnginfo:
+            pnginfo_data = PngImagePlugin.PngInfo()
+            for k, v in (existing_pnginfo or {}).items():
+                pnginfo_data.add_text(k, str(v))
+        else:
+            pnginfo_data = None
+
+        image.save(filename, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
+
+    elif extension.lower() in (".jpg", ".jpeg", ".webp"):
+        if image.mode == 'RGBA':
+            image = image.convert("RGB")
+        elif image.mode == 'I;16':
+            image = image.point(lambda p: p * 0.0038910505836576).convert("RGB" if extension.lower() == ".webp" else "L")
+
+        image.save(filename, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless)
+
+        if opts.enable_pnginfo and geninfo is not None:
+            exif_bytes = piexif.dump({
+                "Exif": {
+                    piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(geninfo or "", encoding="unicode")
+                },
+            })
+
+            piexif.insert(exif_bytes, filename)
+    else:
+        image.save(filename, format=image_format, quality=opts.jpeg_quality)
 
 
 def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
@@ -565,38 +602,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     info = params.pnginfo.get(pnginfo_section_name, None)
 
     def _atomically_save_image(image_to_save, filename_without_extension, extension):
-        # save image with .tmp extension to avoid race condition when another process detects new image in the directory
+        """
+        save image with .tmp extension to avoid race condition when another process detects new image in the directory
+        """
         temp_file_path = f"{filename_without_extension}.tmp"
-        image_format = Image.registered_extensions()[extension]
 
-        if extension.lower() == '.png':
-            pnginfo_data = PngImagePlugin.PngInfo()
-            if opts.enable_pnginfo:
-                for k, v in params.pnginfo.items():
-                    pnginfo_data.add_text(k, str(v))
+        save_image_with_geninfo(image_to_save, info, temp_file_path, extension, params.pnginfo)
 
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, pnginfo=pnginfo_data)
-
-        elif extension.lower() in (".jpg", ".jpeg", ".webp"):
-            if image_to_save.mode == 'RGBA':
-                image_to_save = image_to_save.convert("RGB")
-            elif image_to_save.mode == 'I;16':
-                image_to_save = image_to_save.point(lambda p: p * 0.0038910505836576).convert("RGB" if extension.lower() == ".webp" else "L")
-
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality, lossless=opts.webp_lossless)
-
-            if opts.enable_pnginfo and info is not None:
-                exif_bytes = piexif.dump({
-                    "Exif": {
-                        piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(info or "", encoding="unicode")
-                    },
-                })
-
-                piexif.insert(exif_bytes, temp_file_path)
-        else:
-            image_to_save.save(temp_file_path, format=image_format, quality=opts.jpeg_quality)
-
-        # atomically rename the file with correct extension
         os.replace(temp_file_path, filename_without_extension + extension)
 
     fullfn_without_extension, extension = os.path.splitext(params.filename)
