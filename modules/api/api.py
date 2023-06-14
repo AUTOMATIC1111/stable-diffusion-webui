@@ -212,7 +212,7 @@ class Api:
         if shared.cmd_opts.add_stop_route:
             self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
             self.add_api_route("/sdapi/v1/server-restart", self.restart_webui, methods=["POST"])
-            self.add_api_route("/sdapi/v1/server-terminate", self.terminate_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-stop", self.stop_webui, methods=["POST"])
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -729,6 +729,6 @@ class Api:
             restart.restart_program()
         return Response(status_code=501)
 
-    def terminate_webui(request):
+    def stop_webui(request):
         shared.state.server_command = "stop"
         return Response("Stopping.")
