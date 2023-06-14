@@ -133,7 +133,7 @@ class TaskReceiver:
         rds = self.redis_pool.get_connection()
         locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=30)
         try:
-            locker.acquire(blocking=True, timeout=5)
+            locker.acquire(blocking=True, timeout=40)
             for _ in range(retry):
                 now = int(time.time() * 1000)
                 # min 最小为当前时间（ms）- VIP最大等级*放大系数（VIP提前执行权重）- 任务过期时间（1天）

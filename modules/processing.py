@@ -889,7 +889,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
-    raise Exception('Cuda out of memory')
+
     return res
 
 

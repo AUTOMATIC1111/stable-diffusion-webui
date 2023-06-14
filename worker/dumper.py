@@ -13,6 +13,7 @@ from loguru import logger
 from threading import Thread
 from tools.mgo import MongoClient
 from tools.host import get_host_ip
+from tools.redis import RedisPool
 from worker.task import TaskProgress, TaskStatus
 
 
@@ -61,6 +62,10 @@ class TaskDumper(Thread):
         self._stop_flag = False
         self._dump_now = False
         self._last_dump_time = 0
+        self.redis_pool = RedisPool()
+
+    def _set_cache(self, info: DumpInfo):
+        self.redis_pool.get_connection()
 
     def _get_queue_all(self):
         infos = {}
@@ -108,10 +113,12 @@ class TaskDumper(Thread):
 
         info = self.progress_to_info(task_progress)
         self.queue.put(info)
+        self._set_cache(info)
         if not self._dump_now:
             # 如果dump_now 已经是True,就不要覆盖
-            self._dump_now = task_progress.status >= TaskStatus.Prepare \
-                             or task_progress.completed
+            # self._dump_now = task_progress.status >= TaskStatus.Prepare \
+            #                  or task_progress.completed
+            self._dump_now = task_progress.completed
 
     @abc.abstractmethod
     def progress_to_info(self, task_progress: TaskProgress) -> DumpInfo:

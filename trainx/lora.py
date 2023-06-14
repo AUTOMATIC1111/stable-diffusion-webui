@@ -131,7 +131,52 @@ def do_train_with_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: 
         if callable(dump_progress_cb):
             dump_progress_cb(p)
 
-    train_with_params(callback=progress_callback, **kwargs)
+    ok = train_with_params(callback=progress_callback, **kwargs)
+    if ok:
+        train_lora_task = TrainLoraTask(task)
+        logger.info("=============>>>> end of train <<<<=============")
+        material = train_lora_task.compress_train_material(p.train.format_epoch_log())
+        result = {
+            'material': None,
+            'models': []
+        }
+
+        local_models = get_train_models(train_lora_task, kwargs['output_name'])
+        for m in local_models:
+            # rename
+            dirname = os.path.dirname(m)
+            basename = os.path.basename(m)
+            without, ex = os.path.splitext(basename)
+            sha256 = SHA256.new(basename.encode()).hexdigest()
+            array = without.split('-')
+            epoch = array[-1] if len(array) > 1 else ''
+            hash_file_path = os.path.join(dirname, sha256 + ex)
+
+            shutil.move(m, hash_file_path)
+            key = upload_files(False, hash_file_path)
+            result['models'].append({
+                'key': key[0] if key else '',
+                'hash': sha256,
+                'epoch': epoch
+            })
+
+        if os.path.isfile(material):
+            material_keys = upload_files(False, material)
+            result['material'] = material_keys[0] if material_keys else ''
+        # notify web server
+        sender = RedisSender()
+        sender.notify_train_task(task)
+
+        fp = TaskProgress.new_finish(task, {
+            'train': result
+        }, True)
+        fp.train = p.train
+        if callable(dump_progress_cb):
+            dump_progress_cb(fp)
+    else:
+        p = TaskProgress.new_failed(task, 'train failed(unknown errors)')
+        if callable(dump_progress_cb):
+            dump_progress_cb(p)
 
 
 def start_train_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: typing.Callable):
