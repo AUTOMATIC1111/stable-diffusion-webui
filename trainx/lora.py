@@ -121,10 +121,15 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
 
 
 def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
-    p = TaskProgress.new_running(task, 'running', 0)
     train_lora_task = TrainLoraTask(task)
     kwargs = train_lora_task.build_command_args()
-
+    logger.info("=============>>>> start train lora <<<<=============")
+    logger.info(">>> command args:")
+    for k, v in kwargs.items():
+        logger.info(f"> args: {k}: {v}")
+    logger.info("====================================================")
+    p = TaskProgress.new_running(task, 'running', 0)
+    
     def progress_callback(epoch, loss, num_train_epochs):
         print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
         progress = epoch / num_train_epochs * 100 * 0.9
@@ -196,7 +201,7 @@ def start_train_process(task: Task,  dump_progress_cb: typing.Callable):
     # print(f'start sub process:{proc.pid}')
     # proc.start()
     # proc.join()
-    res = pool.apply_async(do_train_with_process, (task, dump_progress_cb)) # res.get获取结果
+    res = pool.apply_async(do_train_with_process, (task, dump_progress_cb))  # res.get获取结果
     pool.close()   # 关闭进程池 不再接受新进程
     pool.join()
 
