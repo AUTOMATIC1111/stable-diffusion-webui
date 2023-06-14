@@ -1,6 +1,6 @@
 function keyupEditAttention(event) {
   const target = event.originalTarget || event.composedPath()[0];
-  if (!target.matches("[id*='_toprow'] [id*='_prompt'] textarea")) return;
+  if (!target.matches("*:is([id*='_toprow'] [id*='_prompt'], .prompt) textarea")) return;
   if (!(event.metaKey || event.ctrlKey)) return;
   const isPlus = event.key === 'ArrowUp';
   const isMinus = event.key === 'ArrowDown';

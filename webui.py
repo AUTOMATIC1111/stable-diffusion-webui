@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 import re
 import sys
@@ -37,11 +38,9 @@ errors.install([gradio])
 
 errors.log.debug('Loading Modules')
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
-from modules import extra_networks, ui_extra_networks_checkpoints # pylint: disable=C0411,C0412
-from modules import extra_networks_hypernet, ui_extra_networks_hypernets, ui_extra_networks_textual_inversion
-from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411
+from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
 from modules.paths import create_paths
-from modules import shared, extensions, ui_tempdir, ui_extra_networks, modelloader
+from modules import shared, extensions, extra_networks, ui_tempdir, ui_extra_networks, modelloader
 import modules.devices
 import modules.sd_samplers
 import modules.upscaler
@@ -121,15 +120,13 @@ def initialize():
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     shared.reload_hypernetworks()
 
-    ui_extra_networks.intialize()
-    ui_extra_networks.register_page(ui_extra_networks_hypernets.ExtraNetworksPageHypernetworks())
-    ui_extra_networks.register_page(ui_extra_networks_checkpoints.ExtraNetworksPageCheckpoints())
-    ui_extra_networks.register_page(ui_extra_networks_textual_inversion.ExtraNetworksPageTextualInversion())
+    ui_extra_networks.initialize()
+    ui_extra_networks.register_default_pages()
     extra_networks.initialize()
-    extra_networks.register_extra_network(extra_networks_hypernet.ExtraNetworkHypernet())
+    extra_networks.register_default_extra_networks()
     startup_timer.record("extra-networks")
 
-    if cmd_opts.tls_keyfile is not None and cmd_opts.tls_keyfile is not None:
+    if cmd_opts.tls_keyfile is not None and cmd_opts.tls_certfile is not None:
         try:
             if not os.path.exists(cmd_opts.tls_keyfile):
                 log.error("Invalid path to TLS keyfile given")

@@ -2,8 +2,18 @@
 
 ## Update for 06/14/2023
 
+Second stage of a jumbo merge from upstream plus few minor changes...
+
 - simplify token merging  
 - reorganize some settings  
+- all updates from upstream: A1111 v1.3.2 [df004be] (latest release)  
+  pretty much nothing major that i haven't relased in previous versions, but its still a long list of tiny changes  
+  - skipped:  
+    add separate hires prompt: unnecessarily complicated and spread over large number of commits due to many regressions  
+    allow external scripts to add cross-optimization methods: dangerous and i don't see a use case for it so far  
+    load extension info in threads: unnecessary as other optimizations i've already put place perform equally good  
+  - broken:  
+    sub-quadratic optimization changes  
 
 ## Update for 06/13/2023
 

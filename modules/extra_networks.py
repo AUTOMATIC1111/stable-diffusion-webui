@@ -14,9 +14,22 @@ def register_extra_network(extra_network):
     extra_network_registry[extra_network.name] = extra_network
 
 
+def register_default_extra_networks():
+    from modules.extra_networks_hypernet import ExtraNetworkHypernet
+    register_extra_network(ExtraNetworkHypernet())
+
+
 class ExtraNetworkParams:
     def __init__(self, items=None):
         self.items = items or []
+        self.positional = []
+        self.named = {}
+        for item in self.items:
+            parts = item.split('=', 2) if isinstance(item, str) else [item]
+            if len(parts) == 2:
+                self.named[parts[0]] = parts[1]
+            else:
+                self.positional.append(item)
 
 
 class ExtraNetwork:

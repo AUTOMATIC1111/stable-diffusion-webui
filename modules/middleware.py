@@ -2,7 +2,6 @@ import ssl
 import time
 import datetime
 import logging
-import asyncio
 from asyncio.exceptions import CancelledError
 import anyio
 import starlette
