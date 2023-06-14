@@ -170,9 +170,6 @@ if args.use_ipex:
     CondFunc('torch.nn.modules.Linear.forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
         lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
-    CondFunc('torch.nn.modules.Conv2d.forward',
-        lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
-        lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
     CondFunc('torch.linalg.solve',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"), args[1].to("cpu")).to(get_cuda_device_string()),
         lambda *args, **kwargs: True)

@@ -430,7 +430,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
             shared.log.info("No saved optimizer exists in checkpoint")
 
     if shared.cmd_opts.use_ipex:
-        pass
+        scaler = torch.xpu.amp.GradScaler()
     else:
         scaler = torch.cuda.amp.GradScaler()
 
@@ -486,24 +486,16 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     else:
                         loss = shared.sd_model.forward(x, cond)[0] / gradient_step
                     del x
-                    if shared.cmd_opts.use_ipex:
-                        loss = loss / 2
                     _loss_step += loss.item()
 
-                if shared.cmd_opts.use_ipex:
-                    loss.backward()
-                else:
-                    scaler.scale(loss).backward()
+                scaler.scale(loss).backward()
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
                 if clip_grad:
                     clip_grad(embedding.vec, clip_grad_sched.learn_rate)
-                if shared.cmd_opts.use_ipex:
-                    optimizer.step()
-                else:
-                    scaler.step(optimizer)
-                    scaler.update()
+                scaler.step(optimizer)
+                scaler.update()
                 embedding.step += 1
                 pbar.update()
                 optimizer.zero_grad(set_to_none=True)
