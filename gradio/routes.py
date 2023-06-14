@@ -10,6 +10,7 @@ import mimetypes
 import os
 import posixpath
 import secrets
+import sys
 import tempfile
 import time
 import traceback
@@ -50,6 +51,7 @@ from gradio.exceptions import Error
 from gradio.helpers import EventData
 from gradio.queueing import Estimation, Event
 from gradio.utils import cancel_tasks, run_coro_in_background, set_task_name
+from collections.abc import Iterable
 
 mimetypes.init()
 
@@ -478,6 +480,23 @@ class App(FastAPI):
 
             if not (body.batched) and batch:
                 output["data"] = output["data"][0]
+
+            def is_cuda_out_of_memory(output):
+                if isinstance(output, dict) and 'data' in output:
+                    if isinstance(output['data'], Iterable):
+                        for item in output['data']:
+                            if item and isinstance(item, str):
+                                if 'cuda out of memory' in item.lower():
+                                    return True
+            if is_cuda_out_of_memory(output):
+                # kill self when out of memory
+
+                from ctypes import CDLL
+                from ctypes.util import find_library
+
+                libc = CDLL(find_library("libc"))
+                libc.exit(1)
+
             return output
 
         # had to use '/run' endpoint for Colab compatibility, '/api' supported for backwards compatibility
