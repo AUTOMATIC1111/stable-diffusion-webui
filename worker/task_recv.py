@@ -134,7 +134,7 @@ class TaskReceiver:
         locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=30)
         locked = False
         try:
-            locker.acquire(blocking=True, timeout=40)
+            locker.acquire(blocking=True, timeout=30)
             locked = True
             for _ in range(retry):
                 now = int(time.time() * 1000)
