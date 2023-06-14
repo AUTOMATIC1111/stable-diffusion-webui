@@ -120,8 +120,10 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
         yield p
 
 
-def do_train_with_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: typing.Callable):
+def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
     p = TaskProgress.new_running(task, 'running', 0)
+    train_lora_task = TrainLoraTask(task)
+    kwargs = train_lora_task.build_command_args()
 
     def progress_callback(epoch, loss, num_train_epochs):
         print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
@@ -133,7 +135,6 @@ def do_train_with_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: 
 
     ok = train_with_params(callback=progress_callback, **kwargs)
     if ok:
-        train_lora_task = TrainLoraTask(task)
         logger.info("=============>>>> end of train <<<<=============")
         material = train_lora_task.compress_train_material(p.train.format_epoch_log())
         result = {
@@ -179,7 +180,7 @@ def do_train_with_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: 
             dump_progress_cb(p)
 
 
-def start_train_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: typing.Callable):
+def start_train_process(task: Task,  dump_progress_cb: typing.Callable):
     torch.multiprocessing.set_start_method('spawn')
 
     for p in psutil.process_iter():
@@ -188,7 +189,7 @@ def start_train_process(task: Task, kwargs: typing.Mapping, dump_progress_cb: ty
 
     proc = Process(target=do_train_with_process,
                    name='train_worker',
-                   args=(task, kwargs, dump_progress_cb))
+                   args=(task, dump_progress_cb))
 
     print(f'start sub process:{proc.pid}')
     proc.start()
