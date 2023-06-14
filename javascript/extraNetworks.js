@@ -42,18 +42,28 @@ const re_extranet = /<([^:]+:[^:]+):[\d\.]+>/;
 const re_extranet_g = /\s+<([^:]+:[^:]+):[\d\.]+>/g;
 
 function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
-  let m = text.match(re_extranet);
-  if (!m) return false;
-  const partToSearch = m[1];
-  let replaced = false;
-  const newTextareaText = textarea.value.replaceAll(re_extranet_g, (found, index) => {
-    m = found.match(re_extranet);
-    if (m[1] === partToSearch) {
-      replaced = true;
-      return '';
-    }
-    return found;
-  });
+  var m = text.match(re_extranet);
+  var replaced = false;
+  var newTextareaText;
+  if (m) {
+      var partToSearch = m[1];
+      newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found) {
+          m = found.match(re_extranet);
+          if (m[1] == partToSearch) {
+              replaced = true;
+              return "";
+          }
+          return found;
+      });
+  } else {
+      newTextareaText = textarea.value.replaceAll(new RegExp(text, "g"), function(found) {
+          if (found == text) {
+              replaced = true;
+              return "";
+          }
+          return found;
+      });
+  }
   if (replaced) {
     textarea.value = newTextareaText;
     return true;

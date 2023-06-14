@@ -16,16 +16,15 @@ from typing import Optional, NamedTuple, List
 import torch
 from torch import Tensor
 from torch.utils.checkpoint import checkpoint
-import numpy as np
 
 
 def narrow_trunc(
-    input: Tensor, # pylint: disable=redefined-builtin
+    tensor: Tensor,
     dim: int,
     start: int,
     length: int
 ) -> Tensor:
-    return torch.narrow(input, dim, start, length if input.shape[dim] >= start + length else input.shape[dim] - start)
+    return torch.narrow(tensor, dim, start, length if tensor.shape[dim] >= start + length else tensor.shape[dim] - start)
 
 
 class AttnChunk(NamedTuple):
@@ -81,7 +80,7 @@ def _query_chunk_attention(
     kv_chunk_size: int,
 ) -> Tensor:
     _batch_x_heads, k_tokens, _k_channels_per_head = key.shape
-    _, _, _v_channels_per_head = value.shape
+    # _, _, v_channels_per_head = value.shape
 
     def chunk_scanner(chunk_idx: int) -> AttnChunk:
         key_chunk = narrow_trunc(
@@ -202,14 +201,11 @@ def efficient_dot_product_attention(
             value=value,
         )
 
-    res = torch.zeros_like(query)
-    for i in range(math.ceil(q_tokens / query_chunk_size)):
-        attn_scores = compute_query_chunk_attn(
+    res = torch.cat([
+        compute_query_chunk_attn(
             query=get_query_chunk(i * query_chunk_size),
             key=key,
             value=value,
-        )
-
-        res[:, i * query_chunk_size:i * query_chunk_size + attn_scores.shape[1], :] = attn_scores
-
+        ) for i in range(math.ceil(q_tokens / query_chunk_size))
+    ], dim=1)
     return res

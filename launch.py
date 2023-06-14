@@ -5,6 +5,7 @@ import shlex
 import logging
 import subprocess
 import installer
+from functools import lru_cache
 
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -32,6 +33,7 @@ def init_modules():
     extensions_dir = modules.paths_internal.extensions_dir
 
 
+@lru_cache()
 def commit_hash(): # compatbility function
     global stored_commit_hash # pylint: disable=global-statement
     if stored_commit_hash is not None:
@@ -43,6 +45,7 @@ def commit_hash(): # compatbility function
     return stored_commit_hash
 
 
+@lru_cache()
 def run(command, desc=None, errdesc=None, custom_env=None, live=False): # compatbility function
     if desc is not None:
         installer.log.info(desc)
@@ -65,18 +68,22 @@ def check_run(command): # compatbility function
     return result.returncode == 0
 
 
+@lru_cache()
 def is_installed(package): # compatbility function
     return installer.installed(package)
 
 
+@lru_cache()
 def repo_dir(name): # compatbility function
     return os.path.join(script_path, dir_repos, name)
 
 
+@lru_cache()
 def run_python(code, desc=None, errdesc=None): # compatbility function
     return run(f'"{sys.executable}" -c "{code}"', desc, errdesc)
 
 
+@lru_cache()
 def run_pip(pkg, desc=None): # compatbility function
     if desc is None:
         desc = pkg
@@ -84,6 +91,7 @@ def run_pip(pkg, desc=None): # compatbility function
     return run(f'"{sys.executable}" -m pip {pkg} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}")
 
 
+@lru_cache()
 def check_run_python(code): # compatbility function
     return check_run(f'"{sys.executable}" -c "{code}"')
 

@@ -81,7 +81,6 @@ def compatibility_args(opts, args):
     group.add_argument("--opt-channelslast", help=argparse.SUPPRESS, default=opts.opt_channelslast)
     group.add_argument("--xformers", default = (opts.cross_attention_optimization == "xFormers"), action='store_true', help=argparse.SUPPRESS)
     group.add_argument("--disable-nan-check", help=argparse.SUPPRESS, default=opts.disable_nan_check)
-    group.add_argument("--token-merging", help=argparse.SUPPRESS, default=opts.token_merging)
     group.add_argument("--rollback-vae", help=argparse.SUPPRESS, default=opts.rollback_vae)
     group.add_argument("--no-half", help=argparse.SUPPRESS, default=opts.no_half)
     group.add_argument("--no-half-vae", help=argparse.SUPPRESS, default=opts.no_half_vae)

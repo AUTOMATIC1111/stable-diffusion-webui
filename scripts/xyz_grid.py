@@ -141,17 +141,10 @@ def apply_face_restore(p, opt, x):
     p.restore_faces = is_active
 
 
-def apply_token_merging_ratio_hr(p, x, xs):
-    shared.opts.data["token_merging_ratio_hr"] = x
-
-
-def apply_token_merging_ratio(p, x, xs):
-    shared.opts.data["token_merging_ratio"] = x
-
-
-def apply_token_merging_random(p, x, xs):
-    is_active = x.lower() in ('true', 'yes', 'y', '1')
-    shared.opts.data["token_merging_random"] = is_active
+def apply_override(field):
+    def fun(p, x, xs):
+        p.override_settings[field] = x
+    return fun
 
 
 def format_value_add_label(p, opt, x):
@@ -233,9 +226,8 @@ axis_options = [
     AxisOptionImg2Img("Image Mask Weight", float, apply_field("inpainting_mask_weight")),
     AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
     AxisOption("Face restore", str, apply_face_restore, fmt=format_value),
-    AxisOption("ToMe ratio",float, apply_token_merging_ratio),
-    AxisOption("ToMe ratio for Hires fix",float, apply_token_merging_ratio_hr),
-    AxisOption("ToMe random pertubations",str, apply_token_merging_random, choices = lambda: ["Yes","No"])
+    AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
+    AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
 ]
 
 
@@ -349,7 +341,6 @@ class SharedSettingsStackHelper(object):
         self.uni_pc_order = shared.opts.uni_pc_order
         self.token_merging_ratio_hr = shared.opts.token_merging_ratio_hr
         self.token_merging_ratio = shared.opts.token_merging_ratio
-        self.token_merging_random = shared.opts.token_merging_random
         self.sd_model_checkpoint = shared.opts.sd_model_checkpoint
         self.sd_model_dict = shared.opts.sd_model_dict
         self.sd_vae_checkpoint = shared.opts.sd_vae
@@ -361,11 +352,10 @@ class SharedSettingsStackHelper(object):
         shared.opts.data["uni_pc_order"] = self.uni_pc_order
         shared.opts.data["token_merging_ratio_hr"] = self.token_merging_ratio_hr
         shared.opts.data["token_merging_ratio"] = self.token_merging_ratio
-        shared.opts.data["token_merging_random"] = self.token_merging_random
         shared.opts.data["force_latent_sampler"] = self.force_latent_sampler
-        if (self.sd_model_dict != shared.opts.sd_model_dict):
+        if self.sd_model_dict != shared.opts.sd_model_dict:
             shared.opts.data["sd_model_dict"] = self.sd_model_dict
-        if (self.sd_model_checkpoint != shared.opts.sd_model_checkpoint):
+        if self.sd_model_checkpoint != shared.opts.sd_model_checkpoint:
             shared.opts.data["sd_model_checkpoint"] = self.sd_model_checkpoint
             sd_models.reload_model_weights()
         if self.sd_vae_checkpoint != shared.opts.sd_vae:

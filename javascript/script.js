@@ -97,12 +97,16 @@ document.addEventListener('keydown', (e) => {
  * checks that a UI element is not in another hidden element or tab content
  */
 function uiElementIsVisible(el) {
-  let isVisible = !el.closest('.\\!hidden');
+  if (el === document) return true;
+  const computedStyle = getComputedStyle(el);
+  const isVisible = computedStyle.display !== 'none';
   if (!isVisible) return false;
-  while (isVisible = el.closest('.tabitem')?.style.display !== 'none') {
-    if (!isVisible) return false;
-    if (el.parentElement) el = el.parentElement;
-    else break;
-  }
-  return isVisible;
+  return uiElementIsVisible(el.parentNode);
+}
+
+function uiElementInSight(el) {
+  const clRect = el.getBoundingClientRect();
+  const windowHeight = window.innerHeight;
+  const isOnScreen = clRect.bottom > 0 && clRect.top < windowHeight;
+  return isOnScreen;
 }

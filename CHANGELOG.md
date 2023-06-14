@@ -1,23 +1,27 @@
 # Change Log for SD.Next
 
+## Update for 06/14/2023
+
+- simplify token merging  
+- reorganize some settings  
+
 ## Update for 06/13/2023
 
-One bigger update...
+Just a day later and one *bigger update*...
 Both some **new functionality** as well as **massive merges** from upstream  
 
 - new cache for models/lora/lyco metadata: `metadata.json`  
   drastically reduces disk access on app startup  
-- allow saving of **ui default values**  
+- allow saving/resetting of **ui default values**  
   settings -> ui defaults
 - ability to run server without loaded model  
   default is to auto-load model on startup, can be changed in settings -> stable diffusion  
   if disabled, model will be loaded on first request, e.g. when you click generate  
-  this is useful when you want to start server to perform other tasks like upscaling which do not rely on model  
+  useful when you want to start server to perform other tasks like upscaling which do not rely on model  
 - updated `accelerate` and `xformers`
 - huge nubmer of changes ported from **A1111** upstream  
-  this was a massive merge
-  hopefully this does not cause any regressions  
-
+  this was a massive merge, hopefully this does not cause any regressions  
+  and still a bit more pending...
 
 ## Update for 06/12/2023
 
@@ -84,7 +88,7 @@ Another bigger one...And more to come in the next few days...
 - new live preview mode: taesd  
   i really like this one, so its enabled as default for new installs  
 - settings search feature  
-- new sampler: sde++ 2m sde  
+- new sampler: dpm++ 2m sde  
 - fully common save/zip/delete (new) options in all tabs  
   which (again) meant rework of process image tab  
 - system info tab: live gpu utilization/memory graphs for nvidia gpus  

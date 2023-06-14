@@ -23,8 +23,17 @@ Stuff to be investigated...
 
 Pick & merge PRs from main repo...
 
-- TODO: <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...baf6946>
-- STATUS: up-to-date 05/13/2023
+- List:
+  - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...baf6946>
+- Last: 1e5afd4
+- Todo:
+  - <https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/f6fc791>
+- Skipped:
+  - add explict hires prompt: unnecessarily complicated and spread over large number of commits due to many regressions  
+  - allow scripts to add cross-optimization methods: dangerous  
+  - load extension info in threads: unnecessary as other optimizations already in place perform equally good  
+- Broken:
+  - sub-quadratic optimization changes in <https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/c8732df>
 
 ## Integration
 
