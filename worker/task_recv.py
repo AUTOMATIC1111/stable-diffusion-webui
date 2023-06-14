@@ -132,8 +132,10 @@ class TaskReceiver:
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
         locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=30)
+        locked = False
         try:
             locker.acquire(blocking=True, timeout=40)
+            locked = True
             for _ in range(retry):
                 now = int(time.time() * 1000)
                 # min 最小为当前时间（ms）- VIP最大等级*放大系数（VIP提前执行权重）- 任务过期时间（1天）
@@ -154,13 +156,14 @@ class TaskReceiver:
                     rand = random.randint(0, 10) * 1
                     time.sleep(rand)
         except redis_lock.NotAcquired:
-            pass
+            locked = False
         except redis_lock.TimeoutTooLarge:
-            pass
+            locked = False
         except Exception as err:
             logger.exception("cannot get task from redis")
         finally:
-            locker.release()
+            if locked:
+                locker.release()
 
     def _get_queue_task(self, *model_hash: str):
         for sha256 in model_hash:
