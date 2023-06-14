@@ -210,9 +210,9 @@ class Api:
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
 
         if shared.cmd_opts.add_stop_route:
-            self.add_api_route("/sdapi/v1/quit-webui", self.quit_webui, methods=["POST"])
-            self.add_api_route("/sdapi/v1/restart-webui", self.restart_webui, methods=["POST"])
-            self.add_api_route("/_stop", self.stop_route, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-restart", self.restart_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-terminate", self.terminate_webui, methods=["POST"])
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -721,13 +721,13 @@ class Api:
         self.app.include_router(self.router)
         uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=0)
 
-    def quit_webui(self):
+    def kill_webui(self):
         restart.stop_program()
 
     def restart_webui(self):
         if restart.is_restartable():
             restart.restart_program()
 
-    def stop_route(request):
+    def terminate_webui(request):
         shared.state.server_command = "stop"
         return Response("Stopping.")
