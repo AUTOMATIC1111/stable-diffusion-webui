@@ -181,17 +181,22 @@ def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
 
 
 def start_train_process(task: Task,  dump_progress_cb: typing.Callable):
-    torch.multiprocessing.set_start_method('spawn')
+    # torch.multiprocessing.set_start_method('spawn')
+    ctx = torch.multiprocessing.get_context('spawn')
+    pool = ctx.Pool(1)
 
-    for p in psutil.process_iter():
-        if 'train_worker' == p.name():
-            p.kill()
+    # for p in psutil.process_iter():
+    #     if 'train_worker' == p.name():
+    #         p.kill()
 
-    proc = Process(target=do_train_with_process,
-                   name='train_worker',
-                   args=(task, dump_progress_cb))
-
-    print(f'start sub process:{proc.pid}')
-    proc.start()
-    proc.join()
+    # proc = Process(target=do_train_with_process,
+    #                name='train_worker',
+    #                args=(task, dump_progress_cb))
+    #
+    # print(f'start sub process:{proc.pid}')
+    # proc.start()
+    # proc.join()
+    res = pool.apply_async(do_train_with_process, (task, dump_progress_cb)) # res.get获取结果
+    pool.close()   # 关闭进程池 不再接受新进程
+    pool.join()
 
