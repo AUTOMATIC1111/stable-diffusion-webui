@@ -129,7 +129,7 @@ def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
         logger.info(f"> args: {k}: {v}")
     logger.info("====================================================")
     p = TaskProgress.new_running(task, 'running', 0)
-    
+
     def progress_callback(epoch, loss, num_train_epochs):
         print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
         progress = epoch / num_train_epochs * 100 * 0.9

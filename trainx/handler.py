@@ -27,4 +27,4 @@ class TrainTaskHandler(DumpTaskHandler):
         if task.minor_type == TrainTaskMinorType.Preprocess:
             yield from exec_preprocess_task(task)
         elif task.minor_type == TrainTaskMinorType.Lora:
-            yield from start_train_process(task, self._set_task_status)
+            yield from exec_train_lora_task(task, self._set_task_status)
