@@ -727,6 +727,7 @@ class Api:
     def restart_webui(self):
         if restart.is_restartable():
             restart.restart_program()
+        return Response(status_code=501)
 
     def terminate_webui(request):
         shared.state.server_command = "stop"
