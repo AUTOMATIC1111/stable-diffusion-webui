@@ -57,7 +57,7 @@ def exec_preprocess_task(job: Task):
             processed_dir = target_dir
         p = TaskProgress.new_running(job, 'upload thumbnail', 80)
         yield p
-        resolution = get_batch_image_size(processed_dir)
+        resolution, min_reso, max_reso = get_batch_image_size(processed_dir)
         images = build_thumbnail_tag(processed_dir)
         p = TaskProgress.new_running(job, 'upload thumbnail', 90)
         yield p
@@ -67,6 +67,8 @@ def exec_preprocess_task(job: Task):
             'images': list(images),
             'processed_key': keys[0] if keys else None,
             'resolution': resolution,
+            'min_reso': min_reso,
+            'max_reso': max_reso,
         }
         p = TaskProgress.new_finish(job, task_result)
         yield p
@@ -155,10 +157,14 @@ def copy_captions(src, dst):
 
 def get_batch_image_size(target_dir):
     current = []
+    min_reso, max_reso = 100000, -1
     for image_path in find_files_from_dir(target_dir, *ImagesEx):
         with Image.open(image_path) as image:
-            if not current:
+            if not current and current is not None:
                 current = image.size
             elif current != image.size:
-                return None
-    return [x for x in current]
+                current = None
+
+            max_reso = max(max(image.size), max_reso)
+            min_reso = min(min(image.size), min_reso)
+    return [x for x in current], min_reso, max_reso
