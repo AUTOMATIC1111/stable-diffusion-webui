@@ -1,3 +1,4 @@
+from functools import wraps
 import html
 import sys
 import threading
@@ -20,6 +21,7 @@ def wrap_queued_call(func):
 
 
 def wrap_gradio_gpu_call(func, extra_outputs=None):
+    @wraps(func)
     def f(*args, **kwargs):
 
         # if the first argument is a string that says "task(...)", it is treated as a job id
@@ -47,6 +49,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
+    @wraps(func)
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
         run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
         if run_memmon:
