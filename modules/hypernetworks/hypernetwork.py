@@ -654,6 +654,8 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                         loss = shared.sd_model.forward(x, c)[0] / gradient_step
                     del x
                     del c
+                    if shared.cmd_opts.use_ipex and loss > (1 / gradient_step):
+                        loss = (loss - (1 / gradient_step)) * 10
                     _loss_step += loss.item()
                 scaler.scale(loss).backward()
 
