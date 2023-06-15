@@ -167,4 +167,4 @@ def get_batch_image_size(target_dir):
 
             max_reso = max(max(image.size), max_reso)
             min_reso = min(min(image.size), min_reso)
-    return [x for x in current], min_reso, max_reso
+    return [x for x in current or []], min_reso, max_reso
