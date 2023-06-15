@@ -143,10 +143,13 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
     if not url:
         return "cannot found url"
     try:
-        url, cover = parse_download_url(url, cover_url)
+        url, cover, file_name = parse_download_url(url, cover_url)
         resp = http_request(url, timeout=30, stream=True)
         if not model_name:
-            if 'Content-Disposition' in resp.headers:
+            ##如果请求的是www.liblibai.com 则从接口返回获取模型名称
+            if file_name:
+                model_name = file_name
+            elif 'Content-Disposition' in resp.headers:
                 cd = resp.headers.get('Content-Disposition')
                 map = dict(item.strip().split('=')[:2] for item in (item for item in cd.split(';') if '=' in item))
                 if 'filename' in map:
@@ -178,9 +181,6 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
             resp = http_request(cover, timeout=30)
             if resp:
                 ex = '.png'
-                # ct = resp.headers.get('Content-Type')
-                # if ct and 'image/' in ct:
-                #     ex = ct.replace('image/', '.')
                 cover_path = os.path.join(target_dir, without_ex + ex)
                 with open(cover_path, 'wb') as f:
                     f.write(resp.content)
@@ -192,11 +192,34 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
     return "ok"
 
 
-def parse_download_url(url: str, cover: str) -> Tuple[str, str]:
+def parse_download_url(url: str, cover: str) -> Tuple[str, str, str]:
+    def analy_url(model_id: int) -> Tuple[str, str, str]:
+        url = f"https://www.liblibai.com/index.php/api/model/modelDetail?page=1&limit=1&id={model_id}"
+        re = requests.get(url=url)
+        img_url = None
+        down_url = None
+        model_name = None
+        if re.ok:
+            obj = re.json()
+            if obj['code'] == 1:
+                data = obj['data']
+                img_url = data['ai_last_img_arr'][0]['pic']
+                down_url = data['down_url'][0]['down_url']
+                model_name = data['name']
+                logging.info(f"获取模型信息：img_url={img_url},down_url={down_url},model_name={model_name}")
+        return down_url, img_url, model_name
+
+    def analy_mod_id(url: str):
+        ms = re.match('https://www.liblibai.com/\\?bd_vid=(\d+)#/model/(\d+)', url)
+        model_id = 0
+        if ms:
+            model_id = ms.group(ms.lastindex)
+        return model_id
+
     if 'civitai' in url:
         ms = re.match('https://civitai.com/api/download/models/\d+', url)
         if ms:
-            return url, cover
+            return url, cover, None
         if 'civitai.com/models/' in url:
             resp = http_request(url)
             if not resp.ok:
@@ -206,13 +229,16 @@ def parse_download_url(url: str, cover: str) -> Tuple[str, str]:
             if ms:
                 ms2 = re.search('https://imagecache.civitai.com.+?"', text)
                 cover = ms2.group(0) if ms2 else cover
-                return 'https://civitai.com/' + ms.group(1), cover
+                return 'https://civitai.com/' + ms.group(1), cover, None
     elif 'samba' in url:
         if not cover:
             without_ex, _ = os.path.splitext(url)
             return url, without_ex + '.png'
-
-    return url, cover
+    elif 'liblibai' in url:
+        model_id: int = analy_mod_id(url=url)
+        if model_id:
+            return analy_url(model_id)
+    return url, cover, None
 
 
 def create_upload_model_ui():
