@@ -322,11 +322,21 @@ def normalize_git_url(url):
     return url
 
 
-def install_extension_from_url(dirname, url, branch_name=None):
+def install_extension_from_url(dirname, proxy, url, branch_name=None):
     check_access()
 
     assert url, 'No URL specified'
 
+    proxy_list = {
+        "none": "",
+        "ghproxy": "https://ghproxy.com/",
+        "hub.yzuu.cf": "https://hub.yzuu.cf/",
+        "hub.njuu.cf": "https://hub.njuu.cf/",
+        "hub.nuaa.cf": "https://hub.nuaa.cf/",
+    }
+
+    url = proxy_list[proxy] + url
+    
     if dirname is None or dirname == "":
         *parts, last_part = url.split('/')
         last_part = normalize_git_url(last_part)
@@ -346,12 +356,12 @@ def install_extension_from_url(dirname, url, branch_name=None):
         shutil.rmtree(tmpdir, True)
         if not branch_name:
             # if no branch is specified, use the default branch
-            with git.Repo.clone_from(url, tmpdir, filter=['blob:none']) as repo:
+            with git.Repo.clone_from(url, tmpdir, filter=['blob:none'], verbose=False) as repo:
                 repo.remote().fetch()
                 for submodule in repo.submodules:
                     submodule.update()
         else:
-            with git.Repo.clone_from(url, tmpdir, filter=['blob:none'], branch=branch_name) as repo:
+            with git.Repo.clone_from(url, tmpdir, filter=['blob:none'], branch=branch_name, verbose=False) as repo:
                 repo.remote().fetch()
                 for submodule in repo.submodules:
                     submodule.update()
@@ -593,6 +603,12 @@ def create_ui():
                 )
 
             with gr.TabItem("Install from URL", id="install_from_url"):
+                
+                install_proxy = gr.Radio(
+                    label="Install Proxy", choices=["none", "ghproxy", "hub.nuaa.cf","hub.yzuu.cf","hub.njuu.cf"], value="none", 
+                    info="If you can't access github.com, you can use a proxy to install extensions from github.com"
+                )
+
                 install_url = gr.Text(label="URL for extension's git repository")
                 install_branch = gr.Text(label="Specific branch name", placeholder="Leave empty for default main branch")
                 install_dirname = gr.Text(label="Local directory name", placeholder="Leave empty for auto")
@@ -601,7 +617,7 @@ def create_ui():
 
                 install_button.click(
                     fn=modules.ui.wrap_gradio_call(lambda *args: [gr.update(), *install_extension_from_url(*args)], extra_outputs=[gr.update(), gr.update()]),
-                    inputs=[install_dirname, install_url, install_branch],
+                    inputs=[install_dirname, install_proxy, install_url, install_branch],
                     outputs=[install_url, extensions_table, install_result],
                 )
 
