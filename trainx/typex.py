@@ -237,7 +237,7 @@ class AdvancedConfig(SerializationObj):
                 setattr(self, 'network_module', 'networks.' + network_module)
             else:
                 setattr(self, 'network_module', 'lycoris.kohya')
-                
+
         self.set_property_value(task, 'conv_dim', None)
         self.set_property_value(task, 'conv_alpha', None)
         self.set_property_value(task, 'unit', 8)
