@@ -4,8 +4,8 @@ import time
 import shlex
 import logging
 import subprocess
-import installer
 from functools import lru_cache
+import installer
 
 
 commandline_args = os.environ.get('COMMANDLINE_ARGS', "")
@@ -141,7 +141,7 @@ def start_server(immediate=True, server=None):
         if args.api_only:
             server = server.api_only()
         else:
-            server = server.webui()
+            server = server.webui(restart=not immediate)
     if args.profile:
         installer.print_profile(pr, 'WebUI')
     return server

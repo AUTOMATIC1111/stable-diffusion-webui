@@ -197,7 +197,7 @@ def model_hash(filename):
 
 def select_checkpoint(model=True):
     model_checkpoint = shared.opts.sd_model_checkpoint if model else shared.opts.sd_model_dict
-    checkpoint_info = checkpoint_aliases.get(model_checkpoint, None)
+    checkpoint_info = get_closet_checkpoint_match(model_checkpoint)
     if checkpoint_info is not None:
         shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
         return checkpoint_info
@@ -595,7 +595,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     shared.log.info(f"Model loaded in {timer.summary()}")
     current_checkpoint_info = None
     devices.torch_gc(force=True)
-    shared.log.info(f'Model load finished: {memory_stats()}')
+    shared.log.info(f'Model load finished: {memory_stats()} cached={len(checkpoints_loaded.keys())}')
 
 
 def reload_model_weights(sd_model=None, info=None, reuse_dict=False):

@@ -3,6 +3,7 @@
 import os
 import json
 import time
+import logging
 import importlib
 import asyncio
 import argparse
@@ -13,34 +14,40 @@ from generate import generate # pylint: disable=import-error
 grid = importlib.import_module('image-grid').grid
 
 
-default = 'best/icbinp-icantbelieveIts-final.safetensors [73f48afbdc]'
-exclude = ['sd-v20', 'sd-v21', 'inpainting', 'pix2pix']
-# used by lora
-prompt = "photo of <keyword> <embedding>, photograph, posing, pose, high detailed, intricate, elegant, sharp focus, skin texture, looking forward, facing camera, 135mm, shot on dslr, canon 5d, 4k, modelshoot style, cinematic lighting"
-
-# used by models
-prompts = [
-    ('photo citiscape', 'cityscape during night, photorealistic, high detailed, sharp focus, depth of field, 4k'),
-    ('photo car', 'photo of a sports car, high detailed, sharp focus, dslr, cinematic lighting, realistic'),
-    ('photo woman', 'portrait photo of beautiful woman, high detailed, dslr, 35mm'),
-    ('photo naked', 'full body photo of beautiful sexy naked woman, high detailed, dslr, 35mm'),
-
-    ('photo taylor', 'portrait photo of beautiful woman taylor swift, high detailed, sharp focus, depth of field, dslr, 35mm <lora:taylor-swift:1>'),
-    ('photo ti-mia', 'portrait photo of beautiful woman "ti-mia", naked, high detailed, dslr, 35mm'),
-    ('photo ti-vlado', 'portrait photo of man "ti-vlado", high detailed, dslr, 35mm'),
-    ('photo lora-vlado', 'portrait photo of man vlado, high detailed, dslr, 35mm <lora:vlado-original:1>'),
-
-    ('wlop', 'a stunning portrait of sexy teen girl in a wet t-shirt, vivid color palette, digital painting, octane render, highly detailed, particles, light effect, volumetric lighting, art by wlop'),
-    ('greg rutkowski', 'beautiful woman, high detailed, sharp focus, depth of field, 4k, art by greg rutkowski'),
-    ('carne griffiths', 'beautiful woman taylor swift, high detailed, sharp focus, depth of field, art by carne griffiths <lora:taylor-swift:1>'),
-    ('carne griffiths', 'man vlado, high detailed, sharp focus, depth of field, art by carne griffiths <lora:vlado-full:1>'),
-]
-
 options = Map({
+    # used by extra networks
+    'prompt': 'photo of <keyword> <embedding>, photograph, posing, pose, high detailed, intricate, elegant, sharp focus, skin texture, looking forward, facing camera, 135mm, shot on dslr, canon 5d, 4k, modelshoot style, cinematic lighting',
+    # used by models
+    'prompts': [
+        ('photo citiscape', 'cityscape during night, photorealistic, high detailed, sharp focus, depth of field, 4k'),
+        ('photo car', 'photo of a sports car, high detailed, sharp focus, dslr, cinematic lighting, realistic'),
+        ('photo woman', 'portrait photo of beautiful woman, high detailed, dslr, 35mm'),
+        ('photo naked', 'full body photo of beautiful sexy naked woman, high detailed, dslr, 35mm'),
+
+        ('photo taylor', 'portrait photo of beautiful woman taylor swift, high detailed, sharp focus, depth of field, dslr, 35mm <lora:taylor-swift:1>'),
+        ('photo ti-mia', 'portrait photo of beautiful woman "ti-mia", naked, high detailed, dslr, 35mm'),
+        ('photo ti-vlado', 'portrait photo of man "ti-vlado", high detailed, dslr, 35mm'),
+        ('photo lora-vlado', 'portrait photo of man vlado, high detailed, dslr, 35mm <lora:vlado-original:1>'),
+
+        ('wlop', 'a stunning portrait of sexy teen girl in a wet t-shirt, vivid color palette, digital painting, octane render, highly detailed, particles, light effect, volumetric lighting, art by wlop'),
+        ('greg rutkowski', 'beautiful woman, high detailed, sharp focus, depth of field, 4k, art by greg rutkowski'),
+        ('carne griffiths', 'beautiful woman taylor swift, high detailed, sharp focus, depth of field, art by carne griffiths <lora:taylor-swift:1>'),
+        ('carne griffiths', 'man vlado, high detailed, sharp focus, depth of field, art by carne griffiths <lora:vlado-full:1>'),
+    ],
+    # save format
+    'format': '.jpg',
+    # used by generate script
+    'paths': {
+        "root": "/mnt/c/Users/mandi/OneDrive/Generative/Generate",
+        "generate": "image",
+        "upscale": "upscale",
+        "grid": "grid",
+    },
+    # generate params
     'generate': {
         'restore_faces': True,
         'prompt': '',
-        'negative_prompt': 'digital art, cgi, render, foggy, blurry, blurred, duplicate, ugly, mutilated, mutation, mutated, out of frame, bad anatomy, disfigured, deformed, censored, low res, low resolution, watermark, text, poorly drawn face, poorly drawn hands, signature',
+        'negative_prompt': 'foggy, blurry, blurred, duplicate, ugly, mutilated, mutation, mutated, out of frame, bad anatomy, disfigured, deformed, censored, low res, low resolution, watermark, text, poorly drawn face, poorly drawn hands, signature',
         'steps': 20,
         'batch_size': 2,
         'n_iter': 1,
@@ -50,28 +57,18 @@ options = Map({
         'width': 512,
         'height': 512,
     },
-    'format': '.jpg',
-    'paths': {
-        "root": "/mnt/c/Users/mandi/OneDrive/Generative/Generate",
-        "generate": "image",
-        "upscale": "upscale",
-        "grid": "grid",
-    },
-    'options': {
-        "sd_model_checkpoint": "sd-v15-runwayml",
-        "sd_vae": "vae-ft-mse-840000-ema-pruned.ckpt",
-    },
     'lora': {
         'strength': 1.0,
     },
     'hypernetwork': {
-        'keyword': 'beautiful sexy woman',
+        'keyword': '',
         'strength': 1.0,
     },
 })
 
 
 def preview_exists(folder, model):
+    model = os.path.splitext(model)[0]
     for suffix in ['', '.preview']:
         for ext in ['.jpg', '.png', '.webp']:
             fn = os.path.join(folder, f'{model}{suffix}{ext}')
@@ -87,7 +84,7 @@ async def preview_models(params):
     excluded = []
     for m in allmodels: # loop through all registered models
         ok = True
-        for e in exclude: # check if model is excluded
+        for e in params.exclude: # check if model is excluded
             if e in m:
                 excluded.append(m)
                 ok = False
@@ -108,18 +105,13 @@ async def preview_models(params):
     log.info({ 'models preview' })
     log.info({ 'models': len(models), 'excluded': len(excluded) })
     opt = await get('/sdapi/v1/options')
-    if params.output != '':
-        folder = params.output
-    else:
-        folder = os.path.abspath(os.path.join(opt['hypernetwork_dir'], '..', 'Stable-diffusion'))
-    log.info({ 'output directory': folder })
     log.info({ 'total jobs': len(models) * options.generate.batch_size, 'per-model': options.generate.batch_size })
     log.info(json.dumps(options, indent=2))
     for model in models:
-        if preview_exists(folder, model) and len(params.input) == 0: # if model preview exists and not manually included
+        if preview_exists(opt['ckpt_dir'], model) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'model preview exists': model })
             continue
-        fn = os.path.join(folder, os.path.basename(model) + options.format)
+        fn = os.path.join(opt['ckpt_dir'], os.path.splitext(model)[0] + options.format)
         log.info({ 'model load': model })
 
         opt['sd_model_checkpoint'] = model
@@ -130,7 +122,7 @@ async def preview_models(params):
         images = []
         labels = []
         t0 = time.time()
-        for label, p in prompts:
+        for label, p in options.prompts:
             options.generate.prompt = p
             log.info({ 'model generating': model, 'label': label, 'prompt': options.generate.prompt })
             data = await generate(options = options, quiet=True)
@@ -149,9 +141,9 @@ async def preview_models(params):
         log.info({ 'model preview created': model, 'image': fn, 'images': len(images), 'grid': [image.width, image.height], 'time': round(t, 2), 'its': round(its, 2) })
 
     opt = await get('/sdapi/v1/options')
-    if opt['sd_model_checkpoint'] != default and not params.fixed:
-        log.info({ 'model set default': default })
-        opt['sd_model_checkpoint'] = default
+    if opt['sd_model_checkpoint'] != params.model:
+        log.info({ 'model set default': params.model })
+        opt['sd_model_checkpoint'] = params.model
         del opt['sd_lora']
         del opt['sd_lyco']
         await post('/sdapi/v1/options', opt)
@@ -179,7 +171,7 @@ async def lora(params):
         keywords = re.sub(r'\d', '', model)
         keywords = keywords.replace('-v', ' ').replace('-', ' ').strip().split(' ')
         keyword = '\"' + '\" \"'.join(keywords) + '\"'
-        options.generate.prompt = prompt.replace('<keyword>', keyword)
+        options.generate.prompt = options.prompt.replace('<keyword>', keyword)
         options.generate.prompt = options.generate.prompt.replace('<embedding>', '')
         options.generate.prompt += f' <lora:{model}:{options.lora.strength}>'
         log.info({ 'lora generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
@@ -220,7 +212,7 @@ async def lyco(params):
         keywords = re.sub(r'\d', '', model)
         keywords = keywords.replace('-v', ' ').replace('-', ' ').strip().split(' ')
         keyword = '\"' + '\" \"'.join(keywords) + '\"'
-        options.generate.prompt = prompt.replace('<keyword>', keyword)
+        options.generate.prompt = options.prompt.replace('<keyword>', keyword)
         options.generate.prompt = options.generate.prompt.replace('<embedding>', '')
         options.generate.prompt += f' <lyco:{model}:{options.lora.strength}>'
         log.info({ 'lyco generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
@@ -256,7 +248,7 @@ async def hypernetwork(params):
         labels = []
         t0 = time.time()
         keyword = options.hypernetwork.keyword
-        options.generate.prompt = prompt.replace('<keyword>', options.hypernetwork.keyword)
+        options.generate.prompt = options.prompt.replace('<keyword>', options.hypernetwork.keyword)
         options.generate.prompt = options.generate.prompt.replace('<embedding>', '')
         options.generate.prompt = f' <hypernet:{model}:{options.hypernetwork.strength}> ' + options.generate.prompt
         log.info({ 'hypernetwork generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
@@ -294,7 +286,7 @@ async def embedding(params):
         import re
         keyword = '\"' + re.sub(r'\d', '', model) + '\"'
         options.generate.batch_size = 4
-        options.generate.prompt = prompt.replace('<keyword>', keyword)
+        options.generate.prompt = options.prompt.replace('<keyword>', keyword)
         options.generate.prompt = options.generate.prompt.replace('<embedding>', '')
         log.info({ 'embedding generating': model, 'keyword': keyword, 'prompt': options.generate.prompt })
         data = await generate(options = options, quiet=True)
@@ -323,8 +315,13 @@ async def create_previews(params):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'generate model previews')
-    parser.add_argument('--output', type = str, default = '', required = False, help = 'output directory')
-    parser.add_argument('--fixed', default = False, action='store_true', help = "do not change model")
+    parser.add_argument('--model', default='best/icbinp-icantbelieveIts-final.safetensors [73f48afbdc]', help="model used to create extra network previews")
+    parser.add_argument('--exclude', default=['sd-v20', 'sd-v21', 'inpainting', 'pix2pix'], help="exclude models with keywords")
+    parser.add_argument('--debug', default = False, action='store_true', help = 'print extra debug information')
     parser.add_argument('input', type = str, nargs = '*')
     args = parser.parse_args()
+    if args.debug:
+        log.setLevel(logging.DEBUG)
+        log.debug({ 'debug': True })
+    log.debug({ 'args': args.__dict__ })
     asyncio.run(create_previews(args))

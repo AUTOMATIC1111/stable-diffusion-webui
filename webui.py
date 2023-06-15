@@ -6,6 +6,7 @@ import signal
 import asyncio
 import logging
 import warnings
+import importlib
 from threading import Thread
 from modules import timer, errors, paths # pylint: disable=unused-import
 
@@ -37,6 +38,7 @@ startup_timer.record("gradio")
 errors.install([gradio])
 
 errors.log.debug('Loading Modules')
+from installer import log, setup_logging
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
 from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
 from modules.paths import create_paths
@@ -58,7 +60,7 @@ import modules.script_callbacks
 import modules.textual_inversion.textual_inversion
 import modules.progress
 import modules.ui
-from modules.shared import cmd_opts, opts, log
+from modules.shared import cmd_opts, opts
 import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
 startup_timer.record("libraries")
@@ -111,6 +113,8 @@ def initialize():
 
     modelloader.load_upscalers()
     startup_timer.record("upscalers")
+
+    setup_logging() # needs a reset since scripts can hijaack logging
 
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
@@ -293,7 +297,7 @@ def start_ui():
     shared.log.debug(f'Scripts components: {time_component}')
 
 
-def webui():
+def webui(restart=False):
     start_common()
     start_ui()
     modules.sd_models.write_metadata()
@@ -304,17 +308,24 @@ def webui():
 
     log.info(f"Startup time: {startup_timer.summary()}")
 
-    # override all loggers to use the same handlers as the main logger
-    for logger in [logging.getLogger(name) for name in logging.root.manager.loggerDict]: # pylint: disable=no-member
-        if logger.name.startswith('uvicorn'):
-            continue
-        logger.handlers = log.handlers
+    if not restart:
+        # override all loggers to use the same handlers as the main logger
+        for logger in [logging.getLogger(name) for name in logging.root.manager.loggerDict]: # pylint: disable=no-member
+            if logger.name.startswith('uvicorn') or logger.name.startswith('sd'):
+                continue
+            logger.handlers = log.handlers
+        # autolaunch only on initial start
+        if cmd_opts.autolaunch and local_url is not None:
+            cmd_opts.autolaunch = False
+            shared.log.info('Launching browser')
+            import webbrowser
+            webbrowser.open(local_url, new=2, autoraise=True)
+    else:
+        modules.script_callbacks.app_reload_callback()
+        modules.script_callbacks.script_unloaded_callback()
+        for module in [module for name, module in sys.modules.items() if name.startswith("modules.ui")]:
+            importlib.reload(module)
 
-    if cmd_opts.autolaunch and local_url is not None:
-        cmd_opts.autolaunch = False
-        shared.log.info('Launching browser')
-        import webbrowser
-        webbrowser.open(local_url, new=2, autoraise=True)
     return shared.demo.server
 
 

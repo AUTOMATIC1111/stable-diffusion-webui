@@ -127,6 +127,8 @@ async def generate(prompt = None, options = None, quiet = False): # pylint: disa
         sd.generate.prompt = prompt
     if not quiet:
         log.info({ 'generate': sd.generate })
+    if sd.get('options', None) is None:
+        sd['options'] = await get('/sdapi/v1/options')
     names = []
     b64s = []
     images = []
