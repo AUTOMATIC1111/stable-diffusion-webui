@@ -59,6 +59,11 @@ def image_from_url_text(filedata):
         is_in_right_dir = ui_tempdir.check_tmp_file(shared.demo, filename)
         if is_in_right_dir:
             filename = filename.rsplit('?', 1)[0]
+            if not os.path.exists(filename):
+                shared.log.error(f'Image file not found: {filename}')
+                image = Image.new('RGB', (512, 512))
+                image.info['parameters'] = f'Image file not found: {filename}'
+                return image
             image = Image.open(filename)
             geninfo, _items = images.read_info_from_image(image)
             image.info['parameters'] = geninfo

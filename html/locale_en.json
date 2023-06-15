@@ -308,7 +308,7 @@
   {"id":"","label":"ipex","localized":"","hint":""},
   {"id":"","label":"Model compile verbose mode","localized":"","hint":""},
   {"id":"","label":"Model compile suppress errors","localized":"","hint":""},
-  {"id":"","label":"Disable Torch memory garbage collection (experimental)","localized":"","hint":""},
+  {"id":"","label":"Disable Torch memory garbage collection","localized":"","hint":""},
   {"id":"","label":"Directory for temporary images; leave empty for default","localized":"","hint":""},
   {"id":"","label":"Cleanup non-default temporary directory when starting webui","localized":"","hint":""},
   {"id":"","label":"Path to directory with stable diffusion checkpoints","localized":"","hint":""},

@@ -541,7 +541,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
         sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
         current_checkpoint_info = model_data.sd_model.sd_checkpoint_info
         unload_model_weights()
-        model_data.sd_model = None
     do_inpainting_hijack()
     devices.set_cuda_params()
     if already_loaded_state_dict is not None:
@@ -668,8 +667,16 @@ def unload_model_weights(sd_model=None, _info=None):
         model_data.sd_model.to(devices.cpu)
         if shared.backend == shared.Backend.ORIGINAL:
             sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
-        model_data.sd_model = None
         sd_model = None
+        """
+        if hasattr(model_data.sd_model, 'model'):
+            del model_data.sd_model.model
+        if hasattr(model_data.sd_model, 'first_stage_model'):
+            del model_data.sd_model.first_stage_model
+        if hasattr(model_data.sd_model, 'cond_stage_model'):
+            del model_data.sd_model.cond_stage_model           
+        """
+        model_data.sd_model = None
         devices.torch_gc(force=True)
         shared.log.debug(f'Model weights unloaded: {memory_stats()}')
     return sd_model
