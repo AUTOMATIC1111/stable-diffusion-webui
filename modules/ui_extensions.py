@@ -330,12 +330,16 @@ def install_extension_from_url(dirname, proxy, url, branch_name=None):
     proxy_list = {
         "none": "",
         "ghproxy": "https://ghproxy.com/",
-        "hub.yzuu.cf": "https://hub.yzuu.cf/",
-        "hub.njuu.cf": "https://hub.njuu.cf/",
-        "hub.nuaa.cf": "https://hub.nuaa.cf/",
+        "yzuu": "hub.yzuu.cf",
+        "njuu": "hub.njuu.cf",
+        "nuaa": "hub.nuaa.cf",
     }
 
-    url = proxy_list[proxy] + url
+    if proxy in ['yzuu', 'njuu', 'nuaa']:
+        url = url.replace('github.com', proxy_list[proxy])
+    elif proxy == 'ghproxy':
+        url = proxy_list[proxy] + url
+
     if dirname is None or dirname == "":
         *parts, last_part = url.split('/')
         last_part = normalize_git_url(last_part)
@@ -603,7 +607,7 @@ def create_ui():
 
             with gr.TabItem("Install from URL", id="install_from_url"):
                 install_proxy = gr.Radio(
-                    label="Install Proxy", choices=["none", "ghproxy", "hub.nuaa.cf","hub.yzuu.cf","hub.njuu.cf"], value="none",
+                    label="Install Proxy", choices=["none", "ghproxy", "nuaa", "yzuu", "njuu"], value="none",
                     info="If you can't access github.com, you can use a proxy to install extensions from github.com"
                 )
 
