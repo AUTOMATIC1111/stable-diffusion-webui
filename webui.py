@@ -298,6 +298,10 @@ def start_ui():
 
 
 def webui(restart=False):
+    if restart:
+        modules.script_callbacks.app_reload_callback()
+        modules.script_callbacks.script_unloaded_callback()
+
     start_common()
     start_ui()
     modules.sd_models.write_metadata()
@@ -321,8 +325,6 @@ def webui(restart=False):
             import webbrowser
             webbrowser.open(local_url, new=2, autoraise=True)
     else:
-        modules.script_callbacks.app_reload_callback()
-        modules.script_callbacks.script_unloaded_callback()
         for module in [module for name, module in sys.modules.items() if name.startswith("modules.ui")]:
             importlib.reload(module)
 
