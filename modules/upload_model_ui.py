@@ -253,10 +253,10 @@ def create_upload_model_ui():
             upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
 
         with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
-            url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai,samba页面地址直接解析")
+            url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai,samba,liblibai页面地址直接解析")
             model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
             url_img_ctl = gr.Textbox(label="从URL下载封面:",
-                                     placeholder="输入封面下载链接，civitai自动解析无需手动添加,samba默认自动拉取同名PNG资源")
+                                     placeholder="输入封面下载链接，civitai,liblibai自动解析无需手动添加,samba默认自动拉取同名PNG资源")
             btn = gr.Button(value="开始下载")
             result = gr.Textbox(label="上传结果:")
     upload_ctl.upload(fn=upload_asset,
