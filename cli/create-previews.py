@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # pylint: disable=no-member
 import os
+import re
 import json
 import time
 import logging
@@ -133,6 +134,9 @@ async def preview_models(params):
             else:
                 log.error({ 'model': model, 'error': data })
         t1 = time.time()
+        if len(images) == 0:
+            log.error({ 'model': model, 'error': 'no images generated' })
+            continue
         image = grid(images = images, labels = labels, border = 8)
         log.info({ 'saving preview': fn, 'images': len(images), 'size': [image.width, image.height] })
         image.save(fn)
@@ -155,19 +159,19 @@ async def lora(params):
     if not os.path.exists(folder):
         log.error({ 'lora directory not found': folder })
         return
-    models1 = list(Path(folder).glob('*.safetensors'))
-    models2 = list(Path(folder).glob('*.ckpt'))
-    models = [f.stem for f in models1 + models2]
+    models1 = list(Path(folder).glob('**/*.safetensors'))
+    models2 = list(Path(folder).glob('**/*.ckpt'))
+    models = [os.path.splitext(f)[0] for f in models1 + models2]
     log.info({ 'loras': len(models) })
     for model in models:
-        if preview_exists(folder, model) and len(params.input) == 0: # if model preview exists and not manually included
+        if preview_exists('', model) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'lora preview exists': model })
             continue
-        fn = os.path.join(folder, model + options.format)
+        fn = model + options.format
+        model = os.path.basename(model)
         images = []
         labels = []
         t0 = time.time()
-        import re
         keywords = re.sub(r'\d', '', model)
         keywords = keywords.replace('-v', ' ').replace('-', ' ').strip().split(' ')
         keyword = '\"' + '\" \"'.join(keywords) + '\"'
@@ -183,7 +187,11 @@ async def lora(params):
         else:
             log.error({ 'lora': model, 'keyword': keyword, 'error': data })
         t1 = time.time()
+        if len(images) == 0:
+            log.error({ 'model': model, 'error': 'no images generated' })
+            continue
         image = grid(images = images, labels = labels, border = 8)
+        log.info({ 'saving preview': fn, 'images': len(images), 'size': [image.width, image.height] })
         image.save(fn)
         t = t1 - t0
         its = 1.0 * options.generate.steps * len(images) / t
@@ -196,19 +204,19 @@ async def lyco(params):
     if not os.path.exists(folder):
         log.error({ 'lyco directory not found': folder })
         return
-    models1 = list(Path(folder).glob('*.safetensors'))
-    models2 = list(Path(folder).glob('*.ckpt'))
-    models = [f.stem for f in models1 + models2]
+    models1 = list(Path(folder).glob('**/*.safetensors'))
+    models2 = list(Path(folder).glob('**/*.ckpt'))
+    models = [os.path.splitext(f)[0] for f in models1 + models2]
     log.info({ 'lycos': len(models) })
     for model in models:
-        if preview_exists(folder, model) and len(params.input) == 0: # if model preview exists and not manually included
+        if preview_exists('', model) and len(params.input) == 0: # if model preview exists and not manually included
             log.info({ 'lyco preview exists': model })
             continue
-        fn = os.path.join(folder, model + options.format)
+        fn = model + options.format
+        model = os.path.basename(model)
         images = []
         labels = []
         t0 = time.time()
-        import re
         keywords = re.sub(r'\d', '', model)
         keywords = keywords.replace('-v', ' ').replace('-', ' ').strip().split(' ')
         keyword = '\"' + '\" \"'.join(keywords) + '\"'
@@ -224,7 +232,11 @@ async def lyco(params):
         else:
             log.error({ 'lyco': model, 'keyword': keyword, 'error': data })
         t1 = time.time()
+        if len(images) == 0:
+            log.error({ 'model': model, 'error': 'no images generated' })
+            continue
         image = grid(images = images, labels = labels, border = 8)
+        log.info({ 'saving preview': fn, 'images': len(images), 'size': [image.width, image.height] })
         image.save(fn)
         t = t1 - t0
         its = 1.0 * options.generate.steps * len(images) / t
@@ -237,7 +249,7 @@ async def hypernetwork(params):
     if not os.path.exists(folder):
         log.error({ 'hypernetwork directory not found': folder })
         return
-    models = [f.stem for f in Path(folder).glob('*.pt')]
+    models = [os.path.splitext(f)[0] for f in Path(folder).glob('**/*.pt')]
     log.info({ 'hypernetworks': len(models) })
     for model in models:
         if preview_exists(folder, model) and len(params.input) == 0: # if model preview exists and not manually included
@@ -260,7 +272,11 @@ async def hypernetwork(params):
         else:
             log.error({ 'hypernetwork': model, 'keyword': keyword, 'error': data })
         t1 = time.time()
+        if len(images) == 0:
+            log.error({ 'model': model, 'error': 'no images generated' })
+            continue
         image = grid(images = images, labels = labels, border = 8)
+        log.info({ 'saving preview': fn, 'images': len(images), 'size': [image.width, image.height] })
         image.save(fn)
         t = t1 - t0
         its = 1.0 * options.generate.steps * len(images) / t
@@ -273,7 +289,7 @@ async def embedding(params):
     if not os.path.exists(folder):
         log.error({ 'embeddings directory not found': folder })
         return
-    models = [f.stem for f in Path(folder).glob('*.pt')]
+    models = [os.path.splitext(f)[0] for f in Path(folder).glob('**/*.pt')]
     log.info({ 'embeddings': len(models) })
     for model in models:
         if preview_exists(folder, model) and len(params.input) == 0: # if model preview exists and not manually included
@@ -283,7 +299,6 @@ async def embedding(params):
         images = []
         labels = []
         t0 = time.time()
-        import re
         keyword = '\"' + re.sub(r'\d', '', model) + '\"'
         options.generate.batch_size = 4
         options.generate.prompt = options.prompt.replace('<keyword>', keyword)
@@ -295,9 +310,13 @@ async def embedding(params):
                 images.append(img)
                 labels.append(keyword)
         else:
-            log.error({ 'lyco': model, 'keyword': keyword, 'error': data })
+            log.error({ 'embeding': model, 'keyword': keyword, 'error': data })
         t1 = time.time()
+        if len(images) == 0:
+            log.error({ 'model': model, 'error': 'no images generated' })
+            continue
         image = grid(images = images, labels = labels, border = 8)
+        log.info({ 'saving preview': fn, 'images': len(images), 'size': [image.width, image.height] })
         image.save(fn)
         t = t1 - t0
         its = 1.0 * options.generate.steps * len(images) / t
