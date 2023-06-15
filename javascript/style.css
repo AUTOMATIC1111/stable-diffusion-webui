@@ -212,11 +212,12 @@ div#extras_scale_to_tab div.form{
   min-height: 1.3em;
   font-size: 0.8em;
   transition: opacity 0.2s ease-in;
+  pointer-events: none;
   opacity: 0;
 }
 
 .tooltip-show {
-  opacity: 1;
+  opacity: 0.9;
 }
 
 /* settings */

@@ -432,7 +432,7 @@
   {"id":"","label":"uniform","localized":"","hint":""},
   {"id":"","label":"quad","localized":"","hint":""},
   {"id":"","label":"sigma churn","localized":"","hint":""},
-  {"id":"","label":"Negative Guidance minimum sigma","localized":"","hint":"Skip negative prompt for some steps when the image is almost ready, 0=disable"},
+  {"id":"","label":"sigma negative guidance minimum","localized":"","hint":"Skip negative prompt for some steps when the image is almost ready, 0=disable"},
   {"id":"","label":"sigma tmin","localized":"","hint":""},
   {"id":"","label":"sigma noise","localized":"","hint":""},
   {"id":"","label":"Noise seed delta (eta)","localized":"","hint":""},
