@@ -12,3 +12,6 @@ easygui==0.98.3
 toml==0.10.2
 voluptuous==0.13.1
 safetensors>=0.2.6
+dadaptation
+lion-pytorch
+lycoris_lora

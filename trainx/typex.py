@@ -143,7 +143,7 @@ class TrainLoraTrainConfig(SerializationObj):
         self.batch_size = task.value('batch_size', default=4)
         self.epoch = task.value('epoch', default=20)
         self.save_every_n_epochs = task.value('save_every_n_epochs', default=5)
-        self.save_last_n_epochs = task.value('save_last_n_epochs', default=2)
+        self.save_last_n_epochs = task.value('save_last_n_epochssave_last_n_epochs', default=2)
         self.clip_skip = task.value('clip_skip', default=1)
         self.seed = task.value('seed', default=None)
         if isinstance(num_repeats, list):
@@ -233,7 +233,11 @@ class AdvancedConfig(SerializationObj):
         self.set_property_value(task, 'network_module', "networks.lora")
         network_module = getattr(self, 'network_module')
         if network_module and not str(network_module).startswith('networks'):
-            setattr(self, 'network_module', 'networks.' + network_module)
+            if network_module != "lycoris":
+                setattr(self, 'network_module', 'networks.' + network_module)
+            else:
+                setattr(self, 'network_module', 'lycoris.kohya')
+                
         self.set_property_value(task, 'conv_dim', None)
         self.set_property_value(task, 'conv_alpha', None)
         self.set_property_value(task, 'unit', 8)
