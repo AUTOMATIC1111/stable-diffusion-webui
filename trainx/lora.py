@@ -170,15 +170,14 @@ def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
             material_keys = upload_files(False, material)
             result['material'] = material_keys[0] if material_keys else ''
         # notify web server
-        sender = RedisSender()
-        sender.notify_train_task(task)
-
         fp = TaskProgress.new_finish(task, {
             'train': result
         }, True)
         fp.train = p.train
         if callable(dump_progress_cb):
             dump_progress_cb(fp)
+        sender = RedisSender()
+        sender.notify_train_task(task)
     else:
         p = TaskProgress.new_failed(task, 'train failed(unknown errors)')
         if callable(dump_progress_cb):

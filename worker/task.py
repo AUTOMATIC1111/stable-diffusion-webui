@@ -12,6 +12,9 @@ import typing
 from enum import IntEnum
 from datetime import datetime
 from collections import UserDict, UserList
+
+import math
+
 from tools import try_deserialize_json
 
 

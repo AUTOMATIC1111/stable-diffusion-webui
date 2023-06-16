@@ -57,7 +57,7 @@ class TaskDumper(Thread):
         super(TaskDumper, self).__init__(name='task-dumper')
         self.db = db
         self.ip = get_host_ip()
-        self.send_delay = 4
+        self.send_delay = 5
         self.queue = queue.Queue(maxsize=100)
         self._stop_flag = False
         self._dump_now = False
