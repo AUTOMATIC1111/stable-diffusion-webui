@@ -195,18 +195,23 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
 def parse_download_url(url: str, cover: str) -> Tuple[str, str, str]:
     def analy_url(model_id: int) -> Tuple[str, str, str]:
         url = f"https://www.liblibai.com/index.php/api/model/modelDetail?page=1&limit=1&id={model_id}"
-        re = requests.get(url=url)
+        req = requests.get(url=url)
         img_url = None
         down_url = None
         model_name = None
-        if re.ok:
-            obj = re.json()
+        if req.ok:
+            obj = req.json()
             if obj['code'] == 1:
                 data = obj['data']
                 img_url = data['ai_last_img_arr'][0]['pic']
                 down_url = data['down_url'][0]['down_url']
                 model_name = data['name']
-                logging.info(f"获取模型信息：img_url={img_url},down_url={down_url},model_name={model_name}")
+        ##添加格式化文件名,去掉特殊符号及标点符号，用_连接
+        filter_char = ' <>?:{}[]"~`!#$%^&*()_+-=|\';":/.,?><~·！@#￥%……&*（）——+-=“：’；、。，？{}《》'
+        for i in filter_char:
+            model_name = model_name.replace(i, '_')
+        model_name = re.sub("_+", "_", model_name)
+        logging.info(f"获取模型信息：img_url={img_url},down_url={down_url},model_name={model_name}")
         return down_url, img_url, model_name
 
     def analy_mod_id(url: str):
@@ -253,10 +258,10 @@ def create_upload_model_ui():
             upload_img_ctl = gr.File(label="本地上传模型文件封面（可选,需要与模型文件名称一致的png格式图片）:")
 
         with gr.TabItem('通过URL上传', elem_id='tab_upload_file'):
-            url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai,samba页面地址直接解析")
+            url_txt_ctl = gr.Textbox(label="从URL下载:", placeholder="输入下载链接，支持civitai,samba,liblibai页面地址直接解析")
             model_name_ctl = gr.Textbox(label="自定义文件名:", placeholder="自定义模型命名（含后缀），默认使用平台命名")
             url_img_ctl = gr.Textbox(label="从URL下载封面:",
-                                     placeholder="输入封面下载链接，civitai自动解析无需手动添加,samba默认自动拉取同名PNG资源")
+                                     placeholder="输入封面下载链接，civitai,liblibai自动解析无需手动添加,samba默认自动拉取同名PNG资源")
             btn = gr.Button(value="开始下载")
             result = gr.Textbox(label="上传结果:")
     upload_ctl.upload(fn=upload_asset,
