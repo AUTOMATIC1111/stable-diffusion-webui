@@ -199,6 +199,7 @@ def parse_download_url(url: str, cover: str) -> Tuple[str, str, str]:
         img_url = None
         down_url = None
         model_name = None
+        ai_last_ext = None
         if req.ok:
             obj = req.json()
             if obj['code'] == 1:
@@ -206,19 +207,24 @@ def parse_download_url(url: str, cover: str) -> Tuple[str, str, str]:
                 img_url = data['ai_last_img_arr'][0]['pic']
                 down_url = data['down_url'][0]['down_url']
                 model_name = data['name']
+                ai_last_ext = data['ai_last_ext']
         ##添加格式化文件名,去掉特殊符号及标点符号，用_连接
-        filter_char = ' <>?:{}[]"~`!#$%^&*()_+-=|\';":/.,?><~·！@#￥%……&*（）——+-=“：’；、。，？{}《》'
-        for i in filter_char:
-            model_name = model_name.replace(i, '_')
-        model_name = re.sub("_+", "_", model_name)
+        if model_name:
+            filter_char = ' <>?:{}[]"~`!#$%^&*()_+-=|\';":/.,?><~·！@#￥%……&*（）——+-=“：’；、。，？{}《》｜'
+            for i in filter_char:
+                model_name = model_name.replace(i, '_')
+            model_name = re.sub("_+", "_", model_name)
+            if ai_last_ext:
+                model_name = f"{model_name}.{ai_last_ext}"
         logging.info(f"获取模型信息：img_url={img_url},down_url={down_url},model_name={model_name}")
         return down_url, img_url, model_name
 
     def analy_mod_id(url: str):
-        ms = re.match('https://www.liblibai.com/\\?bd_vid=(\d+)#/model/(\d+)', url)
+        ms = re.match('https://www.liblibai.com/(.*)/model/(\d+)', url)
         model_id = 0
         if ms:
             model_id = ms.group(ms.lastindex)
+        logging.info(f"获取模型：model_id = {model_id}")
         return model_id
 
     if 'civitai' in url:
