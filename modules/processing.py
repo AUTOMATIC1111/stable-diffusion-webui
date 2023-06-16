@@ -146,7 +146,7 @@ class StableDiffusionProcessing:
         self.clip_skip = clip_skip
         self.iteration = 0
         self.is_hr_pass = False
-        # opts.data['clip_skip'] = clip_skip # todo is this necessary?
+        opts.data['clip_skip'] = clip_skip
 
 
     @property
