@@ -195,18 +195,23 @@ def request_model_url(url, model_type, model_name, cover_url, progress=gr.Progre
 def parse_download_url(url: str, cover: str) -> Tuple[str, str, str]:
     def analy_url(model_id: int) -> Tuple[str, str, str]:
         url = f"https://www.liblibai.com/index.php/api/model/modelDetail?page=1&limit=1&id={model_id}"
-        re = requests.get(url=url)
+        req = requests.get(url=url)
         img_url = None
         down_url = None
         model_name = None
-        if re.ok:
-            obj = re.json()
+        if req.ok:
+            obj = req.json()
             if obj['code'] == 1:
                 data = obj['data']
                 img_url = data['ai_last_img_arr'][0]['pic']
                 down_url = data['down_url'][0]['down_url']
                 model_name = data['name']
-                logging.info(f"获取模型信息：img_url={img_url},down_url={down_url},model_name={model_name}")
+        ##添加格式化文件名,去掉特殊符号及标点符号，用_连接
+        filter_char = ' <>?:{}[]"~`!#$%^&*()_+-=|\';":/.,?><~·！@#￥%……&*（）——+-=“：’；、。，？{}《》'
+        for i in filter_char:
+            model_name = model_name.replace(i, '_')
+        model_name = re.sub("_+", "_", model_name)
+        logging.info(f"获取模型信息：img_url={img_url},down_url={down_url},model_name={model_name}")
         return down_url, img_url, model_name
 
     def analy_mod_id(url: str):
