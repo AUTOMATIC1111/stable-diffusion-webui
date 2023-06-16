@@ -42,7 +42,7 @@ def setup_middleware(app: FastAPI, cmd_opts):
             duration = str(round(time.time() - ts, 4))
             res.headers["X-Process-Time"] = duration
             endpoint = req.scope.get('path', 'err')
-            if cmd_opts.api_log and endpoint.startswith('/sdapi'):
+            if (cmd_opts.api_log or cmd_opts.api_only) and endpoint.startswith('/sdapi'):
                 log.info('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format( # pylint: disable=consider-using-f-string, logging-format-interpolation
                     t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
                     code = res.status_code,

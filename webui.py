@@ -38,7 +38,7 @@ startup_timer.record("gradio")
 errors.install([gradio])
 
 errors.log.debug('Loading Modules')
-from installer import log, setup_logging
+from installer import log, setup_logging, git_commit
 import ldm.modules.encoders.modules # pylint: disable=W0611,C0411,E0401
 from modules.call_queue import queue_lock, wrap_queued_call, wrap_gradio_gpu_call # pylint: disable=W0611,C0411,C0412
 from modules.paths import create_paths
@@ -64,7 +64,6 @@ from modules.shared import cmd_opts, opts
 import modules.hypernetworks.hypernetwork
 from modules.middleware import setup_middleware
 startup_timer.record("libraries")
-
 log.info('Libraries loaded')
 log.setLevel(logging.DEBUG if cmd_opts.debug else logging.INFO)
 logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
@@ -72,6 +71,23 @@ if cmd_opts.server_name:
     server_name = cmd_opts.server_name
 else:
     server_name = "0.0.0.0" if cmd_opts.listen else None
+
+fastapi_args = {
+    "version": f'0.0.{git_commit}',
+    "title": "SD.Next",
+    "description": "SD.Next",
+    "license_info": "/LICENSE.txt",
+}
+if cmd_opts.docs:
+    fastapi_args.update({
+        "docs_url": "/docs",
+        "redocs_url": "/redocs",
+        "swagger_ui_parameters": {
+            "displayOperationId": True,
+            "showCommonExtensions": True,
+            "deepLinking": False,
+        }
+    })
 
 
 def check_rollback_vae():
@@ -233,24 +249,8 @@ def start_ui():
                 for line in file.readlines():
                     gradio_auth_creds += [x.strip() for x in line.split(',') if x.strip()]
 
-    import installer
     global local_url # pylint: disable=global-statement
-    gradio_kwargs = {
-            "version": f'0.0.{installer.git_commit}',
-            "title": "SD.Next",
-            "description": "SD.Next",
-    }
-    if cmd_opts.docs:
-        gradio_kwargs.update({
-            "docs_url": "/docs",
-            "redocs_url": "/redocs",
-            "swagger_ui_parameters": {
-                "displayOperationId": True,
-                "showCommonExtensions": True,
-                "deepLinking": False,
-            }
-        })
-    app, local_url, share_url = shared.demo.launch(
+    app, local_url, share_url = shared.demo.launch( # app is FastAPI(Starlette) instance
         share=cmd_opts.share,
         server_name=server_name,
         server_port=cmd_opts.port if cmd_opts.port != 7860 else None,
@@ -259,13 +259,12 @@ def start_ui():
         ssl_verify=not cmd_opts.tls_selfsign,
         debug=False,
         auth=[tuple(cred.split(':')) for cred in gradio_auth_creds] if gradio_auth_creds else None,
-        # inbrowser=cmd_opts.autolaunch,
         prevent_thread_lock=True,
         max_threads=64,
         show_api=True,
         favicon_path='html/logo.ico',
         allowed_paths=[os.path.dirname(__file__), cmd_opts.data_dir],
-        app_kwargs=gradio_kwargs,
+        app_kwargs=fastapi_args,
     )
     if cmd_opts.data_dir is not None:
         ui_tempdir.register_tmp_file(shared.demo, os.path.join(cmd_opts.data_dir, 'x'))
@@ -333,14 +332,14 @@ def webui(restart=False):
 
 def api_only():
     start_common()
-    app = FastAPI()
+    app = FastAPI(**fastapi_args)
     setup_middleware(app, cmd_opts)
     api = create_api(app)
     api.wants_restart = False
     modules.script_callbacks.app_started_callback(None, app)
     modules.sd_models.write_metadata()
     log.info(f"Startup time: {startup_timer.summary()}")
-    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+    api.launch()
     return api
 
 

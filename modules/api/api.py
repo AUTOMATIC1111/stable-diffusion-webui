@@ -1,6 +1,7 @@
 import io
 import time
 import base64
+import logging
 from io import BytesIO
 from typing import List, Dict, Any
 from threading import Lock
@@ -11,7 +12,6 @@ from fastapi.exceptions import HTTPException
 from PIL import PngImagePlugin,Image
 import piexif
 import piexif.helper
-import uvicorn
 import gradio as gr
 from modules import errors, shared, sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing
 from modules.api import models
@@ -637,7 +637,40 @@ class Api:
             cuda = { 'error': f'{err}' }
         return models.MemoryResponse(ram = ram, cuda = cuda)
 
-    def launch(self, server_name, port):
+    def launch_uvicorn(self):
         self.app.include_router(self.router)
-        server_name = "0.0.0.0" if shared.cmd_opts.listen else None
-        uvicorn.run(self.app, host=server_name, port=port)
+        import uvicorn
+        config: uvicorn.Config = {
+            "host": "0.0.0.0" if shared.cmd_opts.listen else "127.0.0.1",
+            "port": shared.cmd_opts.port if shared.cmd_opts.port else 7861,
+            "loop": "auto", # auto, asyncio, uvloop
+            "http": "auto", # auto, h11, httptools 
+            "interface": "auto", # auto, asgi3, asgi2, wsgi
+            "ws": "auto", # auto, websockets, wsproto
+            "log_level": logging.WARNING,
+            "backlog": 4096, # default=2048
+            "timeout_keep_alive": 60, # default=5
+            "ssl_keyfile": shared.cmd_opts.tls_keyfile,
+            "ssl_certfile": shared.cmd_opts.tls_certfile,
+        }
+        shared.log.info(f'API server: Uvicorn options={config}')
+        uvicorn.run(self.app, **config)
+
+    def launch_hypercorn(self):
+        import asyncio
+        import hypercorn
+        import hypercorn.asyncio
+        config = hypercorn.config.Config()
+        config.bind = [f'{"0.0.0.0" if shared.cmd_opts.listen else "127.0.0.1"}:{shared.cmd_opts.port if shared.cmd_opts.port else 7861}']
+        config.keyfile = shared.cmd_opts.tls_keyfile
+        config.certfile = shared.cmd_opts.tls_certfile
+        config.keep_alive_timeout = 60 # default=5
+        config.backlog = 4096 # default=100
+        config.loglevel = "WARNING"
+        config.max_app_queue_size = 64 # default=10
+        shared.log.info(f'API server: Hypercorn options={vars(config)}')
+        instance = hypercorn.asyncio.serve(self.app, config)
+        asyncio.run(instance)
+
+    def launch(self):
+        self.launch_uvicorn()
