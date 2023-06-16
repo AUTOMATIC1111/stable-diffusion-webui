@@ -215,10 +215,11 @@ def parse_download_url(url: str, cover: str) -> Tuple[str, str, str]:
         return down_url, img_url, model_name
 
     def analy_mod_id(url: str):
-        ms = re.match('https://www.liblibai.com/\\?bd_vid=(\d+)#/model/(\d+)', url)
+        ms = re.match('https://www.liblibai.com/(.*)/model/(\d+)', url)
         model_id = 0
         if ms:
             model_id = ms.group(ms.lastindex)
+        logging.info(f"获取模型：model_id = {model_id}")
         return model_id
 
     if 'civitai' in url:
