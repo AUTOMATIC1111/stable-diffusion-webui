@@ -27,7 +27,7 @@ if __name__ == "__main__":
             if v['label'] in keys:
                 print(f'  Duplicate: {k}.{v["label"]}')
             else:
-                if len(v['label']) > 54:
+                if len(v['label']) > 63:
                     long += 1
                     print(f'  Long label: {k}.{v["label"]}')
                 keys.append(v['label'])

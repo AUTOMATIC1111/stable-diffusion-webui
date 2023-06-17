@@ -57,7 +57,7 @@ script_callbacks.on_infotext_pasted(lora.infotext_pasted)
 shared.options_templates.update(shared.options_section(('extra_networks', "Extra Networks"), {
     "sd_lora": shared.OptionInfo("None", "Add Lora to prompt", gr.Dropdown, lambda: {"choices": ["None", *lora.available_loras]}, refresh=lora.list_available_loras),
     "lora_preferred_name": shared.OptionInfo("Alias from file", "When adding to prompt, refer to Lora by", gr.Radio, {"choices": ["Alias from file", "Filename"]}),
-    "lora_add_hashes_to_infotext": shared.OptionInfo(True, "Add Lora hashes to infotext"),
+    "lora_add_hashes_to_infotext": shared.OptionInfo(True, "Add Lora hashes to infotext", gr.Checkbox, { "visible": False }),
 }))
 
 
