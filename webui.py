@@ -76,18 +76,14 @@ fastapi_args = {
     "version": f'0.0.{git_commit}',
     "title": "SD.Next",
     "description": "SD.Next",
-    "license_info": "/LICENSE.txt",
+    "docs_url": "/docs" if cmd_opts.docs else None,
+    "redocs_url": "/redocs" if cmd_opts.docs else None,
+    "swagger_ui_parameters": {
+        "displayOperationId": True,
+        "showCommonExtensions": True,
+        "deepLinking": False,
+    }
 }
-if cmd_opts.docs:
-    fastapi_args.update({
-        "docs_url": "/docs",
-        "redocs_url": "/redocs",
-        "swagger_ui_parameters": {
-            "displayOperationId": True,
-            "showCommonExtensions": True,
-            "deepLinking": False,
-        }
-    })
 
 
 def check_rollback_vae():
