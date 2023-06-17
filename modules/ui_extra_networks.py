@@ -8,7 +8,6 @@ import gradio as gr
 import json
 import html
 
-#ADDED RE IMPORT
 import re
 
 from modules.generation_parameters_copypaste import image_from_url_text
@@ -156,12 +155,7 @@ class ExtraNetworksPage:
         Create HTML for card item in tab tabname; can return empty string if the item is not meant to be shown.
         """
 
-        #FORK EDIT - PREPROCESS METADATA -------------------------------------------------------------------------------------------------------------------------------------------------
-
         #FORMAT DESCRIPTION AND PRESET PROMPT WITH WEIGHT
-        """
-        This pulls the preset data from the .txt file and outputs it into 2 variables.
-        """
         raw_description = (item.get("description") or "")
         if "\n" in raw_description:
             spl = raw_description.split("\n")
@@ -173,30 +167,19 @@ class ExtraNetworksPage:
 
 
         #PROMPT QoL FORMATTING
-        """
-        This puts the preset prompt into brackets when used.
-        """
         if raw_prompt == "":
             final_prompt = '+", "'
         else:
             final_prompt = '+", ("+"'+raw_prompt+'"+"), "'
 
         #NAME SIMPLIFIER
-        """
-        This system is in place to categorize and clean the chaos that is created when using a lot of LoRAs. If you have a lot of LoRAs, then you will quickly forget what they do.
-        This allows you to rename your LoRA files in the folder with premade categories and naming conventions and this code will parse it and remove unnecessary data from the filename
-        when adding the files to the UI (No ugly long names).
-        Example:
-            AUTHOR_TYPE_NAME_VERSION => ... LoRA for school uniform from guy named: Proompter12 will be: Proompter12_Clothing_SchoolUniform_v12
-        Note: For LoRAs adding characters, the fromatting is different... AUTHOR_TYPE_ORIGIN_NAME_VERSION, ex. Proompter12_Character_Cyberpunk2077_Rebecca_v3
-        """
         raw_name = item.get("name")
         error_massage = "ERROR. Using underscore in LoRA name triggers special formatting. Refer to modules/ui_extra_network.py for more info."
         if "_" in raw_name:
             spl = raw_name.split("_")
-            if spl[1] == "Character":   #TYPE_ORIGIN_NAME_VERSION
+            if spl[1] == "Character":   #All character LoRAs
                 styled_name = spl[3] or error_massage
-            elif spl[1] == "Clothing":  #TYPE_NAME_VERSION
+            elif spl[1] == "Clothing":  #All clothing LoRAs
                 styled_name = spl[2] or error_massage
             elif spl[1] == "Feature":   #Special character features like blue hair or rainbow eyes for example
                 styled_name = spl[2] or error_massage
@@ -206,11 +189,11 @@ class ExtraNetworksPage:
                 styled_name = spl[2] or error_massage
             elif spl[1] == "Style":     #In this category belongs loras that change the artstyle, like 3D, Ghibli style, etc.
                 styled_name = spl[2] or error_massage
-            elif spl[1] == "VFX":       #Loras improving quality, adding additional information for stuff like fire, water, etc.
+            elif spl[1] == "VFX":       #LoRAs improving quality, adding additional information for stuff like fire, water, etc.
                 styled_name = spl[2] or error_massage
-            elif spl[1] == "Theme":     #Themed loras like cyberpunk, steampunk, etc.
+            elif spl[1] == "Theme":     #Themed LoRAs like cyberpunk, steampunk, etc.
                 styled_name = spl[2] or error_massage
-            elif spl[1] == "Type":      #Category for special loras that for example create assets for games or have a special impact on the output
+            elif spl[1] == "Type":      #Category for special LoRAs that for example create assets for games or have a special impact on the output
                 styled_name = spl[2] or error_massage
             else:
                 styled_name = "_".join(spl)
@@ -227,7 +210,6 @@ class ExtraNetworksPage:
 
         onclick = item.get("onclick", None)
         if onclick is None:
-            #onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
             onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]+final_prompt}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
 
         height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
@@ -262,9 +244,7 @@ class ExtraNetworksPage:
             "prompt": item.get("prompt", None),
             "tabname": json.dumps(tabname),
             "local_preview": json.dumps(item["local_preview"]),
-            #"name": item["name"],
             "name": final_name,
-            #"description": (item.get("description") or ""),
             "description": final_description,
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
