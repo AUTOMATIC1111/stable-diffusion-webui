@@ -87,9 +87,9 @@ Extension for creating videos using img2img and ebsynth. Output edited videos us
 ![image](https://user-images.githubusercontent.com/98228077/223622872-0575abe9-9a53-4614-b9a5-1333f0b34733.png)
 
 
-## Lora Block Weight
+## LoRA Block Weight
 
-Lora is a powerful tool, but it is sometimes difficult to use and can affect areas that you do not want it to affect. This script allows you to set the weights block-by-block. Using this script, you may be able to get the image you want.
+LoRA is a powerful tool, but it is sometimes difficult to use and can affect areas that you do not want it to affect. This script allows you to set the weights block-by-block. Using this script, you may be able to get the image you want.
 
 Used in conjunction with the XY plot, it is possible to examine the impact of each level of the hierarchy.
 
@@ -124,7 +124,7 @@ Bilingual translation, no need to worry about how to find the original button. C
 
 ![image](https://user-images.githubusercontent.com/98228077/223564624-61594e71-d1dd-4f32-9293-9697b07a7735.png)
 
-## Composable Lora
+## Composable LoRA
 https://github.com/opparco/stable-diffusion-webui-composable-lora
 
 Enables using AND keyword(composable diffusion) to limit LoRAs to subprompts. Useful when paired with Latent Couple extension.
@@ -155,7 +155,7 @@ This can add multiple pose characters, detect pose from image, save to PNG, and 
 ## SuperMerger
 https://github.com/hako-mikan/sd-webui-supermerger
 
-Merge and run without saving to drive. Sequential XY merge generations; extract and merge loras, bind loras to ckpt, merge block weights, and more.
+Merge and run without saving to drive. Sequential XY merge generations; extract and merge LoRA's, bind LoRA's to ckpt, merge block weights, and more.
 
 ![image](https://user-images.githubusercontent.com/98228077/223570729-d25ca5c4-a434-42fd-b85d-7e16a7af1fc8.png)
 
@@ -223,21 +223,19 @@ Catppuccin is a community-driven pastel theme that aims to be the middle ground 
 
 
 ## Dynamic Thresholding
-Dynamic Thresholding Adds customizable dynamic thresholding to allow high CFG Scale values without the burning / 'pop art' effect.
-
-Adds customizable dynamic thresholding to allow high CFG Scale values without the burning / 'pop art' effect.
+Dynamic Thresholding adds customizable dynamic thresholding to allow high CFG Scale values without the burning / 'pop art' effect.
 
 
 ## Custom Diffusion
 https://github.com/guaneec/custom-diffusion-webui
 
-Custom Diffusion is, in short, finetuning-lite with TI, instead of tuning the whole model. Similar speed and memory requirements to TI and supposedly gives better results in less steps.
+Custom Diffusion is a form of fine-tuning with TI, instead of tuning the whole model. Similar speed and memory requirements to TI and may give better results in fewer steps.
 
 
 ## Fusion
 https://github.com/ljleb/prompt-fusion-extension
 
-Adds prompt-travel and shift-attention-like interpolations (see exts), but during/within the sampling steps. Always-on + works w/ existing prompt-editing syntax. Various interpolation modes. See their wiki for more info.
+Adds prompt-travel and shift-attention-like interpolations (see exts), but during/within the sampling steps. Always-on + works with existing prompt-editing syntax. Various interpolation modes. See their wiki for more info.
 
 <details><summary>Example: (Click to expand:)</summary>
 
