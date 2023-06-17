@@ -34,9 +34,9 @@ ControlNet Canny Output: https://github.com/pkuliyi2015/multidiffusion-upscaler-
 
 ### Tiled Vae
 
-The `vae_optimize.py` script is a wild hack that splits the image into tiles, encodes each tile separately, and merges the result back together. This process allows the VAE to work with giant images on limited VRAM (~10 GB for 8K images!).
+The `vae_optimize.py` script splits the image into tiles, encodes each tile separately, and merges the results. This process allows the VAE to generate large images with limited VRAM (~10 GB for 8K images).
 
-Remove --lowvram and --medvram to enjoy!
+Using this script may allow removal of --lowvram or --medvram arguments, and thus improve image generation times.
 
 ## VRAM Estimator
 https://github.com/space-nuko/a1111-stable-diffusion-webui-vram-estimator
