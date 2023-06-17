@@ -2919,6 +2919,11 @@ label.svelte-1qxcj04.svelte-1qxcj04.svelte-1qxcj04 {
 /*************/
 /* settings  */
 /*************/
+
+input[type=checkbox]:checked {
+  background-color: var(--ae-primary-color) !important;
+}
+
 #row_setting_quicksettings_list,
 #row_setting_gradio_theme,
 #row_setting_hidden_tabs
