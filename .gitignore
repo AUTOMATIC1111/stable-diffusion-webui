@@ -8,7 +8,10 @@ __pycache__
 /venv
 /tmp
 /model.ckpt
-/models/**/*
+/models/*
+!models/Lora
+/models/Lora/*
+!models/Lora/.description_generator_script.py
 /GFPGANv1.3.pth
 /gfpgan/weights/*.pth
 /ui-config.json
