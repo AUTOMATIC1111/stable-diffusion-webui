@@ -26,7 +26,7 @@ approximation_indexes = {"Full VAE": 0, "Approximate NN": 1, "Approximate simple
 
 
 def single_sample_to_image(sample, approximation=None):
-    if approximation is None or approximation not in approximation_indexes.keys():
+    if approximation is None:
         approximation = approximation_indexes.get(opts.show_progress_type, 0)
     if approximation == 0:
         x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
