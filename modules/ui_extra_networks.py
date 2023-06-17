@@ -203,9 +203,6 @@ class ExtraNetworksPage:
         else:
             final_name = raw_name
 
-
-        #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
         preview = item.get("preview", None)
 
         onclick = item.get("onclick", None)

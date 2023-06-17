@@ -6,7 +6,7 @@ current_directory = os.getcwd()
 # Find all ".safetensor" files in the current directory
 safetensor_files = [file for file in os.listdir(current_directory) if file.endswith('.safetensors')]
 
-print("This script will generate .txt files to ALL undescribed LoRas (.safetensor) located in the working directory. Inside them you can put description of the model and prompts to be used when you click on the model in webUI.")
+print("This script will generate empty .txt files with the same name as ALL LoRAs (.safetensor) located in the current directory. It does not overwrite existing ones. Inside the file with the same name as the LoRA, just ending with .txt you can put description of it and preset prompt that will be used when you active the LoRA from webUI. Put description on the first line and preset prompt on the next line.")
 stop = False
 while stop == False:
     check = input("Do you wish to procceed? [Y/N]: ")
