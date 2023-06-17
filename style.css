@@ -2919,6 +2919,10 @@ label.svelte-1qxcj04.svelte-1qxcj04.svelte-1qxcj04 {
 /*************/
 /* settings  */
 /*************/
+#audio_notification{
+  visibility:hidden !important;
+  height:0 !important;
+}
 
 input[type=checkbox]:checked {
   background-color: var(--ae-primary-color) !important;
