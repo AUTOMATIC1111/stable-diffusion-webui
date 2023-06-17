@@ -155,7 +155,7 @@ class ExtraNetworksPage:
         Create HTML for card item in tab tabname; can return empty string if the item is not meant to be shown.
         """
 
-        #FORMAT DESCRIPTION AND PRESET PROMPT WITH WEIGHT
+        #Split DESCRIPTION and PRESET PROMPT from .txt file
         raw_description = (item.get("description") or "")
         if "\n" in raw_description:
             spl = raw_description.split("\n")
@@ -166,13 +166,13 @@ class ExtraNetworksPage:
             raw_prompt = raw_description
 
 
-        #PROMPT QoL FORMATTING
+        #PROMPT QoL formatting
         if raw_prompt == "":
             final_prompt = '+", "'
         else:
             final_prompt = '+", ("+"'+raw_prompt+'"+"), "'
 
-        #NAME SIMPLIFIER
+        #Shorten and simlify long LoRA names
         raw_name = item.get("name")
         error_massage = "ERROR. Using underscore in LoRA name triggers special formatting. Refer to modules/ui_extra_network.py for more info."
         if "_" in raw_name:
