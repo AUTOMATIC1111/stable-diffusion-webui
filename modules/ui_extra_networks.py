@@ -171,7 +171,7 @@ class ExtraNetworksPage:
             final_description = raw_description
             raw_prompt = raw_description
 
-        
+
         #PROMPT QoL FORMATTING
         """
         This puts the preset prompt into brackets when used.
@@ -214,12 +214,12 @@ class ExtraNetworksPage:
                 styled_name = spl[2] or error_massage
             else:
                 styled_name = "_".join(spl)
-        
+
             final_name = re.sub(r'(?<=[a-z])(?=[A-Z])|(?<=[a-z])(?=\d)', ' ', styled_name)
 
         else:
             final_name = raw_name
-        
+
 
         #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
