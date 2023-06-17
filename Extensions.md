@@ -26,7 +26,7 @@ https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111
 - txt2img panorama generation, as mentioned in MultiDiffusion.
 - It can cooperate with ControlNet to produce wide images with control.
 
-Panorama Example:(links not currently working)
+Panorama Example:(links not working as of Jun 2023)
 Before: [click for the raw image](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/blob/docs/imgs/ancient_city_origin.jpeg)
 After: [click for the raw image](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111/blob/docs/imgs/ancient_city.jpeg)
 
