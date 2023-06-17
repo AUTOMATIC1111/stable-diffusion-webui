@@ -566,9 +566,9 @@ table.settings-value-table td{
 
 /* extra networks */
 .extra-networks > div > [id *= '_extra_']{ margin: 0.3em; }
-.extra-network-subdirs{ padding: 0.2em 0.35em; }
-.extra-network-subdirs button{ margin: 0 0.15em; }
-.extra-networks .tab-nav .search{ display: inline-block; max-width: 16em; margin: 0.3em; align-self: center; width: 16em; }
+.extra-network-subdirs { padding: 0.2em 0.35em; }
+.extra-network-subdirs button { margin: 0 0.15em; box-shadow: none; }
+.extra-networks .tab-nav .search { display: inline-block; max-width: 16em; margin: 0.3em; align-self: center; width: 16em; }
 #txt2img_extra_view, #img2img_extra_view { width: auto; }
 .extra-network-cards .nocards, .extra-network-thumbs .nocards{ margin: 1.25em 0.5em 0.5em 0.5em; }
 .extra-network-cards .nocards h1, .extra-network-thumbs .nocards h1{ font-size: 1.5em; margin-bottom: 1em; }

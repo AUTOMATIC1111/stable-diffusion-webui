@@ -237,10 +237,10 @@ def create_toprow(is_img2img):
                 pause.click(fn=lambda: modules.shared.state.pause(), _js='checkPaused', inputs=[], outputs=[])
             with gr.Row(elem_id=f"{id_part}_tools"):
                 paste = ToolButton(value=paste_symbol, elem_id="paste")
-                clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
-                extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks")
-                prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply")
-                save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create")
+                clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt_btn")
+                extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks_btn")
+                prompt_style_apply = ToolButton(value=apply_style_symbol, elem_id=f"{id_part}_style_apply_btn")
+                save_style = ToolButton(value=save_style_symbol, elem_id=f"{id_part}_style_create_btn")
                 clear_prompt_button.click(fn=lambda *x: x, _js="confirm_clear_prompt", inputs=[prompt, negative_prompt], outputs=[prompt, negative_prompt])
             with gr.Row(elem_id=f"{id_part}_counters"):
                 token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])

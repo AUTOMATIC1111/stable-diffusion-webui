@@ -88,6 +88,10 @@ class ExtraNetworksPage:
                 return abspath[len(parentdir):].replace('\\', '/')
         return ""
 
+    def is_empty(self, folder):
+        files = [f for f in os.listdir(folder) if f.lower().endswith(".ckpt") or f.lower().endswith(".safetensors") or f.lower().endswith(".pt")]
+        return len(files) == 0
+
     def create_html(self, tabname):
         view = shared.opts.extra_networks_default_view
         items_html = ''
@@ -103,15 +107,13 @@ class ExtraNetworksPage:
                     subdir = os.path.abspath(x)[len(parentdir):].replace("\\", "/")
                     while subdir.startswith("/"):
                         subdir = subdir[1:]
-                    is_empty = len(os.listdir(x)) == 0
-                    if not is_empty and not subdir.endswith("/"):
-                        subdir = subdir + "/"
-                    subdirs[subdir] = 1
+                    if not self.is_empty(x):
+                        subdirs[subdir] = 1
         if subdirs:
             subdirs = {"": 1, **subdirs}
         subdirs_html = "".join([f"""
             <button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
-                {html.escape(subdir if subdir!="" else "all")}
+                {html.escape(subdir) if subdir!="" else "all"}
             </button>""" for subdir in subdirs])
         try:
             self.items = list(self.list_items())

@@ -66,7 +66,10 @@ def setup_logging(clean=False):
         "inspect.value.border": "black",
     }))
     level = logging.DEBUG if args.debug else logging.INFO
-    logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', filename=log_file, filemode='a', encoding='utf-8', force=True)
+    try:
+        logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', filename=log_file, filemode='a', encoding='utf-8', force=True)
+    except Exception:
+        logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s') # to be able to report unsupported python version
     log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`
     pretty_install(console=console)
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])

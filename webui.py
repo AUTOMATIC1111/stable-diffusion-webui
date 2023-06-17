@@ -258,6 +258,7 @@ def start_ui():
         prevent_thread_lock=True,
         max_threads=64,
         show_api=True,
+        quiet=True,
         favicon_path='html/logo.ico',
         allowed_paths=[os.path.dirname(__file__), cmd_opts.data_dir],
         app_kwargs=fastapi_args,
@@ -335,8 +336,8 @@ def api_only():
     modules.script_callbacks.app_started_callback(None, app)
     modules.sd_models.write_metadata()
     log.info(f"Startup time: {startup_timer.summary()}")
-    api.launch()
-    return api
+    server = api.launch()
+    return server
 
 
 if __name__ == "__main__":

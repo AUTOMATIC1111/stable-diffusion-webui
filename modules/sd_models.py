@@ -332,7 +332,6 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
 
 def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
     if checkpoint_info in checkpoints_loaded:
-        # use checkpoint cache
         shared.log.info("Model weights loading: from cache")
         return checkpoints_loaded[checkpoint_info]
     res = read_state_dict(checkpoint_info.filename)
