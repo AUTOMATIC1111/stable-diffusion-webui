@@ -71,9 +71,9 @@ def get_memory():
 
 
 class Map(dict): # pylint: disable=C0205
-    __slots__ = ('__dict__') # pylint: disable=C0325
+    __slots__ = ('__dict__') # pylint: disable=superfluous-parens
     def __init__(self, *args, **kwargs):
-        super(Map, self).__init__(*args, **kwargs)
+        super(Map, self).__init__(*args, **kwargs) # pylint: disable=super-with-arguments
         for arg in args:
             if isinstance(arg, dict):
                 for k, v in arg.items():
@@ -100,12 +100,12 @@ class Map(dict): # pylint: disable=C0205
     def __setattr__(self, key, value):
         self.__setitem__(key, value)
     def __setitem__(self, key, value):
-        super(Map, self).__setitem__(key, value)
+        super(Map, self).__setitem__(key, value) # pylint: disable=super-with-arguments
         self.__dict__.update({key: value})
     def __delattr__(self, item):
         self.__delitem__(item)
     def __delitem__(self, key):
-        super(Map, self).__delitem__(key)
+        super(Map, self).__delitem__(key) # pylint: disable=super-with-arguments
         del self.__dict__[key]
 
 

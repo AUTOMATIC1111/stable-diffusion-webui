@@ -20,7 +20,7 @@ all_images = []
 all_images_by_type = {}
 
 
-class Result(object):
+class Result():
     def __init__(self, typ: str, fn: str, tag: str = None, requested: list = []): # noqa: B006
         self.type = typ
         self.input = fn

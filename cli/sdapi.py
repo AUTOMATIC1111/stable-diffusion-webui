@@ -62,7 +62,7 @@ async def result(req):
         return Map({ 'error': req.status, 'reason': req.reason, 'url': req.url })
     else:
         json = await req.json()
-        if type(json) == list:
+        if isinstance(json, list):
             res = json
         elif json is None:
             res = {}
@@ -79,7 +79,7 @@ def resultsync(req: requests.Response):
         return Map({ 'error': req.status_code, 'reason': req.reason, 'url': req.url })
     else:
         json = req.json()
-        if type(json) == list:
+        if isinstance(json, list):
             res = json
         elif json is None:
             res = {}
@@ -169,8 +169,8 @@ def progresssync():
 
 def get_log():
     res = getsync('/sdapi/v1/log')
-    for l in res:
-        log.debug(l)
+    for line in res:
+        log.debug(line)
     return res
 
 

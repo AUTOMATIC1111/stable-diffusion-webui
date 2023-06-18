@@ -18,6 +18,7 @@ from PIL import Image
 from util import log
 grid = importlib.import_module('image-grid').grid
 
+
 def color_to_df(param):
     colors_pre_list = str(param).replace('([(','').split(', (')[0:-1]
     df_rgb = [i.split('), ')[0] + ')' for i in colors_pre_list]
@@ -87,7 +88,6 @@ def palette(img, params, output):
         log.info({ 'palette created': output })
 
     plt.close()
-    return
 
 
 if __name__ == '__main__':

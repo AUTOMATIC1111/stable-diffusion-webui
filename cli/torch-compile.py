@@ -86,7 +86,6 @@ if __name__ == '__main__':
     # print stats
     print(json.dumps(results, indent = 4))
 
-
 """
 Reference: <https://github.com/pytorch/pytorch/blob/4f4b62e4a255708e928445b6502139d5962974fa/docs/source/dynamo/get-started.rst>
 Training & Inference backends:

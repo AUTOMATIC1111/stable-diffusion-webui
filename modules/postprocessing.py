@@ -4,7 +4,7 @@ from typing import List
 
 from PIL import Image
 
-from modules import shared, images, devices, scripts, scripts_postprocessing, ui_common, generation_parameters_copypaste
+from modules import shared, images, devices, scripts, scripts_postprocessing, generation_parameters_copypaste
 from modules.shared import opts
 
 
@@ -76,7 +76,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
             outputs.append(pp.image)
 
     devices.torch_gc()
-    return outputs, ui_common.infotext_to_html(infotext), params
+    return outputs, infotext, params
 
 
 def run_extras(extras_mode, resize_mode, image, image_folder, input_dir, output_dir, show_extras_results, gfpgan_visibility, codeformer_visibility, codeformer_weight, upscaling_resize, upscaling_resize_w, upscaling_resize_h, upscaling_crop, extras_upscaler_1, extras_upscaler_2, extras_upscaler_2_visibility, upscale_first: bool, save_output: bool = True): #pylint: disable=unused-argument

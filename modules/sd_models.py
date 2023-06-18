@@ -667,14 +667,6 @@ def unload_model_weights(sd_model=None, _info=None):
         if shared.backend == shared.Backend.ORIGINAL:
             sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
         sd_model = None
-        """
-        if hasattr(model_data.sd_model, 'model'):
-            del model_data.sd_model.model
-        if hasattr(model_data.sd_model, 'first_stage_model'):
-            del model_data.sd_model.first_stage_model
-        if hasattr(model_data.sd_model, 'cond_stage_model'):
-            del model_data.sd_model.cond_stage_model           
-        """
         model_data.sd_model = None
         devices.torch_gc(force=True)
         shared.log.debug(f'Model weights unloaded: {memory_stats()}')
@@ -682,11 +674,8 @@ def unload_model_weights(sd_model=None, _info=None):
 
 
 def apply_token_merging(sd_model, token_merging_ratio):
-    """
-    Applies speed and memory optimizations from tomesd.
-    """
     current_token_merging_ratio = getattr(sd_model, 'applied_token_merged_ratio', 0)
-    shared.log.debug(f'Appplying token merging: current={current_token_merging_ratio} target={token_merging_ratio}')
+    # shared.log.debug(f'Appplying token merging: current={current_token_merging_ratio} target={token_merging_ratio}')
     if current_token_merging_ratio == token_merging_ratio:
         return
     if current_token_merging_ratio > 0:

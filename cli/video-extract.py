@@ -32,7 +32,7 @@ def extract(src: str, dst: str, rate: float = 0.015, fps: float = 0, start = 0, 
     images = []
     if not os.path.isfile(src) or not filetype.is_video(src):
         log.error({ 'extract': 'input is not movie file' })
-        return
+        return 0
     dst = dst if dst.endswith('/') else dst + '/'
 
     video = probe(src)

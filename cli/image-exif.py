@@ -14,7 +14,7 @@ from rich import print # pylint: disable=redefined-builtin
 class Exif: # pylint: disable=single-string-used-for-slots
     __slots__ = ('__dict__') # pylint: disable=superfluous-parens
     def __init__(self, image = None):
-        super(Exif, self).__setattr__('exif', Image.Exif())
+        super(Exif, self).__setattr__('exif', Image.Exif()) # pylint: disable=super-with-arguments
         self.pnginfo = PngImagePlugin.PngInfo()
         self.tags = {**dict(ExifTags.TAGS.items()), **dict(ExifTags.GPSTAGS.items())}
         self.ids = {**{v: k for k, v in ExifTags.TAGS.items()}, **{v: k for k, v in ExifTags.GPSTAGS.items()}}

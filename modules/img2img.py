@@ -4,7 +4,7 @@ from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, Unidenti
 import modules.scripts
 from modules import sd_samplers, shared, processing
 from modules.generation_parameters_copypaste import create_override_settings_dict
-from modules.ui import plaintext_to_html, infotext_to_html
+from modules.ui import plaintext_to_html
 from modules.memstats import memory_stats
 
 
@@ -67,7 +67,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
 
     if shared.sd_model is None:
         shared.log.warning('Model not loaded')
-        return
+        return [], '', '', 'Error: model not loaded'
+
     if init_img is None:
         shared.log.debug('Init image not set')
 
@@ -173,4 +174,4 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     p.close()
     generation_info_js = processed.js()
     shared.log.debug(f'Processed: {len(processed.images)} Memory: {memory_stats()} img')
-    return processed.images, generation_info_js, infotext_to_html(processed.info), plaintext_to_html(processed.comments)
+    return processed.images, generation_info_js, processed.info, plaintext_to_html(processed.comments)

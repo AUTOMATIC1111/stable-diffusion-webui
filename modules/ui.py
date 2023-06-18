@@ -59,11 +59,12 @@ extra_networks_symbol = '\U0001F310' # '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 
 
-def plaintext_to_html(text):
+
+def plaintext_to_html(text): # may be referenced by extensions
     return ui_common.plaintext_to_html(text)
 
 
-def infotext_to_html(text):
+def infotext_to_html(text): # may be referenced by extensions
     return ui_common.infotext_to_html(text)
 
 
@@ -109,9 +110,9 @@ def apply_styles(prompt, prompt_neg, styles):
 def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_dir, *ii_singles):
     if mode in {0, 1, 3, 4}:
         return [interrogation_function(ii_singles[mode]), None]
-    elif mode == 2:
+    if mode == 2:
         return [interrogation_function(ii_singles[mode]["image"]), None]
-    elif mode == 5:
+    if mode == 5:
         images = modules.shared.listfiles(ii_input_dir)
         if ii_output_dir != "":
             os.makedirs(ii_output_dir, exist_ok=True)
@@ -121,9 +122,8 @@ def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_di
             img = Image.open(image)
             filename = os.path.basename(image)
             left, _ = os.path.splitext(filename)
-            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, f"{left}.txt"), 'a', encoding='utf-8'))
-
-        return [gr.update(), None]
+            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, f"{left}.txt"), 'a', encoding='utf-8')) # pylint: disable=consider-using-with
+    return [gr.update(), None]
 
 
 def interrogate(image):
@@ -273,7 +273,7 @@ def apply_setting(key, value):
             return gr.update()
     comp_args = opts.data_labels[key].component_args
     if comp_args and isinstance(comp_args, dict) and comp_args.get('visible') is False:
-        return
+        return gr.update()
     valtype = type(opts.data_labels[key].default)
     oldval = opts.data.get(key, None)
     opts.data[key] = valtype(value) if valtype != type(None) else value
@@ -294,10 +294,6 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
     refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
     refresh_button.click(fn=refresh, inputs=[], outputs=[refresh_component])
     return refresh_button
-
-
-def create_output_panel(tabname, outdir):
-    return ui_common.create_output_panel(tabname, outdir)
 
 
 def create_sampler_and_steps_selection(choices, tabname):
@@ -404,7 +400,7 @@ def create_ui():
                     show_progress=False,
                 )
 
-            txt2img_gallery, generation_info, html_info, html_log = create_output_panel("txt2img", opts.outdir_txt2img_samples)
+            txt2img_gallery, generation_info, html_info, _html_info_formatted, html_log = ui_common.create_output_panel("txt2img", opts.outdir_txt2img_samples)
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
@@ -568,6 +564,7 @@ def create_ui():
                                 has_exact_match = np.any(np.all(np.array(image) == np.array(state), axis=-1))
                                 edited = same_size and has_exact_match
                                 return image if not edited or state is None else state
+                            return state
 
                         inpaint_color_sketch.change(update_orig, [inpaint_color_sketch, inpaint_color_sketch_orig], inpaint_color_sketch_orig)
 
@@ -719,7 +716,7 @@ def create_ui():
                                     outputs=[inpaint_controls, mask_alpha],
                                 )
 
-            img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
+            img2img_gallery, generation_info, html_info, _html_info_formatted, html_log = ui_common.create_output_panel("img2img", opts.outdir_img2img_samples)
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
@@ -1643,7 +1640,7 @@ def setup_ui_api(app):
     from pydantic import BaseModel, Field # pylint: disable=no-name-in-module
     from typing import List
 
-    class QuicksettingsHint(BaseModel):
+    class QuicksettingsHint(BaseModel): # pylint: disable=too-few-public-methods
         name: str = Field(title="Name of the quicksettings field")
         label: str = Field(title="Label of the quicksettings field")
 

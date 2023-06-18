@@ -43,7 +43,7 @@ def create_ui():
                 interrupt.click(fn=lambda: shared.state.interrupt(), inputs=[], outputs=[])
                 skip = gr.Button('Skip', elem_id=f"{id_part}_skip", variant='secondary')
                 skip.click(fn=lambda: shared.state.skip(), inputs=[], outputs=[])
-            result_images, generation_info, html_info, html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
+            result_images, generation_info, html_info, html_info_formatted, html_log = ui_common.create_output_panel("extras", shared.opts.outdir_extras_samples)
             gr.HTML('File metadata')
             exif_info = gr.HTML(elem_id="pnginfo_html_info")
             gen_info = gr.Text(elem_id="pnginfo_gen_info", visible=False)
@@ -57,7 +57,7 @@ def create_ui():
     extras_image.change(
         fn=wrap_gradio_call(wrap_pnginfo),
         inputs=[extras_image],
-        outputs=[_dummy, html_info, exif_info, gen_info],
+        outputs=[_dummy, html_info_formatted, exif_info, gen_info],
     )
     submit.click(
         fn=call_queue.wrap_gradio_gpu_call(submit_click, extra_outputs=[None, '']),
