@@ -99,7 +99,7 @@ def save_files(js_data, images, html_info, do_make_zip, index):
             p.all_seeds.append(p.seed)
         while len(p.all_prompts) <= i:
             p.all_prompts.append(p.prompt)
-        while len(p.infotexts) <= i:
+        while len(p.infotexts) <= i + 1:
             p.infotexts.append(p.infotext)
         if 'name' in filedata and ('tmp' not in filedata['name']) and os.path.isfile(filedata['name']):
             fullfn = filedata['name']
@@ -115,7 +115,8 @@ def save_files(js_data, images, html_info, do_make_zip, index):
             shared.log.info(f"Copying image: {fullfn} -> {destination}")
         else:
             image = image_from_url_text(filedata)
-            fullfn, txt_fullfn = modules.images.save_image(image, shared.opts.outdir_save, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], info=p.infotexts[i], extension=shared.opts.samples_format, grid=is_grid, p=p, save_to_dirs=shared.opts.use_save_to_dirs_for_ui)
+            # infotext is offset by 1 because the first image is the grid
+            fullfn, txt_fullfn = modules.images.save_image(image, shared.opts.outdir_save, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], info=p.infotexts[i + 1], extension=shared.opts.samples_format, grid=is_grid, p=p, save_to_dirs=shared.opts.use_save_to_dirs_for_ui)
             if fullfn is None:
                 continue
             filename = os.path.relpath(fullfn, shared.opts.outdir_save)
