@@ -59,7 +59,8 @@ def setup_logging():
 
         def emit(self, record):
             msg = self.format(record)
-            self.buffer.append(json.loads(msg))
+            # self.buffer.append(json.loads(msg))
+            self.buffer.append(msg)
             if len(self.buffer) > self.capacity:
                 self.buffer.pop(0)
 
