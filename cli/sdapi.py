@@ -167,6 +167,13 @@ def progresssync():
     return res
 
 
+def get_log():
+    res = getsync('/sdapi/v1/log')
+    for l in res:
+        log.debug(l)
+    return res
+
+
 def options():
     opts = getsync('/sdapi/v1/options')
     flags = getsync('/sdapi/v1/cmd-flags')
@@ -223,6 +230,8 @@ if __name__ == "__main__":
         print(json.dumps(opt['options'], indent = 2))
         log.debug({ 'cmd-flags' })
         print(json.dumps(opt['flags'], indent = 2))
+    if 'log' in sys.argv:
+        get_log()
     if 'shutdown' in sys.argv:
         shutdown()
     asyncio.run(close(), debug=True)

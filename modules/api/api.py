@@ -142,6 +142,7 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
+        self.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List)
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
 
@@ -155,6 +156,9 @@ class Api:
             if compare_digest(credentials.password, self.credentials[credentials.username]):
                 return True
         raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Basic"})
+
+    def get_log_buffer(self):
+        return shared.log.buffer
 
     def get_selectable_script(self, script_name, script_runner):
         if script_name is None or script_name == "":

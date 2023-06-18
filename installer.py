@@ -48,36 +48,63 @@ git_commit = "unknown"
 
 
 # setup console and file logging
-def setup_logging(clean=False):
-    try:
-        if clean and os.path.isfile(log_file):
-            os.remove(log_file)
-        time.sleep(0.1) # prevent race condition
-    except Exception:
-        pass
+def setup_logging():
+
+    class RingBuffer(logging.StreamHandler):
+        def __init__(self, capacity):
+            super().__init__()
+            self.capacity = capacity
+            self.buffer = []
+            self.formatter = logging.Formatter('{ "asctime":"%(asctime)s", "created":%(created)f, "facility":"%(name)s", "pid":%(process)d, "tid":%(thread)d, "level":"%(levelname)s", "module":"%(module)s", "func":"%(funcName)s", "msg":"%(message)s" }')
+
+        def emit(self, record):
+            msg = self.format(record)
+            self.buffer.append(json.loads(msg))
+            if len(self.buffer) > self.capacity:
+                self.buffer.pop(0)
+
+        def get(self):
+            return self.buffer
+
+    from logging.handlers import RotatingFileHandler
     from rich.theme import Theme
     from rich.logging import RichHandler
     from rich.console import Console
     from rich.pretty import install as pretty_install
     from rich.traceback import install as traceback_install
+
+    level = logging.DEBUG if args.debug else logging.INFO
+    log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`
     console = Console(log_time=True, log_time_format='%H:%M:%S-%f', theme=Theme({
         "traceback.border": "black",
         "traceback.border.syntax_error": "black",
         "inspect.value.border": "black",
     }))
-    level = logging.DEBUG if args.debug else logging.INFO
     try:
         logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', filename=log_file, filemode='a', encoding='utf-8', force=True)
     except Exception:
         logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s') # to be able to report unsupported python version
-    log.setLevel(logging.DEBUG) # log to file is always at level debug for facility `sd`
     pretty_install(console=console)
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
-    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=level, console=console)
-    rh.set_name(level)
     while log.hasHandlers() and len(log.handlers) > 0:
         log.removeHandler(log.handlers[0])
+
+    # handlers
+    rh = RichHandler(show_time=True, omit_repeated_times=False, show_level=True, show_path=False, markup=False, rich_tracebacks=True, log_time_format='%H:%M:%S-%f', level=level, console=console)
+    rh.setLevel(level)
     log.addHandler(rh)
+
+    fh = RotatingFileHandler(log_file, maxBytes=10*1024*1024, backupCount=5, encoding='utf-8', delay=True) # 10MB default for log rotation
+    fh.formatter = logging.Formatter('%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s')
+    fh.setLevel(logging.DEBUG)
+    log.addHandler(fh)
+
+    rb = RingBuffer(100) # 100 entries default in log ring buffer
+    rb.setLevel(level)
+    log.addHandler(rb)
+    log.buffer = rb.buffer
+
+    # overrides
     logging.getLogger("urllib3").setLevel(logging.ERROR)
     logging.getLogger("httpx").setLevel(logging.ERROR)
     logging.getLogger("ControlNet").handlers = log.handlers

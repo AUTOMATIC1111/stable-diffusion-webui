@@ -151,7 +151,7 @@ if __name__ == "__main__":
     installer.ensure_base_requirements()
     init_modules() # setup argparser and default folders
     installer.args = args
-    installer.setup_logging(False)
+    installer.setup_logging()
     installer.log.info('Starting SD.Next')
     installer.read_options()
     installer.check_python()
@@ -185,7 +185,6 @@ if __name__ == "__main__":
     # installer.run_setup()
     # installer.log.debug(f"Args: {vars(args)}")
     logging.disable(logging.NOTSET if args.debug else logging.DEBUG)
-
 
     instance = start_server(immediate=True, server=None)
     while True:

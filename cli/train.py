@@ -6,7 +6,6 @@ import re
 import gc
 import sys
 import json
-import time
 import shutil
 import pathlib
 import asyncio
@@ -39,13 +38,7 @@ log_file = os.path.join(os.path.dirname(__file__), 'train.log')
 
 # methods
 
-def setup_logging(clean=False):
-    try:
-        if clean and os.path.isfile(log_file):
-            os.remove(log_file)
-        time.sleep(0.1) # prevent race condition
-    except Exception:
-        pass
+def setup_logging():
     from rich.theme import Theme
     from rich.logging import RichHandler
     from rich.console import Console

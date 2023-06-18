@@ -1,12 +1,22 @@
 # Change Log for SD.Next
 
+## Update for 06/17/2023
+
+- minor improvements to extra networks ui  
+- more hints/tooltips integrated into ui  
+- decidated api server  
+  - still in developent, but highly promising for high throughput server  
+- improve server logging with  
+  - log file rotation  
+  - ring buffer with api endpoint `/sdapi/v1/log`  
+
 ## Update for 06/14/2023
 
 Second stage of a jumbo merge from upstream plus few minor changes...
 
 - simplify token merging  
 - reorganize some settings  
-- all updates from upstream: A1111 v1.3.2 [df004be] (latest release)  
+- all updates from upstream: **A1111** v1.3.2 [df004be] *(latest release)*  
   pretty much nothing major that i haven't released in previous versions, but its still a long list of tiny changes  
   - skipped/did-not-port:  
     add separate hires prompt: unnecessarily complicated and spread over large number of commits due to many regressions  

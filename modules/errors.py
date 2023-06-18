@@ -23,7 +23,7 @@ def install(suppress=[]): # noqa: B006
     warnings.filterwarnings("ignore", category=UserWarning)
     pretty_install(console=console)
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=suppress)
-    logging.basicConfig(level=logging.INFO, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s')
+    logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(levelname)s | %(pathname)s | %(message)s')
     # for handler in logging.getLogger().handlers:
     #    handler.setLevel(logging.INFO)
 

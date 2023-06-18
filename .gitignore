@@ -19,6 +19,7 @@ venv
 
 # all models and temp files
 *.log
+*.log.*
 *.bak
 *.ckpt
 *.safetensors
