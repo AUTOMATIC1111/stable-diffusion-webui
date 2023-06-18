@@ -820,6 +820,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.applied_old_hires_behavior_to = None
 
     def init(self, all_prompts, all_seeds, all_subseeds):
+        self.width = self.width or 512
+        self.height = self.height or 512
         if self.enable_hr:
             if opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):
                 self.hr_resize_x = self.width
