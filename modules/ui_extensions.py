@@ -387,12 +387,15 @@ def refresh_available_extensions(url, hide_tags, sort_column):
     global available_extensions
 
     import urllib.request
-    with urllib.request.urlopen(url) as response:
-        text = response.read()
+    try:
+        with urllib.request.urlopen(url) as response:
+            text = response.read()
+        available_extensions = json.loads(text)
+        code, tags = refresh_available_extensions_from_data(hide_tags, sort_column)
 
-    available_extensions = json.loads(text)
-
-    code, tags = refresh_available_extensions_from_data(hide_tags, sort_column)
+    except Exception as e:
+        code, tags = (None, None)
+        print(e)
 
     return url, code, gr.CheckboxGroup.update(choices=tags), '', ''
 
@@ -629,6 +632,5 @@ def create_ui():
                     inputs=[config_states_list],
                     outputs=[config_states_table],
                 )
-
 
     return ui
