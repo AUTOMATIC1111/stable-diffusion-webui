@@ -60,9 +60,11 @@ switch_values_symbol = '\U000021C5' # ⇅
 
 
 
+def create_output_panel(tabname, outdir): # may be referenced by extensions
+    return ui_common.create_output_panel(tabname, outdir)
+
 def plaintext_to_html(text): # may be referenced by extensions
     return ui_common.plaintext_to_html(text)
-
 
 def infotext_to_html(text): # may be referenced by extensions
     return ui_common.infotext_to_html(text)
