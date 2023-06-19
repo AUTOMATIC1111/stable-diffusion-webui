@@ -486,8 +486,6 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     else:
                         loss = shared.sd_model.forward(x, cond)[0] / gradient_step
                     del x
-                    if shared.cmd_opts.use_ipex and loss > (1 / gradient_step):
-                        loss = (loss - (1 / gradient_step)) * 10
                     _loss_step += loss.item()
 
                 scaler.scale(loss).backward()
@@ -496,6 +494,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                     continue
                 if clip_grad:
                     clip_grad(embedding.vec, clip_grad_sched.learn_rate)
+
                 scaler.step(optimizer)
                 scaler.update()
                 embedding.step += 1
