@@ -352,7 +352,7 @@ class IOComponent(Component):
         pil_image = _Image.fromarray(
             processing_utils._convert(arr, np.uint8, force_copy=False)
         )
-        return self.pil_to_temp_file(pil_image, dir, format="png")
+        return self.pil_to_temp_file(pil_image, dir)
 
     def audio_to_temp_file(
         self, data: np.ndarray, sample_rate: int, dir: str, format: str
