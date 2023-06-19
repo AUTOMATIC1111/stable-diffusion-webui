@@ -10,7 +10,7 @@ This installs an extension from https://github.com/AUTOMATIC1111/stable-diffusio
 
 Alternatively you can just copy-paste a directory into extensions.
 
-For developing extensions, see [Developing extensions](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Extensions/Developing-extensions).
+For developing extensions, see [Developing extensions](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Developing-extensions).
 
 # Security
 
