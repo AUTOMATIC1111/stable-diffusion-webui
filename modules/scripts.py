@@ -116,6 +116,21 @@ class Script:
 
         pass
 
+    def after_extra_networks_activate(self, p, *args, **kwargs):
+        """
+        Calledafter extra networks activation, before conds calculation
+        allow modification of the network after extra networks activation been applied
+        won't be call if p.disable_extra_networks
+
+        **kwargs will have those items:
+          - batch_number - index of current batch, from 0 to number of batches-1
+          - prompts - list of prompts for current batch; you can change contents of this list but changing the number of entries will likely break things
+          - seeds - list of seeds for current batch
+          - subseeds - list of subseeds for current batch
+          - extra_network_data - list of ExtraNetworkParams for current stage
+        """
+        pass
+
     def process_batch(self, p, *args, **kwargs):
         """
         Same as process(), but called for every batch.
@@ -482,6 +497,14 @@ class ScriptRunner:
                 script.before_process_batch(p, *script_args, **kwargs)
             except Exception:
                 errors.report(f"Error running before_process_batch: {script.filename}", exc_info=True)
+
+    def after_extra_networks_activate(self, p, **kwargs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.after_extra_networks_activate(p, *script_args, **kwargs)
+            except Exception:
+                errors.report(f"Error running after_extra_networks_activate: {script.filename}", exc_info=True)
 
     def process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
