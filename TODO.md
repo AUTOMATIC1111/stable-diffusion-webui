@@ -16,6 +16,7 @@ Stuff to be added...
 - Update `train.py` to use `rembg`
 - Create new train UI
 - Create new Models UI
+- Intelligent preview mode
 
 ## Investigate
 
