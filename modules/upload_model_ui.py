@@ -254,7 +254,7 @@ def parse_download_url(url: str, cover: str) -> Tuple[str, str, str]:
 
 def create_upload_model_ui():
     gr.Label("你可以提供下载链接(本地文件需先上传服务器并提供外网访问URL)，选择模型类型并上传提示OK后完成", label=None)
-    radio_ctl = gr.Radio(["Lora", "Stable-diffusion", "VAE", "embeddings"],
+    radio_ctl = gr.Radio(["Lora", "Stable-diffusion", "VAE", "embeddings", "LyCORIS"],
                          value="Lora",
                          label="选择模型类型:")
     with gr.Tabs(elem_id="tabs") as tabs:
@@ -308,7 +308,7 @@ def create_rm_model_ui():
 
     gr.Label("你可以对自己空间模型进行管理", label=None)
     # gr.Label("You can upload the model via a local file or a specified network URL", label=None)
-    radio_ctl = gr.Radio(["Lora", "Stable-diffusion", "VAE", "embeddings"], value='Lora',
+    radio_ctl = gr.Radio(["Lora", "Stable-diffusion", "VAE", "embeddings", "LyCORIS"], value='Lora',
                          label="选择模型类型:")
     ##设置model_frame初始值
     state = gr.State()
