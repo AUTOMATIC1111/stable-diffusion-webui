@@ -617,7 +617,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False):
         current_checkpoint_info = None
     else:
         current_checkpoint_info = sd_model.sd_checkpoint_info
-        if checkpoint_info is not None and sd_model.sd_model_checkpoint == checkpoint_info.filename:
+        if checkpoint_info is not None and current_checkpoint_info.filename == checkpoint_info.filename:
             return
         if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
             lowvram.send_everything_to_cpu()

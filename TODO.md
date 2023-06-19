@@ -14,6 +14,8 @@ Stuff to be added...
 - Import core repos
 - Update `train.py` to use `interrogator`
 - Update `train.py` to use `rembg`
+- Create new train UI
+- Create new Models UI
 
 ## Investigate
 

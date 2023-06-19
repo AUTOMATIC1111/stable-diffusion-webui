@@ -9,6 +9,7 @@ from PIL import Image
 logging.basicConfig(level = logging.INFO, format = '%(asctime)s %(levelname)s: %(message)s')
 log = logging.getLogger(__name__)
 sd_url = "http://127.0.0.1:7860"
+model = "realistic-vision-v13"
 options = {
     "prompt": "city at night",
     "negative_prompt": "foggy, blurry",
@@ -33,6 +34,8 @@ def post(endpoint: str, dct: dict = None):
 
 def generate(num: int = 0):
     log.info(f'sending generate request: {num+1} {options}')
+    if model is not None:
+        post('/sdapi/v1/options', { 'sd_model_checkpoint': model })
     data = post('/sdapi/v1/txt2img', options)
     if 'images' in data:
         for i in range(len(data['images'])):
