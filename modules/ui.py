@@ -112,7 +112,7 @@ def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resiz
     with devices.autocast():
         p.init([""], [0], [0])
 
-    return f"resize: from <span class='resolution'>{p.width}x{p.height}</span> to <span class='resolution'>{p.hr_resize_x or p.hr_upscale_to_x}x{p.hr_resize_y or p.hr_upscale_to_y}</span>"
+    return f"resize: from <span class='resolution'>{p.width}x{p.height}</span> to <span class='resolution'>{p.hr_resize_x or p.hr_upscale_to_x}x{p.hr_resize_y or p.hr_upscale_to_y} = {p.hr_upscale_to_x * p.hr_upscale_to_y / 1000000} MP</span>"
 
 
 def resize_from_to_html(width, height, scale_by):
