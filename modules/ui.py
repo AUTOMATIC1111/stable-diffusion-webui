@@ -59,7 +59,6 @@ extra_networks_symbol = '\U0001F310' # '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
 
 
-
 def create_output_panel(tabname, outdir): # may be referenced by extensions
     a, b, c, _d, e = ui_common.create_output_panel(tabname, outdir)
     return a, b, c, e

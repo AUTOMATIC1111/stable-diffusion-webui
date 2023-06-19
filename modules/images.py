@@ -289,6 +289,7 @@ def sanitize_filename_part(text, replace_spaces=True):
     text = os.path.basename(text)
     if replace_spaces:
         text = text.replace(' ', '_')
+    text = text.replace('#', '_')
     text = text.translate({ord(x): '_' for x in invalid_filename_chars})
     text = text.lstrip(invalid_filename_prefix)[:max_filename_part_length]
     text = text.rstrip(invalid_filename_postfix)
