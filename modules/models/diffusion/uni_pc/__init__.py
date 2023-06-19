@@ -1,1 +1,1 @@
-from .sampler import UniPCSampler  # noqa: F401
+from .sampler import UniPCSampler

@@ -1,6 +1,7 @@
 import os
 import sys
 import traceback
+import inspect
 from collections import namedtuple
 
 import torch
@@ -29,7 +30,7 @@ textual_inversion_templates = {}
 def list_textual_inversion_templates():
     textual_inversion_templates.clear()
 
-    for root, _, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir):
+    for root, dirs, fns in os.walk(shared.cmd_opts.textual_inversion_templates_dir):
         for fn in fns:
             path = os.path.join(root, fn)
 
@@ -68,7 +69,7 @@ class Embedding:
                 'hash': self.checksum(),
                 'optimizer_state_dict': self.optimizer_state_dict,
             }
-            torch.save(optimizer_saved_dict, f"{filename}.optim")
+            torch.save(optimizer_saved_dict, filename + '.optim')
 
     def checksum(self):
         if self.cached_checksum is not None:
@@ -166,7 +167,8 @@ class EmbeddingDatabase:
         # textual inversion embeddings
         if 'string_to_param' in data:
             param_dict = data['string_to_param']
-            param_dict = getattr(param_dict, '_parameters', param_dict)  # fix for torch 1.12.1 loading saved file from torch 1.11
+            if hasattr(param_dict, '_parameters'):
+                param_dict = getattr(param_dict, '_parameters')  # fix for torch 1.12.1 loading saved file from torch 1.11
             assert len(param_dict) == 1, 'embedding file has multiple terms in it'
             emb = next(iter(param_dict.items()))[1]
         # diffuser concepts
@@ -197,7 +199,7 @@ class EmbeddingDatabase:
         if not os.path.isdir(embdir.path):
             return
 
-        for root, _, fns in os.walk(embdir.path, followlinks=True):
+        for root, dirs, fns in os.walk(embdir.path, followlinks=True):
             for fn in fns:
                 try:
                     fullfn = os.path.join(root, fn)
@@ -214,7 +216,7 @@ class EmbeddingDatabase:
     def load_textual_inversion_embeddings(self, force_reload=False):
         if not force_reload:
             need_reload = False
-            for embdir in self.embedding_dirs.values():
+            for path, embdir in self.embedding_dirs.items():
                 if embdir.has_changed():
                     need_reload = True
                     break
@@ -227,15 +229,9 @@ class EmbeddingDatabase:
         self.skipped_embeddings.clear()
         self.expected_shape = self.get_expected_shape()
 
-        for embdir in self.embedding_dirs.values():
+        for path, embdir in self.embedding_dirs.items():
             self.load_from_dir(embdir)
             embdir.update()
-
-        # re-sort word_embeddings because load_from_dir may not load in alphabetic order.
-        # using a temporary copy so we don't reinitialize self.word_embeddings in case other objects have a reference to it.
-        sorted_word_embeddings = {e.name: e for e in sorted(self.word_embeddings.values(), key=lambda e: e.name.lower())}
-        self.word_embeddings.clear()
-        self.word_embeddings.update(sorted_word_embeddings)
 
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
         if self.previously_displayed_embeddings != displayed_embeddings:
@@ -323,16 +319,16 @@ def tensorboard_add(tensorboard_writer, loss, global_step, step, learn_rate, epo
     tensorboard_add_scaler(tensorboard_writer, f"Learn rate/train/epoch-{epoch_num}", learn_rate, step)
 
 def tensorboard_add_scaler(tensorboard_writer, tag, value, step):
-    tensorboard_writer.add_scalar(tag=tag,
+    tensorboard_writer.add_scalar(tag=tag, 
         scalar_value=value, global_step=step)
 
 def tensorboard_add_image(tensorboard_writer, tag, pil_image, step):
     # Convert a pil image to a torch tensor
     img_tensor = torch.as_tensor(np.array(pil_image, copy=True))
-    img_tensor = img_tensor.view(pil_image.size[1], pil_image.size[0],
+    img_tensor = img_tensor.view(pil_image.size[1], pil_image.size[0], 
         len(pil_image.getbands()))
     img_tensor = img_tensor.permute((2, 0, 1))
-
+                
     tensorboard_writer.add_image(tag, img_tensor, global_step=step)
 
 def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_model_every, create_image_every, log_directory, name="embedding"):
@@ -402,7 +398,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     if initial_step >= steps:
         shared.state.textinfo = "Model has already been trained beyond specified max steps"
         return embedding, filename
-
+    
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
     clip_grad = torch.nn.utils.clip_grad_value_ if clip_grad_mode == "value" else \
         torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else \
@@ -412,7 +408,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     # dataset loading may take a while, so input validations and early returns should be done before this
     shared.state.textinfo = f"Preparing dataset from {html.escape(data_root)}..."
     old_parallel_processing_allowed = shared.parallel_processing_allowed
-
+    
     if shared.opts.training_enable_tensorboard:
         tensorboard_writer = tensorboard_setup(log_directory)
 
@@ -435,11 +431,11 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     optimizer = torch.optim.AdamW([embedding.vec], lr=scheduler.learn_rate, weight_decay=0.0)
     if shared.opts.save_optimizer_state:
         optimizer_state_dict = None
-        if os.path.exists(f"{filename}.optim"):
-            optimizer_saved_dict = torch.load(f"{filename}.optim", map_location='cpu')
+        if os.path.exists(filename + '.optim'):
+            optimizer_saved_dict = torch.load(filename + '.optim', map_location='cpu')
             if embedding.checksum() == optimizer_saved_dict.get('hash', None):
                 optimizer_state_dict = optimizer_saved_dict.get('optimizer_state_dict', None)
-
+    
         if optimizer_state_dict is not None:
             optimizer.load_state_dict(optimizer_state_dict)
             print("Loaded existing optimizer from checkpoint")
@@ -468,7 +464,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     try:
         sd_hijack_checkpoint.add()
 
-        for _ in range((steps-initial_step) * gradient_step):
+        for i in range((steps-initial_step) * gradient_step):
             if scheduler.finished:
                 break
             if shared.state.interrupted:
@@ -485,7 +481,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
                 if clip_grad:
                     clip_grad_sched.step(embedding.step)
-
+            
                 with devices.autocast():
                     x = batch.latent_sample.to(devices.device, non_blocking=pin_memory)
                     if use_weight:
@@ -513,7 +509,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                 # go back until we reach gradient accumulation steps
                 if (j + 1) % gradient_step != 0:
                     continue
-
+                
                 if clip_grad:
                     clip_grad(embedding.vec, clip_grad_sched.learn_rate)
 
@@ -597,17 +593,17 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
                         data = torch.load(last_saved_file)
                         info.add_text("sd-ti-embedding", embedding_to_b64(data))
 
-                        title = f"<{data.get('name', '???')}>"
+                        title = "<{}>".format(data.get('name', '???'))
 
                         try:
                             vectorSize = list(data['string_to_param'].values())[0].shape[0]
-                        except Exception:
+                        except Exception as e:
                             vectorSize = '?'
 
                         checkpoint = sd_models.select_checkpoint()
                         footer_left = checkpoint.model_name
-                        footer_mid = f'[{checkpoint.shorthash}]'
-                        footer_right = f'{vectorSize}v {steps_done}s'
+                        footer_mid = '[{}]'.format(checkpoint.shorthash)
+                        footer_right = '{}v {}s'.format(vectorSize, steps_done)
 
                         captioned_image = caption_image_overlay(image, title, footer_left, footer_mid, footer_right)
                         captioned_image = insert_image_data_embed(captioned_image, data)

@@ -17,9 +17,6 @@ class PostprocessImageArgs:
 
 
 class Script:
-    name = None
-    """script's internal name derived from title"""
-
     filename = None
     args_from = None
     args_to = None
@@ -28,8 +25,8 @@ class Script:
     is_txt2img = False
     is_img2img = False
 
-    group = None
     """A gr.Group component that has all script's UI inside it"""
+    group = None
 
     infotext_fields = None
     """if set in ui(), this is a list of pairs of gradio component + text; the text will be used when
@@ -40,9 +37,6 @@ class Script:
     """if set in ui(), this is a list of names of infotext fields; the fields will be sent through the
     various "Send to <X>" buttons when clicked
     """
-
-    api_info = None
-    """Generated value of type modules.api.models.ScriptInfo with information about the script for API"""
 
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
@@ -169,8 +163,7 @@ class Script:
         """helper function to generate id for a HTML element, constructs final id out of script name, tab and user-supplied item_id"""
 
         need_tabname = self.show(True) == self.show(False)
-        tabkind = 'img2img' if self.is_img2img else 'txt2txt'
-        tabname = f"{tabkind}_" if need_tabname else ""
+        tabname = ('img2img' if self.is_img2img else 'txt2txt') + "_" if need_tabname else ""
         title = re.sub(r'[^a-z_0-9]', '', re.sub(r'\s', '_', self.title().lower()))
 
         return f'script_{tabname}{title}_{item_id}'
@@ -237,7 +230,7 @@ def load_scripts():
     syspath = sys.path
 
     def register_scripts_from_module(module):
-        for script_class in module.__dict__.values():
+        for key, script_class in module.__dict__.items():
             if type(script_class) != type:
                 continue
 
@@ -271,12 +264,6 @@ def load_scripts():
             sys.path = syspath
             current_basedir = paths.script_path
 
-    global scripts_txt2img, scripts_img2img, scripts_postproc
-
-    scripts_txt2img = ScriptRunner()
-    scripts_img2img = ScriptRunner()
-    scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
-
 
 def wrap_call(func, filename, funcname, *args, default=None, **kwargs):
     try:
@@ -307,9 +294,9 @@ class ScriptRunner:
 
         auto_processing_scripts = scripts_auto_postprocessing.create_auto_preprocessing_script_data()
 
-        for script_data in auto_processing_scripts + scripts_data:
-            script = script_data.script_class()
-            script.filename = script_data.path
+        for script_class, path, basedir, script_module in auto_processing_scripts + scripts_data:
+            script = script_class()
+            script.filename = path
             script.is_txt2img = not is_img2img
             script.is_img2img = is_img2img
 
@@ -325,8 +312,6 @@ class ScriptRunner:
                 self.selectable_scripts.append(script)
 
     def setup_ui(self):
-        import modules.api.models as api_models
-
         self.titles = [wrap_call(script.title, script.filename, "title") or f"{script.filename} [error]" for script in self.selectable_scripts]
 
         inputs = [None]
@@ -341,27 +326,8 @@ class ScriptRunner:
             if controls is None:
                 return
 
-            script.name = wrap_call(script.title, script.filename, "title", default=script.filename).lower()
-            api_args = []
-
             for control in controls:
                 control.custom_script_source = os.path.basename(script.filename)
-
-                arg_info = api_models.ScriptArg(label=control.label or "")
-
-                for field in ("value", "minimum", "maximum", "step", "choices"):
-                    v = getattr(control, field, None)
-                    if v is not None:
-                        setattr(arg_info, field, v)
-
-                api_args.append(arg_info)
-
-            script.api_info = api_models.ScriptInfo(
-                name=script.name,
-                is_img2img=script.is_img2img,
-                is_alwayson=script.alwayson,
-                args=api_args,
-            )
 
             if script.infotext_fields is not None:
                 self.infotext_fields += script.infotext_fields
@@ -525,7 +491,7 @@ class ScriptRunner:
                 module = script_loading.load_module(script.filename)
                 cache[filename] = module
 
-            for script_class in module.__dict__.values():
+            for key, script_class in module.__dict__.items():
                 if type(script_class) == type and issubclass(script_class, Script):
                     self.scripts[si] = script_class()
                     self.scripts[si].filename = filename
@@ -533,9 +499,9 @@ class ScriptRunner:
                     self.scripts[si].args_to = args_to
 
 
-scripts_txt2img: ScriptRunner = None
-scripts_img2img: ScriptRunner = None
-scripts_postproc: scripts_postprocessing.ScriptPostprocessingRunner = None
+scripts_txt2img = ScriptRunner()
+scripts_img2img = ScriptRunner()
+scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
 scripts_current: ScriptRunner = None
 
 
@@ -545,7 +511,14 @@ def reload_script_body_only():
     scripts_img2img.reload_sources(cache)
 
 
-reload_scripts = load_scripts  # compatibility alias
+def reload_scripts():
+    global scripts_txt2img, scripts_img2img, scripts_postproc
+
+    load_scripts()
+
+    scripts_txt2img = ScriptRunner()
+    scripts_img2img = ScriptRunner()
+    scripts_postproc = scripts_postprocessing.ScriptPostprocessingRunner()
 
 
 def add_classes_to_gradio_component(comp):
@@ -553,7 +526,7 @@ def add_classes_to_gradio_component(comp):
     this adds gradio-* to the component for css styling (ie gradio-button to gr.Button), as well as some others
     """
 
-    comp.elem_classes = [f"gradio-{comp.get_block_name()}", *(comp.elem_classes or [])]
+    comp.elem_classes = ["gradio-" + comp.get_block_name(), *(comp.elem_classes or [])]
 
     if getattr(comp, 'multiselect', False):
         comp.elem_classes.append('multiselect')

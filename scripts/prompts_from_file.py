@@ -1,4 +1,6 @@
 import copy
+import math
+import os
 import random
 import sys
 import traceback
@@ -9,7 +11,8 @@ import gradio as gr
 
 from modules import sd_samplers
 from modules.processing import Processed, process_images
-from modules.shared import state
+from PIL import Image
+from modules.shared import opts, cmd_opts, state
 
 
 def process_string_tag(tag):
@@ -97,29 +100,30 @@ def cmdargs(line):
 
 def load_prompt_file(file):
     if file is None:
-        return None, gr.update(), gr.update(lines=7)
+        lines = []
     else:
         lines = [x.strip() for x in file.decode('utf8', errors='ignore').split("\n")]
-        return None, "\n".join(lines), gr.update(lines=7)
+
+    return None, "\n".join(lines), gr.update(lines=7)
 
 
 class Script(scripts.Script):
     def title(self):
         return "Prompts from file or textbox"
 
-    def ui(self, is_img2img):
+    def ui(self, is_img2img):       
         checkbox_iterate = gr.Checkbox(label="Iterate seed every line", value=False, elem_id=self.elem_id("checkbox_iterate"))
         checkbox_iterate_batch = gr.Checkbox(label="Use same random seed for all lines", value=False, elem_id=self.elem_id("checkbox_iterate_batch"))
 
         prompt_txt = gr.Textbox(label="List of prompt inputs", lines=1, elem_id=self.elem_id("prompt_txt"))
         file = gr.File(label="Upload prompt inputs", type='binary', elem_id=self.elem_id("file"))
 
-        file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt], show_progress=False)
+        file.change(fn=load_prompt_file, inputs=[file], outputs=[file, prompt_txt, prompt_txt])
 
         # We start at one line. When the text changes, we jump to seven lines, or two lines if no \n.
         # We don't shrink back to 1, because that causes the control to ignore [enter], and it may
         # be unclear to the user that shift-enter is needed.
-        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt], show_progress=False)
+        prompt_txt.change(lambda tb: gr.update(lines=7) if ("\n" in tb) else gr.update(lines=2), inputs=[prompt_txt], outputs=[prompt_txt])
         return [checkbox_iterate, checkbox_iterate_batch, prompt_txt]
 
     def run(self, p, checkbox_iterate, checkbox_iterate_batch, prompt_txt: str):
@@ -155,7 +159,7 @@ class Script(scripts.Script):
         images = []
         all_prompts = []
         infotexts = []
-        for args in jobs:
+        for n, args in enumerate(jobs):
             state.job = f"{state.job_no + 1} out of {state.job_count}"
 
             copy_p = copy.copy(p)
@@ -164,7 +168,7 @@ class Script(scripts.Script):
 
             proc = process_images(copy_p)
             images += proc.images
-
+            
             if checkbox_iterate:
                 p.seed = p.seed + (p.batch_size * p.n_iter)
             all_prompts += proc.all_prompts

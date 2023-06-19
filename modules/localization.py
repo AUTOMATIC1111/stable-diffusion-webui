@@ -23,7 +23,7 @@ def list_localizations(dirname):
         localizations[fn] = file.path
 
 
-def localization_js(current_localization_name: str) -> str:
+def localization_js(current_localization_name):
     fn = localizations.get(current_localization_name, None)
     data = {}
     if fn is not None:
@@ -34,4 +34,4 @@ def localization_js(current_localization_name: str) -> str:
             print(f"Error loading localization from {fn}:", file=sys.stderr)
             print(traceback.format_exc(), file=sys.stderr)
 
-    return f"window.localization = {json.dumps(data)}"
+    return f"var localization = {json.dumps(data)}\n"

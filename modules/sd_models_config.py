@@ -1,3 +1,4 @@
+import re
 import os
 
 import torch
@@ -110,7 +111,7 @@ def find_checkpoint_config_near_filename(info):
     if info is None:
         return None
 
-    config = f"{os.path.splitext(info.filename)[0]}.yaml"
+    config = os.path.splitext(info.filename)[0] + ".yaml"
     if os.path.exists(config):
         return config
 

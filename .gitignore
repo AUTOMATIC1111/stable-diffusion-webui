@@ -32,8 +32,4 @@ notification.mp3
 /extensions
 /test/stdout.txt
 /test/stderr.txt
-/cache.json*
-/config_states/
-/node_modules
-/package-lock.json
-/.coverage*
+/cache.json

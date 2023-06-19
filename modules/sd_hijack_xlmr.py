@@ -1,6 +1,8 @@
+import open_clip.tokenizer
 import torch
 
 from modules import sd_hijack_clip, devices
+from modules.shared import opts
 
 
 class FrozenXLMREmbedderWithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords):

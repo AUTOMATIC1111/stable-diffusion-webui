@@ -21,11 +21,3 @@ def refresh_vae_list():
     import modules.sd_vae
 
     modules.sd_vae.refresh_vae_list()
-
-
-def cross_attention_optimizations():
-    import modules.sd_hijack
-
-    return ["Automatic"] + [x.title() for x in modules.sd_hijack.optimizers] + ["None"]
-
-

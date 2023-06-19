@@ -18,14 +18,9 @@ def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, 
 
     if extras_mode == 1:
         for img in image_folder:
-            if isinstance(img, Image.Image):
-                image = img
-                fn = ''
-            else:
-                image = Image.open(os.path.abspath(img.name))
-                fn = os.path.splitext(img.orig_name)[0]
+            image = Image.open(img)
             image_data.append(image)
-            image_names.append(fn)
+            image_names.append(os.path.splitext(img.orig_name)[0])
     elif extras_mode == 2:
         assert not shared.cmd_opts.hide_ui_dir_config, '--hide-ui-dir-config option must be disabled'
         assert input_dir, 'input directory not selected'
