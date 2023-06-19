@@ -214,6 +214,7 @@ div#extras_scale_to_tab div.form{
   transition: opacity 0.2s ease-in;
   pointer-events: none;
   opacity: 0;
+  z-index: var(--layer-2);
 }
 
 .tooltip-show {
