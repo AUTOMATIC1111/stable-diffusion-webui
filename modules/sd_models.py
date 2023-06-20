@@ -126,7 +126,7 @@ def list_models():
         model_url = None
     else:
         # model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
-        model_url = 'http://apksamba.ops.ilongyuan.cn:8000/ai/7/AI%E7%BE%8E%E6%9C%AF/%E6%89%93%E5%8C%85/models/Stable-diffusion/v1-5-pruned-emaonly.safetensors'
+        model_url = 'https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/models/v1-5-pruned-emaonly.safetensors'
 
     model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     model_list.extend(modelloader.load_models(model_path=os.path.join(user_models_path, model_dir), ext_filter=[".ckpt", ".safetensors"], ext_blacklist=[".vae.ckpt", ".vae.safetensors"]))
