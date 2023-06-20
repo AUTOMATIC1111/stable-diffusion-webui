@@ -34,8 +34,13 @@ def process_batch(p, use_png_info, png_info_props, png_info_dir, input_dir, outp
 
     state.job_count = len(images) * p.n_iter
 
+    # extract "default" params to use in case getting png info fails
     prompt = p.prompt
     negative_prompt = p.negative_prompt
+    seed = p.seed
+    cfg_scale = p.cfg_scale
+    sampler_name = p.sampler_name
+    steps = p.steps
 
     for i, image in enumerate(images):
         state.job = f"{i+1} out of {len(images)}"
@@ -86,6 +91,10 @@ def process_batch(p, use_png_info, png_info_props, png_info_dir, input_dir, outp
             except: 
                 p.prompt = prompt
                 p.negative_prompt = negative_prompt
+                p.seed = seed
+                p.cfg_scale = cfg_scale
+                p.sampler_name = sampler_name
+                p.steps = steps
                 print(f"batch png info: using ui set prompts; failed to get png info for {image}")
 
         proc = modules.scripts.scripts_img2img.run(p, *args)
