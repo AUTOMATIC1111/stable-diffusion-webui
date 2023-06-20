@@ -186,13 +186,18 @@ def version_check(commit):
             print("--------------------------------------------------------")
             print("| You are not up to date with the most recent release. |")
             print("| Consider running `git pull` to update.               |")
+            print("| 您没有更新到最新版本                                   |")
+            print("| 考虑使用`git pull`来更新                              |")
             print("--------------------------------------------------------")
         elif commits['commit']['sha'] == commit:
             print("You are up to date with the most recent release.")
+            print("您已更新至最新的版本")
         else:
             print("Not a git clone, can't perform version check.")
+            print("不是Git仓库,无法执行版本检查")
     except Exception as e:
         print("version check failed", e)
+        print("版本检查失败", e)
 
 
 def run_extension_installer(extension_dir):
