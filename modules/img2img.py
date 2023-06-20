@@ -67,7 +67,7 @@ def process_batch(p, use_png_info, png_info_props, png_info_dir, input_dir, outp
                 mask_image_path = inpaint_masks[0]
             mask_image = Image.open(mask_image_path)
             p.image_mask = mask_image
-        
+
         if use_png_info:
             try:
                 info_img = img
@@ -88,14 +88,15 @@ def process_batch(p, use_png_info, png_info_props, png_info_dir, input_dir, outp
                     p.sampler_name = parsed_parameters["Sampler"]
                 if("Steps" in png_info_props):
                     p.steps = int(parsed_parameters["Steps"])
-            except: 
+            except Exception as e:
+                print(f"batch png info: using ui set prompts; failed to get png info for {image}")
+                print(e)
                 p.prompt = prompt
                 p.negative_prompt = negative_prompt
                 p.seed = seed
                 p.cfg_scale = cfg_scale
                 p.sampler_name = sampler_name
                 p.steps = steps
-                print(f"batch png info: using ui set prompts; failed to get png info for {image}")
 
         proc = modules.scripts.scripts_img2img.run(p, *args)
         if proc is None:

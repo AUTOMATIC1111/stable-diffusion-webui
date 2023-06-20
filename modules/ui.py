@@ -948,7 +948,7 @@ def create_ui():
                     inpaint_full_res_padding,
                     inpainting_mask_invert,
                     img2img_batch_use_png_info,
-                    img2img_batch_png_info_props, 
+                    img2img_batch_png_info_props,
                     img2img_batch_png_info_dir,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
