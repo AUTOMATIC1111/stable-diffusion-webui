@@ -54,6 +54,20 @@ You can download 3.10 Python from here: https://www.python.org/downloads/release
 {"Alternatively, use a binary release of WebUI: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases" if is_windows else ""}
 
 Use --skip-python-version-check to suppress this warning.
+
+不兼容的 Python 版本
+
+这个程序是用 3.10.6 Python 测试的，但是你有 {major}.{minor}.{micro}。
+如果遇到“RuntimeError: Couldn't install torch”错误。 信息，
+或任何其他关于包（库）安装不成功的错误，
+请降级(或升级)到最新版Python 3.10
+并删除 WebUI 目录中的当前 Python 和“venv”文件夹。
+您可以从这里下载 3.10 Python: https://www.python.org/downloads/release/python-3109/
+
+{"或者，使用 WebUI 的二进制版本: https://github.com/AUTOMATIC1111/stable-diffusion-webui/releases" if is_windows else ""}
+
+使用 --skip-python-version-check 来抑制此警告。
+
 """)
 
 
