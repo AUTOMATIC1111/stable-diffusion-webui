@@ -329,8 +329,8 @@ def check_torch():
                 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
                 log.info(f'Torch backend: Intel IPEX {ipex.__version__}')
                 log.info(f'{os.popen("icpx --version").read().rstrip()}')
-                for device in [torch.xpu.device(i) for i in range(torch.xpu.device_count())]:
-                    log.info(f'Torch detected GPU: {torch.xpu.get_device_name(device)} VRAM {round(torch.xpu.get_device_properties(device).total_memory / 1024 / 1024)}')
+                for device in range(torch.xpu.device_count()):
+                    log.info(f'Torch detected GPU: {torch.xpu.get_device_name(device)} VRAM {round(torch.xpu.get_device_properties(device).total_memory / 1024 / 1024)} Compute Units {torch.xpu.get_device_properties(device).max_compute_units}')
             elif torch.cuda.is_available() and (allow_cuda or allow_rocm):
                 # log.debug(f'Torch allocator: {torch.cuda.get_allocator_backend()}')
                 if torch.version.cuda and allow_cuda:
