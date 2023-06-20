@@ -22,6 +22,8 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
     if inpaint_mask_dir:
         inpaint_masks = shared.listfiles(inpaint_mask_dir)
         is_inpaint_batch = len(inpaint_masks) > 0
+        # Create a dictionary of masks, where the key is the filename without extension.
+        mask_dict = {os.path.splitext(os.path.basename(m))[0]: m for m in inpaint_masks}
     if is_inpaint_batch:
         print(f"\nInpaint batch is enabled. {len(inpaint_masks)} masks found.")
 
@@ -52,11 +54,9 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args):
         p.init_images = [img] * p.batch_size
 
         if is_inpaint_batch:
-            # try to find corresponding mask for an image using simple filename matching
-            mask_image_path = os.path.join(inpaint_mask_dir, os.path.basename(image))
-            # if not found use first one ("same mask for all images" use-case)
-            if mask_image_path not in inpaint_masks:
-                mask_image_path = inpaint_masks[0]
+            base_filename = os.path.splitext(os.path.basename(image))[0]
+            # try to find corresponding mask if not found, use the first mask ("same mask for all images" use-case)
+            mask_image_path = mask_dict.get(base_filename, inpaint_masks[0])
             mask_image = Image.open(mask_image_path)
             p.image_mask = mask_image
 
