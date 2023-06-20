@@ -57,7 +57,7 @@ Use --skip-python-version-check to suppress this warning.
 
 不兼容的 Python 版本
 
-这个程序是用 3.10.11 Python 测试的，但是你有 {major}.{minor}.{micro}。
+这个程序是用 3.10.6 Python 测试的，但是你有 {major}.{minor}.{micro}。
 如果遇到“RuntimeError: Couldn't install torch”错误。 信息，
 或任何其他关于包（库）安装不成功的错误，
 请降级(或升级)到最新版Python 3.10.11
@@ -244,10 +244,10 @@ def run_extensions_installers(settings_file):
 def prepare_environment():
     global skip_install
 
-    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==2.0.0 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118")
+    torch_command = os.environ.get('TORCH_COMMAND', "pip install torch==2.0.0+cu118 torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
-    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.16rc425')
+    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.17')
     gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "git+https://github.com/TencentARC/GFPGAN.git@8d2447a2d918f8eba5a4a01463fd48e45126a379")
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git@d50d76daa670286dd6cacf3bcd80b5e4823fc8e1")
     openclip_package = os.environ.get('OPENCLIP_PACKAGE', "git+https://github.com/mlfoundations/open_clip.git@bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b")
