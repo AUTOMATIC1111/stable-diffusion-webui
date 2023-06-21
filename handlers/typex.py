@@ -58,6 +58,9 @@ class ImageKeys(UserDict):
         low = self['low'] + ik['low']
         return ImageKeys(high, low)
 
+    def to_dict(self):
+        return dict(self)
+
 
 def get_upload_image_key(file_storage_system, file: str, key: str, key_outs: typing.List[str]):
     r = file_storage_system.upload(file, key)

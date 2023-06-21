@@ -109,6 +109,8 @@ class Task(UserDict):
         else:
             return self.get(key, default=default)
 
+    def to_dict(self):
+        return dict(self)
 
 
 class TaskType(IntEnum):

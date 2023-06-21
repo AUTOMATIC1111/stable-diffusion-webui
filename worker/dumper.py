@@ -6,6 +6,7 @@
 # @File    : dumper.py
 # @Software: Hifive
 import abc
+import json
 import queue
 import time
 import typing
@@ -57,7 +58,7 @@ class TaskDumper(Thread):
         super(TaskDumper, self).__init__(name='task-dumper')
         self.db = db
         self.ip = get_host_ip()
-        self.send_delay = 5
+        self.send_delay = 10
         self.queue = queue.Queue(maxsize=100)
         self._stop_flag = False
         self._dump_now = False
@@ -65,7 +66,11 @@ class TaskDumper(Thread):
         self.redis_pool = RedisPool()
 
     def _set_cache(self, info: DumpInfo):
-        self.redis_pool.get_connection()
+        try:
+            rds = self.redis_pool.get_connection()
+            rds.set(info.id.replace("task_id=", ""), json.dumps(info.set['$set']), 600)
+        except Exception as err:
+            logger.exception('cannot write to redis')
 
     def _get_queue_all(self):
         infos = {}
