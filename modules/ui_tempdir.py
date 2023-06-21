@@ -31,7 +31,11 @@ def check_tmp_file(gradio, filename):
     return False
 
 
-def save_pil_to_file(self, pil_image, dir=None):
+def save_pil_to_file(self, pil_image, dir=None, format=None):
+    # Temporary fix for:
+    # https://github.com/opparco/stable-diffusion-webui-two-shot/issues/54
+    del format
+    
     already_saved_as = getattr(pil_image, 'already_saved_as', None)
     if already_saved_as and os.path.isfile(already_saved_as):
         register_tmp_file(shared.demo, already_saved_as)
