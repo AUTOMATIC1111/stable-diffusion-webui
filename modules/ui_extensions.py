@@ -415,6 +415,7 @@ sort_ordering = [
     (False, lambda x: x.get('name', 'z')),
     (True, lambda x: x.get('name', 'z')),
     (False, lambda x: 'z'),
+    (True, lambda x: x.get('stars', 0)),
 ]
 
 
@@ -546,7 +547,7 @@ def create_ui():
 
                 with gr.Row():
                     hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
-                    sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", ], type="index")
+                    sort_column = gr.Radio(value="popularity", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", "popularity" ], type="index")
 
                 with gr.Row():
                     search_extensions_text = gr.Text(label="Search").style(container=False)
