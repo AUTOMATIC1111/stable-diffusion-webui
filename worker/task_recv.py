@@ -131,10 +131,14 @@ class TaskReceiver:
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
+
+        if not rds.get(queue_name):
+            return
+
         locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10)
         locked = False
         try:
-            locker.acquire(blocking=True, timeout=2)
+            locker.acquire(blocking=True, timeout=3)
             locked = True
             for _ in range(retry):
                 now = int(time.time() * 1000)
@@ -153,7 +157,7 @@ class TaskReceiver:
                 if task:
                     return task
                 elif not values:
-                    rand = random.randint(0, 10) * 1
+                    rand = random.randint(0, 10) * 0.4
                     time.sleep(rand)
         except redis_lock.NotAcquired:
             locked = False
@@ -162,11 +166,11 @@ class TaskReceiver:
         except Exception as err:
             logger.exception("cannot get task from redis")
         finally:
-            if locked:
-                try:
+            try:
+                if locked:
                     locker.release()
-                except:
-                    pass
+            except:
+                pass
 
     def _get_queue_task(self, *model_hash: str):
         for sha256 in model_hash:
