@@ -132,9 +132,6 @@ class TaskReceiver:
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
 
-        if not rds.get(queue_name):
-            return
-
         locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10)
         locked = False
         try:
@@ -157,7 +154,9 @@ class TaskReceiver:
                 if task:
                     return task
                 elif not values:
-                    rand = random.randint(0, 10) * 0.4
+                    rand = random.randint(0, 10) * 0.1 * retry
+                    if (rand < 0.5):
+                        continue
                     time.sleep(rand)
         except redis_lock.NotAcquired:
             locked = False
