@@ -679,11 +679,24 @@ table.settings-value-table td{
 
 #available_extensions .info{
     margin: 0;
+    display: flex;
+    margin-top: auto;
+}
+
+#available_extensions .star_count{
+    opacity: 0.85;
+    font-size: 90%;
+    margin-left: auto;
+    margin-right: 0.5em;
+    display: inline-block;
 }
 
 #available_extensions .date_added{
     opacity: 0.85;
     font-size: 90%;
+    margin-left: auto;
+    margin-right: 0.5em;
+    display: inline-block;
 }
 
 /* replace original footer with ours */

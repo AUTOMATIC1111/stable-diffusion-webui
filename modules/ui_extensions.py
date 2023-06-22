@@ -432,7 +432,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
         <thead>
             <tr>
                 <th>Extension</th>
-                <th>Description</th>
+                <th>Details</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -443,6 +443,8 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
 
     for ext in sorted(extlist, key=sort_function, reverse=sort_reverse):
         name = ext.get("name", "noname")
+        # assert stars are integers
+        stars = int(ext.get("stars", 0)) # forcing int to avoid XSS
         added = ext.get('added', 'unknown')
         url = ext.get("url", None)
         description = ext.get("description", "")
@@ -470,7 +472,10 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
         code += f"""
             <tr>
                 <td><a href="{html.escape(url)}" target="_blank">{html.escape(name)}</a><br />{tags_text}</td>
-                <td>{html.escape(description)}<p class="info"><span class="date_added">Added: {html.escape(added)}</span></p></td>
+                <td>{html.escape(description)}<p class="info">
+                    <span class="star_count"><a href="{html.escape(url)}" target="_blank"> Stars: <b>{stars}</b> ☆</a></span>
+                    <span class="date_added">Added: {html.escape(added)}</span>
+                </p></td>
                 <td>{install_code}</td>
             </tr>
 
