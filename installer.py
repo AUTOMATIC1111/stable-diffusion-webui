@@ -444,7 +444,7 @@ def install_repositories():
 
 # run extension installer
 def run_extension_installer(folder):
-    path_installer = os.path.join(folder, "install.py")
+    path_installer = os.path.realpath(os.path.join(folder, "install.py"))
     if not os.path.isfile(path_installer):
         return
     try:
