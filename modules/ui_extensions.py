@@ -473,8 +473,8 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
             <tr>
                 <td><a href="{html.escape(url)}" target="_blank">{html.escape(name)}</a><br />{tags_text}</td>
                 <td>{html.escape(description)}<p class="info">
-                    <span class="star_count"><a href="{html.escape(url)}" target="_blank"> Stars: <b>{stars}</b> ☆</a></span>
                     <span class="date_added">Added: {html.escape(added)}</span>
+                    <span class="star_count"><a href="{html.escape(url)}" target="_blank"> stars: <b>{stars:,} ☆</b></a></span>
                 </p></td>
                 <td>{install_code}</td>
             </tr>
@@ -546,7 +546,7 @@ def create_ui():
             with gr.TabItem("Available", id="available"):
                 with gr.Row():
                     refresh_available_extensions_button = gr.Button(value="Load from:", variant="primary")
-                    available_extensions_index = gr.Text(value="https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui-extensions/master/index.json", label="Extension index URL").style(container=False)
+                    available_extensions_index = gr.Text(value="https://raw.githubusercontent.com/GoulartNogueira/stable-diffusion-webui-extensions/master/index.json", label="Extension index URL").style(container=False)
                     extension_to_install = gr.Text(elem_id="extension_to_install", visible=False)
                     install_extension_button = gr.Button(elem_id="install_extension_button", visible=False)
 
