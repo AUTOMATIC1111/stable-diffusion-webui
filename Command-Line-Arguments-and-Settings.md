@@ -22,13 +22,18 @@ For example, in Windows:
 set COMMANDLINE_ARGS=--allow-code --xformers --skip-torch-cuda-test --no-half-vae --api --ckpt-dir A:\\stable-diffusion-checkpoints 
 ```
 
-## Command Line Arguments
 ### Running online
 Use the `--share` option to run online. You will get a xxx.app.gradio link. This is the intended way to use the program in colabs. You may set up authentication for said gradio shared instance with the flag `--gradio-auth username:password`, optionally providing multiple sets of usernames and passwords separated by commas.
 
 Use `--listen` to make the server listen to network connections. This will allow computers on the local network to access the UI, and if you configure port forwarding, also computers on the internet.
 
 Use `--port xxxx` to make the server listen on a specific port, xxxx being the wanted port. Remember that all ports below 1024 need root/admin rights, for this reason it is advised to use a port above 1024. Defaults to port 7860 if available.
+
+### Running on CPU
+Running with only your CPU is possible, but not recommended. 
+It is very slow and running in fp16 is not possible. 
+
+To run, use `--use-cpu all --precision full --no-half --skip-torch-cuda-test`
 
 # All command line arguments
 
