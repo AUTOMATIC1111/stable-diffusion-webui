@@ -1,14 +1,15 @@
 # Change Log for SD.Next
 
-## Update for 06/19/2023
+## Update for 06/20/2023
 
 This one is less relevant for standard users, but pretty major if you're running an actual server  
-But even if not, it still includes bunch of cumulative fixes since last release...
+But even if not, it still includes bunch of cumulative fixes since last release - and going by number of new issues, this is probably the most stable release so far...
+(next one is not going to be as stable, but it will be fun :) )
 
 - minor improvements to extra networks ui  
 - more hints/tooltips integrated into ui  
-- decidated api server  
-  - still in developent, but highly promising for high throughput server  
+- new decidated api server  
+  - but highly promising for high throughput server  
 - improve server logging and monitoring with  
   - server log file rotation  
   - ring buffer with api endpoint `/sdapi/v1/log`  

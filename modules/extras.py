@@ -57,6 +57,8 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     shared.state.begin()
     shared.state.job = 'model-merge'
 
+    save_as_half = save_as_half == 0
+
     def fail(message):
         shared.state.textinfo = message
         shared.state.end()
@@ -108,13 +110,13 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     result_is_instruct_pix2pix_model = False
     if theta_func2:
         shared.state.textinfo = "Loading B"
-        shared.log.info(f"Loading {secondary_model_info.filename}...")
+        shared.log.info(f"Model merge loading secondary model: {secondary_model_info.filename}")
         theta_1 = sd_models.read_state_dict(secondary_model_info.filename)
     else:
         theta_1 = None
     if theta_func1:
         shared.state.textinfo = "Loading C"
-        shared.log.info(f"Loading {tertiary_model_info.filename}...")
+        shared.log.info(f"Model merge loading tertiary model: {tertiary_model_info.filename}")
         theta_2 = sd_models.read_state_dict(tertiary_model_info.filename)
         shared.state.textinfo = 'Merging B and C'
         shared.state.sampling_steps = len(theta_1.keys())
@@ -131,9 +133,9 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         del theta_2
         shared.state.nextjob()
     shared.state.textinfo = f"Loading {primary_model_info.filename}..."
-    shared.log.info(f"Loading {primary_model_info.filename}...")
+    shared.log.info(f"Model merge loading primary model: {primary_model_info.filename}")
     theta_0 = sd_models.read_state_dict(primary_model_info.filename)
-    shared.log.info("Merging...")
+    shared.log.info("Model merge: running")
     shared.state.textinfo = 'Merging A and B'
     shared.state.sampling_steps = len(theta_0.keys())
     for key in tqdm.tqdm(theta_0.keys()):
@@ -164,7 +166,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     del theta_1
     bake_in_vae_filename = sd_vae.vae_dict.get(bake_in_vae, None)
     if bake_in_vae_filename is not None:
-        shared.log.info(f"Baking in VAE from {bake_in_vae_filename}")
+        shared.log.info(f"Model merge: baking in VAE: {bake_in_vae_filename}")
         shared.state.textinfo = 'Baking in VAE'
         vae_dict = sd_vae.load_vae_dict(bake_in_vae_filename)
         for key in vae_dict.keys():
@@ -234,7 +236,151 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     if created_model:
         created_model.calculate_shorthash()
     create_config(output_modelname, config_source, primary_model_info, secondary_model_info, tertiary_model_info)
-    shared.log.info(f"Checkpoint saved to {output_modelname}.")
+    shared.log.info(f"Model merge saved: {output_modelname}.")
     shared.state.textinfo = "Checkpoint saved"
     shared.state.end()
     return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], "Checkpoint saved to " + output_modelname]
+
+def run_modelconvert(model, checkpoint_formats, precision, conv_type, custom_name, unet_conv, text_encoder_conv, vae_conv, others_conv, fix_clip):
+
+    # position_ids in clip is int64. model_ema.num_updates is int32
+    dtypes_to_fp16 = {torch.float32, torch.float64, torch.bfloat16}
+    dtypes_to_bf16 = {torch.float32, torch.float64, torch.float16}
+
+    def conv_fp16(t: torch.Tensor):
+        return t.half() if t.dtype in dtypes_to_fp16 else t
+
+    def conv_bf16(t: torch.Tensor):
+        return t.bfloat16() if t.dtype in dtypes_to_bf16 else t
+
+    def conv_full(t):
+        return t
+
+    _g_precision_func = {
+        "full": conv_full,
+        "fp32": conv_full,
+        "fp16": conv_fp16,
+        "bf16": conv_bf16,
+    }
+
+    def check_weight_type(k: str) -> str:
+        if k.startswith("model.diffusion_model"):
+            return "unet"
+        elif k.startswith("first_stage_model"):
+            return "vae"
+        elif k.startswith("cond_stage_model"):
+            return "clip"
+        return "other"
+
+    def load_model(path):
+        if path.endswith(".safetensors"):
+            m = safetensors.torch.load_file(path, device="cpu")
+        else:
+            m = torch.load(path, map_location="cpu")
+        state_dict = m["state_dict"] if "state_dict" in m else m
+        return state_dict
+
+
+    def fix_model(model, fix_clip=False):
+        # code from model-toolkit
+        nai_keys = {
+            'cond_stage_model.transformer.embeddings.': 'cond_stage_model.transformer.text_model.embeddings.',
+            'cond_stage_model.transformer.encoder.': 'cond_stage_model.transformer.text_model.encoder.',
+            'cond_stage_model.transformer.final_layer_norm.': 'cond_stage_model.transformer.text_model.final_layer_norm.'
+        }
+        for k in list(model.keys()):
+            for r in nai_keys:
+                if type(k) == str and k.startswith(r):
+                    new_key = k.replace(r, nai_keys[r])
+                    model[new_key] = model[k]
+                    del model[k]
+                    shared.log.warning(f"Model convert: fixed NovelAI error key: {k}")
+                    break
+        if fix_clip:
+            i = "cond_stage_model.transformer.text_model.embeddings.position_ids"
+            if i in model:
+                correct = torch.Tensor([list(range(77))]).to(torch.int64)
+                now = model[i].to(torch.int64)
+
+                broken = correct.ne(now)
+                broken = [i for i in range(77) if broken[0][i]]
+                model[i] = correct
+                if len(broken) != 0:
+                    shared.log.warning(f"Model convert: fixed broken CLiP: {broken}")
+
+        return model
+
+    if model == "":
+        return "Error: you must choose a model"
+    if len(checkpoint_formats) == 0:
+        return "Error: at least choose one model save format"
+
+    extra_opt = {
+        "unet": unet_conv,
+        "clip": text_encoder_conv,
+        "vae": vae_conv,
+        "other": others_conv
+    }
+    shared.state.begin()
+    shared.state.job = 'model-convert'
+
+    model_info = sd_models.checkpoints_list[model]
+    shared.state.textinfo = f"Loading {model_info.filename}..."
+    shared.log.info(f"Model convert loading: {model_info.filename}")
+    state_dict = load_model(model_info.filename)
+
+    ok = {}  # {"state_dict": {}}
+
+    conv_func = _g_precision_func[precision]
+
+    def _hf(wk: str, t: torch.Tensor):
+        if not isinstance(t, torch.Tensor):
+            return
+        w_t = check_weight_type(wk)
+        conv_t = extra_opt[w_t]
+        if conv_t == "convert":
+            ok[wk] = conv_func(t)
+        elif conv_t == "copy":
+            ok[wk] = t
+        elif conv_t == "delete":
+            return
+    shared.log.info("Model convert: running")
+    if conv_type == "ema-only":
+        for k in tqdm.tqdm(state_dict):
+            ema_k = "___"
+            try:
+                ema_k = "model_ema." + k[6:].replace(".", "")
+            except:
+                pass
+            if ema_k in state_dict:
+                _hf(k, state_dict[ema_k])
+            elif not k.startswith("model_ema.") or k in ["model_ema.num_updates", "model_ema.decay"]:
+                _hf(k, state_dict[k])
+    elif conv_type == "no-ema":
+        for k, v in tqdm.tqdm(state_dict.items()):
+            if "model_ema." not in k:
+                _hf(k, v)
+    else:
+        for k, v in tqdm.tqdm(state_dict.items()):
+            _hf(k, v)
+
+    ok = fix_model(ok, fix_clip=fix_clip)
+    output = ""
+    ckpt_dir = shared.cmd_opts.ckpt_dir or sd_models.model_path
+    save_name = f"{model_info.model_name}-{precision}"
+    if conv_type != "disabled":
+        save_name += f"-{conv_type}"
+    if custom_name != "":
+        save_name = custom_name
+    for fmt in checkpoint_formats:
+        ext = ".safetensors" if fmt == "safetensors" else ".ckpt"
+        _save_name = save_name + ext
+        save_path = os.path.join(ckpt_dir, _save_name)
+        shared.log.info(f"Model convert saving: {save_path}")
+        if fmt == "safetensors":
+            safetensors.torch.save_file(ok, save_path)
+        else:
+            torch.save({"state_dict": ok}, save_path)
+        output += f"Checkpoint saved to {save_path}<br>"
+    shared.state.end()
+    return output

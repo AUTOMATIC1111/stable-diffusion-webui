@@ -28,6 +28,23 @@ async function tooltipHide(e) {
   locale.el.classList.remove('tooltip-show');
 }
 
+async function validateHints(elements, data) {
+  let original = elements.map(e => e.textContent.trim()).sort((a, b) => a > b)
+  original = [...new Set(original)];
+  console.log('hints-differences', { elements: original.length, hints: data.length });
+  const current = data.map(e => e.label).sort((a, b) => a > b)
+  let missing = [];
+  for (let i = 0; i < original.length; i++) {
+    if (!current.includes(original[i])) missing.push(original[i]);
+  }
+  console.log('missing in locale:', missing)
+  missing = [];
+  for (let i = 0; i < current.length; i++) {
+    if (!original.includes(current[i])) missing.push(current[i]);
+  }
+  console.log('in locale but not ui:', missing)
+}
+
 async function setHints() {
   if (locale.finished) return;
   if (locale.data.length === 0) {
@@ -46,7 +63,7 @@ async function setHints() {
   let hints = 0;
   locale.finished = true;
   for (el of elements) {
-    const found = locale.data.find(l => l.label === el.textContent);
+    const found = locale.data.find(l => l.label === el.textContent.trim());
     if (found?.localized?.length > 0) {
       localized++;
       el.textContent = found.localized;
@@ -65,6 +82,7 @@ async function setHints() {
     }
   }
   console.log('set-hints', { type: locale.type, elements: elements.length, localized, hints, data: locale.data.length });
+  // validateHints(elements, locale.data)
 }
 
 onAfterUiUpdate(async () => {

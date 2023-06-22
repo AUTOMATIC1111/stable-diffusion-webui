@@ -10,7 +10,7 @@ import numpy as np
 from PIL import Image
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, ui_loadsave
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models
 from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML # pylint: disable=unused-import
 from modules.paths import script_path, data_path
 from modules.shared import opts, cmd_opts, backend, Backend
@@ -26,7 +26,6 @@ import modules.styles
 import modules.extras
 import modules.textual_inversion.ui
 import modules.sd_samplers
-from modules.textual_inversion import textual_inversion
 
 
 modules.errors.install()
@@ -286,16 +285,7 @@ def apply_setting(key, value):
 
 
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
-    def refresh():
-        refresh_method()
-        args = refreshed_args() if callable(refreshed_args) else refreshed_args
-        for k, v in args.items():
-            setattr(refresh_component, k, v)
-        return gr.update(**(args or {}))
-
-    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
-    refresh_button.click(fn=refresh, inputs=[], outputs=[refresh_component])
-    return refresh_button
+    return ui_common.create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id)
 
 
 def create_sampler_and_steps_selection(choices, tabname):
@@ -496,17 +486,6 @@ def create_ui():
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(paste_button=txt2img_paste, tabname="txt2img", source_text_component=txt2img_prompt, source_image_component=None))
-
-            txt2img_preview_params = [
-                txt2img_prompt,
-                txt2img_negative_prompt,
-                steps,
-                sampler_index,
-                cfg_scale,
-                seed,
-                width,
-                height,
-            ]
 
             token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[txt2img_prompt, steps], outputs=[token_counter])
             negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[txt2img_negative_prompt, steps], outputs=[negative_token_counter])
@@ -875,373 +854,11 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         ui_postprocessing.create_ui()
 
-    def update_interp_description(value):
-        interp_description_css = "<p style='margin-bottom: 2.5em'>{}</p>"
-        interp_descriptions = {
-            "No interpolation": interp_description_css.format("No interpolation will be used. Requires one model; A. Allows for format conversion and VAE baking."),
-            "Weighted sum": interp_description_css.format("A weighted sum will be used for interpolation. Requires two models; A and B. The result is calculated as A * (1 - M) + B * M"),
-            "Add difference": interp_description_css.format("The difference between the last two models will be added to the first. Requires three models; A, B and C. The result is calculated as A + (B - C) * M")
-        }
-        return interp_descriptions[value]
-
     with gr.Blocks(analytics_enabled=False) as train_interface:
-        with gr.Column(elem_id='ti_train_container'):
-            with gr.Tabs(elem_id="train_tabs"):
-                with gr.Tab(label="Merge models"):
-                    with gr.Row().style(equal_height=False):
-                        with gr.Column(variant='compact'):
-                            with FormRow(elem_id="modelmerger_models"):
-                                def sd_model_choices():
-                                    return ['None'] + modules.sd_models.checkpoint_tiles()
-                                primary_model_name = gr.Dropdown(sd_model_choices(), elem_id="modelmerger_primary_model_name", label="Primary model", value="None")
-                                create_refresh_button(primary_model_name, modules.sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_A")
-                                secondary_model_name = gr.Dropdown(sd_model_choices(), elem_id="modelmerger_secondary_model_name", label="Secondary model", value="None")
-                                create_refresh_button(secondary_model_name, modules.sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_B")
-                                tertiary_model_name = gr.Dropdown(sd_model_choices(), elem_id="modelmerger_tertiary_model_name", label="Tertiary model", value="None")
-                                create_refresh_button(tertiary_model_name, modules.sd_models.list_models, lambda: {"choices": sd_model_choices()}, "refresh_checkpoint_C")
-                            custom_name = gr.Textbox(label="New model name", elem_id="modelmerger_custom_name")
-                            with FormRow():
-                                interp_description = gr.HTML(value=update_interp_description("Weighted sum"), elem_id="modelmerger_interp_description")
-                            with FormRow():
-                                interp_method = gr.Radio(choices=["No interpolation", "Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method", elem_id="modelmerger_interp_method")
-                                interp_method.change(fn=update_interp_description, inputs=[interp_method], outputs=[interp_description])
-                                interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Interpolation ratio from Primary to Secondary', value=0.5, elem_id="modelmerger_interp_amount")
-                            with FormRow():
-                                checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
-                            with gr.Box():
-                                save_as_half = gr.Checkbox(value=True, label="Use FP16", elem_id="modelmerger_save_as_half")
-                                save_metadata = gr.Checkbox(value=True, label="Save metadata", elem_id="modelmerger_save_metadata")
-                            with FormRow():
-                                with gr.Column():
-                                    config_source = gr.Radio(choices=["Primary", "Secondary", "Tertiary", "None"], value="Primary", label="Model configuration", type="index", elem_id="modelmerger_config_method")
-                                with gr.Column():
-                                    with FormRow():
-                                        bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None", label="Bake in VAE", elem_id="modelmerger_bake_in_vae")
-                                        create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list, lambda: {"choices": ["None"] + list(sd_vae.vae_dict)}, "modelmerger_refresh_bake_in_vae")
-                            with FormRow():
-                                discard_weights = gr.Textbox(value="", label="Discard weights with matching name", elem_id="modelmerger_discard_weights")
-                            with gr.Row():
-                                modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
-                                model_checkhash = gr.Button(elem_id="modelmerger_hash", value="Calculate hash for all models (may take a long time)", variant='primary')
+        ui_train.create_ui(txt2img_preview_params = [txt2img_prompt, txt2img_negative_prompt, steps, sampler_index, cfg_scale, seed, width, height])
 
-                        with gr.Column(variant='compact', elem_id="modelmerger_results_container"):
-                            with gr.Group(elem_id="modelmerger_results_panel"):
-                                modelmerger_result = gr.HTML(elem_id="modelmerger_result", show_label=False)
-
-                with gr.Tab(label="Create embedding", id="create_embedding"):
-                    new_embedding_name = gr.Textbox(label="Name", elem_id="train_new_embedding_name")
-                    initialization_text = gr.Textbox(label="Initialization text", value="*", elem_id="train_initialization_text")
-                    nvpt = gr.Slider(label="Number of vectors per token", minimum=1, maximum=75, step=1, value=1, elem_id="train_nvpt")
-                    overwrite_old_embedding = gr.Checkbox(value=False, label="Overwrite Old Embedding", elem_id="train_overwrite_old_embedding")
-
-                    with gr.Row():
-                        with gr.Column(scale=3):
-                            gr.HTML(value="")
-
-                        with gr.Column():
-                            create_embedding = gr.Button(value="Create embedding", variant='primary', elem_id="train_create_embedding")
-
-                with gr.Tab(label="Create hypernetwork", id="create_hypernetwork"):
-                    new_hypernetwork_name = gr.Textbox(label="Name", elem_id="train_new_hypernetwork_name")
-                    new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "1024", "320", "640", "1280"], elem_id="train_new_hypernetwork_sizes")
-                    new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'", elem_id="train_new_hypernetwork_layer_structure")
-                    new_hypernetwork_activation_func = gr.Dropdown(value="linear", label="Select activation function of hypernetwork", choices=modules.hypernetworks.ui.keys, elem_id="train_new_hypernetwork_activation_func")
-                    new_hypernetwork_initialization_option = gr.Dropdown(value = "Normal", label="Select Layer weights initialization", choices=["Normal", "KaimingUniform", "KaimingNormal", "XavierUniform", "XavierNormal"], elem_id="train_new_hypernetwork_initialization_option")
-                    new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization", elem_id="train_new_hypernetwork_add_layer_norm")
-                    new_hypernetwork_use_dropout = gr.Checkbox(label="Use dropout", elem_id="train_new_hypernetwork_use_dropout")
-                    new_hypernetwork_dropout_structure = gr.Textbox("0, 0, 0", label="Enter hypernetwork Dropout structure", placeholder="1st and last digit must be 0 and values should be between 0 and 1. ex:'0, 0.01, 0'")
-                    overwrite_old_hypernetwork = gr.Checkbox(value=False, label="Overwrite Old Hypernetwork", elem_id="train_overwrite_old_hypernetwork")
-
-                    with gr.Row():
-                        with gr.Column(scale=3):
-                            gr.HTML(value="")
-
-                        with gr.Column():
-                            create_hypernetwork = gr.Button(value="Create hypernetwork", variant='primary', elem_id="train_create_hypernetwork")
-
-                with gr.Tab(label="Preprocess images", id="preprocess_images"):
-                    process_src = gr.Textbox(label='Source directory', elem_id="train_process_src")
-                    process_dst = gr.Textbox(label='Destination directory', elem_id="train_process_dst")
-                    process_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="train_process_width")
-                    process_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="train_process_height")
-                    preprocess_txt_action = gr.Dropdown(label='Existing Caption txt Action', value="ignore", choices=["ignore", "copy", "prepend", "append"], elem_id="train_preprocess_txt_action")
-
-                    with gr.Row():
-                        process_keep_original_size = gr.Checkbox(label='Keep original size', elem_id="train_process_keep_original_size")
-                        process_keep_channels = gr.Checkbox(label='Keep original image channels', elem_id="train_process_keep_channels")
-                        process_flip = gr.Checkbox(label='Create flipped copies', elem_id="train_process_flip")
-                        process_split = gr.Checkbox(label='Split oversized images', elem_id="train_process_split")
-                        process_focal_crop = gr.Checkbox(label='Auto focal point crop', elem_id="train_process_focal_crop")
-                        process_multicrop = gr.Checkbox(label='Auto-sized crop', elem_id="train_process_multicrop")
-                        process_caption_only = gr.Checkbox(label='Create captions only', elem_id="train_process_multicrop")
-                        process_caption = gr.Checkbox(label='Create BLIP captions', elem_id="train_process_caption")
-                        process_caption_deepbooru = gr.Checkbox(label='Create Deepbooru captions', visible=True, elem_id="train_process_caption_deepbooru")
-
-                    with gr.Row(visible=False) as process_split_extra_row:
-                        process_split_threshold = gr.Slider(label='Split image threshold', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_split_threshold")
-                        process_overlap_ratio = gr.Slider(label='Split image overlap ratio', value=0.2, minimum=0.0, maximum=0.9, step=0.05, elem_id="train_process_overlap_ratio")
-
-                    with gr.Row(visible=False) as process_focal_crop_row:
-                        process_focal_crop_face_weight = gr.Slider(label='Focal point face weight', value=0.9, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_face_weight")
-                        process_focal_crop_entropy_weight = gr.Slider(label='Focal point entropy weight', value=0.15, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_entropy_weight")
-                        process_focal_crop_edges_weight = gr.Slider(label='Focal point edges weight', value=0.5, minimum=0.0, maximum=1.0, step=0.05, elem_id="train_process_focal_crop_edges_weight")
-                        process_focal_crop_debug = gr.Checkbox(label='Create debug image', elem_id="train_process_focal_crop_debug")
-
-                    with gr.Column(visible=False) as process_multicrop_col:
-                        gr.Markdown('Each image is center-cropped with an automatically chosen width and height.')
-                        with gr.Row():
-                            process_multicrop_mindim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension lower bound", value=384, elem_id="train_process_multicrop_mindim")
-                            process_multicrop_maxdim = gr.Slider(minimum=64, maximum=2048, step=8, label="Dimension upper bound", value=768, elem_id="train_process_multicrop_maxdim")
-                        with gr.Row():
-                            process_multicrop_minarea = gr.Slider(minimum=64*64, maximum=2048*2048, step=1, label="Area lower bound", value=64*64, elem_id="train_process_multicrop_minarea")
-                            process_multicrop_maxarea = gr.Slider(minimum=64*64, maximum=2048*2048, step=1, label="Area upper bound", value=640*640, elem_id="train_process_multicrop_maxarea")
-                        with gr.Row():
-                            process_multicrop_objective = gr.Radio(["Maximize area", "Minimize error"], value="Maximize area", label="Resizing objective", elem_id="train_process_multicrop_objective")
-                            process_multicrop_threshold = gr.Slider(minimum=0, maximum=1, step=0.01, label="Error threshold", value=0.1, elem_id="train_process_multicrop_threshold")
-
-                    with gr.Row():
-                        with gr.Column(scale=3):
-                            gr.HTML(value="")
-
-                        with gr.Column():
-                            with gr.Row():
-                                interrupt_preprocessing = gr.Button("Stop", elem_id="train_interrupt_preprocessing")
-                            run_preprocess = gr.Button(value="Preprocess", variant='primary', elem_id="train_run_preprocess")
-
-                    process_split.change(
-                        fn=lambda show: gr_show(show),
-                        inputs=[process_split],
-                        outputs=[process_split_extra_row],
-                    )
-
-                    process_focal_crop.change(
-                        fn=lambda show: gr_show(show),
-                        inputs=[process_focal_crop],
-                        outputs=[process_focal_crop_row],
-                    )
-
-                    process_multicrop.change(
-                        fn=lambda show: gr_show(show),
-                        inputs=[process_multicrop],
-                        outputs=[process_multicrop_col],
-                    )
-
-                def get_textual_inversion_template_names():
-                    return sorted(textual_inversion.textual_inversion_templates)
-
-                with gr.Tab(label="Train", id="train"):
-                    gr.HTML(value="<p style='margin-bottom: 0.7em'>Train an embedding or Hypernetwork; you must specify a directory with a set of 1:1 ratio images</p>")
-                    with FormRow():
-                        train_embedding_name = gr.Dropdown(label='Embedding', elem_id="train_embedding", choices=sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys()))
-                        create_refresh_button(train_embedding_name, sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings, lambda: {"choices": sorted(sd_hijack.model_hijack.embedding_db.word_embeddings.keys())}, "refresh_train_embedding_name")
-
-                        train_hypernetwork_name = gr.Dropdown(label='Hypernetwork', elem_id="train_hypernetwork", choices=sorted(modules.shared.hypernetworks))
-                        create_refresh_button(train_hypernetwork_name, modules.shared.reload_hypernetworks, lambda: {"choices": sorted(modules.shared.hypernetworks)}, "refresh_train_hypernetwork_name")
-
-                    with FormRow():
-                        embedding_learn_rate = gr.Textbox(label='Embedding Learning rate', placeholder="Embedding Learning rate", value="0.005", elem_id="train_embedding_learn_rate")
-                        hypernetwork_learn_rate = gr.Textbox(label='Hypernetwork Learning rate', placeholder="Hypernetwork Learning rate", value="0.00001", elem_id="train_hypernetwork_learn_rate")
-
-                    with FormRow():
-                        clip_grad_mode = gr.Dropdown(value="disabled", label="Gradient Clipping", choices=["disabled", "value", "norm"])
-                        clip_grad_value = gr.Textbox(placeholder="Gradient clip value", value="0.1", show_label=False)
-
-                    with FormRow():
-                        batch_size = gr.Number(label='Batch size', value=1, precision=0, elem_id="train_batch_size")
-                        gradient_step = gr.Number(label='Gradient accumulation steps', value=1, precision=0, elem_id="train_gradient_step")
-
-                    dataset_directory = gr.Textbox(label='Dataset directory', placeholder="Path to directory with input images", elem_id="train_dataset_directory")
-                    log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value=f"{os.path.join('cmd_opts.data_dir', 'train/log/embeddings')}", elem_id="train_log_directory")
-
-                    with FormRow():
-                        template_file = gr.Dropdown(label='Prompt template', value="style_filewords.txt", elem_id="train_template_file", choices=get_textual_inversion_template_names())
-                        create_refresh_button(template_file, textual_inversion.list_textual_inversion_templates, lambda: {"choices": get_textual_inversion_template_names()}, "refrsh_train_template_file")
-
-                    training_width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="train_training_width")
-                    training_height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="train_training_height")
-                    varsize = gr.Checkbox(label="Do not resize images", value=False, elem_id="train_varsize")
-                    steps = gr.Number(label='Max steps', value=1000, precision=0, elem_id="train_steps")
-
-                    with FormRow():
-                        create_image_every = gr.Number(label='Create interim images', value=500, precision=0, elem_id="train_create_image_every")
-                        save_embedding_every = gr.Number(label='Create interim embeddings', value=500, precision=0, elem_id="train_save_embedding_every")
-
-                    use_weight = gr.Checkbox(label="Use PNG alpha channel as loss weight", value=False, elem_id="use_weight")
-
-                    save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True, elem_id="train_save_image_with_stored_embedding")
-                    preview_from_txt2img = gr.Checkbox(label='Use current settings for previews', value=False, elem_id="train_preview_from_txt2img")
-
-                    shuffle_tags = gr.Checkbox(label="Shuffle tags by ',' when creating prompts.", value=False, elem_id="train_shuffle_tags")
-                    tag_drop_out = gr.Slider(minimum=0, maximum=1, step=0.1, label="Drop out tags when creating prompts.", value=0, elem_id="train_tag_drop_out")
-
-                    latent_sampling_method = gr.Radio(label='Choose latent sampling method', value="once", choices=['once', 'deterministic', 'random'], elem_id="train_latent_sampling_method")
-
-                    with gr.Row():
-                        train_embedding = gr.Button(value="Train Embedding", variant='primary', elem_id="train_train_embedding")
-                        interrupt_training = gr.Button(value="Stop", elem_id="train_interrupt_training")
-                        train_hypernetwork = gr.Button(value="Train Hypernetwork", variant='primary', elem_id="train_train_hypernetwork")
-
-                params = script_callbacks.UiTrainTabParams(txt2img_preview_params)
-
-                script_callbacks.ui_train_tabs_callback(params)
-
-            with gr.Column(elem_id='ti_gallery_container'):
-                ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
-                gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(columns=4)
-                gr.HTML(elem_id="ti_progress", value="")
-                ti_outcome = gr.HTML(elem_id="ti_error", value="")
-
-        create_embedding.click(
-            fn=modules.textual_inversion.ui.create_embedding,
-            inputs=[
-                new_embedding_name,
-                initialization_text,
-                nvpt,
-                overwrite_old_embedding,
-            ],
-            outputs=[
-                train_embedding_name,
-                ti_output,
-                ti_outcome,
-            ]
-        )
-
-        create_hypernetwork.click(
-            fn=modules.hypernetworks.ui.create_hypernetwork,
-            inputs=[
-                new_hypernetwork_name,
-                new_hypernetwork_sizes,
-                overwrite_old_hypernetwork,
-                new_hypernetwork_layer_structure,
-                new_hypernetwork_activation_func,
-                new_hypernetwork_initialization_option,
-                new_hypernetwork_add_layer_norm,
-                new_hypernetwork_use_dropout,
-                new_hypernetwork_dropout_structure
-            ],
-            outputs=[
-                train_hypernetwork_name,
-                ti_output,
-                ti_outcome,
-            ]
-        )
-
-        run_preprocess.click(
-            fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
-            _js="start_training_textual_inversion",
-            inputs=[
-                dummy_component,
-                process_src,
-                process_dst,
-                process_width,
-                process_height,
-                preprocess_txt_action,
-                process_keep_original_size,
-                process_keep_channels,
-                process_flip,
-                process_split,
-                process_caption_only,
-                process_caption,
-                process_caption_deepbooru,
-                process_split_threshold,
-                process_overlap_ratio,
-                process_focal_crop,
-                process_focal_crop_face_weight,
-                process_focal_crop_entropy_weight,
-                process_focal_crop_edges_weight,
-                process_focal_crop_debug,
-                process_multicrop,
-                process_multicrop_mindim,
-                process_multicrop_maxdim,
-                process_multicrop_minarea,
-                process_multicrop_maxarea,
-                process_multicrop_objective,
-                process_multicrop_threshold,
-            ],
-            outputs=[
-                ti_output,
-                ti_outcome,
-            ],
-        )
-
-        train_embedding.click(
-            fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.train_embedding, extra_outputs=[gr.update()]),
-            _js="start_training_textual_inversion",
-            inputs=[
-                dummy_component,
-                train_embedding_name,
-                embedding_learn_rate,
-                batch_size,
-                gradient_step,
-                dataset_directory,
-                log_directory,
-                training_width,
-                training_height,
-                varsize,
-                steps,
-                clip_grad_mode,
-                clip_grad_value,
-                shuffle_tags,
-                tag_drop_out,
-                latent_sampling_method,
-                use_weight,
-                create_image_every,
-                save_embedding_every,
-                template_file,
-                save_image_with_stored_embedding,
-                preview_from_txt2img,
-                *txt2img_preview_params,
-            ],
-            outputs=[
-                ti_output,
-                ti_outcome,
-            ]
-        )
-
-        train_hypernetwork.click(
-            fn=wrap_gradio_gpu_call(modules.hypernetworks.ui.train_hypernetwork, extra_outputs=[gr.update()]),
-            _js="start_training_textual_inversion",
-            inputs=[
-                dummy_component,
-                train_hypernetwork_name,
-                hypernetwork_learn_rate,
-                batch_size,
-                gradient_step,
-                dataset_directory,
-                log_directory,
-                training_width,
-                training_height,
-                varsize,
-                steps,
-                clip_grad_mode,
-                clip_grad_value,
-                shuffle_tags,
-                tag_drop_out,
-                latent_sampling_method,
-                use_weight,
-                create_image_every,
-                save_embedding_every,
-                template_file,
-                preview_from_txt2img,
-                *txt2img_preview_params,
-            ],
-            outputs=[
-                ti_output,
-                ti_outcome,
-            ]
-        )
-
-        interrupt_training.click(
-            fn=lambda: modules.shared.state.interrupt(),
-            inputs=[],
-            outputs=[],
-        )
-
-        interrupt_preprocessing.click(
-            fn=lambda: modules.shared.state.interrupt(),
-            inputs=[],
-            outputs=[],
-        )
+    with gr.Blocks(analytics_enabled=False) as models_interface:
+        ui_models.create_ui()
 
     def create_setting_component(key, is_quicksettings=False):
         def fun():
@@ -1436,9 +1053,8 @@ def create_ui():
         (txt2img_interface, "From Text", "txt2img"),
         (img2img_interface, "From Image", "img2img"),
         (extras_interface, "Process Image", "process"),
-        # (pnginfo_interface, "Image Info", "pnginfo"),
-        # (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "train"),
+        (models_interface, "Models", "models"),
     ]
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
@@ -1494,7 +1110,7 @@ def create_ui():
                 show_progress=info.refresh is not None,
             )
 
-        # TODO image_cfg_scale_visibility should be on model change, not on ui create
+        # TODO breaks pix2pix needs better detect if pix2pix and image_cfg_scale_visibility should be on model change, not on ui create
         # image_cfg_scale_visibility = (modules.shared.sd_model is not None) and hasattr(modules.shared.sd_model, 'cond_stage_key') and (modules.shared.sd_model.cond_stage_key == "edit") # pix2pix
         # text_settings.change(fn=lambda: gr.update(visible=image_cfg_scale_visibility), inputs=[], outputs=[image_cfg_scale])
         # demo.load(fn=lambda: gr.update(visible=image_cfg_scale_visibility), inputs=[], outputs=[image_cfg_scale])
@@ -1519,47 +1135,8 @@ def create_ui():
             queue=False,
         )
 
-        def modelmerger(*args):
-            try:
-                results = modules.extras.run_modelmerger(*args)
-            except Exception as e:
-                modules.errors.display(e, 'model merge')
-                modules.sd_models.list_models()  # to remove the potentially missing models from the list
-                return [*[gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(4)], f"Error merging checkpoints: {e}"]
-            return results
-
-        modelmerger_merge.click(fn=lambda: '', inputs=[], outputs=[modelmerger_result])
-        modelmerger_merge.click(
-            fn=wrap_gradio_gpu_call(modelmerger, extra_outputs=lambda: [gr.update() for _ in range(4)]),
-            _js='modelmerger',
-            inputs=[
-                dummy_component,
-                primary_model_name,
-                secondary_model_name,
-                tertiary_model_name,
-                interp_method,
-                interp_amount,
-                save_as_half,
-                custom_name,
-                checkpoint_format,
-                config_source,
-                bake_in_vae,
-                discard_weights,
-                save_metadata,
-            ],
-            outputs=[
-                primary_model_name,
-                secondary_model_name,
-                tertiary_model_name,
-                component_dict['sd_model_checkpoint'],
-                modelmerger_result,
-            ]
-        )
-        model_checkhash.click(fn=sd_models.update_model_hashes, inputs=[], outputs=[modelmerger_result])
-
     loadsave.dump_defaults()
     demo.ui_loadsave = loadsave
-    interp_description.value = update_interp_description(interp_method.value) # Required as a workaround for change() event not triggering when loading values from ui-config.json
 
     return demo
 

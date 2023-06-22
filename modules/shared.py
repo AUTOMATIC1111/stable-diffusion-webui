@@ -411,7 +411,7 @@ options_templates.update(options_section(('saving-paths', "Output Paths"), {
     "outdir_init_images": OptionInfo("outputs/init-images", "Directory for saving init images when using img2img", component_args=hide_dirs),
 }))
 
-options_templates.update(options_section(('ui', "User interface"), {
+options_templates.update(options_section(('ui', "User Interface"), {
     "gradio_theme": OptionInfo("black-orange", "UI theme", gr.Dropdown, lambda: {"choices": list_themes()}, refresh=refresh_themes),
     "theme_style": OptionInfo("Auto", "Theme mode", gr.Radio, {"choices": ["Auto", "Dark", "Light"]}),
     "tooltips": OptionInfo("UI Tooltips", "UI tooltips", gr.Radio, {"choices": ["None", "Browser default", "UI tooltips"]}),
@@ -433,14 +433,14 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_extra_networks_tab_reorder": OptionInfo("Checkpoints, Lora, LyCORIS, Textual Inversion, Hypernetworks", "Extra networks tab order"),
 }))
 
-options_templates.update(options_section(('live-preview', "Live previews"), {
+options_templates.update(options_section(('live-preview', "Live Previews"), {
     "show_progressbar": OptionInfo(True, "Show progressbar"),
     "live_previews_enable": OptionInfo(True, "Show live previews of the created image"),
     "show_progress_grid": OptionInfo(True, "Show previews of all images generated in a batch as a grid"),
     "notification_audio_enable": OptionInfo(False, "Play a sound when images are finished generating"),
     "notification_audio_path": OptionInfo("html/notification.mp3","Path to notification sound", component_args=hide_dirs),
     "show_progress_every_n_steps": OptionInfo(1, "Live preview display period", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
-    "show_progress_type": OptionInfo("TAESD", "Live preview method", gr.Radio, {"choices": ["Full VAE", "Approximate NN", "Approximate simple", "TAESD"]}),
+    "show_progress_type": OptionInfo("Approximate NN", "Live preview method", gr.Radio, {"choices": ["Full VAE", "Approximate NN", "Approximate simple", "TAESD"]}),
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
     "live_preview_refresh_period": OptionInfo(250, "Progressbar/preview update period, in milliseconds")
 }))
@@ -511,7 +511,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
     "ESRGAN_tile": OptionInfo(192, "Tile size for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
     "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
-    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap, in pixels for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
+    "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
     "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution"),
     "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
 }))

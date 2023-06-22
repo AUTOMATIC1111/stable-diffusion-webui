@@ -666,3 +666,5 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 #extras_generate, #extras_interrupt, #extras_skip { display: block !important; position: relative; height: 36px; }
 #extras_upscale { margin-top: 10px }
 #refresh_tac_refreshTempFiles { display: none; }
+#train_tab { flex-flow: row-reverse; }
+#models_tab { flex-flow: row-reverse; }

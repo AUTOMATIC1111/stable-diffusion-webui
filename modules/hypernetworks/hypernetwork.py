@@ -488,8 +488,8 @@ def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None,
         dropout_structure=dropout_structure
     )
     hypernet.save(fn)
-
     shared.reload_hypernetworks()
+    return name
 
 
 def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, use_weight, create_image_every, save_hypernetwork_every, template_filename, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height):
@@ -609,7 +609,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
     # previous_mean_loss = 0
     # print("Mean loss of {} elements".format(size))
 
-    steps_without_grad = 0
+    _steps_without_grad = 0
 
     last_saved_file = "<none>"
     last_saved_image = "<none>"
@@ -756,7 +756,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                             textual_inversion.tensorboard_add_image(tensorboard_writer,
                                                                     f"Validation at epoch {epoch_num}", image,
                                                                     hypernetwork.step)
-                        last_saved_image, last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
+                        last_saved_image, _last_text_info = images.save_image(image, images_dir, "", p.seed, p.prompt, shared.opts.samples_format, processed.infotexts[0], p=p, forced_filename=forced_filename, save_to_dirs=False)
                         last_saved_image += f", prompt: {preview_text}"
 
                 shared.state.job_no = hypernetwork.step

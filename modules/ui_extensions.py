@@ -331,6 +331,8 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         ext['sort_enabled'] = f"{'0' if ext['enabled'] else '1'}{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
         ext['sort_update'] = f"{'1' if update_available else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
         tags = ext.get("tags", [])
+        if not isinstance(tags, list):
+            tags = tags.split(' ')
         tags_string = ' '.join(tags)
         tags = tags + ["installed"] if installed else tags
         if len([x for x in tags if x in hide_tags]) > 0:
@@ -377,7 +379,7 @@ def create_ui():
         extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
         extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)
         with gr.Tabs(elem_id="tabs_extensions"):
-            with gr.TabItem("Manage Extensions", id="manage"):
+            with gr.TabItem("Manage extensions", id="manage"):
                 with gr.Row(elem_id="extensions_installed_top"):
                     extension_to_install = gr.Text(elem_id="extension_to_install", visible=False)
                     install_extension_button = gr.Button(elem_id="install_extension_button", visible=False)

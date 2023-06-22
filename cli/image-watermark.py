@@ -111,7 +111,7 @@ def watermark(params, file):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description = 'image watermarking')
     parser.add_argument('command', choices = ['read', 'write'])
-    parser.add_argument('--wm', type=str, required=False, default='mm', help='watermark string')
+    parser.add_argument('--wm', type=str, required=False, default='sdnext', help='watermark string')
     parser.add_argument('--strip', default=False, action='store_true', help = "strip existing exif data")
     parser.add_argument('--verify', default=False, action='store_true', help = "verify watermark during write")
     parser.add_argument('--length', type=int, default=16, help="watermark length in bits")

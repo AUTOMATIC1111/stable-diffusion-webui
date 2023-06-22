@@ -207,3 +207,19 @@ def create_output_panel(tabname, outdir):
                     paste_button=paste_button, tabname=paste_tabname, source_tabname=("txt2img" if tabname == "txt2img" else None), source_image_component=result_gallery, paste_field_names=paste_field_names
                 ))
             return result_gallery, generation_info, html_info, html_info_formatted, html_log
+
+
+def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+
+    def refresh():
+        refresh_method()
+        args = refreshed_args() if callable(refreshed_args) else refreshed_args
+        for k, v in args.items():
+            setattr(refresh_component, k, v)
+        return gr.update(**(args or {}))
+
+    from modules.ui_components import ToolButton
+    refresh_symbol = '\U0001f504'  # 🔄
+    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
+    refresh_button.click(fn=refresh, inputs=[], outputs=[refresh_component])
+    return refresh_button

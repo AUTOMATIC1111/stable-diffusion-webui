@@ -81,10 +81,7 @@ def setup_logging():
         "traceback.border.syntax_error": "black",
         "inspect.value.border": "black",
     }))
-    try:
-        logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', filename=log_file, filemode='a', encoding='utf-8', force=True)
-    except Exception:
-        logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s') # to be able to report unsupported python version
+    logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', handlers=[logging.NullHandler()]) # redirect default logger to null
     pretty_install(console=console)
     traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
     while log.hasHandlers() and len(log.handlers) > 0:
@@ -109,6 +106,7 @@ def setup_logging():
     logging.getLogger("urllib3").setLevel(logging.ERROR)
     logging.getLogger("httpx").setLevel(logging.ERROR)
     logging.getLogger("ControlNet").handlers = log.handlers
+    logging.getLogger("lycoris").handlers = log.handlers
 
 
 def print_profile(profile: cProfile.Profile, msg: str):
@@ -387,7 +385,7 @@ def check_modified_files():
     try:
         res = git('status --porcelain')
         files = [x[2:].strip() for x in res.split('\n')]
-        files = [x for x in files if len(x) > 0 and not x.startswith('extensions') and not x.startswith('wiki') and not x.endswith('.json')]
+        files = [x for x in files if len(x) > 0 and (not x.startswith('extensions')) and (not x.startswith('wiki')) and (not x.endswith('.json')) and (not '.log' in x)]
         if len(files) > 0:
             log.warning(f'Modified files: {files}')
     except Exception:
@@ -406,7 +404,7 @@ def install_packages():
     # install(openclip_package, 'open-clip-torch')
     clip_package = os.environ.get('CLIP_PACKAGE', "git+https://github.com/openai/CLIP.git")
     install(clip_package, 'clip')
-    install('onnxruntime==1.14.0', 'onnxruntime', ignore=True)
+    install('onnxruntime==1.15.1', 'onnxruntime', ignore=True)
     if args.profile:
         print_profile(pr, 'Packages')
 
@@ -495,8 +493,6 @@ def install_extensions():
     extensions_duplicates = []
     extensions_enabled = []
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
-    if args.base:
-        extension_folders = []
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
@@ -610,8 +606,6 @@ def check_extensions():
     newest_all = os.path.getmtime('requirements.txt')
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
-    if args.base:
-        extension_folders = []
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
@@ -745,7 +739,6 @@ def add_args(parser):
     group.add_argument('--version', default = False, action='store_true', help = "Print version information")
     group.add_argument('--ignore', default = False, action='store_true', help = "Ignore any errors and attempt to continue")
     group.add_argument('--safe', default = False, action='store_true', help = "Run in safe mode with no user extensions")
-    group.add_argument('--base', default = False, action='store_true', help = argparse.SUPPRESS)
 
 
 def parse_args(parser):
@@ -765,8 +758,6 @@ def extensions_preload(parser):
         from modules.script_loading import preload_extensions
         from modules.paths_internal import extensions_builtin_dir, extensions_dir
         extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
-        if args.base:
-            extension_folders = []
         for ext_dir in extension_folders:
             t0 = time.time()
             preload_extensions(ext_dir, parser)

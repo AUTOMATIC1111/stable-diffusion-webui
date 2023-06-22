@@ -99,7 +99,7 @@ lora = Map({
     "text_encoder_lr": 5e-05,
     "train_batch_size": 1,
     "train_data_dir": "",
-    "training_comment": "mood-magic",
+    "training_comment": "",
     "unet_lr": 1e-04,
     "use_8bit_adam": False,
     "v_parameterization": False,
