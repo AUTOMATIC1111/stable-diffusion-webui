@@ -982,3 +982,16 @@ https://github.com/Iyashinouta/sd-model-downloader
 
 SD-Webui extension to Download Model from CivitAI and HuggingFace, Recomended for Cloud Users (a.k.a Google Colab, etc.)
 ![Model Downloader](https://github.com/Iyashinouta/sd-model-downloader/raw/84cfcb9d7b79ff031db9fcb9b2b4805c9293611b/images/instructions.png)
+
+## SD Telegram
+https://github.com/amputator84/sd_telegram
+
+Telegram bot on aiogram to generate images in automatic1111 locally (127.0.0.1:7860 nowebui)
+
+if you want to manage it via telegram bot, install it via extensions.
+Further instructions are on github.
+The bot uses [sdwebuiapi](https://github.com/akirayimi/sdwebuiapi/) and works with a local address.
+
+Able to generate previews, full-size pictures, also send documents and groups. 
+Able to "compose" prompts, take them from [lexica](https://lexica.art/), there is a stream generation script for all models.
+![sd_telegram](https://raw.githubusercontent.com/partyfind/sd_bot/master/trash/photo_2023-06-22_15-29-24.jpg)
