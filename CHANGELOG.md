@@ -1,5 +1,13 @@
 # Change Log for SD.Next
 
+## Update for 06/22/2023
+
+- new training tab interface
+  - redesigned preprocess, train embedding, train hypernetwork
+- new models tab interface
+  - new model convert functionality
+  - new model verify functionality
+
 ## Update for 06/20/2023
 
 This one is less relevant for standard users, but pretty major if you're running an actual server  

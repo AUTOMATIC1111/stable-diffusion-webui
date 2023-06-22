@@ -3,6 +3,7 @@ import html
 import os.path
 import urllib.parse
 from pathlib import Path
+from collections import OrderedDict
 import gradio as gr
 from modules import shared, scripts
 from modules.generation_parameters_copypaste import image_from_url_text
@@ -110,6 +111,7 @@ class ExtraNetworksPage:
                     if not self.is_empty(x):
                         subdirs[subdir] = 1
         if subdirs:
+            subdirs = OrderedDict(sorted(subdirs.items()))
             subdirs = {"": 1, **subdirs}
         subdirs_html = "".join([f"""
             <button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
