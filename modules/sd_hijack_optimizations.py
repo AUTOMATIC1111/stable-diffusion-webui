@@ -33,7 +33,7 @@ def get_available_vram():
         stats = torch.xpu.memory_stats(shared.device)
         mem_active = stats['active_bytes.all.current']
         mem_reserved = stats['reserved_bytes.all.current']
-        mem_free_xpu = torch.xpu.get_device_properties(shared.device).total_memory - torch.xpu.memory_allocated()
+        mem_free_xpu = torch.xpu.get_device_properties(shared.device).total_memory - torch.xpu.memory_allocated(shared.device)
         mem_free_torch = mem_reserved - mem_active
         mem_free_total = mem_free_xpu + mem_free_torch
         return mem_free_total
@@ -194,7 +194,7 @@ def einsum_op_cuda(q, k, v):
         stats = torch.xpu.memory_stats(q.device)
         mem_active = stats['active_bytes.all.current']
         mem_reserved = stats['reserved_bytes.all.current']
-        mem_free_xpu = torch.xpu.get_device_properties(q.device).total_memory - torch.xpu.memory_allocated()
+        mem_free_xpu = torch.xpu.get_device_properties(q.device).total_memory - torch.xpu.memory_allocated(q.device)
         mem_free_torch = mem_reserved - mem_active
         mem_free_total = mem_free_xpu + mem_free_torch
         # Divide factor of safety as there's copying and fragmentation
