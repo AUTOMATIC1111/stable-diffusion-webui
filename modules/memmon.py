@@ -36,7 +36,8 @@ class MemUsageMonitor(threading.Thread):
 
     def cuda_mem_get_info(self):
         if shared.cmd_opts.use_ipex:
-            return [(torch.xpu.get_device_properties(self.device).total_memory - torch.xpu.memory_allocated()), torch.xpu.get_device_properties(self.device).total_memory]
+            index = self.device.index if self.device.index is not None else torch.xpu.current_device()
+            return [(torch.xpu.get_device_properties(index).total_memory - torch.xpu.memory_allocated(index)), torch.xpu.get_device_properties(index).total_memory]
         else:
             index = self.device.index if self.device.index is not None else torch.cuda.current_device()
             return torch.cuda.mem_get_info(index)
