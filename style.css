@@ -1,6 +1,4 @@
-/* temporary fix to load default gradio font in frontend instead of backend */
-
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600&display=swap');
+@import url('file=fonts/source-sans-pro.css');
 
 /* general gradio fixes */
 
