@@ -995,3 +995,9 @@ The bot uses [sdwebuiapi](https://github.com/akirayimi/sdwebuiapi/) and works wi
 Able to generate previews, full-size pictures, also send documents and groups. 
 Able to "compose" prompts, take them from [lexica](https://lexica.art/), there is a stream generation script for all models.
 ![sd_telegram](https://raw.githubusercontent.com/partyfind/sd_bot/master/trash/photo_2023-06-22_15-29-24.jpg)
+
+## QR Code Generator
+https://github.com/missionfloyd/webui-qrcode-generator
+
+Instantly generate QR Codes for ControlNet.
+![QR Code Generator](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/4073789/0ef6ff8a-276f-4386-9f24-021923c7dca0)
