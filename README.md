@@ -5,8 +5,8 @@ A browser interface based on Gradio library for Stable Diffusion.
 
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
-- Original txt2img and img2img modes
-- One click install and run script (but you still must install python and git)
+- Original txt to img and img to txt modes
+- One click install and run script (but you still have to install python and git)
 - Outpainting
 - Inpainting
 - Color Sketch
@@ -23,7 +23,7 @@ A browser interface based on Gradio library for Stable Diffusion.
     - use multiple embeddings with different numbers of vectors per token
     - works with half precision floating point numbers
     - train embeddings on 8GB (also reports of 6GB working)
-- Extras tab with:
+- Extra tabs with:
     - GFPGAN, neural network that fixes faces
     - CodeFormer, face restoration tool as an alternative to GFPGAN
     - RealESRGAN, neural network upscaler
