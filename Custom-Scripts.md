@@ -151,7 +151,7 @@ Control horizontal/vertical seamless tiling independently of each other.
 </details>
 
 ## Force Symmetry
-https://gist.github.com/1ort/2fe6214cf1abe4c07087aac8d91d0d8a
+https://gist.github.com/missionfloyd/69e5a5264ad09ccaab52355b45e7c08f
 
 see https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2441
 
