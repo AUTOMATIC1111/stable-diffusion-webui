@@ -138,7 +138,10 @@ def extension_table():
     <table id="extensions">
         <thead>
             <tr>
-                <th><abbr title="Use checkbox to enable the extension; it will be enabled or disabled when you click apply button">Extension</abbr></th>
+                <th>
+                    <input class="gr-check-radio gr-checkbox all_extensions_toggle" type="checkbox" {'checked="checked"' if all(ext.enabled for ext in extensions.extensions) else ''} onchange="toggle_all_extensions(event)" />
+                    <abbr title="Use checkbox to enable the extension; it will be enabled or disabled when you click apply button">Extension</abbr>
+                </th>
                 <th>URL</th>
                 <th>Branch</th>
                 <th>Version</th>
@@ -170,7 +173,7 @@ def extension_table():
 
         code += f"""
             <tr>
-                <td><label{style}><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
+                <td><label{style}><input class="gr-check-radio gr-checkbox extension_toggle" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''} onchange="toggle_extension(event)" />{html.escape(ext.name)}</label></td>
                 <td>{remote}</td>
                 <td>{ext.branch}</td>
                 <td>{version_link}</td>
