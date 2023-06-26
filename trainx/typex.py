@@ -216,7 +216,7 @@ class AdvancedConfig(SerializationObj):
         self.random_crop = task.get('random_crop', False)
         self.lowram = task.get('lowram', True)
         self.mem_eff_attn = task.get('mem_eff_attn', False)
-        self.xformers = task.get('xformers', True)
+        self.xformers = task.get('xformers', os.getenv('XFORMERS', "0") == "1")
         self.vae = task.get('vae', None)
         self.set_property_value(task, 'max_data_loader_n_workers', 8)
         self.set_property_value(task, 'persistent_data_loader_workers', True)

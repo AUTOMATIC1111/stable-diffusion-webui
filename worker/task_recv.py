@@ -13,6 +13,7 @@ import typing
 import redis_lock
 from loguru import logger
 from .task import Task
+from modules.shared import cmd_opts
 from tools.redis import RedisPool
 from tools.model_hist import CkptLoadRecorder
 
@@ -26,7 +27,7 @@ OtherTaskQueueToken = 'others-'
 TrainTaskQueueToken = 'train'
 UpscaleCoeff = 100 * 1000
 TaskScoreRange = (0, 100 * UpscaleCoeff)
-TaskTimeout = 20 * 3600
+TaskTimeout = 20 * 3600 if not cmd_opts.train_only else 48 * 3600
 Tmp = 'tmp'
 
 
