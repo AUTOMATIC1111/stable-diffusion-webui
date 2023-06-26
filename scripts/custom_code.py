@@ -6,14 +6,12 @@ import copy
 from modules.processing import Processed
 from modules.shared import cmd_opts
 
-
 def convertExpr2Expression(expr):
     expr.lineno = 0
     expr.col_offset = 0
     result = ast.Expression(expr.value, lineno=0, col_offset = 0)
 
     return result
-
 
 def exec_with_return(code, module):
     """
