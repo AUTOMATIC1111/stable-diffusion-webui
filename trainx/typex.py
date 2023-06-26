@@ -223,7 +223,8 @@ class AdvancedConfig(SerializationObj):
         self.set_property_value(task, 'max_train_steps', 1600)
         self.set_property_value(task, 'gradient_checkpointing', True)
         self.set_property_value(task, 'gradient_accumulation_steps', 1)
-        self.set_property_value(task, 'mixed_precision', 'no')
+
+        self.set_property_value(task, 'mixed_precision',  os.getenv("MIXED_PRECISION", "no"))
         self.set_property_value(task, 'full_fp16', True)
         self.set_property_value(task, 'enable_preview', False)
         self.set_property_value(task, 'sample_prompts', None)
