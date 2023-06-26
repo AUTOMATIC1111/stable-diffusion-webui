@@ -463,7 +463,7 @@ class TrainLoraTask(UserDict):
             return str(ex).lower().lstrip('.') == 'safetensors'
 
         dst = os.path.join(Tmp, f'mater-{self.id}.zip')
-        zip_compress(image_dir, dst, filter_safetensors)
+        zip_compress(image_dir, dst, None)
         return dst
 
     def get_model_cover_key(self):
