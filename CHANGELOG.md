@@ -1,12 +1,13 @@
 # Change Log for SD.Next
 
-## Update for 06/22/2023
+## Update for 06/26/2023
 
-- new training tab interface
-  - redesigned preprocess, train embedding, train hypernetwork
-- new models tab interface
-  - new model convert functionality
-  - new model verify functionality
+- new training tab interface  
+  - redesigned preprocess, train embedding, train hypernetwork  
+- new models tab interface  
+  - new model convert functionality, thanks @akegarasu  
+  - new model verify functionality  
+- lot of ipex specific fixes/optimizations, thanks @disty0  
 
 ## Update for 06/20/2023
 
