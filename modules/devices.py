@@ -89,8 +89,8 @@ def test_fp16():
         _y = layerNorm(x)
         shared.log.debug('Torch FP16 test passed')
         return True
-    except Exception:
-        shared.log.warning('Torch FP16 test failed: Forcing FP32 operations')
+    except Exception as e:
+        shared.log.warning(f'Torch FP16 test failed: Forcing FP32 operations: {e}')
         shared.opts.cuda_dtype = 'FP32'
         shared.opts.no_half = True
         shared.opts.no_half_vae = True

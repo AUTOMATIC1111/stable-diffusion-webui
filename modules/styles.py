@@ -3,6 +3,8 @@ from __future__ import annotations
 import csv
 import os
 import os.path
+import tempfile
+import shutil
 import typing
 from installer import log
 
@@ -53,7 +55,6 @@ class StyleDatabase:
                     self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
                 except Exception:
                     log.error(f'Styles error: {self.path} {row}')
-                    pass
             log.debug(f'Loaded styles: {self.path} {len(self.styles.keys())}')
 
     def get_style_prompts(self, styles):
@@ -72,8 +73,10 @@ class StyleDatabase:
         basedir = os.path.dirname(path)
         if basedir is not None and len(basedir) > 0:
             os.makedirs(basedir, exist_ok=True)
-        with os.fdopen(path, "w", encoding="utf-8-sig", newline='') as file:
+        fd, temp_path = tempfile.mkstemp(".csv")
+        with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
             writer.writeheader()
             writer.writerows(style._asdict() for k, style in self.styles.items())
             log.debug(f'Saved styles: {path} {len(self.styles.keys())}')
+        shutil.move(temp_path, path)
