@@ -1,0 +1,63 @@
+.canvas-tooltip-info {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  cursor: help;
+  background-color: rgba(0, 0, 0, 0.3);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column; 
+
+  z-index: 100;
+}
+
+.canvas-tooltip-info::after {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 7px;
+  background-color: white;
+  margin-top: 2px; 
+}
+
+.canvas-tooltip-info::before {
+  content: '';
+  display: block;
+  width: 2px;
+  height: 2px;
+  background-color: white;
+}
+
+.canvas-tooltip-content {
+  display: none;
+  background-color: #f9f9f9; 
+  color: #333; 
+  border: 1px solid #ddd;
+  padding: 15px; 
+  position: absolute;
+  top: 40px;
+  left: 10px;
+  width: 250px;
+  font-size: 16px;
+  opacity: 0;
+  border-radius: 8px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); 
+
+  z-index: 100;
+}
+
+.canvas-tooltip:hover .canvas-tooltip-content {
+  display: block;
+  animation: fadeIn 0.5s; 
+  opacity: 1;
+}
+
+@keyframes fadeIn {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+
