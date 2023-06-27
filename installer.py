@@ -229,8 +229,6 @@ def update(folder):
 # clone git repository
 def clone(url, folder, commithash=None):
     if os.path.exists(folder):
-        if args.skip_update:
-            return
         if commithash is None:
             update(folder)
         else:

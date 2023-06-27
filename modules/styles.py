@@ -52,6 +52,7 @@ class StyleDatabase:
                     negative_prompt = row.get("negative_prompt", "")
                     self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
                 except Exception:
+                    log.error(f'Styles error: {self.path} {row}')
                     pass
             log.debug(f'Loaded styles: {self.path} {len(self.styles.keys())}')
 
