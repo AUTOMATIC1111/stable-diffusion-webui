@@ -184,6 +184,8 @@ class StableDiffusionProcessing:
         self.uc = None
         self.c = None
 
+        self.user = None
+
     @property
     def sd_model(self):
         return shared.sd_model
@@ -585,6 +587,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
         **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
+        "User": p.user if opts.add_user_name_to_info else None,
     }
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
