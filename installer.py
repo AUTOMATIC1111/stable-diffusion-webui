@@ -9,7 +9,6 @@ import subprocess
 import io
 import pstats
 import cProfile
-import argparse
 import pkg_resources
 
 
@@ -28,7 +27,6 @@ args = Dot({
     'debug': False,
     'reset': False,
     'upgrade': False,
-    'skip_update': False,
     'skip_extensions': False,
     'skip_requirements': False,
     'skip_git': False,
@@ -503,7 +501,7 @@ def install_extensions():
                 extensions_duplicates.append(ext)
                 continue
             extensions_enabled.append(ext)
-            if not args.skip_update:
+            if args.upgrade:
                 try:
                     update(os.path.join(folder, ext))
                 except Exception:
@@ -542,7 +540,7 @@ def install_submodules():
         txt = git('submodule')
         log.info('Continuing setup')
     git('submodule --quiet update --init --recursive')
-    if not args.skip_update:
+    if args.upgrade:
         log.info('Updating submodules')
         submodules = txt.splitlines()
         for submodule in submodules:
@@ -673,7 +671,7 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
 
 
 def update_wiki():
-    if not args.skip_update:
+    if args.upgrade:
         log.info('Updating Wiki')
         try:
             update(os.path.join(os.path.dirname(__file__), "wiki"))
@@ -729,7 +727,6 @@ def add_args(parser):
     group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
     group.add_argument("--use-cuda", default=False, action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")
     group.add_argument("--use-rocm", default=False, action='store_true', help="Force use AMD ROCm backend, default: %(default)s")
-    group.add_argument('--skip-update', default = False, action='store_true', help = "Skip update of extensions and submodules, default: %(default)s")
     group.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
     group.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     group.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")

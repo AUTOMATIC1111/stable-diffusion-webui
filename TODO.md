@@ -40,6 +40,7 @@ Tech that can be integrated as part of the core workflow...
 - [QuickEmbedding](https://github.com/ethansmith2000/QuickEmbedding)
 - [DataComp CLiP](https://github.com/mlfoundations/open_clip/blob/main/docs/datacomp_models.md)
 - [ClipSeg](https://github.com/timojl/clipseg)
+- [DragGAN](https://github.com/XingangPan/DragGAN)
 - `TensorRT`
 
 ## Random

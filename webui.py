@@ -164,14 +164,17 @@ def initialize():
 
 
 def load_model():
-    shared.state.begin()
-    shared.state.job = 'load model'
-    thread = Thread(target=lambda: shared.sd_model)
-    thread.start()
+    if opts.sd_checkpoint_autoload:
+        shared.state.begin()
+        shared.state.job = 'load model'
+        thread = Thread(target=lambda: shared.sd_model)
+        thread.start()
+        shared.state.end()
+        thread.join()
+    else:
+        log.debug('Model auto load disabled')
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
-    shared.state.end()
-    thread.join()
     startup_timer.record("checkpoint")
 
 
@@ -301,11 +304,7 @@ def webui(restart=False):
     start_common()
     start_ui()
     modules.sd_models.write_metadata()
-    if opts.sd_checkpoint_autoload:
-        load_model()
-    else:
-        log.debug('Model auto load disabled')
-
+    load_model()
     log.info(f"Startup time: {startup_timer.summary()}")
 
     if not restart:
