@@ -947,7 +947,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if self.hr_sampler_name is not None and self.hr_sampler_name != self.sampler_name:
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler_name
 
-            if tuple(self.hr_prompt) != tuple(self.prompt):
+            if tuple(self.hr_prompt or "") != tuple(self.prompt):
                 self.extra_generation_params["Hires prompt"] = self.hr_prompt
 
             if tuple(self.hr_negative_prompt) != tuple(self.negative_prompt):

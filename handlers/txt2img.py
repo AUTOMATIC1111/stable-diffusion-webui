@@ -206,8 +206,10 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
                                        task.id)
+
+        progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.seed, processed.subseed)
-        progress.set_finish_result(images)
+
         yield progress
 
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:

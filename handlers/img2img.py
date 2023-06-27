@@ -469,8 +469,9 @@ class Img2ImgTaskHandler(TaskHandler):
                                        process_args.outpath_scripts,
                                        task.id)
 
+        progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.seed, processed.subseed)
-        progress.set_finish_result(images)
+
         yield progress
 
     def _set_task_status(self, p: TaskProgress):
