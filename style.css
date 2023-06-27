@@ -403,17 +403,27 @@ div#extras_scale_to_tab div.form{
     margin: 0 1.2em;
 }
 
-table.settings-value-table{
+table.popup-table{
     background: white;
     border-collapse: collapse;
     margin: 1em;
     border: 4px solid white;
 }
 
-table.settings-value-table td{
+table.popup-table td{
     padding: 0.4em;
     border: 1px solid #ccc;
     max-width: 36em;
+}
+
+table.popup-table .muted{
+    color: #aaa;
+}
+
+table.popup-table .link{
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: bold;
 }
 
 .ui-defaults-none{
@@ -439,6 +449,19 @@ table.settings-value-table td{
 .settings-comment .info{
     opacity: 0.75;
 }
+
+#sysinfo_download a.sysinfo_big_link{
+    font-size: 24pt;
+}
+
+#sysinfo_download a{
+    text-decoration: underline;
+}
+
+#sysinfo_validity{
+    font-size: 18pt;
+}
+
 
 /* live preview */
 .progressDiv{
@@ -724,12 +747,22 @@ footer {
 .extra-network-subdirs button{
     margin: 0 0.15em;
 }
-.extra-networks .tab-nav .search{
+.extra-networks .tab-nav .search,
+.extra-networks .tab-nav .sort,
+.extra-networks .tab-nav .sortorder{
     display: inline-block;
-    max-width: 16em;
     margin: 0.3em;
     align-self: center;
+}
+
+.extra-networks .tab-nav .search {
     width: 16em;
+    max-width: 16em;
+}
+
+.extra-networks .tab-nav .sort {
+    width: 12em;
+    max-width: 12em;
 }
 
 #txt2img_extra_view, #img2img_extra_view {
