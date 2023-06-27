@@ -11,7 +11,7 @@ import json
 from threading import Thread
 from typing import Iterable
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from packaging import version
@@ -362,11 +362,6 @@ def api_only():
     api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
 
 
-def stop_route(request):
-    shared.state.server_command = "stop"
-    return Response("Stopping.")
-
-
 def webui():
     launch_api = cmd_opts.api
     initialize()
@@ -404,8 +399,6 @@ def webui():
                 "redoc_url": "/redoc",
             },
         )
-        if cmd_opts.add_stop_route:
-            app.add_route("/_stop", stop_route, methods=["POST"])
 
         # after initial launch, disable --autolaunch for subsequent restarts
         cmd_opts.autolaunch = False
