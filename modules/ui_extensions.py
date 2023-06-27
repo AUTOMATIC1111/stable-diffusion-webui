@@ -138,7 +138,10 @@ def extension_table():
     <table id="extensions">
         <thead>
             <tr>
-                <th><abbr title="Use checkbox to enable the extension; it will be enabled or disabled when you click apply button">Extension</abbr></th>
+                <th>
+                    <input class="gr-check-radio gr-checkbox all_extensions_toggle" type="checkbox" {'checked="checked"' if all(ext.enabled for ext in extensions.extensions) else ''} onchange="toggle_all_extensions(event)" />
+                    <abbr title="Use checkbox to enable the extension; it will be enabled or disabled when you click apply button">Extension</abbr>
+                </th>
                 <th>URL</th>
                 <th>Branch</th>
                 <th>Version</th>
@@ -170,7 +173,7 @@ def extension_table():
 
         code += f"""
             <tr>
-                <td><label{style}><input class="gr-check-radio gr-checkbox" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''}>{html.escape(ext.name)}</label></td>
+                <td><label{style}><input class="gr-check-radio gr-checkbox extension_toggle" name="enable_{html.escape(ext.name)}" type="checkbox" {'checked="checked"' if ext.enabled else ''} onchange="toggle_extension(event)" />{html.escape(ext.name)}</label></td>
                 <td>{remote}</td>
                 <td>{ext.branch}</td>
                 <td>{version_link}</td>
@@ -324,6 +327,11 @@ def normalize_git_url(url):
 
 def install_extension_from_url(dirname, url, branch_name=None):
     check_access()
+
+    if isinstance(dirname, str):
+        dirname = dirname.strip()
+    if isinstance(url, str):
+        url = url.strip()
 
     assert url, 'No URL specified'
 
@@ -563,9 +571,9 @@ def create_ui():
                 available_extensions_table = gr.HTML()
 
                 refresh_available_extensions_button.click(
-                    fn=modules.ui.wrap_gradio_call(refresh_available_extensions, extra_outputs=[gr.update(), gr.update(), gr.update()]),
+                    fn=modules.ui.wrap_gradio_call(refresh_available_extensions, extra_outputs=[gr.update(), gr.update(), gr.update(), gr.update()]),
                     inputs=[available_extensions_index, hide_tags, sort_column],
-                    outputs=[available_extensions_index, available_extensions_table, hide_tags, install_result, search_extensions_text],
+                    outputs=[available_extensions_index, available_extensions_table, hide_tags, search_extensions_text, install_result],
                 )
 
                 install_extension_button.click(

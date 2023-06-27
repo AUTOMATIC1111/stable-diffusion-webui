@@ -15,14 +15,11 @@ model_dir = "Codeformer"
 model_path = os.path.join(models_path, model_dir)
 model_url = 'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth'
 
-have_codeformer = False
 codeformer = None
 
 
 def setup_model(dirname):
-    global model_path
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
+    os.makedirs(model_path, exist_ok=True)
 
     path = modules.paths.paths.get("CodeFormer", None)
     if path is None:
@@ -124,9 +121,6 @@ def setup_model(dirname):
                     self.send_model_to(devices.cpu)
 
                 return restored_img
-
-        global have_codeformer
-        have_codeformer = True
 
         global codeformer
         codeformer = FaceRestorerCodeFormer(dirname)

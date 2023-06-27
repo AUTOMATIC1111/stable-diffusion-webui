@@ -7,8 +7,7 @@ from modules.paths_internal import extensions_dir, extensions_builtin_dir, scrip
 
 extensions = []
 
-if not os.path.exists(extensions_dir):
-    os.makedirs(extensions_dir)
+os.makedirs(extensions_dir, exist_ok=True)
 
 
 def active():

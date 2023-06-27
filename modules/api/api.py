@@ -14,7 +14,7 @@ from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors
+from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart
 from modules.api import models
 from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
@@ -22,7 +22,7 @@ from modules.textual_inversion.textual_inversion import create_embedding, train_
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
-from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights
+from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights, checkpoint_alisases
 from modules.sd_vae import vae_dict
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
@@ -30,13 +30,6 @@ from modules import devices
 from typing import Dict, List, Any
 import piexif
 import piexif.helper
-
-
-def upscaler_to_index(name: str):
-    try:
-        return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid upscaler, needs to be one of these: {' , '.join([x.name for x in shared.sd_upscalers])}") from e
 
 
 def script_name_to_index(name, scripts):
@@ -208,6 +201,11 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
+
+        if shared.cmd_opts.add_stop_route:
+            self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-restart", self.restart_webui, methods=["POST"])
+            self.add_api_route("/sdapi/v1/server-stop", self.stop_webui, methods=["POST"])
 
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
@@ -517,6 +515,10 @@ class Api:
         return options
 
     def set_config(self, req: Dict[str, Any]):
+        checkpoint_name = req.get("sd_model_checkpoint", None)
+        if checkpoint_name is not None and checkpoint_name not in checkpoint_alisases:
+            raise RuntimeError(f"model {checkpoint_name!r} not found")
+
         for k, v in req.items():
             shared.opts.set(k, v)
 
@@ -715,3 +717,15 @@ class Api:
     def launch(self, server_name, port):
         self.app.include_router(self.router)
         uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=0)
+
+    def kill_webui(self):
+        restart.stop_program()
+
+    def restart_webui(self):
+        if restart.is_restartable():
+            restart.restart_program()
+        return Response(status_code=501)
+
+    def stop_webui(request):
+        shared.state.server_command = "stop"
+        return Response("Stopping.")
