@@ -4,8 +4,8 @@ import csv
 import os
 import os.path
 import typing
-import tempfile
-import shutil
+from installer import log
+
 
 if typing.TYPE_CHECKING:
     # Only import this when code is being type-checked, it doesn't have any effect at runtime
@@ -24,14 +24,12 @@ def merge_prompts(style_prompt: str, prompt: str) -> str:
     else:
         parts = filter(None, (prompt.strip(), style_prompt.strip()))
         res = ", ".join(parts)
-
     return res
 
 
 def apply_styles_to_prompt(prompt, styles):
     for style in styles:
         prompt = merge_prompts(style, prompt)
-
     return prompt
 
 
@@ -40,15 +38,12 @@ class StyleDatabase:
         self.no_style = PromptStyle("None", "", "")
         self.styles = {}
         self.path = path
-
         self.reload()
 
     def reload(self):
         self.styles.clear()
-
         if not os.path.exists(self.path):
             self.save_styles(self.path)
-
         with open(self.path, "r", encoding="utf-8-sig", newline='') as file:
             reader = csv.DictReader(file, skipinitialspace=True)
             for row in reader:
@@ -58,6 +53,7 @@ class StyleDatabase:
                     self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
                 except Exception:
                     pass
+            log.debug(f'Loaded styles: {self.path} {len(self.styles.keys())}')
 
     def get_style_prompts(self, styles):
         return [self.styles.get(x, self.no_style).prompt for x in styles]
@@ -72,15 +68,11 @@ class StyleDatabase:
         return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles])
 
     def save_styles(self, path: str) -> None:
-        # Write to temporary file first, so we don't nuke the file if something goes wrong
         basedir = os.path.dirname(path)
         if basedir is not None and len(basedir) > 0:
             os.makedirs(basedir, exist_ok=True)
-        fd, temp_path = tempfile.mkstemp(".csv")
-        with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:
-            # _fields is actually part of the public API: typing.NamedTuple is a replacement for collections.NamedTuple,
-            # and collections.NamedTuple has explicit documentation for accessing _fields. Same goes for _asdict()
+        with os.fdopen(path, "w", encoding="utf-8-sig", newline='') as file:
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
             writer.writeheader()
             writer.writerows(style._asdict() for k, style in self.styles.items())
-        shutil.move(temp_path, path)
+            log.debug(f'Saved styles: {path} {len(self.styles.keys())}')
