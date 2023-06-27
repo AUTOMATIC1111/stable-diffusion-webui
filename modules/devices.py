@@ -15,13 +15,6 @@ def has_mps() -> bool:
     else:
         return mac_specific.has_mps
 
-def extract_device_id(args, name):
-    for x in range(len(args)):
-        if name in args[x]:
-            return args[x + 1]
-
-    return None
-
 
 def get_cuda_device_string():
     from modules import shared
