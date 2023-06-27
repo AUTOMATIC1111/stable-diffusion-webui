@@ -95,8 +95,7 @@ def cleanup_models():
 
 def move_files(src_path: str, dest_path: str, ext_filter: str = None):
     try:
-        if not os.path.exists(dest_path):
-            os.makedirs(dest_path)
+        os.makedirs(dest_path, exist_ok=True)
         if os.path.exists(src_path):
             for file in os.listdir(src_path):
                 fullpath = os.path.join(src_path, file)
