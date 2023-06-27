@@ -1,4 +1,4 @@
-.tooltip-info {
+.canvas-tooltip-info {
   position: absolute;
   top: 10px;
   left: 10px;
@@ -15,7 +15,7 @@
   z-index: 100;
 }
 
-.tooltip-info::after {
+.canvas-tooltip-info::after {
   content: '';
   display: block;
   width: 2px;
@@ -24,7 +24,7 @@
   margin-top: 2px; 
 }
 
-.tooltip-info::before {
+.canvas-tooltip-info::before {
   content: '';
   display: block;
   width: 2px;
@@ -32,7 +32,7 @@
   background-color: white;
 }
 
-.tooltip-content {
+.canvas-tooltip-content {
   display: none;
   background-color: #f9f9f9; 
   color: #333; 
@@ -50,7 +50,7 @@
   z-index: 100;
 }
 
-.tooltip:hover .tooltip-content {
+.canvas-tooltip:hover .canvas-tooltip-content {
   display: block;
   animation: fadeIn 0.5s; 
   opacity: 1;
