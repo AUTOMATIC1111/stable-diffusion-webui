@@ -81,7 +81,7 @@ max-bool-expr=99
 max-branches=99
 max-locals=99
 max-parents=99
-max-public-methods=20
+max-public-methods=99
 max-returns=99
 max-statements=99
 min-public-methods=1
@@ -157,6 +157,7 @@ disable=bad-inline-option,
         use-dict-literal,
         use-symbolic-message-instead,
         useless-suppression,
+        unidiomatic-typecheck,
         wrong-import-position
 enable=c-extension-no-member
 
@@ -201,7 +202,7 @@ check-str-concat-over-line-jumps=no
 
 [TYPECHECK]
 contextmanager-decorators=contextlib.contextmanager
-generated-members=numpy.*,torch.*,cv2.*
+generated-members=numpy.*,logging.*,torch.*,cv2.*
 ignore-none=yes
 ignore-on-opaque-inference=yes
 ignored-checks-for-mixins=no-member,

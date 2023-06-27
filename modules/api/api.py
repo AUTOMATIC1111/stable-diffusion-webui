@@ -434,7 +434,6 @@ class Api:
         for k, v in req.items():
             shared.opts.set(k, v)
         shared.opts.save(shared.config_filename)
-        return
 
     def get_cmd_flags(self):
         return vars(shared.cmd_opts)
