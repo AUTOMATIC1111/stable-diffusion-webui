@@ -1,7 +1,7 @@
 // attaches listeners to the txt2img and img2img galleries to update displayed generation param text when the image changes
 
 let txt2img_gallery, img2img_gallery, modal = undefined;
-onUiUpdate(function() {
+onAfterUiUpdate(function() {
     if (!txt2img_gallery) {
         txt2img_gallery = attachGalleryListeners("txt2img");
     }

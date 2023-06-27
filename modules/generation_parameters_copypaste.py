@@ -55,7 +55,7 @@ def image_from_url_text(filedata):
     if filedata is None:
         return None
 
-    if type(filedata) == list and len(filedata) > 0 and type(filedata[0]) == dict and filedata[0].get("is_file", False):
+    if type(filedata) == list and filedata and type(filedata[0]) == dict and filedata[0].get("is_file", False):
         filedata = filedata[0]
 
     if type(filedata) == dict and filedata.get("is_file", False):
@@ -265,19 +265,30 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         else:
             prompt += ("" if prompt == "" else "\n") + line
 
+    if shared.opts.infotext_styles != "Ignore":
+        found_styles, prompt, negative_prompt = shared.prompt_styles.extract_styles_from_prompt(prompt, negative_prompt)
+
+        if shared.opts.infotext_styles == "Apply":
+            res["Styles array"] = found_styles
+        elif shared.opts.infotext_styles == "Apply if any" and found_styles:
+            res["Styles array"] = found_styles
+
     res["Prompt"] = prompt
     res["Negative prompt"] = negative_prompt
 
     for k, v in re_param.findall(lastline):
-        if v[0] == '"' and v[-1] == '"':
-            v = unquote(v)
+        try:
+            if v[0] == '"' and v[-1] == '"':
+                v = unquote(v)
 
-        m = re_imagesize.match(v)
-        if m is not None:
-            res[f"{k}-1"] = m.group(1)
-            res[f"{k}-2"] = m.group(2)
-        else:
-            res[k] = v
+            m = re_imagesize.match(v)
+            if m is not None:
+                res[f"{k}-1"] = m.group(1)
+                res[f"{k}-2"] = m.group(2)
+            else:
+                res[k] = v
+        except Exception:
+            print(f"Error parsing \"{k}: {v}\"")
 
     # Missing CLIP skip means it was set to 1 (the default)
     if "Clip skip" not in res:
@@ -306,6 +317,18 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "RNG" not in res:
         res["RNG"] = "GPU"
 
+    if "Schedule type" not in res:
+        res["Schedule type"] = "Automatic"
+
+    if "Schedule max sigma" not in res:
+        res["Schedule max sigma"] = 0
+
+    if "Schedule min sigma" not in res:
+        res["Schedule min sigma"] = 0
+
+    if "Schedule rho" not in res:
+        res["Schedule rho"] = 0
+
     return res
 
 
@@ -318,6 +341,10 @@ infotext_to_setting_name_mapping = [
     ('Conditional mask weight', 'inpainting_mask_weight'),
     ('Model hash', 'sd_model_checkpoint'),
     ('ENSD', 'eta_noise_seed_delta'),
+    ('Schedule type', 'k_sched_type'),
+    ('Schedule max sigma', 'sigma_max'),
+    ('Schedule min sigma', 'sigma_min'),
+    ('Schedule rho', 'rho'),
     ('Noise multiplier', 'initial_noise_multiplier'),
     ('Eta', 'eta_ancestral'),
     ('Eta DDIM', 'eta_ddim'),
@@ -330,6 +357,7 @@ infotext_to_setting_name_mapping = [
     ('Token merging ratio hr', 'token_merging_ratio_hr'),
     ('RNG', 'randn_source'),
     ('NGMS', 's_min_uncond'),
+    ('Pad conds', 'pad_cond_uncond'),
 ]
 
 
@@ -421,7 +449,7 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
 
             vals_pairs = [f"{k}: {v}" for k, v in vals.items()]
 
-            return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=len(vals_pairs) > 0)
+            return gr.Dropdown.update(value=vals_pairs, choices=vals_pairs, visible=bool(vals_pairs))
 
         paste_fields = paste_fields + [(override_settings_component, paste_settings)]
 
@@ -438,5 +466,3 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         outputs=[],
         show_progress=False,
     )
-
-
