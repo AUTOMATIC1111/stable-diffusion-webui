@@ -22,7 +22,7 @@ If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so:
 (The rest **below are installation guides for linux** with rocm.)
 
 
-# Automatic Installation
+# Automatic Installatio
 
 (As of [1/15/23](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6709) you can just run webui-user.sh and pytorch+rocm should be automatically installed for you.)
 
