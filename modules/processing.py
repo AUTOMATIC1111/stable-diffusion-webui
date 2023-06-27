@@ -239,7 +239,7 @@ class StableDiffusionProcessing:
         pass
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def close(self):
         self.sampler = None # pylint: disable=attribute-defined-outside-init

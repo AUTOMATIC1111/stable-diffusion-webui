@@ -350,7 +350,7 @@ def run_modelconvert(model, checkpoint_formats, precision, conv_type, custom_nam
             ema_k = "___"
             try:
                 ema_k = "model_ema." + k[6:].replace(".", "")
-            except:
+            except Exception:
                 pass
             if ema_k in state_dict:
                 _hf(k, state_dict[ema_k])

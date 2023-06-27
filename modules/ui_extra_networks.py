@@ -143,7 +143,7 @@ class ExtraNetworksPage:
             return ''
 
     def list_items(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def allowed_directories_for_previews(self):
         return []

@@ -556,9 +556,9 @@ def create_ui():
                     with gr.TabItem('Batch', id='batch', elem_id="img2img_batch_tab") as tab_batch:
                         hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if modules.shared.cmd_opts.hide_ui_dir_config else ''
                         gr.HTML(
-                            "<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running." +
-                            "<br>Use an empty output directory to save pictures normally instead of writing to the output directory." +
-                            "<br>Add inpaint batch mask directory to enable inpaint batch processing."
+                            "<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running" +
+                            "<br>Use an empty output directory to save pictures normally instead of writing to the output directory" +
+                            "<br>Add inpaint batch mask directory to enable inpaint batch processing"
                             f"{hidden}</p>"
                         )
                         img2img_batch_input_dir = gr.Textbox(label="Inpaint batch input directory", **modules.shared.hide_dirs, elem_id="img2img_batch_input_dir")

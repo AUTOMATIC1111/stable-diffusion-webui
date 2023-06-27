@@ -1,25 +1,44 @@
 [tool.ruff]
-
-target-version = "py39"
-
-extend-select = [
-  "B",
-  "C",
-  "I",
+target-version = "py310"
+select = [
+  "F",
+  "E",
   "W",
+  "C",
+  "B",
+  "I",
+  "YTT",
+  "ASYNC",
+  "RUF",
+  "AIR",
+  "NPY",
+  "C4",
+  "T10",
+  "EXE",
+  "ISC",
+  "ICN",
+  "RSE",
+  "TCH",
+  "TID",
+  "INT",
+  "PLE",
+  # "FIX",
+  # "A",
+  # "T20",
+  # "S",
+  # "PL",
 ]
-
 exclude = [
 	"extensions",
-	"extensions-disabled",
   "extensions-builtin",
   "modules/lora",
   "modules/lycoris",
   "modules/dml",
+  "modules/models/diffusion",
 ]
-
 ignore = [
-	"C408", # Rewrite as a literal
+	"A003", # Class attirbute shadowing builtin
+  "C408", # Rewrite as a literal
 	"C901", # Function is too complex
 	"E501", # Line too long
 	"E731", # Do not assign a `lambda` expression, use a `def`
@@ -27,6 +46,9 @@ ignore = [
 	"W605", # invalid escape sequence, messes with some docstrings
   "E402", # Module level import not at top of file
   "F401", # Imported but unused
+  "B905", # Without explicit scrict
+  "RUF005", # Consider concatenation
+  "ISC003", # Implicit string concatenation
 ]
 
 [tool.ruff.flake8-bugbear]

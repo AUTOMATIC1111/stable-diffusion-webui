@@ -13,6 +13,8 @@ ignore-paths=^repositories/.*$,
              ^extensions/.*$,
              ^extensions-builtin/.*$,
              /usr/lib/.*$,
+             ^modules/dml/.*$,
+             ^modules/models/diffusion/.*$,
 ignore-patterns=
 ignored-modules=
 jobs=0

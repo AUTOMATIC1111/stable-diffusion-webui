@@ -6,7 +6,7 @@ import zipfile
 import re
 
 import torch
-import numpy
+import numpy as np
 import _codecs
 
 # PyTorch 1.13 and later have _TypedStorage renamed to TypedStorage
@@ -43,9 +43,9 @@ class RestrictedUnpickler(pickle.Unpickler):
         if module == 'torch.nn.modules.container' and name in ['ParameterDict']:
             return getattr(torch.nn.modules.container, name)
         if module == 'numpy.core.multiarray' and name in ['scalar', '_reconstruct']:
-            return getattr(numpy.core.multiarray, name)
+            return getattr(np.core.multiarray, name)
         if module == 'numpy' and name in ['dtype', 'ndarray']:
-            return getattr(numpy, name)
+            return getattr(np, name)
         if module == '_codecs' and name == 'encode':
             return encode
         if module == "pytorch_lightning.callbacks" and name == 'model_checkpoint':

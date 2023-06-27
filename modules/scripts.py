@@ -33,7 +33,7 @@ class Script:
 
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def ui(self, is_img2img):
         """this function should create gradio UI elements. See https://gradio.app/docs/#components
