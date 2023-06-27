@@ -1,10 +1,9 @@
+from functools import wraps
 import html
-import sys
 import threading
-import traceback
 import time
 
-from modules import shared, progress
+from modules import shared, progress, errors
 
 queue_lock = threading.Lock()
 
@@ -20,10 +19,11 @@ def wrap_queued_call(func):
 
 
 def wrap_gradio_gpu_call(func, extra_outputs=None):
+    @wraps(func)
     def f(*args, **kwargs):
 
         # if the first argument is a string that says "task(...)", it is treated as a job id
-        if len(args) > 0 and type(args[0]) == str and args[0][0:5] == "task(" and args[0][-1] == ")":
+        if args and type(args[0]) == str and args[0].startswith("task(") and args[0].endswith(")"):
             id_task = args[0]
             progress.add_task_to_queue(id_task)
         else:
@@ -47,6 +47,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
 
 
 def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
+    @wraps(func)
     def f(*args, extra_outputs_array=extra_outputs, **kwargs):
         run_memmon = shared.opts.memmon_poll_rate > 0 and not shared.mem_mon.disabled and add_stats
         if run_memmon:
@@ -56,16 +57,14 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         try:
             res = list(func(*args, **kwargs))
         except Exception as e:
-            # When printing out our debug argument list, do not print out more than a MB of text
-            max_debug_str_len = 131072 # (1024*1024)/8
-
-            print("Error completing request", file=sys.stderr)
-            argStr = f"Arguments: {args} {kwargs}"
-            print(argStr[:max_debug_str_len], file=sys.stderr)
-            if len(argStr) > max_debug_str_len:
-                print(f"(Argument list truncated at {max_debug_str_len}/{len(argStr)} characters)", file=sys.stderr)
-
-            print(traceback.format_exc(), file=sys.stderr)
+            # When printing out our debug argument list,
+            # do not print out more than a 100 KB of text
+            max_debug_str_len = 131072
+            message = "Error completing request"
+            arg_str = f"Arguments: {args} {kwargs}"[:max_debug_str_len]
+            if len(arg_str) > max_debug_str_len:
+                arg_str += f" (Argument list truncated at {max_debug_str_len}/{len(arg_str)} characters)"
+            errors.report(f"{message}\n{arg_str}", exc_info=True)
 
             shared.state.job = ""
             shared.state.job_count = 0
@@ -108,4 +107,3 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
         return tuple(res)
 
     return f
-

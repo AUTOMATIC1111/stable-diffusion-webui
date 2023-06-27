@@ -53,8 +53,8 @@ class Upscaler:
 
     def upscale(self, img: PIL.Image, scale, selected_model: str = None):
         self.scale = scale
-        dest_w = int(img.width * scale)
-        dest_h = int(img.height * scale)
+        dest_w = int((img.width * scale) // 8 * 8)
+        dest_h = int((img.height * scale) // 8 * 8)
 
         for _ in range(3):
             shape = (img.width, img.height)
@@ -77,7 +77,7 @@ class Upscaler:
         pass
 
     def find_models(self, ext_filter=None) -> list:
-        return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path)
+        return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path, ext_filter=ext_filter)
 
     def update_status(self, prompt):
         print(f"\nextras: {prompt}", file=shared.progress_print_out)

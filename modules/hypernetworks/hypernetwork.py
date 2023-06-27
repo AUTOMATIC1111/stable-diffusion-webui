@@ -2,8 +2,6 @@ import datetime
 import glob
 import html
 import os
-import sys
-import traceback
 import inspect
 
 import modules.textual_inversion.dataset
@@ -11,7 +9,7 @@ import torch
 import tqdm
 from einops import rearrange, repeat
 from ldm.util import default
-from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint
+from modules import devices, processing, sd_models, shared, sd_samplers, hashes, sd_hijack_checkpoint, errors
 from modules.textual_inversion import textual_inversion, logging
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from torch import einsum
@@ -325,16 +323,13 @@ def load_hypernetwork(name):
     if path is None:
         return None
 
-    hypernetwork = Hypernetwork()
-
     try:
+        hypernetwork = Hypernetwork()
         hypernetwork.load(path)
+        return hypernetwork
     except Exception:
-        print(f"Error loading hypernetwork {path}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        errors.report(f"Error loading hypernetwork {path}", exc_info=True)
         return None
-
-    return hypernetwork
 
 
 def load_hypernetworks(names, multipliers=None):
@@ -770,7 +765,7 @@ Last saved image: {html.escape(last_saved_image)}<br/>
 </p>
 """
     except Exception:
-        print(traceback.format_exc(), file=sys.stderr)
+        errors.report("Exception in training hypernetwork", exc_info=True)
     finally:
         pbar.leave = False
         pbar.close()
