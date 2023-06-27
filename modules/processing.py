@@ -950,7 +950,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if tuple(self.hr_prompt or "") != tuple(self.prompt):
                 self.extra_generation_params["Hires prompt"] = self.hr_prompt
 
-            if tuple(self.hr_negative_prompt) != tuple(self.negative_prompt):
+            if tuple(self.hr_negative_prompt or "") != tuple(self.negative_prompt):
                 self.extra_generation_params["Hires negative prompt"] = self.hr_negative_prompt
 
             if opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):
