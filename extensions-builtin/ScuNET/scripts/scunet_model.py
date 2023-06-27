@@ -1,4 +1,3 @@
-import os.path
 import sys
 
 import PIL.Image
@@ -6,12 +5,11 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from basicsr.utils.download_util import load_file_from_url
-
 import modules.upscaler
 from modules import devices, modelloader, script_callbacks, errors
-from scunet_model_arch import SCUNet as net
+from scunet_model_arch import SCUNet
 
+from modules.modelloader import load_file_from_url
 from modules.shared import opts
 
 
@@ -28,7 +26,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         scalers = []
         add_model2 = True
         for file in model_paths:
-            if "http" in file:
+            if file.startswith("http"):
                 name = self.model_name
             else:
                 name = modelloader.friendly_name(file)
@@ -89,9 +87,10 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
 
         torch.cuda.empty_cache()
 
-        model = self.load_model(selected_file)
-        if model is None:
-            print(f"ScuNET: Unable to load model from {selected_file}", file=sys.stderr)
+        try:
+            model = self.load_model(selected_file)
+        except Exception as e:
+            print(f"ScuNET: Unable to load model from {selected_file}: {e}", file=sys.stderr)
             return img
 
         device = devices.get_device_for('scunet')
@@ -119,15 +118,12 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
 
     def load_model(self, path: str):
         device = devices.get_device_for('scunet')
-        if "http" in path:
-            filename = load_file_from_url(url=self.model_url, model_dir=self.model_download_path, file_name="%s.pth" % self.name, progress=True)
+        if path.startswith("http"):
+            # TODO: this doesn't use `path` at all?
+            filename = load_file_from_url(self.model_url, model_dir=self.model_download_path, file_name=f"{self.name}.pth")
         else:
             filename = path
-        if not os.path.exists(os.path.join(self.model_path, filename)) or filename is None:
-            print(f"ScuNET: Unable to load model from {filename}", file=sys.stderr)
-            return None
-
-        model = net(in_nc=3, config=[4, 4, 4, 4, 4, 4, 4], dim=64)
+        model = SCUNet(in_nc=3, config=[4, 4, 4, 4, 4, 4, 4], dim=64)
         model.load_state_dict(torch.load(filename), strict=True)
         model.eval()
         for _, v in model.named_parameters():
