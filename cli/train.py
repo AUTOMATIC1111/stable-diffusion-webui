@@ -372,15 +372,29 @@ def process_inputs():
     process.unload()
 
 
+def check_versions():
+    log.info('checking accelerate')
+    import accelerate
+    if accelerate.__version__ != '0.19.0':
+        log.error(f'invalid accelerate version: required=0.19.0 found={accelerate.__version__}')
+        exit(1)
+    log.info('checking diffusers')
+    import diffusers
+    if diffusers.__version__ != '0.10.2':
+        log.error(f'invalid diffusers version: required=0.10.2 found={diffusers.__version__}')
+        exit(1)
+
+
 if __name__ == '__main__':
     log.info('SD.Next train script')
     parse_args()
+    setup_logging()
+    check_versions()
     sdapi.sd_url = args.server
     if args.user is not None:
         sdapi.sd_username = args.user
     if args.password is not None:
         sdapi.sd_password = args.password
-    setup_logging()
     prepare_server()
     verify_args()
     prepare_options()

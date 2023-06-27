@@ -38,17 +38,19 @@ exclude = [
 ]
 ignore = [
 	"A003", # Class attirbute shadowing builtin
-  "C408", # Rewrite as a literal
 	"C901", # Function is too complex
 	"E501", # Line too long
 	"E731", # Do not assign a `lambda` expression, use a `def`
 	"I001", # Import block is un-sorted or un-formatted
-	"W605", # invalid escape sequence, messes with some docstrings
+	"W605", # Invalid escape sequence, messes with some docstrings
+  "B905", # Without explicit scrict
+  "C408", # Rewrite as a literal
   "E402", # Module level import not at top of file
   "F401", # Imported but unused
-  "B905", # Without explicit scrict
-  "RUF005", # Consider concatenation
   "ISC003", # Implicit string concatenation
+  "RUF005", # Consider concatenation
+  "RUF012", # Mutable class attributes
+  "RUF013", # Implict optional
 ]
 
 [tool.ruff.flake8-bugbear]
