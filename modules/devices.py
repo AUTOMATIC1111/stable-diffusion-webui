@@ -164,15 +164,35 @@ args = cmd_args.parser.parse_args()
 if args.use_ipex:
     #Fix broken function in ipex 1.13.120+xpu
     from modules.sd_hijack_utils import CondFunc
+    #Functions with dtype errors:
     CondFunc('torch.nn.modules.GroupNorm.forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
         lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
     CondFunc('torch.nn.modules.Linear.forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
         lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
+    #Functions that does not work with the XPU:
+    #UniPC:
     CondFunc('torch.linalg.solve',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"), args[1].to("cpu")).to(get_cuda_device_string()),
-        lambda *args, **kwargs: True)
+        lambda *args, **kwargs: args[1].device != torch.device("cpu"))
+    #ControlNet:
+    CondFunc('torch.batch_norm',
+        lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
+        args[1].to("cpu") if args[1] is not None else args[1],
+        args[2].to("cpu") if args[2] is not None else args[2],
+        args[3].to("cpu") if args[3] is not None else args[3],
+        args[4].to("cpu") if args[4] is not None else args[4],
+        args[5], args[6], args[7], args[8]).to(get_cuda_device_string()),
+        lambda *args, **kwargs: args[1].device != torch.device("cpu"))
+    CondFunc('torch.instance_norm',
+        lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
+        args[1].to("cpu") if args[1] is not None else args[1],
+        args[2].to("cpu") if args[2] is not None else args[2],
+        args[3].to("cpu") if args[3] is not None else args[3],
+        args[4].to("cpu") if args[4] is not None else args[4],
+        args[5], args[6], args[7], args[8]).to(get_cuda_device_string()),
+        lambda *args, **kwargs: args[1].device != torch.device("cpu"))
 
     #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
     if args.device_id is not None:
