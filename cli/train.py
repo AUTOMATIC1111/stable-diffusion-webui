@@ -112,6 +112,7 @@ def parse_args():
 
     group_other = parser.add_argument_group('Other')
     group_other.add_argument('--overwrite', default = False, action='store_true', help = "overwrite existing training, default: %(default)s")
+    group_other.add_argument('--experimental', default = False, action='store_true', help = "enable experimental options, default: %(default)s")
     group_other.add_argument('--debug', default = False, action='store_true', help = "enable debug level logging, default: %(default)s")
 
     args = parser.parse_args()
@@ -373,6 +374,9 @@ def process_inputs():
 
 
 def check_versions():
+    if args.experimental:
+        log.info('experimental mode enabled')
+        return
     log.info('checking accelerate')
     import accelerate
     if accelerate.__version__ != '0.19.0':

@@ -1,5 +1,12 @@
 # Change Log for SD.Next
 
+- change in behavior  
+  extensions no longer auto-update on startup  
+  using `--upgrade` flag upgrades core app as well as all submodules and extensions  
+- add live server log monitoring to ui  
+  configurable via settings -> live preview  
+- add requirements check for training  
+
 ## Update for 06/26/2023
 
 - new training tab interface  

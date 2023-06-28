@@ -158,7 +158,7 @@ def interrogate_image(res: Result, tag: str = None):
         result = sdapi.postsync('/sdapi/v1/interrogate', json)
         if model == 'clip':
             caption = result.caption if 'caption' in result else ''
-            caption = caption.split(',')[0].replace('a ', '')
+            caption = caption.split(',')[0].replace(' a ', ' ').strip()
             if tag is not None:
                 caption = res.tag + ', ' + caption
         if model == 'deepdanbooru':
@@ -170,6 +170,7 @@ def interrogate_image(res: Result, tag: str = None):
                     tags.insert(0, t.strip())
     pos = 0 if len(tags) == 0 else 1
     tags.insert(pos, caption.split(' ')[1])
+    tags = [t for t in tags if len(t) > 2]
     if len(tags) > options.process.tag_limit:
         tags = tags[:options.process.tag_limit]
     res.caption = caption
