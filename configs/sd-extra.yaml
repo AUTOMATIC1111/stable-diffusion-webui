@@ -1,0 +1,17 @@
+upload:
+  server-url: http://192.168.1.8:9000
+  server-addr: 192.168.1.8:9000
+  access_key: idoo-dev
+  secret_key: idoo.dev
+  bucket_name: stabled
+queue:
+  server-addr: pulsar://192.168.1.9:6650
+  topics:
+    - persistent://idoo/dev/topicT2I
+    - persistent://idoo/dev/topicI2I
+  topic-t2i: persistent://idoo/dev/topicT2I
+  topic-t2i-result: persistent://idoo/dev/topicT2IResult
+  topic-i2i-result: persistent://idoo/dev/topicI2IResult
+  topic-web-img-result: persistent://idoo/dev/topicWebImgResult
+  subscription: stable-diffusion
+  consumer-name: sd-9

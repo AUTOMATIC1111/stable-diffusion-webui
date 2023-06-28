@@ -14,6 +14,7 @@ from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
 import modules.shared as shared
+from extra.fileStorage import ExtraFileStorage
 from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors
 from modules.api import models
 from modules.shared import opts
@@ -70,6 +71,37 @@ def decode_base64_to_image(encoding):
     except Exception as e:
         raise HTTPException(status_code=500, detail="Invalid encoded image") from e
 
+
+def store_file_to_minio(image):
+    with io.BytesIO() as output_bytes:
+
+        if opts.samples_format.lower() == 'png':
+            use_metadata = False
+            metadata = PngImagePlugin.PngInfo()
+            for key, value in image.info.items():
+                if isinstance(key, str) and isinstance(value, str):
+                    metadata.add_text(key, value)
+                    use_metadata = True
+            image.save(output_bytes, format="PNG", pnginfo=(metadata if use_metadata else None), quality=opts.jpeg_quality)
+
+        elif opts.samples_format.lower() in ("jpg", "jpeg", "webp"):
+            parameters = image.info.get('parameters', None)
+            exif_bytes = piexif.dump({
+                "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(parameters or "", encoding="unicode") }
+            })
+            if opts.samples_format.lower() in ("jpg", "jpeg"):
+                image.save(output_bytes, format="JPEG", exif = exif_bytes, quality=opts.jpeg_quality)
+            else:
+                image.save(output_bytes, format="WEBP", exif = exif_bytes, quality=opts.jpeg_quality)
+
+        else:
+            raise HTTPException(status_code=500, detail="Invalid image format")
+
+        bytes_data = output_bytes.getvalue()
+        storage = ExtraFileStorage()
+        url = storage.saveByte2Minio(bytes_data, opts.samples_format.lower())
+
+    return url
 
 def encode_pil_to_base64(image):
     with io.BytesIO() as output_bytes:
@@ -321,6 +353,7 @@ class Api:
         script_args = self.init_script_args(txt2imgreq, self.default_script_arg_txt2img, selectable_scripts, selectable_script_idx, script_runner)
 
         send_images = args.pop('send_images', True)
+        send_images_url = args.pop('send_images_url', False)
         args.pop('save_images', None)
 
         with self.queue_lock:
@@ -338,7 +371,10 @@ class Api:
                 processed = process_images(p)
             shared.state.end()
 
-        b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
+        if send_images_url:
+            b64images = list(map(store_file_to_minio, processed.images))
+        else:
+            b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
@@ -377,6 +413,7 @@ class Api:
         script_args = self.init_script_args(img2imgreq, self.default_script_arg_img2img, selectable_scripts, selectable_script_idx, script_runner)
 
         send_images = args.pop('send_images', True)
+        send_images_url = args.pop('send_images_url', False)
         args.pop('save_images', None)
 
         with self.queue_lock:
@@ -395,7 +432,10 @@ class Api:
                 processed = process_images(p)
             shared.state.end()
 
-        b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
+        if send_images_url:
+            b64images = list(map(store_file_to_minio, processed.images))
+        else:
+            b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
         if not img2imgreq.include_init_images:
             img2imgreq.init_images = None

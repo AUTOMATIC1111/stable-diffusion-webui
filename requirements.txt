@@ -30,3 +30,6 @@ torch
 torchdiffeq
 torchsde
 transformers==4.25.1
+
+minio~=7.1.15
+PyYAML~=6.0
