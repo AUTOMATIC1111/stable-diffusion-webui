@@ -414,9 +414,9 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
     "randn_source": OptionInfo("GPU", "Random number generator source.", gr.Radio, {"choices": ["GPU", "CPU"]}).info("changes seeds drastically; use CPU to produce the same picture across different videocard vendors"),
     "font": OptionInfo("", "Font for image grids that have text"),
-    "grid_text_color_active": OptionInfo("#000000", "Text color for image grids", ui_components.FormColorPicker, {}),
-    "grid_text_color_inactive": OptionInfo("#999999", "Inactive text color for image grids", ui_components.FormColorPicker, {}),
-    "grid_background": OptionInfo("#ffffff", "Background color for image grids", ui_components.FormColorPicker, {}),
+    "grid_text_active_color": OptionInfo("#000000", "Text color for image grids", ui_components.FormColorPicker, {}),
+    "grid_text_inactive_color": OptionInfo("#999999", "Inactive text color for image grids", ui_components.FormColorPicker, {}),
+    "grid_background_color": OptionInfo("#ffffff", "Background color for image grids", ui_components.FormColorPicker, {}),
 }))
 
 options_templates.update(options_section(('optimizations', "Optimizations"), {
