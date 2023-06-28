@@ -444,7 +444,7 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
     "live_preview_refresh_period": OptionInfo(250, "Progressbar/preview update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 5000, "step": 25}),
     "logmonitor_show": OptionInfo(True, "Show log view"),
-    "logmonitor_refresh_period": OptionInfo(1000, "Log view update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 5000, "step": 25}),
+    "logmonitor_refresh_period": OptionInfo(5000, "Log view update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 30000, "step": 25}),
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {

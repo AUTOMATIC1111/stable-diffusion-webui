@@ -2,9 +2,11 @@ import json
 import html
 import os.path
 import urllib.parse
+import threading
 from pathlib import Path
 from collections import OrderedDict
 import gradio as gr
+from PIL import Image
 from modules import shared, scripts
 from modules.generation_parameters_copypaste import image_from_url_text
 from modules.ui_components import ToolButton
@@ -56,6 +58,7 @@ class ExtraNetworksPage:
         self.allow_negative_prompt = False
         self.metadata = {}
         self.items = []
+        self.missing_thumbs = []
 
     def refresh(self):
         pass
@@ -92,6 +95,24 @@ class ExtraNetworksPage:
     def is_empty(self, folder):
         files = [f for f in os.listdir(folder) if f.lower().endswith(".ckpt") or f.lower().endswith(".safetensors") or f.lower().endswith(".pt")]
         return len(files) == 0
+
+    def create_thumb(self):
+        created = 0
+        for f in self.missing_thumbs:
+            fn, _ext = os.path.splitext(f)
+            fn = fn.replace('.preview', '')
+            fn = f'{fn}.thumb.jpg'
+            if os.path.exists(fn):
+                continue
+            created += 1
+            img = Image.open(f)
+            img = img.convert('RGB')
+            img.thumbnail((512, 512), Image.HAMMING)
+            img.save(fn)
+            img.close()
+        if len(self.missing_thumbs) > 0:
+            shared.log.info(f"Extra network created thumbnails: {self.name} {created}")
+            self.missing_thumbs.clear()
 
     def create_html(self, tabname):
         view = shared.opts.extra_networks_default_view
@@ -130,13 +151,10 @@ class ExtraNetworksPage:
                 items_html = shared.html("extra-networks-no-cards.html").format(dirs=dirs)
             self_name_id = self.name.replace(" ", "_")
             res = f"""
-                <div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
-                    {subdirs_html}
-                </div>
-                <div id='{tabname}_{self_name_id}_cards' class='extra-network-{view}'>
-                    {items_html}
-                </div>
+                <div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>{subdirs_html}</div>
+                <div id='{tabname}_{self_name_id}_cards' class='extra-network-{view}'>{items_html}</div>
                 """
+            threading.Thread(target=self.create_thumb).start()
             return res
         except Exception as e:
             shared.log.error(f'Extra networks page error: {e}')
@@ -180,9 +198,12 @@ class ExtraNetworksPage:
         Find a preview PNG for a given path (without extension) and call link_preview on it.
         """
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        potential_files = sum([[path + "." + ext, path + ".preview." + ext] for ext in preview_extensions], [])
-        for file in potential_files:
+        for file in sum([[f'{path}.thumb.{ext}'] for ext in preview_extensions], []): # use thumbnail if exists
             if os.path.isfile(file):
+                return self.link_preview(file)
+        for file in sum([[f'{path}.preview.{ext}', f'{path}.{ext}'] for ext in preview_extensions], []):
+            if os.path.isfile(file):
+                self.missing_thumbs.append(file)
                 return self.link_preview(file)
         return None
 
@@ -288,7 +309,6 @@ def path_is_parent(parent_path, child_path):
 def setup_ui(ui, gallery):
     def save_preview(index, images, filename):
         if len(images) == 0:
-            print("There is no image in gallery to save as a preview.")
             return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
         index = int(index)
         index = 0 if index < 0 else index
