@@ -16,6 +16,7 @@ extensions_list = []
 sort_ordering = {
     "default": (True, lambda x: x.get('sort_default', '')),
     "user extensions": (True, lambda x: x.get('sort_user', '')),
+    "trending": (True, lambda x: x.get('sort_trending', -1)),
     "update avilable": (True, lambda x: x.get('sort_update', '')),
     "updated date": (True, lambda x: x.get('updated', '2000-01-01T00:00')),
     "created date": (True, lambda x: x.get('created', '2000-01-01T00:00')),
@@ -330,6 +331,8 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         ext['sort_user'] = f"{'0' if ext['is_builtin'] else '1'}{'1' if ext['installed'] else '0'}{ext.get('name', '')}"
         ext['sort_enabled'] = f"{'0' if ext['enabled'] else '1'}{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
         ext['sort_update'] = f"{'1' if update_available else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
+        timedelta = datetime.now() - datetime.fromisoformat(ext.get('created', '2000-01-01T00:00Z')[:-1])
+        ext['sort_trending'] = round(stars / timedelta.days, 1)
         tags = ext.get("tags", [])
         if not isinstance(tags, list):
             tags = tags.split(' ')
@@ -362,7 +365,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
                 <td><a href="{html.escape(url)}" target="_blank" class="name">{html.escape(name)}</a><br>{tags_text}</td>
                 <td>{html.escape(description)}
                     <p class="info"><span class="date">Created {html.escape(created)} | Added {html.escape(added)} | Pushed {html.escape(pushed)} | Updated {html.escape(updated)}</span></p>
-                    <p class="info"><span class="date">Stars {html.escape(str(stars))} | Size {html.escape(str(size))} | Commits {html.escape(str(commits))} | Issues {html.escape(str(issues))}</span></p>
+                    <p class="info"><span class="date">Stars {html.escape(str(stars))} | Size {html.escape(str(size))} | Commits {html.escape(str(commits))} | Issues {html.escape(str(issues))} | Trending {html.escape(str(ext['sort_trending']))}</span></p>
                 </td>
                 <td>{type_code}</td>
                 <td>{version_code}</td>

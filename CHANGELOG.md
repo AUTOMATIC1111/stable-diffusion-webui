@@ -3,8 +3,11 @@
 - change in behavior  
   extensions no longer auto-update on startup  
   using `--upgrade` flag upgrades core app as well as all submodules and extensions  
-- add live server log monitoring to ui  
+- live server log monitoring in ui  
   configurable via settings -> live preview  
+- auto-create thumbnails from preview images in extra networks in a background thread  
+  this creates significant load time saving on subsequent restarts  
+- extensions sort by trending
 - add requirements check for training  
 
 ## Update for 06/26/2023
