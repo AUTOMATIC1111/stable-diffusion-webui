@@ -186,6 +186,11 @@ class Script:
 
         return f'script_{tabname}{title}_{item_id}'
 
+    def before_hr(self, p ,*args):
+        """
+        This function is called before hires fix start.
+        """
+        pass
 
 current_basedir = paths.script_path
 
@@ -546,6 +551,15 @@ class ScriptRunner:
                     self.scripts[si].filename = filename
                     self.scripts[si].args_from = args_from
                     self.scripts[si].args_to = args_to
+
+
+    def before_hr(self, p):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.before_hr(p, *script_args)
+            except Exception:
+                errors.report(f"Error running before_hr: {script.filename}", exc_info=True)
 
 
 scripts_txt2img: ScriptRunner = None
