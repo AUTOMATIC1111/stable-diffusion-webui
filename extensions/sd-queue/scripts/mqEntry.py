@@ -34,8 +34,8 @@ class MqSupporter:
                 logger.info("Received message handler success")
                 # Acknowledge successful processing of the message
                 consumer.acknowledge(msg)
-            except threading.ThreadError:
-                logger.info("Redo task to queue")
+            except threading.ThreadError as e:
+                logger.info("Redo task to queue, the error [%s]", e)
                 consumer.negative_acknowledge(msg)
             except:
                 # Message failed to be processed
