@@ -5,7 +5,7 @@ import modules.scripts as scripts
 
 class Script(scripts.Script):
     def title(self):
-        pass
+        logger.info("Do test")
 
     def postprocess(self, p, processed, *args):
         logger.info(p)
