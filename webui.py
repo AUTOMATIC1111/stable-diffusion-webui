@@ -359,7 +359,11 @@ def api_only():
     modules.script_callbacks.app_started_callback(None, app)
 
     print(f"Startup time: {startup_timer.summary()}.")
-    api.launch(server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1", port=cmd_opts.port if cmd_opts.port else 7861)
+    api.launch(
+        server_name="0.0.0.0" if cmd_opts.listen else "127.0.0.1",
+        port=cmd_opts.port if cmd_opts.port else 7861,
+        root_path = f"/{cmd_opts.subpath}"
+    )
 
 
 def stop_route(request):
@@ -403,6 +407,7 @@ def webui():
                 "docs_url": "/docs",
                 "redoc_url": "/redoc",
             },
+            root_path = f"/{cmd_opts.subpath}",
         )
         if cmd_opts.add_stop_route:
             app.add_route("/_stop", stop_route, methods=["POST"])
@@ -435,11 +440,6 @@ def webui():
 
         timer.startup_record = startup_timer.dump()
         print(f"Startup time: {startup_timer.summary()}.")
-
-        if cmd_opts.subpath:
-            redirector = FastAPI()
-            redirector.get("/")
-            gradio.mount_gradio_app(redirector, shared.demo, path=f"/{cmd_opts.subpath}")
 
         try:
             while True:
