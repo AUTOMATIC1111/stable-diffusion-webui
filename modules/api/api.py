@@ -25,6 +25,7 @@ from modules import devices
 
 errors.install()
 
+
 def upscaler_to_index(name: str):
     try:
         return [x.name.lower() for x in shared.sd_upscalers].index(name.lower())
@@ -157,8 +158,12 @@ class Api:
                 return True
         raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Basic"})
 
-    def get_log_buffer(self):
-        return shared.log.buffer
+
+    def get_log_buffer(self, req: models.LogRequest = Depends()):
+        lines = shared.log.buffer[:req.lines] if req.lines > 0 else shared.log.buffer.copy()
+        if req.clear:
+            shared.log.buffer.clear()
+        return lines
 
     def get_selectable_script(self, script_name, script_runner):
         if script_name is None or script_name == "":

@@ -58,7 +58,10 @@ async function setHints() {
   ];
   if (elements.length === 0) return;
   if (Object.keys(opts).length === 0) return;
-  if (!locale.el) tooltipCreate();
+  if (!locale.el) {
+    tooltipCreate();
+    logMonitorCreate();
+  }
   let localized = 0;
   let hints = 0;
   locale.finished = true;

@@ -173,6 +173,10 @@ class PNGInfoResponse(BaseModel):
     info: str = Field(title="Image info", description="A string with the parameters used to generate the image")
     items: dict = Field(title="Items", description="An object containing all the info the image had")
 
+class LogRequest(BaseModel):
+    lines: int = Field(default=100, title="Lines", description="How many lines to return")
+    clear: bool = Field(default=False, title="Clear", description="Should the log be cleared after returning the lines?")
+
 class ProgressRequest(BaseModel):
     skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")
 

@@ -29,6 +29,7 @@ select = [
   # "PL",
 ]
 exclude = [
+  "/usr/lib",
 	"extensions",
   "extensions-builtin",
   "modules/lora",

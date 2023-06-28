@@ -49,9 +49,6 @@ button.custom-button{
     text-align: center;
 }
 
-/* remove footer */
-footer { display: none !important; }
-
 /* themes */
 .theme-preview { display: none; position: fixed; border: 4px solid var(--neutral-600); box-shadow: 2px 2px 2px 2px var(--neutral-700); top: 0; bottom: 0; left: 0; right: 0; margin: auto; max-width: 75vw; z-index: 999; }
 
@@ -668,3 +665,14 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 #refresh_tac_refreshTempFiles { display: none; }
 #train_tab { flex-flow: row-reverse; }
 #models_tab { flex-flow: row-reverse; }
+
+.log-monitor { 
+  display: none;
+  justify-content: unset !important;
+  overflow: hidden;
+  padding: 0;
+  margin-top: auto;
+  font-family: monospace;
+  font-size: 0.85em;
+}
+.log-monitor td, .log-monitor th { padding-left: 1em; }
