@@ -139,7 +139,7 @@ class GridAnnotation:
 
 
 def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
-    
+
     color_active = ImageColor.getcolor(opts.grid_text_active_color, 'RGB')
     color_inactive = ImageColor.getcolor(opts.grid_text_inactive_color, 'RGB')
     color_background = ImageColor.getcolor(opts.grid_background_color, 'RGB')
