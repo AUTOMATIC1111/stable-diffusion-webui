@@ -254,7 +254,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         super(Img2ImgTask, self).close()
         for img in self.init_images:
             img.close()
-        if self.mask:
+        if hasattr(self.mask, "close"):
             self.mask.close()
         for obj in self.script_args:
             if hasattr(obj, 'close'):

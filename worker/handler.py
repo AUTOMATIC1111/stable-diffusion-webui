@@ -54,6 +54,8 @@ class TaskHandler:
                 logger.exception('unhandle err')
                 p = TaskProgress.new_failed(task, msg, trace)
                 self._set_task_status(p)
+                if 'BrokenPipeError' in str(ex):
+                    pass
 
     def close(self):
         pass
