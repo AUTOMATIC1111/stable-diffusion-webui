@@ -5,7 +5,7 @@ import requests
 
 from scripts.extLogging import logger
 from extra.loadYamlFile import ExtraConfig
-from mqEntry import MqSupporter, QueueException
+from scripts.mqEntry import MqSupporter, QueueException
 from pulsar import Message
 
 from modules.api import models
