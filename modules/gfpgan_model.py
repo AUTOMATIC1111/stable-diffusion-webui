@@ -70,11 +70,8 @@ gfpgan_constructor = None
 
 
 def setup_model(dirname):
-    global model_path
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
-
     try:
+        os.makedirs(model_path, exist_ok=True)
         from gfpgan import GFPGANer
         from facexlib import detection, parsing  # noqa: F401
         global user_path

@@ -69,6 +69,7 @@ class CFGDenoiser(torch.nn.Module):
         self.init_latent = None
         self.step = 0
         self.image_cfg_scale = None
+        self.padded_cond_uncond = False
 
     def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
         denoised_uncond = x_out[-uncond.shape[0]:]
@@ -133,15 +134,17 @@ class CFGDenoiser(torch.nn.Module):
             x_in = x_in[:-batch_size]
             sigma_in = sigma_in[:-batch_size]
 
-        # TODO add infotext entry
+        self.padded_cond_uncond = False
         if shared.opts.pad_cond_uncond and tensor.shape[1] != uncond.shape[1]:
             empty = shared.sd_model.cond_stage_model_empty_prompt
             num_repeats = (tensor.shape[1] - uncond.shape[1]) // empty.shape[1]
 
             if num_repeats < 0:
                 tensor = torch.cat([tensor, empty.repeat((tensor.shape[0], -num_repeats, 1))], axis=1)
+                self.padded_cond_uncond = True
             elif num_repeats > 0:
                 uncond = torch.cat([uncond, empty.repeat((uncond.shape[0], num_repeats, 1))], axis=1)
+                self.padded_cond_uncond = True
 
         if tensor.shape[1] == uncond.shape[1] or skip_uncond:
             if is_edit_model:
@@ -405,6 +408,9 @@ class KDiffusionSampler:
 
         samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
+        if self.model_wrap_cfg.padded_cond_uncond:
+            p.extra_generation_params["Pad conds"] = True
+
         return samples
 
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
@@ -437,6 +443,9 @@ class KDiffusionSampler:
             'cond_scale': p.cfg_scale,
             's_min_uncond': self.s_min_uncond
         }, disable=False, callback=self.callback_state, **extra_params_kwargs))
+
+        if self.model_wrap_cfg.padded_cond_uncond:
+            p.extra_generation_params["Pad conds"] = True
 
         return samples
 
