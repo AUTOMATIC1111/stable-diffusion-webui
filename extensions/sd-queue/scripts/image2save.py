@@ -1,4 +1,4 @@
-from extLogging import logger
+from scripts.extLogging import logger
 
 import modules.scripts as scripts
 

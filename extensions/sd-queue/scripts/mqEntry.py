@@ -3,7 +3,7 @@ import threading
 import pulsar
 from _pulsar import ConsumerType
 
-from extLogging import logger
+from scripts.extLogging import logger
 from extra.loadYamlFile import ExtraConfig
 
 

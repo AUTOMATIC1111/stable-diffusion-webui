@@ -3,7 +3,7 @@ import json
 import threading
 import requests
 
-from extLogging import logger
+from scripts.extLogging import logger
 from extra.loadYamlFile import ExtraConfig
 from mqEntry import MqSupporter, QueueException
 from pulsar import Message

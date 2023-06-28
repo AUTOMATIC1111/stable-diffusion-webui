@@ -6,7 +6,7 @@ import gradio as gr
 
 def start_queue(_: gr.Blocks, app: FastAPI):
     if '--start-task-listener' in sys.argv:
-        from TaskListener import TaskListener
+        from scripts.TaskListener import TaskListener
         print(f"Launching API server with task listener")
         task = TaskListener(app)
         task.start()
