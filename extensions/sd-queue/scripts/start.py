@@ -8,7 +8,7 @@ from scripts.taskListener import TaskListener
 def start_queue(_: gr.Blocks, app: FastAPI):
     if '--start-task-listener' in sys.argv:
         print(f"Launching API server with task listener")
-        task = TaskListener(app)
+        task = TaskListener()
         task.start()
 
 

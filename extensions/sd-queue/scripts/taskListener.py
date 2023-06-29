@@ -14,13 +14,15 @@ from modules.call_queue import queue_lock
 from pulsar import Message
 
 
-def taskHandler(msg: Message, app: FastAPI):
+def taskHandler(msg: Message):
+    from fastapi import FastAPI
     data = json.loads(msg.data())
     config = ExtraConfig().get_config()
 
     if msg.topic_name() == config["queue"]["topic-t2i"]:
         txt2imgreq = models.StableDiffusionTxt2ImgProcessingAPI(**data)
         logger.info("Text2Image Request '%s'", txt2imgreq)
+        app = FastAPI()
         api = Api(app, queue_lock)
         response = api.text2imgapi(txt2imgreq)
         logger.info("Text2Image Result '%s'", response.dict())
@@ -35,6 +37,7 @@ def taskHandler(msg: Message, app: FastAPI):
         if resp.status_code == 200:
             encoded_file = base64.b64encode(resp.content).decode('utf-8')
             req.init_images = [encoded_file]
+            app = FastAPI()
             api = Api(app, queue_lock)
             response = api.img2imgapi(req)
             logger.info("Image2Image Result '%s'", response.dict())
@@ -47,13 +50,9 @@ def taskHandler(msg: Message, app: FastAPI):
 
 
 class TaskListener(threading.Thread):
-    def __init__(self, app: FastAPI):
-        super().__init__()
-        self.app = app
-
     def run(self):
         config = ExtraConfig().get_config()
         mq = MqSupporter()
         mq.createConsumer(config["queue"]["topics"], config["queue"]["subscription"], config["queue"]["consumer-name"],
-                          taskHandler, self.app)
+                          taskHandler)
         mq.closeClient()

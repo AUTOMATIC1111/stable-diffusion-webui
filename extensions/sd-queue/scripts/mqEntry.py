@@ -21,7 +21,7 @@ class MqSupporter:
         producer.send(msg, properties)
         self.closeClient()
 
-    def createConsumer(self, topics: str, subscription: str, consumerName: str, messageHandler, app):
+    def createConsumer(self, topics: str, subscription: str, consumerName: str, messageHandler):
         self.initClient()
         consumer = self.client.subscribe(topics, subscription, consumer_type=ConsumerType.Shared,
                                          consumer_name=consumerName)
@@ -30,7 +30,7 @@ class MqSupporter:
             msg = consumer.receive()
             try:
                 logger.info("Received message '%s' id='%s'", msg.data(), msg.message_id())
-                messageHandler(msg, app)
+                messageHandler(msg)
                 logger.info("Received message handler success")
                 # Acknowledge successful processing of the message
                 consumer.acknowledge(msg)
