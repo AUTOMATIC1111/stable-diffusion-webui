@@ -47,8 +47,8 @@ class ImageKeys(UserDict):
 
     def __init__(self, keys: typing.Sequence, low_keys: typing.Sequence):
         super(ImageKeys, self).__init__()
-        self['high'] = self.sorted_keys(keys or [])
-        self['low'] = self.sorted_keys(low_keys or [])
+        self['high'] = keys or []
+        self['low'] = low_keys or []
 
     def is_empty(self):
         return len(self['high']) == 0
@@ -63,7 +63,7 @@ class ImageKeys(UserDict):
             basename, _ = os.path.splitext(os.path.basename(p))
 
             if '-' not in basename:
-                return 10000001
+                return -1
             seg = basename.split('-')[-1]
             if seg == 'last':
                 return 10000000
@@ -79,6 +79,8 @@ class ImageKeys(UserDict):
         return sorted(keys, key=sort_file)
 
     def to_dict(self):
+        self['high'] = self.sorted_keys(self['high'])
+        self['low'] = self.sorted_keys(self['low'])
         return dict(self)
 
 

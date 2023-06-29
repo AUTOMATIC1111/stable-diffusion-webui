@@ -126,7 +126,7 @@ class TaskReceiver:
         # meta = rds.getdel(task_id)
         meta = rds.get(task_id)
         if meta:
-            rds.delete(task_id)
+            # rds.delete(task_id)
             return Task.from_json_str(meta)
 
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
@@ -147,11 +147,11 @@ class TaskReceiver:
                     queue_name, min, max, start=0, num=1)
                 task = None
                 if values:
+                    rds.zrem(queue_name, *values)
                     for v in values:
                         task = self.search_task_with_id(rds, v)
                         if task:
                             break
-                    rds.zrem(queue_name, *values)
                 if task:
                     return task
                 elif not values:

@@ -417,7 +417,7 @@ class Processed:
         self.infotexts = infotexts or [info]
 
         if index_of_end_image <= 0 and images_list:
-            self.index_of_end_image = len(images_list) - index_of_first_image - 1
+            self.index_of_end_image = len(images_list) - 1
         else:
             self.index_of_end_image = index_of_end_image
 
