@@ -21,6 +21,7 @@ import tomesd
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
+models_loaded = False
 
 checkpoints_list = {}
 checkpoint_alisases = {}
@@ -121,6 +122,7 @@ def list_models():
         model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
 
     model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    models_loaded = True
 
     if os.path.exists(cmd_ckpt):
         checkpoint_info = CheckpointInfo(cmd_ckpt)
@@ -437,6 +439,10 @@ model_data = SdModelData()
 
 def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     from modules import lowvram, sd_hijack
+    # added fix to uninitialized model list
+    if models_loaded is False:
+        print("load_mode> fixed list models")
+        list_models()
     checkpoint_info = checkpoint_info or select_checkpoint()
 
     if model_data.sd_model:
