@@ -59,6 +59,9 @@ def refresh_vae_list():
         os.path.join(vae_path, '**/*.ckpt'),
         os.path.join(vae_path, '**/*.pt'),
         os.path.join(vae_path, '**/*.safetensors'),
+        os.path.join(sd_models.model_path, 'VAE/*.vae.ckpt'),
+        os.path.join(sd_models.model_path, 'VAE/*.vae.pt'),
+        os.path.join(sd_models.model_path, 'VAE/*.vae.safetensors')
     ]
 
     if shared.cmd_opts.ckpt_dir is not None and os.path.isdir(shared.cmd_opts.ckpt_dir):
