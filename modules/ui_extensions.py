@@ -424,6 +424,7 @@ sort_ordering = [
     (False, lambda x: x.get('name', 'z')),
     (True, lambda x: x.get('name', 'z')),
     (False, lambda x: 'z'),
+    (True, lambda x: x.get('stars', 0)),
 ]
 
 
@@ -451,6 +452,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
 
     for ext in sorted(extlist, key=sort_function, reverse=sort_reverse):
         name = ext.get("name", "noname")
+        stars = int(ext.get("stars", 0))
         added = ext.get('added', 'unknown')
         url = ext.get("url", None)
         description = ext.get("description", "")
@@ -478,7 +480,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
         code += f"""
             <tr>
                 <td><a href="{html.escape(url)}" target="_blank">{html.escape(name)}</a><br />{tags_text}</td>
-                <td>{html.escape(description)}<p class="info"><span class="date_added">Added: {html.escape(added)}</span></p></td>
+                <td>{html.escape(description)}<p class="info"><span class="date_added">Added: {html.escape(added)}</span><span class="star_count">stars: <b>{stars:,}</b></a></p></td>
                 <td>{install_code}</td>
             </tr>
 
@@ -562,7 +564,7 @@ def create_ui():
 
                 with gr.Row():
                     hide_tags = gr.CheckboxGroup(value=["ads", "localization", "installed"], label="Hide extensions with tags", choices=["script", "ads", "localization", "installed"])
-                    sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", ], type="index")
+                    sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order", "stars"], type="index")
 
                 with gr.Row():
                     search_extensions_text = gr.Text(label="Search").style(container=False)
