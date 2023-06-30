@@ -553,6 +553,9 @@ scripts_img2img: ScriptRunner = None
 scripts_postproc: scripts_postprocessing.ScriptPostprocessingRunner = None
 scripts_current: ScriptRunner = None
 
+inputs_txt2img: list[gr.Component] = []
+inputs_img2img: list[gr.Component] = []
+
 
 def reload_script_body_only():
     cache = {}

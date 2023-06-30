@@ -570,6 +570,7 @@ def create_ui():
                 show_progress=False,
             )
 
+            modules.scripts.inputs_txt2img = txt2img_args["inputs"]
             txt2img_prompt.submit(**txt2img_args)
             submit.click(**txt2img_args)
 
@@ -959,6 +960,7 @@ def create_ui():
                 outputs=[img2img_prompt, dummy_component],
             )
 
+            modules.scripts.inputs_img2img = img2img_args["inputs"]
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
 
