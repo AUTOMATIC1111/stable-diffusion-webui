@@ -99,7 +99,7 @@ def store_file_to_minio(image):
 
         bytes_data = output_bytes.getvalue()
         storage = ExtraFileStorage()
-        url = storage.saveByte2Minio(bytes_data, opts.samples_format.lower())
+        url = storage.saveByte2Server(bytes_data, opts.samples_format.lower())
 
     return url
 
