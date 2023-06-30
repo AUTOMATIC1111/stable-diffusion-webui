@@ -31,7 +31,7 @@ class OutImageType(IntEnum):
 
 
 ModelLocation = {
-    ModelType.Embedding: 'embendings',
+    ModelType.Embedding: 'embeddings',
     ModelType.CheckPoint: 'models/Stable-diffusion',
     ModelType.Lora: 'models/Lora'
 }
