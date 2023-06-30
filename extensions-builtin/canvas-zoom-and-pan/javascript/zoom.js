@@ -608,23 +608,29 @@ onUiLoaded(async() => {
 
         // Handle keydown events
         function handleKeyDown(event) {
-            const hotkeyActions = {
-                [hotkeysConfig.canvas_hotkey_reset]: resetZoom,
-                [hotkeysConfig.canvas_hotkey_overlap]: toggleOverlap,
-                [hotkeysConfig.canvas_hotkey_fullscreen]: fitToScreen
-            };
+            // before activating shortcut, ensure user is not actively typing in an input field
+            if(event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT') {
+                event.preventDefault;
+            } else {
 
-            const action = hotkeyActions[event.code];
-            if (action) {
-                event.preventDefault();
-                action(event);
-            }
+                const hotkeyActions = {
+                    [hotkeysConfig.canvas_hotkey_reset]: resetZoom,
+                    [hotkeysConfig.canvas_hotkey_overlap]: toggleOverlap,
+                    [hotkeysConfig.canvas_hotkey_fullscreen]: fitToScreen
+                };
 
-            if (
-                isModifierKey(event, hotkeysConfig.canvas_hotkey_zoom) ||
-                isModifierKey(event, hotkeysConfig.canvas_hotkey_adjust)
-            ) {
-                event.preventDefault();
+                const action = hotkeyActions[event.code];
+                if (action) {
+                    event.preventDefault();
+                    action(event);
+                }
+
+                if (
+                    isModifierKey(event, hotkeysConfig.canvas_hotkey_zoom) ||
+                    isModifierKey(event, hotkeysConfig.canvas_hotkey_adjust)
+                ) {
+                    event.preventDefault();
+                }
             }
         }
 
@@ -687,10 +693,15 @@ onUiLoaded(async() => {
         // Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
         function handleMoveKeyDown(e) {
             if (e.code === hotkeysConfig.canvas_hotkey_move) {
-                if (!e.ctrlKey && !e.metaKey && isKeyDownHandlerAttached) {
-                    e.preventDefault();
-                    document.activeElement.blur();
-                    isMoving = true;
+                // before activating shortcut, ensure user is not actively typing in an input field
+                if(e.target.nodeName === 'TEXTAREA' || e.target.nodeName === 'INPUT') {
+                    event.preventDefault;
+                } else {
+                    if (!e.ctrlKey && !e.metaKey && isKeyDownHandlerAttached) {
+                        e.preventDefault();
+                        document.activeElement.blur();
+                        isMoving = true;
+                    }
                 }
             }
         }
