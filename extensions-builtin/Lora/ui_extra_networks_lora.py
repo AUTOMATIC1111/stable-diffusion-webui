@@ -7,7 +7,7 @@ from modules import shared, ui_extra_networks
 
 class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
     def __init__(self):
-        super().__init__('Lora')
+        super().__init__('LoRA')
 
     def refresh(self):
         lora.list_available_loras()
