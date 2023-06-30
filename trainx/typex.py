@@ -177,8 +177,8 @@ class TrainLoraNetConfig(SerializationObj):
         self.learning_rate = self.get_lr(self.learning_rate)
 
     def get_lr(self, v):
-        if v < 0:
-            return 'None'
+        if v is None or v < 0:
+            return 0
         return v
 
 
