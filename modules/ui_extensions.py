@@ -1,10 +1,8 @@
 import json
 import os.path
-import sys
 import threading
 import time
 from datetime import datetime
-import traceback
 
 import git
 
@@ -13,7 +11,7 @@ import html
 import shutil
 import errno
 
-from modules import extensions, shared, paths, config_states
+from modules import extensions, shared, paths, config_states, errors, restart
 from modules.paths_internal import config_states_dir
 from modules.call_queue import wrap_gradio_gpu_call
 
@@ -46,13 +44,16 @@ def apply_and_restart(disable_list, update_list, disable_all):
         try:
             ext.fetch_and_reset_hard()
         except Exception:
-            print(f"Error getting updates for {ext.name}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.report(f"Error getting updates for {ext.name}", exc_info=True)
 
     shared.opts.disabled_extensions = disabled
     shared.opts.disable_all_extensions = disable_all
     shared.opts.save(shared.config_filename)
-    shared.state.request_restart()
+
+    if restart.is_restartable():
+        restart.restart_program()
+    else:
+        restart.stop_program()
 
 
 def save_config_state(name):
@@ -113,8 +114,7 @@ def check_updates(id_task, disable_list):
             if 'FETCH_HEAD' not in str(e):
                 raise
         except Exception:
-            print(f"Error checking updates for {ext.name}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.report(f"Error checking updates for {ext.name}", exc_info=True)
 
         shared.state.nextjob()
 
@@ -325,6 +325,11 @@ def normalize_git_url(url):
 def install_extension_from_url(dirname, url, branch_name=None):
     check_access()
 
+    if isinstance(dirname, str):
+        dirname = dirname.strip()
+    if isinstance(url, str):
+        url = url.strip()
+
     assert url, 'No URL specified'
 
     if dirname is None or dirname == "":
@@ -337,7 +342,8 @@ def install_extension_from_url(dirname, url, branch_name=None):
     assert not os.path.exists(target_dir), f'Extension directory already exists: {target_dir}'
 
     normalized_url = normalize_git_url(url)
-    assert len([x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url]) == 0, 'Extension with this URL is already installed'
+    if any(x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url):
+        raise Exception(f'Extension with this URL is already installed: {url}')
 
     tmpdir = os.path.join(paths.data_path, "tmp", dirname)
 
@@ -453,7 +459,7 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
         existing = installed_extension_urls.get(normalize_git_url(url), None)
         extension_tags = extension_tags + ["installed"] if existing else extension_tags
 
-        if len([x for x in extension_tags if x in tags_to_hide]) > 0:
+        if any(x for x in extension_tags if x in tags_to_hide):
             hidden += 1
             continue
 
@@ -490,8 +496,14 @@ def refresh_available_extensions_from_data(hide_tags, sort_column, filter_text="
 
 
 def preload_extensions_git_metadata():
+    t0 = time.time()
     for extension in extensions.extensions:
         extension.read_info_from_repo()
+    print(
+        f"preload_extensions_git_metadata for "
+        f"{len(extensions.extensions)} extensions took "
+        f"{time.time() - t0:.2f}s"
+    )
 
 
 def create_ui():
@@ -506,7 +518,8 @@ def create_ui():
             with gr.TabItem("Installed", id="installed"):
 
                 with gr.Row(elem_id="extensions_installed_top"):
-                    apply = gr.Button(value="Apply and restart UI", variant="primary")
+                    apply_label = ("Apply and restart UI" if restart.is_restartable() else "Apply and quit")
+                    apply = gr.Button(value=apply_label, variant="primary")
                     check = gr.Button(value="Check for updates")
                     extensions_disable_all = gr.Radio(label="Disable all extensions", choices=["none", "extra", "all"], value=shared.opts.disable_all_extensions, elem_id="extensions_disable_all")
                     extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)

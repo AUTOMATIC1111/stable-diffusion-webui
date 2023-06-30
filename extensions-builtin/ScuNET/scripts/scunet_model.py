@@ -1,6 +1,5 @@
 import os.path
 import sys
-import traceback
 
 import PIL.Image
 import numpy as np
@@ -10,8 +9,9 @@ from tqdm import tqdm
 from basicsr.utils.download_util import load_file_from_url
 
 import modules.upscaler
-from modules import devices, modelloader, script_callbacks
+from modules import devices, modelloader, script_callbacks, errors
 from scunet_model_arch import SCUNet as net
+
 from modules.shared import opts
 
 
@@ -38,8 +38,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
                 scaler_data = modules.upscaler.UpscalerData(name, file, self, 4)
                 scalers.append(scaler_data)
             except Exception:
-                print(f"Error loading ScuNET model: {file}", file=sys.stderr)
-                print(traceback.format_exc(), file=sys.stderr)
+                errors.report(f"Error loading ScuNET model: {file}", exc_info=True)
         if add_model2:
             scaler_data2 = modules.upscaler.UpscalerData(self.model_name2, self.model_url2, self)
             scalers.append(scaler_data2)

@@ -219,7 +219,7 @@ def load_lora(name, lora_on_disk):
         else:
             raise AssertionError(f"Bad Lora layer name: {key_diffusers} - must end in lora_up.weight, lora_down.weight or alpha")
 
-    if len(keys_failed_to_match) > 0:
+    if keys_failed_to_match:
         print(f"Failed to match keys when loading Lora {lora_on_disk.filename}: {keys_failed_to_match}")
 
     return lora
@@ -267,7 +267,7 @@ def load_loras(names, multipliers=None):
         lora.multiplier = multipliers[i] if multipliers else 1.0
         loaded_loras.append(lora)
 
-    if len(failed_to_load_loras) > 0:
+    if failed_to_load_loras:
         sd_hijack.model_hijack.comments.append("Failed to find Loras: " + ", ".join(failed_to_load_loras))
 
 
@@ -448,7 +448,11 @@ def list_available_loras():
             continue
 
         name = os.path.splitext(os.path.basename(filename))[0]
-        entry = LoraOnDisk(name, filename)
+        try:
+            entry = LoraOnDisk(name, filename)
+        except OSError:  # should catch FileNotFoundError and PermissionError etc.
+            errors.report(f"Failed to load LoRA {name} from {filename}", exc_info=True)
+            continue
 
         available_loras[name] = entry
 

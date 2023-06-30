@@ -2,8 +2,6 @@
 
 import pickle
 import collections
-import sys
-import traceback
 
 import torch
 import numpy
@@ -11,7 +9,10 @@ import _codecs
 import zipfile
 import re
 
+
 # PyTorch 1.13 and later have _TypedStorage renamed to TypedStorage
+from modules import errors
+
 TypedStorage = torch.storage.TypedStorage if hasattr(torch.storage, 'TypedStorage') else torch.storage._TypedStorage
 
 def encode(*args):
@@ -136,17 +137,20 @@ def load_with_extra(filename, extra_handler=None, *args, **kwargs):
             check_pt(filename, extra_handler)
 
     except pickle.UnpicklingError:
-        print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
-        print("-----> !!!! The file is most likely corrupted !!!! <-----", file=sys.stderr)
-        print("You can skip this check with --disable-safe-unpickle commandline argument, but that is not going to help you.\n\n", file=sys.stderr)
+        errors.report(
+            f"Error verifying pickled file from {filename}\n"
+            "-----> !!!! The file is most likely corrupted !!!! <-----\n"
+            "You can skip this check with --disable-safe-unpickle commandline argument, but that is not going to help you.\n\n",
+            exc_info=True,
+        )
         return None
-
     except Exception:
-        print(f"Error verifying pickled file from {filename}:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
-        print("\nThe file may be malicious, so the program is not going to read it.", file=sys.stderr)
-        print("You can skip this check with --disable-safe-unpickle commandline argument.\n\n", file=sys.stderr)
+        errors.report(
+            f"Error verifying pickled file from {filename}\n"
+            f"The file may be malicious, so the program is not going to read it.\n"
+            f"You can skip this check with --disable-safe-unpickle commandline argument.\n\n",
+            exc_info=True,
+        )
         return None
 
     return unsafe_torch_load(filename, *args, **kwargs)
@@ -190,4 +194,3 @@ with safe.Extra(handler):
 unsafe_torch_load = torch.load
 torch.load = load
 global_extra_handler = None
-

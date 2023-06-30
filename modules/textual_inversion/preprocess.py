@@ -47,7 +47,7 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         caption += shared.interrogator.generate_caption(image)
 
     if params.process_caption_deepbooru:
-        if len(caption) > 0:
+        if caption:
             caption += ", "
         caption += deepbooru.model.tag_multi(image)
 
@@ -67,7 +67,7 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
 
     caption = caption.strip()
 
-    if len(caption) > 0:
+    if caption:
         with open(os.path.join(params.dstdir, f"{basename}.txt"), "w", encoding="utf8") as file:
             file.write(caption)
 
