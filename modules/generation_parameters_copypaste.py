@@ -105,11 +105,13 @@ def create_buttons(tabs_list):
     for tab in tabs_list:
         name = tab
         if name == 'txt2img':
-            name = 'text'
+            name = 'Text'
         elif name == 'img2img':
-            name = 'image'
+            name = 'Image'
+        elif name == 'inpaint':
+            name = 'Inpaint'
         elif name == 'extras':
-            name = 'process'
+            name = 'Process'
         buttons[tab] = gr.Button(f"➠ {name}", elem_id=f"{tab}_tab")
     return buttons
 

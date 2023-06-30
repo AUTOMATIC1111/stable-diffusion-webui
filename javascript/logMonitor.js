@@ -1,11 +1,15 @@
 let logMonitorEl = null;
+let logMonitorStatus = true;
 
 async function logMonitor() {
-  setTimeout(logMonitor, opts.logmonitor_refresh_period);
+  if (logMonitorStatus) setTimeout(logMonitor, opts.logmonitor_refresh_period);
   if (logMonitorEl) logMonitorEl.parentElement.style.display = opts.logmonitor_show ? 'block' : 'none';
   if (!opts.logmonitor_show) return;
-  const res = await fetch('/sdapi/v1/log?clear=True');
+  logMonitorStatus = false;
+  let res;
+  try { res = await fetch('/sdapi/v1/log?clear=True'); } catch {}
   if (res?.ok) {
+    logMonitorStatus = true;
     if (!logMonitorEl) logMonitorEl = document.getElementById('logMonitorData');
     if (!logMonitorEl) return;
     logMonitorEl.parentElement.style.display = 'block';

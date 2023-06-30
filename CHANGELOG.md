@@ -1,13 +1,25 @@
 # Change Log for SD.Next
 
+## Update for 06/30/2023
+
+A bit bigger upadate this time, but contained to specific areas...
+
 - change in behavior  
   extensions no longer auto-update on startup  
   using `--upgrade` flag upgrades core app as well as all submodules and extensions  
-- live server log monitoring in ui  
+- **live server log monitoring** in ui  
   configurable via settings -> live preview  
-- auto-create thumbnails from preview images in extra networks in a background thread  
-  this creates significant load time saving on subsequent restarts  
-- extensions sort by trending
+- new **extra networks interface**  
+  *note: if you're using a 3rd party ui extension for extra networks, it will likely need to be updated to work with new interface*
+  - display in front of main ui, inline with main ui or as a sidebar  
+  - lazy load thumbnails  
+    drastically reduces load times for large number of extra networks  
+  - auto-create thumbnails from preview images in extra networks in a background thread  
+    significant load time saving on subsequent restarts  
+  - support for info files in addition to description files  
+  - support for variable aspect-ratio thumbnails  
+  - new folder view  
+- **extensions sort** by trending  
 - add requirements check for training  
 
 ## Update for 06/26/2023
