@@ -173,7 +173,7 @@ class State:
 
         return obj
 
-    def begin(self):
+    def begin(self, job: str = "(unknown)"):
         self.sampling_step = 0
         self.job_count = -1
         self.processing_has_refined_job_count = False
@@ -187,7 +187,7 @@ class State:
         self.interrupted = False
         self.textinfo = None
         self.time_start = time.time()
-
+        self.job = job
         devices.torch_gc()
 
     def end(self):
