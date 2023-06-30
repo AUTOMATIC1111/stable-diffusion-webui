@@ -1,7 +1,7 @@
 import base64
 import uuid
 from io import BytesIO
-import boto3
+import oss2
 
 from extra.loadYamlFile import ExtraConfig
 
@@ -11,9 +11,12 @@ class ExtraFileStorage:
         config = ExtraConfig()
         self.config_data = config.get_config()
         # 初始化客户端
-        self.client = boto3.client('s3', aws_access_key_id=self.config_data['upload']['access_key'],
-                                   aws_secret_access_key=self.config_data['upload']['secret_key'],
-                                   region_name=self.config_data['upload']['server-addr'])
+        access_key_id = self.config_data['upload']['access_key']
+        access_key_secret = self.config_data['upload']['secret_key']
+        endpoint = self.config_data['upload']['server-addr']
+        bucket_name = self.config_data['upload']['bucket_name']
+
+        self.client = oss2.Bucket(oss2.Auth(access_key_id, access_key_secret), endpoint, bucket_name)
 
     def saveBase642Server(self, base64_data):
         # 解码base64数据为二进制数据
@@ -24,9 +27,7 @@ class ExtraFileStorage:
 
         try:
             # 将二进制数据上传到Server
-            self.client.put_object(Bucket=self.config_data['upload']['bucket_name'],
-                                   Key=filename,
-                                   Body=BytesIO(binary_data))
+            self.client.put_object(filename, binary_data)
 
             # 返回访问路径
             return f"{self.config_data['upload']['bucket_name']}/{filename}"
@@ -49,9 +50,7 @@ class ExtraFileStorage:
 
         try:
             # 将二进制数据上传到Server
-            self.client.put_object(Bucket=self.config_data['upload']['bucket_name'],
-                                   Key=filename,
-                                   Body=BytesIO(byte_data))
+            self.client.put_object(filename, byte_data)
 
             # 返回访问路径
             return f"{self.config_data['upload']['bucket_name']}/{filename}"
