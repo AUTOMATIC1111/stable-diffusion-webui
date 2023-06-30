@@ -2,11 +2,10 @@ import base64
 import json
 import threading
 
-from fastapi import FastAPI
 from scripts.extLogging import logger
 from scripts.mqEntry import MqSupporter
 
-import requests
+from extra.fileStorage import ExtraFileStorage
 from extra.loadYamlFile import ExtraConfig
 from modules.api import models
 from modules.api.api import Api
@@ -29,13 +28,16 @@ def taskHandler(msg: Message):
         json_data = json.dumps(response.dict()).encode('utf-8')
         mq = MqSupporter()
         mq.createProducer(config["queue"]["topic-t2i-result"], json_data, msg.properties())
-        mq.createProducer(f"{config['queue']['topic-web-img-result']}-{msg.properties()['userId']}", json_data, msg.properties())
+        mq.createProducer(f"{config['queue']['topic-web-img-result']}-{msg.properties()['userId']}", json_data,
+                          msg.properties())
     else:
         req = models.StableDiffusionImg2ImgProcessingAPI(**data)
         logger.info("Image2Image Request '%s'", req)
-        resp = requests.get(f"{config['upload']['server-url']}/{req.init_images[0]}", stream=True)
-        if resp.status_code == 200:
-            encoded_file = base64.b64encode(resp.content).decode('utf-8')
+
+        try:
+            storage = ExtraFileStorage()
+            resp = storage.downloadFile(req.init_images[0])
+            encoded_file = base64.b64encode(resp.read()).decode('utf-8')
             req.init_images = [encoded_file]
             app = FastAPI()
             api = Api(app, queue_lock)
@@ -44,9 +46,10 @@ def taskHandler(msg: Message):
             json_data = json.dumps(response.dict()).encode('utf-8')
             mq = MqSupporter()
             mq.createProducer(config["queue"]["topic-i2i-result"], json_data, msg.properties())
-            mq.createProducer(f"{config['queue']['topic-web-img-result']}-{msg.properties()['userId']}", json_data, msg.properties())
-        else:
-            logger.error("Image file download fail %s", f"{config['upload']['server-url']}/{req.init_images[0]}")
+            mq.createProducer(f"{config['queue']['topic-web-img-result']}-{msg.properties()['userId']}", json_data,
+                              msg.properties())
+        except:
+            logger.error("Image file download fail %s", req.init_images[0], exc_info=True)
 
 
 class TaskListener(threading.Thread):

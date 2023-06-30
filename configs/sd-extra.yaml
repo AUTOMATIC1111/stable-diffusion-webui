@@ -1,5 +1,4 @@
 upload:
-  server-url: http://192.168.1.8:9000
   server-addr: 192.168.1.8:9000
   access_key: idoo-dev
   secret_key: idoo.dev

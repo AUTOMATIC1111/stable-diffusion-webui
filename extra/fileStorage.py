@@ -56,3 +56,6 @@ class ExtraFileStorage:
         except Exception as err:
             print(err)
             return None
+
+    def downloadFile(self, fileName):
+        return self.client.get_object(fileName)
