@@ -1,6 +1,5 @@
 import base64
 import uuid
-from io import BytesIO
 import oss2
 
 from extra.loadYamlFile import ExtraConfig
