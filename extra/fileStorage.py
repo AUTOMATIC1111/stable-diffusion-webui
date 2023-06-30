@@ -29,7 +29,7 @@ class ExtraFileStorage:
             self.client.put_object(filename, binary_data)
 
             # 返回访问路径
-            return f"{self.config_data['upload']['bucket_name']}/{filename}"
+            return f"{filename}"
         except Exception as err:
             print(err)
             return None
@@ -52,7 +52,7 @@ class ExtraFileStorage:
             self.client.put_object(filename, byte_data)
 
             # 返回访问路径
-            return f"{self.config_data['upload']['bucket_name']}/{filename}"
+            return f"{filename}"
         except Exception as err:
             print(err)
             return None
