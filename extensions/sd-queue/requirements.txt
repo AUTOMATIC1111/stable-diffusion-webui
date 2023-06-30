@@ -1,4 +1,4 @@
 minio~=7.1.15
 PyYAML~=6.0
 pulsar-client~=3.2.0
-boto3
+boto3~=1.26.164
