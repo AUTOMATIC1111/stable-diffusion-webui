@@ -49,7 +49,7 @@ def taskHandler(msg: Message):
             mq.createProducer(f"{config['queue']['topic-web-img-result']}-{msg.properties()['userId']}", json_data,
                               msg.properties())
         except:
-            logger.error("Image file download fail %s", req.init_images[0], exc_info=True)
+            logger.error("Image file download fail", exc_info=True)
 
 
 class TaskListener(threading.Thread):
