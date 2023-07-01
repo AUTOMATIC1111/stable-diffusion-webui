@@ -13,10 +13,10 @@ from modules.call_queue import queue_lock
 from pulsar import Message
 
 
-def taskHandler(msg: Message):
+def taskHandler(msg: Message, environment=None):
     from fastapi import FastAPI
     data = json.loads(msg.data())
-    config = ExtraConfig("prod").get_config()
+    config = ExtraConfig(environment).get_config()
 
     if msg.topic_name() == config["queue"]["topic-t2i"]:
         txt2imgreq = models.StableDiffusionTxt2ImgProcessingAPI(**data)
@@ -53,9 +53,13 @@ def taskHandler(msg: Message):
 
 
 class TaskListener(threading.Thread):
+    def __init__(self, environment=None):
+        super().__init__()
+        self.environment = environment
+
     def run(self):
-        config = ExtraConfig().get_config()
+        config = ExtraConfig(self.environment).get_config()
         mq = MqSupporter()
         mq.createConsumer(config["queue"]["topics"], config["queue"]["subscription"], config["queue"]["consumer-name"],
-                          taskHandler)
+                          taskHandler, self.environment)
         mq.closeClient()
