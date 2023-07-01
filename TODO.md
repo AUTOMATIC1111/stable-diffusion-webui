@@ -53,3 +53,6 @@ Tech that can be integrated as part of the core workflow...
 - test `lyco_patch_lora`
 - fix `lyco` logging
 - string template to exif keywords
+- image watermark
+- image `imagehash` phash and hdash
+- custom exif tags

@@ -115,5 +115,9 @@ def compatibility_args(opts, args):
     opts.enable_pnginfo = True
     opts.data['clip_skip'] = 1
 
+    opts.onchange("lora_dir", lambda: setattr(args, "lora_dir", opts.lora_dir))
+    opts.onchange("lyco_dir", lambda: setattr(args, "lyco_dir", opts.lyco_dir))
+
     args = parser.parse_args()
+    print('HERE', args.lora_dir, opts.lora_dir)
     return args

@@ -428,7 +428,7 @@ def get_next_sequence_number(path, basename):
 def atomically_save_image():
     Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
     while True:
-        image, filename, extension, params, exifinfo_data, txt_fullfn = save_queue.get()
+        image, filename, extension, params, exifinfo, txt_fullfn = save_queue.get()
         fn = filename + extension
         filename = filename.strip()
         if extension[0] != '.': # add dot if missing
@@ -440,7 +440,7 @@ def atomically_save_image():
             image_format = 'JPEG'
         shared.log.debug(f'Saving image: {image_format} {fn} {image.size}')
         # actual save
-        exifinfo_data = (exifinfo_data or "") if shared.opts.image_metadata else ""
+        exifinfo = (exifinfo or "") if shared.opts.image_metadata else ""
         if image_format == 'PNG':
             pnginfo_data = PngImagePlugin.PngInfo()
             for k, v in params.pnginfo.items():
@@ -452,12 +452,12 @@ def atomically_save_image():
                 image = image.convert("RGB")
             elif image.mode == 'I;16':
                 image = image.point(lambda p: p * 0.0038910505836576).convert("L")
-            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data, encoding="unicode") } })
+            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo, encoding="unicode") } })
             image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, exif=exif_bytes)
         elif image_format == 'WEBP':
             if image.mode == 'I;16':
                 image = image.point(lambda p: p * 0.0038910505836576).convert("RGB")
-            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo_data, encoding="unicode") } })
+            exif_bytes = piexif.dump({ "Exif": { piexif.ExifIFD.UserComment: piexif.helper.UserComment.dump(exifinfo, encoding="unicode") } })
             try:
                 image.save(fn, format=image_format, quality=shared.opts.jpeg_quality, lossless=shared.opts.webp_lossless, exif=exif_bytes)
             except Exception as e:
@@ -469,18 +469,18 @@ def atomically_save_image():
             except Exception as e:
                 shared.log.warning(f'Image save failed: {fn} {e}')
         # additional metadata saved in files
-        if shared.opts.save_txt and len(exifinfo_data) > 0:
+        if shared.opts.save_txt and len(exifinfo) > 0:
             try:
                 with open(txt_fullfn, "w", encoding="utf8") as file:
-                    file.write(f"{exifinfo_data}\n")
+                    file.write(f"{exifinfo}\n")
             except Exception as e:
                 shared.log.warning(f'Image description save failed: {txt_fullfn} {e}')
         with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-            file.write(exifinfo_data)
-        if shared.opts.save_log_fn != '' and len(exifinfo_data) > 0:
+            file.write(exifinfo)
+        if shared.opts.save_log_fn != '' and len(exifinfo) > 0:
             try:
                 with open(os.path.join(paths.data_path, shared.opts.save_log_fn), mode='a+', encoding='utf-8') as f:
-                    entry = { 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo_data }
+                    entry = { 'filename': filename, 'time': datetime.datetime.now().isoformat(), 'info': exifinfo }
                     json.dump(entry, f)
                     f.write(os.linesep)
                     shared.log.debug(f'Log file updated: {os.path.join(paths.data_path, shared.opts.save_log_fn)}')
@@ -569,21 +569,21 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
         pnginfo[pnginfo_section_name] = info
     params = script_callbacks.ImageSaveParams(image, p, fullfn, pnginfo)
     script_callbacks.before_image_saved_callback(params)
-    exifinfo_data = params.pnginfo.get('UserComment', '')
-    if len(exifinfo_data) > 0:
-        exifinfo_data = exifinfo_data + ', ' + params.pnginfo.get(pnginfo_section_name, '')
+    exifinfo = params.pnginfo.get('UserComment', '')
+    if len(exifinfo) > 0:
+        exifinfo = exifinfo + ', ' + params.pnginfo.get(pnginfo_section_name, '')
     else:
-        exifinfo_data = params.pnginfo.get(pnginfo_section_name, '')
+        exifinfo = params.pnginfo.get(pnginfo_section_name, '')
     filename, extension = os.path.splitext(params.filename)
     if hasattr(os, 'statvfs'):
         max_name_len = os.statvfs(path).f_namemax
         filename = filename[:max_name_len - max(4, len(extension))]
         params.filename = filename + extension
-    txt_fullfn = f"{filename}.txt" if shared.opts.save_txt and len(exifinfo_data) > 0 else None
+    txt_fullfn = f"{filename}.txt" if shared.opts.save_txt and len(exifinfo) > 0 else None
 
-    save_queue.put((params.image, filename, extension, params, exifinfo_data, txt_fullfn))
+    save_queue.put((params.image, filename, extension, params, exifinfo, txt_fullfn))
     save_queue.join()
-    # atomically_save_image(params.image, filename, extension, params, exifinfo_data, txt_fullfn)
+    # atomically_save_image(params.image, filename, extension, params, exifinfo, txt_fullfn)
 
     params.image.already_saved_as = params.filename
     script_callbacks.image_saved_callback(params)
