@@ -17,10 +17,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY webui.sh webui.sh
 
+# setup venv in /venv to avoid conflict with volume in /stable-diffusion-webui
+RUN echo 'venv_dir=/venv' > webui-user.sh
+
 ENV install_dir=/
 RUN ./webui.sh -f can_run_as_root --exit --skip-torch-cuda-test
 
-ENV VIRTUAL_ENV=/stable-diffusion-webui/venv
+ENV VIRTUAL_ENV=/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
 WORKDIR "/stable-diffusion-webui/"
