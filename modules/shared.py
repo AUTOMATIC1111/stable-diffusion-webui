@@ -298,6 +298,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "prompt_attention": OptionInfo("Full parser", "Prompt attention parser", gr.Radio, lambda: {"choices": ["Full parser", "Compel parser", "A1111 parser", "Fixed attention"] }),
     "prompt_mean_norm": OptionInfo(True, "Prompt attention mean normalization"),
     "comma_padding_backtrack": OptionInfo(20, "Prompt padding for long prompts", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
+    "sd_disable_ckpt": OptionInfo(False, "Disallow usage of checkpoints in ckpt format"),
     "sd_backend": OptionInfo("Original", "Stable Diffusion backend (experimental)", gr.Radio, lambda: {"choices": ["Original", "Diffusers"] }),
 }))
 

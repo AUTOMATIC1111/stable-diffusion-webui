@@ -4,8 +4,10 @@
 
 Small quality-of-life updates and bugfixes:
 
+- add option to disallow usage of ckpt checkpoints
 - change lora and lyco dir without server restart
 - additional filename template fields: `uuid`, `seq`, `image_hash`  
+- image toolbar is now shown only when image is present
 - image `Zip` button gone and its not optional setting that applies to standard `Save` button
 - folder `Show` button is present only when working on localhost,  
   otherwise its replaced with `Copy` that places image URLs on clipboard so they can be used in other apps

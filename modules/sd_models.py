@@ -111,7 +111,8 @@ def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
     if shared.backend == shared.Backend.ORIGINAL:
-        model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+        ext_filter=[".safetensors"] if shared.opts.sd_disable_ckpt else [".ckpt", ".safetensors"]
+        model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     else:
         global model_path # pylint: disable=global-statement
         model_path = os.path.join(models_path, 'Diffusers')
@@ -306,6 +307,9 @@ def read_state_dict(checkpoint_file, map_location=None): # pylint: disable=unuse
         pl_sd = None
         with progress.open(checkpoint_file, 'rb', description=f'Loading weights: [cyan]{checkpoint_file}', auto_refresh=True) as f:
             _, extension = os.path.splitext(checkpoint_file)
+            if extension.lower() == ".ckpt" and shared.opts.sd_disable_ckpt:
+                shared.log.warning(f"Checkpoint loading disabled: {checkpoint_file}")
+                return None
             if shared.opts.stream_load:
                 if extension.lower() == ".safetensors":
                     # shared.log.debug('Model weights loading: type=safetensors mode=buffered')
