@@ -26,14 +26,25 @@ If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so:
 
 (As of [1/15/23](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6709) you can just run webui-user.sh and pytorch+rocm should be automatically installed for you.)
 
-1. Install Python 3.10.6
-2. git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui
-3. Place stable diffusion checkpoint (model.ckpt) in the models/Stable-diffusion directory
-4. For many AMD gpus you MUST Add `--precision full` `--no-half` to `COMMANDLINE_ARGS=` in  **webui-user.sh** to avoid black squares or crashing.* 
 
-5. Run **webui.sh**
+Enter these commands, which will install webui to your current directory:
 
-*Certain cards like the Radeon RX 6000 Series and the RX 500 Series will function normally without the option `--precision full --no-half`, saving plenty of vram. (noted [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/5468).)
+```
+sudo apt install git python3.10 python3.10-venv -y
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd https://github.com/AUTOMATIC1111/stable-diffusion-webui
+python3.10 -m venv venv
+```
+
+Install and run with:
+
+    ./webui.sh {your_arguments*}
+
+*For many AMD gpus you MUST Add `--precision full --no-half` OR just `--upcast-sampling` arguments to avoid NaN errors or crashing. 
+If `--upcast-sampling` works as a fix with your card, you should have 2x speed (fp16) compared to running in full precision.
+
+Some cards like the Radeon RX 6000 Series and the RX 500 Series will already run fp16 perfectly fine (noted [here](https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/5468).)
+
+-If your card is unable to run SD with the latest pytorch+rocm core package, you can try installing previous versions, by following a more manual installation guide below.
 
 # Running natively
 
