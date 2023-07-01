@@ -16,7 +16,7 @@ from pulsar import Message
 def taskHandler(msg: Message):
     from fastapi import FastAPI
     data = json.loads(msg.data())
-    config = ExtraConfig().get_config()
+    config = ExtraConfig("prod").get_config()
 
     if msg.topic_name() == config["queue"]["topic-t2i"]:
         txt2imgreq = models.StableDiffusionTxt2ImgProcessingAPI(**data)
