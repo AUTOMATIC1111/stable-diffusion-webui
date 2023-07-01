@@ -209,7 +209,7 @@ See [Troubleshooting](Troubleshooting) section for what to do if things go wrong
 
 ## Linux 
 
-Enter these commands, which will install webui to your current directory:
+1. Enter these commands, which will install webui to your current directory:
 
 ```
 sudo apt install git python3.10 python3.10-venv -y
@@ -217,7 +217,7 @@ git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd https://
 python3.10 -m venv venv
 ```
 
-Install and run with:
+2. Install and run with:
 
     ./webui.sh {your_arguments}
 
