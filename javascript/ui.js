@@ -124,7 +124,7 @@ function showSubmitButtons(tabname, show) {}
 function clearGallery(tabname) {
   const gallery = gradioApp().getElementById(`${tabname}_gallery`)
   gallery.classList.remove('logo');
-  gallery.style.height = window.innerHeight - gallery.getBoundingClientRect().top - 200 + 'px'
+  // gallery.style.height = window.innerHeight - gallery.getBoundingClientRect().top - 200 + 'px'
   const footer = gradioApp().getElementById(`${tabname}_footer`)
   footer.style.display = 'flex';
 }
