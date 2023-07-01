@@ -43,6 +43,8 @@ yapf
 scikit-image
 basicsr
 compel
+typing-extensions==4.6.3
+pydantic==1.10.9
 requests==2.31.0
 tqdm==4.65.0
 accelerate==0.20.3
