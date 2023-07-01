@@ -1,5 +1,5 @@
 # Xformers Library (Optional)
-The Xformers library provides an optional method to accelerate image generation. This enhancement is exclusively available for NVIDIA GPUs, optimizing image generation and reducing VRAM usage at the expense of producing [non-deterministic](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2705#discussioncomment-4024378) results.
+The Xformers library provides an optional method to accelerate image generation. This enhancement is exclusively available for NVIDIA GPUs, optimizing image generation and reducing VRAM usage. Older versions below 0.0.20 will produce [non-deterministic](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/2705#discussioncomment-4024378) results.
 
 ## Important Notice - No Need for Manual Installation
 As of January 23, 2023, neither Windows nor Linux users are required to manually build the Xformers library. This change was implemented when WebUI transitioned from a user-built wheel to an [official wheel](https://pypi.org/project/xformers/0.0.16rc425/#history). You can view the package upgrades and other details of this update in [this PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/5939/commits/c091cf1b4acd2047644d3571bcbfd81c81b4c3af).
