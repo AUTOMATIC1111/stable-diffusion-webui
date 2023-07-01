@@ -1,5 +1,6 @@
 window.opts = {};
 window.localization = {};
+window.titles = {};
 let tabSelected = '';
 
 function set_theme(theme) {

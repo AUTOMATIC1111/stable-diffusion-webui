@@ -15,14 +15,16 @@ async function logMonitor() {
     logMonitorEl.parentElement.style.display = 'block';
     const lines = await res.json();
     for (const line of lines) {
-      const l = JSON.parse(line);
-      const row = document.createElement("tr");
-      row.style = 'padding: 10px; margin: 0;';
-      row.innerHTML = `<td>${new Date(1000 * l.created).toISOString()}</td><td>${l.level}</td><td>${l.facility}</td><td>${l.module}</td><td>${l.msg}</td>`;
-      logMonitorEl.appendChild(row);
-      while (logMonitorEl.childElementCount > 100) logMonitorEl.removeChild(logMonitorEl.firstChild);
-      logMonitorEl.scrollTop = logMonitorEl.scrollHeight
+      try {      
+        const l = JSON.parse(line);
+        const row = document.createElement("tr");
+        row.style = 'padding: 10px; margin: 0;';
+        row.innerHTML = `<td>${new Date(1000 * l.created).toISOString()}</td><td>${l.level}</td><td>${l.facility}</td><td>${l.module}</td><td>${l.msg}</td>`;
+        logMonitorEl.appendChild(row);
+      } catch {}
     }
+    while (logMonitorEl.childElementCount > 100) logMonitorEl.removeChild(logMonitorEl.firstChild);
+    logMonitorEl.scrollTop = logMonitorEl.scrollHeight
   }
 }
 

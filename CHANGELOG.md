@@ -2,7 +2,7 @@
 
 ## Update for 06/30/2023
 
-A bit bigger upadate this time, but contained to specific areas...
+A bit bigger update this time, but contained to specific areas...
 
 - change in behavior  
   extensions no longer auto-update on startup  
