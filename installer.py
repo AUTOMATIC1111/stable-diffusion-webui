@@ -191,6 +191,8 @@ def git(arg: str, folder: str = None, ignore: bool = False):
     if args.skip_git:
         return ''
     git_cmd = os.environ.get('GIT', "git")
+    if git_cmd != "git":
+        git_cmd = os.path.abspath(git_cmd)
     result = subprocess.run(f'"{git_cmd}" {arg}', check=False, shell=True, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=folder or '.')
     txt = result.stdout.decode(encoding="utf8", errors="ignore")
     if len(result.stderr) > 0:

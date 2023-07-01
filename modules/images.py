@@ -4,6 +4,7 @@ import re
 import os
 import math
 import json
+import uuid
 import string
 import hashlib
 import queue
@@ -61,37 +62,25 @@ Grid = namedtuple("Grid", ["tiles", "tile_w", "tile_h", "image_w", "image_h", "o
 def split_grid(image, tile_w=512, tile_h=512, overlap=64):
     w = image.width
     h = image.height
-
     non_overlap_width = tile_w - overlap
     non_overlap_height = tile_h - overlap
-
     cols = math.ceil((w - overlap) / non_overlap_width)
     rows = math.ceil((h - overlap) / non_overlap_height)
-
     dx = (w - tile_w) / (cols - 1) if cols > 1 else 0
     dy = (h - tile_h) / (rows - 1) if rows > 1 else 0
-
     grid = Grid([], tile_w, tile_h, w, h, overlap)
     for row in range(rows):
         row_images = []
-
         y = int(row * dy)
-
         if y + tile_h >= h:
             y = h - tile_h
-
         for col in range(cols):
             x = int(col * dx)
-
             if x + tile_w >= w:
                 x = w - tile_w
-
             tile = image.crop((x, y, x + tile_w, y + tile_h))
-
             row_images.append([x, tile_w, tile])
-
         grid.tiles.append([y, tile_h, row_images])
-
     return grid
 
 
@@ -103,7 +92,6 @@ def combine_grid(grid):
 
     mask_w = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((1, grid.overlap)).repeat(grid.tile_h, axis=0))
     mask_h = make_mask_image(np.arange(grid.overlap, dtype=np.float32).reshape((grid.overlap, 1)).repeat(grid.image_w, axis=1))
-
     combined_image = Image.new("RGB", (grid.image_w, grid.image_h))
     for y, h, row in grid.tiles:
         combined_row = Image.new("RGB", (grid.image_w, h))
@@ -111,17 +99,13 @@ def combine_grid(grid):
             if x == 0:
                 combined_row.paste(tile, (0, 0))
                 continue
-
             combined_row.paste(tile.crop((0, 0, grid.overlap, h)), (x, 0), mask=mask_w)
             combined_row.paste(tile.crop((grid.overlap, 0, w, h)), (x + grid.overlap, 0))
-
         if y == 0:
             combined_image.paste(combined_row, (0, 0))
             continue
-
         combined_image.paste(combined_row.crop((0, 0, combined_row.width, grid.overlap)), (0, y), mask=mask_h)
         combined_image.paste(combined_row.crop((0, grid.overlap, combined_row.width, h)), (0, y + grid.overlap))
-
     return combined_image
 
 
@@ -298,6 +282,8 @@ def sanitize_filename_part(text, replace_spaces=True):
 
 class FilenameGenerator:
     replacements = {
+        'uuid': lambda self: str(uuid.uuid4()),
+        'image_hash': lambda self: self.image_hash(),
         'seed': lambda self: self.seed if self.seed is not None else '',
         'steps': lambda self: self.p and self.p.steps,
         'cfg': lambda self: self.p and self.p.cfg_scale,
@@ -307,6 +293,7 @@ class FilenameGenerator:
         'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
         'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
         'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
+        'model': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
         'model_shortname': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
@@ -346,6 +333,16 @@ class FilenameGenerator:
                     outres = outres if default == "" else f'{outres}{default}'
         return sanitize_filename_part(outres)
 
+    def image_hash(self):
+        if self.image is None:
+            return None
+        import base64
+        from io import BytesIO
+        buffered = BytesIO()
+        self.image.save(buffered, format="JPEG")
+        img_str = base64.b64encode(buffered.getvalue())
+        return hashlib.sha256(img_str).hexdigest()[0:8]
+
     def prompt_no_style(self):
         if self.p is None or self.prompt is None:
             return None
@@ -354,7 +351,6 @@ class FilenameGenerator:
             if len(style) > 0:
                 for part in style.split("{prompt}"):
                     prompt_no_style = prompt_no_style.replace(part, "").replace(", ,", ",").strip().strip(',')
-
                 prompt_no_style = prompt_no_style.replace(style, "").strip().strip(',').strip()
         return sanitize_filename_part(prompt_no_style, replace_spaces=False)
 
@@ -404,8 +400,10 @@ class FilenameGenerator:
                 elif replacement is not None:
                     res += text + str(replacement)
                     continue
+            else:
+                res += text + f'[{pattern}]' # reinsert unknown pattern
             res += f'{text}'
-            res = res.split('?')[0].strip()
+            res = res.split('?')[0].strip('-').strip()
         return res
 
 
@@ -547,17 +545,19 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
         if shared.opts.samples_filename_pattern and len(shared.opts.samples_filename_pattern) > 0:
             file_decoration = shared.opts.samples_filename_pattern
         else:
-            file_decoration = "[seed]-[prompt_spaces]"
-        add_number = shared.opts.save_images_add_number or file_decoration == ''
-        if file_decoration != "" and add_number:
-            file_decoration = f"-{file_decoration}"
+            file_decoration = "[seq]-[prompt_words]"
+        # add_number = shared.opts.save_images_add_number or file_decoration == ''
+        # if file_decoration != "" and add_number:
+        #    file_decoration = f"-{file_decoration}"
         file_decoration = namegen.apply(file_decoration) + suffix
-        if add_number:
+        if shared.opts.save_images_add_number:
+            if '[seq]' not in file_decoration:
+                file_decoration = f"[seq]-{file_decoration}"
             basecount = get_next_sequence_number(path, basename)
             fullfn = None
-            for i in range(500):
-                fn = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
-                fullfn = os.path.join(path, f"{fn}{file_decoration}.{extension}")
+            for i in range(9999):
+                seq = f"{basecount + i:05}" if basename == '' else f"{basename}-{basecount + i:04}"
+                fullfn = os.path.join(path, f"{file_decoration.replace('[seq]', seq)}.{extension}")
                 if not os.path.exists(fullfn):
                     break
         else:

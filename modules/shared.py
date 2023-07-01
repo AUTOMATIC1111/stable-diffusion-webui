@@ -360,7 +360,8 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "samples_save": OptionInfo(True, "Always save all generated images"),
     "samples_format": OptionInfo('jpg', 'File format for generated images', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
     "image_metadata": OptionInfo(True, "Include metadata in saved images"),
-    "samples_filename_pattern": OptionInfo("[seed]-[prompt_spaces]", "Images filename pattern", component_args=hide_dirs),
+    "samples_filename_pattern": OptionInfo("[seq]-[prompt_words]", "Images filename pattern", component_args=hide_dirs),
+    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 99, "step": 1, **hide_dirs}),
     "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
@@ -386,7 +387,6 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "grid_save_to_dirs": OptionInfo(False, "Save grids to a subdirectory"),
     "use_save_to_dirs_for_ui": OptionInfo(False, "Save images to a subdirectory when using Save button"),
     "directories_filename_pattern": OptionInfo("[date]", "Directory name pattern", component_args=hide_dirs),
-    "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 20, "step": 1, **hide_dirs}),
 }))
 
 options_templates.update(options_section(('image-processing', "Image Processing"), {
