@@ -1,12 +1,12 @@
 > the following information is about the image filename and subdirectory name, not the `Paths for saving \ Output directories`
 ### By default, the Web UI saves images in the output directories and output archive with a filename structure of
 
-Images: `number`-`seed`-`[prompt_spaces]`
+Images: `[number]-[seed]-[prompt_spaces]`
 ```
 01234-987654321-((masterpiece)), ((best quality)), ((illustration)), extremely detailed,style girl.png
 ```
 
-Zip archive: `[datetime]`\_[`[model_name]`]\_`[seed]`-`[seed_last]`
+Zip archive: `[datetime]_[[model_name]]_[seed]-[seed_last]`
 ```
 20230530133149_[v1-5-pruned-emaonly]_987654321-987654329.zip
 ```
