@@ -207,12 +207,26 @@ Invoke-Expression "$SCRIPT"
 
 See [Troubleshooting](Troubleshooting) section for what to do if things go wrong.
 
+## Linux 
+
+Copypaste these commands to install webui to your current directory:
+
+```
+sudo apt install git python3.10 python3.10-venv -y
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd https://github.com/AUTOMATIC1111/stable-diffusion-webui
+python3.10 -m venv venv
+```
+
+Install and Run with:
+
+    ./webui.sh {your_arguments}
 
 
 ## Third party installation guides/scripts:
 - NixOS: https://github.com/virchau13/automatic1111-webui-nix
 
-# Almost Automatic Installation and Launch
+## Install and run without virtual environment
+
 To install the required packages via pip without creating a virtual environment, run:
 ```bash
 python launch.py
