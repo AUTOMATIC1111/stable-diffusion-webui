@@ -24,11 +24,12 @@ function setupExtraNetworksForTab(tabname) {
   });
   intersectionObserver = new IntersectionObserver((entries) => {
     // if (entries[0].intersectionRatio <= 0) onHidden();
+    const en = gradioApp().getElementById(`${tabname}_extra_networks`);
     if (entries[0].intersectionRatio > 0) {
       for (el of Array.from(gradioApp().querySelectorAll('.extra-network-cards'))) {
         const rect = el.getBoundingClientRect();
+        en.style.transition = 'width 0.2s ease';
         if (rect.top > 0) {
-          const en = gradioApp().getElementById(`${tabname}_extra_networks`);
           if (!en) return
           if (window.opts.extra_networks_card_cover == 'cover') {
             en.style.zIndex = 0;
@@ -54,6 +55,9 @@ function setupExtraNetworksForTab(tabname) {
           }
         }
       }
+    } else {
+      en.style.width = 0;
+      gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
     }
   });
   intersectionObserver.observe(search); // monitor visibility of 

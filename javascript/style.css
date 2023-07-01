@@ -7,7 +7,6 @@ div.compact{ gap: 1em; }
 div.gradio-html.min{ min-height: 0; }
 .block.gradio-checkbox { margin: 0.75em 1.5em 0 0; }
 .block.gradio-dropdown, .block.gradio-slider, .block.gradio-checkbox, .block.gradio-textbox, .block.gradio-radio, .block.gradio-checkboxgroup, .block.gradio-number, .block.gradio-colorpicker { border-width: 0 !important; box-shadow: none !important;}
-.block.gradio-gallery{ background: var(--input-background-fill); }
 .block.padded:not(.gradio-accordion) { padding: 0 !important; }
 .compact{ background: transparent !important; padding: 0 !important; }
 .dark .gradio-dropdown ul.options li.item:not(:has(.hide)) { background-color: var(--neutral-900); }
@@ -25,7 +24,8 @@ div.gradio-html.min{ min-height: 0; }
 .gradio-dropdown.multiselect div.wrap-inner {	overflow-x: hidden; overflow-y: auto; max-height: 50vh; overflow-wrap: anywhere; }
 .gradio-html div.wrap{ height: 100%; }
 .gradio-slider input[type="number"]{ width: 6em; }
-.hidden{ display: none; }
+.hidden { display: none; }
+footer { display: none; }
 
 /* general styled components */
 .gradio-button.tool{ max-width: 2.3em;  min-width: 2.3em !important; height: 2.3em; align-self: end; line-height: 1em; border-radius: 0.5em; }
@@ -100,7 +100,7 @@ button.custom-button{
 }
 
 #txt2img_gallery img, #img2img_gallery img, #extras_gallery img { object-fit: scale-down; width: -webkit-fill-available !important; }
-
+#txt2img_footer, #img2img_footer, #extras_footer{ height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box { gap: 0.5em; flex-wrap: wrap-reverse; }
 #txt2img_actions_column, #img2img_actions_column { gap: 0.5em; }
 #txt2img_generate_box > button, #img2img_generate_box > button { height: 2.2em; line-height: 0; }
@@ -546,10 +546,10 @@ table.settings-value-table td{
 .extra-network-cards .card { height: fit-content; margin: 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
 .extra-network-cards .card .overlay { position: absolute; bottom: 0; padding: 0.2em; z-index: 10; width: 100%; background: none; }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }
-.extra-network-cards .card .overlay .name { font-size: 1.2em; font-weight: bold; line-break: anywhere; text-shadow: 1px 1px black; }
+.extra-network-cards .card .overlay .name { font-size: 1.2em; font-weight: bold; line-break: anywhere; text-shadow: 1px 1px black; color: white; }
 .extra-network-cards .card .overlay .actions { font-size: 1.8em; display: none; text-align-last: justify; cursor: pointer; word-spacing: -6px; }
 .extra-network-cards .card:hover .overlay .actions { display: block; }
-.extra-network-cards .card .overlay .description { line-break: anywhere; display: none; }
+.extra-network-cards .card .overlay .description { line-break: anywhere; display: none; color: white; }
 .extra-network-cards .card:hover .overlay .description { display: block; }
 .extra-network-cards .card .preview { box-shadow: var(--button-shadow); min-height: 30px; }
 .extra-network-cards .card:hover .preview { box-shadow: none; }
@@ -585,3 +585,4 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
   font-size: 0.85em;
 }
 .log-monitor td, .log-monitor th { padding-left: 1em; }
+.logo { background-image: url("logo.png") !important; background-repeat: no-repeat !important; background-position: center !important; background-size: contain !important; }

@@ -355,7 +355,7 @@
   {"id":"","label":"Always save all generated images","localized":"","hint":""},
   {"id":"","label":"File format for generated images","localized":"","hint":"Select file format for images"},
   {"id":"","label":"Include metadata in saved images","localized":"","hint":"Save image create parameters as metadata tags inside image file"},
-  {"id":"","label":"Images filename pattern","localized":"","hint":"Use following tags to define how filenames for images are chosen: [steps], [cfg], [prompt_hash], [prompt], [prompt_no_styles], [prompt_spaces], [width], [height], [styles], [sampler], [seed], [model_hash], [model_name], [prompt_words], [date], [datetime], [datetime<Format>], [datetime<Format><Time Zone>], [job_timestamp]; leave empty for default"},
+  {"id":"","label":"Images filename pattern","localized":"","hint":"Use following tags to define how filenames for images are chosen:<br><pre>seq, uuid<br>date, datetime, job_timestamp<br>generation_number, batch_number<br>model, model_shortname<br>model_hash, model_name<br>sampler, seed, steps, cfg<br>clip_skip, denoising<br>hasprompt, prompt, styles<br>prompt_hash, prompt_no_styles<br>prompt_spaces, prompt_words<br>height, width, image_hash<br></pre>"},
   {"id":"","label":"Add number to filename when saving","localized":"","hint":""},
   {"id":"","label":"Always save all generated image grids","localized":"","hint":""},
   {"id":"","label":"File format for grids","localized":"","hint":""},

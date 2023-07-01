@@ -1,5 +1,15 @@
 # Change Log for SD.Next
 
+## Update for 07/01/2023
+
+Small quality-of-life updates and bugfixes:
+
+- change lora and lyco dir without server restart
+- additional filename template fields: `uuid`, `seq`, `image_hash`  
+- image `Zip` button gone and its not optional setting that applies to standard `Save` button
+- folder `Show` button is present only when working on localhost,  
+  otherwise its replaced with `Copy` that places image URLs on clipboard so they can be used in other apps
+
 ## Update for 06/30/2023
 
 A bit bigger update this time, but contained to specific areas...

@@ -66,7 +66,7 @@ def delete_files(js_data, images, _html_info, _do_make_zip, index):
     return images, plaintext_to_html(f"Deleted: {filenames[0] if len(filenames) > 0 else 'none'}")
 
 
-def save_files(js_data, images, html_info, do_make_zip, index):
+def save_files(js_data, images, html_info, index):
     os.makedirs(shared.opts.outdir_save, exist_ok=True)
 
     class PObject: # pylint: disable=too-few-public-methods
@@ -125,7 +125,7 @@ def save_files(js_data, images, html_info, do_make_zip, index):
             if txt_fullfn:
                 filenames.append(os.path.basename(txt_fullfn))
                 fullfns.append(txt_fullfn)
-    if do_make_zip:
+    if shared.opts.samples_save_zip and len(fullfns) > 1:
         zip_filepath = os.path.join(shared.opts.outdir_save, "images.zip")
         from zipfile import ZipFile
         with ZipFile(zip_filepath, "w") as zip_file:
@@ -160,17 +160,20 @@ def create_output_panel(tabname, outdir):
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(value=['html/logo.png'], label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(preview=False, container=False, columns=[1,2,3,4,5,6]) # <576px, <768px, <992px, <1200px, <1400px, >1400px
+            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, elem_id=f"{tabname}_gallery", elem_classes="logo").style(preview=False, container=False, columns=[1,2,3,4,5,6]) # <576px, <768px, <992px, <1200px, <1400px, >1400px
 
-        with gr.Column():
+        with gr.Column(elem_id=f"{tabname}_footer", elem_classes="gallery_footer"):
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):
-                open_folder_button = gr.Button('Show', visible=not shared.cmd_opts.hide_ui_dir_config)
+                if not shared.cmd_opts.listen:
+                    open_folder_button = gr.Button('Show', visible=not shared.cmd_opts.hide_ui_dir_config, elem_id=f'open_folder_{tabname}')
+                    open_folder_button.click(fn=lambda: open_folder(shared.opts.outdir_samples or outdir), inputs=[], outputs=[])
+                else:
+                    clip_files = gr.Button('Copy', elem_id=f'open_folder_{tabname}')
+                    clip_files.click(fn=None, _js='clip_gallery_urls', inputs=[result_gallery], outputs=[])
                 save = gr.Button('Save', elem_id=f'save_{tabname}')
-                save_zip = gr.Button('Zip', elem_id=f'save_zip_{tabname}')
                 delete = gr.Button('Delete', elem_id=f'delete_{tabname}')
                 buttons = parameters_copypaste.create_buttons(["img2img", "inpaint", "extras"])
 
-            open_folder_button.click(fn=lambda: open_folder(shared.opts.outdir_samples or outdir), inputs=[], outputs=[])
             download_files = gr.File(None, file_count="multiple", interactive=False, show_label=False, visible=False, elem_id=f'download_files_{tabname}')
             with gr.Group():
                 html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext", visible=False) # contains raw infotext as returned by wrapped call
@@ -179,20 +182,17 @@ def create_output_panel(tabname, outdir):
                 html_log = gr.HTML(elem_id=f'html_log_{tabname}')
                 generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
                 generation_info_button = gr.Button(visible=False, elem_id=f"{tabname}_generation_info_button")
+
                 generation_info_button.click(fn=update_generation_info, _js="(x, y, z) => [x, y, selected_gallery_index()]", show_progress=False, # triggered on gallery change from js
                     inputs=[generation_info, html_info, html_info],
                     outputs=[html_info, html_info_formatted],
                 )
-                save.click(fn=call_queue.wrap_gradio_call(save_files), _js="(x, y, z, q1, q2) => [x, y, z, false, selected_gallery_index()]", show_progress=False,
-                    inputs=[generation_info, result_gallery, html_info, html_info, html_info],
+                save.click(fn=call_queue.wrap_gradio_call(save_files), _js="(x, y, z, i) => [x, y, z, selected_gallery_index()]", show_progress=False,
+                    inputs=[generation_info, result_gallery, html_info, html_info],
                     outputs=[download_files, html_log],
                 )
-                save_zip.click(fn=call_queue.wrap_gradio_call(save_files), _js="(x, y, z, q1, q2) => [x, y, z, true, selected_gallery_index()]",
-                    inputs=[generation_info, result_gallery, html_info, html_info, html_info],
-                    outputs=[download_files, html_log],
-                )
-                delete.click(fn=call_queue.wrap_gradio_call(delete_files), _js="(x, y, z, q1, q2) => [x, y, z, true, selected_gallery_index()]",
-                    inputs=[generation_info, result_gallery, html_info, html_info, html_info],
+                delete.click(fn=call_queue.wrap_gradio_call(delete_files), _js="(x, y, z, i) => [x, y, z, selected_gallery_index()]",
+                    inputs=[generation_info, result_gallery, html_info, html_info],
                     outputs=[result_gallery, html_log],
                 )
 

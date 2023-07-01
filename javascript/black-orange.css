@@ -1,5 +1,5 @@
 /* generic html tags */
-:root { --font: system-ui, "Segoe UI", "Roboto", "sans-serif"; }
+:root { --font: "Source Sans Pro", 'ui-sans-serif', 'system-ui', "Roboto", sans-serif; }
 html { font-size: 16px; }
 body, button, input, select, textarea { font-family: var(--font);}
 button { font-size: 1.2rem; }
@@ -86,7 +86,8 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_cfg_scale { min-width: 200px; }
 #txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
 #txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }
-#txt2img_gallery, #img2img_gallery, #extras_gallery { background: black !important; padding: 0; margin: 0; object-fit: contain; box-shadow: none; min-height: 0; }
+#txt2img_gallery, #img2img_gallery, #extras_gallery { padding: 0; margin: 0; object-fit: contain; box-shadow: none; min-height: 0; }
+
 #extras_upscale { margin-top: 10px }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }
 #txt2img_results, #img2img_results, #extras_results { background-color: black; padding: 0; }

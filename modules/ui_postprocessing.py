@@ -60,6 +60,7 @@ def create_ui():
         outputs=[_dummy, html_info_formatted, exif_info, gen_info],
     )
     submit.click(
+        _js="submit_postprocessing",
         fn=call_queue.wrap_gradio_gpu_call(submit_click, extra_outputs=[None, '']),
         inputs=[
             tab_index,

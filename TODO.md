@@ -56,3 +56,4 @@ Tech that can be integrated as part of the core workflow...
 - image watermark
 - image `imagehash` phash and hdash
 - custom exif tags
+- replace lightbox with iv-viewer

@@ -282,32 +282,32 @@ def sanitize_filename_part(text, replace_spaces=True):
 
 class FilenameGenerator:
     replacements = {
-        'uuid': lambda self: str(uuid.uuid4()),
-        'image_hash': lambda self: self.image_hash(),
-        'seed': lambda self: self.seed if self.seed is not None else '',
-        'steps': lambda self: self.p and self.p.steps,
+        'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.batch_index + 1,
         'cfg': lambda self: self.p and self.p.cfg_scale,
-        'width': lambda self: self.image.width,
-        'height': lambda self: self.image.height,
-        'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
-        'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
-        'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
-        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
-        'model': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
-        'model_shortname': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
+        'clip_skip': lambda self: self.p and self.p.clip_skip,
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
+        'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
+        'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
+        'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
+        'height': lambda self: self.image.height,
+        'image_hash': lambda self: self.image_hash(),
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
+        'model': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
+        'model_shortname': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
+        'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
+        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
         'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
-        'prompt': lambda self: sanitize_filename_part(self.prompt),
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
         'prompt_words': lambda self: self.prompt_words(),
-        'batch_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.batch_size == 1 else self.p.batch_index + 1,
-        'generation_number': lambda self: NOTHING_AND_SKIP_PREVIOUS_TEXT if self.p.n_iter == 1 and self.p.batch_size == 1 else self.p.iteration * self.p.batch_size + self.p.batch_index + 1,
-        'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
-        'clip_skip': lambda self: self.p and self.p.clip_skip,
-        'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
+        'prompt': lambda self: sanitize_filename_part(self.prompt),
+        'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
+        'seed': lambda self: self.seed if self.seed is not None else '',
+        'steps': lambda self: self.p and self.p.steps,
+        'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
+        'uuid': lambda self: str(uuid.uuid4()),
+        'width': lambda self: self.image.width,
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -356,8 +356,6 @@ class FilenameGenerator:
 
     def prompt_words(self):
         words = [x for x in re_nonletters.split(self.prompt or "") if len(x) > 0]
-        if len(words) == 0:
-            words = ["empty"]
         return sanitize_filename_part(" ".join(words[0:shared.opts.directories_max_prompt_words]), replace_spaces=False)
 
     def datetime(self, *args):

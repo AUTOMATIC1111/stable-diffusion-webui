@@ -119,5 +119,4 @@ def compatibility_args(opts, args):
     opts.onchange("lyco_dir", lambda: setattr(args, "lyco_dir", opts.lyco_dir))
 
     args = parser.parse_args()
-    print('HERE', args.lora_dir, opts.lora_dir)
     return args

@@ -8,6 +8,14 @@ function set_theme(theme) {
   if (!gradioURL.includes('?__theme=')) window.location.replace(`${gradioURL}?__theme=${theme}`);
 }
 
+function clip_gallery_urls(gallery) {
+  const files = gallery.map((v) => v.data);
+  navigator.clipboard.writeText(JSON.stringify(files)).then(
+    () => console.log('clipboard set:', files),
+    (err) => console.log('clipboard error:', files, err)
+  );
+}
+
 function all_gallery_buttons() {
   const allGalleryButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnails > .thumbnail-item.thumbnail-small');
   const visibleGalleryButtons = [];
@@ -113,9 +121,18 @@ function create_submit_args(args) {
 
 function showSubmitButtons(tabname, show) {}
 
+function clearGallery(tabname) {
+  const gallery = gradioApp().getElementById(`${tabname}_gallery`)
+  gallery.classList.remove('logo');
+  gallery.style.height = window.innerHeight - gallery.getBoundingClientRect().top - 200 + 'px'
+  const footer = gradioApp().getElementById(`${tabname}_footer`)
+  footer.style.display = 'flex';
+}
+
 function submit(...args) {
   console.log('Submit txt2img');
   rememberGallerySelection('txt2img_gallery');
+  clearGallery('txt2img');
   const id = randomId();
   requestProgress(id, null, gradioApp().getElementById('txt2img_gallery'));
   const res = create_submit_args(args);
@@ -126,6 +143,7 @@ function submit(...args) {
 function submit_img2img(...args) {
   console.log('Submit img2img');
   rememberGallerySelection('img2img_gallery');
+  clearGallery('img2img');
   const id = randomId();
   requestProgress(id, null, gradioApp().getElementById('img2img_gallery'));
   const res = create_submit_args(args);
@@ -133,6 +151,13 @@ function submit_img2img(...args) {
   res[1] = get_tab_index('mode_img2img');
   return res;
 }
+
+function submit_postprocessing(...args) {
+  console.log('Submit extras');
+  clearGallery('extras');
+  return args
+}
+
 
 function modelmerger(...args) {
   const id = randomId();

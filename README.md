@@ -14,13 +14,13 @@ Individual features are not listed here, instead check [Changelog](CHANGELOG.md)
 
 ## Platform support
 
-- **nVidia** GPUs using **CUDA** libraries on both *Windows and Linux*
-- **AMD** GPUs using **ROCm** libraries on *Linux*  
+- *nVidia* GPUs using **CUDA** libraries on both *Windows and Linux*
+- *AMD* GPUs using **ROCm** libraries on *Linux*  
   Support will be extended to *Windows* once AMD releases ROCm for Windows
-- Any GPU compatibile with **DirectX** on *Windows* using **DirectML** libraries  
+- Any GPU compatibile with *DirectX* on *Windows* using **DirectML** libraries  
   This includes support for AMD GPUs that are not supported by native ROCm libraries
-- **Intel Arc** GPUs using Intel OneAPI **Ipex/XPU** libraries  
-- **Apple M1/M2** on *OSX* using built-in support in Torch with **MPS** optimizations
+- *Intel Arc* GPUs using *Intel OneAPI* **Ipex/XPU** libraries  
+- *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
 
 ## Install
 

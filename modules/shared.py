@@ -363,6 +363,7 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "samples_filename_pattern": OptionInfo("[seq]-[prompt_words]", "Images filename pattern", component_args=hide_dirs),
     "directories_max_prompt_words": OptionInfo(8, "Max prompt words for [prompt_words] pattern", gr.Slider, {"minimum": 1, "maximum": 99, "step": 1, **hide_dirs}),
     "save_images_add_number": OptionInfo(True, "Add number to filename when saving", component_args=hide_dirs),
+    "samples_save_zip": OptionInfo(True, "Create zip archive when downloading multiple images"),
     "grid_save": OptionInfo(True, "Always save all generated image grids"),
     "grid_format": OptionInfo('jpg', 'File format for grids', gr.Dropdown, lambda: {"choices": ["jpg", "png", "webp", "tiff", "jp2"]}),
     "grid_extended_filename": OptionInfo(True, "Add extended info (seed, prompt) to filename when saving grid"),

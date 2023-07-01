@@ -33,7 +33,7 @@ async function logMonitorCreate() {
   if (!el) return;
   el.classList.add('log-monitor');
   el.innerHTML = `
-    <table style="width: 100%">
+    <table style="width: 100%;">
       <thead style="display: block; text-align: left; border-bottom: solid 1px var(--button-primary-border-color)">
         <tr>
           <th style="width: 170px">Time</th>

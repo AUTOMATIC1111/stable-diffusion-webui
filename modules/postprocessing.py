@@ -16,6 +16,7 @@ def run_postprocessing(extras_mode, image, image_folder: List[tempfile.NamedTemp
     image_names = []
     image_ext = []
     outputs = []
+    params = {}
     if extras_mode == 1:
         for img in image_folder:
             if isinstance(img, Image.Image):
