@@ -32,19 +32,19 @@ function setupExtraNetworksForTab(tabname) {
         if (rect.top > 0) {
           if (!en) return
           if (window.opts.extra_networks_card_cover == 'cover') {
-            en.style.zIndex = 0;
+            en.style.zIndex = 9999;
             en.style.position = 'absolute';
             en.style.right = 'unset';
             en.style.width = 'unset';
             el.style.height = document.body.offsetHeight - el.getBoundingClientRect().top + 'px'; 
             gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
           } if (window.opts.extra_networks_card_cover == 'sidebar') {
-            en.style.zIndex = 9999;
+            en.style.zIndex = 0;
             en.style.position = 'absolute';
             en.style.right = '0';
-            en.style.width = '38vw';
+            en.style.width = window.opts.extra_networks_sidebar_width + 'vw';
             el.style.height = gradioApp().getElementById(`${tabname}_settings`).offsetHeight - 90 + 'px'; 
-            gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = '60vw'
+            gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 100 - 2 - window.opts.extra_networks_sidebar_width + 'vw';
           } else {
             en.style.zIndex = 0;
             en.style.position = 'relative';
@@ -156,7 +156,6 @@ function readCardDescription(event, tabname, filename, descript, extraPage, card
   const button = gradioApp().getElementById(`${tabname}_read_description`);
   textarea.value = filename;
   description.value = descript;
-  console.log(textarea.value, description.value);
   updateInput(textarea);
   updateInput(description);
   button.click();

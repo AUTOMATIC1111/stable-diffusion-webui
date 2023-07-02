@@ -332,7 +332,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         ext['sort_enabled'] = f"{'0' if ext['enabled'] else '1'}{'1' if ext['is_builtin'] else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
         ext['sort_update'] = f"{'1' if update_available else '0'}{'1' if ext['installed'] else '0'}{ext.get('updated', '2000-01-01T00:00')}"
         timedelta = datetime.now() - datetime.fromisoformat(ext.get('created', '2000-01-01T00:00Z')[:-1])
-        ext['sort_trending'] = round(stars / (timedelta.days + 1), 1)
+        ext['sort_trending'] = round(stars / min(timedelta.days, 5), 1)
         tags = ext.get("tags", [])
         if not isinstance(tags, list):
             tags = tags.split(' ')

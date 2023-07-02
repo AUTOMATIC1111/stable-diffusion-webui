@@ -165,26 +165,29 @@ class ExtraNetworksPage:
             <button class='lg secondary gradio-button custom-button{" search-all" if subdir=="" else ""}' onclick='extraNetworksSearchButton("{tabname}_extra_tabs", event)'>
                 {html.escape(subdir) if subdir!="" else "all"}
             </button><br>""" for subdir in subdirs])
-#        try:
-        self.items = list(self.list_items())
-        self.create_xyz_grid()
-        for item in self.items:
-            self.metadata[item["name"]] = item.get("metadata", {})
-            self.info[item["name"]] = self.find_info(item['filename'])
-            items_html += self.create_html_for_item(item, tabname)
-        if items_html == '':
-            dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
-            items_html = f'<div class="nocards">No models found: ${dirs}</div>'
-        self_name_id = self.name.replace(" ", "_")
-        res = f"""
-            <div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div>
-            <div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{items_html}</div>
-            """
-        threading.Thread(target=self.create_thumb).start()
-        return res
-#        except Exception as e:
-#            shared.log.error(f'Extra networks page error: {e}')
-#            return ''
+        try:
+            self.items = list(self.list_items())
+            self.create_xyz_grid()
+            for item in self.items:
+                self.metadata[item["name"]] = item.get("metadata", {})
+                self.info[item["name"]] = self.find_info(item['filename'])
+                items_html += self.create_html_for_item(item, tabname)
+            # if items_html == '':
+            #    dirs = "".join([f"<li>{x}</li>" for x in self.allowed_directories_for_previews()])
+            #    items_html = f'<div class="nocards">No models found: {dirs}</div>'
+            self_name_id = self.name.replace(" ", "_")
+            if len(subdirs_html) > 0 or len(items_html) > 0:
+                res = f"""
+                    <div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div>
+                    <div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{items_html}</div>
+                    """
+            else:
+                return ''
+            threading.Thread(target=self.create_thumb).start()
+            return res
+        except Exception as e:
+            shared.log.error(f'Extra networks page error: {e}')
+            return ''
 
     def list_items(self):
         raise NotImplementedError
@@ -305,10 +308,12 @@ def create_ui(container, button, tabname):
         ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
         for page in ui.stored_extra_pages:
-            with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
-                page_elem = gr.HTML(page.create_html(ui.tabname), elem_id=tabname+page.name+"_extra_page", elem_classes="extra-networks-page")
-                page_elem.change(fn=lambda: None, _js=f'() => refreshExtraNetworks("{tabname}")', inputs=[], outputs=[])
-                ui.pages.append(page_elem)
+            page_html = page.create_html(ui.tabname)
+            if len(page_html) > 0:
+                with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
+                    page_elem = gr.HTML(page_html, elem_id=tabname+page.name+"_extra_page", elem_classes="extra-networks-page")
+                    page_elem.change(fn=lambda: None, _js=f'() => refreshExtraNetworks("{tabname}")', inputs=[], outputs=[])
+                    ui.pages.append(page_elem)
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible
