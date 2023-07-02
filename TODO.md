@@ -57,3 +57,5 @@ Tech that can be integrated as part of the core workflow...
 - image `imagehash` phash and hdash
 - custom exif tags
 - replace lightbox with iv-viewer
+- git-rebasin
+- additional upscalers
