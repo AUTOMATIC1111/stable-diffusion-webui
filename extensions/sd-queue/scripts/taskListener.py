@@ -59,7 +59,7 @@ class TaskListener(threading.Thread):
 
     def run(self):
         config = ExtraConfig(self.environment).get_config()
-        mq = MqSupporter()
+        mq = MqSupporter(self.environment)
         mq.createConsumer(config["queue"]["topics"], config["queue"]["subscription"], config["queue"]["consumer-name"],
                           taskHandler, self.environment)
         mq.closeClient()

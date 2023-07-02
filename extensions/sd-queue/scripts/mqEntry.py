@@ -8,11 +8,12 @@ from extra.loadYamlFile import ExtraConfig
 
 
 class MqSupporter:
-    def __init__(self):
+    def __init__(self, environment=None):
         self.client = None
+        self.environment = environment
 
     def initClient(self):
-        config = ExtraConfig().get_config()
+        config = ExtraConfig(self.environment).get_config()
         self.client = pulsar.Client(config["queue"]["server-addr"])
 
     def createProducer(self, topic, msg, properties=None):
