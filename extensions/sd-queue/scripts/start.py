@@ -12,8 +12,8 @@ def start_queue(_: gr.Blocks, app: FastAPI):
         task.start()
     if '--start-prod-task-listener' in sys.argv:
         print(f"Launching API server with task listener")
-        task = TaskListener("prod")
-        task.start()
+        task_p = TaskListener("prod")
+        task_p.start()
 
 
 try:
