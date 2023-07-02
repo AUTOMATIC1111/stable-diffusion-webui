@@ -335,6 +335,7 @@ class Api:
                 p.script_args = tuple(script_args) # Need to pass args as tuple here
                 processed = process_images(p)
             shared.state.end()
+            p.close()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -392,6 +393,7 @@ class Api:
                 p.script_args = tuple(script_args) # Need to pass args as tuple here
                 processed = process_images(p)
             shared.state.end()
+            p.close()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
