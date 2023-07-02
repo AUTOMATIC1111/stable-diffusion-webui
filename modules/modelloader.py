@@ -1,6 +1,8 @@
 import os
 import shutil
 import importlib
+import json
+from typing import Dict
 from urllib.parse import urlparse
 
 from modules import shared
@@ -9,29 +11,54 @@ from modules.paths import script_path, models_path
 
 diffuser_repos = []
 
-def load_diffusers(model_path: str, hub_url: str = None, command_path: str = None):
-    import huggingface_hub as hf
+def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None):
     from diffusers import DiffusionPipeline
+    import huggingface_hub as hf
 
+    if download_config is None:
+        download_config = {
+            "force_download": False,
+            "resume_download": True,
+            "cache_dir": shared.opts.diffusers_dir,
+        }
+
+    if cache_dir is not None:
+        download_config["cache_dir"] = cache_dir
+
+    pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
+    model_info_dict = hf.model_info(hub_id).cardData # TODO hfhub card-data?
+
+    # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
+    if model_info_dict is not None and "prior" in model_info_dict:
+        download_dir = DiffusionPipeline.download(model_info_dict["prior"], **download_config)
+        model_info_dict["prior"] = download_dir
+        # mark prior as hidden
+        with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f:
+            f.write("True")
+
+    with open(os.path.join(pipeline_dir, "model_info.json"), "w", encoding="utf-8") as json_file:
+        json.dump(model_info_dict, json_file)
+
+    return pipeline_dir
+
+def load_diffusers_models(model_path: str, command_path: str = None):
+    import huggingface_hub as hf
     places = []
-
-    # download repo
-    if hub_url is not None:
-        DiffusionPipeline.download(hub_url, cache_dir=model_path)
-
     places.append(model_path)
     if command_path is not None and command_path != model_path and os.path.isdir(command_path):
         places.append(command_path)
     diffuser_repos.clear()
     output = []
-    try:
-        for place in places:
+    for place in places:
+        try:
             res = hf.scan_cache_dir(cache_dir=place)
             for r in list(res.repos):
-                diffuser_repos.append({ 'name': r.repo_id, 'filename': r.repo_id, 'path': str(r.repo_path), 'size': r.size_on_disk, 'mtime': r.last_modified, 'hash': list(r.revisions)[-1].commit_hash })
-                output.append(str(r.repo_id))
-    except Exception as e:
-        shared.log.error(f"Error listing diffusers: {place} {e}")
+                cache_path = os.path.join(r.repo_path, "snapshots", list(r.revisions)[-1].commit_hash)
+                diffuser_repos.append({ 'name': r.repo_id, 'filename': r.repo_id, 'path': cache_path, 'size': r.size_on_disk, 'mtime': r.last_modified, 'hash': list(r.revisions)[-1].commit_hash, 'model_info': str(os.path.join(cache_path, "model_info.json")) })
+                if not os.path.isfile(os.path.join(cache_path, "hidden")):
+                    output.append(str(r.repo_id))
+        except Exception as e:
+            shared.log.error(f"Error listing diffusers: {place} {e}")
     shared.log.debug(f'Scanning diffusers cache: {len(output)} {model_path} {command_path}')
     return output
 

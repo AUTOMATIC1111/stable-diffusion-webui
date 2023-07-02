@@ -43,6 +43,7 @@ yapf
 scikit-image
 basicsr
 compel
+antlr4-python3-runtime==4.9.3
 typing-extensions==4.6.3
 pydantic==1.10.9
 requests==2.31.0

@@ -161,3 +161,15 @@ def create_ui():
                     return model_data, txt
 
                 model_list_btn.click(fn=list_models, inputs=[], outputs=[model_table, models_outcome])
+
+            with gr.Tab(label="HF Hub"):
+                """"
+                options_templates.update(options_section(('diffusers', "Diffusers"), {
+                    "diffusers_ckpt_download": OptionInfo("", "HFHub Checkpoint download", gr.Textbox, {"placeholder": "e.g. runwayml/stable-diffusion-v1-5"}, submit=load_diffusers_ckpt),
+                    "diffusers_lora_download": OptionInfo("", "HFHub LoRA download", gr.Textbox, {"placeholder": "e.g. pcuenq/pokemon-lora"}, submit=load_diffusers_lora),
+                    "diffusers_text_inv_download": OptionInfo("", "HFHub Textual Inversion download", gr.Textbox, {"placeholder": "e.g. sd-concepts-library/midjourney-style"}, submit=load_diffusers_text_inv),
+                }))
+                """
+
+            with gr.Tab(label="CivitAI"):
+                pass

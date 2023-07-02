@@ -4,11 +4,14 @@ import time
 import json
 import datetime
 import urllib.request
+from urllib.parse import urlparse
 from enum import Enum
+import tempfile
 import gradio as gr
 import tqdm
 import requests
-from modules import errors, ui_components, shared_items, cmd_args
+import diffusers
+from modules import errors, ui_components, shared_items, cmd_args, modelloader
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
 import modules.interrogate
 import modules.memmon
@@ -70,6 +73,11 @@ ui_reorder_categories = [
     "override_settings",
     "scripts",
 ]
+
+
+def is_url(string):
+    parsed_url = urlparse(string)
+    return all([parsed_url.scheme, parsed_url.netloc])
 
 
 class Backend(Enum):
@@ -185,7 +193,7 @@ state.server_start = time.time()
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after=''):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, submit=None, comment_before='', comment_after=''):
         self.default = default
         self.label = label
         self.component = component
@@ -195,6 +203,7 @@ class OptionInfo:
         self.refresh = refresh
         self.comment_before = comment_before # HTML text that will be added after label in UI
         self.comment_after = comment_after # HTML text that will be added before label in UI
+        self.submit = submit
 
     def link(self, label, uri):
         self.comment_before += f"[<a href='{uri}' target='_blank'>{label}</a>]"
@@ -223,9 +232,70 @@ def list_checkpoint_tiles():
     import modules.sd_models # pylint: disable=W0621
     return modules.sd_models.checkpoint_tiles()
 
-
 default_checkpoint = list_checkpoint_tiles()[0] if len(list_checkpoint_tiles()) > 0 else "model.ckpt"
 
+def load_diffusers_ckpt(model_repo: str):
+    cached_dir = modelloader.download_diffusers_model(model_repo)
+    print(f"Downloaded {cached_dir}")
+    return ""
+
+def load_diffusers_lora(lora_repo: str):
+    pipe = sys.modules[__name__].sd_model
+
+    if lora_repo == "":
+        pipe._remove_text_encoder_monkey_patch() # pylint: disable=W0212
+        proc_cls_name = next(iter(pipe.unet.attn_processors.values())).__class__.__name__
+        non_lora_proc_cls = getattr(diffusers.models.attention_processor, proc_cls_name[len("LORA"):])
+        pipe.unet.set_attn_processor(non_lora_proc_cls())
+        print("Removed LoRA.")
+        return ""
+    elif is_url(lora_repo):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.system(f"wget -P {temp_dir} {lora_repo}")
+            temp_file_path = os.path.join(temp_dir, lora_repo.split('/')[-1])
+            pipe.load_lora_weights(temp_file_path)
+
+            lora_repo = '/'.join(lora_repo.split('/')[-2:])
+
+        print(f"Loaded Civit.ai LoRA: {lora_repo}")
+        return f"{lora_repo} is loaded. Pass empty text field to remove LoRA or pass new LoRA id."
+    elif len(lora_repo.split('/')) == 2:
+        lora_dir = os.path.dirname(opts.data["diffusers_dir"])
+        cache_dir = os.path.join(lora_dir, "Diffusers_LoRA")
+        pipe.load_lora_weights(lora_repo, cache_dir=cache_dir)
+        print(f"Loaded {lora_repo}")
+        return f"{lora_repo} is loaded. Pass empty text field to remove LoRA or pass new LoRA id."
+    else:
+        print(f"{lora_repo} is not a valid LoRA identifier.")
+        return ""
+
+def load_diffusers_text_inv(text_inv_repo: str):
+    pipe = sys.modules[__name__].sd_model
+
+    if text_inv_repo == "":
+        pipe.tokenizer = pipe.tokenizer.__class__.from_pretrained(pipe.tokenizer.name_or_path)
+        pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
+        print("Removed all textual inversions.")
+        return ""
+    elif is_url(text_inv_repo):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            os.system(f"wget -P {temp_dir} {text_inv_repo}")
+            temp_file_path = os.path.join(temp_dir, text_inv_repo.split('/')[-1])
+            pipe.load_textual_inversion(temp_file_path)
+
+            text_inv_repo = '/'.join(text_inv_repo.split('/')[-2:])
+
+        print(f"Loaded Civit.ai Textual Inv: {text_inv_repo}")
+    elif len(text_inv_repo.split('/')) == 2:
+        text_inv_dir = os.path.dirname(opts.data["diffusers_dir"])
+        cache_dir = os.path.join(text_inv_dir, "Diffusers_Text_Inv")
+        pipe.load_textual_inversion(text_inv_repo, cache_dir=cache_dir)
+        print(f"Loaded {text_inv_repo}")
+
+    text_inv_tokens = pipe.tokenizer.added_tokens_encoder.keys()
+    text_inv_tokens = [t for t in text_inv_tokens if not (len(t.split("_")) > 1 and t.split("_")[-1].isdigit())]
+
+    return f"{', '.join(text_inv_tokens)} loaded. Pass empty text field to remove all or add new textual inversion id."
 
 def refresh_checkpoints():
     import modules.sd_models # pylint: disable=W0621
@@ -329,7 +399,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
     "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
     "cuda_compile": OptionInfo(False, "Enable model compile (experimental)"),
-    "cuda_compile_mode": OptionInfo("none", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex']}),
+    "cuda_compile_mode": OptionInfo("none", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'reduce-overhead', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex']}),
+    "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
     "disable_gc": OptionInfo(False, "Disable Torch memory garbage collection"),
@@ -449,8 +520,9 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
     "logmonitor_refresh_period": OptionInfo(5000, "Log view update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 30000, "step": 25}),
 }))
 
+
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
-    "show_samplers": OptionInfo(["Euler a", "UniPC", "DDIM", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
+    "show_samplers": OptionInfo(["Euler a", "UniPC", "DDIM", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras", "DEIS"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
     "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     "always_batch_cond_uncond": OptionInfo(False, "Disable conditional batching enabled on low memory systems"),

@@ -1,4 +1,4 @@
-from modules import sd_samplers_compvis, sd_samplers_kdiffusion, sd_samplers_diffusors, shared
+from modules import sd_samplers_compvis, sd_samplers_kdiffusion, sd_samplers_diffusers, shared
 from modules.sd_samplers_common import samples_to_image_grid, sample_to_image # pylint: disable=unused-import
 from modules.shared import backend, Backend
 
@@ -9,7 +9,7 @@ if backend == Backend.ORIGINAL:
     ]
 else:
     all_samplers = [
-        *sd_samplers_diffusors.samplers_data_diffusors,
+        *sd_samplers_diffusers.samplers_data_diffusers,
     ]
 all_samplers_map = {x.name: x for x in all_samplers}
 samplers = all_samplers

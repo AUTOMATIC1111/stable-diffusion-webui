@@ -971,6 +971,7 @@ def create_ui():
         quicksettings_names = opts.quicksettings_list
         quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
         quicksettings_list = []
+
         previous_section = []
         tab_item_keys = []
         current_tab = None
@@ -1146,7 +1147,6 @@ def webpath(fn):
         web_path = os.path.relpath(fn, script_path).replace('\\', '/')
     else:
         web_path = os.path.abspath(fn)
-
     return f'file={web_path}?{os.path.getmtime(fn)}'
 
 
