@@ -26,7 +26,7 @@ def taskHandler(msg: Message, environment=None):
         response = api.text2imgapi(txt2imgreq)
         logger.info("Text2Image Result '%s'", response.dict())
         json_data = json.dumps(response.dict()).encode('utf-8')
-        mq = MqSupporter()
+        mq = MqSupporter(environment)
         mq.createProducer(config["queue"]["topic-t2i-result"], json_data, msg.properties())
         mq.createProducer(f"{config['queue']['topic-web-img-result']}-{msg.properties()['userId']}", json_data,
                           msg.properties())
@@ -44,7 +44,7 @@ def taskHandler(msg: Message, environment=None):
             response = api.img2imgapi(req)
             logger.info("Image2Image Result '%s'", response.dict())
             json_data = json.dumps(response.dict()).encode('utf-8')
-            mq = MqSupporter()
+            mq = MqSupporter(environment)
             mq.createProducer(config["queue"]["topic-i2i-result"], json_data, msg.properties())
             mq.createProducer(f"{config['queue']['topic-web-img-result']}-{msg.properties()['userId']}", json_data,
                               msg.properties())
