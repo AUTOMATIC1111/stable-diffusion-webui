@@ -187,11 +187,11 @@ def create_ui():
                 def hf_select(evt: gr.SelectData):
                     return data[evt.index[0]][0]
 
-                def hf_download_model(hub_id: str):
+                def hf_download_model(hub_id: str, token):
                     from modules.shared import log, opts
                     from modules.modelloader import download_diffusers_model
                     try:
-                        download_diffusers_model(hub_id, cache_dir=opts.diffusers_dir)
+                        download_diffusers_model(hub_id, cache_dir=opts.diffusers_dir, token=token)
                     except Exception as e:
                         log.error(f"Diffuser model downloaded error: model={hub_id} {e}")
                         return f"Diffuser model downloaded error: model={hub_id} {e}"
@@ -200,12 +200,14 @@ def create_ui():
                     log.info(f"Diffuser model downloaded: model={hub_id}")
                     return f'Diffuser model downloaded: model={hub_id}'
 
-                with gr.Row():
-                    hf_search_text = gr.Textbox('', label = 'Seach models', placeholder='search huggingface models')
-
-                with gr.Row():
-                    hf_selected = gr.Textbox('', label = 'Select model', placeholder='select model from search results or enter model name manually')
-                with gr.Row():
+                with gr.Column(scale=6):
+                    with gr.Row():
+                        hf_search_text = gr.Textbox('', label = 'Seach models', placeholder='search huggingface models')
+                    with gr.Row():
+                        hf_selected = gr.Textbox('', label = 'Select model', placeholder='select model from search results or enter model name manually')
+                    with gr.Row():
+                        hf_token = gr.Textbox('', label = 'Huggingface token', placeholder='optional access token for private or gated models')
+                with gr.Column(scale=1):
                     hf_download_model_btn = gr.Button(value="Download model", variant='primary')
 
                 with gr.Row():
@@ -214,10 +216,9 @@ def create_ui():
 
                 hf_search_text.submit(fn=hf_search, inputs=[hf_search_text], outputs=[hf_results])
                 hf_results.select(hf_select, inputs=None, outputs=[hf_selected])
-                hf_download_model_btn.click(fn=hf_download_model, inputs=[hf_selected], outputs=[models_outcome])
+                hf_download_model_btn.click(fn=hf_download_model, inputs=[hf_selected, hf_token], outputs=[models_outcome])
 
                 # TODO load_diffusers_lora
-                # TODO load_diffusers_text_inv
 
             with gr.Tab(label="CivitAI"):
                 pass

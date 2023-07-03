@@ -26,6 +26,7 @@ import modules.images as images
 import modules.styles
 import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
+from modules.lora_diffusers import lora_state, unload_diffusers_lora
 
 
 opt_C = 4
@@ -697,6 +698,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     # TODO(Patrick): For wrapped pipelines this is currently a no-op
                     shared.sd_model.scheduler = scheduler.sampler
 
+                cross_attention_kwargs={}
+                if lora_state['active']:
+                    cross_attention_kwargs['scale'] = lora_state['multiplier']
+                task_specific_kwargs={}
                 if sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
                     task_specific_kwargs = {"height": p.height, "width": p.width}
                 elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
@@ -704,7 +709,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
                     # TODO(PVP): change out to latents once possible with `diffusers`
                     task_specific_kwargs = {"image": p.init_images[0], "mask_image": p.image_mask, "strength": p.denoising_strength}
-
                 output = shared.sd_model(
                     prompt=prompts,
                     negative_prompt=negative_prompts,
@@ -712,9 +716,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     guidance_scale=p.cfg_scale,
                     generator=generator,
                     output_type="np",
+                    cross_attention_kwargs=cross_attention_kwargs,
                     **task_specific_kwargs
                 )
                 x_samples_ddim = output.images
+                if lora_state['active']:
+                    unload_diffusers_lora()
+
 
             else:
                 raise ValueError(f"Unknown backend {backend}")

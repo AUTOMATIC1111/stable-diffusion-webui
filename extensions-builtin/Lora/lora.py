@@ -1,8 +1,7 @@
 import os
 import re
-import torch
 from typing import Union
-
+import torch
 from modules import shared, devices, sd_models, errors, scripts, sd_hijack, hashes
 
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
@@ -127,7 +126,6 @@ class LoraModule:
         self.multiplier = 1.0
         self.modules = {}
         self.mtime = None
-
         self.mentioned_name = None
         """the text that was used to add lora to prompt - can be either name or an alias"""
 
@@ -153,6 +151,13 @@ def assign_lora_names_to_compvis_modules(sd_model):
         module.lora_layer_name = lora_name
 
     sd_model.lora_layer_mapping = lora_layer_mapping
+
+def load_diffuser_lora(name, lora_on_disk, multiplier):
+    lora = LoraModule(name, lora_on_disk)
+    lora.mtime = os.path.getmtime(lora_on_disk.filename)
+    from modules.lora_diffusers import load_diffusers_lora
+    load_diffusers_lora(name, lora_on_disk, multiplier)
+    return lora
 
 
 def load_lora(name, lora_on_disk):
@@ -205,7 +210,6 @@ def load_lora(name, lora_on_disk):
         else:
             print(f'Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}')
             continue
-            raise AssertionError(f"Lora layer {key_diffusers} matched a layer with unsupported type: {type(sd_module).__name__}")
 
         with torch.no_grad():
             module.weight.copy_(weight)
@@ -243,14 +247,17 @@ def load_loras(names, multipliers=None):
     failed_to_load_loras = []
 
     for i, name in enumerate(names):
-        lora = already_loaded.get(name, None)
+        lora = already_loaded.get(name, None) if shared.backend == shared.Backend.ORIGINAL else None
 
         lora_on_disk = loras_on_disk[i]
 
         if lora_on_disk is not None:
             if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
                 try:
-                    lora = load_lora(name, lora_on_disk)
+                    if shared.backend == shared.Backend.DIFFUSERS:
+                        lora = load_diffuser_lora(name, lora_on_disk, multipliers[i] if multipliers else 1.0)
+                    else:
+                        lora = load_lora(name, lora_on_disk)
                 except Exception as e:
                     errors.display(e, f"loading Lora {lora_on_disk.filename}")
                     continue

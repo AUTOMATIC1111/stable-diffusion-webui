@@ -41,8 +41,10 @@ class CheckpointInfo:
         self.name = None
         self.hash = None
         self.filename = filename
+        self.type = ''
         abspath = os.path.abspath(filename)
-        if shared.backend == shared.Backend.ORIGINAL:
+
+        if os.path.isfile(abspath): # ckpt or safetensor
             if shared.opts.ckpt_dir is not None and abspath.startswith(shared.opts.ckpt_dir):
                 name = abspath.replace(shared.opts.ckpt_dir, '')
             elif abspath.startswith(model_path):
@@ -54,7 +56,9 @@ class CheckpointInfo:
             self.name = name
             self.hash = model_hash(self.filename)
             self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
-        elif shared.backend == shared.Backend.DIFFUSERS:
+            self.path = abspath
+            self.type = abspath.split('.')[-1].lower()
+        else: # maybe a diffuser
             repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
             if len(repo) == 0:
                 error_message = f'Cannot find diffuser model: {filename}'
@@ -64,6 +68,7 @@ class CheckpointInfo:
             self.hash = repo[0]['hash'][:8]
             self.sha256 = repo[0]['hash']
             self.path = repo[0]['path']
+            self.type = 'diffusers'
 
             if os.path.isfile(repo[0]['model_info']):
                 file_path = repo[0]['model_info']
@@ -71,8 +76,6 @@ class CheckpointInfo:
                     self.model_info = json.load(json_file)
             else:
                 self.model_info = None
-        else:
-            raise ValueError(f'Unknown backend: {shared.backend}')
 
         self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
         self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
@@ -123,13 +126,10 @@ def checkpoint_tiles():
 def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
-    if shared.backend == shared.Backend.ORIGINAL:
-        ext_filter=[".safetensors"] if shared.opts.sd_disable_ckpt else [".ckpt", ".safetensors"]
-        model_list = modelloader.load_models(model_path=os.path.join(models_path, 'Stable-diffusion'), model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
-    else:
-        global model_path # pylint: disable=global-statement
-        model_path = os.path.join(models_path, 'Diffusers')
-        model_list = modelloader.load_diffusers_models(model_path=model_path, command_path=shared.opts.diffusers_dir)
+    ext_filter=[".safetensors"] if shared.opts.sd_disable_ckpt else [".ckpt", ".safetensors"]
+    model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    if shared.backend == shared.Backend.DIFFUSERS:
+        model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
 
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
@@ -158,8 +158,8 @@ def list_models():
                     model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
                 else:
                     default_model_id = "runwayml/stable-diffusion-v1-5"
-                    modelloader.download_diffusers_model(default_model_id, model_path)
-                    model_list = modelloader.load_diffusers_models(model_path=model_path, command_path=shared.opts.diffusers_dir)
+                    modelloader.download_diffusers_model(default_model_id, os.path.join(models_path, 'Diffusers'))
+                    model_list = modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
 
                 for filename in sorted(model_list, key=str.lower):
                     checkpoint_info = CheckpointInfo(filename)
@@ -549,19 +549,22 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     try:
         if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
             model_name = modelloader.find_diffuser(shared.cmd_opts.ckpt)
-
             if model_name is not None:
                 shared.log.info(f'Loading diffuser model: {model_name}')
                 model_file = modelloader.download_diffusers_model(hub_id=model_name)
                 sd_model = diffusers.DiffusionPipeline.from_pretrained(model_file, **diffusers_load_config)
-
                 list_models() # rescan for downloaded model
                 checkpoint_info = CheckpointInfo(model_name)
 
         if sd_model is None:
             checkpoint_info = checkpoint_info or select_checkpoint()
             shared.log.info(f'Loading diffuser model: {checkpoint_info.filename}')
-            sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
+            if not os.path.isfile(checkpoint_info.path):
+                sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
+            else:
+                diffusers_load_config["local_files_only "] = True
+                diffusers_load_config["extract_ema"] = True
+                sd_model = diffusers.StableDiffusionPipeline.from_ckpt(checkpoint_info.path, **diffusers_load_config)
 
         if "StableDiffusion" in sd_model.__class__.__name__:
             sd_model.scheduler = diffusers.UniPCMultistepScheduler.from_config(sd_model.scheduler.config)
@@ -570,9 +573,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model.scheduler.name = 'DDIM'
 
         # Prior pipelines
-        if checkpoint_info.model_info is not None and "prior" in checkpoint_info.model_info:
+        if hasattr(checkpoint_info, 'model_info') and checkpoint_info.model_info is not None and "prior" in checkpoint_info.model_info:
             prior_id = checkpoint_info.model_info["prior"]
-            shared.log.info(f"Loading prior {prior_id} for {checkpoint_info.filename}")
+            shared.log.info(f"Loading diffuser prior: {checkpoint_info.filename} {prior_id}")
             prior = diffusers.DiffusionPipeline.from_pretrained(prior_id, **diffusers_load_config)
             sd_model = PriorPipeline(prior=prior, main=sd_model) # wrap sd_model
 
@@ -586,7 +589,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model.to(devices.device)
             sd_model.unet.to(memory_format=torch.channels_last)
             import torch._dynamo as dynamo # pylint: disable=unused-import
-            # torch._dynamo.config.log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
             torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
             torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
             sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
@@ -602,6 +604,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.log.error("Failed to load diffusers model")
         errors.display(e, "loading Diffusers model")
     shared.sd_model = sd_model
+
+    from modules.textual_inversion import textual_inversion
+    embedding_db = textual_inversion.EmbeddingDatabase()
+    embedding_db.add_embedding_dir(shared.opts.embeddings_dir)
+    embedding_db.load_textual_inversion_embeddings(force_reload=True)
+
     timer.record("load")
     shared.log.info(f"Model loaded in {timer.summary()}")
     devices.torch_gc(force=True)

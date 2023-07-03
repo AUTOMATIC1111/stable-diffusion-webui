@@ -41,6 +41,7 @@ Tech that can be integrated as part of the core workflow...
 - [DataComp CLiP](https://github.com/mlfoundations/open_clip/blob/main/docs/datacomp_models.md)
 - [ClipSeg](https://github.com/timojl/clipseg)
 - [DragGAN](https://github.com/XingangPan/DragGAN)
+- [LamaCleaner]([Title](https://github.com/Sanster/lama-cleaner))
 - `TensorRT`
 
 ## Random

@@ -229,7 +229,7 @@ def start_ui():
     log.debug('Creating UI')
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("before-ui")
-    shared.demo = modules.ui.create_ui()
+    shared.demo = modules.ui.create_ui(startup_timer)
     startup_timer.record("ui")
     if cmd_opts.disable_queue:
         log.info('Server queues disabled')

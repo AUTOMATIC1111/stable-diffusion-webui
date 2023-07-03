@@ -1,5 +1,10 @@
 # Change Log for SD.Next
 
+## Update for ...
+
+- add settings -> extra networks -> do not automatically build extra network pages  
+  speeds up app start if you have a lot of extra networks and you want to build them manually when needed  
+
 ## Update for 07/01/2023
 
 Small quality-of-life updates and bugfixes:

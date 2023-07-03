@@ -12,7 +12,7 @@ from modules.paths import script_path, models_path
 diffuser_repos = []
 
 
-def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None):
+def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None):
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
 
@@ -21,14 +21,16 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
             "force_download": False,
             "resume_download": True,
             "cache_dir": shared.opts.diffusers_dir,
+            # "use_auth_token": True,
         }
-
     if cache_dir is not None:
         download_config["cache_dir"] = cache_dir
-
+    shared.log.debug(f"Diffusers downloading: {hub_id} to {cache_dir}")
+    if token is not None and len(token) > 2:
+        shared.log.debug(f"Diffusers authentication: {token}")
+        hf.login(token)
     pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
     model_info_dict = hf.model_info(hub_id).cardData # TODO hfhub card-data?
-
     # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
     if model_info_dict is not None and "prior" in model_info_dict:
         download_dir = DiffusionPipeline.download(model_info_dict["prior"], **download_config)
@@ -36,10 +38,8 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         # mark prior as hidden
         with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f:
             f.write("True")
-
     with open(os.path.join(pipeline_dir, "model_info.json"), "w", encoding="utf-8") as json_file:
         json.dump(model_info_dict, json_file)
-
     return pipeline_dir
 
 
@@ -61,7 +61,7 @@ def load_diffusers_models(model_path: str, command_path: str = None):
                     output.append(str(r.repo_id))
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
-    shared.log.debug(f'Scanning diffusers cache: {len(output)} {model_path} {command_path}')
+    shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} {len(output)}')
     return output
 
 
@@ -105,7 +105,7 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
         for place in places:
             for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
                 if os.path.islink(full_path) and not os.path.exists(full_path):
-                    print(f"Skipping broken symlink: {full_path}")
+                    shared.log.error(f"Skipping broken symlink: {full_path}")
                     continue
                 if ext_blacklist is not None and any(full_path.endswith(x) for x in ext_blacklist):
                     continue
@@ -172,13 +172,13 @@ def move_files(src_path: str, dest_path: str, ext_filter: str = None):
                     if ext_filter is not None:
                         if ext_filter not in file:
                             continue
-                    print(f"Moving {file} from {src_path} to {dest_path}.")
+                    shared.log.warning(f"Moving {file} from {src_path} to {dest_path}.")
                     try:
                         shutil.move(fullpath, dest_path)
                     except Exception:
                         pass
             if len(os.listdir(src_path)) == 0:
-                print(f"Removing empty folder: {src_path}")
+                shared.log.info(f"Removing empty folder: {src_path}")
                 shutil.rmtree(src_path, True)
     except Exception:
         pass
