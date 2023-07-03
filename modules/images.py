@@ -662,6 +662,13 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     return fullfn, txt_fullfn
 
 
+IGNORED_INFO_KEYS = {
+    'jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+    'loop', 'background', 'timestamp', 'duration', 'progressive', 'progression',
+    'icc_profile', 'chromaticity', 'photoshop',
+}
+
+
 def read_info_from_image(image):
     items = image.info or {}
 
@@ -679,9 +686,7 @@ def read_info_from_image(image):
             items['exif comment'] = exif_comment
             geninfo = exif_comment
 
-    for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
-                    'loop', 'background', 'timestamp', 'duration', 'progressive', 'progression',
-                    'icc_profile', 'chromaticity']:
+    for field in IGNORED_INFO_KEYS:
         items.pop(field, None)
 
     if items.get("Software", None) == "NovelAI":
