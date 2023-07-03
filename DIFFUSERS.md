@@ -30,6 +30,7 @@ whats implemented so far?
 - use huggingface models  
 - extra networks ui  
 - use safetensor models with diffusers backend  
+- lowvram and medvram equivalents for diffusers
 - standard workflows:
   - txt2img, img2img, inpaint, outpaint, process  
   - hires fix, restore faces, etc?  
