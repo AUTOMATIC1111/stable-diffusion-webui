@@ -25,7 +25,7 @@ fi
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]
 then
-    install_dir="$(dirname "$0")"
+    install_dir="$SCRIPT_DIR"
 fi
 
 # Name of the subdirectory (defaults to stable-diffusion-webui)
