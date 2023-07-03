@@ -11,6 +11,7 @@ from modules.paths import script_path, models_path
 
 diffuser_repos = []
 
+
 def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None):
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
@@ -40,6 +41,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         json.dump(model_info_dict, json_file)
 
     return pipeline_dir
+
 
 def load_diffusers_models(model_path: str, command_path: str = None):
     import huggingface_hub as hf
@@ -74,10 +76,9 @@ def find_diffuser(name: str):
     filt = hf.ModelFilter(
         model_name=name,
         task='text-to-image',
-        tags='stable-diffusion',
-        library=['diffusers', 'stable-diffusion'],
+        library=['diffusers'],
     )
-    models = list(api.list_models(filter=filt, full=True, limit=50, sort="downloads", direction=-1))
+    models = list(api.list_models(filter=filt, full=True, limit=5, sort="downloads", direction=-1))
     shared.log.debug(f'Searching diffusers models: {name} {len(models) > 0}')
     if len(models) > 0:
         return models[0].modelId

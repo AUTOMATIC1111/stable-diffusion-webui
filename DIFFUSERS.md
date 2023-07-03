@@ -23,26 +23,30 @@ to update repo, do not use `--upgrade` flag, use manual `git pull` instead
 ### Diffusers
 
 - sd 1.5 and sd 2.1 model  
-  models can be downloaded from huggingface hub  
-  but focus on default model for now and i'll add downloader soon  
-- lora, textual inversion  
-  only loras/textual-inversions downloaded from huggingface hub are supported for now  
-  i'll add standard safetensors soon  
+- model downloader: tabs -> models -> hf hub
 - txt2img, img2img, inpaint, outpaint, process
+- hires fix, restore faces, etc?
 
-### Experimental
+### Experimental - don't test yet
 
-- cuda model compile using `reduce overhead` model with and without `fullgraph`
+- cuda model compile using `reduce overhead` model with or without `fullgraph`
 - kandinsky model
 
 ## Todo
 
-- enable loading of safetensors models  
+- lora
+- embedding
+- safetensors models  
 - cleanup logging  
-- search&download models from hfhub  
 - controlnet extension  
 - multidiffusion extension  
 - sdxl model  
+
+## Limitations
+
+- extra networks
+- controlnet
+- multi-diffusion
 
 ## Issues
 
