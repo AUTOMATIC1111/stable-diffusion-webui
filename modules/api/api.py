@@ -30,6 +30,7 @@ from modules import devices
 from typing import Dict, List, Any
 import piexif
 import piexif.helper
+from contextlib import closing
 
 
 def script_name_to_index(name, scripts):
@@ -322,8 +323,7 @@ class Api:
         args.pop('save_images', None)
 
         with self.queue_lock:
-            p = StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)
-            try:
+            with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
                 p.scripts = script_runner
                 p.outpath_grids = opts.outdir_txt2img_grids
                 p.outpath_samples = opts.outdir_txt2img_samples
@@ -336,8 +336,6 @@ class Api:
                     p.script_args = tuple(script_args) # Need to pass args as tuple here
                     processed = process_images(p)
                 shared.state.end()
-            finally:
-                p.close()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -381,8 +379,7 @@ class Api:
         args.pop('save_images', None)
 
         with self.queue_lock:
-            p = StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)
-            try:
+            with closing(StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)) as p:
                 p.init_images = [decode_base64_to_image(x) for x in init_images]
                 p.scripts = script_runner
                 p.outpath_grids = opts.outdir_img2img_grids
@@ -397,8 +394,6 @@ class Api:
                     processed = process_images(p)
                 shared.state.end()
 
-            finally:
-                p.close()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
