@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import datetime
+from typing import TYPE_CHECKING, Any
 
 import pytz
 import io
@@ -15,9 +18,14 @@ import string
 import json
 import hashlib
 
+from PIL.PngImagePlugin import iTXt
+
 from modules import sd_samplers, shared, script_callbacks, errors
 from modules.paths_internal import roboto_ttf_file
 from modules.shared import opts
+
+if TYPE_CHECKING:
+    from modules.processing import StableDiffusionProcessing
 
 import modules.sd_vae as sd_vae
 
@@ -497,7 +505,13 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_pnginfo=None):
+def save_image_with_geninfo(
+    image: Image.Image,
+    geninfo: str | iTXt | None,
+    filename: str,
+    extension: str | None = None,
+    existing_pnginfo: dict[str, Any] | None = None,
+) -> None:
     if extension is None:
         extension = os.path.splitext(filename)[1]
 
@@ -533,7 +547,24 @@ def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_p
         image.save(filename, format=image_format, quality=opts.jpeg_quality)
 
 
-def save_image(image, path, basename, seed=None, prompt=None, extension='png', info=None, short_filename=False, no_prompt=False, grid=False, pnginfo_section_name='parameters', p=None, existing_info=None, forced_filename=None, suffix="", save_to_dirs=None):
+def save_image(
+    image: Image.Image,
+    path: str,
+    basename: str,
+    seed: str | None = None,
+    prompt: str | None = None,
+    extension: str = 'png',
+    info: str | iTXt | None = None,
+    short_filename: bool = False,
+    no_prompt: bool = False,
+    grid: bool = False,
+    pnginfo_section_name: str = 'parameters',
+    p: StableDiffusionProcessing | None = None,
+    existing_info: dict | None = None,
+    forced_filename: str | None = None,
+    suffix: str = "",
+    save_to_dirs: bool | None = None,
+) -> tuple[str, str | None]:
     """Save an image.
 
     Args:

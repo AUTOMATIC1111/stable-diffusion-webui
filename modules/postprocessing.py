@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 
 from PIL import Image
@@ -6,7 +8,20 @@ from modules import shared, images, devices, scripts, scripts_postprocessing, ui
 from modules.shared import opts
 
 
-def run_postprocessing(extras_mode, image, image_folder, input_dir, output_dir, show_extras_results, *args, save_output: bool = True):
+def run_postprocessing(
+    extras_mode: int,
+    image: Image.Image | str,  # Image or path
+    image_folder: list,  # TODO: type?
+    input_dir: str | None,
+    output_dir: str | None,
+    show_extras_results: bool,
+    *args,
+    save_output: bool = True,
+) -> tuple[
+    list[Image.Image],  # output images
+    str,  # html_info_x
+    str,  # html_info
+]:
     devices.torch_gc()
 
     shared.state.begin()
