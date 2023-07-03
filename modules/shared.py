@@ -694,7 +694,7 @@ cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
 if cmd_opts.backend:
     opts.data['sd_backend'] = cmd_opts.backend.lower()
 backend = Backend.DIFFUSERS if opts.sd_backend == 'diffusers' else Backend.ORIGINAL
-log.info(f'Pipeline: {cmd_opts.backend.lower()}')
+log.info(f'Pipeline: {opts.sd_backend}')
 
 prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_opts.server_name or False)) and not cmd_opts.insecure
