@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 
 import pytz
@@ -669,7 +671,7 @@ IGNORED_INFO_KEYS = {
 }
 
 
-def read_info_from_image(image):
+def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
     items = image.info or {}
 
     geninfo = items.pop('parameters', None)
