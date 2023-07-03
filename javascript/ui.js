@@ -248,29 +248,8 @@ function confirm_clear_prompt(prompt, negative_prompt) {
 }
 
 
-var promptTokecountUpdateFuncs = {};
-
-function recalculatePromptTokens(name) {
-    if (promptTokecountUpdateFuncs[name]) {
-        promptTokecountUpdateFuncs[name]();
-    }
-}
-
-function recalculate_prompts_txt2img() {
-    recalculatePromptTokens('txt2img_prompt');
-    recalculatePromptTokens('txt2img_neg_prompt');
-    return Array.from(arguments);
-}
-
-function recalculate_prompts_img2img() {
-    recalculatePromptTokens('img2img_prompt');
-    recalculatePromptTokens('img2img_neg_prompt');
-    return Array.from(arguments);
-}
-
-
 var opts = {};
-onUiUpdate(function() {
+onAfterUiUpdate(function() {
     if (Object.keys(opts).length != 0) return;
 
     var json_elem = gradioApp().getElementById('settings_json');
@@ -302,28 +281,7 @@ onUiUpdate(function() {
 
     json_elem.parentElement.style.display = "none";
 
-    function registerTextarea(id, id_counter, id_button) {
-        var prompt = gradioApp().getElementById(id);
-        var counter = gradioApp().getElementById(id_counter);
-        var textarea = gradioApp().querySelector("#" + id + " > label > textarea");
-
-        if (counter.parentElement == prompt.parentElement) {
-            return;
-        }
-
-        prompt.parentElement.insertBefore(counter, prompt);
-        prompt.parentElement.style.position = "relative";
-
-        promptTokecountUpdateFuncs[id] = function() {
-            update_token_counter(id_button);
-        };
-        textarea.addEventListener("input", promptTokecountUpdateFuncs[id]);
-    }
-
-    registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button');
-    registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
-    registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');
-    registerTextarea('img2img_neg_prompt', 'img2img_negative_token_counter', 'img2img_negative_token_button');
+    setupTokenCounters();
 
     var show_all_pages = gradioApp().getElementById('settings_show_all_pages');
     var settings_tabs = gradioApp().querySelector('#settings div');
@@ -354,33 +312,6 @@ onOptionsChanged(function() {
 });
 
 let txt2img_textarea, img2img_textarea = undefined;
-let wait_time = 800;
-let token_timeouts = {};
-
-function update_txt2img_tokens(...args) {
-    update_token_counter("txt2img_token_button");
-    if (args.length == 2) {
-        return args[0];
-    }
-    return args;
-}
-
-function update_img2img_tokens(...args) {
-    update_token_counter(
-        "img2img_token_button"
-    );
-    if (args.length == 2) {
-        return args[0];
-    }
-    return args;
-}
-
-function update_token_counter(button_id) {
-    if (token_timeouts[button_id]) {
-        clearTimeout(token_timeouts[button_id]);
-    }
-    token_timeouts[button_id] = setTimeout(() => gradioApp().getElementById(button_id)?.click(), wait_time);
-}
 
 function restart_reload() {
     document.body.innerHTML = '<h1 style="font-family:monospace;margin-top:20%;color:lightgray;text-align:center;">Reloading...</h1>';
