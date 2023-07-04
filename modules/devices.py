@@ -122,6 +122,7 @@ def set_cuda_params():
             try:
                 torch.backends.cudnn.benchmark = True
                 if shared.opts.cudnn_benchmark:
+                    shared.log.debug('Torch enable cuDNN benchmark')
                     torch.backends.cudnn.benchmark_limit = 0
                 torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
             except Exception:

@@ -184,7 +184,7 @@ def create_ui():
                         data.append([model.modelId, model.pipeline_tag, tags, model.downloads, model.lastModified, f'https://huggingface.co/{model.modelId}'])
                     return data
 
-                def hf_select(evt: gr.SelectData):
+                def hf_select(evt: gr.SelectData, data):
                     return data[evt.index[0]][0]
 
                 def hf_download_model(hub_id: str, token):
@@ -212,13 +212,12 @@ def create_ui():
 
                 with gr.Row():
                     hf_headers = ['Name', 'Pipeline', 'Tags', 'Downloads', 'Updated', 'URL']
-                    hf_results = gr.DataFrame([], label = 'Search results', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = hf_headers, type='array')
+                    hf_types = ['str', 'str', 'str', 'number', 'date', 'markdown']
+                    hf_results = gr.DataFrame([], label = 'Search results', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = hf_headers, datatype = hf_types, type='array')
 
                 hf_search_text.submit(fn=hf_search, inputs=[hf_search_text], outputs=[hf_results])
-                hf_results.select(hf_select, inputs=None, outputs=[hf_selected])
+                hf_results.select(fn=hf_select, inputs=[hf_results], outputs=[hf_selected])
                 hf_download_model_btn.click(fn=hf_download_model, inputs=[hf_selected, hf_token], outputs=[models_outcome])
-
-                # TODO load_diffusers_lora
 
             with gr.Tab(label="CivitAI"):
                 pass

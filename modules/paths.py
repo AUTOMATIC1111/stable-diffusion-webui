@@ -76,6 +76,7 @@ def create_paths(opts):
     create_path(fix_path('hypernetwork_dir'))
     create_path(fix_path('ckpt_dir'))
     create_path(fix_path('vae_dir'))
+    create_path(fix_path('diffusers_dir'))
     create_path(fix_path('embeddings_dir'))
     create_path(fix_path('outdir_samples'))
     create_path(fix_path('outdir_txt2img_samples'))

@@ -223,7 +223,8 @@ def select_checkpoint(model=True):
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
         shared.log.warning(f"Selected checkpoint not found: {model_checkpoint}")
-        shared.log.warning(f"Loading fallback checkpoint: {checkpoint_info.title}")
+        # shared.log.warning(f"Loading fallback checkpoint: {checkpoint_info.title}")
+        shared.opts.data['sd_checkpoint'] = checkpoint_info.title
     shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
     return checkpoint_info
 
@@ -579,15 +580,39 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             prior = diffusers.DiffusionPipeline.from_pretrained(prior_id, **diffusers_load_config)
             sd_model = PriorPipeline(prior=prior, main=sd_model) # wrap sd_model
 
-        if shared.cmd_opts.medvram:
-            sd_model.enable_model_cpu_offload()
-        if shared.cmd_opts.lowvram:
-            sd_model.enable_sequential_cpu_offload()
+        if hasattr(sd_model, "enable_sequential_cpu_offload"):
+            if shared.cmd_opts.lowvram or shared.opts.diffusers_seq_cpu_offload:
+                sd_model.enable_sequential_cpu_offload()
+                shared.log.debug('Diffusers: enable sequenctial CPU offload')
+        if hasattr(sd_model, "enable_model_cpu_offload"):
+            if shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload:
+                shared.log.debug('Diffusers: enable model CPU offload')
+                sd_model.enable_model_cpu_offload()
+        if hasattr(sd_model, "enable_vae_slicing"):
+            if shared.opts.diffusers_vae_slicing:
+                shared.log.debug('Diffusers: enable VAE slicing')
+                sd_model.enable_vae_slicing()
+            else:
+                sd_model.disable_vae_slicing()
+        if hasattr(sd_model, "enable_vae_tiling"):
+            if shared.opts.diffusers_vae_tiling:
+                shared.log.debug('Diffusers: enable VAE tiling')
+                sd_model.enable_vae_tiling()
+            else:
+                sd_model.disable_vae_tiling()
+        if hasattr(sd_model, "enable_attention_slicing"):
+            if shared.opts.diffusers_attention_slicing:
+                shared.log.debug('Diffusers: enable attention slicing')
+                sd_model.enable_attention_slicing()
+            else:
+                sd_model.disable_attention_slicing()
         if shared.opts.cross_attention_optimization == "xFormers":
             sd_model.enable_xformers_memory_efficient_attention()
+        if shared.opts.opt_channelslast:
+            shared.log.debug('Diffusers: enable channels last')
+            sd_model.unet.to(memory_format=torch.channels_last)
         if shared.opts.cuda_compile and torch.cuda.is_available():
             sd_model.to(devices.device)
-            sd_model.unet.to(memory_format=torch.channels_last)
             import torch._dynamo as dynamo # pylint: disable=unused-import
             torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
             torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access

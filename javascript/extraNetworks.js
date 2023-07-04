@@ -9,6 +9,7 @@ function setupExtraNetworksForTab(tabname) {
   const refresh = gradioApp().getElementById(`${tabname}_extra_refresh`);
   const description = gradioApp().getElementById(`${tabname}_description`);
   const close = gradioApp().getElementById(`${tabname}_extra_close`);
+  const en = gradioApp().getElementById(`${tabname}_extra_networks`);
   search.classList.add('search');
   description.classList.add('description');
   tabs.appendChild(refresh);
@@ -23,16 +24,15 @@ function setupExtraNetworksForTab(tabname) {
       elem.style.display = text.indexOf(searchTerm) == -1 ? 'none' : '';
     });
   });
+
   intersectionObserver = new IntersectionObserver((entries) => {
-    // if (entries[0].intersectionRatio <= 0) onHidden();
-    const en = gradioApp().getElementById(`${tabname}_extra_networks`);
     if (entries[0].intersectionRatio > 0) {
       for (el of Array.from(gradioApp().querySelectorAll('.extra-network-cards'))) {
         const rect = el.getBoundingClientRect();
-        en.style.transition = 'width 0.2s ease';
         if (rect.top > 0) {
           if (!en) return
           if (window.opts.extra_networks_card_cover == 'cover') {
+            en.style.transition = '';
             en.style.zIndex = 9999;
             en.style.position = 'absolute';
             en.style.right = 'unset';
@@ -40,6 +40,7 @@ function setupExtraNetworksForTab(tabname) {
             el.style.height = document.body.offsetHeight - el.getBoundingClientRect().top + 'px'; 
             gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
           } if (window.opts.extra_networks_card_cover == 'sidebar') {
+            en.style.transition = 'width 0.2s ease';
             en.style.zIndex = 0;
             en.style.position = 'absolute';
             en.style.right = '0';
@@ -47,6 +48,7 @@ function setupExtraNetworksForTab(tabname) {
             el.style.height = gradioApp().getElementById(`${tabname}_settings`).offsetHeight - 90 + 'px'; 
             gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 100 - 2 - window.opts.extra_networks_sidebar_width + 'vw';
           } else {
+            en.style.transition = '';
             en.style.zIndex = 0;
             en.style.position = 'relative';
             en.style.right = 'unset';
@@ -61,7 +63,7 @@ function setupExtraNetworksForTab(tabname) {
       gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
     }
   });
-  intersectionObserver.observe(search); // monitor visibility of 
+  intersectionObserver.observe(en); // monitor visibility of 
 }
 
 function setupExtraNetworks() {

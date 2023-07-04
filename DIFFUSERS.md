@@ -26,6 +26,7 @@ so diffusers code can be merged into `master` and we can continue with developme
 
 whats implemented so far?
 
+- new scheduler: deis
 - simple model downloader for huggingface models: tabs -> models -> hf hub  
 - use huggingface models  
 - extra networks ui  
@@ -58,6 +59,7 @@ whats implemented so far?
 ## Todo
 
 - sdxl model  
+- new schedulers
 
 ## Limitations
 
@@ -73,25 +75,46 @@ will need to handle in the code before we get out of alpha
 
 ## Issues
 
-- seed vs batch size?
+- default model download ckpt vs hfhub?
+- new dependency hell (not diffuser related)?
+- extra networks ui auto-hide and transitions
 
 ## Notes for HF
 
 - removed `quicksettings` alternative completely
-- added simple model downloader in ui: *tabs -> models -> huggingface*
+- added simple model downloader in ui: *tabs -> models -> huggingface*  
+- attempting to download gated model without access token results in model/refs/commits not found instead of access denied  
+  this is not very user friendly, it should be handled in the code  
 - redone **textual inversion** support, core is now in `modules/textual_inversion/textual_inversion.py:load_diffusers_embedding()`  
   the point is that sdnext pre-loads all compatible embeddings on model load so they are available in prompt context
+- redone **lora** support, core is now in `modules/lora_diffusers.py`  
 - added support for diffuser models in **safetensors/ckpt** format  
-  btw, when i use: `diffusers.StableDiffusionPipeline.from_ckpt`  
+- when i use `diffusers.StableDiffusionPipeline.from_ckpt`  
   first time it downloads something - what is that?
   > Downloading (…)lve/main/config.json: 4.55k  
   > Downloading pytorch_model.bin: 1.22G  
-  and in general, loading safetensors model is quite slow, is that expected?  
-  for example, 2sec vs 18sec  
+- loading safetensors model is very slow  
+  for example, 2sec without diffusers and 16sec with diffusers
 - in `modules/modelloader.py:download_diffusers_model()` i get unknown property for `hf.model_info(hub_id).cardData`
   can you double-check if this is linter issue or actual problem?
-- redone **lora** support, core is now in `modules/lora_diffusers.py`  
 - question on `pipe.load_lora_weights`
   does it support loading multiple loras? i don't see any notes on that in docs
   also, lora strength is specified using `cross_attention_kwargs={"scale": x}` during pipeline execution  
   which means if there are multiple loras, they all have the same strength?
+- **deepfloyd** failures:
+  > /home/disty/Apps/automatic/venv/lib/python3.10/site-packages/diffusers/configuration_utils.py:138 in __getattr__  
+  > AttributeError: 'DDPMScheduler' object has no attribute 'name  
+- question how do diffusers handle standard 75 token limit for sd?  
+- diffusers `convert_from_ckpt.py` uses fixed `print` statements so its not possible to control its output to console  
+  it should use `logging` instead. in general, using `print` is bad idea  
+  for example, it very annoyingly logs this every time `StableDiffusionPipeline.from_ckpt` is used:
+  > global_step key not found in model  
+  > Checkpoint /home/vlado/dev/automatic/models/Stable-diffusion/best/absolutereality_v1.safetensors has both EMA and non-EMA weights.  
+  > In this conversion only the EMA weights are extracted. If you want to instead extract the non-EMA weights (useful to continue fine-tuning), please make sure to remove the `--extract_ema` flag.  
+
+## Update
+
+- sortable models table in downloader ui
+- recommended scheduler: `deis`
+- `channels_last` and `cudnn_benchmark` now apply to diffusers
+- new settings section for diffusers fine-tuning

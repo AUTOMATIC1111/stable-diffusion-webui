@@ -524,9 +524,9 @@
 ],
 "scripts": [
   {"id":"","label":"Script","localized":"","hint":""},
-  {"id":"","label":"Swap X/Y axes","localized":"","hint":""},
-  {"id":"","label":"Swap Y/Z axes","localized":"","hint":""},
-  {"id":"","label":"Swap X/Z axes","localized":"","hint":""},
+  {"id":"","label":"Swap X/Y","localized":"","hint":""},
+  {"id":"","label":"Swap Y/Z","localized":"","hint":""},
+  {"id":"","label":"Swap X/Z","localized":"","hint":""},
   {"id":"","label":"Resize to","localized":"","hint":""},
   {"id":"","label":"Resize by","localized":"","hint":""},
   {"id":"","label":"Use via API","localized":"","hint":""},

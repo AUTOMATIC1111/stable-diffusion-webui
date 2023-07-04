@@ -689,14 +689,14 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
             elif backend == Backend.DIFFUSERS:
-                generator = [torch.Generator(device="cpu").manual_seed(s) for s in seeds]
+                generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
+                generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
                 if shared.sd_model.scheduler.name != p.sampler_name:
                     sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
                     if sampler is None:
                         sampler = sd_samplers.all_samplers_map.get("UniPC")
                     scheduler = sampler.constructor(shared.sd_model.sd_checkpoint_info.filename)
-                    # TODO(Patrick): For wrapped pipelines this is currently a no-op
-                    shared.sd_model.scheduler = scheduler.sampler
+                    shared.sd_model.scheduler = scheduler.sampler # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
                 cross_attention_kwargs={}
                 if lora_state['active']:
