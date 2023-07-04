@@ -39,6 +39,16 @@ To run, you must have all these flags enabled: `--use-cpu all --precision full -
 
 Though this is a questionable way to run webui, due to the very slow generation speeds; using the various AI upscalers and captioning tools may be useful to some people.
 
+<details><summary>Extras: </summary>
+
+For the technically inclined, here are some steps a user provided to boost CPU performance:
+
+https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10514
+
+https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
+
+</details>
+
 # All command line arguments
 
 | Argument Command | Value | Default | Description |
