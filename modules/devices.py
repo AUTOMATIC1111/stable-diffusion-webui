@@ -23,7 +23,7 @@ def extract_device_id(args, name): # pylint: disable=redefined-outer-name
 
 
 def get_cuda_device_string():
-    if shared.cmd_opts.use_ipex:
+    if backend == 'ipex':
         if shared.cmd_opts.device_id is not None:
             return f"xpu:{shared.cmd_opts.device_id}"
         return "xpu"
@@ -34,7 +34,7 @@ def get_cuda_device_string():
 
 
 def get_optimal_device_name():
-    if (cuda_ok or shared.cmd_opts.use_ipex) and not shared.cmd_opts.use_directml:
+    if (cuda_ok or backend == 'ipex') and not shared.cmd_opts.use_directml:
         return get_cuda_device_string()
     if has_mps():
         return "mps"
@@ -64,7 +64,7 @@ def torch_gc(force=False):
     if shared.opts.disable_gc and not force:
         return
     collected = gc.collect()
-    if shared.cmd_opts.use_ipex:
+    if backend == 'ipex':
         try:
             with torch.xpu.device(get_cuda_device_string()):
                 torch.xpu.empty_cache()
@@ -161,7 +161,20 @@ def set_cuda_params():
 
 
 args = cmd_args.parser.parse_args()
-if args.use_ipex:
+if args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available()):
+    backend = 'ipex'
+elif args.use_directml:
+    backend = 'directml'
+elif torch.cuda.is_available() and torch.version.cuda:
+    backend = 'cuda'
+elif torch.cuda.is_available() and torch.version.hip:
+    backend = 'rocm'
+elif sys.platform == 'darwin':
+    backend = 'mps'
+else:
+    backend = 'cpu'
+
+if backend == 'ipex':
     #Fix broken function in ipex 1.13.120+xpu
     from modules.sd_hijack_utils import CondFunc
     #Functions with dtype errors:
@@ -206,19 +219,6 @@ dtype = torch.float16
 dtype_vae = torch.float16
 dtype_unet = torch.float16
 unet_needs_upcast = False
-if args.use_ipex:
-    backend = 'ipex'
-elif args.use_directml:
-    backend = 'directml'
-elif torch.cuda.is_available() and torch.version.cuda:
-    backend = 'cuda'
-elif torch.cuda.is_available() and torch.version.hip:
-    backend = 'rocm'
-elif sys.platform == 'darwin':
-    backend = 'mps'
-else:
-    backend = 'cpu'
-
 
 
 def cond_cast_unet(tensor):
@@ -231,7 +231,7 @@ def cond_cast_float(tensor):
 
 def randn(seed, shape):
     torch.manual_seed(seed)
-    if shared.cmd_opts.use_ipex:
+    if backend == 'ipex':
         torch.xpu.manual_seed_all(seed)
     if device.type == 'mps':
         return torch.randn(shape, device=cpu).to(device)
@@ -251,7 +251,7 @@ def autocast(disable=False):
         return contextlib.nullcontext()
     if shared.cmd_opts.use_directml:
         return torch.dml.amp.autocast(dtype)
-    if shared.cmd_opts.use_ipex:
+    if backend == 'ipex':
         return torch.xpu.amp.autocast(enabled=True, dtype=dtype)
     if cuda_ok:
         return torch.autocast("cuda")
@@ -264,7 +264,7 @@ def without_autocast(disable=False):
         return contextlib.nullcontext()
     if shared.cmd_opts.use_directml:
         return torch.dml.amp.autocast(enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
-    if shared.cmd_opts.use_ipex:
+    if backend == 'ipex':
         return torch.xpu.amp.autocast(enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
     if cuda_ok:
         return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()

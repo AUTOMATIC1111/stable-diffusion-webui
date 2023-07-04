@@ -4,7 +4,7 @@ import torch
 import k_diffusion.sampling
 from modules import prompt_parser, devices, sd_samplers_common
 
-from modules.shared import opts, state, cmd_opts
+from modules.shared import opts, state
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
 from modules.script_callbacks import CFGDenoisedParams, cfg_denoised_callback
@@ -326,11 +326,11 @@ class KDiffusionSampler:
         sigma_max = sigmas.max()
 
         current_iter_seeds = p.all_seeds[p.iteration * p.batch_size:(p.iteration + 1) * p.batch_size]
-        if cmd_opts.use_ipex: #Remove this after Intel adds support for torch.Generator()
+        if devices.backend == 'ipex': #Remove this after Intel adds support for torch.Generator()
             try:
                 return BrownianTreeNoiseSampler(x.to("cpu"), sigma_min, sigma_max, seed=current_iter_seeds, transform=lambda x: x.to("cpu"), transform_last=lambda x: x.to(shared.device)) # pylint: disable=E1123
             except Exception:
-                print("ERROR    Please apply this patch to repositories/k-diffusion/k_diffusion/sampling.py: https://github.com/crowsonkb/k-diffusion/pull/68/files")
+                shared.log.error("Please apply this patch to repositories/k-diffusion/k_diffusion/sampling.py: https://github.com/crowsonkb/k-diffusion/pull/68/files")
                 return None
         else:
             return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)

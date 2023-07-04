@@ -12,7 +12,7 @@ import safetensors.torch
 
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.util import instantiate_from_config, ismap
-from modules import shared, sd_hijack
+from modules import devices, shared, sd_hijack
 
 cached_ldsr_model: torch.nn.Module = None
 
@@ -113,7 +113,7 @@ class LDSR:
         gc.collect()
         if torch.cuda.is_available:
             torch.cuda.empty_cache()
-        if shared.cmd_opts.use_ipex:
+        if devices.backend == 'ipex':
             torch.xpu.empty_cache()
 
         im_og = image

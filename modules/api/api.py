@@ -605,7 +605,7 @@ class Api:
             ram = { 'error': f'{err}' }
         try:
             import torch
-            if shared.cmd_opts.use_ipex:
+            if devices.backend == 'ipex':
                 system = { 'free': (torch.xpu.get_device_properties(shared.device).total_memory - torch.xpu.memory_allocated()), 'used': torch.xpu.memory_allocated(), 'total': torch.xpu.get_device_properties(shared.device).total_memory }
                 s = dict(torch.xpu.memory_stats())
                 allocated = { 'current': s['allocated_bytes.all.current'], 'peak': s['allocated_bytes.all.peak'] }

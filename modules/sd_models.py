@@ -585,7 +585,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None)
     sd_hijack.model_hijack.hijack(sd_model)
     timer.record("hijack")
     sd_model.eval()
-    if shared.cmd_opts.use_ipex and not (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
+    if devices.backend == 'ipex' and not (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
         sd_model = torch.xpu.optimize(sd_model, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True,
         graph_mode=True if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex' else False)
         shared.log.info("Applied IPEX Optimize")
