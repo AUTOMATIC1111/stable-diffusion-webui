@@ -59,8 +59,9 @@ whats implemented so far?
 ## Todo
 
 - sdxl model  
-- new schedulers
-- settings -> schedulers
+- new schedulers  
+- settings -> schedulers  
+- no idea if sd21 works out-of-the-box
 
 ## Limitations
 
@@ -84,6 +85,11 @@ will need to handle in the code before we get out of alpha
 - added simple model downloader in ui: *tabs -> models -> huggingface*  
 - attempting to download gated model without access token results in model/refs/commits not found instead of access denied  
   this is not very user friendly, it should be handled in the code  
+- redone diffuser sampler support, new code in `modules/sd_samplers_diffusers.py`  
+- new config section ui settings -> samplers  
+  (its dynamic, it will show standard ui or diffuser specific stuff depending how sdnext is started)  
+- scheduler config is a bit difficult to work with as its not possible to see which params each scheduler defines ahead of time  
+  and if passing params it doesn't have, it will result in runtime error
 - redone **textual inversion** support, core is now in `modules/textual_inversion/textual_inversion.py:load_diffusers_embedding()`  
   the point is that sdnext pre-loads all compatible embeddings on model load so they are available in prompt context
 - redone **lora** support, core is now in `modules/lora_diffusers.py`  
@@ -100,6 +106,8 @@ will need to handle in the code before we get out of alpha
   does it support loading multiple loras? i don't see any notes on that in docs
   also, lora strength is specified using `cross_attention_kwargs={"scale": x}` during pipeline execution  
   which means if there are multiple loras, they all have the same strength?
+- any plans to support more complex loras? from limited testing  
+  it seems only basic loras are working while lycoris/locon are not
 - **deepfloyd** failures:
   > /home/disty/Apps/automatic/venv/lib/python3.10/site-packages/diffusers/configuration_utils.py:138 in __getattr__  
   > AttributeError: 'DDPMScheduler' object has no attribute 'name  
@@ -111,7 +119,6 @@ will need to handle in the code before we get out of alpha
   > Checkpoint /home/vlado/dev/automatic/models/Stable-diffusion/best/absolutereality_v1.safetensors has both EMA and non-EMA weights.  
   > In this conversion only the EMA weights are extracted. If you want to instead extract the non-EMA weights (useful to continue fine-tuning), please make sure to remove the `--extract_ema` flag.  
 - do you have plans to implement [Restart](https://github.com/vladmandic/automatic/issues/1537) sampler in diffusers?
-- scheduler config is really difficult to work with as its not possible to see which params each scheduler defines ahead of time and if passing params it doesn't have, it will result in runtime error
 
 ## Update
 
@@ -121,8 +128,6 @@ will need to handle in the code before we get out of alpha
 - `channels_last` and `cudnn_benchmark` now apply to diffusers  
 - new settings section for diffusers fine-tuning  
 - fixed missed call to `devices.set_cuda_params`
-- had to reduce number of supported schedulers by a lot until i add param checking for the rest  
-  issue is that diffusers have completely different params for schedulers than a111, but passing unknown param causes runtime error
-  previously params were not passed at all, so you couldn't even use anything other than default scheduler (although ui showed you were)
+- redid samplers
 - fixed "it looks like the config file at 'xxx.safetensors' is not a valid JSON file"  
-  this is also related to schedulers as diffusers are trying to read default scheduler config from model itself, but that doesn't exist for safetensors  
+- ui settings -> samplers is now dynamic depending if backend is original or diffusers
