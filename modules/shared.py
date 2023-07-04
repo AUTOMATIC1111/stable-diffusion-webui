@@ -188,7 +188,7 @@ class State:
 
 state = State()
 state.server_start = time.time()
-backend = Backend.DIFFUSERS if cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
+backend = Backend.DIFFUSERS if (cmd_opts.backend is not None) and (cmd_opts.backend.lower() == 'diffusers') else Backend.ORIGINAL
 log.info(f'Pipeline: {backend}')
 
 
