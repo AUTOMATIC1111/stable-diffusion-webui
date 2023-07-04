@@ -146,7 +146,7 @@
   {"id":"","label":"System Paths","localized":"","hint":""},
   {"id":"","label":"Image Options","localized":"","hint":""},
   {"id":"","label":"Image Processing","localized":"","hint":""},
-  {"id":"","label":"Output Paths","localized":"","hint":""},
+  {"id":"","label":"Image Paths","localized":"","hint":""},
   {"id":"","label":"User Interface","localized":"","hint":""},
   {"id":"","label":"Live Previews","localized":"","hint":""},
   {"id":"","label":"Sampler Settings","localized":"","hint":""},

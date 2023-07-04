@@ -692,11 +692,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
                 generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
                 if shared.sd_model.scheduler.name != p.sampler_name:
+                    #  sd_model.scheduler = diffusers.UniPCMultistepScheduler.from_config(sd_model.scheduler.config)
                     sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
                     if sampler is None:
                         sampler = sd_samplers.all_samplers_map.get("UniPC")
-                    scheduler = sampler.constructor(shared.sd_model.sd_checkpoint_info.filename)
-                    shared.sd_model.scheduler = scheduler.sampler # TODO(Patrick): For wrapped pipelines this is currently a no-op
+                    shared.sd_model.scheduler = sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
                 cross_attention_kwargs={}
                 if lora_state['active']:
@@ -722,7 +722,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 x_samples_ddim = output.images
                 if lora_state['active']:
                     unload_diffusers_lora()
-
 
             else:
                 raise ValueError(f"Unknown backend {backend}")

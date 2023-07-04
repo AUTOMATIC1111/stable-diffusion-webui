@@ -60,6 +60,7 @@ whats implemented so far?
 
 - sdxl model  
 - new schedulers
+- settings -> schedulers
 
 ## Limitations
 
@@ -75,9 +76,7 @@ will need to handle in the code before we get out of alpha
 
 ## Issues
 
-- default model download ckpt vs hfhub?
 - new dependency hell (not diffuser related)?
-- extra networks ui auto-hide and transitions
 
 ## Notes for HF
 
@@ -90,7 +89,7 @@ will need to handle in the code before we get out of alpha
 - redone **lora** support, core is now in `modules/lora_diffusers.py`  
 - added support for diffuser models in **safetensors/ckpt** format  
 - when i use `diffusers.StableDiffusionPipeline.from_ckpt`  
-  first time it downloads something - what is that?
+  first time it downloads something - what is that? (could it be a default safety checker?)
   > Downloading (…)lve/main/config.json: 4.55k  
   > Downloading pytorch_model.bin: 1.22G  
 - loading safetensors model is very slow  
@@ -111,10 +110,19 @@ will need to handle in the code before we get out of alpha
   > global_step key not found in model  
   > Checkpoint /home/vlado/dev/automatic/models/Stable-diffusion/best/absolutereality_v1.safetensors has both EMA and non-EMA weights.  
   > In this conversion only the EMA weights are extracted. If you want to instead extract the non-EMA weights (useful to continue fine-tuning), please make sure to remove the `--extract_ema` flag.  
+- do you have plans to implement [Restart](https://github.com/vladmandic/automatic/issues/1537) sampler in diffusers?
+- scheduler config is really difficult to work with as its not possible to see which params each scheduler defines ahead of time and if passing params it doesn't have, it will result in runtime error
 
 ## Update
 
-- sortable models table in downloader ui
-- recommended scheduler: `deis`
-- `channels_last` and `cudnn_benchmark` now apply to diffusers
-- new settings section for diffusers fine-tuning
+- sortable models table in downloader ui  
+- system info tab -> benchmark is now working  
+- recommended scheduler: `deis`  
+- `channels_last` and `cudnn_benchmark` now apply to diffusers  
+- new settings section for diffusers fine-tuning  
+- fixed missed call to `devices.set_cuda_params`
+- had to reduce number of supported schedulers by a lot until i add param checking for the rest  
+  issue is that diffusers have completely different params for schedulers than a111, but passing unknown param causes runtime error
+  previously params were not passed at all, so you couldn't even use anything other than default scheduler (although ui showed you were)
+- fixed "it looks like the config file at 'xxx.safetensors' is not a valid JSON file"  
+  this is also related to schedulers as diffusers are trying to read default scheduler config from model itself, but that doesn't exist for safetensors  

@@ -343,6 +343,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
+    "diffusers_extract_ema": OptionInfo(True, "Use model EMA weights when possible"),
     "diffusers_generator_device": OptionInfo("default", "Generator device", gr.Radio, lambda: {"choices": ["default", "cpu"]}),
     "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload"),
     "diffusers_model_cpu_offload": OptionInfo(False, "Enable model CPU offload"),
@@ -417,7 +418,7 @@ options_templates.update(options_section(('image-processing', "Image Processing"
 }))
 
 
-options_templates.update(options_section(('saving-paths', "Output Paths"), {
+options_templates.update(options_section(('saving-paths', "Image Paths"), {
     "outdir_samples": OptionInfo("", "Output directory for images", component_args=hide_dirs),
     "outdir_txt2img_samples": OptionInfo("outputs/text", 'Output directory for txt2img images', component_args=hide_dirs),
     "outdir_img2img_samples": OptionInfo("outputs/image", 'Output directory for img2img images', component_args=hide_dirs),

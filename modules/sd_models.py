@@ -541,6 +541,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         "low_cpu_mem_usage": True,
         "torch_dtype": devices.dtype,
         "safety_checker": None,
+        "requires_safety_checker": False,
+        "load_safety_checker": False,
         # "use_safetensors": True,  # TODO(PVP) - we can't enable this for all checkpoints just yet
     }
 
@@ -548,6 +550,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
     sd_model = None
     try:
+        devices.set_cuda_params() # todo
         if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
             model_name = modelloader.find_diffuser(shared.cmd_opts.ckpt)
             if model_name is not None:
@@ -564,12 +567,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
             else:
                 diffusers_load_config["local_files_only "] = True
-                diffusers_load_config["extract_ema"] = True
+                diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
                 sd_model = diffusers.StableDiffusionPipeline.from_ckpt(checkpoint_info.path, **diffusers_load_config)
 
         if "StableDiffusion" in sd_model.__class__.__name__:
-            sd_model.scheduler = diffusers.UniPCMultistepScheduler.from_config(sd_model.scheduler.config)
-            sd_model.scheduler.name = 'UniPC'
+            from modules.sd_samplers import create_sampler
+            create_sampler('UniPC', sd_model)
         elif "Kandinsky" in sd_model.__class__.__name__:
             sd_model.scheduler.name = 'DDIM'
 

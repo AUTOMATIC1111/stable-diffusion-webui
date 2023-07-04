@@ -3,14 +3,9 @@ from modules.sd_samplers_common import samples_to_image_grid, sample_to_image # 
 from modules.shared import backend, Backend
 
 if backend == Backend.ORIGINAL:
-    all_samplers = [
-        *sd_samplers_kdiffusion.samplers_data_k_diffusion,
-        *sd_samplers_compvis.samplers_data_compvis,
-    ]
+    all_samplers = [*sd_samplers_kdiffusion.samplers_data_k_diffusion, *sd_samplers_compvis.samplers_data_compvis]
 else:
-    all_samplers = [
-        *sd_samplers_diffusers.samplers_data_diffusers,
-    ]
+    all_samplers = [*sd_samplers_diffusers.samplers_data_diffusers]
 all_samplers_map = {x.name: x for x in all_samplers}
 samplers = all_samplers
 samplers_for_img2img = all_samplers
@@ -34,10 +29,12 @@ def create_sampler(name, model):
         sampler = config.constructor(model)
         sampler.config = config
         return sampler
-    else:
-        sampler = config.constructor(model.sd_checkpoint_info.filename)
+    elif backend == Backend.DIFFUSERS:
+        sampler = config.constructor(model)
         model.scheduler = sampler.sampler
         return sampler.sampler
+    else:
+        return None
 
 
 def set_samplers():
