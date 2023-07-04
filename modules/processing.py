@@ -691,8 +691,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             elif backend == Backend.DIFFUSERS:
                 generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
                 generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
-                if shared.sd_model.scheduler.name != p.sampler_name:
-                    #  sd_model.scheduler = diffusers.UniPCMultistepScheduler.from_config(sd_model.scheduler.config)
+                if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name):
                     sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
                     if sampler is None:
                         sampler = sd_samplers.all_samplers_map.get("UniPC")

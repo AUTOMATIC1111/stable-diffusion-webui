@@ -414,7 +414,7 @@ def install_repositories():
         pr.enable()
     def d(name):
         return os.path.join(os.path.dirname(__file__), 'repositories', name)
-    log.info('Installing repositories')
+    log.info('Verifying repositories')
     os.makedirs(os.path.join(os.path.dirname(__file__), 'repositories'), exist_ok=True)
     stable_diffusion_repo = os.environ.get('STABLE_DIFFUSION_REPO', "https://github.com/Stability-AI/stablediffusion.git")
     # stable_diffusion_commit = os.environ.get('STABLE_DIFFUSION_COMMIT_HASH', "cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf")
@@ -526,7 +526,7 @@ def install_submodules():
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
-    log.info('Installing submodules')
+    log.info('Verifying submodules')
     txt = git('submodule')
     log.debug(f'Submodules list: {txt}')
     if 'no submodule mapping found' in txt:

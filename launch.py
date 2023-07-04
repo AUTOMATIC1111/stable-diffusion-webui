@@ -174,6 +174,7 @@ if __name__ == "__main__":
         installer.install_repositories()
         installer.install_submodules()
         installer.install_extensions()
+        installer.install_packages() # redo packages since extensions may change them
         installer.update_wiki()
         if installer.errors == 0:
             installer.log.debug(f'Setup complete without errors: {round(time.time())}')

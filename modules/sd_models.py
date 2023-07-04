@@ -571,8 +571,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model = diffusers.StableDiffusionPipeline.from_ckpt(checkpoint_info.path, **diffusers_load_config)
 
         if "StableDiffusion" in sd_model.__class__.__name__:
-            from modules.sd_samplers import create_sampler
-            create_sampler('UniPC', sd_model)
+            pass # scheduler is created on first use
         elif "Kandinsky" in sd_model.__class__.__name__:
             sd_model.scheduler.name = 'DDIM'
 
