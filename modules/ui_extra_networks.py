@@ -133,12 +133,15 @@ class ExtraNetworksPage:
             fn = f'{fn}.thumb.jpg'
             if os.path.exists(fn):
                 continue
-            created += 1
-            img = Image.open(f)
-            img = img.convert('RGB')
-            img.thumbnail((512, 512), Image.HAMMING)
-            img.save(fn)
-            img.close()
+            try:
+                img = Image.open(f)
+                img = img.convert('RGB')
+                img.thumbnail((512, 512), Image.HAMMING)
+                img.save(fn)
+                img.close()
+                created += 1
+            except Exception as e:
+                shared.log.error(f'Extra network error creating thumbnail: {f} {e}')
         if len(self.missing_thumbs) > 0:
             shared.log.info(f"Extra network created thumbnails: {self.name} {created}")
             self.missing_thumbs.clear()

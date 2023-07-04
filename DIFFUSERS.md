@@ -73,7 +73,7 @@ will need to handle in the code before we get out of alpha
 
 ## Issues
 
-- TBD
+- seed vs batch size?
 
 ## Notes for HF
 
