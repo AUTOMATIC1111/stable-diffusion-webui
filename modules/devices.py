@@ -207,13 +207,7 @@ if backend == 'ipex':
         args[5], args[6], args[7], args[8]).to(get_cuda_device_string()),
         lambda *args, **kwargs: args[1].device != torch.device("cpu"))
 
-    #Use XPU instead of CPU. %20 Perf improvement on weak CPUs.
-    if args.device_id is not None:
-        cpu = torch.device(f"xpu:{args.device_id}")
-    else:
-        cpu = torch.device("xpu")
-else:
-    cpu = torch.device("cpu")
+cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
 dtype = torch.float16
 dtype_vae = torch.float16
