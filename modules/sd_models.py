@@ -474,7 +474,7 @@ class SdModelData:
                     elif shared.backend == shared.Backend.DIFFUSERS:
                         load_diffuser()
                     else:
-                        shared.log.error(f"Unknown Stable Diffusion backend: {shared.opts.sd_backend}")
+                        shared.log.error(f"Unknown Stable Diffusion backend: {shared.backend}")
                     self.initial = False
                 except Exception as e:
                     shared.log.error("Failed to load stable diffusion model")
