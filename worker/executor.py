@@ -10,6 +10,7 @@ import typing
 from queue import Queue
 from loguru import logger
 from worker.task import Task
+from datetime import datetime
 from worker.handler import TaskHandler
 from worker.task_recv import TaskReceiver, TaskTimeout
 from threading import Thread, Condition, Lock
@@ -61,7 +62,8 @@ class TaskExecutor(Thread):
             handler = self.get_handler(task)
             if not handler:
                 self.error_handler(task, Exception('can not found task handler'))
-            if task.create_at > 0 and time.time() - task.create_at > self.timeout:
+            # 判断TASK超时。
+            if self._is_timeout(task):
                 now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
                 create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(task.create_at))
                 handler.set_failed(task, f'task time out(task create time:{create_time}, now:{now})')
@@ -81,10 +83,19 @@ class TaskExecutor(Thread):
                     self.not_busy.wait()
         logger.info("=======> task receiver quit!!!!!!")
 
+    def _is_timeout(self, task: Task) -> bool:
+        if task.create_at <= 0:
+            return False
+        now = time.time()
+        if task.is_train:
+            # 1天内的任务。
+            return now - task.create_at > 24 * 3600
+
+        return now - task.create_at > self.timeout
+
     def run(self) -> None:
         self._get_task()
 
     def start(self) -> None:
         super(TaskExecutor, self).start()
         self.exec_task()
-

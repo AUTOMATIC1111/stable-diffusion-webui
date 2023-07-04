@@ -34,7 +34,31 @@ Env_AccessKey = 'StorageAK'
 Env_SecretKey = 'StorageSK'
 Env_BucketKey = 'StorageBucket'
 
+Env_Run_Train_Time_Start = "RUN_TRAIN_TIME_START"
+Env_Run_Train_Time_End = "RUN_TRAIN_TIME_END"
+Env_Worker_Group = "WORKER_GROUP_NAME"
+
+
 cache = {}
+
+
+def get_worker_group():
+    group = cache.get(Env_Worker_Group) or os.getenv(Env_Worker_Group, "Unknown")
+    cache[Env_Worker_Group] = group
+
+    return group
+
+
+def get_run_train_time_cfg():
+    d = {
+        Env_Run_Train_Time_Start: None,
+        Env_Run_Train_Time_End: None,
+    }
+
+    for key in d.keys():
+        d[key] = cache.get(key) or os.getenv(key)
+        cache[key] = d[key]
+    return d
 
 
 def get_mysql_env() -> typing.Mapping[str, str]:
