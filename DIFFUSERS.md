@@ -119,6 +119,7 @@ will need to handle in the code before we get out of alpha
   > Checkpoint /home/vlado/dev/automatic/models/Stable-diffusion/best/absolutereality_v1.safetensors has both EMA and non-EMA weights.  
   > In this conversion only the EMA weights are extracted. If you want to instead extract the non-EMA weights (useful to continue fine-tuning), please make sure to remove the `--extract_ema` flag.  
 - do you have plans to implement [Restart](https://github.com/vladmandic/automatic/issues/1537) sampler in diffusers?
+- `torch.nonzero()` performance issue <https://github.com/huggingface/diffusers/issues/3950>
 
 ## Update
 

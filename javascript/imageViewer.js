@@ -149,9 +149,8 @@ onAfterUiUpdate(() => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  // const modalFragment = document.createDocumentFragment();
   const modal = document.createElement('div');
-  modal.onclick = closeModal;
+  // modal.onclick = closeModal;
   modal.id = 'lightboxModal';
   modal.tabIndex = 0;
   modal.addEventListener('keydown', modalKeyHandler, true);
@@ -182,21 +181,17 @@ document.addEventListener('DOMContentLoaded', () => {
   modalSave.title = 'Save Image(s)';
   modalControls.appendChild(modalSave);
 
-  /*
-  const modalClose = document.createElement('span');
-  modalClose.className = 'modalClose cursor';
-  modalClose.innerHTML = '&times;';
-  modalClose.onclick = closeModal;
-  modalClose.title = 'Close image viewer';
-  modalControls.appendChild(modalClose);
-  */
-
   const modalImage = document.createElement('img');
   modalImage.id = 'modalImage';
-  modalImage.onclick = closeModal;
   modalImage.tabIndex = 0;
   modalImage.addEventListener('keydown', modalKeyHandler, true);
   modal.appendChild(modalImage);
+  modalImage.onload = () => panzoom(modalImage, { zoomSpeed: 0.025, minZoom: 0.25, maxZoom: 4.0 });
+  let drag = false;
+  modalImage.addEventListener('mousedown', () => drag = false);
+  modalImage.addEventListener('mousemove', () => drag = true);
+  modalImage.addEventListener('mouseup', () => { if (!drag) closeModal(); });
+  // modalImage.onclick = closeModal;
 
   const modalPrev = document.createElement('a');
   modalPrev.className = 'modalPrev';

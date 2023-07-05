@@ -26,7 +26,8 @@ Stuff to be investigated...
 
 Pick & merge PRs from main repo...
 
-- list: <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/89f9faa...baf6946>
+- up-to-date with: df004be
+- current todo list: <https://github.com/AUTOMATIC1111/stable-diffusion-webui/compare/df004be...394ffa7>
 
 ## Integration
 
@@ -48,7 +49,6 @@ Tech that can be integrated as part of the core workflow...
 
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
 - <https://towardsdatascience.com/mastering-memoization-in-python-dcdd8b435189>
-- shared.info
 - docker
 - port `p.all_hr_prompts`
 - test `lyco_patch_lora`
@@ -57,6 +57,6 @@ Tech that can be integrated as part of the core workflow...
 - image watermark
 - image `imagehash` phash and hdash
 - custom exif tags
-- replace lightbox with iv-viewer
 - git-rebasin
 - additional upscalers
+- new image browser
