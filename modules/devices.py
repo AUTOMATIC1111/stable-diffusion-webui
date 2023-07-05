@@ -190,9 +190,9 @@ if backend == 'ipex':
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"), args[1].to("cpu")).to(get_cuda_device_string()),
         lambda *args, **kwargs: args[1].device != torch.device("cpu"))
     #SDE Samplers:
-    CondFunc('torchsde._brownian.brownian_interval._randn',
-        lambda _, size, dtype, device, seed: torch.randn(size, dtype=dtype, device=device, generator=torch.xpu.Generator(device).manual_seed(int(seed))),
-        lambda _, size, dtype, device, seed: device != torch.device("cpu"))
+    CondFunc('torch.Generator',
+        lambda orig_func, *args, **kwargs: torch.xpu.Generator(args[0]),
+        lambda *args, **kwargs: args[1] != torch.device("cpu"))
     #ControlNet:
     CondFunc('torch.batch_norm',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
