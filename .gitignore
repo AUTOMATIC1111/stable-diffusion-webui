@@ -1,6 +1,7 @@
 # defaults
 __pycache__
 .ruff_cache
+.vscode
 /cache.json
 /metadata.json
 /config.json
