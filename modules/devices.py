@@ -191,8 +191,8 @@ if backend == 'ipex':
         lambda *args, **kwargs: args[1].device != torch.device("cpu"))
     #SDE Samplers:
     CondFunc('torch.Generator',
-        lambda orig_func, *args, **kwargs: torch.xpu.Generator(args[0]),
-        lambda *args, **kwargs: args[1] != torch.device("cpu"))
+        lambda _, device: torch.xpu.Generator(device),
+        lambda _, device: device != torch.device("cpu") and device != "cpu")
     #ControlNet:
     CondFunc('torch.batch_norm',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
