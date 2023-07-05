@@ -177,7 +177,7 @@ def get_log():
 def get_info():
     import time
     t0 = time.time()
-    res = getsync('/sdapi/v1/system-info/status')
+    res = getsync('/sdapi/v1/system-info/status?full=true&refresh=true')
     t1 = time.time()
     print({ 'duration': 1000 * round(t1-t0, 3), **res })
     return res

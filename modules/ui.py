@@ -321,7 +321,10 @@ def create_override_settings_dropdown(tabname, row): # pylint: disable=unused-ar
     return dropdown
 
 
-def create_ui(startup_timer):
+def create_ui(startup_timer = None):
+    if startup_timer is None:
+        from modules import timer
+        startup_timer = timer.Timer()
     import modules.img2img # pylint: disable=redefined-outer-name
     import modules.txt2img # pylint: disable=redefined-outer-name
     reload_javascript()

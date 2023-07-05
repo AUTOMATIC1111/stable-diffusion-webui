@@ -123,6 +123,7 @@ will need to handle in the code before we get out of alpha
 - `torch.nonzero()` performance issue <https://github.com/huggingface/diffusers/issues/3950>
 - `enable_sequential_cpu_offload()` results in error
   > NotImplementedError: Cannot copy out of meta tensor; no data!
+- diffusers support `xformers`, but i don't see any notes on `sdp`?
 
 ## Update
 
@@ -143,12 +144,11 @@ will need to handle in the code before we get out of alpha
 | original | 7.99 / 7.93 / 8.83 / 9.14 / 9.2 | 6.7 / 7.2 |
 | original medvram | 6.23 / 7.16 / 8.41 / 9.24 / 9.68 | 8.4 / 6.8 |
 | original lowvram | 1.05 / 1.94 / 3.2 / 4.81 / 6.46 | 8.8 / 5.2 |
-| original compile inductor | | |
 | diffusers | 9 / 7.4 / 8.2 / 8.4 / 7.0 | 4.3 / 9.0 |
 | diffusers medvram | 7.5 / 6.7 / 7.5 / 7.8 / 7.2 | 6.6 / 8.2 |
 | diffusers lowvram | 7.0 / 7.0 / 7.4 / 7.7 / 7.8 | 4.3 / 7.2 |
 | diffusers with safetensors | 8.9 / 7.3 / 8.1 / 8.4 / 7.1 | 5.9 / 9.0 |
-| diffusers compile | | |
+
 Notes:
 
 - Performance is measured for `batch-size` 1, 2, 4, 8 16
