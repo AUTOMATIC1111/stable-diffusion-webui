@@ -30,8 +30,8 @@ def fetch_file(filename: str = ""):
         raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
 
     ext = os.path.splitext(filename)[1].lower()
-    if ext not in (".png", ".jpg", ".jpeg", ".webp"):
-        raise ValueError(f"File cannot be fetched: {filename}. Only png and jpg and webp.")
+    if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
+        raise ValueError(f"File cannot be fetched: {filename}. Only png, jpg, webp, and gif.")
 
     # would profit from returning 304
     return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
