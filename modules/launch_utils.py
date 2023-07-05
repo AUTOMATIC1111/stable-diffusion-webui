@@ -226,7 +226,7 @@ def run_extensions_installers(settings_file):
 
 def prepare_environment():
     torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu118")
-    torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url {torch_index_url}")
+    torch_command = os.environ.get('TORCH_COMMAND', f"install torch==2.0.1 torchvision==0.15.2 --extra-index-url {torch_index_url}")
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.20')
@@ -262,7 +262,7 @@ def prepare_environment():
     print(f"Commit hash: {commit}")
 
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
-        run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
+        run_pip(f'{torch_command}', "torch", live=True)
 
     if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
         raise RuntimeError(
