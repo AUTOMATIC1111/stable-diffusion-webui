@@ -383,7 +383,7 @@ def setup_ui(ui, gallery):
 
         assert is_allowed, f'writing to {filename} is not allowed'
 
-        save_image_with_geninfo(image, geninfo, filename)
+        save_image_with_geninfo(image, geninfo, filename, existing_pnginfo={'parameters': geninfo})
 
         return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
 
