@@ -189,6 +189,10 @@ if backend == 'ipex':
     CondFunc('torch.linalg.solve',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"), args[1].to("cpu")).to(get_cuda_device_string()),
         lambda *args, **kwargs: args[1].device != torch.device("cpu"))
+    #SDE Samplers:
+    CondFunc('torchsde._brownian.brownian_interval._randn',
+        lambda _, size, dtype, device, seed: torch.randn(size, dtype=dtype, device=device, generator=torch.xpu.Generator(device).manual_seed(int(seed))),
+        lambda _, size, dtype, device, seed: device != torch.device("cpu"))
     #ControlNet:
     CondFunc('torch.batch_norm',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
@@ -206,10 +210,6 @@ if backend == 'ipex':
         args[4].to("cpu") if args[4] is not None else args[4],
         args[5], args[6], args[7], args[8]).to(get_cuda_device_string()),
         lambda *args, **kwargs: args[1].device != torch.device("cpu"))
-    #SDE Samplers
-    CondFunc('torchsde._brownian.brownian_interval._randn',
-        lambda _, size, dtype, device, seed: torch.randn(size, dtype=dtype, device=device, generator=torch.xpu.Generator(device).manual_seed(int(seed))),
-        lambda _, size, dtype, device, seed: device != torch.device("cpu"))
 
 cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
