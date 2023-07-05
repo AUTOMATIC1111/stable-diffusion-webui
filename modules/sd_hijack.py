@@ -180,8 +180,10 @@ class StableDiffusionModelHijack:
                 shared.log.warning("Model compile skipped: IPEX Method is for Intel GPU's with OneAPI")
         elif opts.cuda_compile and opts.cuda_compile_mode != 'none' and shared.backend == shared.Backend.ORIGINAL:
             try:
-                import torch._dynamo as dynamo # pylint: disable=unused-import
-                # torch._dynamo.config.log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
+                import logging
+                import torch._dynamo # pylint: disable=unused-import
+                log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
+                torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
                 torch._dynamo.config.verbose = opts.cuda_compile_verbose # pylint: disable=protected-access
                 torch._dynamo.config.suppress_errors = opts.cuda_compile_errors # pylint: disable=protected-access
                 torch.backends.cudnn.benchmark = True

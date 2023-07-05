@@ -615,7 +615,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model.unet.to(memory_format=torch.channels_last)
         if shared.opts.cuda_compile and torch.cuda.is_available():
             sd_model.to(devices.device)
-            import torch._dynamo as dynamo # pylint: disable=unused-import
+            import torch._dynamo # pylint: disable=unused-import
+            log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
+            torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
             torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
             torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
             sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
