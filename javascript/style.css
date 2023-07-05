@@ -541,7 +541,7 @@ table.settings-value-table td{
 .extra-networks-tab { padding: 0 !important; }
 .extra-network-subdirs { background: var(--input-background-fill); overflow-x: hidden; overflow-y: auto; max-height: 50vh; min-width: 80px; max-width: 120px; }
 .extra-networks-page { display: flex }
-.extra-networks .custom-button { min-width: 80px; max-width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 2px 8px 2px 8px; box-shadow: none; line-break: anywhere; }
+.extra-networks .custom-button { min-width: 80px; max-width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 2px 8px 2px 8px; box-shadow: none; line-break: auto; }
 .extra-networks .custom-button:hover { background: var(--button-primary-background-fill) }
 .extra-network-cards { display: flex; flex-wrap: wrap; height: 50vh; max-height: 50vh; overflow-y: scroll; overflow-x: hidden; width: -webkit-fill-available; }
 .extra-network-cards .card { height: fit-content; margin: 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }

@@ -472,11 +472,11 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     "show_samplers": OptionInfo(["Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
     "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
+    "always_batch_cond_uncond": OptionInfo(False, "Disable conditional batching enabled on low memory systems"),
 }))
 
 if backend == Backend.ORIGINAL:
     options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
-        "always_batch_cond_uncond": OptionInfo(False, "Disable conditional batching enabled on low memory systems"),
         "enable_quantization": OptionInfo(True, "Enable samplers quantization for sharper and cleaner results"),
         "eta_ancestral": OptionInfo(1.0, "Noise multiplier for ancestral samplers (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
         "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),

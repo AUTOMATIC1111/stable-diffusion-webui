@@ -582,28 +582,28 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             prior = diffusers.DiffusionPipeline.from_pretrained(prior_id, **diffusers_load_config)
             sd_model = PriorPipeline(prior=prior, main=sd_model) # wrap sd_model
 
-        if hasattr(sd_model, "enable_sequential_cpu_offload"):
-            if shared.cmd_opts.lowvram or shared.opts.diffusers_seq_cpu_offload:
-                sd_model.enable_sequential_cpu_offload()
-                shared.log.debug('Diffusers: enable sequenctial CPU offload')
         if hasattr(sd_model, "enable_model_cpu_offload"):
             if shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload:
                 shared.log.debug('Diffusers: enable model CPU offload')
                 sd_model.enable_model_cpu_offload()
+        if hasattr(sd_model, "enable_sequential_cpu_offload"):
+            if shared.opts.diffusers_seq_cpu_offload:
+                sd_model.enable_sequential_cpu_offload()
+                shared.log.debug('Diffusers: enable sequential CPU offload')
         if hasattr(sd_model, "enable_vae_slicing"):
-            if shared.opts.diffusers_vae_slicing:
+            if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_slicing:
                 shared.log.debug('Diffusers: enable VAE slicing')
                 sd_model.enable_vae_slicing()
             else:
                 sd_model.disable_vae_slicing()
         if hasattr(sd_model, "enable_vae_tiling"):
-            if shared.opts.diffusers_vae_tiling:
+            if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_tiling:
                 shared.log.debug('Diffusers: enable VAE tiling')
                 sd_model.enable_vae_tiling()
             else:
                 sd_model.disable_vae_tiling()
         if hasattr(sd_model, "enable_attention_slicing"):
-            if shared.opts.diffusers_attention_slicing:
+            if shared.cmd_opts.lowvram or shared.opts.diffusers_attention_slicing:
                 shared.log.debug('Diffusers: enable attention slicing')
                 sd_model.enable_attention_slicing()
             else:

@@ -68,12 +68,14 @@ whats implemented so far?
 even if extensions are not supported, runtime errors are never nice  
 will need to handle in the code before we get out of alpha
 
-- controlnet
-  `sd_model.model?.diffusion_model?`
-- multi-diffusion  
-  `sd_model.first_stage_model?.encoder?`
-- lycoris
+- lycoris  
   `lyco_patch_lora`
+- controlnet
+  > sd_model.model?.diffusion_model?
+- multi-diffusion  
+  > sd_model.first_stage_model?.encoder?
+- dynamic-thresholding
+  > AttributeError: 'DiffusionSampler' object has no attribute 'model_wrap_cfg'
 
 ## Issues
 
@@ -120,6 +122,8 @@ will need to handle in the code before we get out of alpha
   > In this conversion only the EMA weights are extracted. If you want to instead extract the non-EMA weights (useful to continue fine-tuning), please make sure to remove the `--extract_ema` flag.  
 - do you have plans to implement [Restart](https://github.com/vladmandic/automatic/issues/1537) sampler in diffusers?
 - `torch.nonzero()` performance issue <https://github.com/huggingface/diffusers/issues/3950>
+- `enable_sequential_cpu_offload()` results in error
+  > NotImplementedError: Cannot copy out of meta tensor; no data!
 
 ## Update
 
@@ -132,3 +136,17 @@ will need to handle in the code before we get out of alpha
 - redid samplers
 - fixed "it looks like the config file at 'xxx.safetensors' is not a valid JSON file"  
 - ui settings -> samplers is now dynamic depending if backend is original or diffusers
+
+## Performance
+
+| pipeline | performance it/s | memory cpu/gpu |
+| --- | --- | --- |
+| original | | |
+| diffusers | 8.98 / 7.44 / 8.16 / 8.41 / 7.04 | 4.3 / 9.0 |
+| diffusers with safetensors | 8.91 / 7.35 / 8.11 / 8.4 / 7.09 | 5.9 / 9.0 |
+| diffusers medvram | 7.52 / 6.72 / 7.53 / 7.84 / 7.21 | 6.6 / 8.2 |
+| diffusers lowvram | | |
+
+Notes:
+
+- Performance is measured for batch sizes 1, 2, 4, 8 16
