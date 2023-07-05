@@ -37,6 +37,6 @@ def __delete_files(path, expiry_timestamp=3600):
 def clear_gradio_tmp():
     path = os.environ.get("GRADIO_TEMP_DIR") or str(Path(tempfile.gettempdir()) / "gradio")
     __delete_files(path)
-    t = Timer(3, clear_gradio_tmp)
+    t = Timer(600, clear_gradio_tmp)
     t.start()
 
