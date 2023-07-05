@@ -903,9 +903,13 @@ def create_ui(startup_timer):
                     res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
                     create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
         else:
-            res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
+            try:
+                res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
+            except Exception as e:
+                modules.shared.log.error(f'Error creating setting: {key} {e}')
+                res = None
 
-        if not is_quicksettings:
+        if res is not None and not is_quicksettings:
             res.change(fn=None, inputs=res, _js=f'(val) => markIfModified("{key}", val)')
             dirty_indicator.click(fn=lambda: getattr(opts, key), outputs=res, show_progress=False)
             dirtyable_setting.__exit__()

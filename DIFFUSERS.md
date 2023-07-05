@@ -59,9 +59,8 @@ whats implemented so far?
 ## Todo
 
 - sdxl model  
-- new schedulers  
-- settings -> schedulers  
 - no idea if sd21 works out-of-the-box
+- hires fix?
 
 ## Limitations
 
@@ -143,15 +142,16 @@ will need to handle in the code before we get out of alpha
 | --- | --- | --- |
 | original | 7.99 / 7.93 / 8.83 / 9.14 / 9.2 | 6.7 / 7.2 |
 | original medvram | 6.23 / 7.16 / 8.41 / 9.24 / 9.68 | 8.4 / 6.8 |
-| original lowvram | | |
+| original lowvram | 1.05 / 1.94 / 3.2 / 4.81 / 6.46 | 8.8 / 5.2 |
+| original compile inductor | | |
 | diffusers | 9 / 7.4 / 8.2 / 8.4 / 7.0 | 4.3 / 9.0 |
 | diffusers medvram | 7.5 / 6.7 / 7.5 / 7.8 / 7.2 | 6.6 / 8.2 |
 | diffusers lowvram | 7.0 / 7.0 / 7.4 / 7.7 / 7.8 | 4.3 / 7.2 |
 | diffusers with safetensors | 8.9 / 7.3 / 8.1 / 8.4 / 7.1 | 5.9 / 9.0 |
-
+| diffusers compile | | |
 Notes:
 
-- Performance is measured for batch sizes 1, 2, 4, 8 16
+- Performance is measured for `batch-size` 1, 2, 4, 8 16
 - Test environment:
   - nVidia RTX 3060 GPU
   - Torch 2.1-nightly with CUDA 12.1
