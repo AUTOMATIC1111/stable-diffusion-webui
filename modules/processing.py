@@ -417,7 +417,7 @@ class Processed:
         self.infotexts = infotexts or [info]
 
         if index_of_end_image <= 0 and images_list:
-            self.index_of_end_image = len(images_list) - index_of_first_image - 1
+            self.index_of_end_image = len(images_list) - 1
         else:
             self.index_of_end_image = index_of_end_image
 
@@ -920,8 +920,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_upscale_to_x = hr_resize_x
         self.hr_upscale_to_y = hr_resize_y
         self.hr_sampler_name = hr_sampler_name
-        self.hr_prompt = hr_prompt
-        self.hr_negative_prompt = hr_negative_prompt
+        self.hr_prompt = hr_prompt or ''
+        self.hr_negative_prompt = hr_negative_prompt or ''
         self.all_hr_prompts = None
         self.all_hr_negative_prompts = None
 
@@ -947,10 +947,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if self.hr_sampler_name is not None and self.hr_sampler_name != self.sampler_name:
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler_name
 
-            if tuple(self.hr_prompt) != tuple(self.prompt):
+            if tuple(self.hr_prompt or "") != tuple(self.prompt or ""):
                 self.extra_generation_params["Hires prompt"] = self.hr_prompt
 
-            if tuple(self.hr_negative_prompt) != tuple(self.negative_prompt):
+            if tuple(self.hr_negative_prompt or "") != tuple(self.negative_prompt or ""):
                 self.extra_generation_params["Hires negative prompt"] = self.hr_negative_prompt
 
             if opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):

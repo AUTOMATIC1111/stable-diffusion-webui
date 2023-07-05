@@ -6,6 +6,8 @@
 # @File    : oss.py
 # @Software: Hifive
 import os
+import shutil
+
 import oss2
 
 from filestorage.storage import FileStorage
@@ -37,14 +39,22 @@ class OssFileStorage(FileStorage):
                 return local_path
             if os.path.isfile(remoting_path):
                 return remoting_path
-            bucket, key = self.extract_buack_key_from_path(remoting_path)
-            self.logger.info(f"download {key} from oss to {local_path}")
-            bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
-            oss2.resumable_download(bucket, key, local_path)
-            if os.path.isfile(local_path):
-                return local_path
-            else:
-                raise OSError(f'cannot download file from oss, {remoting_path}')
+            try:
+                bucket, key = self.extract_buack_key_from_path(remoting_path)
+                self.logger.info(f"download {key} from oss to {local_path}")
+                tmp_file = os.path.join(self.tmp_dir, os.path.basename(local_path))
+                bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
+                oss2.resumable_download(bucket, key, tmp_file)
+                if os.path.isfile(tmp_file):
+                    shutil.move(tmp_file, local_path)
+                    return local_path
+                else:
+
+                    raise OSError(f'cannot download file from oss, {remoting_path}')
+            except Exception:
+                if os.path.isfile(local_path):
+                    os.remove(local_path)
+                raise
         else:
             raise OSError('cannot init oss or file not found')
 

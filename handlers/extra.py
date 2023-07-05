@@ -112,7 +112,7 @@ class ExtraTaskHandler(DumpTaskHandler):
             image_keys = ImageKeys(high_keys, low_keys)
             images = result[0]
             p.set_finish_result({
-                'all': image_keys,
+                'all': image_keys.to_dict(),
                 'upscaler': {
                     'size': '' if not images else f'{images[0].width}*{images[0].height}',
                 }

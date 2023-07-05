@@ -15,7 +15,7 @@ from tools.mysql import get_mysql_cli
 
 def authorization(user, password):
     auths = {
-        "admin": "Admin123"
+        "admin": "Admin123",
     }
 
     if user in auths and auths.get(user) == password:

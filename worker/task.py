@@ -65,6 +65,10 @@ class Task(UserDict):
         return self.get('create_at')
 
     @property
+    def is_train(self):
+        return TaskType.Train == self.task_type
+
+    @property
     def sd_model_path(self):
         return self.get('base_model_path')
 
@@ -109,6 +113,8 @@ class Task(UserDict):
         else:
             return self.get(key, default=default)
 
+    def to_dict(self):
+        return dict(self)
 
 
 class TaskType(IntEnum):

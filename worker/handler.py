@@ -48,12 +48,20 @@ class TaskHandler:
                 logger.exception('CUDA out of memory')
                 p = TaskProgress.new_failed(task, 'CUDA out of memory', '')
                 self._set_task_status(p)
+                # kill process
+                from ctypes import CDLL
+                from ctypes.util import find_library
+
+                libc = CDLL(find_library("libc"))
+                libc.exit(1)
             except Exception as ex:
                 trace = traceback.format_exc()
                 msg = str(ex)
                 logger.exception('unhandle err')
                 p = TaskProgress.new_failed(task, msg, trace)
                 self._set_task_status(p)
+                if 'BrokenPipeError' in str(ex):
+                    pass
 
     def close(self):
         pass

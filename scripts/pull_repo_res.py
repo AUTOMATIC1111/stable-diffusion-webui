@@ -74,7 +74,7 @@ def pull_clip_category():
     categories = ['artists.txt', 'flavors.txt', 'mediums.txt', 'movements.txt']
     for name in categories:
         if not os.path.isfile(os.path.join(interrogate, name)):
-            url = 'https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/resource/' + name
+            url = 'https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/clip/' + name
             print(f'>> download {name}')
             resp = requests.get(url, timeout=10)
             if resp.ok:

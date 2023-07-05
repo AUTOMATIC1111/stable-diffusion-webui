@@ -6,6 +6,8 @@
 # @File    : obs.py
 # @Software: Hifive
 import os
+import shutil
+
 from obs import PutObjectHeader
 from obs import ObsClient
 from filestorage.storage import FileStorage
@@ -34,15 +36,23 @@ class ObsFileStorage(FileStorage):
 
     def download(self, remoting_path, local_path) -> str:
         if self.obsClient and remoting_path and local_path:
-            if os.path.isfile(local_path):
-                return local_path
-            bucket, key = self.extract_buack_key_from_path(remoting_path)
-            self.logger.info(f"download {key} from obs to {local_path}")
-            resp = self.obsClient.downloadFile(bucket, key, local_path, 10 * 1024 * 1024, 4, True)
-            if resp.status < 300:
-                return local_path
-            else:
-                raise OSError(f'cannot download file from obs, resp:{resp.errorMessage}, key: {remoting_path}')
+            try:
+                if os.path.isfile(local_path):
+                    return local_path
+
+                bucket, key = self.extract_buack_key_from_path(remoting_path)
+                self.logger.info(f"download {key} from obs to {local_path}")
+                tmp_file = os.path.join(self.tmp_dir, os.path.basename(local_path))
+                resp = self.obsClient.downloadFile(bucket, key, tmp_file, 10 * 1024 * 1024, 4, True)
+                if resp.status < 300 and os.path.isfile(tmp_file):
+                    shutil.move(tmp_file, local_path)
+                    return local_path
+                else:
+                    raise OSError(f'cannot download file from obs, resp:{resp.errorMessage}, key: {remoting_path}')
+            except Exception:
+                if os.path.isfile(local_path):
+                    os.remove(local_path)
+                raise
         else:
             raise OSError('cannot init obs or file not found')
 

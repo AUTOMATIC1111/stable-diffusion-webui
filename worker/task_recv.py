@@ -10,12 +10,17 @@ import random
 import shutil
 import time
 import typing
+import uuid
 import redis_lock
 from loguru import logger
 from .task import Task
+from datetime import datetime
+from modules.shared import cmd_opts
 from tools.redis import RedisPool
 from tools.model_hist import CkptLoadRecorder
-
+from tools.gpu import GpuInfo
+from tools.wrapper import timed_lru_cache
+from tools.environment import get_run_train_time_cfg, get_worker_group, Env_Run_Train_Time_Start, Env_Run_Train_Time_End
 try:
     from collections.abc import Iterable  # >=py3.10
 except:
@@ -26,7 +31,7 @@ OtherTaskQueueToken = 'others-'
 TrainTaskQueueToken = 'train'
 UpscaleCoeff = 100 * 1000
 TaskScoreRange = (0, 100 * UpscaleCoeff)
-TaskTimeout = 20 * 3600
+TaskTimeout = 20 * 3600 if not cmd_opts.train_only else 48 * 3600
 Tmp = 'tmp'
 
 
@@ -72,6 +77,37 @@ class TaskReceiver:
         self.redis_pool = RedisPool()
         self.clean_tmp_time = time.time()
         self.train_only = train_only
+        self.worker_id = self._worker_id()
+
+        run_train_time_cfg = get_run_train_time_cfg()
+        run_train_time_start = run_train_time_cfg[Env_Run_Train_Time_Start]
+        run_train_time_end = run_train_time_cfg[Env_Run_Train_Time_End]
+
+        def formate_day_of_time(day_of_time: int):
+            if day_of_time < 0:
+                return 24 - day_of_time
+            return day_of_time
+
+        run_train_time_start = formate_day_of_time(int(run_train_time_start) - 8 if run_train_time_start else 15)
+        run_train_time_end = formate_day_of_time(int(run_train_time_end) - 8 if run_train_time_end else 23)
+
+        self.run_train_time_start = min(run_train_time_start, run_train_time_end)
+        self.run_train_time_end = max(run_train_time_start, run_train_time_end)
+
+        logger.info(f"worker id:{self.worker_id}")
+
+        self.register_time = 0
+        self.local_cache = {}
+
+    def _worker_id(self):
+        group_id = get_worker_group()
+        nvidia_video_card_id = '&'.join(GpuInfo().names)
+
+        # int(str(uuid.uuid1())[-4:], 16)
+        if not nvidia_video_card_id:
+            nvidia_video_card_id = uuid.uuid1()
+
+        return f"worker:{group_id}:{nvidia_video_card_id}"
 
     def _clean_tmp_files(self):
         now = time.time()
@@ -112,7 +148,7 @@ class TaskReceiver:
                     return task
 
     def _search_train_task(self):
-        if self.train_only:
+        if self.train_only or self._can_gener_img_worker_run_train():
             keys = self._search_queue_names()
             for queue_name in keys:
                 if TrainTaskQueueToken in queue_name:
@@ -120,21 +156,39 @@ class TaskReceiver:
                     if task:
                         return task
 
+    def _can_gener_img_worker_run_train(self):
+        # 默认23点~凌晨5点(UTC 15~21)可以运行TRAIN
+        utc = datetime.utcnow()
+
+        if self.run_train_time_start < utc.hour < self.run_train_time_end:
+            logger.info(f"worker receive train task")
+            workers = self.get_all_workers()
+            if workers:
+                # 1/5的WOEKER 生图，剩下的执行训练。
+                run_train_worker_flag = self.worker_id in workers[len(workers) // 5:]
+                if run_train_worker_flag:
+                    logger.info(">>> worker can run train task.")
+
+                return run_train_worker_flag
+
+        return False
+
     def search_task_with_id(self, rds, task_id) -> typing.Any:
         # redis > 6.2.0
         # meta = rds.getdel(task_id)
         meta = rds.get(task_id)
         if meta:
-            rds.delete(task_id)
+            # rds.delete(task_id)
             return Task.from_json_str(meta)
 
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
         queue_name = queue_name.decode('utf8') if isinstance(queue_name, bytes) else queue_name
         rds = self.redis_pool.get_connection()
-        locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=30)
+
+        locker = redis_lock.Lock(rds, "task-lock-" + queue_name, expire=10)
         locked = False
         try:
-            locker.acquire(blocking=True, timeout=30)
+            locker.acquire(blocking=True, timeout=3)
             locked = True
             for _ in range(retry):
                 now = int(time.time() * 1000)
@@ -145,15 +199,17 @@ class TaskReceiver:
                     queue_name, min, max, start=0, num=1)
                 task = None
                 if values:
+                    rds.zrem(queue_name, *values)
                     for v in values:
                         task = self.search_task_with_id(rds, v)
                         if task:
                             break
-                    rds.zrem(queue_name, *values)
                 if task:
                     return task
                 elif not values:
-                    rand = random.randint(0, 10) * 1
+                    rand = random.randint(0, 10) * 0.1 * retry
+                    if (rand < 0.5):
+                        continue
                     time.sleep(rand)
         except redis_lock.NotAcquired:
             locked = False
@@ -162,8 +218,11 @@ class TaskReceiver:
         except Exception as err:
             logger.exception("cannot get task from redis")
         finally:
-            if locked:
-                locker.release()
+            try:
+                if locked:
+                    locker.release()
+            except:
+                pass
 
     def _get_queue_task(self, *model_hash: str):
         for sha256 in model_hash:
@@ -177,13 +236,17 @@ class TaskReceiver:
         keys = rds.keys(TaskQueuePrefix + '*')
         return [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
 
-    def _search_norm_task(self):
+    def _search_task(self):
         t = self._search_history_ckpt_task()
         if t:
             return t
         t = self._search_other_ckpt()
         if t:
             return t
+        if self._can_gener_img_worker_run_train():
+            t = self._search_train_task()
+            if t:
+                return t
 
     def get_one_task(self, block: bool = True, sleep_time: float = 4) -> typing.Optional[Task]:
         while 1:
@@ -191,7 +254,7 @@ class TaskReceiver:
             if self.train_only:
                 task = self._search_train_task()
             else:
-                task = self._search_norm_task()
+                task = self._search_task()
             if task:
                 return task
             if not block:
@@ -199,6 +262,7 @@ class TaskReceiver:
             wait = sleep_time - time.time() + st
             if wait > 0:
                 time.sleep(wait)
+            self.register_worker()
 
     def task_iter(self, sleep_time: float = 4) -> typing.Iterable[Task]:
         while 1:
@@ -207,7 +271,7 @@ class TaskReceiver:
                 if self.train_only:
                     task = self._search_train_task()
                 else:
-                    task = self._search_norm_task()
+                    task = self._search_task()
                 if task:
                     yield task
                 wait = sleep_time - time.time() + st
@@ -217,3 +281,24 @@ class TaskReceiver:
             except:
                 time.sleep(1)
                 logger.exception("get task err")
+            finally:
+                self.register_worker()
+
+    def register_worker(self):
+        if time.time() - self.register_time > 120:
+            try:
+                conn = self.redis_pool.get_connection()
+                conn.setex(self.worker_id, 300, 60)
+                self.register_time = time.time()
+            except:
+                return False
+        return True
+
+    @timed_lru_cache(120)
+    def get_all_workers(self):
+        rds = self.redis_pool.get_connection()
+        keys = rds.keys('worker:*')
+        worker_ids = [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
+
+        return sorted(worker_ids, key=lambda x: int(x[-6:], 16))
+

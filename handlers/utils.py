@@ -275,14 +275,14 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
     script_keys = out_script_image.multi_upload_keys(clean_upload_files)
 
     output = {
-        'grids': grid_keys,
-        'samples': image_keys
+        'grids': grid_keys.to_dict(),
+        'samples': image_keys.to_dict()
     }
 
     all_keys = grid_keys + image_keys + script_keys
     output.update({
         'has_grid': proc.index_of_first_image > 0,
-        'all': all_keys,
+        'all': all_keys.to_dict(),
     })
 
     return output

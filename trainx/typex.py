@@ -177,8 +177,8 @@ class TrainLoraNetConfig(SerializationObj):
         self.learning_rate = self.get_lr(self.learning_rate)
 
     def get_lr(self, v):
-        if v < 0:
-            return 'None'
+        if v is None or v < 0:
+            return 0
         return v
 
 
@@ -216,14 +216,15 @@ class AdvancedConfig(SerializationObj):
         self.random_crop = task.get('random_crop', False)
         self.lowram = task.get('lowram', True)
         self.mem_eff_attn = task.get('mem_eff_attn', False)
-        self.xformers = task.get('xformers', True)
+        self.xformers = task.get('xformers', os.getenv('XFORMERS', "0") == "1")
         self.vae = task.get('vae', None)
         self.set_property_value(task, 'max_data_loader_n_workers', 8)
         self.set_property_value(task, 'persistent_data_loader_workers', True)
         self.set_property_value(task, 'max_train_steps', 1600)
         self.set_property_value(task, 'gradient_checkpointing', True)
         self.set_property_value(task, 'gradient_accumulation_steps', 1)
-        self.set_property_value(task, 'mixed_precision', 'no')
+
+        self.set_property_value(task, 'mixed_precision',  os.getenv("MIXED_PRECISION", "no"))
         self.set_property_value(task, 'full_fp16', True)
         self.set_property_value(task, 'enable_preview', False)
         self.set_property_value(task, 'sample_prompts', None)
@@ -462,7 +463,7 @@ class TrainLoraTask(UserDict):
             return str(ex).lower().lstrip('.') == 'safetensors'
 
         dst = os.path.join(Tmp, f'mater-{self.id}.zip')
-        zip_compress(image_dir, dst, filter_safetensors)
+        zip_compress(image_dir, dst, None)
         return dst
 
     def get_model_cover_key(self):
