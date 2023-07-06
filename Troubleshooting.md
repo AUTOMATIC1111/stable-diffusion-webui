@@ -35,7 +35,7 @@ Certain GPU video cards don't support half precision: a green or black screen ma
 If still not fixed, use command line arguments `--precision full --no-half` at a significant increase in VRAM usage, which may require `--medvram`.
 
 # A Tensor with all NaNs was produced in the vae
-This is the same problem as the one from above, to verify, Use `--skip-nan-check`. With this on, if one of the images fail the rest of the pictures are displayed. 
+This is the same problem as the one from above, to verify, Use `--disable-nan-check`. With this on, if one of the images fail the rest of the pictures are displayed. 
 
 It is either a model cause - [resource](https://github.com/arenasys/stable-diffusion-webui-model-toolkit#clip)
 
