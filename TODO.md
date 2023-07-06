@@ -60,3 +60,4 @@ Tech that can be integrated as part of the core workflow...
 - git-rebasin
 - additional upscalers
 - new image browser
+- fp8

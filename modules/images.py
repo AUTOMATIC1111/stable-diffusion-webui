@@ -133,7 +133,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
         except Exception:
             return ImageFont.truetype('html/roboto.ttf', fontsize)
 
-    def draw_texts(drawing, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
+    def draw_texts(drawing: ImageDraw, draw_x, draw_y, lines, initial_fnt, initial_fontsize):
         for line in lines:
             fnt = initial_fnt
             fontsize = initial_fontsize
