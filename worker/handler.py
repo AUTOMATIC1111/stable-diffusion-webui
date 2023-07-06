@@ -6,6 +6,7 @@
 # @File    : handler.py
 # @Software: Hifive
 import abc
+import time
 import typing
 import traceback
 
@@ -48,6 +49,8 @@ class TaskHandler:
                 logger.exception('CUDA out of memory')
                 p = TaskProgress.new_failed(task, 'CUDA out of memory', '')
                 self._set_task_status(p)
+                time.sleep(15)
+                logger.info("CUDA out of memory, quit...")
                 # kill process
                 from ctypes import CDLL
                 from ctypes.util import find_library

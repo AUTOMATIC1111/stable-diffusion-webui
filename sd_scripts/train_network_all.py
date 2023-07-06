@@ -730,6 +730,9 @@ def train(args, train_epoch_callback=None):
         if callable(train_epoch_callback):
             train_epoch_callback(epoch + 1, loss_total / len(loss_list), num_train_epochs)
         # end of epoch
+        if loss_total / len(loss_list) == math.nan:
+            # nan(task failed)
+            return False
 
     # metadata["ss_epoch"] = str(num_train_epochs)
     metadata["ss_training_finished_at"] = str(time.time())
@@ -750,7 +753,6 @@ def train(args, train_epoch_callback=None):
 
         print("model saved.")
         return True
-
 
 
 def setup_parser() -> argparse.ArgumentParser:
