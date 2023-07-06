@@ -283,6 +283,7 @@ def check_torch():
     log.debug(f'Torch overrides: cuda={args.use_cuda} rocm={args.use_rocm} ipex={args.use_ipex} diml={args.use_directml}')
     log.debug(f'Torch allowed: cuda={allow_cuda} rocm={allow_rocm} ipex={allow_ipex} diml={allow_directml}')
     torch_command = os.environ.get('TORCH_COMMAND', '')
+    xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if torch_command != '':
         pass
     elif allow_cuda and (shutil.which('nvidia-smi') is not None or os.path.exists(os.path.join(os.environ.get('SystemRoot') or r'C:\Windows', 'System32', 'nvidia-smi.exe'))):
@@ -294,11 +295,9 @@ def check_torch():
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
         os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/rocm5.4.2')
-        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     elif allow_ipex and args.use_ipex and shutil.which('sycl-ls') is not None:
         log.info('Intel OneAPI Toolkit detected')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==1.13.0a0 torchvision==0.14.1a0 intel_extension_for_pytorch==1.13.120+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
-        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
@@ -306,13 +305,11 @@ def check_torch():
         elif allow_directml and args.use_directml and ('arm' not in machine and 'aarch' not in machine):
             log.info('Using DirectML Backend')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch-directml')
-            xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
             if 'torch' in torch_command and not args.version:
                 install(torch_command, 'torch torchvision')
         else:
             log.info('Using CPU-only Torch')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision')
-            xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if 'torch' in torch_command and not args.version:
         install(torch_command, 'torch torchvision')
     if args.skip_torch:

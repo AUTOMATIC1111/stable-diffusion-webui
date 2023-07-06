@@ -1031,7 +1031,8 @@ def create_ui(startup_timer = None):
                 create_dirty_indicator("show_all_pages", [], interactive=False)
 
         def unload_sd_weights():
-            modules.sd_models.unload_model_weights()
+            modules.sd_models.unload_model_weights(op='model')
+            modules.sd_models.unload_model_weights(op='refiner')
 
         def reload_sd_weights():
             modules.sd_models.reload_model_weights()

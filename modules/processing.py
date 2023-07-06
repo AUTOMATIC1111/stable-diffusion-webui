@@ -223,7 +223,8 @@ class StableDiffusionProcessing:
         source_image = devices.cond_cast_float(source_image)
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
-        if backend == Backend.DIFFUSERS: # TODO: Diffusers img2img_image_conditioning
+        if backend == Backend.DIFFUSERS:
+            log.warning('Diffusers not implemented: img2img_image_conditioning')
             return None
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image)
@@ -682,11 +683,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 x_samples_ddim = torch.stack(x_samples_ddim).float()
                 x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                 del samples_ddim
-                if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-                    lowvram.send_everything_to_cpu()
-                    devices.torch_gc()
-                if p.scripts is not None:
-                    p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
             elif backend == Backend.DIFFUSERS:
                 generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
@@ -695,7 +691,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
                     if sampler is None:
                         sampler = sd_samplers.all_samplers_map.get("UniPC")
-                    shared.sd_model.scheduler = sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
+                    # shared.sd_model.scheduler = sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
                 cross_attention_kwargs={}
                 if lora_state['active']:
@@ -708,22 +704,47 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
                     # TODO(PVP): change out to latents once possible with `diffusers`
                     task_specific_kwargs = {"image": p.init_images[0], "mask_image": p.image_mask, "strength": p.denoising_strength}
-                output = shared.sd_model(
+
+                output = shared.sd_model( # pylint: disable=not-callable
                     prompt=prompts,
                     negative_prompt=negative_prompts,
                     num_inference_steps=p.steps,
                     guidance_scale=p.cfg_scale,
                     generator=generator,
-                    output_type="np",
+                    output_type='np' if shared.sd_refiner is None else 'latent',
                     cross_attention_kwargs=cross_attention_kwargs,
                     **task_specific_kwargs
                 )
+
+                if shared.sd_refiner is not None:
+                    init_image = output.images[0]
+                    output = shared.sd_refiner( # pylint: disable=not-callable
+                        prompt=prompts,
+                        negative_prompt=negative_prompts,
+                        num_inference_steps=p.steps,
+                        guidance_scale=p.cfg_scale,
+                        generator=generator,
+                        output_type='np',
+                        cross_attention_kwargs=cross_attention_kwargs,
+                        image=init_image
+                    )
+
                 x_samples_ddim = output.images
+
+                if p.enable_hr:
+                    log.warning('Diffusers not implemented: hires fix')
+
                 if lora_state['active']:
                     unload_diffusers_lora()
 
             else:
                 raise ValueError(f"Unknown backend {backend}")
+
+            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                lowvram.send_everything_to_cpu()
+                devices.torch_gc()
+            if p.scripts is not None:
+                p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
@@ -898,7 +919,23 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if self.hr_upscaler is not None:
                 self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
 
-    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts): # TODO this is majority of processing time
+    def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
+
+        def save_intermediate(image, index):
+            """saves image before applying hires fix, if enabled in options; takes as an argument either an image or batch with latent space images"""
+            if not opts.save or self.do_not_save_samples or not opts.save_images_before_highres_fix:
+                return
+            if not isinstance(image, Image.Image):
+                image = sd_samplers.sample_to_image(image, index, approximation=0)
+            orig1 = self.extra_generation_params
+            orig2 = self.restore_faces
+            self.extra_generation_params = {}
+            self.restore_faces = False
+            info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=index)
+            self.extra_generation_params = orig1
+            self.restore_faces = orig2
+            images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, info=info, suffix="-before-highres-fix")
+
         if backend == Backend.DIFFUSERS:
             sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
@@ -915,21 +952,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.is_hr_pass = True
         target_width = self.hr_upscale_to_x
         target_height = self.hr_upscale_to_y
-
-        def save_intermediate(image, index):
-            """saves image before applying hires fix, if enabled in options; takes as an argument either an image or batch with latent space images"""
-            if not opts.save or self.do_not_save_samples or not opts.save_images_before_highres_fix:
-                return
-            if not isinstance(image, Image.Image):
-                image = sd_samplers.sample_to_image(image, index, approximation=0)
-            orig1 = self.extra_generation_params
-            orig2 = self.restore_faces
-            self.extra_generation_params = {}
-            self.restore_faces = False
-            info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=index)
-            self.extra_generation_params = orig1
-            self.restore_faces = orig2
-            images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, info=info, suffix="-before-highres-fix")
 
         if latent_scale_mode is not None:
             for i in range(samples.shape[0]):

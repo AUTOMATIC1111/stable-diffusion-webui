@@ -38,6 +38,7 @@ hypernetworks = {}
 loaded_hypernetworks = []
 gradio_theme = gr.themes.Base()
 settings_components = None
+pipelines = ['Stable Diffusion', 'Stable Diffusion XL', 'Kandinsky V1', 'Kandinsky V2', 'DeepFloyd IF', 'Shap-E']
 latent_upscale_default_mode = "Latent"
 latent_upscale_modes = {
     "Latent": {"mode": "bilinear", "antialias": False},
@@ -217,6 +218,10 @@ class OptionInfo:
         self.comment_after += f"<span class='info'>({info})</span>"
         return self
 
+    def html(self, info):
+        self.comment_after += f"<span class='info'>{info}</span>"
+        return self
+
     def needs_restart(self):
         self.comment_after += " <span class='info'>(requires restart)</span>"
         return self
@@ -295,8 +300,9 @@ else: # cuda
     cross_attention_optimization_default ="Scaled-Dot-Product"
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
-    "sd_model_checkpoint": OptionInfo(default_checkpoint, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_checkpoint_autoload": OptionInfo(True, "Stable Diffusion checkpoint autoload on server start"),
+    "sd_model_checkpoint": OptionInfo(default_checkpoint, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
+    "sd_model_refiner": OptionInfo('None', "Stable Diffusion refiner", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_checkpoint_cache": OptionInfo(0, "Number of cached model checkpoints", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAE checkpoints", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "Select VAE", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
@@ -341,10 +347,11 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
-    "disable_gc": OptionInfo(False, "Disable Torch memory garbage collection"),
+    "disable_gc": OptionInfo(True, "Disable Torch memory garbage collection on each generation"),
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
+    "diffusers_pipeline": OptionInfo(pipelines[0], 'Diffuser Pipeline', gr.Dropdown, lambda: {"choices": pipelines}),
     "diffusers_extract_ema": OptionInfo(True, "Use model EMA weights when possible"),
     "diffusers_generator_device": OptionInfo("default", "Generator device", gr.Radio, lambda: {"choices": ["default", "cpu"]}),
     "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload"),
@@ -905,7 +912,6 @@ class Shared(sys.modules[__name__].__class__):
     @property
     def sd_model(self):
         import modules.sd_models # pylint: disable=W0621
-        # return modules.sd_models.model_data.sd_model
         return modules.sd_models.model_data.get_sd_model()
 
     @sd_model.setter
@@ -913,6 +919,17 @@ class Shared(sys.modules[__name__].__class__):
         import modules.sd_models # pylint: disable=W0621
         modules.sd_models.model_data.set_sd_model(value)
 
-# sd_model: LatentDiffusion = None  # this var is here just for IDE's type checking; it cannot be accessed because the class field above will be accessed instead
+    @property
+    def sd_refiner(self):
+        import modules.sd_models # pylint: disable=W0621
+        return modules.sd_models.model_data.get_sd_refiner()
+
+    @sd_refiner.setter
+    def sd_refiner(self, value):
+        import modules.sd_models # pylint: disable=W0621
+        modules.sd_models.model_data.set_sd_refiner(value)
+
+
 sd_model = None
+sd_refiner = None
 sys.modules[__name__].__class__ = Shared

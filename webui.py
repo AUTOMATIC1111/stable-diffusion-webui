@@ -167,14 +167,18 @@ def load_model():
     if opts.sd_checkpoint_autoload:
         shared.state.begin()
         shared.state.job = 'load model'
-        thread = Thread(target=lambda: shared.sd_model)
-        thread.start()
+        thread_model = Thread(target=lambda: shared.sd_model)
+        thread_model.start()
+        thread_refiner = Thread(target=lambda: shared.sd_refiner)
+        thread_refiner.start()
         shared.state.end()
-        thread.join()
+        thread_model.join()
+        thread_refiner.join()
     else:
         log.debug('Model auto load disabled')
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
-    shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='model')), call=False)
+    shared.opts.onchange("sd_model_refiner", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='refiner')), call=False)
+    shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='dict')), call=False)
     startup_timer.record("checkpoint")
 
 

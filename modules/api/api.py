@@ -406,17 +406,15 @@ class Api:
 
     def interruptapi(self):
         shared.state.interrupt()
-
         return {}
 
     def unloadapi(self):
-        unload_model_weights()
-
+        unload_model_weights(op='model')
+        unload_model_weights(op='refiner')
         return {}
 
     def reloadapi(self):
         reload_model_weights()
-
         return {}
 
     def skip(self):
