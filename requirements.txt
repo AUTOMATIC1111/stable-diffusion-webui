@@ -26,6 +26,7 @@ resize-right
 torchdiffeq
 kornia
 lark
+lxml==4.9.2
 svglib
 k_diffusion==0.0.14
 inflection
