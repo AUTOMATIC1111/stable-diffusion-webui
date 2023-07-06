@@ -36,8 +36,9 @@ def get_optimal_device_name():
     if torch.cuda.is_available():
         return get_cuda_device_string()
 
-    if has_mps():
-        return "mps"
+    elif hasattr(torch.backends, 'mps'):
+        if torch.backends.mps.is_available():
+            return "mps"
 
     return "cpu"
 
@@ -61,6 +62,11 @@ def torch_gc():
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
 
+def torch_mps_gc():
+    if hasattr(torch.backends, 'mps'):
+        if torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+        
 
 def enable_tf32():
     if torch.cuda.is_available():

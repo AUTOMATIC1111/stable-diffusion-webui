@@ -44,6 +44,7 @@ class UpscalerSwinIR(Upscaler):
         img = upscale(img, model)
         try:
             torch.cuda.empty_cache()
+            torch.mps.empty_cache()
         except Exception:
             pass
         return img
