@@ -34,12 +34,25 @@ Env_AccessKey = 'StorageAK'
 Env_SecretKey = 'StorageSK'
 Env_BucketKey = 'StorageBucket'
 
+# 标记 WORKER执行TRAIN 的时机，不配做默认23~7点
 Env_Run_Train_Time_Start = "RUN_TRAIN_TIME_START"
 Env_Run_Train_Time_End = "RUN_TRAIN_TIME_END"
+# 资源GROUP名称，如:aliyun
 Env_Worker_Group = "WORKER_GROUP_NAME"
-
+# 标记是否是弹性资源，有该标记就会认为是弹性资源
+Env_Flexible_Res_Token = "FLEXIBLE_RESOURCE"
+# 工作状态FILE记录路径
+Env_Worker_State_File = "WORKER_STATE_FILE_PATH"
 
 cache = {}
+
+
+def is_flexible_worker():
+    return os.getenv(Env_Flexible_Res_Token, "") != ""
+
+
+def get_worker_state_dump_path(defalut_path=None):
+    return os.getenv(Env_Worker_State_File, defalut_path)
 
 
 def get_worker_group():
