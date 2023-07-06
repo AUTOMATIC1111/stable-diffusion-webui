@@ -544,4 +544,7 @@ if __name__ == "__main__":
             api_only()
         else:
             webui()
+    from modules import crontab_clear_tmp
+    ##定时清除gradio临时文件
+    crontab_clear_tmp.clear_gradio_tmp()
     dispose()
