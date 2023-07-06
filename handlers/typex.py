@@ -181,18 +181,19 @@ class ImageOutput:
             for file_path in self.local_files:
                 filename = os.path.basename(file_path)
                 key = os.path.join(bucket, relative_path, filename)
-                file_storage_system.upload(file_path, key)
+                # file_storage_system.upload(file_path, key)
                 worker_args.append((file_storage_system, file_path, key, high_keys))
-            worker = MultiThreadWorker(worker_args, get_upload_image_key, 4)
-            worker.run()
+            if worker_args:
+                worker = MultiThreadWorker(worker_args, get_upload_image_key, 4)
+                worker.run()
 
-            if clean_upload_file:
-                try:
-                    shutil.rmtree(self.output_dir)
-                except:
-                    pass
+                if clean_upload_file:
+                    try:
+                        shutil.rmtree(self.output_dir)
+                    except:
+                        pass
 
-            return ImageKeys(high_keys, low_keys)
+                return ImageKeys(high_keys, low_keys)
 
             # local
         return ImageKeys(self.local_files, low_files)

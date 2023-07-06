@@ -15,7 +15,7 @@ from PIL.PngImagePlugin import PngInfo
 Image.MAX_IMAGE_PIXELS = 933120000
 
 
-def encode_pil_to_base64(image, quality=80):
+def encode_pil_to_base64(image, quality=50):
     with BytesIO() as output_bytes:
         use_metadata = False
         metadata = PngInfo()
