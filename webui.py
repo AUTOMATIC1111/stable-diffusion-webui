@@ -72,10 +72,6 @@ from modules import modelloader
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
-from modules import crontab_clear_tmp
-
-##定时清除gradio临时文件
-crontab_clear_tmp.clear_gradio_tmp()
 startup_timer.record("other imports")
 
 if cmd_opts.server_name:
