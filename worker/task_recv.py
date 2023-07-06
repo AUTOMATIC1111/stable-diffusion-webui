@@ -5,6 +5,9 @@
 # @Site    : 
 # @File    : task_recv.py
 # @Software: Hifive
+import enum
+import hashlib
+import json
 import os
 import random
 import shutil
@@ -17,10 +20,13 @@ from .task import Task
 from datetime import datetime
 from modules.shared import cmd_opts
 from tools.redis import RedisPool
+from collections import defaultdict
 from tools.model_hist import CkptLoadRecorder
 from tools.gpu import GpuInfo
 from tools.wrapper import timed_lru_cache
-from tools.environment import get_run_train_time_cfg, get_worker_group, Env_Run_Train_Time_Start, Env_Run_Train_Time_End
+from tools.environment import get_run_train_time_cfg, get_worker_group, \
+    Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
+
 try:
     from collections.abc import Iterable  # >=py3.10
 except:
@@ -33,6 +39,8 @@ UpscaleCoeff = 100 * 1000
 TaskScoreRange = (0, 100 * UpscaleCoeff)
 TaskTimeout = 20 * 3600 if not cmd_opts.train_only else 48 * 3600
 Tmp = 'tmp'
+SDWorkerZset = 'sd-workers'
+ElasticResWorkerFlag = "[ElasticRes]"
 
 
 def find_files_from_dir(directory, *args):
@@ -70,6 +78,37 @@ def clean_tmp(expired_days=1):
                     logger.exception('cannot remove file!!')
 
 
+class TaskReceiverState(enum.Enum):
+    Running = "running"
+    Idle = "idle"
+
+
+class TaskReceiverRecorder:
+
+    def __init__(self, file_path: str = None, interval=60):
+        self.file_path = file_path or get_worker_state_dump_path("worker_state.log")
+        self.timestamp = int(time.time())
+        self.current = TaskReceiverState.Running
+        self.interval = interval
+        self.dump_ts = 0
+
+    def set_state(self, state: TaskReceiverState):
+        if state != self.current:
+            self.current = state
+            self.timestamp = int(time.time())
+
+    def write(self):
+        if int(time.time()) - self.dump_ts > self.interval:
+            # 记录时间大于状态修改时间说明该状态已经记录
+            if self.dump_ts < self.timestamp:
+                with open(self.file_path, "w+") as f:
+                    f.write(json.dumps({
+                        "status": str(self.current.value),
+                        "timestamp": self.timestamp
+                    }))
+            self.dump_ts = int(time.time())
+
+
 class TaskReceiver:
 
     def __init__(self, recoder: CkptLoadRecorder, train_only: bool = False):
@@ -78,6 +117,8 @@ class TaskReceiver:
         self.clean_tmp_time = time.time()
         self.train_only = train_only
         self.worker_id = self._worker_id()
+        self.is_elastic = is_flexible_worker()
+        self.recorder = TaskReceiverRecorder()
 
         run_train_time_cfg = get_run_train_time_cfg()
         run_train_time_start = run_train_time_cfg[Env_Run_Train_Time_Start]
@@ -106,8 +147,17 @@ class TaskReceiver:
         # int(str(uuid.uuid1())[-4:], 16)
         if not nvidia_video_card_id:
             nvidia_video_card_id = uuid.uuid1()
+        else:
+            hash_md5 = hashlib.md5()
+            index = nvidia_video_card_id.index("GPU")
+            hash_md5.update(nvidia_video_card_id.encode())
+            nvidia_video_card_id = nvidia_video_card_id[:index] + hash_md5.hexdigest()[:8] + "-" + uuid.uuid4().hex
+        nvidia_video_card_id = nvidia_video_card_id.replace("(", "-").replace(")", "")
 
-        return f"worker:{group_id}:{nvidia_video_card_id}"
+        if is_flexible_worker():
+            nvidia_video_card_id = ElasticResWorkerFlag + nvidia_video_card_id
+
+        return f"{group_id}:{nvidia_video_card_id}"
 
     def _clean_tmp_files(self):
         now = time.time()
@@ -162,6 +212,7 @@ class TaskReceiver:
 
         if self.run_train_time_start < utc.hour < self.run_train_time_end:
             logger.info(f"worker receive train task")
+
             workers = self.get_all_workers()
             if workers:
                 # 1/5的WOEKER 生图，剩下的执行训练。
@@ -273,7 +324,10 @@ class TaskReceiver:
                 else:
                     task = self._search_task()
                 if task:
+                    self.recorder.set_state(TaskReceiverState.Running)
                     yield task
+                else:
+                    self.recorder.set_state(TaskReceiverState.Idle)
                 wait = sleep_time - time.time() + st
                 if wait > 0:
                     self._clean_tmp_files()
@@ -283,22 +337,42 @@ class TaskReceiver:
                 logger.exception("get task err")
             finally:
                 self.register_worker()
+                self.write_worker_state()
 
     def register_worker(self):
         if time.time() - self.register_time > 120:
             try:
                 conn = self.redis_pool.get_connection()
-                conn.setex(self.worker_id, 300, 60)
+                # conn.setex(self.worker_id, 300, 60)
+                conn.zadd(SDWorkerZset, {
+                    self.worker_id: int(time.time())
+                })
                 self.register_time = time.time()
             except:
                 return False
         return True
 
-    @timed_lru_cache(120)
+    @timed_lru_cache(60)
     def get_all_workers(self):
+        now = int(time.time())
         rds = self.redis_pool.get_connection()
-        keys = rds.keys('worker:*')
+        keys = rds.zrangebyscore(SDWorkerZset, now - 300, now)
         worker_ids = [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
 
-        return sorted(worker_ids, key=lambda x: int(x[-6:], 16))
+        worker_ids = sorted(worker_ids, key=lambda x: int(x[-8:], 16))
+        return worker_ids
 
+    def get_group_workers(self):
+        workers = self.get_all_workers()
+        gw = defaultdict(list)
+        for w in workers:
+            array = w.split(':')
+            key = array[0]
+            gw[key].append(":".join(array[1:]))
+        return gw
+
+    def is_elastic_worker(self, worker_id: str) -> bool:
+        return ElasticResWorkerFlag in worker_id
+
+    def write_worker_state(self):
+        self.recorder.write()
