@@ -61,6 +61,7 @@ whats implemented so far?
 - sdxl model  
 - no idea if sd21 works out-of-the-box
 - hires fix?
+- vae support
 
 ## Limitations
 
@@ -75,6 +76,7 @@ will need to handle in the code before we get out of alpha
   > sd_model.first_stage_model?.encoder?
 - dynamic-thresholding
   > AttributeError: 'DiffusionSampler' object has no attribute 'model_wrap_cfg'
+- no per-step callback  
 
 ## Performance
 

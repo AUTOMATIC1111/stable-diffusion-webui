@@ -14,30 +14,24 @@ input[type=range]::-moz-range-thumb { box-shadow: 2px 2px 3px #111111; border: 0
 ::-webkit-scrollbar-thumb { background-color: var(--highlight-color); border-radius: 2px; border-width: 0; box-shadow: 2px 2px 3px #111111; }
 div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 0.5em; margin-bottom: 6px; }
 
-/* main gradio components by selector */
-div.gradio-container.dark > div.w-full.flex.flex-col.min-h-screen > div { background-color: black; }
-
 /* gradio shadowroot */
 .gradio-container { font-family: var(--font); --left-column: 490px; --highlight-color: #CE6400; --inactive-color: #4E1400; }
 
+
 /* gradio style classes */
+fieldset .gr-block.gr-box, label.block span { padding: 0; margin-top: -4px; }
 .border-2 { border-width: 0; }
 .border-b-2 { border-bottom-width: 2px; border-color: var(--highlight-color) !important; padding-bottom: 2px; margin-bottom: 8px; }
-.dark .bg-white { color: lightyellow; border-radius: 0; background-color: var(--inactive-color); }
-.dark .bg-gray-200, .dark .\!bg-gray-200 { background-color: transparent; }
-.dark .dark\:bg-gray-900 { background-color: black; }
-.dark .gr-box { border-radius: 0 !important; background-color: #111111 !important; box-shadow: 2px 2px 3px #111111; border-width: 0; padding: 4px; margin: 12px 0px 12px 0px }
-.dark .gr-button { border-radius: 0; font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.8rem; min-width: 32px; min-height: 32px; padding: 3px; margin: 3px; }
-.dark .gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: 2px; box-shadow: 2px 2px 3px #111111; }
-.dark .gr-check-radio:checked { background-color: var(--highlight-color); }
-.dark .gr-compact { border-radius: 0; background-color: black; }
-.dark .gr-form { border-radius: 0; border-width: 0; }
-.dark .gr-input { background-color: #333333 !important; padding: 4px; margin: 4px; }
-.dark .gr-input-label { color: lightyellow; border-width: 0; background: transparent; padding: 2px !important; }
-.dark .gr-panel { border-radius: 0; background-color: black; }
-.dark { background-color: black; }
-.dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span { padding: 0; margin-top: -4px; }
-.dark fieldset span.text-gray-500, .dark .gr-block.gr-box span.text-gray-500, .dark label.block span { border-radius: 0;}
+.bg-white { color: lightyellow; background-color: var(--inactive-color); }
+.gr-box { border-radius: 0 !important; background-color: #111111 !important; box-shadow: 2px 2px 3px #111111; border-width: 0; padding: 4px; margin: 12px 0px 12px 0px }
+.gr-button { font-weight: normal; box-shadow: 2px 2px 3px #111111; font-size: 0.8rem; min-width: 32px; min-height: 32px; padding: 3px; margin: 3px; }
+.gr-check-radio { background-color: var(--inactive-color); border-width: 0; border-radius: 2px; box-shadow: 2px 2px 3px #111111; }
+.gr-check-radio:checked { background-color: var(--highlight-color); }
+.gr-compact { background-color: black; }
+.gr-form { border-width: 0; }
+.gr-input { background-color: #333333 !important; padding: 4px; margin: 4px; }
+.gr-input-label { color: lightyellow; border-width: 0; background: transparent; padding: 2px !important; }
+.gr-panel { background-color: black; }
 .eta-bar { display: none !important }
 svg.feather.feather-image, .feather .feather-image { display: none }
 .gap-2 { padding-top: 8px; }
@@ -48,10 +42,8 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .p-2 { padding: 0; }
 .px-4 { padding-lefT: 1rem; padding-right: 1rem; }
 .py-6 { padding-bottom: 0; }
-.rounded-lg { border-radius: 0; }
 .tabs { background-color: black; }
-.gradio-button.tool { border-radius: 0; }
-.block.token-counter span { background-color: #222 !important; box-shadow: 2px 2px 2px #111; border: none !important; border-radius: 0; font-size: 0.8rem; }
+.block.token-counter span { background-color: #222 !important; box-shadow: 2px 2px 2px #111; border: none !important; font-size: 0.8rem; }
 .tab-nav { zoom: 120%; margin-bottom: 10px; border-bottom: 2px solid #CE6400 !important; padding-bottom: 2px; }
 .label-wrap { margin: 16px 0px 8px 0px; }
 .gradio-slider input[type="number"] { width: 4.5em; font-size: 0.8rem; }
@@ -68,7 +60,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 .image-buttons { gap: 10px !important}
 
 /* gradio elements overrides */
-#div.gradio-container.dark { overflow-x: hidden; }
+#div.gradio-container { overflow-x: hidden; }
 #img2img_label_copy_to_img2img { font-weight: normal; }
 #txt2img_prompt, #txt2img_neg_prompt, #img2img_prompt, #img2img_neg_prompt { background-color: black; box-shadow: 4px 4px 4px 0px #333333  !important; }
 #txt2img_prompt > label > textarea, #txt2img_neg_prompt > label > textarea, #img2img_prompt > label > textarea, #img2img_neg_prompt > label > textarea { font-size: 1.2rem; }
@@ -104,7 +96,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #steps-animation, #controlnet { border-width: 0; }
 
 /* based on gradio built-in dark theme */
-.dark {
+:root, .light, .dark {
   --body-background-fill: black;
   --body-text-color: var(--neutral-100);
   --color-accent-soft: var(--neutral-700);
@@ -282,7 +274,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --section-header-text-weight: 400;
   --checkbox-border-radius: var(--radius-sm);
   --checkbox-label-gap: 2px;
-  --checkbox-label-padding: var(--spacing-md) calc(2 * var(--spacing-md));
+  --checkbox-label-padding: var(--spacing-md);
   --checkbox-label-shadow: var(--shadow-drop);
   --checkbox-label-text-size: var(--text-md);
   --checkbox-label-text-weight: 400;

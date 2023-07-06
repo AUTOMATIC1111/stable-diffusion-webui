@@ -1188,12 +1188,7 @@ def html_body():
     body = ''
     inline = ''
     if opts.theme_style != 'Auto':
-        if opts.gradio_theme == 'black-orange':
-            modules.shared.log.info('Theme does not support custom mode')
-        else:
-            inline += f"set_theme('{opts.theme_style.lower()}');"
-    if opts.gradio_theme == 'black-orange':
-        inline += "set_theme('dark');"
+        inline += f"set_theme('{opts.theme_style.lower()}');"
     body += f'<script type="text/javascript">{inline}</script>\n'
     return body
 

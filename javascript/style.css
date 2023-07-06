@@ -28,7 +28,7 @@ div.gradio-html.min{ min-height: 0; }
 footer { display: none; }
 
 /* general styled components */
-.gradio-button.tool{ max-width: 2.3em;  min-width: 2.3em !important; height: 2.3em; align-self: end; line-height: 1em; border-radius: 0.5em; }
+.gradio-button.tool{ max-width: 2.3em;  min-width: 2.3em !important; height: 2.3em; align-self: end; line-height: 1em }
 .gradio-button.secondary-down{ background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); }
 .gradio-button.secondary-down, .gradio-button.secondary-down:hover{ box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset; }
 .gradio-button.secondary-down:hover{ background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
@@ -69,7 +69,6 @@ button.custom-button{
     background: var(--input-background-fill) !important;
     box-shadow: 0 0 0.0 0.3em rgba(192,192,192,0.15), inset 0 0 0.6em rgba(192,192,192,0.075);
     border: 2px solid rgba(192,192,192,0.4) !important;
-    border-radius: 0.4em;
 }
 
 .block.token-counter.error span{
@@ -316,7 +315,6 @@ div#extras_scale_to_tab div.form{
     position: relative;
     height: 20px;
     background: #b4c0cc;
-    border-radius: 3px !important;
     margin-bottom: -3px;
 }
 
@@ -333,7 +331,6 @@ div#extras_scale_to_tab div.form{
     line-height: 20px;
     padding: 0 8px 0 0;
     text-align: right;
-    border-radius: 3px;
     overflow: visible;
     white-space: nowrap;
     padding: 0 0.5em;
@@ -464,14 +461,12 @@ table.settings-value-table td{
   font-weight: bold;
   font-size: 20px;
   transition: 0.6s ease;
-  border-radius: 0 3px 3px 0;
   user-select: none;
   -webkit-user-select: none;
 }
 
 .modalNext {
   right: 0;
-  border-radius: 3px 0 0 3px;
 }
 
 .modalPrev:hover, .modalNext:hover {
@@ -497,7 +492,6 @@ table.settings-value-table td{
     display:block;
     padding:0px 0;
     border:2px solid #a55000;
-    border-radius:8px;
     box-shadow:1px 1px 2px #CE6400;
     width: 200px;
 }
