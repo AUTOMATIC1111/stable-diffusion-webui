@@ -711,6 +711,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     shared.state.current_latent = latents
                     shared.state.set_current_image()
 
+                # shared.sd_model.to(devices.device)
                 output = shared.sd_model( # pylint: disable=not-callable
                     prompt=prompts,
                     negative_prompt=negative_prompts,
@@ -723,8 +724,13 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     cross_attention_kwargs=cross_attention_kwargs,
                     **task_specific_kwargs
                 )
+                # if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                #    shared.sd_model.to('cpu')
+                #    devices.torch_gc(force=True)
+
 
                 if shared.sd_refiner is not None:
+                    # shared.sd_refiner.to(devices.device)
                     init_image = output.images[0]
                     output = shared.sd_refiner( # pylint: disable=not-callable
                         prompt=prompts,
@@ -738,6 +744,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         cross_attention_kwargs=cross_attention_kwargs,
                         image=init_image
                     )
+                    # if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                    #    shared.sd_refiner.to('cpu')
+                    #    devices.torch_gc(force=True)
+
 
                 x_samples_ddim = output.images
 

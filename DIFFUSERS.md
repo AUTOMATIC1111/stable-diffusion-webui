@@ -21,6 +21,8 @@ All notes have moved to [Wiki page](https://github.com/vladmandic/automatic/wiki
 ## TODO
 
 - VAE
-  > vae = AutoencoderKL.from_pretrained("stabilityai/sdxl-vae")  
-  > pipe = StableDiffusionPipeline.from_pretrained(model, vae=vae)  
-- Refiner handler with medvram/lowvram
+- Refiner with medvram/lowvram
+- SD-XL from safetensors
+- Hires fix
+- Callbacks
+- Stop/Skip
