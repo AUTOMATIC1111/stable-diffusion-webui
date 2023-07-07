@@ -358,6 +358,7 @@ class TaskReceiver:
                 conn.zadd(SDWorkerZset, {
                     self.worker_id: int(time.time())
                 })
+                conn.expire(SDWorkerZset, timedelta(hours=1))
                 self.register_time = time.time()
             except:
                 return False
