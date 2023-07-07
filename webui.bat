@@ -1,3 +1,4 @@
+gitpull
 @echo off
 
 if not defined PYTHON (set PYTHON=python)
