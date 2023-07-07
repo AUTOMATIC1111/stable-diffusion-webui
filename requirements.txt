@@ -49,7 +49,7 @@ requests==2.31.0
 tqdm==4.65.0
 accelerate==0.20.3
 opencv-python==4.7.0.72
-diffusers==0.17.1
+diffusers==0.18.0
 einops==0.4.1
 gradio==3.32.0
 numexpr==2.8.4

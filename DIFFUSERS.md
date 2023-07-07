@@ -4,14 +4,10 @@
 
 initial support merged into `dev` branch  
 
-- first download and start as normal:
+- download from branch and start as normal:
   > git clone https://github.com/vladmandic/automatic -b dev diffusers  
   > cd diffusers  
   > webui --debug --backend original  
-
-- then upgrade diffusers to unreleased version and switch to using diffusers
-  > pip install --upgrade git+https://github.com/huggingface/diffusers  
-  > webui --debug --quick --backend diffusers  
 
 - to go back to standard execution pipeline, start with  
   > webui --debug --backend original
