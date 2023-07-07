@@ -231,7 +231,8 @@ class TaskReceiver:
         # meta = rds.getdel(task_id)
         meta = rds.get(task_id)
         if meta:
-            rds.setex(task_id+"-worker", timedelta(hours=2), self.worker_id)
+            task_id = task_id.decode('utf8') if isinstance(task_id, bytes) else task_id
+            rds.setex(f"task:worker:{task_id}", timedelta(hours=2), self.worker_id)
             return Task.from_json_str(meta)
 
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
