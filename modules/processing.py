@@ -691,7 +691,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
                     if sampler is None:
                         sampler = sd_samplers.all_samplers_map.get("UniPC")
-                    # shared.sd_model.scheduler = sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
+                    shared.sd_model.scheduler = sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
                 cross_attention_kwargs={}
                 if lora_state['active']:
