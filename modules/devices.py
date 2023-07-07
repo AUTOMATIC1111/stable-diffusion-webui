@@ -66,7 +66,7 @@ def torch_mps_gc():
     if hasattr(torch.backends, 'mps'):
         if torch.backends.mps.is_available():
             torch.mps.empty_cache()
-        
+
 
 def enable_tf32():
     if torch.cuda.is_available():
