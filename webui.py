@@ -101,6 +101,7 @@ def check_rollback_vae():
 
 def initialize():
     log.debug('Entering initialize')
+    shared.disable_extensions()
     check_rollback_vae()
 
     modules.sd_vae.refresh_vae_list()

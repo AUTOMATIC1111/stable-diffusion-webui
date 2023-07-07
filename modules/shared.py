@@ -264,12 +264,17 @@ def list_themes():
     return themes
 
 
-def lora_disable():
+def disable_extensions():
     if opts.lora_disable:
         if 'Lora' not in opts.disabled_extensions:
             opts.data['disabled_extensions'].append('Lora')
     else:
         opts.data['disabled_extensions'] = [x for x in opts.disabled_extensions if x != 'Lora']
+    if backend == Backend.DIFFUSERS:
+        for ext in ['sd-webui-controlnet', 'sd-dynamic-thresholding', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
+            if ext not in opts.disabled_extensions:
+                log.warning(f'Diffusers disabling uncompatible extension: {ext}')
+                opts.data['disabled_extensions'].append(ext)
 
 
 def refresh_themes():
@@ -586,7 +591,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, lambda: {"choices": ["contain", "cover", "fill"]}),
     "extra_network_skip_indexing": OptionInfo(False, "Do not automatically build extra network pages", gr.Checkbox),
     "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all Lora types", gr.Checkbox),
-    "lora_disable": OptionInfo(False, "Disable built-in Lora handler", gr.Checkbox, { "visible": True }, onchange=lora_disable),
+    "lora_disable": OptionInfo(False, "Disable built-in Lora handler", gr.Checkbox, { "visible": True }, onchange=disable_extensions),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple Loras", gr.Checkbox),
     "extra_networks_add_text_separator": OptionInfo(" ", "Extra text to add before <...> when adding extra network to prompt", gr.Text, { "visible": False }),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),

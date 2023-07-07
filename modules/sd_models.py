@@ -219,7 +219,7 @@ def select_checkpoint(op='model'):
     elif op == 'dict':
         model_checkpoint = shared.opts.sd_model_dict
     elif op == 'refiner':
-        model_checkpoint = shared.opts.data['sd_model_refiner']
+        model_checkpoint = shared.opts.data.get('sd_model_refiner', None)
     if model_checkpoint is None or model_checkpoint == 'None':
         return None
     checkpoint_info = get_closet_checkpoint_match(model_checkpoint)
@@ -595,7 +595,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             if model_name is not None:
                 shared.log.info(f'Loading diffuser {op}: {model_name}')
                 model_file = modelloader.download_diffusers_model(hub_id=model_name)
-                sd_model = diffusers.DiffusionPipeline.from_pretrained(model_file, **diffusers_load_config)
+                try:
+                    sd_model = diffusers.DiffusionPipeline.from_pretrained(model_file, **diffusers_load_config)
+                except Exception as e:
+                    shared.log.error(f'Diffusers failed loading model: {model_file} {e}')
                 list_models() # rescan for downloaded model
                 checkpoint_info = CheckpointInfo(model_name)
 
@@ -606,7 +609,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 return
             shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
             if not os.path.isfile(checkpoint_info.path):
-                sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
+                try:
+                    sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
+                except Exception as e:
+                    shared.log.error(f'Diffusers failed loading model: {checkpoint_info.path} {e}')
             else:
                 diffusers_load_config["local_files_only "] = True
                 diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
@@ -690,6 +696,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model("dummy prompt")
             shared.log.info("Complilation done.")
 
+        if sd_model is None:
+            shared.log.error('Diffuser model not loaded')
+            return
         sd_model.sd_checkpoint_info = checkpoint_info # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_checkpoint = checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_hash = checkpoint_info.hash # pylint: disable=attribute-defined-outside-init
