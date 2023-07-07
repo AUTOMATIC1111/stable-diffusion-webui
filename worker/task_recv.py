@@ -18,7 +18,7 @@ import redis_lock
 import requests
 from loguru import logger
 from .task import Task
-from datetime import datetime
+from datetime import datetime, timedelta
 from modules.shared import cmd_opts
 from tools.redis import RedisPool
 from collections import defaultdict
@@ -231,7 +231,7 @@ class TaskReceiver:
         # meta = rds.getdel(task_id)
         meta = rds.get(task_id)
         if meta:
-            # rds.delete(task_id)
+            rds.setex(task_id+"-worker", timedelta(hours=2), self.worker_id)
             return Task.from_json_str(meta)
 
     def _extract_queue_task(self, queue_name: str, retry: int = 1):
