@@ -1,6 +1,7 @@
+from torch import FloatTensor
 import diffusers
 
-def _get_prev_sample(self, sample, timestep, prev_timestep, model_output):
+def _get_prev_sample(self, sample: FloatTensor, timestep, prev_timestep, model_output):
     # See formula (9) of PNDM paper https://arxiv.org/pdf/2202.09778.pdf
     # this function computes x_(t−δ) using the formula of (9)
     # Note that x_t needs to be added to both sides of the equation
@@ -13,7 +14,7 @@ def _get_prev_sample(self, sample, timestep, prev_timestep, model_output):
     # sample -> x_t
     # model_output -> e_θ(x_t, t)
     # prev_sample -> x_(t−δ)
-    print(sample) # DML Solution: PNDM Sampling does not work without this print. (because it depends on PLMS)
+    sample.__str__() # DML Solution: PNDM Sampling does not work without 'stringify'. (because it depends on PLMS)
     alpha_prod_t = self.alphas_cumprod[timestep]
     alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else self.final_alpha_cumprod
     beta_prod_t = 1 - alpha_prod_t
