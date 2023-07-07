@@ -129,7 +129,7 @@ def list_models():
     checkpoint_aliases.clear()
     ext_filter=[".safetensors"] if shared.opts.sd_disable_ckpt else [".ckpt", ".safetensors"]
     model_list = []
-    if shared.backend == shared.Backend.ORIGINAL or shared.opts.diffusers_pipeline == shared.pipelines[0]:
+    if shared.backend == shared.Backend.ORIGINAL or shared.opts.diffusers_allow_safetensors:
         model_list += modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.backend == shared.Backend.DIFFUSERS:
         model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
@@ -577,7 +577,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         # "use_safetensors": True,  # TODO(PVP) - we can't enable this for all checkpoints just yet
     }
 
-    if shared.opts.data['sd_model_checkpoint'] == 'model.ckpt':
+    if shared.opts.data.get('sd_model_checkpoint', '') == 'model.ckpt' or shared.opts.data.get('sd_model_checkpoint', '') == '':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
 
     if op == 'model' or op == 'dict':
@@ -608,6 +608,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 unload_model_weights(op=op)
                 return
             shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
+
+            vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
+            vae = sd_vae.load_vae_diffusers(None, vae_file, vae_source)
+            if vae is not None:
+                diffusers_load_config["vae"] = vae
+
             if not os.path.isfile(checkpoint_info.path):
                 try:
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
@@ -617,7 +623,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 diffusers_load_config["local_files_only "] = True
                 diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
                 try:
-                    # pipelines = ['Stable Diffusion', 'Stable Diffusion XL', 'Kandinsky V1', 'Kandinsky V2', 'DeepFloyd IF', 'Shap-E']
                     if shared.opts.diffusers_pipeline == shared.pipelines[0]:
                         pipeline = diffusers.StableDiffusionPipeline
                     elif shared.opts.diffusers_pipeline == shared.pipelines[1]:
@@ -630,13 +635,32 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                         pipeline = diffusers.IFPipeline
                     elif shared.opts.diffusers_pipeline == shared.pipelines[5]:
                         pipeline = diffusers.ShapEPipeline
+                    elif shared.opts.diffusers_pipeline == shared.pipelines[6]:
+                        pipeline = diffusers.StableDiffusionImg2ImgPipeline
+                    elif shared.opts.diffusers_pipeline == shared.pipelines[7]:
+                        pipeline = diffusers.StableDiffusionXLImg2ImgPipeline
+                    elif shared.opts.diffusers_pipeline == shared.pipelines[8]:
+                        pipeline = diffusers.KandinskyImg2ImgPipeline
+                    elif shared.opts.diffusers_pipeline == shared.pipelines[9]:
+                        pipeline = diffusers.KandinskyV22Img2ImgPipeline
+                    elif shared.opts.diffusers_pipeline == shared.pipelines[10]:
+                        pipeline = diffusers.IFImg2ImgPipeline
+                    elif shared.opts.diffusers_pipeline == shared.pipelines[11]:
+                        pipeline = diffusers.ShapEImg2ImgPipeline
                     else:
                         shared.log.error(f'Diffusers unknown pipeline: {shared.opts.diffusers_pipeline}')
                 except Exception as e:
                     shared.log.error(f'Diffusers failed initializing pipeline: {shared.opts.diffusers_pipeline} {e}')
                     return
                 try:
-                    sd_model = pipeline.from_ckpt(checkpoint_info.path, **diffusers_load_config)
+                    if hasattr(pipeline, 'from_single_file'):
+                        diffusers_load_config['use_safetensors'] = True
+                        sd_model = pipeline.from_single_file(checkpoint_info.path, **diffusers_load_config)
+                    elif hasattr(pipeline, 'from_ckpt'):
+                        sd_model = pipeline.from_ckpt(checkpoint_info.path, **diffusers_load_config)
+                    else:
+                        shared.log.error(f'Diffusers cannot load safetensor model: {checkpoint_info.path} {shared.opts.diffusers_pipeline}')
+                        return
                 except Exception as e:
                     shared.log.error(f'Diffusers failed loading model using pipeline: {checkpoint_info.path} {shared.opts.diffusers_pipeline} {e}')
                     return
@@ -938,13 +962,14 @@ def unload_model_weights(op='model'):
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
             model_data.sd_model = None
+            shared.log.debug(f'Weights unloaded {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
             model_data.sd_refiner.to(devices.cpu)
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
             model_data.sd_refiner = None
-    shared.log.debug(f'Weights unloaded {op}: {memory_stats()}')
+            shared.log.debug(f'Weights unloaded {op}: {memory_stats()}')
     devices.torch_gc(force=True)
 
 

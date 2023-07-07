@@ -6,8 +6,10 @@
 - add settings -> extra networks -> do not automatically build extra network pages  
   speeds up app start if you have a lot of extra networks and you want to build them manually when needed  
 - extra network ui tweaks  
+- cache extra networks between tabs  
+  this should result in neat 2x speedup on building extra networks  
 - merge experimental diffusers support  
-  this will be covered in details in separate post  
+  covered in details in a separate post  
 
 ## Update for 07/01/2023
 

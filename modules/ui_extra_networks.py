@@ -66,6 +66,7 @@ class ExtraNetworksPage:
         self.allow_negative_prompt = False
         self.metadata = {}
         self.info = {}
+        self.html = ''
         self.items = []
         self.missing_thumbs = []
         self.card = '''
@@ -150,7 +151,6 @@ class ExtraNetworksPage:
         self_name_id = self.name.replace(" ", "_")
         if skip:
             return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network page not ready<br>Click refresh to try again</div>"
-        items_html = ''
         subdirs = {}
         allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
         for parentdir in [*set(allowed_folders)]:
@@ -174,16 +174,21 @@ class ExtraNetworksPage:
                 {html.escape(subdir) if subdir!="" else "all"}
             </button><br>""" for subdir in subdirs])
         try:
+            if len(self.html) > 0:
+                res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
+                return res
+            self.html = ''
             self.items = list(self.list_items())
             self.create_xyz_grid()
             for item in self.items:
                 self.metadata[item["name"]] = item.get("metadata", {})
                 self.info[item["name"]] = self.find_info(item['filename'])
-                items_html += self.create_html_for_item(item, tabname)
-            if len(subdirs_html) > 0 or len(items_html) > 0:
-                res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{items_html}</div>"
+                self.html += self.create_html_for_item(item, tabname)
+            if len(subdirs_html) > 0 or len(self.html) > 0:
+                res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
             else:
                 return ''
+            shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} subdirs={len(subdirs)}')
             threading.Thread(target=self.create_thumb).start()
             return res
         except Exception as e:
@@ -327,6 +332,7 @@ def create_ui(container, button, tabname, skip_indexing = False):
     def refresh():
         res = []
         for pg in ui.stored_extra_pages:
+            pg.html = ''
             pg.refresh()
             res.append(pg.create_html(ui.tabname))
         ui.search.update(value = ui.search.value)

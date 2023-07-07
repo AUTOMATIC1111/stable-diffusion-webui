@@ -38,7 +38,10 @@ hypernetworks = {}
 loaded_hypernetworks = []
 gradio_theme = gr.themes.Base()
 settings_components = None
-pipelines = ['Stable Diffusion', 'Stable Diffusion XL', 'Kandinsky V1', 'Kandinsky V2', 'DeepFloyd IF', 'Shap-E']
+pipelines = [
+    'Stable Diffusion', 'Stable Diffusion XL', 'Kandinsky V1', 'Kandinsky V2', 'DeepFloyd IF', 'Shap-E',
+    'Stable Diffusion Img2Img', 'Stable Diffusion XL Img2Img', 'Kandinsky V1 Img2Img', 'Kandinsky V2 Img2Img', 'DeepFloyd IF Img2Img', 'Shap-E Img2Img'
+]
 latent_upscale_default_mode = "Latent"
 latent_upscale_modes = {
     "Latent": {"mode": "bilinear", "antialias": False},
@@ -356,7 +359,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
-    "diffusers_pipeline": OptionInfo(pipelines[0], 'Diffuser Pipeline', gr.Dropdown, lambda: {"choices": pipelines}),
+    "diffusers_allow_safetensors": OptionInfo(False, 'Diffuser Pipeline when loading from safetensors'),
+    "diffusers_pipeline": OptionInfo(pipelines[0], 'Diffuser Pipeline when loading from safetensors', gr.Dropdown, lambda: {"choices": pipelines}),
     "diffusers_extract_ema": OptionInfo(True, "Use model EMA weights when possible"),
     "diffusers_generator_device": OptionInfo("default", "Generator device", gr.Radio, lambda: {"choices": ["default", "cpu"]}),
     "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload"),

@@ -7,7 +7,7 @@ initial support merged into `dev` branch
 - download from branch and start as normal:
   > git clone https://github.com/vladmandic/automatic -b dev diffusers  
   > cd diffusers  
-  > webui --debug --backend original  
+  > webui --debug --backend diffusers  
 
 - to go back to standard execution pipeline, start with  
   > webui --debug --backend original

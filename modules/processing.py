@@ -705,12 +705,22 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     # TODO(PVP): change out to latents once possible with `diffusers`
                     task_specific_kwargs = {"image": p.init_images[0], "mask_image": p.image_mask, "strength": p.denoising_strength}
 
+                def diffusers_callback(step: int, _timestep: int, latents: torch.FloatTensor): # TODO simplified callback for now
+                    shared.state.sampling_step = step
+                    shared.state.sampling_steps = p.steps
+                    shared.state.current_latent = latents
+                    shared.state.set_current_image()
+                    if p.scripts is not None:
+                        p.scripts.process(p)
+
                 output = shared.sd_model( # pylint: disable=not-callable
                     prompt=prompts,
                     negative_prompt=negative_prompts,
                     num_inference_steps=p.steps,
                     guidance_scale=p.cfg_scale,
                     generator=generator,
+                    callback_steps = 1,
+                    callback = diffusers_callback,
                     output_type='np' if shared.sd_refiner is None else 'latent',
                     cross_attention_kwargs=cross_attention_kwargs,
                     **task_specific_kwargs
@@ -724,6 +734,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         num_inference_steps=p.steps,
                         guidance_scale=p.cfg_scale,
                         generator=generator,
+                        callback_steps = 1,
+                        callback = diffusers_callback,
                         output_type='np',
                         cross_attention_kwargs=cross_attention_kwargs,
                         image=init_image
