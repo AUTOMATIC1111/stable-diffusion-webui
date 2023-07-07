@@ -546,7 +546,7 @@ class PriorPipeline:
     def __call__(self, *args, **kwargs):
         unclip_outputs = self.prior(prompt=kwargs.get("prompt"), negative_prompt=kwargs.get("negative_prompt"))
 
-        if self.prior.device.type == "cuda":
+        if self.prior.device.type == "cuda" or self.prior.device.type == "xpu":
             prior_device = self.prior.device
             self.prior.to("cpu")
             self.main.to(prior_device)
@@ -554,7 +554,7 @@ class PriorPipeline:
         kwargs = {**kwargs, **unclip_outputs}
         result = self.main(*args, **kwargs)
 
-        if self.main.device.type == "cuda":
+        if self.main.device.type == "cuda" or self.main.device.type == "xpu":
             main_device = self.main.device
             self.main.to("cpu")
             self.prior.to(main_device)
