@@ -43,12 +43,17 @@ Env_Worker_Group = "WORKER_GROUP_NAME"
 Env_Flexible_Res_Token = "FLEXIBLE_RESOURCE"
 # 工作状态FILE记录路径
 Env_Worker_State_File = "WORKER_STATE_FILE_PATH"
-
+Env_GSS_Count_API = "GSS_COUNT_API"
 cache = {}
 
 
 def is_flexible_worker():
     return os.getenv(Env_Flexible_Res_Token, "") != ""
+
+
+def get_gss_count_api():
+    if is_flexible_worker():
+        return os.getenv(Env_GSS_Count_API)
 
 
 def get_worker_state_dump_path(defalut_path=None):

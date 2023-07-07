@@ -15,7 +15,7 @@ from threading import Thread
 from tools.mgo import MongoClient
 from tools.host import get_host_ip
 from tools.redis import RedisPool
-from worker.task import TaskProgress, TaskStatus
+from worker.task import TaskProgress
 
 
 class DumpInfo:
@@ -36,6 +36,11 @@ class DumpInfo:
 
     def update_db(self, db):
         logger.info(f"dumper task:{self.id}.")
+        if '$set' in self.set:
+            set_value = self.set['$set']
+            if isinstance(set_value, dict) and 'task_progress' in set_value:
+                logger.info(f"dumper task:{self.id} and progress {set_value['task_progress']}.")
+
         db.update(
             self.query,
             self.set,
@@ -79,14 +84,19 @@ class TaskDumper(Thread):
             id = info.id
             if info.id not in infos:
                 infos[id] = info
-            elif info.create_time > infos[id].create_time:
+            elif isinstance(info, DumpInfo) and isinstance(infos[id], DumpInfo)\
+                    and info.create_time > infos[id].create_time:
                 infos[id] = info
+            else:
+                # 先进先出
+                infos[id] = info
+
         return infos
 
     def run(self) -> None:
         while not self._stop_flag:
             now = time.time()
-            if self._dump_now or self._last_dump_time + self.send_delay > now:
+            if self._dump_now or now - self._last_dump_time > self.send_delay:
                 self._last_dump_time = now
                 if not self.queue.empty():
                     array = self._get_queue_all()
@@ -138,8 +148,8 @@ class TaskDumper(Thread):
 
 class MongoTaskDumper(TaskDumper):
 
-    def __init__(self):
-        mgo = MongoClient()
+    def __init__(self, *args, **db_settings):
+        mgo = MongoClient(**db_settings or {})
         mgo.collect.create_index('task_id', unique=True)
         mgo.collect.create_index('status')
         mgo.collect.create_index('task.user_id')
@@ -187,5 +197,6 @@ class MongoTaskDumper(TaskDumper):
 
 dumper = MongoTaskDumper()
 dumper.start()
+
 
 

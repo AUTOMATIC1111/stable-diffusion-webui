@@ -15,6 +15,7 @@ import time
 import typing
 import uuid
 import redis_lock
+import requests
 from loguru import logger
 from .task import Task
 from datetime import datetime
@@ -24,7 +25,7 @@ from collections import defaultdict
 from tools.model_hist import CkptLoadRecorder
 from tools.gpu import GpuInfo
 from tools.wrapper import timed_lru_cache
-from tools.environment import get_run_train_time_cfg, get_worker_group, \
+from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, \
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
 try:
@@ -112,6 +113,7 @@ class TaskReceiverRecorder:
 class TaskReceiver:
 
     def __init__(self, recoder: CkptLoadRecorder, train_only: bool = False):
+        self.release_flag = None
         self.model_recoder = recoder
         self.redis_pool = RedisPool()
         self.clean_tmp_time = time.time()
@@ -319,15 +321,23 @@ class TaskReceiver:
         while 1:
             try:
                 st = time.time()
-                if self.train_only:
-                    task = self._search_train_task()
+
+                # 释放弹性资源，不再获取任务主动
+                if self.release_elastic_res_state():
+                    task = None
+                    time.sleep(1)
                 else:
-                    task = self._search_task()
+                    if self.train_only:
+                        task = self._search_train_task()
+                    else:
+                        task = self._search_task()
+
                 if task:
                     self.recorder.set_state(TaskReceiverState.Running)
                     yield task
                 else:
                     self.recorder.set_state(TaskReceiverState.Idle)
+
                 wait = sleep_time - time.time() + st
                 if wait > 0:
                     self._clean_tmp_files()
@@ -376,3 +386,20 @@ class TaskReceiver:
 
     def write_worker_state(self):
         self.recorder.write()
+
+    def release_elastic_res_state(self):
+        if self.is_elastic:
+            if time.time() - self.register_time > 120:
+                url = get_gss_count_api()
+                if url:
+                    try:
+                        resp = requests.get(url, timeout=5)
+                        json_data = resp.json()
+                        group = get_worker_group()
+                        if group in json_data:
+                            self.release_flag = json_data[group] == 0
+                    except:
+                        self.release_flag = False
+        else:
+            self.release_flag = False
+        return self.release_flag

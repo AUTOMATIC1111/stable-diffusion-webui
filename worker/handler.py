@@ -67,7 +67,7 @@ class TaskHandler:
                     pass
 
     def close(self):
-        pass
+        dumper.stop()
 
     def set_failed(self, task: Task, desc: str):
         p = TaskProgress.new_failed(task, desc)

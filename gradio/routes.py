@@ -97,6 +97,7 @@ templates.env.filters["toorjson"] = toorjson
 
 client = httpx.AsyncClient()
 
+
 ###########
 # Auth
 ###########
@@ -162,7 +163,7 @@ class App(FastAPI):
 
     @staticmethod
     def create_app(
-        blocks: gradio.Blocks, app_kwargs: Dict[str, Any] | None = None
+            blocks: gradio.Blocks, app_kwargs: Dict[str, Any] | None = None
     ) -> App:
         app_kwargs = app_kwargs or {}
         app_kwargs.setdefault("default_response_class", ORJSONResponse)
@@ -266,7 +267,7 @@ class App(FastAPI):
                 config = {
                     "auth_required": True,
                     "auth_message": blocks.auth_message,
-                    "is_space": app.get_blocks().is_space,
+                    "space_id": app.get_blocks().is_space,
                     "root": root_path,
                 }
 
@@ -414,9 +415,9 @@ class App(FastAPI):
             return {"success": True}
 
         async def run_predict(
-            body: PredictBody,
-            request: Request | List[Request],
-            fn_index_inferred: int,
+                body: PredictBody,
+                request: Request | List[Request],
+                fn_index_inferred: int,
         ):
             if hasattr(body, "session_hash"):
                 if body.session_hash not in app.state_holder:
@@ -488,6 +489,7 @@ class App(FastAPI):
                             if item and isinstance(item, str):
                                 if 'cuda out of memory' in item.lower():
                                     return True
+
             if is_cuda_out_of_memory(output):
                 # kill self when out of memory
 
@@ -505,10 +507,10 @@ class App(FastAPI):
         @app.post("/api/{api_name}", dependencies=[Depends(login_check)])
         @app.post("/api/{api_name}/", dependencies=[Depends(login_check)])
         async def predict(
-            api_name: str,
-            body: PredictBody,
-            request: fastapi.Request,
-            username: str = Depends(get_current_user),
+                api_name: str,
+                body: PredictBody,
+                request: fastapi.Request,
+                username: str = Depends(get_current_user),
         ):
             fn_index_inferred = None
             if body.fn_index is None:
@@ -526,9 +528,9 @@ class App(FastAPI):
             else:
                 fn_index_inferred = body.fn_index
             if (
-                not app.get_blocks().api_open
-                and app.get_blocks().queue_enabled_for_fn(fn_index_inferred)
-                and f"Bearer {app.queue_token}" != request.headers.get("Authorization")
+                    not app.get_blocks().api_open
+                    and app.get_blocks().queue_enabled_for_fn(fn_index_inferred)
+                    and f"Bearer {app.queue_token}" != request.headers.get("Authorization")
             ):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -558,8 +560,8 @@ class App(FastAPI):
 
         @app.websocket("/queue/join")
         async def join_queue(
-            websocket: WebSocket,
-            token: Optional[str] = Depends(ws_login_check),
+                websocket: WebSocket,
+                token: Optional[str] = Depends(ws_login_check),
         ):
             blocks = app.get_blocks()
             app.last_event_ts = time.time()
@@ -626,7 +628,7 @@ class App(FastAPI):
 
         @app.post("/upload", dependencies=[Depends(login_check)])
         async def upload_file(
-            files: List[UploadFile] = File(...),
+                files: List[UploadFile] = File(...),
         ):
             output_files = []
             file_manager = gradio.File()
@@ -679,11 +681,11 @@ def safe_join(directory: str, path: str) -> str:
     filename = posixpath.normpath(path)
     fullpath = os.path.join(directory, filename)
     if (
-        any(sep in filename for sep in _os_alt_seps)
-        or os.path.isabs(filename)
-        or filename == ".."
-        or filename.startswith("../")
-        or os.path.isdir(fullpath)
+            any(sep in filename for sep in _os_alt_seps)
+            or os.path.isabs(filename)
+            or filename == ".."
+            or filename.startswith("../")
+            or os.path.isdir(fullpath)
     ):
         raise HTTPException(403)
 
@@ -784,10 +786,10 @@ class Request:
     """
 
     def __init__(
-        self,
-        request: fastapi.Request | None = None,
-        username: str | None = None,
-        **kwargs,
+            self,
+            request: fastapi.Request | None = None,
+            username: str | None = None,
+            **kwargs,
     ):
         """
         Can be instantiated with either a fastapi.Request or by manually passing in
@@ -820,10 +822,10 @@ class Request:
 
 @document()
 def mount_gradio_app(
-    app: fastapi.FastAPI,
-    blocks: gradio.Blocks,
-    path: str,
-    gradio_api_url: str | None = None,
+        app: fastapi.FastAPI,
+        blocks: gradio.Blocks,
+        path: str,
+        gradio_api_url: str | None = None,
 ) -> fastapi.FastAPI:
     """Mount a gradio.Blocks to an existing FastAPI application.
 

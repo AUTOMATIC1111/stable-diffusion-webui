@@ -66,7 +66,7 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
         progress = epoch / num_train_epochs * 100 * 0.9
         p.train.add_epoch_log(TrainEpoch(epoch, loss))
         p.task_progress = progress
-        if loss == math.nan or str(loss).lower() == 'nan':
+        if math.isnan(loss) or str(loss).lower() == 'nan':
             p.status = TaskStatus.Failed
         if callable(dump_func):
             dump_func(p)
