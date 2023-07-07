@@ -563,6 +563,7 @@ class PriorPipeline:
 
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
+    import torch # todo: no idea why its undefined here
     if timer is None:
         timer = Timer()
     import logging

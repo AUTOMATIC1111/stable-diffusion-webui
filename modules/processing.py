@@ -710,8 +710,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     shared.state.sampling_steps = p.steps
                     shared.state.current_latent = latents
                     shared.state.set_current_image()
-                    if p.scripts is not None:
-                        p.scripts.process(p)
 
                 output = shared.sd_model( # pylint: disable=not-callable
                     prompt=prompts,
