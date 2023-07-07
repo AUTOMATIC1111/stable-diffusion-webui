@@ -160,9 +160,17 @@ def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
         shared.log.error('VAE not found: {vae_file}')
         return
     shared.log.info(f"Loading diffusers VAE: {vae_source}: {vae_file}")
+    diffusers_load_config = {
+        "low_cpu_mem_usage": True,
+        "torch_dtype": devices.dtype_vae,
+        "use_safetensors": True,
+    }
+    if devices.dtype_vae == torch.float16:
+        diffusers_load_config['variant'] = 'fp16'
+    shared.log.debug(f'Diffusers VAE load config: {diffusers_load_config}')
     try:
         import diffusers
-        diffusers_vae = diffusers.AutoencoderKL.from_pretrained(vae_file)
+        diffusers_vae = diffusers.AutoencoderKL.from_pretrained(vae_file, **diffusers_load_config)
     except Exception as e:
         shared.log.error(f"Loading diffusers VAE failed: {vae_file} {e}")
         diffusers_vae = None

@@ -563,7 +563,7 @@ class PriorPipeline:
 
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
-    import torch # todo: no idea why its undefined here
+    import torch # pylint: disable=reimported,redefined-outer-name
     if timer is None:
         timer = Timer()
     import logging
@@ -577,6 +577,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         "load_safety_checker": False,
         # "use_safetensors": True,  # TODO(PVP) - we can't enable this for all checkpoints just yet
     }
+    if devices.dtype == torch.float16:
+        diffusers_load_config['variant'] = 'fp16'
 
     if shared.opts.data.get('sd_model_checkpoint', '') == 'model.ckpt' or shared.opts.data.get('sd_model_checkpoint', '') == '':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
@@ -588,6 +590,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if model_data.sd_refiner is not None and (checkpoint_info.hash == model_data.sd_refiner.sd_checkpoint_info.hash): # trying to load the same model
             return
 
+    shared.log.debug(f'Diffusers load config: {diffusers_load_config}')
     sd_model = None
     try:
         devices.set_cuda_params()
