@@ -497,13 +497,23 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_pnginfo=None):
+def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_pnginfo=None, pnginfo_section_name='parameters'):
+    """
+    Saves image to filename, including geninfo as text information for generation info.
+    For PNG images, geninfo is added to existing pnginfo dictionary using the pnginfo_section_name argument as key.
+    For JPG images, there's no dictionary and geninfo just replaces the EXIF description.
+    """
+
     if extension is None:
         extension = os.path.splitext(filename)[1]
 
     image_format = Image.registered_extensions()[extension]
 
     if extension.lower() == '.png':
+        existing_pnginfo = existing_pnginfo or {}
+        if opts.enable_pnginfo:
+            existing_pnginfo[pnginfo_section_name] = geninfo
+
         if opts.enable_pnginfo:
             pnginfo_data = PngImagePlugin.PngInfo()
             for k, v in (existing_pnginfo or {}).items():
@@ -622,7 +632,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         """
         temp_file_path = f"{filename_without_extension}.tmp"
 
-        save_image_with_geninfo(image_to_save, info, temp_file_path, extension, params.pnginfo)
+        save_image_with_geninfo(image_to_save, info, temp_file_path, extension, existing_pnginfo=params.pnginfo, pnginfo_section_name=pnginfo_section_name)
 
         os.replace(temp_file_path, filename_without_extension + extension)
 
