@@ -173,14 +173,14 @@ class StableDiffusionModelHijack:
         if m.cond_stage_key == "edit":
             sd_hijack_unet.hijack_ddpm_edit()
 
+        import logging
         if opts.cuda_compile and opts.cuda_compile_mode == 'ipex':
-            if shared.cmd_opts.use_ipex:
+            if devices.backend == 'ipex':
                 shared.log.info("Model compile enabled: IPEX Optimize Graph Mode")
             else:
                 shared.log.warning("Model compile skipped: IPEX Method is for Intel GPU's with OneAPI")
         elif opts.cuda_compile and opts.cuda_compile_mode != 'none' and shared.backend == shared.Backend.ORIGINAL:
             try:
-                import logging
                 import torch._dynamo # pylint: disable=unused-import
                 log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                 torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access

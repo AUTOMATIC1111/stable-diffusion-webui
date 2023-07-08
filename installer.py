@@ -307,8 +307,12 @@ def check_torch():
         os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
         os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/rocm5.4.2')
-    elif allow_ipex and args.use_ipex and shutil.which('sycl-ls') is not None:
+        xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
+    elif allow_ipex and (args.use_ipex or shutil.which('sycl-ls') is not None or os.environ.get('ONEAPI_ROOT') is not None or os.path.exists('/opt/intel/oneapi')):
+        args.use_ipex = True
         log.info('Intel OneAPI Toolkit detected')
+        if shutil.which('sycl-ls') is None:
+            log.error('Intel OneAPI Toolkit is not activated! Start the WebUI with --use-ipex or activate OneAPI manually')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==1.13.0a0 torchvision==0.14.1a0 intel_extension_for_pytorch==1.13.120+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
     else:
         machine = platform.machine()

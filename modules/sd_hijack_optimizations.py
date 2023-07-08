@@ -29,7 +29,7 @@ else:
 
 
 def get_available_vram():
-    if shared.cmd_opts.use_ipex:
+    if devices.backend == 'ipex':
         stats = torch.xpu.memory_stats(shared.device)
         mem_active = stats['active_bytes.all.current']
         mem_reserved = stats['reserved_bytes.all.current']
@@ -190,7 +190,7 @@ def einsum_op_tensor_mem(q, k, v, max_tensor_mb):
     return einsum_op_slice_1(q, k, v, max(q.shape[1] // div, 1))
 
 def einsum_op_cuda(q, k, v):
-    if shared.cmd_opts.use_ipex:
+    if devices.backend == 'ipex':
         stats = torch.xpu.memory_stats(q.device)
         mem_active = stats['active_bytes.all.current']
         mem_reserved = stats['reserved_bytes.all.current']
@@ -218,10 +218,7 @@ def einsum_op_dml(q, k, v):
     return einsum_op_tensor_mem(q, k, v, (mem_reserved - mem_active) if mem_reserved > mem_active else 1)
 
 def einsum_op(q, k, v):
-    if shared.cmd_opts.use_ipex:
-        return einsum_op_cuda(q, k, v)
-
-    if q.device.type == 'cuda':
+    if q.device.type == 'cuda' or devices.backend == 'ipex':
         return einsum_op_cuda(q, k, v)
 
     if q.device.type == 'mps':
@@ -413,7 +410,7 @@ def scaled_dot_product_attention_forward(self, x, context=None, mask=None):
     return hidden_states
 
 def scaled_dot_product_no_mem_attention_forward(self, x, context=None, mask=None):
-    if shared.cmd_opts.use_ipex:
+    if devices.backend == 'ipex':
         with torch.backends.xpu.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
             return scaled_dot_product_attention_forward(self, x, context, mask)
     else:
@@ -522,7 +519,7 @@ def sdp_attnblock_forward(self, x):
     return x + out
 
 def sdp_no_mem_attnblock_forward(self, x):
-    if shared.cmd_opts.use_ipex:
+    if devices.backend == 'ipex':
         with torch.backends.xpu.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
             return sdp_attnblock_forward(self, x)
     else:

@@ -7,7 +7,7 @@ from tqdm.rich import tqdm
 from swinir_model_arch import SwinIR as net
 from swinir_model_arch_v2 import Swin2SR as net2
 from modules import modelloader, devices, script_callbacks, shared
-from modules.shared import cmd_opts, opts, state
+from modules.shared import opts, state
 from modules.upscaler import Upscaler, UpscalerData
 
 
@@ -41,11 +41,12 @@ class UpscalerSwinIR(Upscaler):
         model = model.to(device_swinir, dtype=devices.dtype)
         img = upscale(img, model)
         try:
-            torch.cuda.empty_cache()
+            if devices.backend == 'ipex':
+                torch.xpu.empty_cache()
+            else:
+                torch.cuda.empty_cache()
         except Exception:
             pass
-        if cmd_opts.use_ipex:
-            torch.xpu.empty_cache()
         return img
 
     def load_model(self, path, scale=4):

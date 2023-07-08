@@ -8,8 +8,8 @@ from modules.dml.opts import override_opts
 from .optimizer.unknown import UnknownOptimizer
 
 class DirectML():
-    _is_autocast_enabled = False
-    _autocast_dtype = torch.float16
+    is_autocast_enabled = False
+    autocast_gpu_dtype = torch.float16
 
     def get_optimizer(device: torch.device):
         assert device.type == 'privateuseone'
@@ -30,18 +30,6 @@ class DirectML():
     def memory_stats(device: torch.device):
         optimizer = DirectML.get_optimizer(device)
         return optimizer.memory_stats(device.index)
-
-    def get_autocast_gpu_dtype():
-        return DirectML._autocast_dtype
-
-    def set_autocast_gpu_dtype(dtype):
-        DirectML._autocast_dtype = dtype
-
-    def is_autocast_enabled():
-        return DirectML._is_autocast_enabled
-
-    def set_autocast_enabled(enabled: bool):
-        DirectML._is_autocast_enabled = enabled
 
 
 DirectML.amp = amp

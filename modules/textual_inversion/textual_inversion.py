@@ -443,7 +443,7 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
         else:
             shared.log.info("No saved optimizer exists in checkpoint")
 
-    if shared.cmd_opts.use_ipex:
+    if devices.backend == 'ipex':
         scaler = torch.xpu.amp.GradScaler()
     else:
         scaler = torch.cuda.amp.GradScaler()
