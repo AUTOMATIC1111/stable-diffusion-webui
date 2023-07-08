@@ -2,14 +2,24 @@
 
 ## Update for 07/08/2023
 
+This is a massive update which has been baking in a `dev` branch for a while now
+
+- merge experimental diffusers support  
+
+*TL;DR*: Yes, you can run **SD-XL** model in **SD.Next** now  
+For details, see Wiki page: [Diffusers](https://github.com/vladmandic/automatic/wiki/Diffusers)  
+Note this is still experimental, so please follow Wiki  
+Additional enhancements and fixes will be provided over the next few days  
+*Thanks to @huggingface team for making this possible and our internal @team for all the early testing*
+
+Release also contains number of smaller updates:
+
 - add pan & zoom controls (touch and mouse) to image viewer (lightbox)  
 - cache extra networks between tabs  
   this should result in neat 2x speedup on building extra networks  
 - add settings -> extra networks -> do not automatically build extra network pages  
   speeds up app start if you have a lot of extra networks and you want to build them manually when needed  
 - extra network ui tweaks  
-- merge experimental diffusers support  
-  covered in details in a separate post  
 
 ## Update for 07/01/2023
 
