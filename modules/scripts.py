@@ -187,7 +187,7 @@ class Script:
 
         return f'script_{tabname}{title}_{item_id}'
 
-    def before_hr(self, p ,*args):
+    def before_hr(self, p, *args):
         """
         This function is called before hires fix start.
         """
