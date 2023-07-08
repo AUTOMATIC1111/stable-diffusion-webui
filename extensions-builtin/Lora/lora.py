@@ -138,6 +138,50 @@ class LoraUpDownModule:
         self.down = None
         self.alpha = None
 
+class LoRaCacheLRU:
+    def __init__(self, max_cache_num = 0):
+        self.max_cache_num = max_cache_num
+        self.cached_loras_map = {}
+        self.LRU = []
+
+    def get_lora_and_refresh_LRU(self, lora_name, lora_on_disk):
+        """
+        Return lora and refresh LRU
+        """
+        ## if not using cache
+        if self.max_cache_num <= 0:
+            lora = load_lora(lora_name, lora_on_disk.filename)
+            return lora
+        
+        ## LoRa in LRU
+        if lora_name in self.LRU:
+            self.LRU.remove(lora_name)
+            self.LRU = [lora_name] + self.LRU
+            lora = self.cached_loras_map[lora_name]
+            return lora
+
+        ## LoRa not in LRU and cache is not full
+        if len(self.LRU) < self.max_cache_num:
+            lora = load_lora(lora_name, lora_on_disk.filename)
+            self.cached_loras_map[lora.name] = lora
+            self.LRU = [lora.name]+self.LRU
+            return lora
+        
+        ## LoRa not in LRU and cache is full
+        lora_name_to_remove = self.LRU[-1]
+        del self.cached_loras_map[lora_name_to_remove]
+        lora = load_lora(lora_name, lora_on_disk.filename)
+        self.cached_loras_map[lora.name] = lora
+        self.LRU = [lora.name]+self.LRU[:-1]
+        return lora
+
+    def set_max_cache_num(self,max_cache_num):
+        if len(self.LRU)>max_cache_num:
+            for lora_name in self.LRU[max_cache_num:]:
+                del self.cached_loras_map[lora_name]
+            self.LRU=self.LRU[:max_cache_num]
+        self.max_cache_num=max_cache_num
+
 
 def assign_lora_names_to_compvis_modules(sd_model):
     lora_layer_mapping = {}
@@ -248,12 +292,9 @@ def load_loras(names, multipliers=None):
         lora_on_disk = loras_on_disk[i]
 
         if lora_on_disk is not None:
-            if lora is None:
-                lora = cached_loras.get(name,None)    
             if lora is None or os.path.getmtime(lora_on_disk.filename) > lora.mtime:
                 try:
-                    lora = load_lora(name, lora_on_disk)
-                    cached_loras[lora.name] = lora
+                    lora = lora_cache.get_lora_and_refresh_LRU(name, lora_on_disk)
                 except Exception as e:
                     errors.display(e, f"loading Lora {lora_on_disk.filename}")
                     continue
@@ -501,6 +542,6 @@ available_lora_aliases = {}
 available_lora_hash_lookup = {}
 forbidden_lora_aliases = {}
 loaded_loras = []
-cached_loras = {}
+lora_cache = LoRaCacheLRU(100)
 
 list_available_loras()
