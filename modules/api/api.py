@@ -330,7 +330,7 @@ class Api:
                 p.outpath_grids = opts.outdir_txt2img_grids
                 p.outpath_samples = opts.outdir_txt2img_samples
 
-                shared.state.begin()
+                shared.state.begin(job="scripts_txt2img")
                 if selectable_scripts is not None:
                     p.script_args = script_args
                     processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
@@ -387,7 +387,7 @@ class Api:
                 p.outpath_grids = opts.outdir_img2img_grids
                 p.outpath_samples = opts.outdir_img2img_samples
 
-                shared.state.begin()
+                shared.state.begin(job="scripts_img2img")
                 if selectable_scripts is not None:
                     p.script_args = script_args
                     processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
@@ -395,7 +395,6 @@ class Api:
                     p.script_args = tuple(script_args) # Need to pass args as tuple here
                     processed = process_images(p)
                 shared.state.end()
-
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -603,44 +602,42 @@ class Api:
 
     def create_embedding(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="create_embedding")
             filename = create_embedding(**args) # create empty embedding
             sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings() # reload embeddings so new one can be immediately used
-            shared.state.end()
             return models.CreateResponse(info=f"create embedding filename: {filename}")
         except AssertionError as e:
-            shared.state.end()
             return models.TrainResponse(info=f"create embedding error: {e}")
+        finally:
+            shared.state.end()
+
 
     def create_hypernetwork(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="create_hypernetwork")
             filename = create_hypernetwork(**args) # create empty embedding
-            shared.state.end()
             return models.CreateResponse(info=f"create hypernetwork filename: {filename}")
         except AssertionError as e:
-            shared.state.end()
             return models.TrainResponse(info=f"create hypernetwork error: {e}")
+        finally:
+            shared.state.end()
 
     def preprocess(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="preprocess")
             preprocess(**args) # quick operation unless blip/booru interrogation is enabled
             shared.state.end()
-            return models.PreprocessResponse(info = 'preprocess complete')
+            return models.PreprocessResponse(info='preprocess complete')
         except KeyError as e:
-            shared.state.end()
             return models.PreprocessResponse(info=f"preprocess error: invalid token: {e}")
-        except AssertionError as e:
-            shared.state.end()
+        except Exception as e:
             return models.PreprocessResponse(info=f"preprocess error: {e}")
-        except FileNotFoundError as e:
+        finally:
             shared.state.end()
-            return models.PreprocessResponse(info=f'preprocess error: {e}')
 
     def train_embedding(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="train_embedding")
             apply_optimizations = shared.opts.training_xattention_optimizations
             error = None
             filename = ''
@@ -653,15 +650,15 @@ class Api:
             finally:
                 if not apply_optimizations:
                     sd_hijack.apply_optimizations()
-                shared.state.end()
             return models.TrainResponse(info=f"train embedding complete: filename: {filename} error: {error}")
-        except AssertionError as msg:
-            shared.state.end()
+        except Exception as msg:
             return models.TrainResponse(info=f"train embedding error: {msg}")
+        finally:
+            shared.state.end()
 
     def train_hypernetwork(self, args: dict):
         try:
-            shared.state.begin()
+            shared.state.begin(job="train_hypernetwork")
             shared.loaded_hypernetworks = []
             apply_optimizations = shared.opts.training_xattention_optimizations
             error = None
@@ -679,9 +676,10 @@ class Api:
                     sd_hijack.apply_optimizations()
                 shared.state.end()
             return models.TrainResponse(info=f"train embedding complete: filename: {filename} error: {error}")
-        except AssertionError:
+        except Exception as exc:
+            return models.TrainResponse(info=f"train embedding error: {exc}")
+        finally:
             shared.state.end()
-            return models.TrainResponse(info=f"train embedding error: {error}")
 
     def get_memory(self):
         try:

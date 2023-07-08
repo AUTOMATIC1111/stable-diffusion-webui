@@ -4,6 +4,7 @@ import os
 import sys
 import threading
 import time
+import logging
 
 import gradio as gr
 import torch
@@ -17,6 +18,8 @@ from modules import localization, script_loading, errors, ui_components, shared_
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir  # noqa: F401
 from ldm.models.diffusion.ddpm import LatentDiffusion
 from typing import Optional
+
+log = logging.getLogger(__name__)
 
 demo = None
 
@@ -144,12 +147,15 @@ class State:
     def request_restart(self) -> None:
         self.interrupt()
         self.server_command = "restart"
+        log.info("Received restart request")
 
     def skip(self):
         self.skipped = True
+        log.info("Received skip request")
 
     def interrupt(self):
         self.interrupted = True
+        log.info("Received interrupt request")
 
     def nextjob(self):
         if opts.live_previews_enable and opts.show_progress_every_n_steps == -1:
@@ -173,7 +179,7 @@ class State:
 
         return obj
 
-    def begin(self):
+    def begin(self, job: str = "(unknown)"):
         self.sampling_step = 0
         self.job_count = -1
         self.processing_has_refined_job_count = False
@@ -187,10 +193,13 @@ class State:
         self.interrupted = False
         self.textinfo = None
         self.time_start = time.time()
-
+        self.job = job
         devices.torch_gc()
+        log.info("Starting job %s", job)
 
     def end(self):
+        duration = time.time() - self.time_start
+        log.info("Ending job %s (%.2f seconds)", self.job, duration)
         self.job = ""
         self.job_count = 0
 

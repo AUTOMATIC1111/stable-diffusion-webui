@@ -30,7 +30,7 @@ def wrap_gradio_gpu_call(func, extra_outputs=None):
             id_task = None
 
         with queue_lock:
-            shared.state.begin()
+            shared.state.begin(job=id_task)
             progress.start_task(id_task)
 
             try:
