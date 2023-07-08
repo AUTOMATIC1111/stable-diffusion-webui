@@ -175,8 +175,10 @@ else:
     backend = 'cpu'
 
 if backend == 'ipex':
-    #Fix broken function in ipex 1.13.120+xpu
+    #Fix broken functions with ipex
     from modules.sd_hijack_utils import CondFunc
+    torch.cuda.empty_cache = torch.xpu.empty_cache
+
     #Functions with dtype errors:
     CondFunc('torch.nn.modules.GroupNorm.forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
@@ -184,15 +186,20 @@ if backend == 'ipex':
     CondFunc('torch.nn.modules.Linear.forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
         lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
+    
     #Functions that does not work with the XPU:
     #UniPC:
     CondFunc('torch.linalg.solve',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"), args[1].to("cpu")).to(get_cuda_device_string()),
         lambda *args, **kwargs: args[1].device != torch.device("cpu"))
     #SDE Samplers:
-    CondFunc('torchsde._brownian.brownian_interval._randn',
-        lambda _, size, dtype, device, seed: torch.randn(size, dtype=dtype, device=device, generator=torch.xpu.Generator(device).manual_seed(int(seed))),
-        lambda _, size, dtype, device, seed: device != torch.device("cpu"))
+    CondFunc('torch.Generator',
+        lambda orig_func, device: torch.xpu.Generator(device),
+        lambda orig_func, device: device != torch.device("cpu") and device != "cpu")
+    #Diffusers Float64 (ARC GPUs doesn't support double or Float64):
+    CondFunc('torch.from_numpy',
+        lambda orig_func, *args, **kwargs: orig_func(args[0].astype('float32')),
+        lambda *args, **kwargs: args[1].dtype == float)
     #ControlNet:
     CondFunc('torch.batch_norm',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
