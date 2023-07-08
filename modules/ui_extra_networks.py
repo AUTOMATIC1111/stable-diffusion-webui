@@ -90,8 +90,8 @@ class ExtraNetworksPage:
 
         subdirs = {}
         for parentdir in [os.path.abspath(x) for x in self.allowed_directories_for_previews()]:
-            for root, dirs, _ in os.walk(parentdir, followlinks=True):
-                for dirname in dirs:
+            for root, dirs, _ in sorted(os.walk(parentdir, followlinks=True), key=lambda x: shared.natural_sort_key(x[0])):
+                for dirname in sorted(dirs, key=shared.natural_sort_key):
                     x = os.path.join(root, dirname)
 
                     if not os.path.isdir(x):
