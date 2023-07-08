@@ -12,7 +12,7 @@ import re
 import numpy as np
 import piexif
 import piexif.helper
-from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
+from PIL import Image, ImageFont, ImageDraw, ImageColor, PngImagePlugin
 import string
 import json
 import hashlib
@@ -141,6 +141,11 @@ class GridAnnotation:
 
 
 def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
+
+    color_active = ImageColor.getcolor(opts.grid_text_active_color, 'RGB')
+    color_inactive = ImageColor.getcolor(opts.grid_text_inactive_color, 'RGB')
+    color_background = ImageColor.getcolor(opts.grid_background_color, 'RGB')
+
     def wrap(drawing, text, font, line_length):
         lines = ['']
         for word in text.split():
@@ -170,9 +175,6 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
     fnt = get_font(fontsize)
 
-    color_active = (0, 0, 0)
-    color_inactive = (153, 153, 153)
-
     pad_left = 0 if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0 else width * 3 // 4
 
     cols = im.width // width
@@ -181,7 +183,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
     assert cols == len(hor_texts), f'bad number of horizontal texts: {len(hor_texts)}; must be {cols}'
     assert rows == len(ver_texts), f'bad number of vertical texts: {len(ver_texts)}; must be {rows}'
 
-    calc_img = Image.new("RGB", (1, 1), "white")
+    calc_img = Image.new("RGB", (1, 1), color_background)
     calc_d = ImageDraw.Draw(calc_img)
 
     for texts, allowed_width in zip(hor_texts + ver_texts, [width] * len(hor_texts) + [pad_left] * len(ver_texts)):
@@ -202,7 +204,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
     pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
 
-    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + margin * (rows-1)), "white")
+    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + margin * (rows-1)), color_background)
 
     for row in range(rows):
         for col in range(cols):
