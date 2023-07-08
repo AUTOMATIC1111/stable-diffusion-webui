@@ -325,7 +325,18 @@ def normalize_git_url(url):
     return url
 
 
-def install_extension_from_url(dirname, proxy, url, branch_name=None):
+def github_proxy(url):
+    proxy = shared.opts.github_proxy
+
+    if proxy == 'None':
+        return url
+    if proxy == 'ghproxy.com':
+        return "https://ghproxy.com/" + url
+
+    return url.replace('github.com', proxy)
+
+
+def install_extension_from_url(dirname, url, branch_name=None):
     check_access()
 
     if isinstance(dirname, str):
@@ -335,18 +346,7 @@ def install_extension_from_url(dirname, proxy, url, branch_name=None):
 
     assert url, 'No URL specified'
 
-    proxy_list = {
-        "none": "",
-        "ghproxy": "https://ghproxy.com/",
-        "yzuu": "hub.yzuu.cf",
-        "njuu": "hub.njuu.cf",
-        "nuaa": "hub.nuaa.cf",
-    }
-
-    if proxy in ['yzuu', 'njuu', 'nuaa']:
-        url = url.replace('github.com', proxy_list[proxy])
-    elif proxy == 'ghproxy':
-        url = proxy_list[proxy] + url
+    url = github_proxy(url)
 
     if dirname is None or dirname == "":
         *parts, last_part = url.split('/')
@@ -628,11 +628,6 @@ def create_ui():
                 )
 
             with gr.TabItem("Install from URL", id="install_from_url"):
-                install_proxy = gr.Radio(
-                    label="Install Proxy", choices=["none", "ghproxy", "nuaa", "yzuu", "njuu"], value="none",
-                    info="If you can't access github.com, you can use a proxy to install extensions from github.com"
-                )
-
                 install_url = gr.Text(label="URL for extension's git repository")
                 install_branch = gr.Text(label="Specific branch name", placeholder="Leave empty for default main branch")
                 install_dirname = gr.Text(label="Local directory name", placeholder="Leave empty for auto")
@@ -641,7 +636,7 @@ def create_ui():
 
                 install_button.click(
                     fn=modules.ui.wrap_gradio_call(lambda *args: [gr.update(), *install_extension_from_url(*args)], extra_outputs=[gr.update(), gr.update()]),
-                    inputs=[install_dirname, install_proxy, install_url, install_branch],
+                    inputs=[install_dirname, install_url, install_branch],
                     outputs=[install_url, extensions_table, install_result],
                 )
 
