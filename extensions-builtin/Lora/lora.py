@@ -542,6 +542,6 @@ available_lora_aliases = {}
 available_lora_hash_lookup = {}
 forbidden_lora_aliases = {}
 loaded_loras = []
-lora_cache = LoRaCacheLRU(100)
+lora_cache = LoRaCacheLRU()
 
 list_available_loras()
