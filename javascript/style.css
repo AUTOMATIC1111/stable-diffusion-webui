@@ -391,7 +391,7 @@ div#extras_scale_to_tab div.form{
     background-color: rgba(20, 20, 20, 0.95);
     user-select: none;
     -webkit-user-select: none;
-    flex-direction: column;
+    flex-direction: row;
 }
 
 .modalControls {
@@ -420,14 +420,18 @@ div#extras_scale_to_tab div.form{
     color: #999;
     text-decoration: none;
 }
-
-#lightboxModal > img {
+.lightboxModalPreviewZone {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+.lightboxModalPreviewZone > img {
     display: block;
     margin: auto;
     width: auto;
 }
 
-#lightboxModal > img.modalImageFullscreen{
+.lightboxModalPreviewZone > img.modalImageFullscreen{
     object-fit: contain;
     height: 100%;
     width: 100%;
@@ -450,7 +454,6 @@ table.settings-value-table td{
 
 .modalPrev, .modalNext {
   cursor: pointer;
-  position: absolute;
   top: 0;
   width: auto;
   height: 100vh;

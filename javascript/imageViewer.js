@@ -3,6 +3,8 @@ function closeModal() {
   gradioApp().getElementById('lightboxModal').style.display = 'none';
 }
 
+let preventImmediateClose = false;
+
 function showModal(event) {
   const source = event.target || event.srcElement;
   const modalImage = gradioApp().getElementById('modalImage');
@@ -16,6 +18,12 @@ function showModal(event) {
   // show the save button in modal only on txt2img or img2img tabs
   if (tabTxt2Img.style.display != 'none' || tabImg2Img.style.display != 'none') gradioApp().getElementById('modal_save').style.display = 'inline';
   else gradioApp().getElementById('modal_save').style.display = 'none';
+  const ignoreEvent = (ev) => {ev.stopImmediatePropagation()}
+  
+  preventImmediateClose = true
+  setTimeout(() => {
+    preventImmediateClose = false
+  }, 100)
   event.stopPropagation();
 }
 
@@ -107,9 +115,7 @@ function setupImageForLightbox(e) {
   e.style.cursor = 'pointer';
   e.style.userSelect = 'none';
 
-  const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-  const event = isFirefox ? 'mousedown' : 'click';
-  e.addEventListener(event, (evt) => {
+  e.addEventListener('mousedown', (evt) => {
     if (evt.button != 0) return;
     const initialZoom = (localStorage.getItem('modalZoom') || true) == 'yes';
     modalZoomSet(gradioApp().getElementById('modalImage'), initialZoom);
@@ -154,6 +160,10 @@ document.addEventListener('DOMContentLoaded', () => {
   modal.tabIndex = 0;
   modal.addEventListener('keydown', modalKeyHandler, true);
 
+  const modalPreviewZone = document.createElement('div');
+  modalPreviewZone.className = 'lightboxModalPreviewZone'
+  modalPreviewZone.tabIndex = 0;
+
   const modalControls = document.createElement('div');
   modalControls.className = 'modalControls gradio-container';
   modal.append(modalControls);
@@ -184,14 +194,14 @@ document.addEventListener('DOMContentLoaded', () => {
   modalImage.id = 'modalImage';
   modalImage.tabIndex = 0;
   modalImage.addEventListener('keydown', modalKeyHandler, true);
-  modal.appendChild(modalImage);
+  modalPreviewZone.appendChild(modalImage);
   modalImage.onload = () => panzoom(modalImage, { zoomSpeed: 0.025, minZoom: 0.25, maxZoom: 4.0 });
 
   let drag = false;
-  modal.addEventListener('mousedown', () => drag = false);
-  modal.addEventListener('mousemove', () => drag = true);
-  modal.addEventListener('scroll', () => drag = true);
-  modal.addEventListener('mouseup', () => { if (!drag) closeModal(); });
+  modalPreviewZone.addEventListener('mousedown', () => drag = false);
+  modalPreviewZone.addEventListener('mousemove', () => drag = true);
+  modalPreviewZone.addEventListener('scroll', () => drag = true);
+  modalPreviewZone.addEventListener('mouseup', () => { if (!drag && !preventImmediateClose) closeModal(); });
   
   const modalPrev = document.createElement('a');
   modalPrev.className = 'modalPrev';
@@ -200,6 +210,8 @@ document.addEventListener('DOMContentLoaded', () => {
   modalPrev.addEventListener('click', modalPrevImage, true);
   modalPrev.addEventListener('keydown', modalKeyHandler, true);
   modal.appendChild(modalPrev);
+
+  modal.appendChild(modalPreviewZone);
 
   const modalNext = document.createElement('a');
   modalNext.className = 'modalNext';
