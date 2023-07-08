@@ -200,6 +200,8 @@ def git(arg: str, folder: str = None, ignore: bool = False):
         txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
     txt = txt.strip()
     if result.returncode != 0 and not ignore:
+        if "couldn't find remote ref" in txt: # not a git repo
+            return txt
         global errors # pylint: disable=global-statement
         errors += 1
         log.error(f'Error running git: {folder} / {arg}')
@@ -683,7 +685,6 @@ def update_wiki():
         log.info('Updating Wiki')
         try:
             update(os.path.join(os.path.dirname(__file__), "wiki"))
-            update(os.path.join(os.path.dirname(__file__), "wiki", "origin-wiki"))
         except Exception:
             log.error('Error updating wiki')
 
