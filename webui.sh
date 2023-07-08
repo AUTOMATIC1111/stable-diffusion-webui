@@ -4,26 +4,28 @@
 # change the variables in webui-user.sh instead #
 #################################################
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 # If run from macOS, load defaults from webui-macos-env.sh
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -f webui-macos-env.sh ]]
+    if [[ -f "$SCRIPT_DIR"/webui-macos-env.sh ]]
         then
-        source ./webui-macos-env.sh
+        source "$SCRIPT_DIR"/webui-macos-env.sh
     fi
 fi
 
 # Read variables from webui-user.sh
 # shellcheck source=/dev/null
-if [[ -f webui-user.sh ]]
+if [[ -f "$SCRIPT_DIR"/webui-user.sh ]]
 then
-    source ./webui-user.sh
+    source "$SCRIPT_DIR"/webui-user.sh
 fi
 
 # Set defaults
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]
 then
-    install_dir="$(pwd)"
+    install_dir="$SCRIPT_DIR"
 fi
 
 # Name of the subdirectory (defaults to stable-diffusion-webui)

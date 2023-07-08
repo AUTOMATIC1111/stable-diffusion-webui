@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 
 import pytz
@@ -497,13 +499,23 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_pnginfo=None):
+def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_pnginfo=None, pnginfo_section_name='parameters'):
+    """
+    Saves image to filename, including geninfo as text information for generation info.
+    For PNG images, geninfo is added to existing pnginfo dictionary using the pnginfo_section_name argument as key.
+    For JPG images, there's no dictionary and geninfo just replaces the EXIF description.
+    """
+
     if extension is None:
         extension = os.path.splitext(filename)[1]
 
     image_format = Image.registered_extensions()[extension]
 
     if extension.lower() == '.png':
+        existing_pnginfo = existing_pnginfo or {}
+        if opts.enable_pnginfo:
+            existing_pnginfo[pnginfo_section_name] = geninfo
+
         if opts.enable_pnginfo:
             pnginfo_data = PngImagePlugin.PngInfo()
             for k, v in (existing_pnginfo or {}).items():
@@ -622,7 +634,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         """
         temp_file_path = f"{filename_without_extension}.tmp"
 
-        save_image_with_geninfo(image_to_save, info, temp_file_path, extension, params.pnginfo)
+        save_image_with_geninfo(image_to_save, info, temp_file_path, extension, existing_pnginfo=params.pnginfo, pnginfo_section_name=pnginfo_section_name)
 
         os.replace(temp_file_path, filename_without_extension + extension)
 
@@ -639,12 +651,18 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     oversize = image.width > opts.target_side_length or image.height > opts.target_side_length
     if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > opts.img_downscale_threshold * 1024 * 1024):
         ratio = image.width / image.height
-
+        resize_to = None
         if oversize and ratio > 1:
-            image = image.resize((round(opts.target_side_length), round(image.height * opts.target_side_length / image.width)), LANCZOS)
+            resize_to = round(opts.target_side_length), round(image.height * opts.target_side_length / image.width)
         elif oversize:
-            image = image.resize((round(image.width * opts.target_side_length / image.height), round(opts.target_side_length)), LANCZOS)
+            resize_to = round(image.width * opts.target_side_length / image.height), round(opts.target_side_length)
 
+        if resize_to is not None:
+            try:
+                # Resizing image with LANCZOS could throw an exception if e.g. image mode is I;16
+                image = image.resize(resize_to, LANCZOS)
+            except:
+                image = image.resize(resize_to)
         try:
             _atomically_save_image(image, fullfn_without_extension, ".jpg")
         except Exception as e:
@@ -662,8 +680,15 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     return fullfn, txt_fullfn
 
 
-def read_info_from_image(image):
-    items = image.info or {}
+IGNORED_INFO_KEYS = {
+    'jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+    'loop', 'background', 'timestamp', 'duration', 'progressive', 'progression',
+    'icc_profile', 'chromaticity', 'photoshop',
+}
+
+
+def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
+    items = (image.info or {}).copy()
 
     geninfo = items.pop('parameters', None)
 
@@ -679,9 +704,7 @@ def read_info_from_image(image):
             items['exif comment'] = exif_comment
             geninfo = exif_comment
 
-    for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
-                    'loop', 'background', 'timestamp', 'duration', 'progressive', 'progression',
-                    'icc_profile', 'chromaticity']:
+    for field in IGNORED_INFO_KEYS:
         items.pop(field, None)
 
     if items.get("Software", None) == "NovelAI":
