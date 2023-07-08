@@ -32,6 +32,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvisi
 startup_timer.record("torch")
 
 errors.log.debug('Loading Gradio')
+import typing_extensions # pylint: disable=W0611,C0411
 from fastapi import FastAPI # pylint: disable=W0611,C0411
 import gradio # pylint: disable=W0611,C0411
 startup_timer.record("gradio")

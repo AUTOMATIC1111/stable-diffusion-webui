@@ -60,6 +60,6 @@ Tech that can be integrated as part of the core workflow...
 - git-rebasin
 - additional upscalers
 - new image browser
-- `fp8`
 - update `transformers`
 - `git submodule set-url extensions-builtin/clip-interrogator-ext https://github.com/Dahvikiin/clip-interrogator-ext.git`
+- upate `gradio`
