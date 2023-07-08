@@ -18,7 +18,6 @@ function showModal(event) {
   // show the save button in modal only on txt2img or img2img tabs
   if (tabTxt2Img.style.display != 'none' || tabImg2Img.style.display != 'none') gradioApp().getElementById('modal_save').style.display = 'inline';
   else gradioApp().getElementById('modal_save').style.display = 'none';
-  const ignoreEvent = (ev) => {ev.stopImmediatePropagation()}
   
   preventImmediateClose = true
   setTimeout(() => {
@@ -201,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
   modalPreviewZone.addEventListener('mousedown', () => drag = false);
   modalPreviewZone.addEventListener('mousemove', () => drag = true);
   modalPreviewZone.addEventListener('scroll', () => drag = true);
-  modalPreviewZone.addEventListener('mouseup', () => { if (!drag && !preventImmediateClose) closeModal(); });
+  modalPreviewZone.addEventListener('mouseup', () => { if (!(drag || preventImmediateClose)) closeModal(); });
   
   const modalPrev = document.createElement('a');
   modalPrev.className = 'modalPrev';
