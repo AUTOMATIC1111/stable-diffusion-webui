@@ -6,7 +6,7 @@ function keyupEditOrder(event) {
     let target = event.originalTarget || event.composedPath()[0];
     if (!target.matches("*:is([id*='_toprow'] [id*='_prompt'], .prompt) textarea")) return;
     if (!event.altKey) return;
-    event.preventDefault()
+    event.preventDefault();
 
     let isLeft = event.key == "ArrowLeft";
     let isRight = event.key == "ArrowRight";
