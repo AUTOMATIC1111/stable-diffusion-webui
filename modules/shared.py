@@ -359,8 +359,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
-    "diffusers_allow_safetensors": OptionInfo(False, 'Diffuser Pipeline when loading from safetensors'),
-    "diffusers_pipeline": OptionInfo(pipelines[0], 'Diffuser Pipeline when loading from safetensors', gr.Dropdown, lambda: {"choices": pipelines}),
+    "diffusers_allow_safetensors": OptionInfo(False, 'Diffusers allow loading from safetensors files'),
+    "diffusers_pipeline": OptionInfo(pipelines[0], 'Select diffuser pipeline when loading from safetensors', gr.Dropdown, lambda: {"choices": pipelines}),
     "diffusers_extract_ema": OptionInfo(True, "Use model EMA weights when possible"),
     "diffusers_generator_device": OptionInfo("default", "Generator device", gr.Radio, lambda: {"choices": ["default", "cpu"]}),
     "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload"),
@@ -478,7 +478,7 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
     "show_progress_every_n_steps": OptionInfo(1, "Live preview display period", gr.Slider, {"minimum": -1, "maximum": 32, "step": 1}),
     "show_progress_type": OptionInfo("Approximate NN", "Live preview method", gr.Radio, {"choices": ["Full VAE", "Approximate NN", "Approximate simple", "TAESD"]}),
     "live_preview_content": OptionInfo("Combined", "Live preview subject", gr.Radio, {"choices": ["Combined", "Prompt", "Negative prompt"]}),
-    "live_preview_refresh_period": OptionInfo(250, "Progressbar/preview update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 5000, "step": 25}),
+    "live_preview_refresh_period": OptionInfo(500, "Progressbar/preview update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 5000, "step": 25}),
     "logmonitor_show": OptionInfo(True, "Show log view"),
     "logmonitor_refresh_period": OptionInfo(5000, "Log view update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 30000, "step": 25}),
 }))

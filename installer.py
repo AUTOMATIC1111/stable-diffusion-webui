@@ -649,11 +649,13 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
             sys.exit(1)
     ver = git('log -1 --pretty=format:"%h %ad"')
     log.info(f'Version: {ver}')
-    if args.quick or args.version or args.skip_git:
+    if args.version or args.skip_git:
         return
     commit = git('rev-parse HEAD')
     global git_commit # pylint: disable=global-statement
     git_commit = commit[:7]
+    if args.quick:
+        return
     try:
         import requests
     except ImportError:
