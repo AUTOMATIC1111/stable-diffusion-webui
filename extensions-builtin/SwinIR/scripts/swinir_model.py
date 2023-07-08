@@ -1,17 +1,17 @@
-import os
+import sys
 
 import numpy as np
 import torch
 from PIL import Image
-from basicsr.utils.download_util import load_file_from_url
 from tqdm import tqdm
 
 from modules import modelloader, devices, script_callbacks, shared
 from modules.shared import opts, state
-from swinir_model_arch import SwinIR as net
-from swinir_model_arch_v2 import Swin2SR as net2
+from swinir_model_arch import SwinIR
+from swinir_model_arch_v2 import Swin2SR
 from modules.upscaler import Upscaler, UpscalerData
 
+SWINIR_MODEL_URL = "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR-L_x4_GAN.pth"
 
 device_swinir = devices.get_device_for('swinir')
 
@@ -19,16 +19,14 @@ device_swinir = devices.get_device_for('swinir')
 class UpscalerSwinIR(Upscaler):
     def __init__(self, dirname):
         self.name = "SwinIR"
-        self.model_url = "https://github.com/JingyunLiang/SwinIR/releases/download/v0.0" \
-                         "/003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR" \
-                         "-L_x4_GAN.pth "
+        self.model_url = SWINIR_MODEL_URL
         self.model_name = "SwinIR 4x"
         self.user_path = dirname
         super().__init__()
         scalers = []
         model_files = self.find_models(ext_filter=[".pt", ".pth"])
         for model in model_files:
-            if "http" in model:
+            if model.startswith("http"):
                 name = self.model_name
             else:
                 name = modelloader.friendly_name(model)
@@ -37,8 +35,10 @@ class UpscalerSwinIR(Upscaler):
         self.scalers = scalers
 
     def do_upscale(self, img, model_file):
-        model = self.load_model(model_file)
-        if model is None:
+        try:
+            model = self.load_model(model_file)
+        except Exception as e:
+            print(f"Failed loading SwinIR model {model_file}: {e}", file=sys.stderr)
             return img
         model = model.to(device_swinir, dtype=devices.dtype)
         img = upscale(img, model)
@@ -49,30 +49,31 @@ class UpscalerSwinIR(Upscaler):
         return img
 
     def load_model(self, path, scale=4):
-        if "http" in path:
-            dl_name = "%s%s" % (self.model_name.replace(" ", "_"), ".pth")
-            filename = load_file_from_url(url=path, model_dir=self.model_download_path, file_name=dl_name, progress=True)
+        if path.startswith("http"):
+            filename = modelloader.load_file_from_url(
+                url=path,
+                model_dir=self.model_download_path,
+                file_name=f"{self.model_name.replace(' ', '_')}.pth",
+            )
         else:
             filename = path
-        if filename is None or not os.path.exists(filename):
-            return None
         if filename.endswith(".v2.pth"):
-            model = net2(
-            upscale=scale,
-            in_chans=3,
-            img_size=64,
-            window_size=8,
-            img_range=1.0,
-            depths=[6, 6, 6, 6, 6, 6],
-            embed_dim=180,
-            num_heads=[6, 6, 6, 6, 6, 6],
-            mlp_ratio=2,
-            upsampler="nearest+conv",
-            resi_connection="1conv",
+            model = Swin2SR(
+                upscale=scale,
+                in_chans=3,
+                img_size=64,
+                window_size=8,
+                img_range=1.0,
+                depths=[6, 6, 6, 6, 6, 6],
+                embed_dim=180,
+                num_heads=[6, 6, 6, 6, 6, 6],
+                mlp_ratio=2,
+                upsampler="nearest+conv",
+                resi_connection="1conv",
             )
             params = None
         else:
-            model = net(
+            model = SwinIR(
                 upscale=scale,
                 in_chans=3,
                 img_size=64,

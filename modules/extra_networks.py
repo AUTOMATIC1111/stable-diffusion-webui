@@ -32,6 +32,9 @@ class ExtraNetworkParams:
             else:
                 self.positional.append(item)
 
+    def __eq__(self, other):
+        return self.items == other.items
+
 
 class ExtraNetwork:
     def __init__(self, name):
@@ -99,6 +102,9 @@ def activate(p, extra_network_data):
             extra_network.activate(p, [])
         except Exception as e:
             errors.display(e, f"activating extra network {extra_network_name}")
+
+    if p.scripts is not None:
+        p.scripts.after_extra_networks_activate(p, batch_number=p.iteration, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds, extra_network_data=extra_network_data)
 
 
 def deactivate(p, extra_network_data):

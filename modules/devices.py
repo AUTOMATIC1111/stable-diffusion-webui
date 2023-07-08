@@ -1,5 +1,7 @@
 import sys
 import contextlib
+from functools import lru_cache
+
 import torch
 from modules import errors
 
@@ -12,13 +14,6 @@ def has_mps() -> bool:
         return False
     else:
         return mac_specific.has_mps
-
-def extract_device_id(args, name):
-    for x in range(len(args)):
-        if name in args[x]:
-            return args[x + 1]
-
-    return None
 
 
 def get_cuda_device_string():
@@ -154,3 +149,19 @@ def test_for_nans(x, where):
     message += " Use --disable-nan-check commandline argument to disable this check."
 
     raise NansException(message)
+
+
+@lru_cache
+def first_time_calculation():
+    """
+    just do any calculation with pytorch layers - the first time this is done it allocaltes about 700MB of memory and
+    spends about 2.7 seconds doing that, at least wih NVidia.
+    """
+
+    x = torch.zeros((1, 1)).to(device, dtype)
+    linear = torch.nn.Linear(1, 1).to(device, dtype)
+    linear(x)
+
+    x = torch.zeros((1, 1, 3, 3)).to(device, dtype)
+    conv2d = torch.nn.Conv2d(1, 1, (3, 3)).to(device, dtype)
+    conv2d(x)

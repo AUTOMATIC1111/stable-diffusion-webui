@@ -12,7 +12,7 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
         shared.reload_hypernetworks()
 
     def list_items(self):
-        for name, path in shared.hypernetworks.items():
+        for index, (name, path) in enumerate(shared.hypernetworks.items()):
             path, ext = os.path.splitext(path)
 
             yield {
@@ -23,6 +23,8 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
                 "search_term": self.search_terms_from_path(path),
                 "prompt": json.dumps(f"<hypernet:{name}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
                 "local_preview": f"{path}.preview.{shared.opts.samples_format}",
+                "sort_keys": {'default': index, **self.get_sort_keys(path + ext)},
+
             }
 
     def allowed_directories_for_previews(self):
