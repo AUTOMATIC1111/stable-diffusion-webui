@@ -18,13 +18,7 @@ import modules.scripts
 def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0, use_png_info=False, png_info_props=None, png_info_dir=None):
     processing.fix_seed(p)
 
-    images = []
-    for root, directories, files in os.walk(input_dir):
-        for filename in files:
-            filepath = os.path.join(root, filename)
-            if filepath.endswith(".jpg") or filepath.endswith(".jpeg") or filepath.endswith(".png") or filepath.endswith(".webp"):
-                images.append(filepath)
-
+    images = list(shared.walk_files(input_dir, allowed_extensions=(".png", ".jpg", ".jpeg", ".webp")))
 
     is_inpaint_batch = False
     if inpaint_mask_dir:
