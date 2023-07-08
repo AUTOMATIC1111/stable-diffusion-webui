@@ -1,8 +1,12 @@
+/* alt+left/right moves text in prompt */
+
 function keyupEditOrder(event) {
     if (!opts.keyedit_move) return;
+
     let target = event.originalTarget || event.composedPath()[0];
     if (!target.matches("*:is([id*='_toprow'] [id*='_prompt'], .prompt) textarea")) return;
-    if (!event.metaKey && !event.ctrlKey) return;
+    if (!event.altKey) return;
+    event.preventDefault()
 
     let isLeft = event.key == "ArrowLeft";
     let isRight = event.key == "ArrowRight";
