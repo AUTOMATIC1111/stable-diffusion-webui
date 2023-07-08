@@ -230,7 +230,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     if is_batch:
         assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
-        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir)
+        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by, use_png_info=img2img_batch_input_dir, png_info_props=img2img_batch_output_dir, png_info_dir=img2img_batch_inpaint_mask_dir)
 
         processed = Processed(p, [], p.seed, "")
     else:
