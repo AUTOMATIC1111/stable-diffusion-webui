@@ -42,7 +42,7 @@ jobs:
           --no-half
           --disable-opt-split-attention
           --use-cpu all
-          --add-stop-route
+          --api-server-stop
           2>&1 | tee output.txt &
       - name: Run tests
         run: |
