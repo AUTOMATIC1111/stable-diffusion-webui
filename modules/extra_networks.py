@@ -103,6 +103,9 @@ def activate(p, extra_network_data):
         except Exception as e:
             errors.display(e, f"activating extra network {extra_network_name}")
 
+    if p.scripts is not None:
+        p.scripts.after_extra_networks_activate(p, batch_number=p.iteration, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds, extra_network_data=extra_network_data)
+
 
 def deactivate(p, extra_network_data):
     """call deactivate for extra networks in extra_network_data in specified order, then call
