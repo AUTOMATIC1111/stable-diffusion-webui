@@ -26,37 +26,33 @@ function setupExtraNetworksForTab(tabname) {
   });
 
   intersectionObserver = new IntersectionObserver((entries) => {
+    if (!en) return
+    for (el of Array.from(gradioApp().querySelectorAll('.extra-network-cards'))) el.style.height = window.opts.extra_networks_height + 'vh';
     if (entries[0].intersectionRatio > 0) {
-      for (el of Array.from(gradioApp().querySelectorAll('.extra-network-cards'))) {
-        const rect = el.getBoundingClientRect();
-        if (rect.top > 0) {
-          if (!en) return
-          if (window.opts.extra_networks_card_cover == 'cover') {
-            en.style.transition = '';
-            en.style.zIndex = 9999;
-            en.style.position = 'absolute';
-            en.style.right = 'unset';
-            en.style.width = 'unset';
-            el.style.height = document.body.offsetHeight - el.getBoundingClientRect().top + 'px'; 
-            gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
-          } if (window.opts.extra_networks_card_cover == 'sidebar') {
-            en.style.transition = 'width 0.2s ease';
-            en.style.zIndex = 0;
-            en.style.position = 'absolute';
-            en.style.right = '0';
-            en.style.width = window.opts.extra_networks_sidebar_width + 'vw';
-            el.style.height = gradioApp().getElementById(`${tabname}_settings`).offsetHeight - 90 + 'px'; 
-            gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 100 - 2 - window.opts.extra_networks_sidebar_width + 'vw';
-          } else {
-            en.style.transition = '';
-            en.style.zIndex = 0;
-            en.style.position = 'relative';
-            en.style.right = 'unset';
-            en.style.width = 'unset';
-            el.style.height = window.innerHeight - el.getBoundingClientRect().top + 'px'; 
-            gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
-          }
-        }
+      if (window.opts.extra_networks_card_cover === 'cover') {
+        en.style.transition = '';
+        en.style.zIndex = 9999;
+        en.style.position = 'absolute';
+        en.style.right = 'unset';
+        en.style.width = 'unset';
+        en.style.height = 'unset';
+        gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
+      } else if (window.opts.extra_networks_card_cover === 'sidebar') {
+        en.style.transition = 'width 0.2s ease';
+        en.style.zIndex = 0;
+        en.style.position = 'absolute';
+        en.style.right = '0';
+        en.style.width = window.opts.extra_networks_sidebar_width + 'vw';
+        en.style.height = '-webkit-fill-available'
+        gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 100 - 2 - window.opts.extra_networks_sidebar_width + 'vw';
+      } else {
+        en.style.transition = '';
+        en.style.zIndex = 0;
+        en.style.position = 'relative';
+        en.style.right = 'unset';
+        en.style.width = 'unset';
+        en.style.height = 'unset';
+        gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
       }
     } else {
       en.style.width = 0;

@@ -83,7 +83,7 @@ class ExtraNetworksPage:
                         <span title="Read info" onclick={card_read_info}>ℹ️</span>
                     </div>
                 </div>
-                <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='lazy'></img>
+                <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='{loading}'></img>
             </div>
         '''  # noqa: RUF001
 
@@ -214,6 +214,7 @@ class ExtraNetworksPage:
             "name": item["name"],
             "description": (item.get("description") or ""),
             "search_term": item.get("search_term", ""),
+            "loading": "lazy" if shared.opts.extra_networks_card_lazy else "eager",
             "card_click": item.get("onclick", '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item.get("prompt", None)}, {"true" if self.allow_negative_prompt else "false"})""") + '"'),
             "card_save_desc": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "card_save_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',

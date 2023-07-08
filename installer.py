@@ -105,6 +105,7 @@ def setup_logging():
     logging.getLogger("httpx").setLevel(logging.ERROR)
     logging.getLogger("ControlNet").handlers = log.handlers
     logging.getLogger("lycoris").handlers = log.handlers
+    # logging.getLogger("DeepSpeed").handlers = log.handlers
 
 
 def print_profile(profile: cProfile.Profile, msg: str):

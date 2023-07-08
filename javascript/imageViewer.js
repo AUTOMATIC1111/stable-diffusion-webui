@@ -150,7 +150,6 @@ onAfterUiUpdate(() => {
 
 document.addEventListener('DOMContentLoaded', () => {
   const modal = document.createElement('div');
-  // modal.onclick = closeModal;
   modal.id = 'lightboxModal';
   modal.tabIndex = 0;
   modal.addEventListener('keydown', modalKeyHandler, true);
@@ -187,12 +186,13 @@ document.addEventListener('DOMContentLoaded', () => {
   modalImage.addEventListener('keydown', modalKeyHandler, true);
   modal.appendChild(modalImage);
   modalImage.onload = () => panzoom(modalImage, { zoomSpeed: 0.025, minZoom: 0.25, maxZoom: 4.0 });
-  let drag = false;
-  modalImage.addEventListener('mousedown', () => drag = false);
-  modalImage.addEventListener('mousemove', () => drag = true);
-  modalImage.addEventListener('mouseup', () => { if (!drag) closeModal(); });
-  // modalImage.onclick = closeModal;
 
+  let drag = false;
+  modal.addEventListener('mousedown', () => drag = false);
+  modal.addEventListener('mousemove', () => drag = true);
+  modal.addEventListener('scroll', () => drag = true);
+  modal.addEventListener('mouseup', () => { if (!drag) closeModal(); });
+  
   const modalPrev = document.createElement('a');
   modalPrev.className = 'modalPrev';
   modalPrev.innerHTML = '&#10094;';

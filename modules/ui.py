@@ -13,7 +13,7 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_grad
 from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models
 from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML # pylint: disable=unused-import
 from modules.paths import script_path, data_path
-from modules.shared import opts, cmd_opts, backend, Backend
+from modules.shared import opts, cmd_opts
 from modules import prompt_parser
 import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -198,13 +198,21 @@ def update_token_counter(text, steps):
         prompt_schedules = [[[steps, text]]]
     flat_prompts = reduce(lambda list1, list2: list1+list2, prompt_schedules)
     prompts = [prompt_text for step, prompt_text in flat_prompts]
-    if backend == Backend.ORIGINAL:
+    if modules.shared.backend == modules.shared.Backend.ORIGINAL:
         token_count, max_length = max([sd_hijack.model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
-    else:
-        tokenizer = modules.shared.sd_model.tokenizer
-        has_bos_token, has_eos_token = tokenizer.bos_token_id is not None, tokenizer.eos_token_id is not None
-        token_count = max([len(modules.shared.sd_model.tokenizer(prompt)) for prompt in prompts]) - int(has_bos_token) - int(has_eos_token)
-        max_length = tokenizer.model_max_length - int(has_bos_token) - int(has_eos_token)
+    elif modules.shared.backend == modules.shared.Backend.DIFFUSERS:
+        if modules.shared.sd_model is not None:
+            tokenizer = modules.shared.sd_model.tokenizer
+            has_bos_token = tokenizer.bos_token_id is not None
+            has_eos_token = tokenizer.eos_token_id is not None
+            ids = [modules.shared.sd_model.tokenizer(prompt) for prompt in prompts]
+            if len(ids) > 0 and hasattr(ids[0], 'input_ids'):
+                ids = [x.input_ids for x in ids]
+            token_count = max([len(x) for x in ids]) - int(has_bos_token) - int(has_eos_token)
+            max_length = tokenizer.model_max_length - int(has_bos_token) - int(has_eos_token)
+        else:
+            token_count = 0
+            max_length = 75
     return f"<span class='gr-box gr-text-input'>{token_count}/{max_length}</span>"
 
 
