@@ -96,27 +96,16 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
                     info_img = Image.open(info_img_path)
                 geninfo, _ = imgutil.read_info_from_image(info_img)
                 parsed_parameters = parse_generation_parameters(geninfo)
-                if("Prompt" in png_info_props):
-                    p.prompt = prompt + " " + parsed_parameters["Prompt"]
-                if("Negative prompt" in png_info_props):
-                    p.negative_prompt = negative_prompt + " " + parsed_parameters["Negative prompt"]
-                if("Seed" in png_info_props):
-                    p.seed = int(parsed_parameters["Seed"])
-                if("CFG scale" in png_info_props):
-                    p.cfg_scale = float(parsed_parameters["CFG scale"])
-                if("Sampler" in png_info_props):
-                    p.sampler_name = parsed_parameters["Sampler"]
-                if("Steps" in png_info_props):
-                    p.steps = int(parsed_parameters["Steps"])
-            except Exception as e:
-                print(f"batch png info: using ui set prompts; failed to get png info for {image}")
-                print(e)
-                p.prompt = prompt
-                p.negative_prompt = negative_prompt
-                p.seed = seed
-                p.cfg_scale = cfg_scale
-                p.sampler_name = sampler_name
-                p.steps = steps
+                parsed_parameters = {k: v for k, v in parsed_parameters.items() if k in (png_info_props or {})}
+            except Exception:
+                parsed_parameters = {}
+
+            p.prompt = prompt + (" " + parsed_parameters["Prompt"] if "Prompt" in parsed_parameters else "")
+            p.negative_prompt = negative_prompt + (" " + parsed_parameters["Negative prompt"] if "Negative prompt" in parsed_parameters else "")
+            p.seed = int(parsed_parameters.get("Seed", seed))
+            p.cfg_scale = float(parsed_parameters.get("CFG scale", cfg_scale))
+            p.sampler_name = parsed_parameters.get("Sampler", sampler_name)
+            p.steps = int(parsed_parameters.get("Steps", steps))
 
         proc = modules.scripts.scripts_img2img.run(p, *args)
         if proc is None:
