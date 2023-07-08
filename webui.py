@@ -43,7 +43,7 @@ warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvisi
 
 startup_timer.record("import torch")
 
-import gradio
+import gradio  # noqa: F401
 startup_timer.record("import gradio")
 
 import ldm.modules.encoders.modules  # noqa: F401
@@ -413,7 +413,7 @@ def webui():
                 "docs_url": "/docs",
                 "redoc_url": "/redoc",
             },
-            root_path = f"/{cmd_opts.subpath}",
+            root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else "",
         )
 
         # after initial launch, disable --autolaunch for subsequent restarts
