@@ -30,7 +30,10 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         shared.log.debug(f"Diffusers authentication: {token}")
         hf.login(token)
     pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
-    model_info_dict = hf.model_info(hub_id).cardData # TODO hfhub card-data?
+    try:
+        model_info_dict = hf.model_info(hub_id).cardData # TODO HF-Hub cardData invalid property
+    except Exception:
+        model_info_dict = None
     # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
     if model_info_dict is not None and "prior" in model_info_dict:
         download_dir = DiffusionPipeline.download(model_info_dict["prior"], **download_config)

@@ -212,8 +212,10 @@ def git(arg: str, folder: str = None, ignore: bool = False):
 
 # switch to main branch as head can get detached
 def branch(folder):
+    if args.experimental:
+        return None
     if not os.path.exists(os.path.join(folder, '.git')):
-        return
+        return None
     b = git('branch', folder)
     if 'main' in b:
         b = 'main'

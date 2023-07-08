@@ -1,7 +1,7 @@
 import diffusers
 from modules import shared
 
-lora_state = { # TODO this is ugly but diffusers
+lora_state = { # TODO Lora state for Diffusers
     'multiplier': 1.0,
     'active': False,
     'loaded': 0,

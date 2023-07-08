@@ -162,7 +162,6 @@ class DDPMV1(pl.LightningModule):
             lvlb_weights = 0.5 * np.sqrt(torch.Tensor(alphas_cumprod)) / (2. * 1 - torch.Tensor(alphas_cumprod))
         else:
             raise NotImplementedError("mu not supported")
-        # TODO how to choose this term
         lvlb_weights[0] = lvlb_weights[1]
         self.register_buffer('lvlb_weights', lvlb_weights, persistent=False)
         assert not torch.isnan(self.lvlb_weights).all()
@@ -872,7 +871,7 @@ class LatentDiffusionV1(DDPMV1):
             assert c is not None
             if self.cond_stage_trainable:
                 c = self.get_learned_conditioning(c)
-            if self.shorten_cond_schedule:  # TODO: drop this option
+            if self.shorten_cond_schedule:
                 tc = self.cond_ids[t].to(self.device)
                 c = self.q_sample(x_start=c, t=tc, noise=torch.randn_like(c.float()))
         return self.p_losses(x, c, t, *args, **kwargs)

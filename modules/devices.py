@@ -8,12 +8,15 @@ if sys.platform == "darwin":
     from modules import mac_specific # pylint: disable=ungrouped-imports
 
 cuda_ok = torch.cuda.is_available()
+previous_oom = 0
+
 
 def has_mps() -> bool:
     if sys.platform != "darwin":
         return False
     else:
         return mac_specific.has_mps
+
 
 def extract_device_id(args, name): # pylint: disable=redefined-outer-name
     for x in range(len(args)):
@@ -61,6 +64,18 @@ def get_device_for(task):
 
 
 def torch_gc(force=False):
+    mem = memstats.memory_stats()
+    gpu = mem.get('gpu', {})
+    oom = gpu.get('oom', 0)
+    used = round(100 * gpu.get('used', 0) / gpu.get('total', 1))
+    global previous_oom # pylint: disable=global-statement
+    if oom > previous_oom:
+        previous_oom = oom
+        shared.log.warning(f'GPU out-of-memory error: {mem}')
+    if used > 90:
+        shared.log.warning(f'GPU high memory utilization: {used}% {mem}')
+        force = True
+
     if shared.opts.disable_gc and not force:
         return
     collected = gc.collect()

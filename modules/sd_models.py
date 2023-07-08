@@ -59,6 +59,8 @@ class CheckpointInfo:
             self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
             self.path = abspath
             self.type = abspath.split('.')[-1].lower()
+            self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
+            self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         else: # maybe a diffuser
             repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
             if len(repo) == 0:
@@ -70,16 +72,13 @@ class CheckpointInfo:
             self.sha256 = repo[0]['hash']
             self.path = repo[0]['path']
             self.type = 'diffusers'
-
+            self.name_for_extra = repo[0]['name']
+            self.model_name = repo[0]['name']
             if os.path.isfile(repo[0]['model_info']):
                 file_path = repo[0]['model_info']
                 with open(file_path, "r", encoding="utf-8") as json_file:
                     self.model_info = json.load(json_file)
-            else:
-                self.model_info = None
 
-        self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
-        self.model_name = os.path.splitext(name.replace("/", "_").replace("\\", "_"))[0]
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
         self.ids = [self.hash, self.model_name, self.title, self.name, f'{self.name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
@@ -161,7 +160,7 @@ def list_models():
                     model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
                 else:
                     default_model_id = "runwayml/stable-diffusion-v1-5"
-                    modelloader.download_diffusers_model(default_model_id, os.path.join(models_path, 'Diffusers'))
+                    modelloader.download_diffusers_model(default_model_id, shared.opts.diffusers_dir)
                     model_list = modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
 
                 for filename in sorted(model_list, key=str.lower):
@@ -665,6 +664,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     else:
                         shared.log.error(f'Diffusers cannot load safetensor model: {checkpoint_info.path} {shared.opts.diffusers_pipeline}')
                         return
+                    if sd_model is not None:
+                        shared.log.debug(f'Diffusers pipeline: {type(sd_model)}') # pylint: disable=protected-access
                 except Exception as e:
                     shared.log.error(f'Diffusers failed loading model using pipeline: {checkpoint_info.path} {shared.opts.diffusers_pipeline} {e}')
                     return

@@ -219,5 +219,5 @@ def create_ui():
                 hf_results.select(fn=hf_select, inputs=[hf_results], outputs=[hf_selected])
                 hf_download_model_btn.click(fn=hf_download_model, inputs=[hf_selected, hf_token], outputs=[models_outcome])
 
-            with gr.Tab(label="CivitAI"):
-                pass
+            # with gr.Tab(label="CivitAI"):
+            #    pass
