@@ -22,7 +22,7 @@ from modules.textual_inversion.textual_inversion import create_embedding, train_
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
-from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights, checkpoint_alisases
+from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights, checkpoint_aliases
 from modules.sd_vae import vae_dict
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
@@ -519,7 +519,7 @@ class Api:
 
     def set_config(self, req: Dict[str, Any]):
         checkpoint_name = req.get("sd_model_checkpoint", None)
-        if checkpoint_name is not None and checkpoint_name not in checkpoint_alisases:
+        if checkpoint_name is not None and checkpoint_name not in checkpoint_aliases:
             raise RuntimeError(f"model {checkpoint_name!r} not found")
 
         for k, v in req.items():
