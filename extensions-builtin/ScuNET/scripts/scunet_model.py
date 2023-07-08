@@ -85,7 +85,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
 
     def do_upscale(self, img: PIL.Image.Image, selected_file):
 
-        torch.cuda.empty_cache()
+        devices.torch_gc()
 
         try:
             model = self.load_model(selected_file)
@@ -110,7 +110,7 @@ class UpscalerScuNET(modules.upscaler.Upscaler):
         torch_output = torch_output[:, :h * 1, :w * 1] # remove padding, if any
         np_output: np.ndarray = torch_output.float().cpu().clamp_(0, 1).numpy()
         del torch_img, torch_output
-        torch.cuda.empty_cache()
+        devices.torch_gc()
 
         output = np_output.transpose((1, 2, 0))  # CHW to HWC
         output = output[:, :, ::-1]  # BGR to RGB

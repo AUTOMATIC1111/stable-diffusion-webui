@@ -49,10 +49,13 @@ def get_device_for(task):
 
 
 def torch_gc():
+
     if torch.cuda.is_available():
         with torch.cuda.device(get_cuda_device_string()):
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
+    elif has_mps() and hasattr(torch.mps, 'empty_cache'):
+        torch.mps.empty_cache()
 
 
 def enable_tf32():
