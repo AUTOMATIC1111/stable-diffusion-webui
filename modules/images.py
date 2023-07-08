@@ -661,7 +661,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             try:
                 # Resizing image with LANCZOS could throw an exception if e.g. image mode is I;16
                 image = image.resize(resize_to, LANCZOS)
-            except:
+            except Exception:
                 image = image.resize(resize_to)
         try:
             _atomically_save_image(image, fullfn_without_extension, ".jpg")
