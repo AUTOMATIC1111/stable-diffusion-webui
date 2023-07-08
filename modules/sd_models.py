@@ -713,6 +713,11 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if shared.opts.opt_channelslast:
             shared.log.debug('Diffusers: enable channels last')
             sd_model.unet.to(memory_format=torch.channels_last)
+        if devices.backend == 'ipex':
+            sd_model.to(devices.device)
+            sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True, 
+            graph_mode=True if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex' else False)
+            shared.log.info("Applied IPEX Optimize")
         if shared.opts.cuda_compile and torch.cuda.is_available():
             sd_model.to(devices.device)
             import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
@@ -874,8 +879,9 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     sd_hijack.model_hijack.hijack(sd_model)
     timer.record("hijack")
     sd_model.eval()
-    if devices.backend == 'ipex' and not (shared.cmd_opts.lowvram or shared.cmd_opts.medvram):
+    if devices.backend == 'ipex':
         sd_model = torch.xpu.optimize(sd_model, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True,
+        weights_prepack=False if shared.cmd_opts.lowvram or shared.cmd_opts.medvram else True,
         graph_mode=True if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex' else False)
         shared.log.info("Applied IPEX Optimize")
     if op == 'refiner':
