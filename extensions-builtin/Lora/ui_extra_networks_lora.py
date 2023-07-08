@@ -13,13 +13,10 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         lora.list_available_loras()
 
     def list_items(self):
-        for name, lora_on_disk in lora.available_loras.items():
+        for index, (name, lora_on_disk) in enumerate(lora.available_loras.items()):
             path, ext = os.path.splitext(lora_on_disk.filename)
 
-            if shared.opts.lora_preferred_name == "Filename" or lora_on_disk.alias.lower() in lora.forbidden_lora_aliases:
-                alias = name
-            else:
-                alias = lora_on_disk.alias
+            alias = lora_on_disk.get_alias()
 
             yield {
                 "name": name,
@@ -30,6 +27,8 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 "prompt": json.dumps(f"<lora:{alias}:") + " + opts.extra_networks_default_multiplier + " + json.dumps(">"),
                 "local_preview": f"{path}.{shared.opts.samples_format}",
                 "metadata": json.dumps(lora_on_disk.metadata, indent=4) if lora_on_disk.metadata else None,
+                "sort_keys": {'default': index, **self.get_sort_keys(lora_on_disk.filename)},
+
             }
 
     def allowed_directories_for_previews(self):

@@ -1,11 +1,11 @@
 import base64
 import json
+import warnings
+
 import numpy as np
 import zlib
-from PIL import Image, PngImagePlugin, ImageDraw, ImageFont
-from fonts.ttf import Roboto
+from PIL import Image, ImageDraw
 import torch
-from modules.shared import opts
 
 
 class EmbeddingEncoder(json.JSONEncoder):
@@ -17,7 +17,7 @@ class EmbeddingEncoder(json.JSONEncoder):
 
 class EmbeddingDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+        json.JSONDecoder.__init__(self, *args, object_hook=self.object_hook, **kwargs)
 
     def object_hook(self, d):
         if 'TORCHTENSOR' in d:
@@ -131,17 +131,17 @@ def extract_image_data_embed(image):
 
 
 def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, textfont=None):
+    from modules.images import get_font
+    if textfont:
+        warnings.warn(
+            'passing in a textfont to caption_image_overlay is deprecated and does nothing',
+            DeprecationWarning,
+            stacklevel=2,
+        )
     from math import cos
 
     image = srcimage.copy()
     fontsize = 32
-    if textfont is None:
-        try:
-            textfont = ImageFont.truetype(opts.font or Roboto, fontsize)
-            textfont = opts.font or Roboto
-        except Exception:
-            textfont = Roboto
-
     factor = 1.5
     gradient = Image.new('RGBA', (1, image.size[1]), color=(0, 0, 0, 0))
     for y in range(image.size[1]):
@@ -152,12 +152,12 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
 
     draw = ImageDraw.Draw(image)
 
-    font = ImageFont.truetype(textfont, fontsize)
+    font = get_font(fontsize)
     padding = 10
 
     _, _, w, h = draw.textbbox((0, 0), title, font=font)
     fontsize = min(int(fontsize * (((image.size[0]*0.75)-(padding*4))/w)), 72)
-    font = ImageFont.truetype(textfont, fontsize)
+    font = get_font(fontsize)
     _, _, w, h = draw.textbbox((0, 0), title, font=font)
     draw.text((padding, padding), title, anchor='lt', font=font, fill=(255, 255, 255, 230))
 
@@ -168,7 +168,7 @@ def caption_image_overlay(srcimage, title, footerLeft, footerMid, footerRight, t
     _, _, w, h = draw.textbbox((0, 0), footerRight, font=font)
     fontsize_right = min(int(fontsize * (((image.size[0]/3)-(padding))/w)), 72)
 
-    font = ImageFont.truetype(textfont, min(fontsize_left, fontsize_mid, fontsize_right))
+    font = get_font(min(fontsize_left, fontsize_mid, fontsize_right))
 
     draw.text((padding, image.size[1]-padding),               footerLeft, anchor='ls', font=font, fill=(255, 255, 255, 230))
     draw.text((image.size[0]/2, image.size[1]-padding),       footerMid, anchor='ms', font=font, fill=(255, 255, 255, 230))

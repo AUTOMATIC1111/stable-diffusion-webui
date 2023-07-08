@@ -3,8 +3,6 @@ Supports saving and restoring webui and extensions from a known working set of c
 """
 
 import os
-import sys
-import traceback
 import json
 import time
 import tqdm
@@ -13,8 +11,8 @@ from datetime import datetime
 from collections import OrderedDict
 import git
 
-from modules import shared, extensions
-from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path, config_states_dir
+from modules import shared, extensions, errors
+from modules.paths_internal import script_path, config_states_dir
 
 
 all_config_states = OrderedDict()
@@ -35,7 +33,7 @@ def list_config_states():
                 j["filepath"] = path
                 config_states.append(j)
 
-    config_states = list(sorted(config_states, key=lambda cs: cs["created_at"], reverse=True))
+    config_states = sorted(config_states, key=lambda cs: cs["created_at"], reverse=True)
 
     for cs in config_states:
         timestamp = time.asctime(time.gmtime(cs["created_at"]))
@@ -53,8 +51,7 @@ def get_webui_config():
         if os.path.exists(os.path.join(script_path, ".git")):
             webui_repo = git.Repo(script_path)
     except Exception:
-        print(f"Error reading webui git info from {script_path}:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        errors.report(f"Error reading webui git info from {script_path}", exc_info=True)
 
     webui_remote = None
     webui_commit_hash = None
@@ -83,6 +80,8 @@ def get_extension_config():
     ext_config = {}
 
     for ext in extensions.extensions:
+        ext.read_info_from_repo()
+
         entry = {
             "name": ext.name,
             "path": ext.path,
@@ -132,8 +131,7 @@ def restore_webui_config(config):
         if os.path.exists(os.path.join(script_path, ".git")):
             webui_repo = git.Repo(script_path)
     except Exception:
-        print(f"Error reading webui git info from {script_path}:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        errors.report(f"Error reading webui git info from {script_path}", exc_info=True)
         return
 
     try:
@@ -141,8 +139,7 @@ def restore_webui_config(config):
         webui_repo.git.reset(webui_commit_hash, hard=True)
         print(f"* Restored webui to commit {webui_commit_hash}.")
     except Exception:
-        print(f"Error restoring webui to commit {webui_commit_hash}:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        errors.report(f"Error restoring webui to commit{webui_commit_hash}")
 
 
 def restore_extension_config(config):

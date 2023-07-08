@@ -54,18 +54,21 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     """
 
     def collect_steps(steps, tree):
-        l = [steps]
+        res = [steps]
+
         class CollectSteps(lark.Visitor):
             def scheduled(self, tree):
                 tree.children[-1] = float(tree.children[-1])
                 if tree.children[-1] < 1:
                     tree.children[-1] *= steps
                 tree.children[-1] = min(steps, int(tree.children[-1]))
-                l.append(tree.children[-1])
+                res.append(tree.children[-1])
+
             def alternate(self, tree):
-                l.extend(range(1, steps+1))
+                res.extend(range(1, steps+1))
+
         CollectSteps().visit(tree)
-        return sorted(set(l))
+        return sorted(set(res))
 
     def at_step(step, tree):
         class AtStep(lark.Transformer):
@@ -92,7 +95,7 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     def get_schedule(prompt):
         try:
             tree = schedule_parser.parse(prompt)
-        except lark.exceptions.LarkError as e:
+        except lark.exceptions.LarkError:
             if 0:
                 import traceback
                 traceback.print_exc()
@@ -140,7 +143,7 @@ def get_learned_conditioning(model, prompts, steps):
         conds = model.get_learned_conditioning(texts)
 
         cond_schedule = []
-        for i, (end_at_step, text) in enumerate(prompt_schedule):
+        for i, (end_at_step, _) in enumerate(prompt_schedule):
             cond_schedule.append(ScheduledPromptConditioning(end_at_step, conds[i]))
 
         cache[prompt] = cond_schedule
@@ -216,8 +219,8 @@ def reconstruct_cond_batch(c: List[List[ScheduledPromptConditioning]], current_s
     res = torch.zeros((len(c),) + param.shape, device=param.device, dtype=param.dtype)
     for i, cond_schedule in enumerate(c):
         target_index = 0
-        for current, (end_at, cond) in enumerate(cond_schedule):
-            if current_step <= end_at:
+        for current, entry in enumerate(cond_schedule):
+            if current_step <= entry.end_at_step:
                 target_index = current
                 break
         res[i] = cond_schedule[target_index].cond
@@ -231,13 +234,13 @@ def reconstruct_multicond_batch(c: MulticondLearnedConditioning, current_step):
     tensors = []
     conds_list = []
 
-    for batch_no, composable_prompts in enumerate(c.batch):
+    for composable_prompts in c.batch:
         conds_for_batch = []
 
-        for cond_index, composable_prompt in enumerate(composable_prompts):
+        for composable_prompt in composable_prompts:
             target_index = 0
-            for current, (end_at, cond) in enumerate(composable_prompt.schedules):
-                if current_step <= end_at:
+            for current, entry in enumerate(composable_prompt.schedules):
+                if current_step <= entry.end_at_step:
                     target_index = current
                     break
 
@@ -333,11 +336,11 @@ def parse_prompt_attention(text):
             round_brackets.append(len(res))
         elif text == '[':
             square_brackets.append(len(res))
-        elif weight is not None and len(round_brackets) > 0:
+        elif weight is not None and round_brackets:
             multiply_range(round_brackets.pop(), float(weight))
-        elif text == ')' and len(round_brackets) > 0:
+        elif text == ')' and round_brackets:
             multiply_range(round_brackets.pop(), round_bracket_multiplier)
-        elif text == ']' and len(square_brackets) > 0:
+        elif text == ']' and square_brackets:
             multiply_range(square_brackets.pop(), square_bracket_multiplier)
         else:
             parts = re.split(re_break, text)

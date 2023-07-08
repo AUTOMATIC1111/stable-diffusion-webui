@@ -167,7 +167,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                 chunk.multipliers += [weight] * emb_len
                 position += embedding_length_in_tokens
 
-        if len(chunk.tokens) > 0 or len(chunks) == 0:
+        if chunk.tokens or not chunks:
             next_chunk(is_last=True)
 
         return chunks, token_count
@@ -223,7 +223,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
             self.hijack.fixes = [x.fixes for x in batch_chunk]
 
             for fixes in self.hijack.fixes:
-                for position, embedding in fixes:
+                for _position, embedding in fixes:
                     used_embeddings[embedding.name] = embedding
 
             z = self.process_tokens(tokens, multipliers)

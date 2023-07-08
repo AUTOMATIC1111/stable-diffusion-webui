@@ -1,7 +1,9 @@
+let gamepads = [];
+
 window.addEventListener('gamepadconnected', (e) => {
     const index = e.gamepad.index;
     let isWaiting = false;
-    setInterval(async () => {
+    gamepads[index] = setInterval(async() => {
         if (!opts.js_modal_lightbox_gamepad || isWaiting) return;
         const gamepad = navigator.getGamepads()[index];
         const xValue = gamepad.axes[0];
@@ -14,7 +16,7 @@ window.addEventListener('gamepadconnected', (e) => {
         }
         if (isWaiting) {
             await sleepUntil(() => {
-                const xValue = navigator.getGamepads()[index].axes[0]
+                const xValue = navigator.getGamepads()[index].axes[0];
                 if (xValue < 0.3 && xValue > -0.3) {
                     return true;
                 }
@@ -22,6 +24,10 @@ window.addEventListener('gamepadconnected', (e) => {
             isWaiting = false;
         }
     }, 10);
+});
+
+window.addEventListener('gamepaddisconnected', (e) => {
+    clearInterval(gamepads[e.gamepad.index]);
 });
 
 /*
