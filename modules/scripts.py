@@ -216,7 +216,7 @@ def list_scripts(scriptdirname, extension):
     for ext in extensions.active():
         scripts_list += ext.list_files(scriptdirname, extension)
 
-    scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
+    scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path) and not x.filename.startswith("._")]
 
     return scripts_list
 
