@@ -161,3 +161,63 @@ def create_ui():
                     return model_data, txt
 
                 model_list_btn.click(fn=list_models, inputs=[], outputs=[model_table, models_outcome])
+
+            with gr.Tab(label="Huggingface"):
+                data = []
+                os.environ.setdefault('HF_HUB_DISABLE_EXPERIMENTAL_WARNING', '1')
+                os.environ.setdefault('HF_HUB_DISABLE_SYMLINKS_WARNING', '1')
+                os.environ.setdefault('HF_HUB_DISABLE_IMPLICIT_TOKEN', '1')
+                os.environ.setdefault('HUGGINGFACE_HUB_VERBOSITY', 'warning')
+
+                def hf_search(keyword):
+                    import huggingface_hub as hf
+                    hf_api = hf.HfApi()
+                    model_filter = hf.ModelFilter(
+                        model_name=keyword,
+                        task='text-to-image',
+                        library=['diffusers'],
+                    )
+                    models = hf_api.list_models(filter=model_filter, full=True, limit=50, sort="downloads", direction=-1)
+                    data.clear()
+                    for model in models:
+                        tags = [t for t in model.tags if not t.startswith('diffusers') and not t.startswith('license') and not t.startswith('arxiv') and len(t) > 2]
+                        data.append([model.modelId, model.pipeline_tag, tags, model.downloads, model.lastModified, f'https://huggingface.co/{model.modelId}'])
+                    return data
+
+                def hf_select(evt: gr.SelectData, data):
+                    return data[evt.index[0]][0]
+
+                def hf_download_model(hub_id: str, token):
+                    from modules.shared import log, opts
+                    from modules.modelloader import download_diffusers_model
+                    try:
+                        download_diffusers_model(hub_id, cache_dir=opts.diffusers_dir, token=token)
+                    except Exception as e:
+                        log.error(f"Diffuser model downloaded error: model={hub_id} {e}")
+                        return f"Diffuser model downloaded error: model={hub_id} {e}"
+                    from modules.sd_models import list_models # pylint: disable=W0621
+                    list_models()
+                    log.info(f"Diffuser model downloaded: model={hub_id}")
+                    return f'Diffuser model downloaded: model={hub_id}'
+
+                with gr.Column(scale=6):
+                    with gr.Row():
+                        hf_search_text = gr.Textbox('', label = 'Seach models', placeholder='search huggingface models')
+                    with gr.Row():
+                        hf_selected = gr.Textbox('', label = 'Select model', placeholder='select model from search results or enter model name manually')
+                    with gr.Row():
+                        hf_token = gr.Textbox('', label = 'Huggingface token', placeholder='optional access token for private or gated models')
+                with gr.Column(scale=1):
+                    hf_download_model_btn = gr.Button(value="Download model", variant='primary')
+
+                with gr.Row():
+                    hf_headers = ['Name', 'Pipeline', 'Tags', 'Downloads', 'Updated', 'URL']
+                    hf_types = ['str', 'str', 'str', 'number', 'date', 'markdown']
+                    hf_results = gr.DataFrame([], label = 'Search results', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = hf_headers, datatype = hf_types, type='array')
+
+                hf_search_text.submit(fn=hf_search, inputs=[hf_search_text], outputs=[hf_results])
+                hf_results.select(fn=hf_select, inputs=[hf_results], outputs=[hf_selected])
+                hf_download_model_btn.click(fn=hf_download_model, inputs=[hf_selected, hf_token], outputs=[models_outcome])
+
+            # with gr.Tab(label="CivitAI"):
+            #    pass

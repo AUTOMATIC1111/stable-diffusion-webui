@@ -101,6 +101,7 @@ def check_rollback_vae():
 
 def initialize():
     log.debug('Entering initialize')
+    shared.disable_extensions()
     check_rollback_vae()
 
     modules.sd_vae.refresh_vae_list()
@@ -167,14 +168,18 @@ def load_model():
     if opts.sd_checkpoint_autoload:
         shared.state.begin()
         shared.state.job = 'load model'
-        thread = Thread(target=lambda: shared.sd_model)
-        thread.start()
+        thread_model = Thread(target=lambda: shared.sd_model)
+        thread_model.start()
+        thread_refiner = Thread(target=lambda: shared.sd_refiner)
+        thread_refiner.start()
         shared.state.end()
-        thread.join()
+        thread_model.join()
+        thread_refiner.join()
     else:
         log.debug('Model auto load disabled')
-    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
-    shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
+    shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='model')), call=False)
+    shared.opts.onchange("sd_model_refiner", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='refiner')), call=False)
+    shared.opts.onchange("sd_model_dict", wrap_queued_call(lambda: modules.sd_models.reload_model_weights(op='dict')), call=False)
     startup_timer.record("checkpoint")
 
 
@@ -229,7 +234,7 @@ def start_ui():
     log.debug('Creating UI')
     modules.script_callbacks.before_ui_callback()
     startup_timer.record("before-ui")
-    shared.demo = modules.ui.create_ui()
+    shared.demo = modules.ui.create_ui(startup_timer)
     startup_timer.record("ui")
     if cmd_opts.disable_queue:
         log.info('Server queues disabled')

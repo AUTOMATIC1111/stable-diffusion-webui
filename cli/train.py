@@ -265,6 +265,7 @@ def prepare_options():
         options.lora.in_json = None
     if args.type == 'dreambooth':
         log.info('train using dreambooth style training')
+        options.lora.vae_batch_size = args.batch
         options.lora.in_json = None
     if args.type == 'lora':
         log.info('train using lora style training')
@@ -378,14 +379,18 @@ def check_versions():
         log.info('experimental mode enabled')
         return
     log.info('checking accelerate')
+    error = False
     import accelerate
     if accelerate.__version__ != '0.19.0':
-        log.error(f'invalid accelerate version: required=0.19.0 found={accelerate.__version__}')
-        exit(1)
+        log.error(f'invalid accelerate version: accelerate=0.19.0 found={accelerate.__version__}')
+        error = True
     log.info('checking diffusers')
     import diffusers
     if diffusers.__version__ != '0.10.2':
-        log.error(f'invalid diffusers version: required=0.10.2 found={diffusers.__version__}')
+        log.error(f'invalid diffusers version: diffusers=0.10.2 found={diffusers.__version__}')
+        error = True
+    if error:
+        log.info('> pip install accelerate==0.19.0 diffusers==0.10.2')
         exit(1)
 
 

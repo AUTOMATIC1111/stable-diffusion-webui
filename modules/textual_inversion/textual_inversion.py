@@ -113,33 +113,56 @@ class EmbeddingDatabase:
 
     def register_embedding(self, embedding, model):
         self.word_embeddings[embedding.name] = embedding
-
         ids = model.cond_stage_model.tokenize([embedding.name])[0]
-
         first_id = ids[0]
         if first_id not in self.ids_lookup:
             self.ids_lookup[first_id] = []
-
         self.ids_lookup[first_id] = sorted(self.ids_lookup[first_id] + [(ids, embedding)], key=lambda x: len(x[0]), reverse=True)
-
         return embedding
 
     def get_expected_shape(self):
         if shared.sd_model is None:
             shared.log.error('Model not loaded')
             return 0
+        if shared.backend == shared.Backend.DIFFUSERS:
+            return 0
         vec = shared.sd_model.cond_stage_model.encode_embedding_init_text(",", 1)
         return vec.shape[1]
+
+    def load_diffusers_embedding(self, filename: str, path: str):
+        fn, ext = os.path.splitext(filename)
+        if ext.lower() != ".pt" and ext.lower() != ".safetensors":
+            return
+        pipe = shared.sd_model
+        if filename == "":
+            pipe.tokenizer = pipe.tokenizer.__class__.from_pretrained(pipe.tokenizer.name_or_path)
+            pipe.text_encoder.resize_token_embeddings(len(pipe.tokenizer))
+            return
+        name = os.path.basename(fn)
+        embedding = Embedding(vec=None, name=name)
+        try:
+            pipe.load_textual_inversion(path, cache_dir=shared.opts.data["diffusers_dir"], local_files_only=True)
+            self.word_embeddings[name] = embedding
+        except Exception:
+            self.skipped_embeddings[name] = embedding
+        try:
+            text_inv_tokens = pipe.tokenizer.added_tokens_encoder.keys()
+            text_inv_tokens = [t for t in text_inv_tokens if not (len(t.split("_")) > 1 and t.split("_")[-1].isdigit())]
+        except Exception:
+            text_inv_tokens = []
+            pass
 
     def load_from_file(self, path, filename):
         name, ext = os.path.splitext(filename)
         ext = ext.upper()
+        if shared.backend == shared.Backend.DIFFUSERS:
+            self.load_diffusers_embedding(filename, path)
+            return
 
         if ext in ['.PNG', '.WEBP', '.JXL', '.AVIF']:
             _, second_ext = os.path.splitext(name)
             if second_ext.upper() == '.PREVIEW':
                 return
-
             embed_image = Image.open(path)
             if hasattr(embed_image, 'text') and 'sd-ti-embedding' in embed_image.text:
                 data = embedding_from_b64(embed_image.text['sd-ti-embedding'])
@@ -206,15 +229,12 @@ class EmbeddingDatabase:
                     continue
 
     def load_textual_inversion_embeddings(self, force_reload=False):
-        if shared.backend == shared.Backend.DIFFUSERS: # TODO Diffusers
-            return
         if not force_reload:
             need_reload = False
             for embdir in self.embedding_dirs.values():
                 if embdir.has_changed():
                     need_reload = True
                     break
-
             if not need_reload:
                 return
 
@@ -241,32 +261,25 @@ class EmbeddingDatabase:
     def find_embedding_at_position(self, tokens, offset):
         token = tokens[offset]
         possible_matches = self.ids_lookup.get(token, None)
-
         if possible_matches is None:
             return None, None
-
         for ids, embedding in possible_matches:
             if tokens[offset:offset + len(ids)] == ids:
                 return embedding, len(ids)
-
         return None, None
 
 
 def create_embedding(name, num_vectors_per_token, overwrite_old, init_text='*'):
     cond_model = shared.sd_model.cond_stage_model
-
     with devices.autocast():
         cond_model([""])  # will send cond model to GPU if lowvram/medvram is active
-
     #cond_model expects at least some text, so we provide '*' as backup.
     embedded = cond_model.encode_embedding_init_text(init_text or '*', num_vectors_per_token)
     vec = torch.zeros((num_vectors_per_token, embedded.shape[1]), device=devices.device)
-
     #Only copy if we provided an init_text, otherwise keep vectors as zeros
     if init_text:
         for i in range(num_vectors_per_token):
             vec[i] = embedded[i * int(embedded.shape[0]) // num_vectors_per_token]
-
     # Remove illegal characters from name.
     name = "".join( x for x in name if (x.isalnum() or x in "._- "))
     fn = os.path.join(shared.opts.embeddings_dir, f"{name}.pt")
@@ -299,11 +312,13 @@ def write_loss(log_directory, filename, step, epoch_len, values):
             **values,
         })
 
+
 def tensorboard_setup(log_directory):
     os.makedirs(os.path.join(log_directory, "tensorboard"), exist_ok=True)
     return SummaryWriter(
             log_dir=os.path.join(log_directory, "tensorboard"),
             flush_secs=shared.opts.training_tensorboard_flush_every)
+
 
 def tensorboard_add(tensorboard_writer, loss, global_step, step, learn_rate, epoch_num):
     tensorboard_add_scaler(tensorboard_writer, "Loss/train", loss, global_step)
@@ -311,16 +326,18 @@ def tensorboard_add(tensorboard_writer, loss, global_step, step, learn_rate, epo
     tensorboard_add_scaler(tensorboard_writer, "Learn rate/train", learn_rate, global_step)
     tensorboard_add_scaler(tensorboard_writer, f"Learn rate/train/epoch-{epoch_num}", learn_rate, step)
 
+
 def tensorboard_add_scaler(tensorboard_writer, tag, value, step):
     tensorboard_writer.add_scalar(tag=tag, scalar_value=value, global_step=step)
+
 
 def tensorboard_add_image(tensorboard_writer, tag, pil_image, step):
     # Convert a pil image to a torch tensor
     img_tensor = torch.as_tensor(np.array(pil_image, copy=True))
     img_tensor = img_tensor.view(pil_image.size[1], pil_image.size[0], len(pil_image.getbands()))
     img_tensor = img_tensor.permute((2, 0, 1))
-
     tensorboard_writer.add_image(tag, img_tensor, global_step=step)
+
 
 def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_model_every, create_image_every, log_directory, name="embedding"):
     assert model_name, f"{name} not selected"
@@ -383,15 +400,12 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
         images_embeds_dir = None
 
     hijack = sd_hijack.model_hijack
-
     embedding = hijack.embedding_db.word_embeddings[embedding_name]
     checkpoint = sd_models.select_checkpoint()
-
     initial_step = embedding.step or 0
     if initial_step >= steps:
         shared.state.textinfo = "Model has already been trained beyond specified max steps"
         return embedding, filename
-
     scheduler = LearnRateScheduler(learn_rate, steps, initial_step)
     clip_grad = torch.nn.utils.clip_grad_value_ if clip_grad_mode == "value" else \
         torch.nn.utils.clip_grad_norm_ if clip_grad_mode == "norm" else \

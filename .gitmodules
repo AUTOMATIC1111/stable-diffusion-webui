@@ -17,29 +17,29 @@
   url = https://github.com/kohya-ss/sd-scripts
   ignore = dirty
 [submodule "extensions-builtin/clip-interrogator-ext"]
-	path = extensions-builtin/clip-interrogator-ext
-	url = https://github.com/pharmapsychotic/clip-interrogator-ext.git
+  path = extensions-builtin/clip-interrogator-ext
+  url = https://github.com/Dahvikiin/clip-interrogator-ext.git
   ignore = dirty
 [submodule "extensions-builtin/sd-webui-controlnet"]
-	path = extensions-builtin/sd-webui-controlnet
-	url = https://github.com/Mikubill/sd-webui-controlnet
+  path = extensions-builtin/sd-webui-controlnet
+  url = https://github.com/Mikubill/sd-webui-controlnet
   ignore = dirty
 [submodule "modules/lycoris"]
-	path = modules/lycoris
-	url = https://github.com/KohakuBlueleaf/LyCORIS
+  path = modules/lycoris
+  url = https://github.com/KohakuBlueleaf/LyCORIS
   ignore = dirty
 [submodule "extensions-builtin/stable-diffusion-webui-rembg"]
-	path = extensions-builtin/stable-diffusion-webui-rembg
-	url = https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg
+  path = extensions-builtin/stable-diffusion-webui-rembg
+  url = https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg
   ignore = dirty
 [submodule "extensions-builtin/a1111-sd-webui-lycoris"]
-	path = extensions-builtin/a1111-sd-webui-lycoris
-	url = https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris
+  path = extensions-builtin/a1111-sd-webui-lycoris
+  url = https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris
   ignore = dirty
 [submodule "extensions-builtin/multidiffusion-upscaler-for-automatic1111"]
-	path = extensions-builtin/multidiffusion-upscaler-for-automatic1111
-	url = https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111
+  path = extensions-builtin/multidiffusion-upscaler-for-automatic1111 
+  url = https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111
   ignore = dirty
 [submodule "extensions-builtin/sd-webui-agent-scheduler"]
-	path = extensions-builtin/sd-webui-agent-scheduler
-	url = https://github.com/ArtVentureX/sd-webui-agent-scheduler
+  path = extensions-builtin/sd-webui-agent-scheduler
+  url = https://github.com/ArtVentureX/sd-webui-agent-scheduler

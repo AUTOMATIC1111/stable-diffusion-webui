@@ -1,5 +1,16 @@
 # Change Log for SD.Next
 
+## Update for 07/08/2023
+
+- add pan & zoom controls (touch and mouse) to image viewer (lightbox)  
+- cache extra networks between tabs  
+  this should result in neat 2x speedup on building extra networks  
+- add settings -> extra networks -> do not automatically build extra network pages  
+  speeds up app start if you have a lot of extra networks and you want to build them manually when needed  
+- extra network ui tweaks  
+- merge experimental diffusers support  
+  covered in details in a separate post  
+
 ## Update for 07/01/2023
 
 Small quality-of-life updates and bugfixes:

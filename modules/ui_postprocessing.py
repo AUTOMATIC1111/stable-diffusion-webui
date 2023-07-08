@@ -9,18 +9,16 @@ from modules.ui_common import infotext_to_html
 
 def wrap_pnginfo(image):
     _, geninfo, info = run_pnginfo(image)
-    return '', infotext_to_html(geninfo), info, geninfo
+    return infotext_to_html(geninfo), info, geninfo
 
 
 def submit_click(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs):
-
     result_images, geninfo, js_info = postprocessing.run_postprocessing(tab_index, extras_image, image_batch, extras_batch_input_dir, extras_batch_output_dir, show_extras_results, *script_inputs)
     return result_images, geninfo, json.dumps(js_info), ''
 
 
 def create_ui():
     tab_index = gr.State(value=0) # pylint: disable=abstract-class-instantiated
-
     with gr.Row().style(equal_height=False, variant='compact'):
         with gr.Column(variant='compact'):
             with gr.Tabs(elem_id="mode_extras"):
@@ -53,11 +51,10 @@ def create_ui():
     tab_single.select(fn=lambda: 0, inputs=[], outputs=[tab_index])
     tab_batch.select(fn=lambda: 1, inputs=[], outputs=[tab_index])
     tab_batch_dir.select(fn=lambda: 2, inputs=[], outputs=[tab_index])
-    _dummy = gr.HTML(visible=False)
     extras_image.change(
         fn=wrap_gradio_call(wrap_pnginfo),
         inputs=[extras_image],
-        outputs=[_dummy, html_info_formatted, exif_info, gen_info],
+        outputs=[html_info_formatted, exif_info, gen_info],
     )
     submit.click(
         _js="submit_postprocessing",

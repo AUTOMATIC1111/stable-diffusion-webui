@@ -37,7 +37,6 @@ class VanillaStableDiffusionSampler:
         self.eta = None
         self.config = None
         self.last_latent = None
-
         self.conditioning_key = sd_model.model.conditioning_key
 
     def number_of_needed_noises(self, p): # pylint: disable=unused-argument

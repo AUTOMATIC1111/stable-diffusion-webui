@@ -3,6 +3,7 @@ import torch
 import torch_directml # pylint: disable=import-error
 import modules.dml.hijack
 import modules.dml.amp as amp
+from modules.dml.opts import override_opts
 
 from .optimizer.unknown import UnknownOptimizer
 
@@ -31,6 +32,8 @@ class DirectML():
         return optimizer.memory_stats(device.index)
 
 
-# Alternative of torch.cuda for DirectML.
 DirectML.amp = amp
+# Alternative of torch.cuda for DirectML.
 torch.dml = DirectML
+
+override_opts()

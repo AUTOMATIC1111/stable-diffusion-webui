@@ -5,6 +5,7 @@ from copy import deepcopy
 import torch
 from modules import shared, paths, devices, script_callbacks, sd_models
 
+
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
 vae_dict = {}
 base_vae = None
@@ -12,6 +13,7 @@ loaded_vae_file = None
 checkpoint_info = None
 vae_path = os.path.abspath(os.path.join(paths.models_path, 'VAE'))
 checkpoints_loaded = collections.OrderedDict()
+
 
 def get_base_vae(model):
     if base_vae is not None and checkpoint_info == model.sd_checkpoint_info and model:
@@ -147,6 +149,34 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
     loaded_vae_file = vae_file
 
 
+def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
+    global loaded_vae_file # pylint: disable=global-statement
+    if loaded_vae_file == vae_file:
+        return
+    loaded_vae_file = None
+    if vae_file is None:
+        return
+    if not os.path.isfile(vae_file):
+        shared.log.error('VAE not found: {vae_file}')
+        return
+    shared.log.info(f"Loading diffusers VAE: {vae_source}: {vae_file}")
+    diffusers_load_config = {
+        "low_cpu_mem_usage": True,
+        "torch_dtype": devices.dtype_vae,
+        "use_safetensors": True,
+    }
+    if devices.dtype_vae == torch.float16:
+        diffusers_load_config['variant'] = 'fp16'
+    shared.log.debug(f'Diffusers VAE load config: {diffusers_load_config}')
+    try:
+        import diffusers
+        diffusers_vae = diffusers.AutoencoderKL.from_pretrained(vae_file, **diffusers_load_config)
+    except Exception as e:
+        shared.log.error(f"Loading diffusers VAE failed: {vae_file} {e}")
+        diffusers_vae = None
+    return diffusers_vae
+
+
 # don't call this from outside
 def _load_vae_dict(model, vae_dict_1):
     model.first_stage_model.load_state_dict(vae_dict_1)
@@ -178,12 +208,17 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         lowvram.send_everything_to_cpu()
     else:
         sd_model.to(devices.cpu)
-    sd_hijack.model_hijack.undo_hijack(sd_model)
-    if shared.cmd_opts.rollback_vae and devices.dtype_vae == torch.bfloat16:
-        devices.dtype_vae = torch.float16
-    load_vae(sd_model, vae_file, vae_source)
-    sd_hijack.model_hijack.hijack(sd_model)
-    script_callbacks.model_loaded_callback(sd_model)
+
+    if shared.backend == shared.Backend.ORIGINAL:
+        sd_hijack.model_hijack.undo_hijack(sd_model)
+        if shared.cmd_opts.rollback_vae and devices.dtype_vae == torch.bfloat16:
+            devices.dtype_vae = torch.float16
+        load_vae(sd_model, vae_file, vae_source)
+        sd_hijack.model_hijack.hijack(sd_model)
+        script_callbacks.model_loaded_callback(sd_model)
+    elif shared.backend == shared.Backend.DIFFUSERS:
+        load_vae_diffusers(sd_model, vae_file, vae_source)
+
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
         sd_model.to(devices.device)
     shared.log.info(f"VAE weights loaded: {vae_file}")

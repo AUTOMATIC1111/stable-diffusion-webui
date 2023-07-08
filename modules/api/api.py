@@ -237,7 +237,7 @@ class Api:
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
-            ui.create_ui()
+            ui.create_ui(None)
         if not self.default_script_arg_txt2img:
             self.default_script_arg_txt2img = self.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = self.get_selectable_script(txt2imgreq.script_name, script_runner)
@@ -282,7 +282,7 @@ class Api:
         script_runner = scripts.scripts_img2img
         if not script_runner.scripts:
             script_runner.initialize_scripts(True)
-            ui.create_ui()
+            ui.create_ui(None)
         if not self.default_script_arg_img2img:
             self.default_script_arg_img2img = self.init_default_script_args(script_runner)
         selectable_scripts, selectable_script_idx = self.get_selectable_script(img2imgreq.script_name, script_runner)
@@ -406,17 +406,15 @@ class Api:
 
     def interruptapi(self):
         shared.state.interrupt()
-
         return {}
 
     def unloadapi(self):
-        unload_model_weights()
-
+        unload_model_weights(op='model')
+        unload_model_weights(op='refiner')
         return {}
 
     def reloadapi(self):
         reload_model_weights()
-
         return {}
 
     def skip(self):
@@ -650,8 +648,8 @@ class Api:
             "port": shared.cmd_opts.port,
             "keyfile": shared.cmd_opts.tls_keyfile,
             "certfile": shared.cmd_opts.tls_certfile,
-            "loop": "auto",
-            "http": "auto",
+            "loop": "auto", # auto, asyncio, uvloop
+            "http": "auto", # auto, h11, httptools
         }
         from modules.server import UvicornServer
         server = UvicornServer(self.app, **config)

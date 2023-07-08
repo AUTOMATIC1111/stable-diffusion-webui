@@ -28,7 +28,7 @@ div.gradio-html.min{ min-height: 0; }
 footer { display: none; }
 
 /* general styled components */
-.gradio-button.tool{ max-width: 2.3em;  min-width: 2.3em !important; height: 2.3em; align-self: end; line-height: 1em; border-radius: 0.5em; }
+.gradio-button.tool{ max-width: 2.3em;  min-width: 2.3em !important; height: 2.3em; align-self: end; line-height: 1em }
 .gradio-button.secondary-down{ background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); }
 .gradio-button.secondary-down, .gradio-button.secondary-down:hover{ box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset; }
 .gradio-button.secondary-down:hover{ background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
@@ -69,7 +69,6 @@ button.custom-button{
     background: var(--input-background-fill) !important;
     box-shadow: 0 0 0.0 0.3em rgba(192,192,192,0.15), inset 0 0 0.6em rgba(192,192,192,0.075);
     border: 2px solid rgba(192,192,192,0.4) !important;
-    border-radius: 0.4em;
 }
 
 .block.token-counter.error span{
@@ -100,7 +99,8 @@ button.custom-button{
 }
 
 #txt2img_gallery img, #img2img_gallery img, #extras_gallery img { object-fit: scale-down; width: -webkit-fill-available !important; }
-#txt2img_footer, #img2img_footer, #extras_footer{ height: fit-content; display: none; }
+#txt2img_footer, #img2img_footer, #extras_footer { height: fit-content; }
+#txt2img_footer, #img2img_footer { height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box { gap: 0.5em; flex-wrap: wrap-reverse; }
 #txt2img_actions_column, #img2img_actions_column { gap: 0.5em; }
 #txt2img_generate_box > button, #img2img_generate_box > button { height: 2.2em; line-height: 0; }
@@ -315,7 +315,6 @@ div#extras_scale_to_tab div.form{
     position: relative;
     height: 20px;
     background: #b4c0cc;
-    border-radius: 3px !important;
     margin-bottom: -3px;
 }
 
@@ -332,7 +331,6 @@ div#extras_scale_to_tab div.form{
     line-height: 20px;
     padding: 0 8px 0 0;
     text-align: right;
-    border-radius: 3px;
     overflow: visible;
     white-space: nowrap;
     padding: 0 0.5em;
@@ -434,6 +432,7 @@ div#extras_scale_to_tab div.form{
     height: 100%;
     width: 100%;
     min-height: 0;
+    background: transparent;
 }
 
 table.settings-value-table{
@@ -463,14 +462,12 @@ table.settings-value-table td{
   font-weight: bold;
   font-size: 20px;
   transition: 0.6s ease;
-  border-radius: 0 3px 3px 0;
   user-select: none;
   -webkit-user-select: none;
 }
 
 .modalNext {
   right: 0;
-  border-radius: 3px 0 0 3px;
 }
 
 .modalPrev:hover, .modalNext:hover {
@@ -496,7 +493,6 @@ table.settings-value-table td{
     display:block;
     padding:0px 0;
     border:2px solid #a55000;
-    border-radius:8px;
     box-shadow:1px 1px 2px #CE6400;
     width: 200px;
 }
@@ -538,11 +534,11 @@ table.settings-value-table td{
 .extra-networks .description { margin-top: 8px; }
 .extra-networks .tab-nav > button { margin-right: 0; height: auto; padding: 2px 4px 2px 4px; }
 .extra-networks-tab { padding: 0 !important; }
-.extra-network-subdirs { background: var(--input-background-fill); }
+.extra-network-subdirs { background: var(--input-background-fill); overflow-x: hidden; overflow-y: auto; min-width: 80px; max-width: 120px; }
 .extra-networks-page { display: flex }
-.extra-networks .custom-button { min-width: 60px; width: 100%; background: none; justify-content: left; padding: 2px 8px 2px 8px; box-shadow: none; }
+.extra-networks .custom-button { min-width: 80px; max-width: 120px; width: 100%; background: none; justify-content: left; text-align: left; padding: 2px 8px 2px 8px; box-shadow: none; line-break: auto; }
 .extra-networks .custom-button:hover { background: var(--button-primary-background-fill) }
-.extra-network-cards { display: flex; flex-wrap: wrap; height: 50vh; overflow-y: scroll; overflow-x: hidden; scroll-snap-type: y mandatory; width: -webkit-fill-available; }
+.extra-network-cards { display: flex; flex-wrap: wrap; overflow-y: scroll; overflow-x: hidden; width: -webkit-fill-available; }
 .extra-network-cards .card { height: fit-content; margin: 0.5em; position: relative; scroll-snap-align: start; scroll-margin-top: 0; }
 .extra-network-cards .card .overlay { position: absolute; bottom: 0; padding: 0.2em; z-index: 10; width: 100%; background: none; }
 .extra-network-cards .card:hover .overlay { background: rgba(0, 0, 0, 0.40); }

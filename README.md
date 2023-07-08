@@ -67,6 +67,19 @@ Below is partial list of all available parameters, run `webui --help` for the fu
 
 ## Notes
 
+### **Extensions**
+
+SD.Next comes with several extensions pre-installed:
+
+- [Dyanmic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding)
+- [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
+- [Agent Scheduler](https://github.com/ArtVentureX/sd-webui-agent-scheduler)
+- [Multi-Diffusion Tiled Diffusion and VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111)
+- [LyCORIS](https://github.com/KohakuBlueleaf/a1111-sd-webui-lycoris)
+- [Image Browser](https://github.com/AlUlkesh/stable-diffusion-webui-images-browser)
+- [CLiP Interrogator](https://github.com/pharmapsychotic/clip-interrogator-ext)
+- [Rembg Background Removal](https://github.com/AUTOMATIC1111/stable-diffusion-webui-rembg)
+
 ### **Collab**
 
 - To avoid having this repo rely just on me, I'd love to have additional maintainers with full admin rights. If you're interested, ping me!  

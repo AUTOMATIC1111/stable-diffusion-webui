@@ -45,7 +45,7 @@ group.add_argument('--use-directml', default = False, action='store_true', help 
 group.add_argument("--use-cuda", default=False, action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")
 group.add_argument("--use-rocm", default=False, action='store_true', help="Force use AMD ROCm backend, default: %(default)s")
 group.add_argument('--subpath', type=str, help='Customize the URL subpath for usage with reverse proxy')
-group.add_argument('--backend', type=str, choices=[None, 'original', 'diffusers'], default=None, required=False, help='force backend type')
+group.add_argument('--backend', type=str, choices=['original', 'diffusers'], required=False, help='force model pipeline type')
 
 
 # removed args are added here as hidden in fixed format for compatbility reasons
@@ -90,6 +90,8 @@ def compatibility_args(opts, args):
     group.add_argument("--sub-quad-chunk-threshold", help=argparse.SUPPRESS, default=opts.sub_quad_chunk_threshold)
     group.add_argument("--lora-dir", help=argparse.SUPPRESS, default=opts.lora_dir)
     group.add_argument("--lyco-dir", help=argparse.SUPPRESS, default=opts.lyco_dir)
+    group.add_argument("--embeddings-dir", help=argparse.SUPPRESS, default=opts.embeddings_dir)
+    group.add_argument("--hypernetwork-dir", help=argparse.SUPPRESS, default=opts.hypernetwork_dir)
     group.add_argument("--lyco-patch-lora", help=argparse.SUPPRESS, default=opts.lyco_patch_lora)
     group.add_argument("--lyco-debug", help=argparse.SUPPRESS, action='store_true', default=False)
     group.add_argument("--enable-console-prompts", help=argparse.SUPPRESS, action='store_true', default=False)

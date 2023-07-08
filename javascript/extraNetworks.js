@@ -9,6 +9,7 @@ function setupExtraNetworksForTab(tabname) {
   const refresh = gradioApp().getElementById(`${tabname}_extra_refresh`);
   const description = gradioApp().getElementById(`${tabname}_description`);
   const close = gradioApp().getElementById(`${tabname}_extra_close`);
+  const en = gradioApp().getElementById(`${tabname}_extra_networks`);
   search.classList.add('search');
   description.classList.add('description');
   tabs.appendChild(refresh);
@@ -19,48 +20,46 @@ function setupExtraNetworksForTab(tabname) {
     searchTerm = search.value.toLowerCase();
     gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`).forEach((elem) => {
       text = `${elem.querySelector('.name').textContent.toLowerCase()} ${elem.querySelector('.search_term').textContent.toLowerCase()}`;
+      text = text.replace('models--', 'Diffusers')
       elem.style.display = text.indexOf(searchTerm) == -1 ? 'none' : '';
     });
   });
+
   intersectionObserver = new IntersectionObserver((entries) => {
-    // if (entries[0].intersectionRatio <= 0) onHidden();
-    const en = gradioApp().getElementById(`${tabname}_extra_networks`);
+    if (!en) return
+    for (el of Array.from(gradioApp().querySelectorAll('.extra-networks-page'))) el.style.height = window.opts.extra_networks_height + 'vh';
     if (entries[0].intersectionRatio > 0) {
-      for (el of Array.from(gradioApp().querySelectorAll('.extra-network-cards'))) {
-        const rect = el.getBoundingClientRect();
+      if (window.opts.extra_networks_card_cover === 'cover') {
+        en.style.transition = '';
+        en.style.zIndex = 9999;
+        en.style.position = 'absolute';
+        en.style.right = 'unset';
+        en.style.width = 'unset';
+        en.style.height = 'unset';
+        gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
+      } else if (window.opts.extra_networks_card_cover === 'sidebar') {
         en.style.transition = 'width 0.2s ease';
-        if (rect.top > 0) {
-          if (!en) return
-          if (window.opts.extra_networks_card_cover == 'cover') {
-            en.style.zIndex = 9999;
-            en.style.position = 'absolute';
-            en.style.right = 'unset';
-            en.style.width = 'unset';
-            el.style.height = document.body.offsetHeight - el.getBoundingClientRect().top + 'px'; 
-            gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
-          } if (window.opts.extra_networks_card_cover == 'sidebar') {
-            en.style.zIndex = 0;
-            en.style.position = 'absolute';
-            en.style.right = '0';
-            en.style.width = window.opts.extra_networks_sidebar_width + 'vw';
-            el.style.height = gradioApp().getElementById(`${tabname}_settings`).offsetHeight - 90 + 'px'; 
-            gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 100 - 2 - window.opts.extra_networks_sidebar_width + 'vw';
-          } else {
-            en.style.zIndex = 0;
-            en.style.position = 'relative';
-            en.style.right = 'unset';
-            en.style.width = 'unset';
-            el.style.height = window.innerHeight - el.getBoundingClientRect().top + 'px'; 
-            gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
-          }
-        }
+        en.style.zIndex = 0;
+        en.style.position = 'absolute';
+        en.style.right = '0';
+        en.style.width = window.opts.extra_networks_sidebar_width + 'vw';
+        en.style.height = '-webkit-fill-available'
+        gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 100 - 2 - window.opts.extra_networks_sidebar_width + 'vw';
+      } else {
+        en.style.transition = '';
+        en.style.zIndex = 0;
+        en.style.position = 'relative';
+        en.style.right = 'unset';
+        en.style.width = 'unset';
+        en.style.height = 'unset';
+        gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
       }
     } else {
       en.style.width = 0;
       gradioApp().getElementById(`${tabname}_settings`).parentNode.style.width = 'unset'
     }
   });
-  intersectionObserver.observe(search); // monitor visibility of 
+  intersectionObserver.observe(en); // monitor visibility of 
 }
 
 function setupExtraNetworks() {

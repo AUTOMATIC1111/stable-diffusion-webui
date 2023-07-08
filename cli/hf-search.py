@@ -11,9 +11,8 @@ if __name__ == "__main__":
     model_filter = hf.ModelFilter(
         model_name=keyword,
         task='text-to-image',
-        tags='stable-diffusion',
-        library=['diffusers', 'stable-diffusion'],
+        library=['diffusers'],
     )
     res = hf_api.list_models(filter=model_filter, full=True, limit=50, sort="downloads", direction=-1)
-    models = [{ 'name': m.modelId, 'downloads': m.downloads, 'mtime': m.lastModified, 'url': f'https://huggingface.co/{m.modelId}' } for m in res]
-    print('Online', models)
+    models = [{ 'name': m.modelId, 'downloads': m.downloads, 'mtime': m.lastModified, 'url': f'https://huggingface.co/{m.modelId}', 'pipeline': m.pipeline_tag, 'tags': m.tags } for m in res]
+    print(models)
