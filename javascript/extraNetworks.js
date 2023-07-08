@@ -27,7 +27,7 @@ function setupExtraNetworksForTab(tabname) {
 
   intersectionObserver = new IntersectionObserver((entries) => {
     if (!en) return
-    for (el of Array.from(gradioApp().querySelectorAll('.extra-network-cards'))) el.style.height = window.opts.extra_networks_height + 'vh';
+    for (el of Array.from(gradioApp().querySelectorAll('.extra-networks-page'))) el.style.height = window.opts.extra_networks_height + 'vh';
     if (entries[0].intersectionRatio > 0) {
       if (window.opts.extra_networks_card_cover === 'cover') {
         en.style.transition = '';

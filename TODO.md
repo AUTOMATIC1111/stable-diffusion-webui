@@ -63,3 +63,4 @@ Tech that can be integrated as part of the core workflow...
 - update `transformers`
 - `git submodule set-url extensions-builtin/clip-interrogator-ext https://github.com/Dahvikiin/clip-interrogator-ext.git`
 - upate `gradio`
+- extra network refresh breaks if new extra network type found

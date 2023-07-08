@@ -583,10 +583,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
 
     if op == 'model' or op == 'dict':
-        if model_data.sd_model is not None and checkpoint_info is not None (checkpoint_info.hash == model_data.sd_model.sd_checkpoint_info.hash): # trying to load the same model
+        if (model_data.sd_model is not None) and (checkpoint_info is not None) and (checkpoint_info.hash == model_data.sd_model.sd_checkpoint_info.hash): # trying to load the same model
             return
     else:
-        if model_data.sd_refiner is not None and checkpoint_info is not None and (checkpoint_info.hash == model_data.sd_refiner.sd_checkpoint_info.hash): # trying to load the same model
+        if (model_data.sd_refiner is not None) and (checkpoint_info is not None) and (checkpoint_info.hash == model_data.sd_refiner.sd_checkpoint_info.hash): # trying to load the same model
             return
 
     shared.log.debug(f'Diffusers load config: {diffusers_load_config}')
