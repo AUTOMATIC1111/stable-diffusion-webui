@@ -631,7 +631,7 @@ class LatentDiffusion(DDPM):
             weighting = weighting * L_weighting
         return weighting
 
-    def get_fold_unfold(self, x, kernel_size, stride, uf=1, df=1):  # todo load once not every time, shorten code
+    def get_fold_unfold(self, x, kernel_size, stride, uf=1, df=1):
         """
         :param x: img of size (bs, c, h, w)
         :return: n img crops of size (n, bs, c, kernel_size[0], kernel_size[1])
@@ -919,7 +919,7 @@ class LatentDiffusion(DDPM):
             z_list = [z[:, :, :, :, i] for i in range(z.shape[-1])]
 
             if self.cond_stage_key in ["image", "LR_image", "segmentation",
-                                       'bbox_img'] and self.model.conditioning_key:  # todo check for completeness
+                                       'bbox_img'] and self.model.conditioning_key:
                 c_key = next(iter(cond.keys()))  # get key
                 c = next(iter(cond.values()))  # get value
                 assert (len(c) == 1)  # todo extend to list with more than one elem
@@ -973,12 +973,11 @@ class LatentDiffusion(DDPM):
                 cond_list = [{'c_crossattn': [e]} for e in adapted_cond]
 
             else:
-                cond_list = [cond for i in range(z.shape[-1])]  # Todo make this more efficient
+                cond_list = [cond for i in range(z.shape[-1])]
 
             # apply model by loop over crops
             output_list = [self.model(z_list[i], t, **cond_list[i]) for i in range(z.shape[-1])]
-            assert not isinstance(output_list[0],
-                                  tuple)  # todo cant deal with multiple model outputs check this never happens
+            assert not isinstance(output_list[0], tuple)
 
             o = torch.stack(output_list, axis=-1)
             o = o * weighting

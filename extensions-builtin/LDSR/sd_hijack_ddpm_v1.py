@@ -958,7 +958,7 @@ class LatentDiffusionV1(DDPMV1):
                 cond_list = [{'c_crossattn': [e]} for e in adapted_cond]
 
             else:
-                cond_list = [cond for i in range(z.shape[-1])]  # Todo make this more efficient
+                cond_list = [cond for i in range(z.shape[-1])]
 
             # apply model by loop over crops
             output_list = [self.model(z_list[i], t, **cond_list[i]) for i in range(z.shape[-1])]

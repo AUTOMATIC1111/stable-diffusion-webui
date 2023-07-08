@@ -208,25 +208,32 @@ def git(arg: str, folder: str = None, ignore: bool = False):
         log.debug(f'Git output: {txt}')
     return txt
 
-
-# update switch to main branch as head can get detached and update repository
-def update(folder):
+# switch to main branch as head can get detached
+def branch(folder):
     if not os.path.exists(os.path.join(folder, '.git')):
         return
-    branch = git('branch', folder)
-    if 'main' in branch:
-        branch = 'main'
-    elif 'master' in branch:
-        branch = 'master'
+    b = git('branch', folder)
+    if 'main' in b:
+        b = 'main'
+    elif 'master' in b:
+        b = 'master'
     else:
-        branch = branch.split('\n')[0].replace('*', '').strip()
-    # log.debug(f'Setting branch: {folder} / {branch}')
-    git(f'checkout {branch}', folder)
+        b = b.split('\n')[0].replace('*', '').strip()
+    log.debug(f'Submodule: {folder} / {b}')
+    git(f'checkout {b}', folder, ignore=True)
+    return b
+
+
+# update git repository
+def update(folder, current_branch = False):
+    if current_branch:
+        git('pull --autostash --rebase --force', folder)
+        return
+    b = branch(folder)
     if branch is None:
         git('pull --autostash --rebase --force', folder)
     else:
-        git(f'pull origin {branch} --autostash --rebase --force', folder)
-    # branch = git('branch', folder)
+        git(f'pull origin {b} --autostash --rebase --force', folder)
 
 
 # clone git repository
@@ -528,7 +535,7 @@ def install_submodules():
         pr.enable()
     log.info('Verifying submodules')
     txt = git('submodule')
-    log.debug(f'Submodules list: {txt}')
+    # log.debug(f'Submodules list: {txt}')
     if 'no submodule mapping found' in txt:
         log.warning('Attempting repository recover')
         git('add .')
@@ -540,15 +547,16 @@ def install_submodules():
         txt = git('submodule')
         log.info('Continuing setup')
     git('submodule --quiet update --init --recursive')
-    if args.upgrade:
-        log.info('Updating submodules')
-        submodules = txt.splitlines()
-        for submodule in submodules:
-            try:
-                name = submodule.split()[1].strip()
+    submodules = txt.splitlines()
+    for submodule in submodules:
+        try:
+            name = submodule.split()[1].strip()
+            if args.upgrade:
                 update(name)
-            except Exception:
-                log.error(f'Error updating submodule: {submodule}')
+            else:
+                branch(name)
+        except Exception:
+            log.error(f'Error updating submodule: {submodule}')
     if args.profile:
         print_profile(pr, 'Submodule')
 
@@ -653,7 +661,7 @@ def check_version(offline=False, reset=True): # pylint: disable=unused-argument
                 try:
                     git('add .')
                     git('stash')
-                    update('.')
+                    update('.', current_branch=True)
                     # git('git stash pop')
                     ver = git('log -1 --pretty=format:"%h %ad"')
                     log.info(f'Upgraded to version: {ver}')

@@ -18,7 +18,7 @@
   ignore = dirty
 [submodule "extensions-builtin/clip-interrogator-ext"]
 	path = extensions-builtin/clip-interrogator-ext
-	url = https://github.com/pharmapsychotic/clip-interrogator-ext.git
+	url = https://github.com/Dahvikiin/clip-interrogator-ext.git
   ignore = dirty
 [submodule "extensions-builtin/sd-webui-controlnet"]
 	path = extensions-builtin/sd-webui-controlnet
