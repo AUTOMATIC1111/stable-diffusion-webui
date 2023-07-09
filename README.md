@@ -1,8 +1,11 @@
-<div align = "center">
+<div align="center">
   
 # SD.Next
+
 **Stable Diffusion implementation with advanced features**
+
 <br>  
+
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/vladmandic)
 ![Last Commit](https://img.shields.io/github/last-commit/vladmandic/automatic?svg=true)
 ![License](https://img.shields.io/github/license/vladmandic/automatic?svg=true)
@@ -15,7 +18,25 @@
 
 This project started as a fork from [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/) and it grew significantly since then, but although it diverged considerably, any substantial features to original work is ported to this repository as well.
 
-Individual features are not listed here, instead check [Changelog](CHANGELOG.md) for full list of changes.
+## Top-10 Differentiators
+
+All Individual features are not listed here, instead check [Changelog](CHANGELOG.md) for full list of changes.
+
+- Optimized backend with latest **torch** developments  
+  Including built-in support for `torch.compile`  
+- Support for `diffusers` as well as standard `ldm` backend  
+  Support for diffusers includes multiple models other than standard **Stable Diffusion**  
+  such as **SD-XL**, **Kandinsky**, **DeepFloyd IF** (and many more in the near future)  
+- Fully multiplatform with platform specific autodetection and tuning performed on install  
+- Improved prompt parser  
+- Enhanced Lora/Locon/Lyco code supporting latest trends in training  
+- Built-in queue management  
+- Advanced metadata caching and handling to speed up operations  
+- Enterprise level logging and hardened API  
+- Modern localization and hints engine  
+- Broad compatibility with extisting extensions ecosystem and new extensions manager  
+- Built in installer with automatic updates and dependency management  
+- Modernized UI (still based on Gradio) with theme support  
 
 ## Platform support
 
@@ -40,15 +61,19 @@ Individual features are not listed here, instead check [Changelog](CHANGELOG.md)
     - Uses `install.py` to handle all actual requirements and dependencies
 
 
-**Common Installation Errors or Problems**  
-[Common Installation Errors](https://github.com/vladmandic/automatic/discussions/1627)  
-[Q&A Discussions](https://github.com/vladmandic/automatic/discussions/1011)
+### Common Problems
 
-> Server can run without virtual environment, but it is recommended to use it to avoid library version conflicts with other applications  
+- [Common Installation Errors](https://github.com/vladmandic/automatic/discussions/1627)  
+- [Q&A Discussions](https://github.com/vladmandic/automatic/discussions/1011)
 
-> **nVidia/CUDA** and **AMD/ROCm** are auto-detected is present and available, but for any other use case specify required parameter explicitly or wrong packages may be installed as installer will assume CPU-only environment.
+### Installation Notes
 
-Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first.
+- Server can run without virtual environment,  
+  but it is recommended to use it to avoid library version conflicts with other applications  
+- **nVidia/CUDA** and **AMD/ROCm** are auto-detected is present and available,  
+   but for any other use case specify required parameter explicitly or wrong packages may be installed  
+  as installer will assume CPU-only environment.
+- Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first.
 
 Below is partial list of all available parameters, run `webui --help` for the full list:
 
