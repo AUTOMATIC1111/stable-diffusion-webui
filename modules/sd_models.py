@@ -718,7 +718,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 shared.log.info("Model compile enabled: IPEX Optimize Graph Mode")
             sd_model.unet.training = False
             sd_model.to(devices.device)
-            sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True,
+            sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True, # pylint: disable=attribute-defined-outside-init
             graph_mode=True if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex' else False)
             shared.log.info("Applied IPEX Optimize")
         if shared.opts.cuda_compile and torch.cuda.is_available():

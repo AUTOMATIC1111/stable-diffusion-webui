@@ -12,7 +12,7 @@ from modules.paths import script_path, models_path
 diffuser_repos = []
 
 
-def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None):
+def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None, variant = None, revision = None, mirror = None):
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
 
@@ -25,7 +25,13 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         }
     if cache_dir is not None:
         download_config["cache_dir"] = cache_dir
-    shared.log.debug(f"Diffusers downloading: {hub_id} to {cache_dir}")
+    if variant is not None and len(variant) > 0:
+        download_config["variant"] = variant
+    if revision is not None and len(revision) > 0:
+        download_config["revision"] = revision
+    if mirror is not None and len(mirror) > 0:
+        download_config["mirror"] = mirror
+    shared.log.debug(f"Diffusers downloading: {hub_id} {download_config}")
     if token is not None and len(token) > 2:
         shared.log.debug(f"Diffusers authentication: {token}")
         hf.login(token)

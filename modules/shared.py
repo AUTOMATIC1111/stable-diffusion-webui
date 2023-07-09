@@ -361,6 +361,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_allow_safetensors": OptionInfo(False, 'Diffusers allow loading from safetensors files'),
     "diffusers_pipeline": OptionInfo(pipelines[0], 'Select diffuser pipeline when loading from safetensors', gr.Dropdown, lambda: {"choices": pipelines}),
+    "diffusers_move_base": OptionInfo(False, "Move base model to CPU when using refiner"),
+    "diffusers_move_refiner": OptionInfo(True, "Move refiner model to CPU when not in use"),
     "diffusers_extract_ema": OptionInfo(True, "Use model EMA weights when possible"),
     "diffusers_generator_device": OptionInfo("default", "Generator device", gr.Radio, lambda: {"choices": ["default", "cpu"]}),
     "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload"),

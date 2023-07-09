@@ -61,14 +61,12 @@ def create_paths(opts):
                 pass
 
     def fix_path(folder):
-        if opts.data[folder] is None or opts.data[folder] == '':
-            return opts.data[folder]
-        if os.path.isabs(opts.data[folder]):
-            return opts.data[folder]
-        if opts.data[folder].startswith(data_path):
-            return opts.data[folder]
+        if opts.data.get(folder, None) is None or opts.data[folder] is None or opts.data[folder] == '':
+            return
+        if os.path.isabs(opts.data[folder]) or opts.data[folder].startswith(data_path):
+            return
         opts.data[folder] = os.path.join(data_path, opts.data[folder])
-        return opts.data[folder]
+        return
 
     create_path(fix_path('temp_dir'))
     create_path(extensions_dir)

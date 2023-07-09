@@ -64,3 +64,4 @@ Tech that can be integrated as part of the core workflow...
 - `git submodule set-url extensions-builtin/clip-interrogator-ext https://github.com/Dahvikiin/clip-interrogator-ext.git`
 - upate `gradio`
 - extra network refresh breaks if new extra network type found
+- [sd-xl lora](https://civitai.com/models/104913/fcstyledxl)

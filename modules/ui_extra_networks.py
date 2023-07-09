@@ -316,11 +316,10 @@ def create_ui(container, button, tabname, skip_indexing = False):
 
         for page in ui.stored_extra_pages:
             page_html = page.create_html(ui.tabname, skip_indexing)
-            if len(page_html) > 0:
-                with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
-                    page_elem = gr.HTML(page_html, elem_id=tabname+page.name+"_extra_page", elem_classes="extra-networks-page")
-                    page_elem.change(fn=lambda: None, _js=f'() => refreshExtraNetworks("{tabname}")', inputs=[], outputs=[])
-                    ui.pages.append(page_elem)
+            with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
+                page_elem = gr.HTML(page_html, elem_id=tabname+page.name+"_extra_page", elem_classes="extra-networks-page")
+                page_elem.change(fn=lambda: None, _js=f'() => refreshExtraNetworks("{tabname}")', inputs=[], outputs=[])
+                ui.pages.append(page_elem)
 
     def toggle_visibility(is_visible):
         is_visible = not is_visible

@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
   modalImage.tabIndex = 0;
   modalImage.addEventListener('keydown', modalKeyHandler, true);
   modalPreviewZone.appendChild(modalImage);
-  modalImage.onload = () => panzoom(modalImage, { zoomSpeed: 0.025, minZoom: 0.25, maxZoom: 4.0 });
+  modalImage.onload = () => panzoom(modalImage, { zoomSpeed: 0.05, minZoom: 0.25, maxZoom: 4.0 });
 
   let drag = false;
   modalPreviewZone.addEventListener('mousedown', () => drag = false);
@@ -209,7 +209,6 @@ document.addEventListener('DOMContentLoaded', () => {
   modalPrev.addEventListener('click', modalPrevImage, true);
   modalPrev.addEventListener('keydown', modalKeyHandler, true);
   modal.appendChild(modalPrev);
-
   modal.appendChild(modalPreviewZone);
 
   const modalNext = document.createElement('a');
@@ -218,7 +217,6 @@ document.addEventListener('DOMContentLoaded', () => {
   modalNext.tabIndex = 0;
   modalNext.addEventListener('click', modalNextImage, true);
   modalNext.addEventListener('keydown', modalKeyHandler, true);
-
   modal.appendChild(modalNext);
 
   try { gradioApp().appendChild(modal); } catch (e) { gradioApp().body.appendChild(modal); }
