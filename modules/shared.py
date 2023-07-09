@@ -391,7 +391,6 @@ options_templates.update(options_section(('system', "System"), {
     "print_hypernet_extra": OptionInfo(False, "Print extra hypernetwork information to console."),
     "list_hidden_files": OptionInfo(True, "Load models/files in hidden directories").info("directory is hidden if its name starts with \".\""),
     "disable_mmap_load_safetensors": OptionInfo(False, "Disable memmapping for loading .safetensors files.").info("fixes very slow loading speed in some cases"),
-    "github_proxy": OptionInfo("None", "Github proxy", ui_components.DropdownEditable, lambda: {"choices": ["None", "ghproxy.com", "hub.yzuu.cf", "hub.njuu.cf", "hub.nuaa.cf"]}).info("for custom inputs will just replace github.com with the input"),
 }))
 
 options_templates.update(options_section(('training', "Training"), {
