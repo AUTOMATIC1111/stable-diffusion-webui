@@ -591,6 +591,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
     shared.log.debug(f'Diffusers load config: {diffusers_load_config}')
     sd_model = None
+    base_sent_to_cpu=False
     try:
         devices.set_cuda_params()
         if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
@@ -713,14 +714,31 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if shared.opts.opt_channelslast:
             shared.log.debug('Diffusers: enable channels last')
             sd_model.unet.to(memory_format=torch.channels_last)
+
         if devices.backend == 'ipex':
+            sd_model.unet.training = False
             if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex':
                 shared.log.info("Model compile enabled: IPEX Optimize Graph Mode")
-            sd_model.unet.training = False
-            sd_model.to(devices.device)
+            if op == 'refiner':
+                gpu_vram = memory_stats().get('gpu', {})
+                if (gpu_vram.get('total', 0) - gpu_vram.get('used', 0)) >= 7 if "StableDiffusionXL" in sd_model.__class__.__name__ else 3.5:
+                    sd_model.to(devices.device)
+                    base_sent_to_cpu=False
+                else:
+                    shared.log.info(f"Not enough VRAM to optimize refiner, using RAM as fallback. Free VRAM: {gpu_vram.get('total', 0) - gpu_vram.get('used', 0)} GB")
+                    shared.log.debug('Moving base model to CPU')
+                    model_data.sd_model.to("cpu")
+                    devices.torch_gc(force=True)
+                    sd_model.to(devices.device)
+                    base_sent_to_cpu=True
+                    shared.opts.diffusers_move_base=True
+                    shared.opts.diffusers_move_refiner=True
+            else:
+                sd_model.to(devices.device)
             sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True, # pylint: disable=attribute-defined-outside-init
             graph_mode=True if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex' else False)
             shared.log.info("Applied IPEX Optimize")
+
         if shared.opts.cuda_compile and torch.cuda.is_available():
             sd_model.to(devices.device)
             import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
@@ -739,7 +757,14 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         sd_model.sd_checkpoint_info = checkpoint_info # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_checkpoint = checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_hash = checkpoint_info.hash # pylint: disable=attribute-defined-outside-init
-        sd_model.to(devices.device)
+        if op == 'refiner' and shared.opts.diffusers_move_refiner:
+            shared.log.debug('Moving refiner model to CPU')
+            sd_model.to("cpu")
+        else:
+            sd_model.to(devices.device)
+        if op == 'refiner' and base_sent_to_cpu:
+            shared.log.debug('Moving base model back to GPU')
+            model_data.sd_model.to(devices.device)
     except Exception as e:
         shared.log.error("Failed to load diffusers model")
         errors.display(e, "loading Diffusers model")
