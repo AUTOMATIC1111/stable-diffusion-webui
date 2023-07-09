@@ -1,9 +1,12 @@
 // A full size 'lightbox' preview modal shown when left clicking on gallery previews
+let previewTimestamp = Date.now();
+let previewDrag = false;
+
 function closeModal() {
+  if (previewDrag) return;
+  if ((Date.now() - previewTimestamp) < 250) return
   gradioApp().getElementById('lightboxModal').style.display = 'none';
 }
-
-let preventImmediateClose = false;
 
 function showModal(event) {
   const source = event.target || event.srcElement;
@@ -15,14 +18,9 @@ function showModal(event) {
   lb.focus();
   const tabTxt2Img = gradioApp().getElementById('tab_txt2img');
   const tabImg2Img = gradioApp().getElementById('tab_img2img');
-  // show the save button in modal only on txt2img or img2img tabs
   if (tabTxt2Img.style.display != 'none' || tabImg2Img.style.display != 'none') gradioApp().getElementById('modal_save').style.display = 'inline';
   else gradioApp().getElementById('modal_save').style.display = 'none';
-  
-  preventImmediateClose = true
-  setTimeout(() => {
-    preventImmediateClose = false
-  }, 100)
+  previewTimestamp = Date.now()
   event.stopPropagation();
 }
 
@@ -196,11 +194,13 @@ document.addEventListener('DOMContentLoaded', () => {
   modalPreviewZone.appendChild(modalImage);
   modalImage.onload = () => panzoom(modalImage, { zoomSpeed: 0.05, minZoom: 0.25, maxZoom: 4.0 });
 
-  let drag = false;
-  modalPreviewZone.addEventListener('mousedown', () => drag = false);
-  modalPreviewZone.addEventListener('mousemove', () => drag = true);
-  modalPreviewZone.addEventListener('scroll', () => drag = true);
-  modalPreviewZone.addEventListener('mouseup', () => { if (!(drag || preventImmediateClose)) closeModal(); });
+  modalPreviewZone.addEventListener('mousedown', () => previewDrag = false);
+  modalPreviewZone.addEventListener('touchstart', () => previewDrag = false);
+  modalPreviewZone.addEventListener('mousemove', () => previewDrag = true);
+  modalPreviewZone.addEventListener('touchmove', () => previewDrag = true);
+  modalPreviewZone.addEventListener('scroll', () => previewDrag = true);
+  modalPreviewZone.addEventListener('mouseup', () => closeModal());
+  modalPreviewZone.addEventListener('touchend', () => closeModal());
   
   const modalPrev = document.createElement('a');
   modalPrev.className = 'modalPrev';
