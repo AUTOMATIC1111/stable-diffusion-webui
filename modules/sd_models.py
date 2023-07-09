@@ -713,7 +713,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if shared.opts.opt_channelslast:
             shared.log.debug('Diffusers: enable channels last')
             sd_model.unet.to(memory_format=torch.channels_last)
-        if devices.backend == 'ipex' and not ("StableDiffusion" in sd_model.__class__.__name__ and not "StableDiffusionXL" in sd_model.__class__.__name__):
+        if devices.backend == 'ipex':
+            if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex':
+                shared.log.info("Model compile enabled: IPEX Optimize Graph Mode")
+            sd_model.unet.training = False
             sd_model.to(devices.device)
             sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True,
             graph_mode=True if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex' else False)
