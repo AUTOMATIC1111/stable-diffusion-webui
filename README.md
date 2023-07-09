@@ -39,6 +39,11 @@ Individual features are not listed here, instead check [Changelog](CHANGELOG.md)
     - Starts `sdnext.py` in a Python virtual environment (`venv`)  
     - Uses `install.py` to handle all actual requirements and dependencies
 
+
+**Common Installation Errors or Problems**  
+[Common Installation Errors](https://github.com/vladmandic/automatic/discussions/1627)  
+[Q&A Discussions](https://github.com/vladmandic/automatic/discussions/1011)
+
 > Server can run without virtual environment, but it is recommended to use it to avoid library version conflicts with other applications  
 
 > **nVidia/CUDA** and **AMD/ROCm** are auto-detected is present and available, but for any other use case specify required parameter explicitly or wrong packages may be installed as installer will assume CPU-only environment.
