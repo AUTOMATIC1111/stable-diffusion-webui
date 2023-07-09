@@ -1,10 +1,11 @@
 # Change Log for SD.Next
 
 - fix startup issue with incorrect config
-- image viewer: fixes for non-chromium browsers
+- image viewer: fixes for non-chromium browsers and mobile users and add option to download image
 - extra network: fix corrupt display on refesh when new extra network type found
 - diffusers: option to move base and/or refiner model to cpu to free up vram
 - diffusers: model downloader options to specify model variant/revision/mirror
+- diffusers: updated hints for settings
 
 ## Update for 07/08/2023
 

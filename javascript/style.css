@@ -394,50 +394,13 @@ div#extras_scale_to_tab div.form{
     flex-direction: row;
 }
 
-.modalControls {
-    display: flex;
-    gap: 1em;
-    padding: 1em;
-    background-color: rgba(0,0,0,0.2);
-    position: absolute;
-    width: fit-content;
-    z-index: 1;
-}
-
-.modalClose {
-    margin-left: auto;
-}
-
-.modalControls span{
-    color: white;
-    font-size: 35px;
-    font-weight: bold;
-    cursor: pointer;
-    width: 1em;
-}
-
-.modalControls span:hover, .modalControls span:focus{
-    color: #999;
-    text-decoration: none;
-}
-.lightboxModalPreviewZone {
-    display: flex;
-    width: 100%;
-    height: 100%;
-}
-.lightboxModalPreviewZone > img {
-    display: block;
-    margin: auto;
-    width: auto;
-}
-
-.lightboxModalPreviewZone > img.modalImageFullscreen{
-    object-fit: contain;
-    height: 100%;
-    width: 100%;
-    min-height: 0;
-    background: transparent;
-}
+.modalControls { display: flex; justify-content: space-evenly; background-color: transparent; position: absolute; width: -webkit-fill-available; z-index: 1; }
+.modalControls:hover { background-color: #50505050; }
+.modalControls span { color: white; font-size: 2em; font-weight: bold; cursor: pointer; filter: grayscale(100%); }
+.modalControls span:hover, .modalControls span:focus { color: var(--highlight-color); filter: none; }
+.lightboxModalPreviewZone { display: flex; width: 100%; height: 100%; }
+.lightboxModalPreviewZone > img { display: block; margin: auto; width: auto; }
+.lightboxModalPreviewZone > img.modalImageFullscreen{ object-fit: contain;  height: 100%; width: 100%; min-height: 0; background: transparent; }
 
 table.settings-value-table{
   background: white;
