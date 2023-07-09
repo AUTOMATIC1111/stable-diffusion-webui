@@ -355,7 +355,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
-    "disable_gc": OptionInfo(True, "Disable Torch memory garbage collection on each generation"),
+    "disable_gc": OptionInfo(True, "Disable Torch memory garbage collection"),
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
