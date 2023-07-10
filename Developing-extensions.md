@@ -56,7 +56,8 @@ modules.sd_hijack.model_hijack.embedding_db.add_embedding_dir(path)
 ## User Examples
 https://github.com/udon-universe/stable-diffusion-webui-extension-templates \
 https://github.com/AliceQAQ/sd-webui-gradio-demo \
-https://github.com/wcdnail/sd-web-ui-wexperimental
+https://github.com/wcdnail/sd-web-ui-wexperimental \
+https://github.com/EnsignMK/ExampleSendText
 
 ## Official Extension Index
 - Add extensions here - https://github.com/AUTOMATIC1111/stable-diffusion-webui-extensions
