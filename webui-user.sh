@@ -46,3 +46,5 @@
 #export NO_TCMALLOC="True"
 
 ###########################################
+export K_DIFFUSION_REPO="https://github.com/dongyang-mt/k-diffusion.git"
+export K_DIFFUSION_COMMIT_HASH="3c49d10d1facbcbb46897116362223806f628344"

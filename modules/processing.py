@@ -451,7 +451,7 @@ def slerp(val, low, high):
     if dot.mean() > 0.9995:
         return low * val + high * (1 - val)
 
-    omega = torch.acos(dot)
+    omega = torch.acos(dot.to('cpu')).to('musa')
     so = torch.sin(omega)
     res = (torch.sin((1.0-val)*omega)/so).unsqueeze(1)*low + (torch.sin(val*omega)/so).unsqueeze(1) * high
     return res

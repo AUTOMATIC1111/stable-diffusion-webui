@@ -3,6 +3,7 @@ import contextlib
 from functools import lru_cache
 
 import torch
+import torch_musa
 from modules import errors
 
 if sys.platform == "darwin":
@@ -33,6 +34,9 @@ def get_cuda_device_string():
 
 
 def get_optimal_device_name():
+    if torch.musa.is_available():
+        return torch.device("musa")
+
     if torch.cuda.is_available():
         return get_cuda_device_string()
 

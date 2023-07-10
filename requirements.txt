@@ -26,7 +26,7 @@ safetensors
 scikit-image>=0.19
 timm
 tomesd
-torch
+#torch
 torchdiffeq
 torchsde
 transformers==4.25.1
