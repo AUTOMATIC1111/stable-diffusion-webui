@@ -16,6 +16,7 @@ from tools.mgo import MongoClient
 from tools.host import get_host_ip
 from tools.redis import RedisPool
 from worker.task import TaskProgress
+from tools.environment import pod_host
 
 
 class DumpInfo:
@@ -62,7 +63,7 @@ class TaskDumper(Thread):
 
         super(TaskDumper, self).__init__(name='task-dumper')
         self.db = db
-        self.ip = get_host_ip()
+        self.ip = pod_host() or get_host_ip()
         self.send_delay = 10
         self.queue = queue.Queue(maxsize=100)
         self._stop_flag = False

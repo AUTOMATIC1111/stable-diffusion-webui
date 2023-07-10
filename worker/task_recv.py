@@ -25,7 +25,7 @@ from collections import defaultdict
 from tools.model_hist import CkptLoadRecorder
 from tools.gpu import GpuInfo
 from tools.wrapper import timed_lru_cache
-from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, \
+from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, pod_host,\
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
 try:
@@ -118,7 +118,7 @@ class TaskReceiver:
         self.redis_pool = RedisPool()
         self.clean_tmp_time = time.time()
         self.train_only = train_only
-        self.worker_id = self._worker_id()
+        # self.worker_id = self._worker_id()
         self.is_elastic = is_flexible_worker()
         self.recorder = TaskReceiverRecorder()
 
@@ -142,18 +142,25 @@ class TaskReceiver:
         self.register_time = 0
         self.local_cache = {}
 
-    def _worker_id(self):
+    @property
+    def worker_id(self):
         group_id = get_worker_group()
         nvidia_video_card_id = '&'.join(GpuInfo().names)
 
         # int(str(uuid.uuid1())[-4:], 16)
         if not nvidia_video_card_id:
-            nvidia_video_card_id = uuid.uuid1()
+            hostname = pod_host()
+            nvidia_video_card_id = hostname or uuid.uuid1()
         else:
-            hash_md5 = hashlib.md5()
+            hostname = pod_host()
             index = nvidia_video_card_id.index("GPU")
-            hash_md5.update(nvidia_video_card_id.encode())
-            nvidia_video_card_id = nvidia_video_card_id[:index] + hash_md5.hexdigest()[:8] + "-" + uuid.uuid4().hex
+
+            if not hostname:
+                hash_md5 = hashlib.md5()
+                hash_md5.update(nvidia_video_card_id.encode())
+                nvidia_video_card_id = nvidia_video_card_id[:index] + hash_md5.hexdigest()[:8] + "-" + uuid.uuid4().hex
+            else:
+                nvidia_video_card_id = nvidia_video_card_id[:index] + "-" + hostname
         nvidia_video_card_id = nvidia_video_card_id.replace("(", "-").replace(")", "")
 
         if is_flexible_worker():
@@ -325,6 +332,7 @@ class TaskReceiver:
 
                 # 释放弹性资源，不再获取任务主动
                 if self.release_elastic_res_state():
+                    logger.info("release elastic resource...")
                     task = None
                     time.sleep(1)
                 else:
@@ -369,7 +377,7 @@ class TaskReceiver:
         now = int(time.time())
         rds = self.redis_pool.get_connection()
         keys = rds.zrangebyscore(SDWorkerZset, now - 300, now)
-        worker_ids = [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
+        worker_ids = [k.decode('utf8').replace("-", "") if isinstance(k, bytes) else k for k in keys]
 
         worker_ids = sorted(worker_ids, key=lambda x: int(x[-8:], 16))
         return worker_ids
@@ -396,10 +404,11 @@ class TaskReceiver:
                 if url:
                     try:
                         resp = requests.get(url, timeout=5)
-                        json_data = resp.json()
+                        json_data = resp.json() or {}
                         group = get_worker_group()
-                        if group in json_data:
-                            self.release_flag = json_data[group] == 0
+                        auto_scaler = json_data.get('auto_scaler')
+                        if auto_scaler and group in auto_scaler:
+                            self.release_flag = auto_scaler[group] == 0
                     except:
                         self.release_flag = False
         else:

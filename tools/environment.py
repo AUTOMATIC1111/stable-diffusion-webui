@@ -44,11 +44,16 @@ Env_Flexible_Res_Token = "FLEXIBLE_RESOURCE"
 # 工作状态FILE记录路径
 Env_Worker_State_File = "WORKER_STATE_FILE_PATH"
 Env_GSS_Count_API = "GSS_COUNT_API"
+Env_HostName = "hostname"
 cache = {}
 
 
 def is_flexible_worker():
     return os.getenv(Env_Flexible_Res_Token, "") != ""
+
+
+def pod_host():
+    return os.getenv(Env_HostName)
 
 
 def get_gss_count_api():
