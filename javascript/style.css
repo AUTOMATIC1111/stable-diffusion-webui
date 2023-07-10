@@ -551,6 +551,6 @@ div.controlnet_main_options { display: grid; grid-template-columns: 1fr 1fr; gri
 .logo { background-image: url("logo.png") !important; background-repeat: no-repeat !important; background-position: center !important; background-size: contain !important; }
 
 /* Workaround for Gradio dropdowns capturing clicks during and after fadeout */
-.gradio-dropdown > label > div > :not(.showOptions) ~ ul.options {
+.gradio-dropdown > label > div > div:first-child:not(.showOptions) ~ ul.options {
   pointer-events: none;
 }
