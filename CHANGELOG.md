@@ -2,12 +2,16 @@
 
 ## Update for 07/10/2023
 
+Service release with some fixes and enhancements:
+
 - diffusers:
   - option to move base and/or refiner model to cpu to free up vram  
   - model downloader options to specify model variant / revision / mirror  
   - now you can download `fp16` variant directly for reduced memory footprint  
+  - basic **img2img** workflow (*sketch* and *inpaint* are not supported yet)  
+    note that **sd-xl** img2img workflows are architecturaly different so it will take longer to implement  
   - updated hints for settings  
-- extra network:
+- extra networks:
   - fix corrupt display on refesh when new extra network type found  
   - additional ui tweaks  
   - generate thumbnails from previews only if preview resolution is above 1k

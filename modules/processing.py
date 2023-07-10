@@ -225,14 +225,13 @@ class StableDiffusionProcessing:
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
         if backend == Backend.DIFFUSERS:
             log.warning('Diffusers not implemented: img2img_image_conditioning')
-            return None
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image)
-        if self.sd_model.cond_stage_key == "edit":
+        if hasattr(self.sd_model, 'cond_stage_key') and self.sd_model.cond_stage_key == "edit":
             return self.edit_image_conditioning(source_image)
-        if self.sampler.conditioning_key in {'hybrid', 'concat'}:
+        if hasattr(self.sampler, 'conditioning_key') and self.sampler.conditioning_key in {'hybrid', 'concat'}:
             return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
-        if self.sampler.conditioning_key == "crossattn-adm":
+        if hasattr(self.sampler, 'conditioning_key') and self.sampler.conditioning_key == "crossattn-adm":
             return self.unclip_image_conditioning(source_image)
         # Dummy zero conditioning if we're not using inpainting or depth model.
         return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
@@ -752,7 +751,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 x_samples_ddim = output.images
 
-                if p.enable_hr:
+                if p.is_hr_pass:
                     log.warning('Diffusers not implemented: hires fix')
 
                 if lora_state['active']:
@@ -1130,8 +1129,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if backend == Backend.ORIGINAL:
             self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
         else:
-            # we don't pre-encode the latents for diffusers to allow the UI to stay general for different model types
-            self.init_latent = None
+            # TODO Diffusers don't pre-encode the latents for diffusers to allow the UI to stay general for different model types
+            self.init_latent = torch.Tensor(1)
 
         if self.resize_mode == 3:
             self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")

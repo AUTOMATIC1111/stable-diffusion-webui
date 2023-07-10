@@ -806,12 +806,21 @@ def set_diffuser_pipe(pipe, new_pipe_type):
 
     pipe_name = pipe.__class__.__name__
     pipe_name = pipe_name.replace("Img2Img", "").replace("Inpaint", "")
+    new_pipe_cls_str = None
     if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
         new_pipe_cls_str = pipe_name
     elif new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE:
-        new_pipe_cls_str = pipe_name.replace("Pipeline", "Img2ImgPipeline")
+        tmp_pipe_name = pipe_name.replace("Pipeline", "Img2ImgPipeline")
+        if hasattr(diffusers, tmp_pipe_name):
+            new_pipe_cls_str = pipe_name.replace("Pipeline", "Img2ImgPipeline")
     elif new_pipe_type == DiffusersTaskType.INPAINTING:
-        new_pipe_cls_str = pipe_name.replace("Pipeline", "InpaintPipeline")
+        tmp_pipe_name = pipe_name.replace("Pipeline", "InpaintPipeline")
+        if hasattr(diffusers, tmp_pipe_name):
+            new_pipe_cls_str = pipe_name.replace("Pipeline", "InpaintPipeline")
+
+    if new_pipe_cls_str is None:
+        shared.log.warning(f'Diffusers unknown pipeline: {tmp_pipe_name}')
+        new_pipe_cls_str = pipe_name
 
     new_pipe_cls = getattr(diffusers, new_pipe_cls_str)
 
