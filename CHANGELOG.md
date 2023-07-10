@@ -1,11 +1,22 @@
 # Change Log for SD.Next
 
-- fix startup issue with incorrect config
-- image viewer: fixes for non-chromium browsers and mobile users and add option to download image
-- extra network: fix corrupt display on refesh when new extra network type found
-- diffusers: option to move base and/or refiner model to cpu to free up vram
-- diffusers: model downloader options to specify model variant/revision/mirror
-- diffusers: updated hints for settings
+## Update for 07/10/2023
+
+- diffusers:
+  - option to move base and/or refiner model to cpu to free up vram  
+  - model downloader options to specify model variant / revision / mirror  
+  - now you can download `fp16` variant directly for reduced memory footprint  
+  - updated hints for settings  
+- extra network:
+  - fix corrupt display on refesh when new extra network type found  
+  - additional ui tweaks  
+  - generate thumbnails from previews only if preview resolution is above 1k
+- image viewer:
+  - fixes for non-chromium browsers and mobile users and add option to download image  
+  - option to download image directly from image viewer
+- general
+  - fix startup issue with incorrect config  
+  - installer should always check requirements on upgrades
 
 ## Update for 07/08/2023
 

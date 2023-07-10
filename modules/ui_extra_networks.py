@@ -136,11 +136,12 @@ class ExtraNetworksPage:
                 continue
             try:
                 img = Image.open(f)
-                img = img.convert('RGB')
-                img.thumbnail((512, 512), Image.HAMMING)
-                img.save(fn)
-                img.close()
-                created += 1
+                if img.width > 1024 or img.height > 1024:
+                    img = img.convert('RGB')
+                    img.thumbnail((512, 512), Image.HAMMING)
+                    img.save(fn)
+                    img.close()
+                    created += 1
             except Exception as e:
                 shared.log.error(f'Extra network error creating thumbnail: {f} {e}')
         if len(self.missing_thumbs) > 0:
@@ -305,8 +306,8 @@ def create_ui(container, button, tabname, skip_indexing = False):
     with gr.Tabs(elem_id=tabname+"_extra_tabs"):
         button_refresh = ToolButton(refresh_symbol, elem_id=tabname+"_extra_refresh")
         button_close = ToolButton(close_symbol, elem_id=tabname+"_extra_close")
-        ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=True, elem_classes="textbox")
-        ui.description = gr.TextArea('', show_label=False, elem_id=tabname+"_description", placeholder="Save/Replace Extra Network Description...", lines=2, elem_classes="textbox")
+        ui.search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", elem_classes="textbox", lines=1)
+        ui.description = gr.TextArea('', show_label=False, elem_id=tabname+"_description", placeholder="Save/Replace Extra Network Description...", elem_classes="textbox", lines=1)
 
         ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
         ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)

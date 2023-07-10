@@ -14,8 +14,11 @@ function setupExtraNetworksForTab(tabname) {
   description.classList.add('description');
   tabs.appendChild(refresh);
   tabs.appendChild(close);
-  tabs.appendChild(search);
-  tabs.appendChild(description);
+  div = document.createElement('div');
+  div.classList.add('second-line');
+  tabs.appendChild(div);
+  div.appendChild(search);
+  div.appendChild(description);
   search.addEventListener('input', (evt) => {
     searchTerm = search.value.toLowerCase();
     gradioApp().querySelectorAll(`#${tabname}_extra_tabs div.card`).forEach((elem) => {

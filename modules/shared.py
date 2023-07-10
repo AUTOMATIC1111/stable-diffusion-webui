@@ -591,7 +591,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
 options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "ui_extra_networks_tab_reorder": OptionInfo("Checkpoints, Lora, LyCORIS, Textual Inversion, Hypernetworks", "Extra networks tab order"),
     "extra_networks_card_cover": OptionInfo("inline", "UI position", gr.Radio, lambda: {"choices": ["cover", "inline", "sidebar"]}),
-    "extra_networks_height": OptionInfo(47, "UI height (%)", gr.Slider, {"minimum": 10, "maximum": 100, "step": 1}),
+    "extra_networks_height": OptionInfo(53, "UI height (%)", gr.Slider, {"minimum": 10, "maximum": 100, "step": 1}),
     "extra_networks_sidebar_width": OptionInfo(35, "UI sidebar width (%)", gr.Slider, {"minimum": 10, "maximum": 80, "step": 1}),
     "extra_networks_card_lazy": OptionInfo(True, "UI card preview lazy loading"),
     "extra_networks_card_size": OptionInfo(200, "UI card size (px)", gr.Slider, {"minimum": 20, "maximum": 2000, "step": 1}),

@@ -178,7 +178,7 @@ def pip(arg: str, ignore: bool = False, quiet: bool = False):
 
 # install package using pip if not already installed
 def install(package, friendly: str = None, ignore: bool = False):
-    if args.reinstall:
+    if args.reinstall or args.upgrade:
         global quick_allowed # pylint: disable=global-statement
         quick_allowed = False
     if args.use_ipex and package == "pytorch_lightning==1.9.4":
