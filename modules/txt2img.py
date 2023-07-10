@@ -1,3 +1,5 @@
+from contextlib import closing
+
 import modules.scripts
 from modules import sd_samplers, processing
 from modules.generation_parameters_copypaste import create_override_settings_dict
@@ -53,12 +55,11 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
     if cmd_opts.enable_console_prompts:
         print(f"\ntxt2img: {prompt}", file=shared.progress_print_out)
 
-    processed = modules.scripts.scripts_txt2img.run(p, *args)
+    with closing(p):
+        processed = modules.scripts.scripts_txt2img.run(p, *args)
 
-    if processed is None:
-        processed = processing.process_images(p)
-
-    p.close()
+        if processed is None:
+            processed = processing.process_images(p)
 
     shared.total_tqdm.clear()
 

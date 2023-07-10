@@ -1,4 +1,5 @@
 import os
+from contextlib import closing
 from pathlib import Path
 
 import numpy as np
@@ -217,18 +218,17 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     if mask:
         p.extra_generation_params["Mask blur"] = mask_blur
 
-    if is_batch:
-        assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
+    with closing(p):
+        if is_batch:
+            assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
-        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by, use_png_info=img2img_batch_use_png_info, png_info_props=img2img_batch_png_info_props, png_info_dir=img2img_batch_png_info_dir)
+            process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by, use_png_info=img2img_batch_use_png_info, png_info_props=img2img_batch_png_info_props, png_info_dir=img2img_batch_png_info_dir)
 
-        processed = Processed(p, [], p.seed, "")
-    else:
-        processed = modules.scripts.scripts_img2img.run(p, *args)
-        if processed is None:
-            processed = process_images(p)
-
-    p.close()
+            processed = Processed(p, [], p.seed, "")
+        else:
+            processed = modules.scripts.scripts_img2img.run(p, *args)
+            if processed is None:
+                processed = process_images(p)
 
     shared.total_tqdm.clear()
 
