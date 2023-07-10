@@ -721,18 +721,21 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 shared.log.info("Model compile enabled: IPEX Optimize Graph Mode")
             if op == 'refiner':
                 gpu_vram = memory_stats().get('gpu', {})
-                if (gpu_vram.get('total', 0) - gpu_vram.get('used', 0)) >= 7 if "StableDiffusionXL" in sd_model.__class__.__name__ else 3.5:
+                if not shared.opts.diffusers_move_base and (gpu_vram.get('total', 0) - gpu_vram.get('used', 0)) >= 7 if "StableDiffusionXL" in sd_model.__class__.__name__ else 3.5:
                     sd_model.to(devices.device)
                     base_sent_to_cpu=False
                 else:
-                    shared.log.info(f"Not enough VRAM to optimize refiner, using RAM as fallback. Free VRAM: {gpu_vram.get('total', 0) - gpu_vram.get('used', 0)} GB")
+                    if shared.opts.diffusers_move_base:
+                        pass
+                    else:
+                        shared.log.info(f"Not enough VRAM to optimize refiner, using RAM as fallback. Free VRAM: {gpu_vram.get('total', 0) - gpu_vram.get('used', 0)} GB")
+                        shared.opts.diffusers_move_base=True
+                        shared.opts.diffusers_move_refiner=True
                     shared.log.debug('Moving base model to CPU')
                     model_data.sd_model.to("cpu")
                     devices.torch_gc(force=True)
                     sd_model.to(devices.device)
                     base_sent_to_cpu=True
-                    shared.opts.diffusers_move_base=True
-                    shared.opts.diffusers_move_refiner=True
             else:
                 sd_model.to(devices.device)
             sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True, # pylint: disable=attribute-defined-outside-init
