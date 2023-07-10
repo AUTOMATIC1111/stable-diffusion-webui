@@ -1,5 +1,6 @@
 import os
 from collections import namedtuple
+from contextlib import closing
 
 import torch
 import tqdm
@@ -584,8 +585,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
                     preview_text = p.prompt
 
-                    processed = processing.process_images(p)
-                    image = processed.images[0] if len(processed.images) > 0 else None
+                    with closing(p):
+                        processed = processing.process_images(p)
+                        image = processed.images[0] if len(processed.images) > 0 else None
 
                     if unload:
                         shared.sd_model.first_stage_model.to(devices.cpu)
