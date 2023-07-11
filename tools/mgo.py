@@ -36,7 +36,8 @@ class MongoClient(object):
                 socketTimeoutMS=timeout*1000,
                 appname='ai-draw-prof',
                 username=username,
-                password=pwd
+                password=pwd,
+                authSource=database,
             )
             self.db = self.client[database]
             # self.db.authenticate(username, pwd)
