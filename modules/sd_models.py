@@ -77,7 +77,11 @@ class CheckpointInfo:
             if os.path.isfile(repo[0]['model_info']):
                 file_path = repo[0]['model_info']
                 with open(file_path, "r", encoding="utf-8") as json_file:
-                    self.model_info = json.load(json_file)
+                    try:
+                        self.model_info = json.load(json_file)
+                    except Exception as e:
+                        shared.log.error(f'Error loading model info: {json_file} {e}')
+                        self.model_info = {}
 
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
@@ -726,9 +730,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     base_sent_to_cpu=False
                 else:
                     if not refiner_enough_vram and not (shared.opts.diffusers_move_base and shared.opts.diffusers_move_refiner):
-                        shared.log.warning(f"Not enough VRAM to use refiner, using RAM as fallback. Free VRAM: {free_vram} GB\n"
-                        + "Enabled 'Move base model to CPU when using refiner' and 'Move refiner model to CPU when not in use'\n"
-                        + "Enable the settings above and apply the settings to suppress this warning.")
+                        shared.log.warning(f"Insufficient GPU memory, using system memory as fallback: free={free_vram} GB")
+                        shared.log.debug('Enabled moving base model to CPU')
+                        shared.log.debug('Enabled moving base model to CPU')
                         shared.opts.diffusers_move_base=True
                         shared.opts.diffusers_move_refiner=True
                     shared.log.debug('Moving base model to CPU')

@@ -712,18 +712,19 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     shared.state.set_current_image()
 
                 shared.sd_model.to(devices.device)
-                output = shared.sd_model( # pylint: disable=not-callable
-                    prompt=prompts,
-                    negative_prompt=negative_prompts,
-                    num_inference_steps=p.steps,
-                    guidance_scale=p.cfg_scale,
-                    generator=generator,
-                    callback_steps = 1,
-                    callback = diffusers_callback,
-                    output_type='np' if shared.sd_refiner is None else 'latent',
-                    cross_attention_kwargs=cross_attention_kwargs,
-                    **task_specific_kwargs
-                )
+
+                pipe_args = { # TODO needs dynamic discovery of possible args
+                    "prompt": prompts,
+                    "negative_prompt": negative_prompts,
+                    "num_inference_steps": p.steps,
+                    "guidance_scale": p.cfg_scale,
+                    "generator": generator,
+                    "output_type": 'np' if shared.sd_refiner is None else 'latent',
+                    "callback_steps": 1, # TODO not supported by Kandinsky
+                    "callback": diffusers_callback, # TODO not supported by Kandinsky
+                    "cross_attention_kwargs": cross_attention_kwargs, # TODO not supported by Kandinsky
+                }
+                output = shared.sd_model(**pipe_args, **task_specific_kwargs) # pylint: disable=not-callable
 
                 if shared.sd_refiner is not None:
                     if shared.opts.diffusers_move_base:
@@ -732,22 +733,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     shared.sd_refiner.to(devices.device)
                     devices.torch_gc()
                     init_image = output.images[0]
-                    output = shared.sd_refiner( # pylint: disable=not-callable
-                        prompt=prompts,
-                        negative_prompt=negative_prompts,
-                        num_inference_steps=p.steps,
-                        guidance_scale=p.cfg_scale,
-                        generator=generator,
-                        callback_steps = 1,
-                        callback = diffusers_callback,
-                        output_type='np',
-                        cross_attention_kwargs=cross_attention_kwargs,
-                        image=init_image
-                    )
+                    pipe_args['image'] = init_image
+                    pipe_args['output_type'] = 'np'
+                    output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
                     if shared.opts.diffusers_move_refiner:
                         shared.log.debug('Moving refiner model to CPU')
                         shared.sd_refiner.to('cpu')
-
 
                 x_samples_ddim = output.images
 

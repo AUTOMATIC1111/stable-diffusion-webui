@@ -170,7 +170,7 @@ function readCardDescription(event, filename, descript, extraPage, cardName) {
 
 function extraNetworksSearchButton(event) {
   const tabname = getENActiveTab();
-  searchTextarea = gradioApp().querySelector(`#${tabname}__extra_tabs > div > div > textarea`);
+  searchTextarea = gradioApp().querySelector(`#${tabname}_extra_tabs > div > div > textarea`);
   button = event.target;
   text = button.classList.contains('search-all') ? '' : `/${button.textContent.trim()}/`;
   searchTextarea.value = text;

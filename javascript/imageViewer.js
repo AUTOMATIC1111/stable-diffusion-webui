@@ -207,9 +207,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // handlers
   modalPreviewZone.addEventListener('mousedown', () => previewDrag = false);
-  modalPreviewZone.addEventListener('touchstart', () => previewDrag = false);
+  modalPreviewZone.addEventListener('touchstart', () => { previewDrag = false }, { passive: true });
   modalPreviewZone.addEventListener('mousemove', () => previewDrag = true);
-  modalPreviewZone.addEventListener('touchmove', () => previewDrag = true);
+  modalPreviewZone.addEventListener('touchmove', () => { previewDrag = true }, { passive: true });
   modalPreviewZone.addEventListener('scroll', () => previewDrag = true);
   modalPreviewZone.addEventListener('mouseup', () => closeModal());
   modalPreviewZone.addEventListener('touchend', () => closeModal());
