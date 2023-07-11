@@ -591,7 +591,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
     shared.log.debug(f'Diffusers load config: {diffusers_load_config}')
     sd_model = None
-    base_sent_to_cpu=False
+
     try:
         devices.set_cuda_params()
         if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
@@ -715,20 +715,20 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             shared.log.debug('Diffusers: enable channels last')
             sd_model.unet.to(memory_format=torch.channels_last)
 
-        if devices.backend == 'ipex':
-            sd_model.unet.training = False
-            if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex':
-                shared.log.info("Model compile enabled: IPEX Optimize Graph Mode")
+        base_sent_to_cpu=False
+        if (shared.opts.cuda_compile and torch.cuda.is_available()) or devices.backend == 'ipex':
             if op == 'refiner':
                 gpu_vram = memory_stats().get('gpu', {})
-                if not shared.opts.diffusers_move_base and (gpu_vram.get('total', 0) - gpu_vram.get('used', 0)) >= 7 if "StableDiffusionXL" in sd_model.__class__.__name__ else 3.5:
+                free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)
+                refiner_enough_vram = free_vram >= 7 if "StableDiffusionXL" in sd_model.__class__.__name__ else 3
+                if not shared.opts.diffusers_move_base and refiner_enough_vram:
                     sd_model.to(devices.device)
                     base_sent_to_cpu=False
                 else:
-                    if shared.opts.diffusers_move_base:
-                        pass
-                    else:
-                        shared.log.info(f"Not enough VRAM to optimize refiner, using RAM as fallback. Free VRAM: {gpu_vram.get('total', 0) - gpu_vram.get('used', 0)} GB")
+                    if not refiner_enough_vram and not (shared.opts.diffusers_move_base and shared.opts.diffusers_move_refiner):
+                        shared.log.warning(f"Not enough VRAM to use refiner, using RAM as fallback. Free VRAM: {free_vram} GB\n"
+                        + "Enabled 'Move base model to CPU when using refiner' and 'Move refiner model to CPU when not in use'\n"
+                        + "Enable the settings above and apply the settings to suppress this warning.")
                         shared.opts.diffusers_move_base=True
                         shared.opts.diffusers_move_refiner=True
                     shared.log.debug('Moving base model to CPU')
@@ -738,12 +738,16 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     base_sent_to_cpu=True
             else:
                 sd_model.to(devices.device)
+
+        if devices.backend == 'ipex':
+            sd_model.unet.training = False
+            if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex':
+                shared.log.info("Model compile enabled: IPEX Optimize Graph Mode")
             sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True, # pylint: disable=attribute-defined-outside-init
             graph_mode=True if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex' else False)
             shared.log.info("Applied IPEX Optimize")
 
-        if shared.opts.cuda_compile and torch.cuda.is_available():
-            sd_model.to(devices.device)
+        elif shared.opts.cuda_compile and torch.cuda.is_available():
             import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
             log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
             torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
