@@ -121,6 +121,7 @@ class TaskReceiver:
         # self.worker_id = self._worker_id()
         self.is_elastic = is_flexible_worker()
         self.recorder = TaskReceiverRecorder()
+        self.worker_id = self._worker_id()
 
         run_train_time_cfg = get_run_train_time_cfg()
         run_train_time_start = run_train_time_cfg[Env_Run_Train_Time_Start]
@@ -142,17 +143,16 @@ class TaskReceiver:
         self.register_time = 0
         self.local_cache = {}
 
-    @property
-    def worker_id(self):
+    def _worker_id(self):
         group_id = get_worker_group()
         nvidia_video_card_id = '&'.join(GpuInfo().names)
 
         # int(str(uuid.uuid1())[-4:], 16)
+        hostname = pod_host()
+        print(f"hostname:{hostname}, vedio id:{nvidia_video_card_id}")
         if not nvidia_video_card_id:
-            hostname = pod_host()
             nvidia_video_card_id = hostname or uuid.uuid1()
         else:
-            hostname = pod_host()
             index = nvidia_video_card_id.index("GPU")
 
             if not hostname:
