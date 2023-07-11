@@ -14,7 +14,7 @@ import ldm.modules.midas as midas
 
 from ldm.util import instantiate_from_config
 
-from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet
+from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet, sd_models_xl
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 import tomesd
@@ -289,6 +289,9 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     if state_dict is None:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
 
+    if hasattr(model, 'conditioner'):
+        sd_models_xl.extend_sdxl(model)
+
     model.load_state_dict(state_dict, strict=False)
     del state_dict
     timer.record("apply weights to model")
@@ -334,7 +337,8 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     model.sd_checkpoint_info = checkpoint_info
     shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
 
-    model.logvar = model.logvar.to(devices.device)  # fix for training
+    if hasattr(model, 'logvar'):
+        model.logvar = model.logvar.to(devices.device)  # fix for training
 
     sd_vae.delete_base_vae()
     sd_vae.clear_loaded_vae()

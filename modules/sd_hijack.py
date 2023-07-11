@@ -166,6 +166,15 @@ class StableDiffusionModelHijack:
             undo_optimizations()
 
     def hijack(self, m):
+        conditioner = getattr(m, 'conditioner', None)
+        if conditioner:
+            for i in range(len(conditioner.embedders)):
+                embedder = conditioner.embedders[i]
+                if type(embedder).__name__ == 'FrozenOpenCLIPEmbedder':
+                    embedder.model.token_embedding = EmbeddingsWithFixes(embedder.model.token_embedding, self)
+                    m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(embedder, self)
+                    conditioner.embedders[i] = m.cond_stage_model
+
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             model_embeddings = m.cond_stage_model.roberta.embeddings
             model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.word_embeddings, self)
