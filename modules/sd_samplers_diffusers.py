@@ -49,7 +49,10 @@ samplers_data_diffusers = [
 
 class DiffusionSampler:
     def __init__(self, name, constructor, model, **kwargs):
+        self.config = {}
         self.config = config['All'].copy()
+        if not hasattr(model, 'scheduler'):
+            return
         for key, value in config.get(name, {}).items(): # diffusers defaults
             self.config[key] = value
         for key, value in model.scheduler.config.items(): # model defaults

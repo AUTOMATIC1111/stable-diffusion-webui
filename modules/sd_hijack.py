@@ -181,7 +181,7 @@ class StableDiffusionModelHijack:
                 shared.log.warning("Model compile skipped: IPEX Method is for Intel GPU's with OneAPI")
         elif opts.cuda_compile and opts.cuda_compile_mode != 'none' and shared.backend == shared.Backend.ORIGINAL:
             try:
-                import torch._dynamo # pylint: disable=unused-import
+                import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                 log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                 torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
                 torch._dynamo.config.verbose = opts.cuda_compile_verbose # pylint: disable=protected-access
@@ -210,6 +210,8 @@ class StableDiffusionModelHijack:
         self.layers = flatten(m)
 
     def undo_hijack(self, m):
+        if not hasattr(m, 'cond_stage_model'):
+            return # not ldm model
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             m.cond_stage_model = m.cond_stage_model.wrapped
 

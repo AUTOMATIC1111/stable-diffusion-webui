@@ -801,4 +801,7 @@ def read_options():
     global opts # pylint: disable=global-statement
     if os.path.isfile(args.config):
         with open(args.config, "r", encoding="utf8") as file:
-            opts = json.load(file)
+            try:
+                opts = json.load(file)
+            except Exception as e:
+                log.error(f'Error reading options file: {file} {e}')

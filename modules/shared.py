@@ -192,6 +192,7 @@ class State:
 
 state = State()
 state.server_start = time.time()
+
 backend = Backend.DIFFUSERS if (cmd_opts.backend is not None) and (cmd_opts.backend.lower() == 'diffusers') else Backend.ORIGINAL
 log.info(f'Pipeline: {backend}')
 
@@ -308,6 +309,7 @@ else: # cuda
     cross_attention_optimization_default ="Scaled-Dot-Product"
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
+    "sd_backend": OptionInfo("original", "Stable Diffusion backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
     "sd_checkpoint_autoload": OptionInfo(True, "Stable Diffusion checkpoint autoload on server start"),
     "sd_model_checkpoint": OptionInfo(default_checkpoint, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_model_refiner": OptionInfo('None', "Stable Diffusion refiner", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
@@ -321,7 +323,6 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "prompt_mean_norm": OptionInfo(True, "Prompt attention mean normalization"),
     "comma_padding_backtrack": OptionInfo(20, "Prompt padding for long prompts", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
     "sd_disable_ckpt": OptionInfo(False, "Disallow usage of checkpoints in ckpt format"),
-    "sd_backend": OptionInfo("original", "Stable Diffusion backend (experimental)", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
 }))
 
 options_templates.update(options_section(('optimizations', "Optimizations"), {
@@ -490,6 +491,10 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     "show_samplers": OptionInfo(["Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
     "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
+    'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
+    'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
+    'uni_pc_order': OptionInfo(3, "UniPC order (must be < sampling steps)", gr.Slider, {"minimum": 1, "maximum": 10, "step": 1}),
+    'uni_pc_lower_order_final': OptionInfo(True, "UniPC lower order final"),
 }))
 
 if backend == Backend.ORIGINAL:
@@ -505,10 +510,6 @@ if backend == Backend.ORIGINAL:
         's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
         'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}),
         'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
-        'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
-        'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
-        'uni_pc_order': OptionInfo(3, "UniPC order (must be < sampling steps)", gr.Slider, {"minimum": 1, "maximum": 10, "step": 1}),
-        'uni_pc_lower_order_final': OptionInfo(True, "UniPC lower order final"),
     }))
 elif backend == Backend.DIFFUSERS:
     options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
@@ -524,10 +525,6 @@ elif backend == Backend.DIFFUSERS:
         's_noise': OptionInfo(1.0, "sigma noise", gr.Number, { "visible": False}),
         'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}, { "visible": False}),
         'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma", gr.Checkbox, { "visible": False}),
-        #'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}, { "visible": False}),
-        #'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}, { "visible": False}),
-        #'uni_pc_order': OptionInfo(3, "UniPC order (must be < sampling steps)", gr.Slider, {"minimum": 1, "maximum": 10, "step": 1}, { "visible": False}),
-        #'uni_pc_lower_order_final': OptionInfo(True, "UniPC lower order final", { "visible": False}),
         # diffuser specific
         "schedulers_prediction_type": OptionInfo("default", "Samplers override model prediction type", gr.Radio, lambda: {"choices": ['default', 'epsilon', 'sample', 'v-prediction']}),
         "schedulers_beta_schedule": OptionInfo("default", "Samplers override beta schedule", gr.Radio, lambda: {"choices": ['default', 'linear', 'scaled_linear', 'squaredcos_cap_v2']}),
@@ -754,6 +751,7 @@ opts = Options()
 config_filename = cmd_opts.config
 opts.load(config_filename)
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
+opts.data['sd_backend'] = 'original' if backend == Backend.ORIGINAL else 'diffusers'
 
 prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_opts.server_name or False)) and not cmd_opts.insecure
@@ -918,10 +916,7 @@ def get_version():
     return version
 
 
-class Shared(sys.modules[__name__].__class__):
-    # this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than at program startup.
-    sd_model_val = None
-
+class Shared(sys.modules[__name__].__class__): # this class is here to provide sd_model field as a property, so that it can be created and loaded on demand rather than at program startup.
     @property
     def sd_model(self):
         import modules.sd_models # pylint: disable=W0621
@@ -941,6 +936,10 @@ class Shared(sys.modules[__name__].__class__):
     def sd_refiner(self, value):
         import modules.sd_models # pylint: disable=W0621
         modules.sd_models.model_data.set_sd_refiner(value)
+
+    @property
+    def backend(self):
+        return Backend.ORIGINAL if opts.data['sd_backend'] == 'original' else Backend.DIFFUSERS
 
 
 sd_model = None

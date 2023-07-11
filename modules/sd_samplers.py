@@ -1,15 +1,31 @@
 from modules import sd_samplers_compvis, sd_samplers_kdiffusion, sd_samplers_diffusers, shared
 from modules.sd_samplers_common import samples_to_image_grid, sample_to_image # pylint: disable=unused-import
-from modules.shared import backend, Backend
 
-if backend == Backend.ORIGINAL:
-    all_samplers = [*sd_samplers_kdiffusion.samplers_data_k_diffusion, *sd_samplers_compvis.samplers_data_compvis]
-else:
-    all_samplers = [*sd_samplers_diffusers.samplers_data_diffusers]
-all_samplers_map = {x.name: x for x in all_samplers}
+
+all_samplers = []
+all_samplers = []
+all_samplers_map = {}
 samplers = all_samplers
 samplers_for_img2img = all_samplers
 samplers_map = {}
+
+def list_samplers(backend_name = shared.backend):
+    global all_samplers # pylint: disable=global-statement
+    global all_samplers_map # pylint: disable=global-statement
+    global samplers # pylint: disable=global-statement
+    global samplers_for_img2img # pylint: disable=global-statement
+    global samplers_map # pylint: disable=global-statement
+    if backend_name == shared.Backend.ORIGINAL:
+        all_samplers = [*sd_samplers_kdiffusion.samplers_data_k_diffusion, *sd_samplers_compvis.samplers_data_compvis]
+    else:
+        all_samplers = [*sd_samplers_diffusers.samplers_data_diffusers]
+    all_samplers_map = {x.name: x for x in all_samplers}
+    samplers = all_samplers
+    samplers_for_img2img = all_samplers
+    samplers_map = {}
+    shared.log.debug(f'Enumerated samplers: {len(all_samplers)}')
+
+list_samplers()
 
 
 def find_sampler_config(name):
@@ -25,11 +41,11 @@ def create_sampler(name, model):
     if config is None:
         shared.log.error(f'Attempting to use unknown sampler: {name}')
         config = all_samplers[0]
-    if backend == Backend.ORIGINAL:
+    if shared.backend == shared.Backend.ORIGINAL:
         sampler = config.constructor(model)
         sampler.config = config
         return sampler
-    elif backend == Backend.DIFFUSERS:
+    elif shared.backend == shared.Backend.DIFFUSERS:
         sampler = config.constructor(model)
         model.scheduler = sampler.sampler
         return sampler.sampler

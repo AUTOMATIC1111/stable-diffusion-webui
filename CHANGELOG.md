@@ -1,5 +1,9 @@
 # Change Log for SD.Next
 
+## Update for 07/11/2023:
+
+- fixes in extra-networks, diffusers samplers
+
 ## Update for 07/10/2023
 
 Service release with some fixes and enhancements:

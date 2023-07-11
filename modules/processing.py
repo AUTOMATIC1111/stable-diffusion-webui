@@ -18,7 +18,7 @@ from installer import git_commit
 import modules.sd_hijack
 from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, script_callbacks, extra_networks, sd_vae_approx, scripts, sd_samplers_common # pylint: disable=unused-import
 from modules.sd_hijack import model_hijack
-from modules.shared import opts, cmd_opts, state, log, backend, Backend
+from modules.shared import opts, cmd_opts, state, log, Backend
 import modules.shared as shared
 import modules.paths as paths
 import modules.face_restoration
@@ -149,7 +149,6 @@ class StableDiffusionProcessing:
         self.is_hr_pass = False
         opts.data['clip_skip'] = clip_skip
 
-
     @property
     def sd_model(self):
         return shared.sd_model
@@ -223,7 +222,7 @@ class StableDiffusionProcessing:
         source_image = devices.cond_cast_float(source_image)
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
-        if backend == Backend.DIFFUSERS:
+        if shared.backend == Backend.DIFFUSERS:
             log.warning('Diffusers not implemented: img2img_image_conditioning')
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image)
@@ -562,7 +561,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
-    if backend == Backend.ORIGINAL:
+    if shared.backend == Backend.ORIGINAL:
         modules.sd_hijack.model_hijack.apply_circular(p.tiling)
         modules.sd_hijack.model_hijack.clear_comments()
     comments = {}
@@ -613,11 +612,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         cache[0] = (required_prompts, steps)
         return cache[1]
 
-    ema_scope_context = p.sd_model.ema_scope if backend == Backend.ORIGINAL else nullcontext
+    ema_scope_context = p.sd_model.ema_scope if shared.backend == Backend.ORIGINAL else nullcontext
     with torch.no_grad(), ema_scope_context():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
-            if shared.opts.live_previews_enable and opts.show_progress_type == "Approximate NN" and backend == Backend.ORIGINAL:
+            if shared.opts.live_previews_enable and opts.show_progress_type == "Approximate NN" and shared.backend == Backend.ORIGINAL:
                 sd_vae_approx.model()
         if state.job_count == -1:
             state.job_count = p.n_iter
@@ -655,7 +654,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
-            if backend == Backend.ORIGINAL:
+            if shared.backend == Backend.ORIGINAL:
                 uc = get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, p.steps * step_multiplier, cached_uc)
                 c = get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, p.steps * step_multiplier, cached_c)
                 if len(model_hijack.comments) > 0:
@@ -682,7 +681,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                 del samples_ddim
 
-            elif backend == Backend.DIFFUSERS:
+            elif shared.backend == Backend.DIFFUSERS:
                 generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
                 generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
                 if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name):
@@ -749,7 +748,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     unload_diffusers_lora()
 
             else:
-                raise ValueError(f"Unknown backend {backend}")
+                raise ValueError(f"Unknown backend {shared.backend}")
 
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
                 lowvram.send_everything_to_cpu()
@@ -759,7 +758,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
-                if backend == Backend.ORIGINAL:
+                if shared.backend == Backend.ORIGINAL:
                     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
                     x_sample = x_sample.astype(np.uint8)
                 else:
@@ -874,7 +873,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.applied_old_hires_behavior_to = None
 
     def init(self, all_prompts, all_seeds, all_subseeds):
-        if backend == Backend.DIFFUSERS:
+        if shared.backend == Backend.DIFFUSERS:
             sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
         self.width = self.width or 512
@@ -947,7 +946,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.restore_faces = orig2
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, info=info, suffix="-before-highres-fix")
 
-        if backend == Backend.DIFFUSERS:
+        if shared.backend == Backend.DIFFUSERS:
             sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
@@ -1041,9 +1040,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         image_mask = self.image_mask
-        if backend == Backend.DIFFUSERS and image_mask is None:
+        if shared.backend == Backend.DIFFUSERS and image_mask is None:
             sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
-        elif backend == Backend.DIFFUSERS and image_mask is not None:
+        elif shared.backend == Backend.DIFFUSERS and image_mask is not None:
             sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.INPAINTING)
             self.sd_model.dtype = self.sd_model.unet.dtype
 
@@ -1117,7 +1116,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         image = 2. * image - 1.
         image = image.to(shared.device)
 
-        if backend == Backend.ORIGINAL:
+        if shared.backend == Backend.ORIGINAL:
             self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
         else:
             # TODO Diffusers don't pre-encode the latents for diffusers to allow the UI to stay general for different model types
@@ -1142,7 +1141,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_conditioning = self.img2img_image_conditioning(image, self.init_latent, image_mask)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
-        if backend == Backend.DIFFUSERS:
+        if shared.backend == Backend.DIFFUSERS:
             if self.init_mask is None: # pylint: disable=no-member
                 sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
             else:

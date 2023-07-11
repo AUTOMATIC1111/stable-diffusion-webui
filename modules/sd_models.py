@@ -198,6 +198,9 @@ def get_closet_checkpoint_match(search_string):
     found = sorted([info for info in checkpoints_list.values() if search_string in info.title], key=lambda x: len(x.title))
     if found:
         return found[0]
+    found = sorted([info for info in checkpoints_list.values() if search_string.split(' ')[0] in info.title], key=lambda x: len(x.title))
+    if found:
+        return found[0]
     return None
 
 
@@ -217,12 +220,12 @@ def model_hash(filename):
 
 
 def select_checkpoint(op='model'):
-    if op == 'model':
-        model_checkpoint = shared.opts.sd_model_checkpoint
-    elif op == 'dict':
+    if op == 'dict':
         model_checkpoint = shared.opts.sd_model_dict
     elif op == 'refiner':
         model_checkpoint = shared.opts.data.get('sd_model_refiner', None)
+    else:
+        model_checkpoint = shared.opts.sd_model_checkpoint
     if model_checkpoint is None or model_checkpoint == 'None':
         return None
     checkpoint_info = get_closet_checkpoint_match(model_checkpoint)
@@ -401,7 +404,8 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
         model.first_stage_model = vae
         if depth_model:
             model.depth_model = depth_model
-    devices.dtype_unet = model.model.diffusion_model.dtype
+    # devices.dtype_unet = model.model.diffusion_model.dtype
+    model.model.diffusion_model.to(devices.dtype_unet)
     model.first_stage_model.to(devices.dtype_vae)
     # clean up cache if limit is reached
     while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
@@ -497,7 +501,6 @@ class ModelData:
         return self.sd_model
 
     def set_sd_model(self, v):
-        shared.log.debug(f"Class model: {v}")
         self.sd_model = v
 
     def get_sd_refiner(self):
@@ -563,6 +566,15 @@ class PriorPipeline:
             self.prior.to(main_device)
 
         return result
+
+
+def change_backend():
+    shared.log.info(f'Pipeline changed: {shared.backend}')
+    unload_model_weights()
+    checkpoints_loaded.clear()
+    list_models()
+    from modules.sd_samplers import list_samplers
+    list_samplers(shared.backend)
 
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
@@ -768,6 +780,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         sd_model.sd_checkpoint_info = checkpoint_info # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_checkpoint = checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_hash = checkpoint_info.hash # pylint: disable=attribute-defined-outside-init
+        sd_model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {elapsed} {remaining}', ncols=80, colour='#327fba')
         if op == 'refiner' and shared.opts.diffusers_move_refiner:
             shared.log.debug('Moving refiner model to CPU')
             sd_model.to("cpu")
