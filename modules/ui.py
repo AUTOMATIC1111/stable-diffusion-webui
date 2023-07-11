@@ -1679,61 +1679,60 @@ def create_ui():
             for _i, k, _item in sorted(quicksettings_list, key=lambda x: quicksettings_names.get(x[1], x[0])):
                 component = create_setting_component(k, is_quicksettings=True)
                 component_dict[k] = component
-            gradio.HTML("""
-            <style>
-                    /* Tooltip 容器 */
-                    .tooltip {
-                        position: relative;
-                        display: inline-block;
-                        border-bottom: 1px dotted black; /* 悬停元素上显示点线 */
-                        width: 80px;
-                    }
-                     
-                    /* Tooltip 文本 */
-                    .tooltip .tooltiptext {
-                        visibility: hidden;
-                        width: 120px;
-                        background-color: black;
-                        color: #fff;
-                        text-align: center;
-                        padding: 5px 0;
-                        border-radius: 6px;
-                     
-                        /* 定位 */
-                        position: absolute;
-                        z-index: 1;
-                    }
-                     
-                    /* 鼠标移动上去后显示提示框 */
-                    .tooltip:hover .tooltiptext {
-                        visibility: visible;
-                    }
-                </style>
-                  <div style="display: flex;jus[tify-content: flex-start;lign-items: center;height: 40px;" > 
-                        <div style="height: 40px;line-height: 40px;margin-left:20px; min-width: 100px;">常用工具:</div>
-                        <a href="https://civitai.com/" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
-                            <img src="https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/icon/favicon.ico" width="22" height="22" style="color:blue;margin-right:2px;"/>
-        
-                            <div class="tooltip">CivitAI
-                                <span class="tooltiptext">模型下载网站</span>
-                            </div>
-                        </a>
-                        <a href="https://aitag.top/" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
-                            <img src="https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/icon/vite.svg" width="22" height="22" style="color:blue;margin-right:2px"/>
-                            <div class="tooltip">魔咒百科
-                                <span class="tooltiptext">TAG百科</span>
-                            </div>
-                        </a>
-                        <a href="https://www.painthua.com/" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
-                            <img src="https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/icon/huggingface_logo-noborder.svg" width="22" height="22" style="color:blue;margin-right:2px"/>
-                            <div class="tooltip">扩展原图
-                                <span class="tooltiptext">painthua原图扩展,功能准备中...</span>
-                            </div>
-                        </a>
-                        
-                </div>
-                """)
-
+            # gradio.HTML("""
+            # <style>
+            #         /* Tooltip 容器 */
+            #         .tooltip {
+            #             position: relative;
+            #             display: inline-block;
+            #             border-bottom: 1px dotted black; /* 悬停元素上显示点线 */
+            #             width: 80px;
+            #         }
+            #
+            #         /* Tooltip 文本 */
+            #         .tooltip .tooltiptext {
+            #             visibility: hidden;
+            #             width: 120px;
+            #             background-color: black;
+            #             color: #fff;
+            #             text-align: center;
+            #             padding: 5px 0;
+            #             border-radius: 6px;
+            #
+            #             /* 定位 */
+            #             position: absolute;
+            #             z-index: 1;
+            #         }
+            #
+            #         /* 鼠标移动上去后显示提示框 */
+            #         .tooltip:hover .tooltiptext {
+            #             visibility: visible;
+            #         }
+            #     </style>
+            #       <div style="display: flex;jus[tify-content: flex-start;lign-items: center;height: 40px;" >
+            #             <div style="height: 40px;line-height: 40px;margin-left:20px; min-width: 100px;">常用工具:</div>
+            #             <a href="https://civitai.com/" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
+            #                 <img src="https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/icon/favicon.ico" width="22" height="22" style="color:blue;margin-right:2px;"/>
+            #
+            #                 <div class="tooltip">CivitAI
+            #                     <span class="tooltiptext">模型下载网站</span>
+            #                 </div>
+            #             </a>
+            #             <a href="https://aitag.top/" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
+            #                 <img src="https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/icon/vite.svg" width="22" height="22" style="color:blue;margin-right:2px"/>
+            #                 <div class="tooltip">魔咒百科
+            #                     <span class="tooltiptext">TAG百科</span>
+            #                 </div>
+            #             </a>
+            #             <a href="https://www.painthua.com/" style="display:flex;justify-content: flex-start;align-items: center;margin-left:10px;">
+            #                 <img src="https://das-pub.obs.ap-southeast-1.myhuaweicloud.com/sd-webui/icon/huggingface_logo-noborder.svg" width="22" height="22" style="color:blue;margin-right:2px"/>
+            #                 <div class="tooltip">扩展原图
+            #                     <span class="tooltiptext">painthua原图扩展,功能准备中...</span>
+            #                 </div>
+            #             </a>
+            #
+            #     </div>
+            #     """)
 
         parameters_copypaste.connect_paste_params_buttons()
 
