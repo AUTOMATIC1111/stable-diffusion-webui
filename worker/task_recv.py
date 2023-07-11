@@ -219,7 +219,7 @@ class TaskReceiver:
         # 默认23点~凌晨5点(UTC 15~21)可以运行TRAIN
         utc = datetime.utcnow()
 
-        if self.run_train_time_start < utc.hour < self.run_train_time_end:
+        if self.run_train_time_start <= utc.hour <= self.run_train_time_end:
             logger.info(f"worker receive train task")
 
             workers = self.get_all_workers()
