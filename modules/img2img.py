@@ -14,7 +14,7 @@ from modules.ui import plaintext_to_html
 import modules.scripts
 
 
-def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False):
+def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0):
     if not isinstance(to_scale, bool):
         raise TypeError("The `to_scale` parameter must be a boolean.")
 
