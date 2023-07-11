@@ -598,7 +598,8 @@ class Api:
         }
 
     def refresh_checkpoints(self):
-        shared.refresh_checkpoints()
+        with self.queue_lock:
+            shared.refresh_checkpoints()
 
     def create_embedding(self, args: dict):
         try:
