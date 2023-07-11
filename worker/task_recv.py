@@ -225,7 +225,7 @@ class TaskReceiver:
             workers = self.get_all_workers()
             if workers:
                 # 1/5的WOEKER 生图，剩下的执行训练。
-                run_train_worker_flag = self.worker_id in workers[len(workers) // 5:]
+                run_train_worker_flag = self.worker_id.replace("-", "") in workers[len(workers) // 5:]
                 if run_train_worker_flag:
                     logger.info(">>> worker can run train task.")
 
