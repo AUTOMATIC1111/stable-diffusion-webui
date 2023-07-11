@@ -216,7 +216,7 @@ class StableDiffusionProcessing:
         conditioning_mask = torch.nn.functional.interpolate(conditioning_mask, size=latent_image.shape[-2:])
         conditioning_mask = conditioning_mask.expand(conditioning_image.shape[0], -1, -1, -1)
         image_conditioning = torch.cat([conditioning_mask, conditioning_image], dim=1)
-        image_conditioning = image_conditioning.to(shared.device).type(self.sd_model.dtype)
+        image_conditioning = image_conditioning.to(device = shared.device, dtype = source_image.dtype)
         return image_conditioning
 
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
@@ -1020,7 +1020,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 image = np.moveaxis(image, 2, 0)
                 batch_images.append(image)
             decoded_samples = torch.from_numpy(np.array(batch_images))
-            decoded_samples = decoded_samples.to(shared.device)
+            decoded_samples = decoded_samples.to(device=shared.device, dtype=devices.dtype_vae)
             decoded_samples = 2. * decoded_samples - 1.
             if shared.opts.sd_vae_sliced_encode and len(decoded_samples) > 1:
                 samples = torch.stack([
@@ -1149,7 +1149,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
         image = torch.from_numpy(batch_images)
         image = 2. * image - 1.
-        image = image.to(shared.device)
+        image = image.to(device=shared.device, dtype=devices.dtype_vae)
 
         if shared.backend == Backend.ORIGINAL:
             self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
@@ -1166,8 +1166,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             latmask = latmask[0]
             latmask = np.around(latmask)
             latmask = np.tile(latmask[None], (4, 1, 1))
-            self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(self.sd_model.dtype)
-            self.nmask = torch.asarray(latmask).to(shared.device).type(self.sd_model.dtype)
+            self.mask = torch.asarray(1.0 - latmask).to(device=shared.device, dtype=self.sd_model.dtype)
+            self.nmask = torch.asarray(latmask).to(device=shared.device, dtype=self.sd_model.dtype)
             # this needs to be fixed to be done in sample() using actual seeds for batches
             if self.inpainting_fill == 2:
                 self.init_latent = self.init_latent * self.mask + create_random_tensors(self.init_latent.shape[1:], all_seeds[0:self.init_latent.shape[0]]) * self.nmask
