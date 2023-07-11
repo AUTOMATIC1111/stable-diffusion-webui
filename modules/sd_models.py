@@ -744,7 +744,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     if not refiner_enough_vram and not (shared.opts.diffusers_move_base and shared.opts.diffusers_move_refiner):
                         shared.log.warning(f"Insufficient GPU memory, using system memory as fallback: free={free_vram} GB")
                         shared.log.debug('Enabled moving base model to CPU')
-                        shared.log.debug('Enabled moving base model to CPU')
+                        shared.log.debug('Enabled moving refiner model to CPU')
                         shared.opts.diffusers_move_base=True
                         shared.opts.diffusers_move_refiner=True
                     shared.log.debug('Moving base model to CPU')

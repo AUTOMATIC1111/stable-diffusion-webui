@@ -202,6 +202,10 @@ if backend == 'ipex':
     CondFunc('torch.nn.modules.Linear.forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
         lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
+    #Diffusers bfloat16:
+    CondFunc('torch.nn.modules.Conv2d._conv_forward',
+        lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[2].data.dtype), args[2], args[3]),
+        lambda *args, **kwargs: args[2].dtype != args[3].data.dtype)
     #Functions that does not work with the XPU:
     #UniPC:
     CondFunc('torch.linalg.solve',
