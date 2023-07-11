@@ -83,6 +83,9 @@ class Exif: # pylint: disable=single-string-used-for-slots
 
 
 def read_exif(filename: str):
+    if filename.lower().endswith('.heic'):
+        from pi_heif import register_heif_opener
+        register_heif_opener()
     try:
         img = Image.open(filename)
         exif = Exif(img)

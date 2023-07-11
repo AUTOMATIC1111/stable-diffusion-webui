@@ -63,3 +63,4 @@ Tech that can be integrated as part of the core workflow...
 - extra network refresh breaks if new extra network type found
 - [sd-xl lora](https://civitai.com/models/104913/fcstyledxl)
 - sd-xl img2img with configurable steps
+- change backend pipeline on-the-fly

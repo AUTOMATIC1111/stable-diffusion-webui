@@ -19,6 +19,7 @@
   --primary-950: #6c2e12;
 }
 .light, .dark {
+  --input-padding: 4px;
   --radius-lg: 2px;
   --radius-sm: 1px;
   --spacing-md: 5px;
@@ -289,7 +290,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --checkbox-shadow: var(--input-shadow);
   --error-border-width: 1px;
   --input-border-width: 0;
-  --input-padding: 6px;
   --input-radius: var(--radius-lg);
   --input-text-size: var(--text-md);
   --input-text-weight: 400;

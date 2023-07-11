@@ -101,6 +101,9 @@ if __name__ == '__main__':
         for file in files:
             if not filetype.is_image(file):
                 continue
+            if file.lower().endswith('.heic'):
+                from pi_heif import register_heif_opener
+                register_heif_opener()
             log.debug(file)
             img = Image.open(file)
             # img.verify()

@@ -499,7 +499,7 @@ table.settings-value-table td{
 .extra-networks .second-line { display: flex; width: -webkit-fill-available; gap: 0.2em; }
 .extra-networks .search { flex: 1; }
 .extra-networks .description { flex: 3; }
-.extra-networks .tab-nav > button { margin-right: 0; height: auto; padding: 2px 4px 2px 4px; }
+.extra-networks .tab-nav > button { margin-right: 0; height: 24px; padding: 2px 4px 2px 4px; }
 .extra-networks-tab { padding: 0 !important; }
 .extra-network-subdirs { background: var(--input-background-fill); overflow-x: hidden; overflow-y: auto; min-width: 120px; }
 .extra-networks-page { display: flex }

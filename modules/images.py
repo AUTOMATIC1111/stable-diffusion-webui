@@ -20,6 +20,13 @@ from modules import sd_samplers, shared, script_callbacks, errors, paths
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
+try:
+    from pi_heif import register_heif_opener
+    register_heif_opener()
+except Exception:
+    pass
+
+
 def check_grid_size(imgs):
     mp = 0
     for img in imgs:
@@ -616,7 +623,11 @@ def read_info_from_image(image):
         items['UserComment'] = geninfo
 
     if "exif" in items:
-        exif = piexif.load(items["exif"])
+        try:
+            exif = piexif.load(items["exif"])
+        except Exception as e:
+            shared.log.error(f'Error loading EXIF data: {e}')
+            exif = {}
         for _key, subkey in exif.items():
             if isinstance(subkey, dict):
                 for key, val in subkey.items():
