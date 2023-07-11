@@ -730,7 +730,7 @@ def train(args, train_epoch_callback=None):
         if callable(train_epoch_callback):
             train_epoch_callback(epoch + 1, loss_total / len(loss_list), num_train_epochs)
         # end of epoch
-        if loss_total / len(loss_list) == math.nan:
+        if math.isnan(loss_total / len(loss_list)):
             # nan(task failed)
             return False
 
