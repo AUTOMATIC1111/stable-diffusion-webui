@@ -5,7 +5,6 @@ basicsr
 fonts
 font-roboto
 gfpgan
-gradio==3.23
 invisible-watermark
 numpy
 omegaconf
@@ -41,7 +40,6 @@ aiohttp
 altair>=4.2.2
 fastapi
 ffmpy
-gradio_client>=0.0.4
 httpx
 huggingface_hub>=0.13.0
 Jinja2
@@ -72,3 +70,4 @@ pygments
 oss2
 tomesd
 esdk-obs-python
+gradio-orz==3.36.1
