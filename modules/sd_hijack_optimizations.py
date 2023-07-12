@@ -505,7 +505,11 @@ def sdp_attnblock_forward(self, x):
     k = self.k(h_)
     v = self.v(h_)
     b, c, h, w = q.shape # pylint: disable=unused-variable
-    q, k, v = (rearrange(t, 'b c h w -> b (h w) c') for t in (q, k, v))
+
+    # SDP optimization kenels are built for operations with multiple attention heads.
+    # Four dimensional tensors are required for mem_efficient and flash attention to work.
+    # We add an attention head dimension `a` to allow these kernels to be used.
+    q, k, v = (rearrange(t, '(b a) c h w -> b a (h w) c', a=1) for t in (q, k, v))
     dtype = q.dtype
     if shared.opts.upcast_attn:
         q, k, v = q.float(), k.float(), v.float()
@@ -514,7 +518,7 @@ def sdp_attnblock_forward(self, x):
     v = v.contiguous()
     out = torch.nn.functional.scaled_dot_product_attention(q, k, v, dropout_p=0.0, is_causal=False)
     out = out.to(dtype)
-    out = rearrange(out, 'b (h w) c -> b c h w', h=h)
+    out = rearrange(out, 'b a (h w) c -> (b a) c h w', h=h) # remove the one attention head dimension `a`
     out = self.proj_out(out)
     return x + out
 
