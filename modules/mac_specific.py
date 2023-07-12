@@ -5,7 +5,7 @@ import platform
 from modules.sd_hijack_utils import CondFunc
 from packaging import version
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 # before torch version 1.13, has_mps is only available in nightly pytorch and macOS 12.3+,
