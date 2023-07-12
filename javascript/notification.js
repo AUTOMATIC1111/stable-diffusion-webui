@@ -3,7 +3,7 @@
 let lastHeadImg = null;
 let notificationButton = null;
 
-onAfterUiUpdate(function () {
+function initNotifications() {
   if (!notificationButton) {
     notificationButton = gradioApp().getElementById('request_notifications');
     if (notificationButton) notificationButton.addEventListener('click', (evt) => Notification.requestPermission(), true);
@@ -12,7 +12,7 @@ onAfterUiUpdate(function () {
   const galleryPreviews = gradioApp().querySelectorAll('div[id^="tab_"][style*="display: block"] div[id$="_results"] .thumbnail-item > img');
   if (!galleryPreviews) return;
   const headImg = galleryPreviews[0]?.src;
-  if (!headImg || headImg == lastHeadImg || headImg.endsWith('logo.png')) return;
+  if (!headImg || headImg === lastHeadImg || headImg.endsWith('logo.png')) return;
   const audioNotification = gradioApp().querySelector('#audio_notification audio');
   if (audioNotification) audioNotification.play();
   lastHeadImg = headImg;
@@ -26,4 +26,7 @@ onAfterUiUpdate(function () {
     parent.focus();
     this.close();
   };
-});
+  console.log('sendNotification');
+}
+
+onAfterUiUpdate(initNotifications);

@@ -1,16 +1,16 @@
-let locale = {
+const locale = {
   data: [],
   timeout: null,
   finished: false,
   type: 2,
   el: null,
-}
+};
 
 function tooltipCreate() {
   locale.el = document.createElement('div');
   locale.el.className = 'tooltip';
   locale.el.id = 'tooltip-container';
-  locale.el.innerText = 'this is a hint'
+  locale.el.innerText = 'this is a hint';
   gradioApp().appendChild(locale.el);
   if (window.opts.tooltips === 'None') locale.type = 0;
   if (window.opts.tooltips === 'Browser default') locale.type = 1;
@@ -29,28 +29,28 @@ async function tooltipHide(e) {
 }
 
 async function validateHints(elements, data) {
-  let original = elements.map(e => e.textContent.toLowerCase().trim()).sort((a, b) => a > b)
+  let original = elements.map((e) => e.textContent.toLowerCase().trim()).sort((a, b) => a > b);
   original = [...new Set(original)];
-  console.log('all hints:', original)
+  console.log('all hints:', original);
   console.log('hints-differences', { elements: original.length, hints: data.length });
-  const current = data.map(e => e.label.toLowerCase().trim()).sort((a, b) => a > b)
+  const current = data.map((e) => e.label.toLowerCase().trim()).sort((a, b) => a > b);
   let missing = [];
   for (let i = 0; i < original.length; i++) {
     if (!current.includes(original[i])) missing.push(original[i]);
   }
-  console.log('missing in locale:', missing)
+  console.log('missing in locale:', missing);
   missing = [];
   for (let i = 0; i < current.length; i++) {
     if (!original.includes(current[i])) missing.push(current[i]);
   }
-  console.log('in locale but not ui:', missing)
+  console.log('in locale but not ui:', missing);
 }
 
 async function setHints() {
   if (locale.finished) return;
   if (locale.data.length === 0) {
     const res = await fetch('/file=html/locale_en.json');
-    const json = await res.json(); 
+    const json = await res.json();
     locale.data = Object.values(json).flat();
   }
   const elements = [
@@ -59,15 +59,12 @@ async function setHints() {
   ];
   if (elements.length === 0) return;
   if (Object.keys(opts).length === 0) return;
-  if (!locale.el) {
-    tooltipCreate();
-    logMonitorCreate();
-  }
+  if (!locale.el) tooltipCreate();
   let localized = 0;
   let hints = 0;
   locale.finished = true;
-  for (el of elements) {
-    const found = locale.data.find(l => l.label === el.textContent.trim());
+  for (const el of elements) {
+    const found = locale.data.find((l) => l.label === el.textContent.trim());
     if (found?.localized?.length > 0) {
       localized++;
       el.textContent = found.localized;
@@ -85,11 +82,13 @@ async function setHints() {
       }
     }
   }
-  console.log('set-hints', { type: locale.type, elements: elements.length, localized, hints, data: locale.data.length });
+  console.log('setHints', {
+    type: locale.type, elements: elements.length, localized, hints, data: locale.data.length,
+  });
   // validateHints(elements, locale.data)
 }
 
 onAfterUiUpdate(async () => {
   if (locale.timeout) clearTimeout(locale.timeout);
-  locale.timeout = setTimeout(setHints, 250)
+  locale.timeout = setTimeout(setHints, 250);
 });

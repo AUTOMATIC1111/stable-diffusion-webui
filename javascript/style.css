@@ -388,7 +388,8 @@ div#extras_scale_to_tab div.form{
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(20, 20, 20, 0.95);
+    background-color: rgba(20, 20, 20, 0.75);
+    backdrop-filter: blur(6px);
     user-select: none;
     -webkit-user-select: none;
     flex-direction: row;
@@ -399,6 +400,7 @@ div#extras_scale_to_tab div.form{
 .modalControls span { color: white; font-size: 2em; font-weight: bold; cursor: pointer; filter: grayscale(100%); }
 .modalControls span:hover, .modalControls span:focus { color: var(--highlight-color); filter: none; }
 .lightboxModalPreviewZone { display: flex; width: 100%; height: 100%; }
+.lightboxModalPreviewZone:focus-visible { outline: none; }
 .lightboxModalPreviewZone > img { display: block; margin: auto; width: auto; }
 .lightboxModalPreviewZone > img.modalImageFullscreen{ object-fit: contain;  height: 100%; width: 100%; min-height: 0; background: transparent; }
 

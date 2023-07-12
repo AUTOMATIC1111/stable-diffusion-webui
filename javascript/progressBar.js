@@ -1,14 +1,10 @@
 let lastState = {};
 
-function rememberGallerySelection(id_gallery) {}
-
-function getGallerySelectedIndex(id_gallery) {}
-
 function request(url, data, handler, errorHandler) {
   const xhr = new XMLHttpRequest();
   xhr.open('POST', url, true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.onreadystatechange = function () {
+  xhr.onreadystatechange = () => {
     if (xhr.readyState === 4) {
       if (xhr.status === 200) {
         try {
@@ -39,33 +35,33 @@ function formatTime(secs) {
 
 function checkPaused(state) {
   lastState.paused = state ? !state : !lastState.paused;
-  document.getElementById('txt2img_pause').innerText = lastState.paused ? 'Resume' : 'Pause'
-  document.getElementById('img2img_pause').innerText = lastState.paused ? 'Resume' : 'Pause'
+  document.getElementById('txt2img_pause').innerText = lastState.paused ? 'Resume' : 'Pause';
+  document.getElementById('img2img_pause').innerText = lastState.paused ? 'Resume' : 'Pause';
 }
 
 function setProgress(res) {
-  elements = ['txt2img_generate', 'img2img_generate', 'extras_generate']
-  const progress = (res?.progress || 0)
-  const perc = res && (progress > 0) ? `${Math.round(100.0 * progress)}%` : ''
-  let sec = res?.eta || 0
+  const elements = ['txt2img_generate', 'img2img_generate', 'extras_generate'];
+  const progress = (res?.progress || 0);
+  const perc = res && (progress > 0) ? `${Math.round(100.0 * progress)}%` : '';
+  let sec = res?.eta || 0;
   let eta = '';
   if (res?.paused) eta = 'Paused';
   else if (res?.completed || (progress > 0.99)) eta = 'Finishing';
   else if (sec === 0) eta = 'Starting';
   else {
-    min = Math.floor(sec / 60);
-    sec = sec % 60;
-    eta = min > 0 ? `ETA: ${Math.round(min)}m ${Math.round(sec)}s` : `ETA: ${Math.round(sec)}s`; 
+    const min = Math.floor(sec / 60);
+    sec %= 60;
+    eta = min > 0 ? `ETA: ${Math.round(min)}m ${Math.round(sec)}s` : `ETA: ${Math.round(sec)}s`;
   }
-  document.title = 'SD.Next ' + perc;
-  for (elId of elements) {
-    el = document.getElementById(elId);
+  document.title = `SD.Next ${perc}`;
+  for (const elId of elements) {
+    const el = document.getElementById(elId);
     el.innerText = res
       ? `${perc} ${eta}`
       : 'Generate';
-    el.style.background = res 
+    el.style.background = res
       ? `linear-gradient(to right, var(--primary-500) 0%, var(--primary-800) ${perc}, var(--neutral-700) ${perc})`
-      : 'var(--button-primary-background-fill)'
+      : 'var(--button-primary-background-fill)';
   }
 }
 
@@ -99,15 +95,15 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
         livePreview.style.width = `${rect.width}px`;
         livePreview.style.height = `${rect.height}px`;
       }
-      img.onload = function () {
+      img.onload = () => {
         livePreview.appendChild(img);
         if (livePreview.childElementCount > 2) livePreview.removeChild(livePreview.firstElementChild);
       };
     }
-  }
+  };
 
   const done = () => {
-    console.debug('task end:   ', id_task);
+    console.debug('taskEnd:', id_task);
     localStorage.removeItem('task');
     setProgress();
     if (parentGallery && livePreview) parentGallery.removeChild(livePreview);
@@ -115,12 +111,12 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
     if (atEnd) atEnd();
   };
 
-  const start = (id_task, id_live_preview) => {
+  const start = (id_task, id_live_preview) => { // eslint-disable-line no-shadow
     request('./internal/progress', { id_task, id_live_preview }, (res) => {
       lastState = res;
       const elapsedFromStart = (new Date() - dateStart) / 1000;
       hasStarted |= res.active;
-      if (res.completed || (!res.active && (hasStarted || once)) || (elapsedFromStart > 30 && !res.queued && res.progress == prevProgress)) {
+      if (res.completed || (!res.active && (hasStarted || once)) || (elapsedFromStart > 30 && !res.queued && res.progress === prevProgress)) {
         done();
         return;
       }

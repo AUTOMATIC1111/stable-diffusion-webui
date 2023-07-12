@@ -1,15 +1,15 @@
 function gradioApp() {
   const elems = document.getElementsByTagName('gradio-app');
   const elem = elems.length === 0 ? document : elems[0];
-  if (elem !== document) elem.getElementById = function (id) { return document.getElementById(id); };
+  if (elem !== document) elem.getElementById = (id) => document.getElementById(id);
   return elem.shadowRoot ? elem.shadowRoot : elem;
 }
 
-function get_uiCurrentTab() {
+function getUICurrentTab() {
   return gradioApp().querySelector('#tabs button.selected');
 }
 
-function get_uiCurrentTabContent() {
+function getUICurrentTabContent() {
   return gradioApp().querySelector('.tabitem[id^=tab_]:not([style*="display: none"])');
 }
 
@@ -44,11 +44,11 @@ function onOptionsChanged(callback) {
 function executeCallbacks(queue, arg) {
   // if (!uiLoaded) return
   for (const callback of queue) {
-      try {
-          callback(arg);
-      } catch (e) {
-          console.error("error running callback", callback, ":", e);
-      }
+    try {
+      callback(arg);
+    } catch (e) {
+      console.error('error running callback', callback, ':', e);
+    }
   }
 }
 
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     executeCallbacks(uiUpdateCallbacks, m);
     scheduleAfterUiUpdateCallbacks();
-    const newTab = get_uiCurrentTab();
+    const newTab = getUICurrentTab();
     if (newTab && (newTab !== uiCurrentTab)) {
       uiCurrentTab = newTab;
       executeCallbacks(uiTabChangeCallbacks);
@@ -87,7 +87,7 @@ document.addEventListener('keydown', (e) => {
     if ((e.keyCode === 13 && (e.metaKey || e.ctrlKey || e.altKey))) handled = true;
   }
   if (handled) {
-    button = get_uiCurrentTabContent().querySelector('button[id$=_generate]');
+    const button = getUICurrentTabContent().querySelector('button[id$=_generate]');
     if (button) button.click();
     e.preventDefault();
   }

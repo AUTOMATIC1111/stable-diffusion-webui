@@ -1,0 +1,25 @@
+{
+  "name": "@vladmandic/automatic",
+  "version": "dev",
+  "description": "SD.Next: Opinionated implementation of Stable Diffusion",
+  "author": "Vladimir Mandic <mandic00@live.com>",
+  "bugs": {
+    "url": "https://github.com/vladmandic/automatic/issues"
+  },
+  "homepage": "https://github.com/vladmandic/automatic",
+  "license": "AGPLv3",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vladmandic/automatic.git"
+  },
+  "devDependencies": {
+    "eslint": "^8.44.0",
+    "eslint-config-airbnb-base": "^15.0.0"
+  },
+  "dependencies": {
+    "eslint-plugin-json": "^3.1.0"
+  }
+}

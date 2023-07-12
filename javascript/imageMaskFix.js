@@ -8,29 +8,23 @@ function imageMaskResize() {
     window.removeEventListener('resize', imageMaskResize);
     return;
   }
-
   const wrapper = canvases[0].closest('.touch-none');
   const previewImage = wrapper.previousElementSibling;
-
   if (!previewImage.complete) {
     previewImage.addEventListener('load', imageMaskResize);
     return;
   }
-
   const w = previewImage.width;
   const h = previewImage.height;
   const nw = previewImage.naturalWidth;
   const nh = previewImage.naturalHeight;
   const portrait = nh > nw;
-
   const wW = Math.min(w, portrait ? h / nh * nw : w / nw * nw);
   const wH = Math.min(h, portrait ? h / nh * nh : w / nw * nh);
-
   wrapper.style.width = `${wW}px`;
   wrapper.style.height = `${wH}px`;
   wrapper.style.left = '0px';
   wrapper.style.top = '0px';
-
   canvases.forEach((c) => {
     c.style.width = '';
     c.style.height = '';

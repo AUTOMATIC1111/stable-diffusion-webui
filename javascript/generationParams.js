@@ -3,16 +3,10 @@
 function attachGalleryListeners(tab_name) {
   const gallery = gradioApp().querySelector(`#${tab_name}_gallery`);
   gallery?.addEventListener('click', () => setTimeout(() => {
-    gradioApp()
-      .getElementById(`${tab_name}_generation_info_button`)
-      ?.click();
+    gradioApp().getElementById(`${tab_name}_generation_info_button`)?.click();
   }, 500));
   gallery?.addEventListener('keydown', (e) => {
-    if (e.keyCode == 37 || e.keyCode == 39) { // left or right arrow
-      gradioApp()
-        .getElementById(`${tab_name}_generation_info_button`)
-        .click();
-    }
+    if (e.keyCode === 37 || e.keyCode === 39) gradioApp().getElementById(`${tab_name}_generation_info_button`).click(); // left or right arrow
   });
   return gallery;
 }
@@ -20,21 +14,26 @@ function attachGalleryListeners(tab_name) {
 let txt2img_gallery;
 let img2img_gallery;
 let modal;
+let generationParamsInitialized = false;
 
-onAfterUiUpdate(() => {
+function initiGenerationParams() {
+  if (generationParamsInitialized) return;
+  if (!modal) modal = gradioApp().getElementById('lightboxModal');
+  if (!modal) return;
+  generationParamsInitialized = true;
+
+  const modalObserver = new MutationObserver((mutations) => {
+    mutations.forEach((mutationRecord) => {
+      let selectedTab = gradioApp().querySelector('#tabs div button.selected')?.innerText;
+      if (!selectedTab) selectedTab = gradioApp().querySelector('#tabs div button')?.innerText;
+      if (mutationRecord.target.style.display === 'none' && (selectedTab === 'txt2img' || selectedTab === 'img2img')) { gradioApp().getElementById(`${selectedTab}_generation_info_button`)?.click(); }
+    });
+  });
+
   if (!txt2img_gallery) txt2img_gallery = attachGalleryListeners('txt2img');
   if (!img2img_gallery) img2img_gallery = attachGalleryListeners('img2img');
-  if (!modal) {
-    modal = gradioApp().getElementById('lightboxModal');
-    modalObserver.observe(modal, { attributes: true, attributeFilter: ['style'] });
-  }
-});
+  modalObserver.observe(modal, { attributes: true, attributeFilter: ['style'] });
+  console.log('initGenerationParams');
+}
 
-let modalObserver = new MutationObserver((mutations) => {
-  mutations.forEach((mutationRecord) => {
-    let selectedTab = gradioApp().querySelector('#tabs div button.selected')?.innerText;
-    if (!selectedTab) selectedTab = gradioApp().querySelector('#tabs div button')?.innerText;
-    if (mutationRecord.target.style.display === 'none' && (selectedTab === 'txt2img' || selectedTab === 'img2img')) { gradioApp().getElementById(`${selectedTab}_generation_info_button`)?.click(); }
-  });
-});
-
+onAfterUiUpdate(initiGenerationParams);

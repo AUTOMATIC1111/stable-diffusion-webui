@@ -96,7 +96,7 @@ def create_ui(txt2img_preview_params):
                     process_stop.click(fn=lambda: shared.state.interrupt(), inputs=[], outputs=[])
                     process_run.click(
                         fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
-                        _js="start_train_monitoring",
+                        _js="startTrainMonitor",
                         inputs=[
                             dummy_component,
                             process_src,
@@ -325,7 +325,7 @@ def create_ui(txt2img_preview_params):
 
                     hn_train.click(
                         fn=wrap_gradio_gpu_call(modules.hypernetworks.ui.train_hypernetwork, extra_outputs=[gr.update()]),
-                        _js="start_train_monitoring",
+                        _js="startTrainMonitor",
                         inputs=[
                             dummy_component,
                             hn_name,

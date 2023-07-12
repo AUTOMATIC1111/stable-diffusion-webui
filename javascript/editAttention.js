@@ -70,28 +70,23 @@ function keyupEditAttention(event) {
     selectionStart += 1;
     selectionEnd += 1;
   }
-
   const end = text.slice(selectionEnd + 1).indexOf(closeCharacter) + 1;
   let weight = parseFloat(text.slice(selectionEnd + 1, selectionEnd + 1 + end));
   if (Number.isNaN(weight)) return;
-
   weight += isPlus ? delta : -delta;
   weight = parseFloat(weight.toPrecision(12));
   if (String(weight).length === 1) weight += '.0';
-
-  if (closeCharacter == ')' && weight == 1) {
+  if (closeCharacter === ')' && weight === 1) {
     text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + 5);
     selectionStart--;
     selectionEnd--;
   } else {
     text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + 1 + end - 1);
   }
-
   target.focus();
   target.value = text;
   target.selectionStart = selectionStart;
   target.selectionEnd = selectionEnd;
-
   updateInput(target);
 }
 

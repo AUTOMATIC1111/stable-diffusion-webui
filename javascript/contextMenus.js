@@ -52,18 +52,19 @@ const contextMenuInit = () => {
     return newItem.id;
   }
 
-  function removeContextMenuOption(uid) {
+  function removeContextMenuOption(id) {
     menuSpecs.forEach((v, k) => {
       let index = -1;
-      v.forEach((e, ei) => { if (e.id === uid) { index = ei; } });
-      if (index >= 0) {
-        v.splice(index, 1);
-      }
+      v.forEach((e, ei) => {
+        if (e.id === id) { index = ei; }
+      });
+      if (index >= 0) v.splice(index, 1);
     });
   }
 
   function addContextMenuEventListener() {
     if (eventListenerApplied) return;
+    console.log('initContextMenu');
     gradioApp().addEventListener('click', (e) => {
       if (!e.isTrusted) return;
       const oldMenu = gradioApp().querySelector('#context-menu');
@@ -89,34 +90,25 @@ const appendContextMenuOption = initResponse[0];
 const removeContextMenuOption = initResponse[1];
 const addContextMenuEventListener = initResponse[2];
 
-(function () {
+(function () { // eslint-disable-line
   // Start example Context Menu Items
-  const generateOnRepeat = function (genbuttonid, interruptbuttonid) {
+  const generateOnRepeat = (genbuttonid, interruptbuttonid) => {
     const genbutton = gradioApp().querySelector(genbuttonid);
     const busy = document.getElementById('progressbar')?.style.display === 'block';
-    if (!busy) {
-      genbutton.click();
-    }
+    if (!busy) genbutton.click();
     clearInterval(window.generateOnRepeatInterval);
     window.generateOnRepeatInterval = setInterval(
       () => {
-        const busy = document.getElementById('progressbar')?.style.display === 'block';
-        if (!busy) genbutton.click();
+        const pbBusy = document.getElementById('progressbar')?.style.display === 'block';
+        if (!pbBusy) genbutton.click();
       },
       500,
     );
   };
 
-  appendContextMenuOption('#txt2img_generate', 'Generate forever', () => {
-    generateOnRepeat('#txt2img_generate', '#txt2img_interrupt');
-  });
-  appendContextMenuOption('#img2img_generate', 'Generate forever', () => {
-    generateOnRepeat('#img2img_generate', '#img2img_interrupt');
-  });
-
-  const cancelGenerateForever = function () {
-    clearInterval(window.generateOnRepeatInterval);
-  };
+  appendContextMenuOption('#txt2img_generate', 'Generate forever', () => generateOnRepeat('#txt2img_generate', '#txt2img_interrupt'));
+  appendContextMenuOption('#img2img_generate', 'Generate forever', () => generateOnRepeat('#img2img_generate', '#img2img_interrupt'));
+  const cancelGenerateForever = () => clearInterval(window.generateOnRepeatInterval);
 
   appendContextMenuOption('#txt2img_interrupt', 'Cancel generate forever', cancelGenerateForever);
   appendContextMenuOption('#txt2img_generate', 'Cancel generate forever', cancelGenerateForever);
@@ -126,7 +118,7 @@ const addContextMenuEventListener = initResponse[2];
     '#roll',
     'Roll three',
     () => {
-      const rollbutton = get_uiCurrentTabContent().querySelector('#roll');
+      const rollbutton = getUICurrentTabContent().querySelector('#roll');
       setTimeout(() => { rollbutton.click(); }, 100);
       setTimeout(() => { rollbutton.click(); }, 200);
       setTimeout(() => { rollbutton.click(); }, 300);
