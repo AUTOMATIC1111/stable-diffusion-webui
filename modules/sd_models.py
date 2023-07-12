@@ -538,15 +538,18 @@ class PriorPipeline:
         self.prior.to(*args, **kwargs)
 
     def enable_model_cpu_offload(self, *args, **kwargs):
-        self.prior.enable_model_cpu_offload(*args, **kwargs)
+        if hasattr(self.prior, 'enable_model_cpu_offload'):
+            self.prior.enable_model_cpu_offload(*args, **kwargs)
         self.main.enable_model_cpu_offload(*args, **kwargs)
 
     def enable_sequential_cpu_offload(self, *args, **kwargs):
-        self.prior.enable_sequential_cpu_offload(*args, **kwargs)
+        if hasattr(self.prior, 'enable_sequential_cpu_offload'):
+            self.prior.enable_sequential_cpu_offload(*args, **kwargs)
         self.main.enable_sequential_cpu_offload(*args, **kwargs)
 
     def enable_xformers_memory_efficient_attention(self, *args, **kwargs):
-        self.prior.enable_xformers_memory_efficient_attention(*args, **kwargs)
+        if hasattr(self.prior, 'enable_xformers_memory_efficient_attention'):
+            self.prior.enable_xformers_memory_efficient_attention(*args, **kwargs)
         self.main.enable_xformers_memory_efficient_attention(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
@@ -682,7 +685,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                         shared.log.error(f'Diffusers cannot load safetensor model: {checkpoint_info.path} {shared.opts.diffusers_pipeline}')
                         return
                     if sd_model is not None:
-                        shared.log.debug(f'Diffusers pipeline: {type(sd_model)}') # pylint: disable=protected-access
+                        shared.log.debug(f'Diffusers pipeline: {sd_model.__class__.__name__}') # pylint: disable=protected-access
                 except Exception as e:
                     shared.log.error(f'Diffusers failed loading model using pipeline: {checkpoint_info.path} {shared.opts.diffusers_pipeline} {e}')
                     return
@@ -778,7 +781,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         sd_model.sd_checkpoint_info = checkpoint_info # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_checkpoint = checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_hash = checkpoint_info.hash # pylint: disable=attribute-defined-outside-init
-        sd_model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {elapsed} {remaining}', ncols=80, colour='#327fba')
+        if hasattr(sd_model, "set_progress_bar_config"):
+            sd_model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {elapsed} {remaining}', ncols=80, colour='#327fba')
         if op == 'refiner' and shared.opts.diffusers_move_refiner:
             shared.log.debug('Moving refiner model to CPU')
             sd_model.to("cpu")
@@ -975,8 +979,8 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     if sd_model is None:  # previous model load failed
         current_checkpoint_info = None
     else:
-        current_checkpoint_info = sd_model.sd_checkpoint_info
-        if checkpoint_info is not None and current_checkpoint_info.filename == checkpoint_info.filename:
+        current_checkpoint_info = getattr(sd_model, 'sd_checkpoint_info', None)
+        if current_checkpoint_info is not None and checkpoint_info is not None and current_checkpoint_info.filename == checkpoint_info.filename:
             return
         if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
             lowvram.send_everything_to_cpu()

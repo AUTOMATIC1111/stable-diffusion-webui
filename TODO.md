@@ -2,12 +2,19 @@
 
 ## Issues
 
-Stuff to be fixed...
+Stuff to be fixed, in no particular order...
 
+- SD-XL Lora
+- SD-XL Img2Img/Inpaint
+- Kandinsky 2.2 (2.1 is working)
+- Refresh `sd_checkpoint` pulldown on backend switch
+- Extensions misteriously auto-enabling
+- VAE/UNet dtypes
+- Attention head
 
 ## Features
 
-Stuff to be added...
+Stuff to be added, in no particular order...
 
 - Update `Wiki`
 - Create new `GitHub` hooks/actions for CI/CD  
@@ -15,8 +22,19 @@ Stuff to be added...
 - Update `train.py` to use `interrogator`
 - Update `train.py` to use `rembg`
 - Create new train UI
-- Create new Models UI
-- Intelligent preview mode
+- Docker PR
+- Port `p.all_hr_prompts`
+- Image watermark using `image-watermark`
+- Image phash and hdash using `imagehash`
+- Model merge using `git-rebasin`
+- Additional upscalers
+- New image browser
+- Update `gradio`
+- Rename repo: **automatic** -> **sdnext**
+- New icons
+- Enable refiner workflow for `ldm` backend
+- Improve `lyco` logging
+- Cache models when switching backends
 
 ## Investigate
 
@@ -49,19 +67,4 @@ Tech that can be integrated as part of the core workflow...
 
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
 - <https://towardsdatascience.com/mastering-memoization-in-python-dcdd8b435189>
-- docker
-- port `p.all_hr_prompts`
-- test `lyco_patch_lora`
-- fix `lyco` logging
-- image watermark
-- image `imagehash` phash and hdash
-- git-rebasin
-- additional upscalers
-- new image browser
-- `git submodule set-url extensions-builtin/clip-interrogator-ext https://github.com/Dahvikiin/clip-interrogator-ext.git`
-- upate `gradio`
-- extra network refresh breaks if new extra network type found
-- [sd-xl lora](https://civitai.com/models/104913/fcstyledxl)
-- sd-xl img2img with configurable steps
-- change backend pipeline on-the-fly
-- rename repo
+

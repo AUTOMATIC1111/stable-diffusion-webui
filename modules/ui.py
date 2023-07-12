@@ -375,6 +375,7 @@ def create_ui(startup_timer = None):
                             restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                             tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
                             enable_hr = gr.Checkbox(label='Hires fix', value=False, elem_id="txt2img_enable_hr")
+                            enable_refiner = gr.Checkbox(label='Refiner', value=False, elem_id="txt2img_enable_refiner")
                             hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
                     elif category == "hires_fix":
                         with FormGroup(visible=False, elem_id="txt2img_hires_fix") as hr_options:
@@ -387,6 +388,14 @@ def create_ui(startup_timer = None):
                             with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact"):
                                 hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
                                 hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
+                        with FormGroup(visible=False, elem_id="txt2img_hires_fix") as refiner_options:
+                            with FormRow(elem_id="txt2img_refiner_row1", variant="compact"):
+                                refiner_steps = gr.Slider(minimum=1, maximum=99, step=1, label='Steps', value=5, elem_id="txt2img_refiner_steps")
+                                refiner_denoise = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.5, elem_id="txt2img_refiner_denoise")
+                            with FormRow(elem_id="txt2img_refiner_row2", variant="compact"):
+                                refiner_prompt = gr.Textbox(value='', label='Prompt')
+                            with FormRow(elem_id="txt2img_refiner_row3", variant="compact"):
+                                refiner_negative = gr.Textbox(value='', label='Negative prompt')
                     elif category == "override_settings":
                         with FormRow(elem_id="txt2img_override_settings_row") as row:
                             override_settings = create_override_settings_dropdown('txt2img', row)
@@ -435,6 +444,10 @@ def create_ui(startup_timer = None):
                     hr_second_pass_steps,
                     hr_resize_x,
                     hr_resize_y,
+                    refiner_steps,
+                    refiner_denoise,
+                    refiner_prompt,
+                    refiner_negative,
                     override_settings,
                 ] + custom_inputs,
                 outputs=[
@@ -451,23 +464,10 @@ def create_ui(startup_timer = None):
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
 
-            txt_prompt_img.change(
-                fn=modules.images.image_data,
-                inputs=[
-                    txt_prompt_img
-                ],
-                outputs=[
-                    txt2img_prompt,
-                    txt_prompt_img
-                ]
-            )
+            txt_prompt_img.change(fn=modules.images.image_data, inputs=[txt_prompt_img], outputs=[txt2img_prompt, txt_prompt_img])
 
-            enable_hr.change(
-                fn=lambda x: gr_show(x),
-                inputs=[enable_hr],
-                outputs=[hr_options],
-                show_progress = False,
-            )
+            enable_hr.change(fn=lambda x: gr_show(x), inputs=[enable_hr], outputs=[hr_options], show_progress = False)
+            enable_refiner.change(fn=lambda x: gr_show(x), inputs=[enable_refiner], outputs=[refiner_options], show_progress = False)
 
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),

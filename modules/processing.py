@@ -3,6 +3,7 @@ import math
 import os
 import hashlib
 import random
+import inspect
 from contextlib import nullcontext
 from typing import Any, Dict, List
 import torch
@@ -612,6 +613,45 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         cache[0] = (required_prompts, steps)
         return cache[1]
 
+    # TODO Diffusers limited callbacks
+    def diffusers_callback(step: int, _timestep: int, latents: torch.FloatTensor):
+        shared.state.sampling_step = step
+        shared.state.sampling_steps = p.steps
+        shared.state.current_latent = latents
+        shared.state.set_current_image()
+
+    def set_pipeline_args(model, prompt, negative_prompt, **kwargs):
+        args = {}
+        pipeline = model.main if model.__class__.__name__ == 'PriorPipeline' else model
+        signature = inspect.signature(type(pipeline).__call__)
+        possible = signature.parameters.keys()
+        generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
+        generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
+        if 'prompt' in possible:
+            args['prompt'] = prompt
+        if 'negative_prompt' in possible:
+            args['negative_prompt'] = negative_prompt
+        if 'num_inference_steps' in possible:
+            args['num_inference_steps'] = p.steps
+        if 'guidance_scale' in possible:
+            args['guidance_scale'] = p.cfg_scale
+        if 'generator' in possible:
+            args['generator'] = generator
+        if 'output_type' in possible:
+            args['output_type'] = 'np'
+        if 'callback_steps' in possible:
+            args['callback_steps'] = 1
+        if 'callback' in args:
+            args['callback'] = diffusers_callback
+        if 'cross_attention_kwargs' in possible:
+            args['cross_attention_kwargs'] = cross_attention_kwargs
+        for arg in kwargs:
+            if arg in possible:
+                args[arg] = kwargs[arg]
+        log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} args={args.keys()}')
+        return args
+
+
     ema_scope_context = p.sd_model.ema_scope if shared.backend == Backend.ORIGINAL else nullcontext
     with torch.no_grad(), ema_scope_context():
         with devices.autocast():
@@ -682,8 +722,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 del samples_ddim
 
             elif shared.backend == Backend.DIFFUSERS:
-                generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
-                generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
                 if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name):
                     sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
                     if sampler is None:
@@ -702,41 +740,33 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     # TODO(PVP): change out to latents once possible with `diffusers`
                     task_specific_kwargs = {"image": p.init_images[0], "mask_image": p.image_mask, "strength": p.denoising_strength}
 
-                # TODO Diffusers limited callbacks
                 # TODO Diffusers processing is not using p.sample so second pass is ignored
-                def diffusers_callback(step: int, _timestep: int, latents: torch.FloatTensor):
-                    shared.state.sampling_step = step
-                    shared.state.sampling_steps = p.steps
-                    shared.state.current_latent = latents
-                    shared.state.set_current_image()
 
                 shared.sd_model.to(devices.device)
-
-                pipe_args = { # TODO needs dynamic discovery of possible args
-                    "prompt": prompts,
-                    "negative_prompt": negative_prompts,
-                    "num_inference_steps": p.steps,
-                    "guidance_scale": p.cfg_scale,
-                    "generator": generator,
-                    "output_type": 'np' if shared.sd_refiner is None else 'latent',
-                    "callback_steps": 1, # TODO not supported by Kandinsky
-                    "callback": diffusers_callback, # TODO not supported by Kandinsky
-                    "cross_attention_kwargs": cross_attention_kwargs, # TODO not supported by Kandinsky
-                }
-                output = shared.sd_model(**pipe_args, **task_specific_kwargs) # pylint: disable=not-callable
-
+                pipe_args = set_pipeline_args(
+                    model=shared.sd_model,
+                    prompt=prompts,
+                    negative_prompt=negative_prompts,
+                    output_type='np' if shared.sd_refiner is None else 'latent',
+                    **task_specific_kwargs
+                )
+                output = shared.sd_model(**pipe_args) # pylint: disable=not-callable
                 if shared.sd_refiner is not None:
                     if shared.opts.diffusers_move_base:
                         shared.log.debug('Moving base model to CPU')
                         shared.sd_model.to('cpu')
                     shared.sd_refiner.to(devices.device)
                     devices.torch_gc()
-                    init_image = output.images[0]
-                    pipe_args['image'] = init_image
-                    pipe_args['output_type'] = 'np'
+                    pipe_args = set_pipeline_args(
+                        model=shared.sd_refiner,
+                        prompt=p.refiner_prompt if len(p.refiner_prompt) > 0 else prompts,
+                        negative_prompt=p.refiner_negative if len(p.refiner_negative) > 0 else negative_prompts,
+                        image=output.images[0],
+                        output_type='np'
+                    )
                     output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
                     if shared.opts.diffusers_move_refiner:
-                        shared.log.debug('Moving refiner model to CPU')
+                        log.debug('Moving refiner model to CPU')
                         shared.sd_refiner.to('cpu')
 
                 x_samples_ddim = output.images
@@ -852,7 +882,8 @@ def old_hires_fix_first_pass_dimensions(width, height):
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, **kwargs):
+    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, refiner_steps: int = 0, refiner_denoise: int = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
+
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
@@ -871,6 +902,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.truncate_x = 0
         self.truncate_y = 0
         self.applied_old_hires_behavior_to = None
+        self.refiner_steps = refiner_steps
+        self.refiner_denoise = refiner_denoise
+        self.refiner_prompt = refiner_prompt
+        self.refiner_negative = refiner_negative
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == Backend.DIFFUSERS:

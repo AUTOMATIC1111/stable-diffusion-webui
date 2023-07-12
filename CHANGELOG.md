@@ -1,8 +1,22 @@
 # Change Log for SD.Next
 
-## Update for 07/11/2023:
+## Update for 07/12/2023
 
-- fixes in extra-networks, diffusers samplers
+Another big one...
+
+- diffusers backend:
+  - separate ui settings for refiner pass with sd-xl  
+    you can specify: prompt, negative prompt, steps, denoise start  
+  - fix loading from pure safetensors files  
+    now you can load sd-xl from safetensors file or from huggingface folder format  
+  - fix kandinsky model  
+- other:
+  - major refactoring of the javascript code  
+    includes fixes for text selections and navigation  
+  - minor fixes in extra-networks
+
+big thanks to @huggingface team for great communication, support and fixing all the reported issues asap!
+
 
 ## Update for 07/10/2023
 
