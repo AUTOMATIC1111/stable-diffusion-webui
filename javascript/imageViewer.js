@@ -199,7 +199,7 @@ function initImageViewer() {
   const modalNext = document.createElement('a');
   modalNext.className = 'modalNext';
   modalNext.innerHTML = '&#10095;';
-  modalNext.addEventListener('click', () => modalImageSwitch(-1), true);
+  modalNext.addEventListener('click', () => modalImageSwitch(1), true);
   // modalNext.addEventListener('keydown', modalKeyHandler, true);
 
   const modalControls = document.createElement('div');

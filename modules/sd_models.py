@@ -819,13 +819,13 @@ class DiffusersTaskType(Enum):
 def set_diffuser_pipe(pipe, new_pipe_type):
     wrapper_pipe = None
 
-    if pipe.__class__ == PriorPipeline:
-        wrapper_pipe = pipe
-        pipe = pipe.main
-
     sd_checkpoint_info = pipe.sd_checkpoint_info
     sd_model_checkpoint = pipe.sd_model_checkpoint
     sd_model_hash = pipe.sd_model_hash
+
+    if pipe.__class__ == PriorPipeline:
+        wrapper_pipe = pipe
+        pipe = pipe.main
 
     pipe_name = pipe.__class__.__name__
     pipe_name = pipe_name.replace("Img2Img", "").replace("Inpaint", "")
