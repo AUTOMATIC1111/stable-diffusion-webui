@@ -9,7 +9,7 @@ Another big one...
     you can specify: prompt, negative prompt, steps, denoise start  
   - fix loading from pure safetensors files  
     now you can load sd-xl from safetensors file or from huggingface folder format  
-  - fix kandinsky model  
+  - fix kandinsky model (2.1 working, 2.2 was just released and will be soon)  
 - other:
   - major refactoring of the javascript code  
     includes fixes for text selections and navigation  

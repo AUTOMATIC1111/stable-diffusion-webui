@@ -8,14 +8,15 @@ Stuff to be fixed, in no particular order...
 - SD-XL Img2Img/Inpaint
 - Kandinsky 2.2 (2.1 is working)
 - Refresh `sd_checkpoint` pulldown on backend switch
-- Extensions misteriously auto-enabling
-- VAE/UNet dtypes
-- Attention head
+- Misterious Extensions auto-enabling
+- Misterious Extra network corruptions
 
 ## Features
 
 Stuff to be added, in no particular order...
 
+- VAE/UNet dtypes
+- Attention head
 - Update `Wiki`
 - Create new `GitHub` hooks/actions for CI/CD  
 - Import core repos
