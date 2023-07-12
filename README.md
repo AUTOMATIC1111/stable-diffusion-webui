@@ -135,7 +135,10 @@ Find the instructions [here](https://github.com/AUTOMATIC1111/stable-diffusion-w
 Here's how to add code to this repo: [Contributing](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Contributing)
 
 ## Documentation
+
 The documentation was moved from this README over to the project's [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki).
+
+For the purposes of getting Google and other search engines to crawl the wiki, here's a link to the (not for humans) [crawlable wiki](https://github-wiki-see.page/m/AUTOMATIC1111/stable-diffusion-webui/wiki).
 
 ## Credits
 Licenses for borrowed code can be found in `Settings -> Licenses` screen, and also in `html/licenses.html` file.

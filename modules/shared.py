@@ -1,9 +1,11 @@
 import datetime
 import json
 import os
+import re
 import sys
 import threading
 import time
+import logging
 
 import gradio as gr
 import torch
@@ -17,6 +19,8 @@ from modules import localization, script_loading, errors, ui_components, shared_
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir  # noqa: F401
 from ldm.models.diffusion.ddpm import LatentDiffusion
 from typing import Optional
+
+log = logging.getLogger(__name__)
 
 demo = None
 
@@ -144,12 +148,15 @@ class State:
     def request_restart(self) -> None:
         self.interrupt()
         self.server_command = "restart"
+        log.info("Received restart request")
 
     def skip(self):
         self.skipped = True
+        log.info("Received skip request")
 
     def interrupt(self):
         self.interrupted = True
+        log.info("Received interrupt request")
 
     def nextjob(self):
         if opts.live_previews_enable and opts.show_progress_every_n_steps == -1:
@@ -173,7 +180,7 @@ class State:
 
         return obj
 
-    def begin(self):
+    def begin(self, job: str = "(unknown)"):
         self.sampling_step = 0
         self.job_count = -1
         self.processing_has_refined_job_count = False
@@ -187,10 +194,13 @@ class State:
         self.interrupted = False
         self.textinfo = None
         self.time_start = time.time()
-
+        self.job = job
         devices.torch_gc()
+        log.info("Starting job %s", job)
 
     def end(self):
+        duration = time.time() - self.time_start
+        log.info("Ending job %s (%.2f seconds)", self.job, duration)
         self.job = ""
         self.job_count = 0
 
@@ -311,6 +321,10 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "grid_prevent_empty_spots": OptionInfo(False, "Prevent empty spots in grid (when set to autodetect)"),
     "grid_zip_filename_pattern": OptionInfo("", "Archive filename pattern", component_args=hide_dirs).link("wiki", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Custom-Images-Filename-Name-and-Subdirectory"),
     "n_rows": OptionInfo(-1, "Grid row count; use -1 for autodetect and 0 for it to be same as batch size", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
+    "font": OptionInfo("", "Font for image grids that have text"),
+    "grid_text_active_color": OptionInfo("#000000", "Text color for image grids", ui_components.FormColorPicker, {}),
+    "grid_text_inactive_color": OptionInfo("#999999", "Inactive text color for image grids", ui_components.FormColorPicker, {}),
+    "grid_background_color": OptionInfo("#ffffff", "Background color for image grids", ui_components.FormColorPicker, {}),
 
     "enable_pnginfo": OptionInfo(True, "Save text information about generation parameters as chunks to png files"),
     "save_txt": OptionInfo(False, "Create a text file next to every image with generation parameters."),
@@ -376,6 +390,8 @@ options_templates.update(options_section(('system', "System"), {
     "multiple_tqdm": OptionInfo(True, "Add a second progress bar to the console that shows progress for an entire job."),
     "print_hypernet_extra": OptionInfo(False, "Print extra hypernetwork information to console."),
     "list_hidden_files": OptionInfo(True, "Load models/files in hidden directories").info("directory is hidden if its name starts with \".\""),
+    "disable_mmap_load_safetensors": OptionInfo(False, "Disable memmapping for loading .safetensors files.").info("fixes very slow loading speed in some cases"),
+    "github_proxy": OptionInfo("None", "Github proxy", ui_components.DropdownEditable, lambda: {"choices": ["None", "ghproxy.com", "hub.yzuu.cf", "hub.njuu.cf", "hub.nuaa.cf"]}).info("for custom inputs will just replace github.com with the input"),
 }))
 
 options_templates.update(options_section(('training', "Training"), {
@@ -470,7 +486,6 @@ options_templates.update(options_section(('ui', "User interface"), {
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
     "send_size": OptionInfo(True, "Send size when sending prompt or image to another interface"),
-    "font": OptionInfo("", "Font for image grids that have text"),
     "js_modal_lightbox": OptionInfo(True, "Enable full page image viewer"),
     "js_modal_lightbox_initially_zoomed": OptionInfo(True, "Show images zoomed in by default in full page image viewer"),
     "js_modal_lightbox_gamepad": OptionInfo(False, "Navigate image viewer with gamepad"),
@@ -481,6 +496,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "keyedit_precision_attention": OptionInfo(0.1, "Ctrl+up/down precision when editing (attention:1.1)", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_precision_extra": OptionInfo(0.05, "Ctrl+up/down precision when editing <extra networks:0.9>", gr.Slider, {"minimum": 0.01, "maximum": 0.2, "step": 0.001}),
     "keyedit_delimiters": OptionInfo(".,\\/!?%^*;:{}=`~()", "Ctrl+up/down word delimiters"),
+    "keyedit_move": OptionInfo(True, "Alt+left/right moves prompt elements"),
     "quicksettings_list": OptionInfo(["sd_model_checkpoint"], "Quicksettings list", ui_components.DropdownMulti, lambda: {"choices": list(opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that appear at the top of page rather than in settings tab").needs_restart(),
     "ui_tab_order": OptionInfo([], "UI tab order", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
@@ -493,6 +509,7 @@ options_templates.update(options_section(('ui', "User interface"), {
 options_templates.update(options_section(('infotext', "Infotext"), {
     "add_model_hash_to_info": OptionInfo(True, "Add model hash to generation information"),
     "add_model_name_to_info": OptionInfo(True, "Add model name to generation information"),
+    "add_user_name_to_info": OptionInfo(False, "Add user name to generation information when authenticated"),
     "add_version_to_infotext": OptionInfo(True, "Add program version to generation information"),
     "disable_weights_auto_swap": OptionInfo(True, "Disregard checkpoint information from pasted infotext").info("when reading generation parameters from text into UI"),
     "infotext_styles": OptionInfo("Apply if any", "Infer styles from prompts of pasted infotext", gr.Radio, {"choices": ["Ignore", "Apply", "Discard", "Apply if any"]}).info("when reading generation parameters from text into UI)").html("""<ul style='margin-left: 1.5em'>
@@ -817,8 +834,12 @@ mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
 
 
+def natural_sort_key(s, regex=re.compile('([0-9]+)')):
+    return [int(text) if text.isdigit() else text.lower() for text in regex.split(s)]
+
+
 def listfiles(dirname):
-    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=str.lower) if not x.startswith(".")]
+    filenames = [os.path.join(dirname, x) for x in sorted(os.listdir(dirname), key=natural_sort_key) if not x.startswith(".")]
     return [file for file in filenames if os.path.isfile(file)]
 
 
@@ -843,8 +864,11 @@ def walk_files(path, allowed_extensions=None):
     if allowed_extensions is not None:
         allowed_extensions = set(allowed_extensions)
 
-    for root, _, files in os.walk(path, followlinks=True):
-        for filename in files:
+    items = list(os.walk(path, followlinks=True))
+    items = sorted(items, key=lambda x: natural_sort_key(x[0]))
+
+    for root, _, files in items:
+        for filename in sorted(files, key=natural_sort_key):
             if allowed_extensions is not None:
                 _, ext = os.path.splitext(filename)
                 if ext not in allowed_extensions:

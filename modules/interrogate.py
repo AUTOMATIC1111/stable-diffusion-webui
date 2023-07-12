@@ -184,8 +184,7 @@ class InterrogateModels:
 
     def interrogate(self, pil_image):
         res = ""
-        shared.state.begin()
-        shared.state.job = 'interrogate'
+        shared.state.begin(job="interrogate")
         try:
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
                 lowvram.send_everything_to_cpu()

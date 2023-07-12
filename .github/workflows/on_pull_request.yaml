@@ -18,7 +18,7 @@ jobs:
           #     not to have GHA download an (at the time of writing) 4 GB cache
           #     of PyTorch and other dependencies.
       - name: Install Ruff
-        run: pip install ruff==0.0.265
+        run: pip install ruff==0.0.272
       - name: Run Ruff
         run: ruff .
   lint-js:

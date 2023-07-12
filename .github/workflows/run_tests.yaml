@@ -42,7 +42,7 @@ jobs:
           --no-half
           --disable-opt-split-attention
           --use-cpu all
-          --add-stop-route
+          --api-server-stop
           2>&1 | tee output.txt &
       - name: Run tests
         run: |
@@ -50,7 +50,7 @@ jobs:
           python -m pytest -vv --junitxml=test/results.xml --cov . --cov-report=xml --verify-base-url test
       - name: Kill test server
         if: always()
-        run: curl -vv -XPOST http://127.0.0.1:7860/_stop && sleep 10
+        run: curl -vv -XPOST http://127.0.0.1:7860/sdapi/v1/server-stop && sleep 10
       - name: Show coverage
         run: |
           python -m coverage combine .coverage*
