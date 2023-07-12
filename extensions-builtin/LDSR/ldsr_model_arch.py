@@ -111,10 +111,7 @@ class LDSR:
         eta = 1.0
 
         gc.collect()
-        if torch.cuda.is_available:
-            torch.cuda.empty_cache()
-        if devices.backend == 'ipex':
-            torch.xpu.empty_cache()
+        devices.torch_gc()
 
         im_og = image
         width_og, height_og = im_og.size
@@ -150,8 +147,7 @@ class LDSR:
 
         del model
         gc.collect()
-        if torch.cuda.is_available:
-            torch.cuda.empty_cache()
+        devices.torch_gc()
 
         return a
 

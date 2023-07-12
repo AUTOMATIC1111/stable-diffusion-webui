@@ -193,7 +193,7 @@ else:
 if backend == 'ipex':
     #Fix broken functions with ipex
     from modules.sd_hijack_utils import CondFunc
-    torch.cuda.empty_cache = torch.xpu.empty_cache
+    torch.cuda.empty_cache = torch_gc
 
     #Functions with dtype errors:
     CondFunc('torch.nn.modules.GroupNorm.forward',
