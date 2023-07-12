@@ -1,3 +1,4 @@
+import os
 import gc
 import sys
 import contextlib
@@ -79,7 +80,7 @@ def torch_gc(force=False):
     if shared.opts.disable_gc and not force:
         return
     collected = gc.collect()
-    if backend == 'ipex':
+    if backend == 'ipex' and "WSL2" not in os.popen("uname -a").read():
         try:
             with torch.xpu.device(get_cuda_device_string()):
                 torch.xpu.empty_cache()
