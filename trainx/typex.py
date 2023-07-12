@@ -143,7 +143,7 @@ class TrainLoraTrainConfig(SerializationObj):
         self.batch_size = task.value('batch_size', default=4)
         self.epoch = task.value('epoch', default=20)
         self.save_every_n_epochs = task.value('save_every_n_epochs', default=5)
-        self.save_last_n_epochs = task.value('save_last_n_epochssave_last_n_epochs', default=2)
+        self.save_last_n_epochs = task.value('save_last_n_epochs', default=2)
         self.clip_skip = task.value('clip_skip', default=1)
         self.seed = task.value('seed', default=None)
         if isinstance(num_repeats, list):
@@ -404,7 +404,7 @@ class TrainLoraTask(UserDict):
                 num_repeats.append(params.advanced.list_reg_repeats[sub_folder])
             else:
                 num_repeats.append(params.advanced.list_reg_repeats)
-        key = self.hash_id[:32]
+        key = self.orig_task.get('model_name') or self.hash_id[:16]
 
         kwargs = {
             'output_dir': self.output_dir,
