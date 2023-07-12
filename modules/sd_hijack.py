@@ -173,25 +173,26 @@ class StableDiffusionModelHijack:
         if m.cond_stage_key == "edit":
             sd_hijack_unet.hijack_ddpm_edit()
 
-        import logging
-        if opts.cuda_compile and opts.cuda_compile_mode == 'ipex':
-            if devices.backend == 'ipex':
-                shared.log.info("Model compile enabled: IPEX Optimize Graph Mode")
-            else:
-                shared.log.warning("Model compile skipped: IPEX Method is for Intel GPU's with OneAPI")
-        elif opts.cuda_compile and opts.cuda_compile_mode != 'none' and shared.backend == shared.Backend.ORIGINAL:
+        if opts.cuda_compile and opts.cuda_compile_mode != 'none' and shared.backend == shared.Backend.ORIGINAL:
             try:
-                import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
-                log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
-                torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
-                torch._dynamo.config.verbose = opts.cuda_compile_verbose # pylint: disable=protected-access
-                torch._dynamo.config.suppress_errors = opts.cuda_compile_errors # pylint: disable=protected-access
-                torch.backends.cudnn.benchmark = True
-                if opts.cuda_compile_mode == 'hidet':
-                    import hidet
-                    hidet.torch.dynamo_config.use_tensor_core(True)
-                    hidet.torch.dynamo_config.search_space(2)
-                m.model = torch.compile(m.model, mode="default", backend=opts.cuda_compile_mode, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
+                import logging
+                if opts.cuda_compile_mode == 'ipex':
+                    import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
+                    m.model.training = False
+                    m.model = ipex.optimize(m.model, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True, # pylint: disable=attribute-defined-outside-init
+                    graph_mode=opts.cuda_compile_fullgraph, weights_prepack=False if shared.cmd_opts.lowvram or shared.cmd_opts.medvram else True)
+                else:
+                    import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
+                    log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
+                    torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
+                    torch._dynamo.config.verbose = opts.cuda_compile_verbose # pylint: disable=protected-access
+                    torch._dynamo.config.suppress_errors = opts.cuda_compile_errors # pylint: disable=protected-access
+                    torch.backends.cudnn.benchmark = True
+                    if opts.cuda_compile_mode == 'hidet':
+                        import hidet
+                        hidet.torch.dynamo_config.use_tensor_core(True)
+                        hidet.torch.dynamo_config.search_space(2)
+                    m.model = torch.compile(m.model, mode="default", backend=opts.cuda_compile_mode, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
                 shared.log.info(f"Model compile enabled: {opts.cuda_compile_mode}")
             except Exception as err:
                 shared.log.warning(f"Model compile not supported: {err}")

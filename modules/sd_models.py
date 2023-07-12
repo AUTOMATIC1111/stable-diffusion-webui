@@ -732,7 +732,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model.unet.to(memory_format=torch.channels_last)
 
         base_sent_to_cpu=False
-        if (shared.opts.cuda_compile and torch.cuda.is_available()) or devices.backend == 'ipex':
+        if shared.opts.cuda_compile and (torch.cuda.is_available() or devices.backend == 'ipex'):
             if op == 'refiner':
                 gpu_vram = memory_stats().get('gpu', {})
                 free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)
@@ -754,25 +754,23 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     base_sent_to_cpu=True
             else:
                 sd_model.to(devices.device)
-
-        if devices.backend == 'ipex':
-            sd_model.unet.training = False
-            if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex':
-                shared.log.info("Model compile enabled: IPEX Optimize Graph Mode")
-            sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True, # pylint: disable=attribute-defined-outside-init
-            graph_mode=True if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex' else False)
-            shared.log.info("Applied IPEX Optimize")
-
-        elif shared.opts.cuda_compile and torch.cuda.is_available():
-            import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
-            log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
-            torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
-            torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
-            torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
-            sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-            shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_mode}")
-            sd_model("dummy prompt")
-            shared.log.info("Complilation done.")
+            try:
+                if shared.opts.cuda_compile_mode == 'ipex':
+                    sd_model.unet.training = False
+                    sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, # pylint: disable=attribute-defined-outside-init
+                    optimize_lstm=True, weights_prepack=True, graph_mode=shared.opts.cuda_compile_fullgraph)
+                else:
+                    import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
+                    log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
+                    torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
+                    torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
+                    torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
+                    sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+                    shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_mode}")
+                    sd_model("dummy prompt")
+                shared.log.info("Complilation done.")
+            except Exception as err:
+                shared.log.warning(f"Model compile not supported: {err}")
 
         if sd_model is None:
             shared.log.error('Diffuser model not loaded')
@@ -940,11 +938,6 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     sd_hijack.model_hijack.hijack(sd_model)
     timer.record("hijack")
     sd_model.eval()
-    if devices.backend == 'ipex':
-        sd_model = torch.xpu.optimize(sd_model, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True,
-        weights_prepack=False if shared.cmd_opts.lowvram or shared.cmd_opts.medvram else True,
-        graph_mode=True if shared.opts.cuda_compile and shared.opts.cuda_compile_mode == 'ipex' else False)
-        shared.log.info("Applied IPEX Optimize")
     if op == 'refiner':
         model_data.sd_refiner = sd_model
     else:
