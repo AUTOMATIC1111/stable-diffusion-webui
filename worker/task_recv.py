@@ -25,7 +25,8 @@ from collections import defaultdict
 from tools.model_hist import CkptLoadRecorder
 from tools.gpu import GpuInfo
 from tools.wrapper import timed_lru_cache
-from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, pod_host,\
+from tools.host import get_host_name
+from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api,\
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
 try:
@@ -148,7 +149,12 @@ class TaskReceiver:
         nvidia_video_card_id = '&'.join(GpuInfo().names)
 
         # int(str(uuid.uuid1())[-4:], 16)
-        hostname = pod_host()
+        hostname = get_host_name()
+        try:
+            int(hostname[:8], 16)
+        except:
+            hostname = None
+
         print(f"hostname:{hostname}, vedio id:{nvidia_video_card_id}")
         if not nvidia_video_card_id:
             nvidia_video_card_id = hostname or uuid.uuid1()
@@ -406,11 +412,10 @@ class TaskReceiver:
                     try:
                         resp = requests.get(url, timeout=5)
                         json_data = resp.json() or {}
-                        group = get_worker_group()
-                        auto_scaler = json_data.get('auto_scaler')
-                        if auto_scaler and group in auto_scaler:
-                            self.release_flag = auto_scaler[group] == 0
-                    except:
+                        need_workers = json_data.get('need_workers', 0)
+                        self.release_flag = need_workers == 0
+                    except Exception as ex:
+                        logger.exception('cannot get elastic workers')
                         self.release_flag = False
         else:
             self.release_flag = False
