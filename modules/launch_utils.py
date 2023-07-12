@@ -227,13 +227,14 @@ def run_extensions_installers(settings_file):
 def mute_sdxl_imports():
     """create fake modules that SDXL wants to import but doesn't actually use for our purposes"""
 
-    import importlib
+    class Dummy:
+        pass
 
-    module = importlib.util.module_from_spec(importlib.machinery.ModuleSpec('taming.modules.losses.lpips', None))
+    module = Dummy()
     module.LPIPS = None
     sys.modules['taming.modules.losses.lpips'] = module
 
-    module = importlib.util.module_from_spec(importlib.machinery.ModuleSpec('sgm.data', None))
+    module = Dummy()
     module.StableDataModuleFromConfig = None
     sys.modules['sgm.data'] = module
 
