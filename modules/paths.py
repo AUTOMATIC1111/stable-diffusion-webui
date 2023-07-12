@@ -41,7 +41,7 @@ for d, must_exist, what, options in path_dirs:
             # import sgm and remove it from sys.path so that when a script imports scripts.something, it doesbn't use sgm's scripts dir.
 
             sys.path.insert(0, d)
-            import sgm
+            import sgm  # noqa: F401
             sys.path.pop(0)
         else:
             sys.path.append(d)
