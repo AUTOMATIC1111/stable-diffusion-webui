@@ -30,6 +30,10 @@ has_mps = check_for_mps()
 
 def torch_mps_gc() -> None:
     try:
+        from modules.shared import state
+        if state.current_latent is not None:
+            log.debug("`current_latent` is set, skipping MPS garbage collection")
+            return
         from torch.mps import empty_cache
         empty_cache()
     except Exception:
