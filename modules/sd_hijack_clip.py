@@ -42,6 +42,10 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         self.hijack: sd_hijack.StableDiffusionModelHijack = hijack
         self.chunk_length = 75
 
+        self.is_trainable = getattr(wrapped, 'is_trainable', False)
+        self.input_key = getattr(wrapped, 'input_key', 'txt')
+        self.legacy_ucg_val = None
+
     def empty_chunk(self):
         """creates an empty PromptChunk and returns it"""
 
@@ -199,8 +203,9 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         """
         Accepts an array of texts; Passes texts through transformers network to create a tensor with numerical representation of those texts.
         Returns a tensor with shape of (B, T, C), where B is length of the array; T is length, in tokens, of texts (including padding) - T will
-        be a multiple of 77; and C is dimensionality of each token - for SD1 it's 768, and for SD2 it's 1024.
+        be a multiple of 77; and C is dimensionality of each token - for SD1 it's 768, for SD2 it's 1024, and for SDXL it's 1280.
         An example shape returned by this function can be: (2, 77, 768).
+        For SDXL, instead of returning one tensor avobe, it returns a tuple with two: the other one with shape (B, 1280) with pooled values.
         Webui usually sends just one text at a time through this function - the only time when texts is an array with more than one elemenet
         is when you do prompt editing: "a picture of a [cat:dog:0.4] eating ice cream"
         """
@@ -233,7 +238,10 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
             embeddings_list = ", ".join([f'{name} [{embedding.checksum()}]' for name, embedding in used_embeddings.items()])
             self.hijack.comments.append(f"Used embeddings: {embeddings_list}")
 
-        return torch.hstack(zs)
+        if getattr(self.wrapped, 'return_pooled', False):
+            return torch.hstack(zs), zs[0].pooled
+        else:
+            return torch.hstack(zs)
 
     def process_tokens(self, remade_batch_tokens, batch_multipliers):
         """
@@ -256,9 +264,9 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
         # restoring original mean is likely not correct, but it seems to work well to prevent artifacts that happen otherwise
         batch_multipliers = torch.asarray(batch_multipliers).to(devices.device)
         original_mean = z.mean()
-        z = z * batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
+        z *= batch_multipliers.reshape(batch_multipliers.shape + (1,)).expand(z.shape)
         new_mean = z.mean()
-        z = z * (original_mean / new_mean)
+        z *= (original_mean / new_mean)
 
         return z
 

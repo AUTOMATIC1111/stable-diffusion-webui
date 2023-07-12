@@ -224,6 +224,20 @@ def run_extensions_installers(settings_file):
         run_extension_installer(os.path.join(extensions_dir, dirname_extension))
 
 
+def mute_sdxl_imports():
+    """create fake modules that SDXL wants to import but doesn't actually use for our purposes"""
+
+    import importlib
+
+    module = importlib.util.module_from_spec(importlib.machinery.ModuleSpec('taming.modules.losses.lpips', None))
+    module.LPIPS = None
+    sys.modules['taming.modules.losses.lpips'] = module
+
+    module = importlib.util.module_from_spec(importlib.machinery.ModuleSpec('sgm.data', None))
+    module.StableDataModuleFromConfig = None
+    sys.modules['sgm.data'] = module
+
+
 def prepare_environment():
     torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu118")
     torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url {torch_index_url}")
@@ -319,9 +333,12 @@ def prepare_environment():
     if args.update_all_extensions:
         git_pull_recursive(extensions_dir)
 
+    mute_sdxl_imports()
+
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
+
 
 
 def configure_for_tests():

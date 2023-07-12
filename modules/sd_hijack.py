@@ -15,6 +15,11 @@ import ldm.models.diffusion.ddim
 import ldm.models.diffusion.plms
 import ldm.modules.encoders.modules
 
+import sgm.modules.attention
+import sgm.modules.diffusionmodules.model
+import sgm.modules.diffusionmodules.openaimodel
+import sgm.modules.encoders.modules
+
 attention_CrossAttention_forward = ldm.modules.attention.CrossAttention.forward
 diffusionmodules_model_nonlinearity = ldm.modules.diffusionmodules.model.nonlinearity
 diffusionmodules_model_AttnBlock_forward = ldm.modules.diffusionmodules.model.AttnBlock.forward
@@ -56,6 +61,9 @@ def apply_optimizations(option=None):
     ldm.modules.diffusionmodules.model.nonlinearity = silu
     ldm.modules.diffusionmodules.openaimodel.th = sd_hijack_unet.th
 
+    sgm.modules.diffusionmodules.model.nonlinearity = silu
+    sgm.modules.diffusionmodules.openaimodel.th = sd_hijack_unet.th
+
     if current_optimizer is not None:
         current_optimizer.undo()
         current_optimizer = None
@@ -88,6 +96,10 @@ def undo_optimizations():
     ldm.modules.diffusionmodules.model.nonlinearity = diffusionmodules_model_nonlinearity
     ldm.modules.attention.CrossAttention.forward = hypernetwork.attention_CrossAttention_forward
     ldm.modules.diffusionmodules.model.AttnBlock.forward = diffusionmodules_model_AttnBlock_forward
+
+    sgm.modules.diffusionmodules.model.nonlinearity = diffusionmodules_model_nonlinearity
+    sgm.modules.attention.CrossAttention.forward = hypernetwork.attention_CrossAttention_forward
+    sgm.modules.diffusionmodules.model.AttnBlock.forward = diffusionmodules_model_AttnBlock_forward
 
 
 def fix_checkpoint():
@@ -170,10 +182,19 @@ class StableDiffusionModelHijack:
         if conditioner:
             for i in range(len(conditioner.embedders)):
                 embedder = conditioner.embedders[i]
-                if type(embedder).__name__ == 'FrozenOpenCLIPEmbedder':
+                typename = type(embedder).__name__
+                if typename == 'FrozenOpenCLIPEmbedder':
                     embedder.model.token_embedding = EmbeddingsWithFixes(embedder.model.token_embedding, self)
                     m.cond_stage_model = sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords(embedder, self)
                     conditioner.embedders[i] = m.cond_stage_model
+                if typename == 'FrozenCLIPEmbedder':
+                    model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
+                    model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
+                    m.cond_stage_model = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(embedder, self)
+                    conditioner.embedders[i] = m.cond_stage_model
+                if typename == 'FrozenOpenCLIPEmbedder2':
+                    embedder.model.token_embedding = EmbeddingsWithFixes(embedder.model.token_embedding, self)
+                    conditioner.embedders[i] = sd_hijack_open_clip.FrozenOpenCLIPEmbedder2WithCustomWords(embedder, self)
 
         if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
             model_embeddings = m.cond_stage_model.roberta.embeddings
