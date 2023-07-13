@@ -55,3 +55,6 @@ sgm.modules.diffusionmodules.model.print = lambda *args: None
 sgm.modules.diffusionmodules.openaimodel.print = lambda *args: None
 sgm.modules.encoders.modules.print = lambda *args: None
 
+# this gets the code to load the vanilla attention that we override
+sgm.modules.attention.SDP_IS_AVAILABLE = True
+sgm.modules.attention.XFORMERS_IS_AVAILABLE = False
