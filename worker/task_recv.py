@@ -254,9 +254,13 @@ class TaskReceiver:
             workers = self.get_all_workers()
             if workers:
                 # 1/5的WOEKER 生图，剩下的执行训练。
-                run_train_workers = workers[len(workers) // 5:]
+                if len(workers) >= 5:
+                    run_train_workers = workers[len(workers) // 5:]
+                else:
+                    run_train_workers = []
+
                 logger.info(f"run train task worker ids:{';'.join(run_train_workers)}, current id:{self.worker_id}")
-                run_train_worker_flag = self.worker_id in workers[len(workers) // 5:]
+                run_train_worker_flag = self.worker_id in run_train_workers
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
 
