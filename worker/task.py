@@ -68,6 +68,9 @@ class Task(UserDict):
     def is_train(self):
         return TaskType.Train == self.task_type
 
+    def stop_receiver(self):
+        return self.is_train or '67f5b377-1b0e-439b-a886-1784af2b38ec' in self.get('user_id', '')
+
     @property
     def sd_model_path(self):
         return self.get('base_model_path')

@@ -69,7 +69,11 @@ class TaskExecutor(Thread):
                 handler.set_failed(task, f'task time out(task create time:{create_time}, now:{now})')
                 continue
             handler(task)
-            self.not_busy.notify()
+            if task.stop_receiver():
+                time.sleep(3)
+            with self.not_busy:
+                self.not_busy.notify()
+
         logger.info('executor stopping...')
         self._close()
 
@@ -79,6 +83,10 @@ class TaskExecutor(Thread):
                 if not self.queue.full():
                     for task in self.receiver.task_iter():
                         self.queue.put(task)
+                        if isinstance(task, Task) and task.stop_receiver():
+                            logger.info("====>>> waiting train task, stop receive.")
+                            self.not_busy.wait()
+                            logger.info("====>>> waiting train task, begin receive.")
                 else:
                     self.not_busy.wait()
         logger.info("=======> task receiver quit!!!!!!")

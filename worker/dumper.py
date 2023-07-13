@@ -154,6 +154,12 @@ class MongoTaskDumper(TaskDumper):
         mgo.collect.create_index('task_id', unique=True)
         mgo.collect.create_index('status')
         mgo.collect.create_index('task.user_id')
+        mgo.collect.create_index('task.create_at')
+        mgo.collect.create_index('task.minor_type')
+        mgo.collect.create_index('task.task_type')
+        mgo.collect.create_index('task.model_name')
+        mgo.collect.create_index('task.model_hash')
+
         self.clean_time = 0
         super(MongoTaskDumper, self).__init__(mgo)
 

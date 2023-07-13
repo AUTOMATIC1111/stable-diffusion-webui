@@ -71,6 +71,7 @@ class TaskHandler:
                 logger.exception('unhandle err')
                 p = TaskProgress.new_failed(task, msg, trace)
                 self._set_task_status(p)
+                torch_gc()
                 if 'BrokenPipeError' in str(ex):
                     pass
 

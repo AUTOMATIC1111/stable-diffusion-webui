@@ -216,6 +216,10 @@ class TaskReceiver:
                     return task
 
     def _search_train_task(self):
+        # 弹性不训练
+        if self.is_elastic:
+            return
+
         if self.train_only or self._can_gener_img_worker_run_train():
             keys = self._search_queue_names()
             for queue_name in keys:
@@ -237,7 +241,7 @@ class TaskReceiver:
                 run_train_worker_flag = self.worker_id in workers[len(workers) // 5:]
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
-                
+
                 if run_train_worker_flag and free / 2 ** 30 > 16:
                     logger.info(">>> worker can run train task.")
 

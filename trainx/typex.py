@@ -13,7 +13,7 @@ from enum import IntEnum
 from collections import UserDict
 from Crypto.Hash import SHA256
 from worker.task import Task, TaskType
-from .utils import get_tmp_local_path, Tmp, upload_files
+from .utils import get_tmp_local_path, Tmp, upload_files, ModelType, get_model_local_path
 from tools.file import zip_uncompress, getdirsize, zip_compress, find_files_from_dir
 from modules.textual_inversion.preprocess import PreprocessTxtAction
 
@@ -379,8 +379,8 @@ class TrainLoraTask(UserDict):
         self.rewrite_caption(image_dir)
         toml = self.create_toml(image_dir)
         params = self.train_param()
-        base_model = get_tmp_local_path(params.base.base_model)
-        base_lora = get_tmp_local_path(params.base.base_lora) if params.base.base_lora else ''
+        base_model = get_model_local_path(params.base.base_model, ModelType.CheckPoint)
+        base_lora = get_model_local_path(params.base.base_lora, ModelType.Lora) if params.base.base_lora else ''
         save_last_n_epochs = params.train.save_last_n_epochs
 
         class_tokens, list_train_data_dir, num_repeats = [], [], []
