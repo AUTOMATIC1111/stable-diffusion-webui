@@ -26,6 +26,7 @@ from tools.model_hist import CkptLoadRecorder
 from tools.gpu import GpuInfo
 from tools.wrapper import timed_lru_cache
 from tools.host import get_host_name
+from modules.shared import mem_mon as vram_mon
 from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api,\
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
@@ -130,7 +131,7 @@ class TaskReceiver:
 
         def formate_day_of_time(day_of_time: int):
             if day_of_time < 0:
-                return 24 - day_of_time
+                return 24 + day_of_time
             return day_of_time
 
         run_train_time_start = formate_day_of_time(int(run_train_time_start) - 8 if run_train_time_start else 15)
@@ -139,7 +140,7 @@ class TaskReceiver:
         self.run_train_time_start = min(run_train_time_start, run_train_time_end)
         self.run_train_time_end = max(run_train_time_start, run_train_time_end)
 
-        logger.info(f"worker id:{self.worker_id}")
+        logger.info(f"worker id:{self.worker_id}, train work receive clock:{self.run_train_time_start} - {self.run_train_time_end}")
 
         self.register_time = 0
         self.local_cache = {}
@@ -150,8 +151,10 @@ class TaskReceiver:
 
         # int(str(uuid.uuid1())[-4:], 16)
         hostname = get_host_name()
+        # hostname = 'sdplus-saas-qa-568ff9745c-rcwm6'
         try:
-            int(hostname[:8], 16)
+            int(hostname[-16:-6], 16)
+            hostname = 'Host:' + hostname
         except:
             hostname = None
 
@@ -331,7 +334,7 @@ class TaskReceiver:
                 time.sleep(wait)
             self.register_worker()
 
-    def task_iter(self, sleep_time: float = 4) -> typing.Iterable[Task]:
+    def task_iter(self, sleep_time: float = 2) -> typing.Iterable[Task]:
         while 1:
             try:
                 st = time.time()
@@ -357,6 +360,8 @@ class TaskReceiver:
                 if wait > 0:
                     self._clean_tmp_files()
                     time.sleep(wait)
+                    free, total = vram_mon.cuda_mem_get_info()
+                    logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
             except:
                 time.sleep(1)
                 logger.exception("get task err")
@@ -384,9 +389,14 @@ class TaskReceiver:
         now = int(time.time())
         rds = self.redis_pool.get_connection()
         keys = rds.zrangebyscore(SDWorkerZset, now - 300, now)
-        worker_ids = [k.decode('utf8').replace("-", "") if isinstance(k, bytes) else k for k in keys]
+        worker_ids = [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
 
-        worker_ids = sorted(worker_ids, key=lambda x: int(x[-8:], 16))
+        def get_work_id_num(x: str):
+            if 'Host:' in x:
+                return x[-16:-8]
+            return x.replace("-", "")[-8:]
+
+        worker_ids = sorted(worker_ids, key=get_work_id_num)
         return worker_ids
 
     def get_group_workers(self):

@@ -239,6 +239,7 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
     out_image = ImageOutput(OutImageType.Image, output_dir)
     out_script_image = ImageOutput(OutImageType.Script, script_dir)
 
+    size = ''
     for n, processed_image in enumerate(proc.images):
         ex = '.png'
         if isinstance(processed_image, Image.Image) and hasattr(processed_image, 'already_saved_as'):
@@ -262,6 +263,7 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
 
         pnginfo_data = PngInfo()
         pnginfo_data.add_text('by', 'xing-zhe')
+        size = f"{processed_image.width}*{processed_image.height}"
         for k, v in processed_image.info.items():
             if 'parameters' == k:
                 v = des_encrypt(v)
@@ -283,6 +285,7 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
     output.update({
         'has_grid': proc.index_of_first_image > 0,
         'all': all_keys.to_dict(),
+        'size': size
     })
 
     return output
