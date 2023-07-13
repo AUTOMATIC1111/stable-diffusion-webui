@@ -360,8 +360,7 @@ class TaskReceiver:
                 if wait > 0:
                     self._clean_tmp_files()
                     time.sleep(wait)
-                    free, total = vram_mon.cuda_mem_get_info()
-                    logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
+
             except:
                 time.sleep(1)
                 logger.exception("get task err")
@@ -372,6 +371,8 @@ class TaskReceiver:
     def register_worker(self):
         if time.time() - self.register_time > 120:
             try:
+                free, total = vram_mon.cuda_mem_get_info()
+                logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
                 conn = self.redis_pool.get_connection()
                 # conn.setex(self.worker_id, 300, 60)
                 conn.zadd(SDWorkerZset, {
