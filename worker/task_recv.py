@@ -26,6 +26,7 @@ from tools.model_hist import CkptLoadRecorder
 from tools.gpu import GpuInfo
 from tools.wrapper import timed_lru_cache
 from tools.host import get_host_name
+from modules.shared import mem_mon as vram_mon
 from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api,\
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
@@ -333,7 +334,7 @@ class TaskReceiver:
                 time.sleep(wait)
             self.register_worker()
 
-    def task_iter(self, sleep_time: float = 4) -> typing.Iterable[Task]:
+    def task_iter(self, sleep_time: float = 2) -> typing.Iterable[Task]:
         while 1:
             try:
                 st = time.time()
@@ -359,6 +360,8 @@ class TaskReceiver:
                 if wait > 0:
                     self._clean_tmp_files()
                     time.sleep(wait)
+                    free, total = vram_mon.cuda_mem_get_info()
+                    logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
             except:
                 time.sleep(1)
                 logger.exception("get task err")
