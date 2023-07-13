@@ -7,6 +7,8 @@ let img2img_textarea;
 const wait_time = 800;
 const token_timeouts = {};
 let uiLoaded = false;
+let opts_metadata = {};
+const opts_tabs = {};
 
 function set_theme(theme) {
   const gradioURL = window.location.href;
@@ -226,12 +228,25 @@ function register_drag_drop() {
   });
 }
 
-opts = {};
-let opts_metadata = {};
-const opts_tabs = {};
+const monitoredOpts = [
+  { sd_model_checkpoint: null },
+  {
+    sd_backend: () => {
+      gradioApp().getElementById('refresh_sd_model_checkpoint')?.click();
+    },
+  },
+];
 
 function updateOpts(json_string) {
   const settings_data = JSON.parse(json_string);
+  for (const op of monitoredOpts) {
+    const key = Object.keys(op)[0];
+    const callback = op[key];
+    if (opts[key] && opts[key] !== settings_data.values[key]) {
+      console.log('updateOpts', key, opts[key], settings_data.values[key]);
+      if (callback) callback();
+    }
+  }
   opts = settings_data.values;
   opts_metadata = settings_data.metadata;
   Object.entries(opts_metadata).forEach(([opt, meta]) => {
@@ -253,7 +268,7 @@ function showAllSettings() {
   });
 }
 
-function sort_ui_elements() {
+function sortUIElements() {
   // sort top-level tabs
   const currSelected = gradioApp()?.querySelector('.tab-nav > .selected')?.innerText;
   if (currSelected === tabSelected || !opts.ui_tab_reorder) return;
@@ -280,6 +295,7 @@ function sort_ui_elements() {
 
   const scriptsImg = gradioApp().getElementById('scripts_alwayson_img2img').children;
   for (const el of Array.from(scriptsImg)) el.style.order = find(el, tabsOrder);
+  console.log('sortUIElements');
 }
 
 function markIfModified(setting_name, value) {
@@ -318,7 +334,7 @@ function markIfModified(setting_name, value) {
 }
 
 onAfterUiUpdate(async () => {
-  sort_ui_elements();
+  sortUIElements();
   if (Object.keys(opts).length !== 0) return;
   const json_elem = gradioApp().getElementById('settings_json');
   if (!json_elem) return;

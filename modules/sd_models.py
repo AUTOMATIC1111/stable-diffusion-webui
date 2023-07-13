@@ -575,7 +575,6 @@ def change_backend():
     shared.log.info(f'Pipeline changed: {shared.backend}')
     unload_model_weights()
     checkpoints_loaded.clear()
-    list_models()
     from modules.sd_samplers import list_samplers
     list_samplers(shared.backend)
 

@@ -7,29 +7,26 @@ Stuff to be fixed, in no particular order...
 - SD-XL Lora
 - SD-XL Img2Img/Inpaint
 - Kandinsky 2.2 (2.1 is working)
-- Refresh `sd_checkpoint` pulldown on backend switch
 - Misterious Extensions auto-enabling
 - Misterious Extra network corruptions
-- Update submodule upstream: `git submodule sync`
 
 ## Features
 
 Stuff to be added, in no particular order...
 
-- VAE/UNet dtypes
-- Attention head
 - Update `Wiki`
 - Create new `GitHub` hooks/actions for CI/CD  
 - Import core repos
 - Update `train.py` to use `interrogator`
 - Update `train.py` to use `rembg`
-- Create new train UI
+- Create new **Lora** train UI
 - Docker PR
 - Port `p.all_hr_prompts`
 - Image watermark using `image-watermark`
 - Image phash and hdash using `imagehash`
 - Model merge using `git-rebasin`
 - Additional upscalers
+- XYZ grid upscalers
 - New image browser
 - Update `gradio`
 - Rename repo: **automatic** -> **sdnext**

@@ -1,9 +1,14 @@
 # Change Log for SD.Next
 
-## Update for 07/12/2023
+## Update for 07/13/2023
 
-Another big one, but now improvements to both **diffusers** and **original** backend
+Another big one, but now improvements to both **diffusers** and **original** backends as well plus ability to dynamically switch between them!
 
+- swich backend between diffusers and original on-the-fly
+  - you can still use `--backend <backend>` and now that only means in which mode app will start,
+    but you can change it anytime in ui settings
+  - for example, you can even do things like generate image using sd-xl,  
+    then switch to original backend and perform inpaint using a different model  
 - diffusers backend:
   - separate ui settings for refiner pass with sd-xl  
     you can specify: prompt, negative prompt, steps, denoise start  
@@ -17,7 +22,8 @@ Another big one, but now improvements to both **diffusers** and **original** bac
 - other:
   - major refactoring of the javascript code  
     includes fixes for text selections and navigation  
-  - minor fixes in extra-networks
+  - minor fixes in extra-networks  
+  - installer handles origin changes for submodules  
 
 big thanks to @huggingface team for great communication, support and fixing all the reported issues asap!
 
