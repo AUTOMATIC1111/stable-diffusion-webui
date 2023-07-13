@@ -224,22 +224,6 @@ def run_extensions_installers(settings_file):
         run_extension_installer(os.path.join(extensions_dir, dirname_extension))
 
 
-def mute_sdxl_imports():
-    """create fake modules that SDXL wants to import but doesn't actually use for our purposes"""
-
-    class Dummy:
-        pass
-
-    module = Dummy()
-    module.LPIPS = None
-    sys.modules['taming.modules.losses.lpips'] = module
-
-    module = Dummy()
-    module.StableDataModuleFromConfig = None
-    sys.modules['sgm.data'] = module
-
-
-
 def prepare_environment():
     torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu118")
     torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url {torch_index_url}")
@@ -356,8 +340,6 @@ def configure_for_tests():
 
 
 def start():
-    mute_sdxl_imports()
-
     print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
     if '--nowebui' in sys.argv:
