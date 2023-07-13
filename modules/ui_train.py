@@ -209,7 +209,7 @@ def create_ui(txt2img_preview_params):
 
                     ti_train.click(
                         fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.train_embedding, extra_outputs=[gr.update()]),
-                        _js="start_train_monitoring",
+                        _js="startTrainMonitor",
                         inputs=[
                             dummy_component,
                             ti_name,
