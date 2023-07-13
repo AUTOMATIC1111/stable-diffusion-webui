@@ -69,7 +69,7 @@ class Task(UserDict):
         return TaskType.Train == self.task_type
 
     def stop_receiver(self):
-        return (self.is_train and self.minor_type > 1) 
+        return (self.is_train and self.minor_type > 1)
 
     @property
     def sd_model_path(self):

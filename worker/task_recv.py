@@ -18,6 +18,7 @@ import redis_lock
 import requests
 from loguru import logger
 from .task import Task
+from threading import Timer
 from datetime import datetime, timedelta
 from modules.shared import cmd_opts
 from tools.redis import RedisPool
@@ -112,6 +113,19 @@ class TaskReceiverRecorder:
             self.dump_ts = int(time.time())
 
 
+def register_worker(worker_id):
+    try:
+        pool = RedisPool()
+        conn = pool.get_connection()
+        conn.setex(worker_id, 300, 60)
+        conn.zadd(SDWorkerZset, {
+            worker_id: int(time.time())
+        })
+        conn.expire(SDWorkerZset, timedelta(hours=1))
+    except:
+        pass
+
+
 class TaskReceiver:
 
     def __init__(self, recoder: CkptLoadRecorder, train_only: bool = False):
@@ -144,6 +158,8 @@ class TaskReceiver:
 
         self.register_time = 0
         self.local_cache = {}
+        self.timer = Timer(10, register_worker, (self.worker_id,))
+        self.timer.start()
 
     def _worker_id(self):
         group_id = get_worker_group()
@@ -238,6 +254,8 @@ class TaskReceiver:
             workers = self.get_all_workers()
             if workers:
                 # 1/5的WOEKER 生图，剩下的执行训练。
+                run_train_workers = workers[len(workers) // 5:]
+                logger.info(f"run train task worker ids:{';'.join(run_train_workers)}, current id:{self.worker_id}")
                 run_train_worker_flag = self.worker_id in workers[len(workers) // 5:]
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
@@ -380,13 +398,12 @@ class TaskReceiver:
             try:
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
-                conn = self.redis_pool.get_connection()
+                # conn = self.redis_pool.get_connection()
                 # conn.setex(self.worker_id, 300, 60)
-                conn.zadd(SDWorkerZset, {
-                    self.worker_id: int(time.time())
-                })
-                conn.expire(SDWorkerZset, timedelta(hours=1))
-                print("register worker id:" + self.worker_id)
+                # conn.zadd(SDWorkerZset, {
+                #     self.worker_id: int(time.time())
+                # })
+                # conn.expire(SDWorkerZset, timedelta(hours=1))
                 self.register_time = time.time()
             except:
                 return False
@@ -438,3 +455,6 @@ class TaskReceiver:
         else:
             self.release_flag = False
         return self.release_flag
+
+    def close(self):
+        self.timer.cancel()

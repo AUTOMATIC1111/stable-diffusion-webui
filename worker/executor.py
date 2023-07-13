@@ -37,6 +37,7 @@ class TaskExecutor(Thread):
     def _close(self):
         for h in self._handlers:
             h.close()
+        self.receiver.close()
 
     def stop(self):
         self.__stop = True
