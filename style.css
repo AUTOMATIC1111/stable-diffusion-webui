@@ -704,9 +704,22 @@ table.popup-table .link{
     margin: 0;
 }
 
-#available_extensions .date_added{
-    opacity: 0.85;
+#available_extensions .info{
+    margin: 0.5em 0;
+    display: flex;
+    margin-top: auto;
+    opacity: 0.80;
     font-size: 90%;
+}
+
+#available_extensions .date_added{
+    margin-right: auto;
+    display: inline-block;
+}
+
+#available_extensions .star_count{
+    margin-left: auto;
+    display: inline-block;
 }
 
 /* replace original footer with ours */

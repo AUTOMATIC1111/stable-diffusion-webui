@@ -274,10 +274,6 @@ class PromptStyleItem(BaseModel):
     prompt: Optional[str] = Field(title="Prompt")
     negative_prompt: Optional[str] = Field(title="Negative Prompt")
 
-class ArtistItem(BaseModel):
-    name: str = Field(title="Name")
-    score: float = Field(title="Score")
-    category: str = Field(title="Category")
 
 class EmbeddingItem(BaseModel):
     step: Optional[int] = Field(title="Step", description="The number of steps that were used to train this embedding, if available")
