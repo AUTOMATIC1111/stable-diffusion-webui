@@ -760,10 +760,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             else:
                 sd_model.to(devices.device)
             try:
+                shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_mode}")
                 if shared.opts.cuda_compile_mode == 'ipex':
                     sd_model.unet.training = False
-                    sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, auto_kernel_selection=True, # pylint: disable=attribute-defined-outside-init
-                    optimize_lstm=True, weights_prepack=True, graph_mode=shared.opts.cuda_compile_fullgraph)
+                    sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
                 else:
                     import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                     log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
@@ -771,7 +771,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
                     torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
                     sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-                    shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_mode}")
                     sd_model("dummy prompt")
                 shared.log.info("Complilation done.")
             except Exception as err:

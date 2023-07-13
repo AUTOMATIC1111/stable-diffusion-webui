@@ -177,11 +177,11 @@ class StableDiffusionModelHijack:
         if opts.cuda_compile and opts.cuda_compile_mode != 'none' and shared.backend == shared.Backend.ORIGINAL:
             try:
                 import logging
+                shared.log.info(f"Compiling pipeline={m.model.__class__.__name__} mode={opts.cuda_compile_mode}")
                 if opts.cuda_compile_mode == 'ipex':
                     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
                     m.model.training = False
-                    m.model = ipex.optimize(m.model, dtype=devices.dtype, auto_kernel_selection=True, optimize_lstm=True, # pylint: disable=attribute-defined-outside-init
-                    graph_mode=opts.cuda_compile_fullgraph, weights_prepack=False if shared.cmd_opts.lowvram or shared.cmd_opts.medvram else True)
+                    m.model = ipex.optimize(m.model, dtype=devices.dtype, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
                 else:
                     import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                     log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
@@ -194,7 +194,7 @@ class StableDiffusionModelHijack:
                         hidet.torch.dynamo_config.use_tensor_core(True)
                         hidet.torch.dynamo_config.search_space(2)
                     m.model = torch.compile(m.model, mode="default", backend=opts.cuda_compile_mode, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
-                shared.log.info(f"Model compile enabled: {opts.cuda_compile_mode}")
+                shared.log.info("Model complilation done.")
             except Exception as err:
                 shared.log.warning(f"Model compile not supported: {err}")
 
