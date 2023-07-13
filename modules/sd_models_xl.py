@@ -32,6 +32,9 @@ def apply_model(self: sgm.models.diffusion.DiffusionEngine, x, t, cond):
     return self.model(x, t, cond)
 
 
+def get_first_stage_encoding(self, x):  # SDXL's encode_first_stage does everything so get_first_stage_encoding is just there for compatibility
+    return x
+
 def extend_sdxl(model):
     dtype = next(model.model.diffusion_model.parameters()).dtype
     model.model.diffusion_model.dtype = dtype
@@ -50,6 +53,7 @@ def extend_sdxl(model):
 
 sgm.models.diffusion.DiffusionEngine.get_learned_conditioning = get_learned_conditioning
 sgm.models.diffusion.DiffusionEngine.apply_model = apply_model
+sgm.models.diffusion.DiffusionEngine.get_first_stage_encoding = get_first_stage_encoding
 
 sgm.modules.attention.print = lambda *args: None
 sgm.modules.diffusionmodules.model.print = lambda *args: None
