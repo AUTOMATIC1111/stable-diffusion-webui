@@ -130,7 +130,7 @@ class TaskReceiver:
 
         def formate_day_of_time(day_of_time: int):
             if day_of_time < 0:
-                return 24 - day_of_time
+                return 24 + day_of_time
             return day_of_time
 
         run_train_time_start = formate_day_of_time(int(run_train_time_start) - 8 if run_train_time_start else 15)
@@ -139,7 +139,7 @@ class TaskReceiver:
         self.run_train_time_start = min(run_train_time_start, run_train_time_end)
         self.run_train_time_end = max(run_train_time_start, run_train_time_end)
 
-        logger.info(f"worker id:{self.worker_id}")
+        logger.info(f"worker id:{self.worker_id}, train work receive clock:{self.run_train_time_start} - {self.run_train_time_end}")
 
         self.register_time = 0
         self.local_cache = {}
