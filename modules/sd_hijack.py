@@ -2,6 +2,7 @@ from types import MethodType
 import torch
 from torch.nn.functional import silu
 import ldm.modules.attention
+import ldm.modules.distributions.distributions
 import ldm.modules.diffusionmodules.model
 import ldm.modules.diffusionmodules.openaimodel
 import ldm.models.diffusion.ddim
@@ -305,3 +306,6 @@ def register_buffer(self, name, attr):
 
 ldm.models.diffusion.ddim.DDIMSampler.register_buffer = register_buffer
 ldm.models.diffusion.plms.PLMSSampler.register_buffer = register_buffer
+
+# Ensure samping from Guassian for DDPM follows types
+ldm.modules.distributions.distributions.DiagonalGaussianDistribution.sample = lambda self: self.mean.to(self.parameters.dtype) + self.std.to(self.parameters.dtype) * torch.randn(self.mean.shape, dtype=self.parameters.dtype).to(device=self.parameters.device)
