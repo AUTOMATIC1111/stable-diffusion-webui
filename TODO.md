@@ -68,4 +68,3 @@ Tech that can be integrated as part of the core workflow...
 
 - Bunch of stuff: <https://pharmapsychotic.com/tools.html>
 - <https://towardsdatascience.com/mastering-memoization-in-python-dcdd8b435189>
-

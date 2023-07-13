@@ -622,7 +622,7 @@ def create_ui(startup_timer = None):
                                                 with FormRow():
                                                     width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
                                                     height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
-                                            with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
+                                            with gr.Column(elem_id="img2img_column_dim", scale=1, elem_classes="dimensions-tools"):
                                                 with FormRow():
                                                     res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
                                                     detect_image_size_btn = ToolButton(value=detect_image_size_symbol, elem_id="img2img_detect_image_size_btn")
@@ -799,7 +799,7 @@ def create_ui(startup_timer = None):
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
-            
+
             detect_image_size_btn.click(
                 fn=lambda w, h, _: (w or gr.update(), h or gr.update()),
                 _js="currentImg2imgSourceResolution",
