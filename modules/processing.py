@@ -216,7 +216,7 @@ class StableDiffusionProcessing:
         conditioning_mask = torch.nn.functional.interpolate(conditioning_mask, size=latent_image.shape[-2:])
         conditioning_mask = conditioning_mask.expand(conditioning_image.shape[0], -1, -1, -1)
         image_conditioning = torch.cat([conditioning_mask, conditioning_image], dim=1)
-        image_conditioning = image_conditioning.to(device = shared.device, dtype = source_image.dtype)
+        image_conditioning = image_conditioning.to(device=shared.device, dtype=source_image.dtype)
         return image_conditioning
 
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
