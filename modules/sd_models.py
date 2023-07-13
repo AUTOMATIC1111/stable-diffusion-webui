@@ -382,7 +382,10 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
         shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
     if state_dict is None:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
-    model.load_state_dict(state_dict, strict=False)
+    try:
+        model.load_state_dict(state_dict, strict=False)
+    except Exception as e:
+        shared.log.error(f'Error loading model weights: {checkpoint_info.filename} {e}')
     del state_dict
     timer.record("apply")
     if shared.opts.sd_checkpoint_cache > 0:

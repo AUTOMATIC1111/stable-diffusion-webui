@@ -22,6 +22,7 @@ Another big one, but now improvements to both **diffusers** and **original** bac
 - other:
   - major refactoring of the javascript code  
     includes fixes for text selections and navigation  
+  - system info tab now reports on nvidia driver version as well  
   - minor fixes in extra-networks  
   - installer handles origin changes for submodules  
 

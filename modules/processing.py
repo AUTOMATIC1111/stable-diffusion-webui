@@ -761,6 +761,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         model=shared.sd_refiner,
                         prompt=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
                         negative_prompt=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
+                        num_inference_steps=p.refiner_steps,
+                        denoising_start=p.refiner_denoise,
                         image=output.images[0],
                         output_type='np'
                     )
