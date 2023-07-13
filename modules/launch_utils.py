@@ -334,8 +334,6 @@ def prepare_environment():
     if args.update_all_extensions:
         git_pull_recursive(extensions_dir)
 
-    mute_sdxl_imports()
-
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
         exit(0)
@@ -357,6 +355,8 @@ def configure_for_tests():
 
 
 def start():
+    mute_sdxl_imports()
+
     print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
     if '--nowebui' in sys.argv:
