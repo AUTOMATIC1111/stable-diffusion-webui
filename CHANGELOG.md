@@ -2,7 +2,7 @@
 
 ## Update for 07/12/2023
 
-Another big one...
+Another big one, but now improvements to both **diffusers** and **original** backend
 
 - diffusers backend:
   - separate ui settings for refiner pass with sd-xl  
@@ -10,6 +10,10 @@ Another big one...
   - fix loading from pure safetensors files  
     now you can load sd-xl from safetensors file or from huggingface folder format  
   - fix kandinsky model (2.1 working, 2.2 was just released and will be soon)  
+- original backend:
+  - improvements to vae/unet handling as well as cross-optimization heads  
+    in non-technical terms, this means lower memory usage and higher performance  
+    and you should be able to generate higher resolution images without any other changes
 - other:
   - major refactoring of the javascript code  
     includes fixes for text selections and navigation  

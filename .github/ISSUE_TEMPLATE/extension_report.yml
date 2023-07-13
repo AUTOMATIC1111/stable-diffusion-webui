@@ -1,5 +1,5 @@
-name: Extension Compatibility Report
-description: Extension is not working as expected
+name: Extension Issue Report
+description: Extension cannot be installed or not working as expected
 title: "[Extension]: "
 labels: ["extension"]
 
