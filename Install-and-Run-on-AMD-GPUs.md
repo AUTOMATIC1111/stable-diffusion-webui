@@ -24,7 +24,7 @@ If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so:
 
 # Automatic Installation
 
-<sup>(As of [1/15/23](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6709) you can just run webui-user.sh and pytorch+rocm should be automatically installed for you.)</sup>
+<sup>(As of [1/15/23](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6709) you can just run `webui.sh` and pytorch+rocm should be automatically installed for you.)</sup>
 
 
 1. Enter these commands, which will install webui to your current directory:
@@ -39,7 +39,7 @@ python3.10 -m venv venv
 
     ./webui.sh {your_arguments*}
 
-*For many AMD gpus you MUST Add `--precision full --no-half` OR just `--upcast-sampling` arguments to avoid NaN errors or crashing. 
+*For many AMD GPUs, you **must** add `--precision full --no-half` or `--upcast-sampling` arguments to avoid NaN errors or crashing. 
 If `--upcast-sampling` works as a fix with your card, you should have 2x speed (fp16) compared to running in full precision.
 
 <details>
@@ -179,32 +179,16 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. Create webui launch script 
-
-The Python launcher for webui needs to be run directly. In the project folder, create a new file called `webui-py.sh` and paste the following code:
-
-```bash
-#!/bin/bash
-python launch.py #add arguments here
-```
-
-Depending on the GPU model, you may need to add certain [Command Line Arguments](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings) and [Optimizations](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations) for webui to run properly. Also refer to the [Automatic Installation](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs#automatic-installation) section for AMD GPUs.
-
-3. Make the script executable and run webui (first start may take a bit longer)
-
-```bash
-sudo chmod +x ./webui-py.sh
-./webui-py.sh
-```
-
 ## Launch
 
 Run the following inside the project root to start webui:
 
 ```bash
 source venv/bin/activate
-./webui-py.sh
+./webui.sh
 ```
+
+Depending on the GPU model, you may need to add certain [Command Line Arguments](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Command-Line-Arguments-and-Settings) and [Optimizations](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimizations) to `webui-user.sh` in order for webui to run properly. Refer to the [Automatic Installation](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs#automatic-installation) section.
 
 ## Limitations
 
