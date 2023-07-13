@@ -179,6 +179,11 @@ def load_lora(name, lora_on_disk):
             if m:
                 sd_module = shared.sd_model.lora_layer_mapping.get(m.group(1), None)
 
+        # SDXL loras seem to already have correct compvis keys, so only need to replace "lora_unet" with "diffusion_model"
+        if sd_module is None and "lora_unet" in key_diffusers_without_lora_parts:
+            key = key_diffusers_without_lora_parts.replace("lora_unet", "diffusion_model")
+            sd_module = shared.sd_model.lora_layer_mapping.get(key, None)
+
         if sd_module is None:
             keys_failed_to_match[key_diffusers] = key
             continue
