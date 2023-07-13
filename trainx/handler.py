@@ -10,6 +10,7 @@ from worker.handler import DumpTaskHandler
 from worker.task import Task, TaskType
 from .preprocess import exec_preprocess_task
 from .lora import exec_train_lora_task, start_train_process
+from modules.devices import torch_gc
 
 
 class TrainTaskMinorType(IntEnum):
@@ -24,6 +25,7 @@ class TrainTaskHandler(DumpTaskHandler):
         super(TrainTaskHandler, self).__init__(TaskType.Train)
 
     def _exec(self, task: Task):
+        torch_gc()
         if task.minor_type == TrainTaskMinorType.Preprocess:
             yield from exec_preprocess_task(task)
         elif task.minor_type == TrainTaskMinorType.Lora:

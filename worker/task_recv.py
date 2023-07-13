@@ -150,8 +150,10 @@ class TaskReceiver:
 
         # int(str(uuid.uuid1())[-4:], 16)
         hostname = get_host_name()
+        # hostname = 'sdplus-saas-qa-568ff9745c-rcwm6'
         try:
-            int(hostname[:8], 16)
+            int(hostname[-16:-6], 16)
+            hostname = 'Host:' + hostname
         except:
             hostname = None
 
@@ -374,6 +376,7 @@ class TaskReceiver:
                 })
                 conn.expire(SDWorkerZset, timedelta(hours=1))
                 print("register worker id:" + self.worker_id)
+                self.get_all_workers()
                 self.register_time = time.time()
             except:
                 return False
@@ -384,9 +387,14 @@ class TaskReceiver:
         now = int(time.time())
         rds = self.redis_pool.get_connection()
         keys = rds.zrangebyscore(SDWorkerZset, now - 300, now)
-        worker_ids = [k.decode('utf8').replace("-", "") if isinstance(k, bytes) else k for k in keys]
+        worker_ids = [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
 
-        worker_ids = sorted(worker_ids, key=lambda x: int(x[-8:], 16))
+        def get_work_id_num(x: str):
+            if 'Host:' in x:
+                return x[-16:-8]
+            return x.replace("-", "")[-8:]
+
+        worker_ids = sorted(worker_ids, key=get_work_id_num)
         return worker_ids
 
     def get_group_workers(self):
