@@ -379,7 +379,6 @@ class TaskReceiver:
                 })
                 conn.expire(SDWorkerZset, timedelta(hours=1))
                 print("register worker id:" + self.worker_id)
-                self.get_all_workers()
                 self.register_time = time.time()
             except:
                 return False
