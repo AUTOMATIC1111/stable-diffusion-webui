@@ -71,8 +71,8 @@ class TaskExecutor(Thread):
             handler(task)
             if task.stop_receiver():
                 time.sleep(3)
-            with self.not_busy:
-                self.not_busy.notify()
+                with self.not_busy:
+                    self.not_busy.notify()
 
         logger.info('executor stopping...')
         self._close()
@@ -84,9 +84,9 @@ class TaskExecutor(Thread):
                     for task in self.receiver.task_iter():
                         self.queue.put(task)
                         if isinstance(task, Task) and task.stop_receiver():
-                            logger.info("====>>> waiting train task, stop receive.")
+                            logger.info(f"====>>> waiting train task:{task.id}, stop receive.")
                             self.not_busy.wait()
-                            logger.info("====>>> waiting train task, begin receive.")
+                            logger.info(f"====>>> waiting train task:{task.id}, begin receive.")
                 else:
                     self.not_busy.wait()
         logger.info("=======> task receiver quit!!!!!!")

@@ -243,16 +243,16 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                     size = image.size if image else None
                     image = np.array(image) if image else None
                     mask = item['image'].get('mask')
-                    if image is not None:
-                        shape = list(size)
-                        shape.append(4)  # rgba
+                    if not mask:
+                        # shape = list(size)
+                        # shape.append(4)  # rgba
+                        # mask = np.zeros(shape)
+                        # mask[:, :, -1] = 255
                         mask = None
-                    elif isinstance(mask, str):
+                    elif isinstance(mask, str) and mask:
                         mask = get_tmp_local_path(item['image']['mask'])
                         mask = np.array(Image.open(mask))
-                    else:
-                        # mask = np.full((512, 512, 4), 255)
-                        mask = None
+
                 control_unit = {
                     'enabled': item.get('enabled', False),
                     'guess_mode': item.get('guess_mode', False),
