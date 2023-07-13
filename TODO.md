@@ -10,6 +10,7 @@ Stuff to be fixed, in no particular order...
 - Refresh `sd_checkpoint` pulldown on backend switch
 - Misterious Extensions auto-enabling
 - Misterious Extra network corruptions
+- Update submodule upstream: `git submodule sync`
 
 ## Features
 
@@ -36,6 +37,8 @@ Stuff to be added, in no particular order...
 - Enable refiner workflow for `ldm` backend
 - Improve `lyco` logging
 - Cache models when switching backends
+- Style editor
+- Built-in notifications
 
 ## Investigate
 

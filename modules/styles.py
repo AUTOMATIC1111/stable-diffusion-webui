@@ -24,8 +24,13 @@ def merge_prompts(style_prompt: str, prompt: str) -> str:
     if "{prompt}" in style_prompt:
         res = style_prompt.replace("{prompt}", prompt)
     else:
-        parts = filter(None, (prompt.strip(), style_prompt.strip()))
-        res = ", ".join(parts)
+        original_prompt = prompt.strip()
+        style_prompt = style_prompt.strip()
+        parts = filter(None, (original_prompt, style_prompt))
+        if original_prompt.endswith(","):
+            res = " ".join(parts)
+        else:
+            res = ", ".join(parts)
     return res
 
 

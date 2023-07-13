@@ -759,8 +759,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     devices.torch_gc()
                     pipe_args = set_pipeline_args(
                         model=shared.sd_refiner,
-                        prompt=p.refiner_prompt if len(p.refiner_prompt) > 0 else prompts,
-                        negative_prompt=p.refiner_negative if len(p.refiner_negative) > 0 else negative_prompts,
+                        prompt=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
+                        negative_prompt=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
                         image=output.images[0],
                         output_type='np'
                     )

@@ -73,8 +73,11 @@ class DiffusionSampler:
             self.config['lower_order_final'] = opts.schedulers_use_loworder
         if 'solver_order' in self.config:
             self.config['solver_order'] = opts.schedulers_solver_order
+        if 'predict_x0' in self.config:
+            self.config['predict_x0'] = opts.uni_pc_variant
         if name.startswith('DPM'):
             self.config['algorithm_type'] = opts.schedulers_dpm_solver
+
         self.sampler = constructor(**self.config)
         self.sampler.name = name
         log.debug(f'Diffusers sampler: {name} {self.config}')
