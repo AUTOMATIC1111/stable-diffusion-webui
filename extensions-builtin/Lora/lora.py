@@ -68,6 +68,14 @@ def convert_diffusers_name_to_compvis(key, is_sd2):
 
         return f"transformer_text_model_encoder_layers_{m[0]}_{m[1]}"
 
+    if match(m, r"lora_te2_text_model_encoder_layers_(\d+)_(.+)"):
+        if 'mlp_fc1' in m[1]:
+            return f"1_model_transformer_resblocks_{m[0]}_{m[1].replace('mlp_fc1', 'mlp_c_fc')}"
+        elif 'mlp_fc2' in m[1]:
+            return f"1_model_transformer_resblocks_{m[0]}_{m[1].replace('mlp_fc2', 'mlp_c_proj')}"
+        else:
+            return f"1_model_transformer_resblocks_{m[0]}_{m[1].replace('self_attn', 'attn')}"
+
     return key
 
 
@@ -142,10 +150,20 @@ class LoraUpDownModule:
 def assign_lora_names_to_compvis_modules(sd_model):
     lora_layer_mapping = {}
 
-    for name, module in shared.sd_model.cond_stage_model.wrapped.named_modules():
-        lora_name = name.replace(".", "_")
-        lora_layer_mapping[lora_name] = module
-        module.lora_layer_name = lora_name
+    if shared.sd_model.is_sdxl:
+        for i, embedder in enumerate(shared.sd_model.conditioner.embedders):
+            if not hasattr(embedder, 'wrapped'):
+                continue
+
+            for name, module in embedder.wrapped.named_modules():
+                lora_name = f'{i}_{name.replace(".", "_")}'
+                lora_layer_mapping[lora_name] = module
+                module.lora_layer_name = lora_name
+    else:
+        for name, module in shared.sd_model.cond_stage_model.wrapped.named_modules():
+            lora_name = name.replace(".", "_")
+            lora_layer_mapping[lora_name] = module
+            module.lora_layer_name = lora_name
 
     for name, module in shared.sd_model.model.named_modules():
         lora_name = name.replace(".", "_")
@@ -168,10 +186,10 @@ def load_lora(name, lora_on_disk):
     keys_failed_to_match = {}
     is_sd2 = 'model_transformer_resblocks' in shared.sd_model.lora_layer_mapping
 
-    for key_diffusers, weight in sd.items():
-        key_diffusers_without_lora_parts, lora_key = key_diffusers.split(".", 1)
-        key = convert_diffusers_name_to_compvis(key_diffusers_without_lora_parts, is_sd2)
+    for key_lora, weight in sd.items():
+        key_lora_without_lora_parts, lora_key = key_lora.split(".", 1)
 
+        key = convert_diffusers_name_to_compvis(key_lora_without_lora_parts, is_sd2)
         sd_module = shared.sd_model.lora_layer_mapping.get(key, None)
 
         if sd_module is None:
@@ -180,12 +198,15 @@ def load_lora(name, lora_on_disk):
                 sd_module = shared.sd_model.lora_layer_mapping.get(m.group(1), None)
 
         # SDXL loras seem to already have correct compvis keys, so only need to replace "lora_unet" with "diffusion_model"
-        if sd_module is None and "lora_unet" in key_diffusers_without_lora_parts:
-            key = key_diffusers_without_lora_parts.replace("lora_unet", "diffusion_model")
+        if sd_module is None and "lora_unet" in key_lora_without_lora_parts:
+            key = key_lora_without_lora_parts.replace("lora_unet", "diffusion_model")
+            sd_module = shared.sd_model.lora_layer_mapping.get(key, None)
+        elif sd_module is None and "lora_te1_text_model" in key_lora_without_lora_parts:
+            key = key_lora_without_lora_parts.replace("lora_te1_text_model", "0_transformer_text_model")
             sd_module = shared.sd_model.lora_layer_mapping.get(key, None)
 
         if sd_module is None:
-            keys_failed_to_match[key_diffusers] = key
+            keys_failed_to_match[key_lora] = key
             continue
 
         lora_module = lora.modules.get(key, None)
