@@ -254,8 +254,9 @@ class TaskReceiver:
             workers = self.get_all_workers()
             if workers:
                 # 1/5的WOEKER 生图，剩下的执行训练。
-                if len(workers) >= 5:
-                    run_train_workers = workers[len(workers) // 5:]
+                run_train_worker_num = len(workers) // 5
+                if run_train_worker_num >= 1:
+                    run_train_workers = workers[run_train_worker_num:]
                 else:
                     run_train_workers = []
 
