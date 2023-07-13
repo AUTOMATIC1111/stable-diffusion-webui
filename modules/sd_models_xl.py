@@ -48,7 +48,7 @@ def extend_sdxl(model):
     discretization = sgm.modules.diffusionmodules.discretizer.LegacyDDPMDiscretization()
     model.alphas_cumprod = torch.asarray(discretization.alphas_cumprod, device=devices.device, dtype=dtype)
 
-    model.is_xl = True
+    model.is_sdxl = True
 
 
 sgm.models.diffusion.DiffusionEngine.get_learned_conditioning = get_learned_conditioning
