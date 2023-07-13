@@ -190,7 +190,7 @@ class StableDiffusionModelHijack:
                 if typename == 'FrozenCLIPEmbedder':
                     model_embeddings = m.cond_stage_model.transformer.text_model.embeddings
                     model_embeddings.token_embedding = EmbeddingsWithFixes(model_embeddings.token_embedding, self)
-                    m.cond_stage_model = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(embedder, self)
+                    m.cond_stage_model = sd_hijack_clip.FrozenCLIPEmbedderForSDXLWithCustomWords(embedder, self)
                     conditioner.embedders[i] = m.cond_stage_model
                 if typename == 'FrozenOpenCLIPEmbedder2':
                     embedder.model.token_embedding = EmbeddingsWithFixes(embedder.model.token_embedding, self)

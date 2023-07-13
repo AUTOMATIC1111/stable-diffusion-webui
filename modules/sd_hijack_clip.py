@@ -323,3 +323,18 @@ class FrozenCLIPEmbedderWithCustomWords(FrozenCLIPEmbedderWithCustomWordsBase):
         embedded = embedding_layer.token_embedding.wrapped(ids.to(embedding_layer.token_embedding.wrapped.weight.device)).squeeze(0)
 
         return embedded
+
+
+class FrozenCLIPEmbedderForSDXLWithCustomWords(FrozenCLIPEmbedderWithCustomWords):
+    def __init__(self, wrapped, hijack):
+        super().__init__(wrapped, hijack)
+
+    def encode_with_transformers(self, tokens):
+        outputs = self.wrapped.transformer(input_ids=tokens, output_hidden_states=self.wrapped.layer == "hidden")
+
+        if self.wrapped.layer == "last":
+            z = outputs.last_hidden_state
+        else:
+            z = outputs.hidden_states[self.wrapped.layer_idx]
+
+        return z

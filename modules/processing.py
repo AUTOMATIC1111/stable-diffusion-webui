@@ -344,7 +344,7 @@ class StableDiffusionProcessing:
 
     def setup_conds(self):
         prompts = prompt_parser.SdConditioning(self.prompts, width=self.width, height=self.height)
-        negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height)
+        negative_prompts = prompt_parser.SdConditioning(self.negative_prompts, width=self.width, height=self.height, is_negative_prompt=True)
 
         sampler_config = sd_samplers.find_sampler_config(self.sampler_name)
         self.step_multiplier = 2 if sampler_config and sampler_config.options.get("second_order", False) else 1

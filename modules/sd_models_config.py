@@ -12,7 +12,6 @@ sd_xl_repo_configs_path = os.path.join(paths.paths['Stable Diffusion XL'], "conf
 config_default = shared.sd_default_config
 config_sd2 = os.path.join(sd_repo_configs_path, "v2-inference.yaml")
 config_sd2v = os.path.join(sd_repo_configs_path, "v2-inference-v.yaml")
-config_sd2v = os.path.join(sd_xl_repo_configs_path, "sd_2_1_768.yaml")
 config_sd2_inpainting = os.path.join(sd_repo_configs_path, "v2-inpainting-inference.yaml")
 config_sdxl = os.path.join(sd_xl_repo_configs_path, "sd_xl_base.yaml")
 config_depth_model = os.path.join(sd_repo_configs_path, "v2-midas-inference.yaml")
