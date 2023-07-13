@@ -6,6 +6,7 @@
 # @File    : handler.py
 # @Software: Hifive
 import abc
+import random
 import time
 import typing
 import traceback
@@ -44,6 +45,8 @@ class TaskHandler:
                 self._set_task_status(p)
                 for progress in self._exec(task):
                     self._set_task_status(progress)
+                if random.randint(0, 10) < 3:
+                    torch_gc()
             except torch.cuda.OutOfMemoryError:
                 torch_gc()
                 time.sleep(15)
