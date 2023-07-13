@@ -193,8 +193,7 @@ class State:
 state = State()
 state.server_start = time.time()
 
-backend = Backend.DIFFUSERS if (cmd_opts.backend is not None) and (cmd_opts.backend.lower() == 'diffusers') else Backend.ORIGINAL
-log.info(f'Pipeline: {backend}')
+backend = Backend.DIFFUSERS if (cmd_opts.backend is not None) and (cmd_opts.backend.lower() == 'diffusers') else Backend.ORIGINAL # initial since we don't have opts loaded yet
 
 
 class OptionInfo:
@@ -751,7 +750,13 @@ opts = Options()
 config_filename = cmd_opts.config
 opts.load(config_filename)
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
-opts.data['sd_backend'] = 'original' if backend == Backend.ORIGINAL else 'diffusers'
+if cmd_opts.backend is None:
+    backend = Backend.DIFFUSERS if opts.data['sd_backend'] == 'diffusers' else Backend.ORIGINAL
+else:
+    backend = Backend.DIFFUSERS if cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
+    opts.data['sd_backend'] = 'original' if backend == Backend.ORIGINAL else 'diffusers'
+log.info(f'Pipeline: {backend}')
+
 
 prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
 cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_opts.server_name or False)) and not cmd_opts.insecure
