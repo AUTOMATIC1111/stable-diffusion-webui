@@ -395,10 +395,11 @@ def repair_config(sd_config):
     if not hasattr(sd_config.model.params, "use_ema"):
         sd_config.model.params.use_ema = False
 
-    if shared.cmd_opts.no_half:
-        sd_config.model.params.unet_config.params.use_fp16 = False
-    elif shared.cmd_opts.upcast_sampling:
-        sd_config.model.params.unet_config.params.use_fp16 = True
+    if hasattr(sd_config.model.params, 'unet_config'):
+        if shared.cmd_opts.no_half:
+            sd_config.model.params.unet_config.params.use_fp16 = False
+        elif shared.cmd_opts.upcast_sampling:
+            sd_config.model.params.unet_config.params.use_fp16 = True
 
     if getattr(sd_config.model.params.first_stage_config.params.ddconfig, "attn_type", None) == "vanilla-xformers" and not shared.xformers_available:
         sd_config.model.params.first_stage_config.params.ddconfig.attn_type = "vanilla"
