@@ -56,6 +56,7 @@ apply_style_symbol = '\U0001F9F3' # '\U0001f4cb'  # 📋
 clear_prompt_symbol = '\U0001F6AE' # '\U0001f5d1\ufe0f'  # 🗑️
 extra_networks_symbol = '\U0001F310' # '\U0001F3B4'  # 🎴
 switch_values_symbol = '\U000021C5' # ⇅
+detect_image_size_symbol = '\U0001F4D0'  # 📐
 
 
 def create_output_panel(tabname, outdir): # may be referenced by extensions
@@ -622,7 +623,9 @@ def create_ui(startup_timer = None):
                                                     width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
                                                     height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
                                             with gr.Column(elem_id="img2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
-                                                res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                                with FormRow():
+                                                    res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
+                                                    detect_image_size_btn = ToolButton(value=detect_image_size_symbol, elem_id="img2img_detect_image_size_btn")
 
                                     with gr.Tab(label="Resize by") as tab_scale_by:
                                         scale_by = gr.Slider(minimum=0.05, maximum=4.0, step=0.05, label="Scale", value=1.0, elem_id="img2img_scale")
@@ -796,6 +799,14 @@ def create_ui(startup_timer = None):
             img2img_prompt.submit(**img2img_args)
             submit.click(**img2img_args)
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
+            
+            detect_image_size_btn.click(
+                fn=lambda w, h, _: (w or gr.update(), h or gr.update()),
+                _js="currentImg2imgSourceResolution",
+                inputs=[dummy_component, dummy_component, dummy_component],
+                outputs=[width, height],
+                show_progress=False,
+            )
 
             img2img_interrogate.click(
                 fn=lambda *args: process_interrogate(interrogate, *args),
