@@ -25,7 +25,9 @@ from collections import defaultdict
 from tools.model_hist import CkptLoadRecorder
 from tools.gpu import GpuInfo
 from tools.wrapper import timed_lru_cache
-from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, pod_host,\
+from tools.host import get_host_name
+from modules.shared import mem_mon as vram_mon
+from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api,\
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
 try:
@@ -121,6 +123,7 @@ class TaskReceiver:
         # self.worker_id = self._worker_id()
         self.is_elastic = is_flexible_worker()
         self.recorder = TaskReceiverRecorder()
+        self.worker_id = self._worker_id()
 
         run_train_time_cfg = get_run_train_time_cfg()
         run_train_time_start = run_train_time_cfg[Env_Run_Train_Time_Start]
@@ -128,7 +131,7 @@ class TaskReceiver:
 
         def formate_day_of_time(day_of_time: int):
             if day_of_time < 0:
-                return 24 - day_of_time
+                return 24 + day_of_time
             return day_of_time
 
         run_train_time_start = formate_day_of_time(int(run_train_time_start) - 8 if run_train_time_start else 15)
@@ -137,22 +140,28 @@ class TaskReceiver:
         self.run_train_time_start = min(run_train_time_start, run_train_time_end)
         self.run_train_time_end = max(run_train_time_start, run_train_time_end)
 
-        logger.info(f"worker id:{self.worker_id}")
+        logger.info(f"worker id:{self.worker_id}, train work receive clock:{self.run_train_time_start} - {self.run_train_time_end}")
 
         self.register_time = 0
         self.local_cache = {}
 
-    @property
-    def worker_id(self):
+    def _worker_id(self):
         group_id = get_worker_group()
         nvidia_video_card_id = '&'.join(GpuInfo().names)
 
         # int(str(uuid.uuid1())[-4:], 16)
+        hostname = get_host_name()
+        # hostname = 'sdplus-saas-qa-568ff9745c-rcwm6'
+        try:
+            int(hostname[-16:-6], 16)
+            hostname = 'Host:' + hostname
+        except:
+            hostname = None
+
+        print(f"hostname:{hostname}, vedio id:{nvidia_video_card_id}")
         if not nvidia_video_card_id:
-            hostname = pod_host()
             nvidia_video_card_id = hostname or uuid.uuid1()
         else:
-            hostname = pod_host()
             index = nvidia_video_card_id.index("GPU")
 
             if not hostname:
@@ -219,14 +228,17 @@ class TaskReceiver:
         # 默认23点~凌晨5点(UTC 15~21)可以运行TRAIN
         utc = datetime.utcnow()
 
-        if self.run_train_time_start < utc.hour < self.run_train_time_end:
+        if self.run_train_time_start <= utc.hour < self.run_train_time_end:
             logger.info(f"worker receive train task")
 
             workers = self.get_all_workers()
             if workers:
                 # 1/5的WOEKER 生图，剩下的执行训练。
                 run_train_worker_flag = self.worker_id in workers[len(workers) // 5:]
-                if run_train_worker_flag:
+                free, total = vram_mon.cuda_mem_get_info()
+                logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
+                
+                if run_train_worker_flag and free / 2 ** 30 > 16:
                     logger.info(">>> worker can run train task.")
 
                 return run_train_worker_flag
@@ -325,7 +337,7 @@ class TaskReceiver:
                 time.sleep(wait)
             self.register_worker()
 
-    def task_iter(self, sleep_time: float = 4) -> typing.Iterable[Task]:
+    def task_iter(self, sleep_time: float = 2) -> typing.Iterable[Task]:
         while 1:
             try:
                 st = time.time()
@@ -351,6 +363,7 @@ class TaskReceiver:
                 if wait > 0:
                     self._clean_tmp_files()
                     time.sleep(wait)
+
             except:
                 time.sleep(1)
                 logger.exception("get task err")
@@ -361,12 +374,15 @@ class TaskReceiver:
     def register_worker(self):
         if time.time() - self.register_time > 120:
             try:
+                free, total = vram_mon.cuda_mem_get_info()
+                logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
                 conn = self.redis_pool.get_connection()
                 # conn.setex(self.worker_id, 300, 60)
                 conn.zadd(SDWorkerZset, {
                     self.worker_id: int(time.time())
                 })
                 conn.expire(SDWorkerZset, timedelta(hours=1))
+                print("register worker id:" + self.worker_id)
                 self.register_time = time.time()
             except:
                 return False
@@ -377,9 +393,14 @@ class TaskReceiver:
         now = int(time.time())
         rds = self.redis_pool.get_connection()
         keys = rds.zrangebyscore(SDWorkerZset, now - 300, now)
-        worker_ids = [k.decode('utf8').replace("-", "") if isinstance(k, bytes) else k for k in keys]
+        worker_ids = [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
 
-        worker_ids = sorted(worker_ids, key=lambda x: int(x[-8:], 16))
+        def get_work_id_num(x: str):
+            if 'Host:' in x:
+                return x[-16:-8]
+            return x.replace("-", "")[-8:]
+
+        worker_ids = sorted(worker_ids, key=get_work_id_num)
         return worker_ids
 
     def get_group_workers(self):
@@ -405,11 +426,10 @@ class TaskReceiver:
                     try:
                         resp = requests.get(url, timeout=5)
                         json_data = resp.json() or {}
-                        group = get_worker_group()
-                        auto_scaler = json_data.get('auto_scaler')
-                        if auto_scaler and group in auto_scaler:
-                            self.release_flag = auto_scaler[group] == 0
-                    except:
+                        need_workers = json_data.get('need_workers', 0)
+                        self.release_flag = need_workers == 0
+                    except Exception as ex:
+                        logger.exception('cannot get elastic workers')
                         self.release_flag = False
         else:
             self.release_flag = False

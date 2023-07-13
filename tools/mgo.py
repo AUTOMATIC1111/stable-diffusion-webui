@@ -8,6 +8,7 @@
 import os
 import pymongo
 from bson import ObjectId
+from functools import partial
 from tools.environment import get_mongo_env, Env_MgoHost, \
     Env_MgoPort, Env_MgoCollect, Env_MgoUser, Env_MgoPass, Env_MgoDB
 
@@ -27,17 +28,32 @@ class MongoClient(object):
         if not host:
             raise EnvironmentError('cannot found mongo host')
         if username and pwd:
-            self.client = pymongo.MongoClient(
-                host=host,
-                port=int(port),
-                connect=False,  # False 在第一次操作的时候实时连接
-                serverSelectionTimeoutMS=timeout*1000,
-                connectTimeoutMS=5000,
-                socketTimeoutMS=timeout*1000,
-                appname='ai-draw-prof',
-                username=username,
-                password=pwd
-            )
+            if db_settings.get('database') or env_vars.get(Env_MgoDB):
+                self.client = pymongo.MongoClient(
+                    host=host,
+                    port=int(port),
+                    connect=False,  # False 在第一次操作的时候实时连接
+                    serverSelectionTimeoutMS=timeout * 1000,
+                    connectTimeoutMS=5000,
+                    socketTimeoutMS=timeout * 1000,
+                    appname='ai-draw-prof',
+                    username=username,
+                    password=pwd,
+                    authSource=database,
+                )
+            else:
+                self.client = pymongo.MongoClient(
+                    host=host,
+                    port=int(port),
+                    connect=False,  # False 在第一次操作的时候实时连接
+                    serverSelectionTimeoutMS=timeout * 1000,
+                    connectTimeoutMS=5000,
+                    socketTimeoutMS=timeout * 1000,
+                    appname='ai-draw-prof',
+                    username=username,
+                    password=pwd,
+                )
+
             self.db = self.client[database]
             # self.db.authenticate(username, pwd)
         else:

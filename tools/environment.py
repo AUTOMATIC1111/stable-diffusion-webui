@@ -22,6 +22,7 @@ Env_MysqlDB = 'MysqlDB'
 Env_RedisHost = 'RedisHost'
 Env_RedisPass = 'RedisPass'
 Env_RedisPort = 'RedisPort'
+Env_RedisUser = 'RedisUser'
 Env_RedisDB = 'RedisDB'
 Env_MgoHost = 'MgoHost'
 Env_MgoUser = 'MgoUser'
@@ -117,6 +118,7 @@ def get_redis_env() -> typing.Mapping[str, str]:
         Env_RedisDB: None,
         Env_RedisPass: None,
         Env_RedisHost: None,
+        Env_RedisUser: None
     }
     for key in d.keys():
         d[key] = cache.get(key) or os.getenv(key)
