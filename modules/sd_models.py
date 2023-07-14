@@ -414,6 +414,7 @@ def repair_config(sd_config):
 sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embedding.weight'
 sd2_clip_weight = 'cond_stage_model.model.transformer.resblocks.0.attn.in_proj_weight'
 sdxl_clip_weight = 'conditioner.embedders.1.model.ln_final.weight'
+sdxl_refiner_clip_weight = 'conditioner.embedders.0.model.ln_final.weight'
 
 
 class SdModelData:
@@ -477,7 +478,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
 
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
-    clip_is_included_into_sd = sd1_clip_weight in state_dict or sd2_clip_weight in state_dict or sdxl_clip_weight in state_dict
+    clip_is_included_into_sd = any([x for x in [sd1_clip_weight, sd2_clip_weight, sdxl_clip_weight, sdxl_refiner_clip_weight] if x in state_dict])
 
     timer.record("find config")
 
