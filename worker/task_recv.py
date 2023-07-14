@@ -265,8 +265,9 @@ class TaskReceiver:
                 else:
                     run_train_workers = []
 
-                logger.info(f"run train task worker ids:{';'.join(run_train_workers)}, current id:{self.worker_id}")
-                run_train_worker_flag = self.worker_id in run_train_workers
+                no_group_worker_id = self.worker_id.replace(group_id, '')
+                logger.info(f"run train task worker ids:{';'.join(run_train_workers)}, current id:{no_group_worker_id}")
+                run_train_worker_flag = no_group_worker_id in run_train_workers
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
 
