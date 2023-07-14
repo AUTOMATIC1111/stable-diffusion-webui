@@ -2,9 +2,7 @@
 __pycache__
 .ruff_cache
 /cache.json
-/metadata.json
-/config.json
-/ui-config.json
+/*.json
 /params.txt
 /styles.csv
 /user.css
@@ -38,6 +36,7 @@ venv
 /*.lnk
 !webui.bat
 !webui.sh
+!package.json
 
 # all dynamic stuff
 /repositories/**/*

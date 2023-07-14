@@ -485,54 +485,37 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
     "logmonitor_refresh_period": OptionInfo(5000, "Log view update period, in milliseconds", gr.Slider, {"minimum": 0, "maximum": 30000, "step": 25}),
 }))
 
-
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
     "show_samplers": OptionInfo(["Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
     "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
-    'uni_pc_order': OptionInfo(3, "UniPC order (must be < sampling steps)", gr.Slider, {"minimum": 1, "maximum": 10, "step": 1}),
-    'uni_pc_lower_order_final': OptionInfo(True, "UniPC lower order final"),
-}))
+    'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}),
 
-if backend == Backend.ORIGINAL:
-    options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
-        "always_batch_cond_uncond": OptionInfo(False, "Disable conditional batching enabled on low memory systems"),
-        "enable_quantization": OptionInfo(True, "Enable samplers quantization for sharper and cleaner results"),
-        "eta_ancestral": OptionInfo(1.0, "Noise multiplier for ancestral samplers (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-        "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-        "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
-        's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-        's_min_uncond': OptionInfo(0, "sigma negative guidance minimum ", gr.Slider, {"minimum": 0.0, "maximum": 4.0, "step": 0.01}),
-        's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-        's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
-        'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}),
-        'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
-    }))
-elif backend == Backend.DIFFUSERS:
-    options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
-        # hidden - included for compatibility only
-        "always_batch_cond_uncond": OptionInfo(False, "Disable conditional batching enabled on low memory systems", gr.Checkbox, { "visible": False}),
-        "enable_quantization": OptionInfo(True, "Enable samplers quantization for sharper and cleaner results", gr.Checkbox, { "visible": False}),
-        "eta_ancestral": OptionInfo(1.0, "Noise multiplier for ancestral samplers (eta)", gr.Number, { "visible": False}),
-        "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Number, { "visible": False}),
-        "ddim_discretize": OptionInfo('uniform', "", gr.Text, { "visible": False}),
-        's_churn': OptionInfo(0.0, "sigma churn", gr.Number, { "visible": False}),
-        's_min_uncond': OptionInfo(0, "sigma negative guidance minimum ", gr.Number, { "visible": False}),
-        's_tmin':  OptionInfo(0.0, "sigma tmin", gr.Number, { "visible": False}),
-        's_noise': OptionInfo(1.0, "sigma noise", gr.Number, { "visible": False}),
-        'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}, { "visible": False}),
-        'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma", gr.Checkbox, { "visible": False}),
-        # diffuser specific
-        "schedulers_prediction_type": OptionInfo("default", "Samplers override model prediction type", gr.Radio, lambda: {"choices": ['default', 'epsilon', 'sample', 'v-prediction']}),
-        "schedulers_beta_schedule": OptionInfo("default", "Samplers override beta schedule", gr.Radio, lambda: {"choices": ['default', 'linear', 'scaled_linear', 'squaredcos_cap_v2']}),
-        "schedulers_solver_order": OptionInfo(2, "Samplers solver order where applicable", gr.Slider, {"minimum": 1, "maximum": 5, "step": 1}),
-        "schedulers_use_karras": OptionInfo(True, "Samplers should use Karras sigmas where applicable"),
-        "schedulers_use_loworder": OptionInfo(True, "Samplers should use use lower-order solvers in the final steps where applicable"),
-        "schedulers_use_thresholding": OptionInfo(False, "Samplers should use dynamic thresholding where applicable"),
-        "schedulers_dpm_solver": OptionInfo("sde-dpmsolver++", "Samplers DPM solver algorithm", gr.Radio, lambda: {"choices": ['dpmsolver', 'dpmsolver++', 'sde-dpmsolver++']}),
-    }))
+    "schedulers_sep_diffusers": OptionInfo("<h2>Diffusers specific config</h2>", "", gr.HTML),
+    "schedulers_prediction_type": OptionInfo("default", "Samplers override model prediction type", gr.Radio, lambda: {"choices": ['default', 'epsilon', 'sample', 'v-prediction']}),
+    "schedulers_beta_schedule": OptionInfo("default", "Samplers override beta schedule", gr.Radio, lambda: {"choices": ['default', 'linear', 'scaled_linear', 'squaredcos_cap_v2']}),
+    "schedulers_solver_order": OptionInfo(2, "Samplers solver order where applicable", gr.Slider, {"minimum": 1, "maximum": 5, "step": 1}),
+    "schedulers_use_karras": OptionInfo(True, "Samplers should use Karras sigmas where applicable"),
+    "schedulers_use_loworder": OptionInfo(True, "Samplers should use use lower-order solvers in the final steps where applicable"),
+    "schedulers_use_thresholding": OptionInfo(False, "Samplers should use dynamic thresholding where applicable"),
+    "schedulers_dpm_solver": OptionInfo("sde-dpmsolver++", "Samplers DPM solver algorithm", gr.Radio, lambda: {"choices": ['dpmsolver', 'dpmsolver++', 'sde-dpmsolver++']}),
+
+    "schedulers_sep_kdiffusers": OptionInfo("<h2>K-Diffusion specific config</h2>", "", gr.HTML),
+    "always_batch_cond_uncond": OptionInfo(False, "Disable conditional batching enabled on low memory systems"),
+    "enable_quantization": OptionInfo(True, "Enable samplers quantization for sharper and cleaner results"),
+    "eta_ancestral": OptionInfo(1.0, "Noise multiplier for ancestral samplers (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    's_churn': OptionInfo(0.0, "sigma churn", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    's_min_uncond': OptionInfo(0, "sigma negative guidance minimum ", gr.Slider, {"minimum": 0.0, "maximum": 4.0, "step": 0.01}),
+    's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+    'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
+
+    "schedulers_sep_compvis": OptionInfo("<h2>CompVis specific config</h2>", "", gr.HTML),
+    "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
+    "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
+}))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
     'postprocessing_enable_in_main_ui': OptionInfo([], "Enable addtional postprocessing operations", ui_components.DropdownMulti, lambda: {"choices": [x.name for x in shared_items.postprocessing_scripts()]}),
