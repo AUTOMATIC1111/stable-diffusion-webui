@@ -29,17 +29,4 @@ def memory_stats():
         return mem
     except Exception:
         pass
-    try:
-        gpu = { 'used': gb(torch.xpu.memory_allocated()), 'total': gb(torch.xpu.get_device_properties(shared.device).total_memory) }
-        s = dict(torch.xpu.memory_stats())
-        mem.update({
-            'gpu': gpu,
-            'retries': s['num_alloc_retries'],
-            'oom': s['num_ooms']
-        })
-        if s['num_ooms'] > 0:
-            shared.state.oom = True
-        return mem
-    except Exception:
-        pass
     return mem

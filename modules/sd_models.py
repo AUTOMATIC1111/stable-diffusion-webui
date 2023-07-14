@@ -737,7 +737,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model.unet.to(memory_format=torch.channels_last)
 
         base_sent_to_cpu=False
-        if shared.opts.cuda_compile and (torch.cuda.is_available() or devices.backend == 'ipex'):
+        if shared.opts.cuda_compile and torch.cuda.is_available():
             if op == 'refiner':
                 gpu_vram = memory_stats().get('gpu', {})
                 free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)

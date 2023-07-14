@@ -29,15 +29,7 @@ else:
 
 
 def get_available_vram():
-    if devices.backend == 'ipex':
-        stats = torch.xpu.memory_stats(shared.device)
-        mem_active = stats['active_bytes.all.current']
-        mem_reserved = stats['reserved_bytes.all.current']
-        mem_free_xpu = torch.xpu.get_device_properties(shared.device).total_memory - torch.xpu.memory_allocated(shared.device)
-        mem_free_torch = mem_reserved - mem_active
-        mem_free_total = mem_free_xpu + mem_free_torch
-        return mem_free_total
-    elif shared.device.type == 'cuda':
+    if shared.device.type == 'cuda' or shared.device.type == 'xpu':
         try:
             stats = torch.cuda.memory_stats(shared.device)
             mem_active = stats['active_bytes.all.current']
@@ -47,7 +39,6 @@ def get_available_vram():
             mem_free_total = mem_free_cuda + mem_free_torch
         except Exception:
             mem_free_total = 1024 * 1024 * 1024
-
         return mem_free_total
     elif shared.device.type == 'privateuseone':
         mem_total, mem_active = torch.dml.memory_stats(shared.device)
@@ -190,27 +181,17 @@ def einsum_op_tensor_mem(q, k, v, max_tensor_mb):
     return einsum_op_slice_1(q, k, v, max(q.shape[1] // div, 1))
 
 def einsum_op_cuda(q, k, v):
-    if devices.backend == 'ipex':
-        stats = torch.xpu.memory_stats(q.device)
+    try:
+        stats = torch.cuda.memory_stats(q.device)
         mem_active = stats['active_bytes.all.current']
         mem_reserved = stats['reserved_bytes.all.current']
-        mem_free_xpu = torch.xpu.get_device_properties(q.device).total_memory - torch.xpu.memory_allocated(q.device)
+        mem_free_cuda, _ = torch.cuda.mem_get_info(q.device)
         mem_free_torch = mem_reserved - mem_active
-        mem_free_total = mem_free_xpu + mem_free_torch
-        # Divide factor of safety as there's copying and fragmentation
-        return einsum_op_tensor_mem(q, k, v, mem_free_total / 3.3 / (1 << 20))
-    else:
-        try:
-            stats = torch.cuda.memory_stats(q.device)
-            mem_active = stats['active_bytes.all.current']
-            mem_reserved = stats['reserved_bytes.all.current']
-            mem_free_cuda, _ = torch.cuda.mem_get_info(q.device)
-            mem_free_torch = mem_reserved - mem_active
-            mem_free_total = mem_free_cuda + mem_free_torch
-        except Exception:
-            mem_free_total = 1024 * 1024 * 1024
-        # Divide factor of safety as there's copying and fragmentation
-        return einsum_op_tensor_mem(q, k, v, mem_free_total / 3.3 / (1 << 20))
+        mem_free_total = mem_free_cuda + mem_free_torch
+    except Exception:
+        mem_free_total = 1024 * 1024 * 1024
+    # Divide factor of safety as there's copying and fragmentation
+    return einsum_op_tensor_mem(q, k, v, mem_free_total / 3.3 / (1 << 20))
 
 def einsum_op_dml(q, k, v):
     mem_total, mem_active = torch.dml.memory_stats(q.device)
@@ -218,7 +199,7 @@ def einsum_op_dml(q, k, v):
     return einsum_op_tensor_mem(q, k, v, (mem_reserved - mem_active) if mem_reserved > mem_active else 1)
 
 def einsum_op(q, k, v):
-    if q.device.type == 'cuda' or devices.backend == 'ipex':
+    if q.device.type == 'cuda' or q.device.type == 'xpu':
         return einsum_op_cuda(q, k, v)
 
     if q.device.type == 'mps':
@@ -410,12 +391,8 @@ def scaled_dot_product_attention_forward(self, x, context=None, mask=None):
     return hidden_states
 
 def scaled_dot_product_no_mem_attention_forward(self, x, context=None, mask=None):
-    if devices.backend == 'ipex':
-        with torch.backends.xpu.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
-            return scaled_dot_product_attention_forward(self, x, context, mask)
-    else:
-        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
-            return scaled_dot_product_attention_forward(self, x, context, mask)
+    with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
+        return scaled_dot_product_attention_forward(self, x, context, mask)
 
 def cross_attention_attnblock_forward(self, x):
     h_ = x
@@ -523,12 +500,8 @@ def sdp_attnblock_forward(self, x):
     return x + out
 
 def sdp_no_mem_attnblock_forward(self, x):
-    if devices.backend == 'ipex':
-        with torch.backends.xpu.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
-            return sdp_attnblock_forward(self, x)
-    else:
-        with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
-            return sdp_attnblock_forward(self, x)
+    with torch.backends.cuda.sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
+        return sdp_attnblock_forward(self, x)
 
 def sub_quad_attnblock_forward(self, x):
     h_ = x
