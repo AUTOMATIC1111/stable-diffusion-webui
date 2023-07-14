@@ -37,7 +37,7 @@ except:
     from collections import Iterable  # <=py3.9
 
 TaskQueuePrefix = "task_"
-OtherTaskQueueToken = 'others-'
+OtherTaskQueueToken = TaskQueuePrefix + 'others'
 TrainTaskQueueToken = 'train'
 UpscaleCoeff = 100 * 1000
 TaskScoreRange = (0, 100 * UpscaleCoeff)
