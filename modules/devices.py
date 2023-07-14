@@ -194,14 +194,16 @@ if backend == 'ipex':
     #Fix functions with ipex
     torch.cuda.is_available = torch.xpu.is_available
     torch.cuda.current_device = torch.xpu.current_device
+    torch.cuda.get_device_name = torch.xpu.get_device_name
     torch.cuda.get_device_properties = torch.xpu.get_device_properties
     torch.cuda.empty_cache = torch_gc
 
     torch.cuda.memory_stats = torch.xpu.memory_stats
-    torch.cuda.mem_get_info = lambda device: [(torch.xpu.get_device_properties(device).total_memory - torch.xpu.memory_allocated(device)), torch.xpu.get_device_properties(device).total_memory]
+    torch.cuda.mem_get_info = lambda device=None: [(torch.xpu.get_device_properties(device).total_memory - torch.xpu.memory_allocated(device)), torch.xpu.get_device_properties(device).total_memory]
     torch.cuda.memory_allocated = torch.xpu.memory_allocated
     torch.cuda.max_memory_allocated = torch.xpu.max_memory_allocated
     torch.cuda.reset_peak_memory_stats = torch.xpu.reset_peak_memory_stats
+    torch.cuda.utilization = 0
 
     torch.cuda.get_rng_state_all = torch.xpu.get_rng_state_all
     torch.cuda.set_rng_state_all = torch.xpu.set_rng_state_all
