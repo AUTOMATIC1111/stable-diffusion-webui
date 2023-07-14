@@ -1,5 +1,22 @@
 # Change Log for SD.Next
 
+## Update for 07/14/2023:
+
+Trying to unify settings for both original and diffusers backend without introducing duplicates...
+
+- renamed **hires fix** to **second pass**  
+  as that is what it actually is, name hires fix is misleading to start with  
+- actual **hires fix** and **refiner** are now options inside **second pass** section  
+- obsoleted settings -> sampler -> **force_latent_sampler**  
+  it is now part of **second pass** options and it works the same for both original and diffusers backend  
+  which means you can use different scheduler settings for txt2img and hires if you want  
+- sd-xl refiner will run if its loaded and if second pass is enabled  
+  so you can quickly enable/disable refiner by simply enabling/disabling second pass  
+- you can mix&match **model** and **refiner**  
+  for example, you can generate image using sd 1.5 and still use sd-xl refiner as second pass  
+- reorganized settings -> samplers to show which section refers to which backend  
+- added diffusers **lmsd** sampler  
+
 ## Update for 07/13/2023
 
 Another big one, but now improvements to both **diffusers** and **original** backends as well plus ability to dynamically switch between them!
