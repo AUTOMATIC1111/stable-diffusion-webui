@@ -374,7 +374,7 @@ class TrainLoraTask(UserDict):
         with open(os.path.join(image_dir, 'train.json'), "w+") as f:
 
             for key in ['pretrained_model_name_or_path', 'network_weights']:
-                if key in data['base']:
+                if key in data:
                     data[key] = '******.safetensors'
             f.write(json.dumps(data))
 
