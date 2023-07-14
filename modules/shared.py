@@ -734,7 +734,7 @@ config_filename = cmd_opts.config
 opts.load(config_filename)
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
 if cmd_opts.backend is None:
-    backend = Backend.DIFFUSERS if opts.data['sd_backend'] == 'diffusers' else Backend.ORIGINAL
+    backend = Backend.DIFFUSERS if opts.data.get('sd_backend', 'original') == 'diffusers' else Backend.ORIGINAL
 else:
     backend = Backend.DIFFUSERS if cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
 opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
