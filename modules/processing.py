@@ -330,8 +330,21 @@ class StableDiffusionProcessing:
 
         caches is a list with items described above.
         """
+
+        cached_params = (
+            required_prompts,
+            steps,
+            opts.CLIP_stop_at_last_layers,
+            shared.sd_model.sd_checkpoint_info,
+            extra_network_data,
+            opts.sdxl_crop_left,
+            opts.sdxl_crop_top,
+            self.width,
+            self.height,
+        )
+
         for cache in caches:
-            if cache[0] is not None and (required_prompts, steps, opts.CLIP_stop_at_last_layers, shared.sd_model.sd_checkpoint_info, extra_network_data) == cache[0]:
+            if cache[0] is not None and cached_params == cache[0]:
                 return cache[1]
 
         cache = caches[0]
@@ -339,7 +352,7 @@ class StableDiffusionProcessing:
         with devices.autocast():
             cache[1] = function(shared.sd_model, required_prompts, steps)
 
-        cache[0] = (required_prompts, steps, opts.CLIP_stop_at_last_layers, shared.sd_model.sd_checkpoint_info, extra_network_data)
+        cache[0] = cached_params
         return cache[1]
 
     def setup_conds(self):
