@@ -100,7 +100,9 @@ def setup_for_low_vram(sd_model, use_medvram):
         sd_model.depth_model.register_forward_pre_hook(send_me_to_gpu)
     if sd_model.embedder:
         sd_model.embedder.register_forward_pre_hook(send_me_to_gpu)
-    parents[sd_model.cond_stage_model.transformer] = sd_model.cond_stage_model
+
+    if hasattr(sd_model, 'cond_stage_model'):
+        parents[sd_model.cond_stage_model.transformer] = sd_model.cond_stage_model
 
     if use_medvram:
         sd_model.model.register_forward_pre_hook(send_me_to_gpu)
