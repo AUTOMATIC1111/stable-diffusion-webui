@@ -28,7 +28,7 @@ from tools.wrapper import timed_lru_cache
 from tools.host import get_host_name
 from modules.shared import mem_mon as vram_mon
 from apscheduler.schedulers.background import BackgroundScheduler
-from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api,\
+from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, \
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
 try:
@@ -155,7 +155,8 @@ class TaskReceiver:
         self.run_train_time_start = min(run_train_time_start, run_train_time_end)
         self.run_train_time_end = max(run_train_time_start, run_train_time_end)
 
-        logger.info(f"worker id:{self.worker_id}, train work receive clock:{self.run_train_time_start} - {self.run_train_time_end}")
+        logger.info(
+            f"worker id:{self.worker_id}, train work receive clock:{self.run_train_time_start} - {self.run_train_time_end}")
 
         self.register_time = 0
         self.local_cache = {}
@@ -265,7 +266,7 @@ class TaskReceiver:
                 else:
                     run_train_workers = []
 
-                no_group_worker_id = self.worker_id.replace(group_id, '')
+                no_group_worker_id = self.worker_id.replace(group_id + ":", '')
                 logger.info(f"run train task worker ids:{';'.join(run_train_workers)}, current id:{no_group_worker_id}")
                 run_train_worker_flag = no_group_worker_id in run_train_workers
                 free, total = vram_mon.cuda_mem_get_info()
