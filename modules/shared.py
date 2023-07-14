@@ -638,7 +638,7 @@ class Options:
             try:
                 self.data_labels[key].onchange()
             except Exception as e:
-                errors.display(e, f"changing setting {key} to {value}")
+                log.error(f'Error in onchange callback: {key} {value} {e}')
                 setattr(self, key, oldval)
                 return False
         return True
