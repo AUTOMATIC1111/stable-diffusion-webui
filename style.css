@@ -230,17 +230,28 @@ button.custom-button{
 .performance {
     font-size: 0.85em;
     color: #444;
+    display: flex;
 }
 
 .performance p{
     display: inline-block;
 }
 
-.performance .time {
-    margin-right: 0;
+.performance p.time, .performance p.vram, .performance p.time abbr, .performance p.vram abbr {
+    margin-bottom: 0;
+    color: var(--block-title-text-color);
 }
 
-.performance .vram {
+.performance p.time {
+}
+
+.performance p.vram {
+    margin-left: auto;
+}
+
+.performance .measurement{
+    color: var(--body-text-color);
+    font-weight: bold;
 }
 
 #txt2img_generate, #img2img_generate {
