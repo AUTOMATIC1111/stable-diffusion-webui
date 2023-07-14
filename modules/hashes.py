@@ -5,7 +5,7 @@ import os.path
 import filelock
 
 from modules import shared
-from modules.paths import data_path
+from modules.paths import data_path, script_path
 
 
 cache_filename = os.path.join(data_path, "cache.json")
@@ -26,8 +26,13 @@ def cache(subsection):
             if not os.path.isfile(cache_filename):
                 cache_data = {}
             else:
-                with open(cache_filename, "r", encoding="utf8") as file:
-                    cache_data = json.load(file)
+                try:
+                    with open(cache_filename, "r", encoding="utf8") as file:
+                        cache_data = json.load(file)
+                except Exception:
+                    os.replace(cache_filename, os.path.join(script_path, "tmp", "cache.json"))
+                    print('[ERROR] issue occurred while trying to read cache.json, move current cache to tmp/cache.json and create new cache')
+                    cache_data = {}
 
     s = cache_data.get(subsection, {})
     cache_data[subsection] = s

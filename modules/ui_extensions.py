@@ -325,17 +325,6 @@ def normalize_git_url(url):
     return url
 
 
-def github_proxy(url):
-    proxy = shared.opts.github_proxy
-
-    if proxy == 'None':
-        return url
-    if proxy == 'ghproxy.com':
-        return "https://ghproxy.com/" + url
-
-    return url.replace('github.com', proxy)
-
-
 def install_extension_from_url(dirname, url, branch_name=None):
     check_access()
 
@@ -345,8 +334,6 @@ def install_extension_from_url(dirname, url, branch_name=None):
         url = url.strip()
 
     assert url, 'No URL specified'
-
-    url = github_proxy(url)
 
     if dirname is None or dirname == "":
         *parts, last_part = url.split('/')
@@ -367,12 +354,12 @@ def install_extension_from_url(dirname, url, branch_name=None):
         shutil.rmtree(tmpdir, True)
         if not branch_name:
             # if no branch is specified, use the default branch
-            with git.Repo.clone_from(url, tmpdir, filter=['blob:none'], verbose=False) as repo:
+            with git.Repo.clone_from(url, tmpdir, filter=['blob:none']) as repo:
                 repo.remote().fetch()
                 for submodule in repo.submodules:
                     submodule.update()
         else:
-            with git.Repo.clone_from(url, tmpdir, filter=['blob:none'], branch=branch_name, verbose=False) as repo:
+            with git.Repo.clone_from(url, tmpdir, filter=['blob:none'], branch=branch_name) as repo:
                 repo.remote().fetch()
                 for submodule in repo.submodules:
                     submodule.update()
