@@ -50,9 +50,9 @@ def get_model_local_path(remoting_path: str, model_type: ModelType):
 
     dst = get_local_path(remoting_path, dst)
     if os.path.isfile(dst):
-        if model_type == ModelType.CheckPoint:
-            checkpoint = CheckpointInfo(dst)
-            checkpoint.register()
+        # if model_type == ModelType.CheckPoint:
+        #     checkpoint = CheckpointInfo(dst)
+        #     checkpoint.register()
         return dst
 
 
