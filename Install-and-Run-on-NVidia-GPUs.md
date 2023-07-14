@@ -209,11 +209,13 @@ See [Troubleshooting](Troubleshooting) section for what to do if things go wrong
 
 ## Linux 
 
+(Debian-based)
+
 1. Enter these commands, which will install webui to your current directory:
 
 ```
-sudo apt install git python3.10 python3.10-venv -y
-git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd https://github.com/AUTOMATIC1111/stable-diffusion-webui
+sudo apt install git python3.10-venv -y
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd stable-diffusion-webui
 python3.10 -m venv venv
 ```
 
@@ -221,7 +223,17 @@ python3.10 -m venv venv
 
     ./webui.sh {your_arguments}
 
-For other non debian-based distributions, use the appropriate package manager. Ensure you create a 3.10 venv.
+<details><summary>Other Distributions:</summary>
+
+(Arch-based)
+
+    sudo pacman -S git python3 -y && git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd stable-diffusion-webui && ./webui.sh
+
+(Red Hat-based)
+
+    sudo DND install git python3 -y && git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd stable-diffusion-webui && ./webui.sh
+
+</details>
 
 ## Third party installation guides/scripts:
 - NixOS: https://github.com/virchau13/automatic1111-webui-nix
