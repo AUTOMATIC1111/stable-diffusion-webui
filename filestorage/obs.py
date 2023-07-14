@@ -34,7 +34,12 @@ class ObsFileStorage(FileStorage):
     def name(self):
         return 'myhuaweicloud'
 
-    def download(self, remoting_path, local_path) -> str:
+    def download(self, remoting_path, local_path, progress_callback=None) -> str:
+
+        def progress_callback_wrapper(transferred, total, time):
+            if callable(progress_callback):
+                progress_callback(transferred, total)
+
         if self.obsClient and remoting_path and local_path:
             try:
                 if os.path.isfile(local_path):
@@ -43,7 +48,8 @@ class ObsFileStorage(FileStorage):
                 bucket, key = self.extract_buack_key_from_path(remoting_path)
                 self.logger.info(f"download {key} from obs to {local_path}")
                 tmp_file = os.path.join(self.tmp_dir, os.path.basename(local_path))
-                resp = self.obsClient.downloadFile(bucket, key, tmp_file, 10 * 1024 * 1024, 4, True)
+                resp = self.obsClient.downloadFile(
+                    bucket, key, tmp_file, 10 * 1024 * 1024, 4, True, progressCallback=progress_callback_wrapper)
                 if resp.status < 300 and os.path.isfile(tmp_file):
                     shutil.move(tmp_file, local_path)
                     return local_path

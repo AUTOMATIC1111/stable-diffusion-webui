@@ -161,8 +161,6 @@ class TaskReceiver:
         self.local_cache = {}
         self.timer = BackgroundScheduler()
 
-        print(self.get_all_workers())
-
         self.timer.add_job(register_worker, 'interval', seconds=30, args=[self.worker_id])
         self.timer.start()
 
@@ -256,7 +254,9 @@ class TaskReceiver:
         if self.run_train_time_start <= utc.hour < self.run_train_time_end:
             logger.info(f"worker receive train task")
 
-            workers = self.get_all_workers()
+            group_workers = self.get_group_workers()
+            group_id = get_worker_group()
+            workers = group_workers.get(group_id) or []
             if workers:
                 # 1/5的WOEKER 生图，剩下的执行训练。
                 run_train_worker_num = len(workers) // 5
@@ -464,7 +464,8 @@ class TaskReceiver:
                     try:
                         resp = requests.get(url, timeout=5)
                         json_data = resp.json() or {}
-                        need_workers = json_data.get('need_workers', 0)
+                        data = json_data.get('data') or {}
+                        need_workers = data.get('need_workers', 0)
                         self.release_flag = need_workers == 0
                     except Exception as ex:
                         logger.exception('cannot get elastic workers')

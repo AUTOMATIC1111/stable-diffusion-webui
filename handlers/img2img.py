@@ -389,7 +389,20 @@ class Img2ImgTaskHandler(TaskHandler):
         return t
 
     def _get_local_checkpoint(self, task: Task):
-        base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint)
+        progress = TaskProgress.new_prepare(task, f"0%")
+
+        def progress_callback(*args):
+            if len(args) < 2:
+                return
+            transferred, total = args[0], args[1]
+            p = int(transferred * 100 / total)
+
+            current_progress = int(progress.task_desc[:-1])
+            if p % 5 == 0 and p >= current_progress + 5:
+                progress.task_desc = f"{p}%"
+                self._set_task_status(progress)
+
+        base_model_path = get_model_local_path(task.sd_model_path, ModelType.CheckPoint, progress_callback)
         if not base_model_path or not os.path.isfile(base_model_path):
             raise OSError(f'cannot found model:{task.sd_model_path}')
         return base_model_path
@@ -410,6 +423,7 @@ class Img2ImgTaskHandler(TaskHandler):
             sd_models.user_loras = self._get_local_loras(process_args.loras)
         else:
             sd_models.user_loras = []
+
         if process_args.embedding:
             embedding_dirs = self._get_local_embedding_dirs(process_args.embedding)
             sd_models.user_embedding_dirs = set(embedding_dirs)

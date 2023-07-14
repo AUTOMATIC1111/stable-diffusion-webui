@@ -206,6 +206,9 @@ class TaskProgress(SerializationObj):
     def result(self):
         return self._result
 
+    def pre_task_completed(self):
+        return self.completed or self.status >= TaskStatus.Uploading
+
     def set_status(self, status: TaskStatus, desc: str):
         self.task_desc = desc
         self.status = status

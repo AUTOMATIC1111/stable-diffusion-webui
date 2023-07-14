@@ -29,7 +29,7 @@ def find_storage_classes_with_env():
     if domain and domain in storages:
         return storages[domain]
 
-    return storages['default']
+    return storages.get('default')
 
 
 def get_domain_from_endpoint(endpoint):
@@ -42,12 +42,12 @@ def get_domain_from_endpoint(endpoint):
     return domain.lower()
 
 
-def get_local_path(remoting, local, storage_cls=None):
+def get_local_path(remoting, local, storage_cls=None, progress_callback=None):
     if os.path.isfile(local):
         return local
     storage_cls = storage_cls or find_storage_classes_with_env()
     with storage_cls() as s:
-        return s.download(remoting, local)
+        return s.download(remoting, local, progress_callback)
 
 
 def batch_download(remoting_loc_pairs: typing.Sequence[typing.Tuple[str, str]], storage_cls=None):

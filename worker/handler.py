@@ -34,7 +34,7 @@ class TaskHandler:
     def _set_task_status(self, p: TaskProgress):
         logger.info(f">>> task:{p.task.desc()}, status:{p.status.name}, desc:{p.task_desc}")
 
-    def do(self, task: Task):
+    def do(self, task: Task, progress_callback=None):
         ok, msg = task.valid()
         if not ok:
             p = TaskProgress.new_failed(task, msg)
@@ -45,6 +45,8 @@ class TaskHandler:
                 self._set_task_status(p)
                 for progress in self._exec(task):
                     self._set_task_status(progress)
+                    if callable(progress_callback):
+                        progress_callback(progress)
                 if random.randint(0, 10) < 3:
                     torch_gc()
             except torch.cuda.OutOfMemoryError:
@@ -55,7 +57,9 @@ class TaskHandler:
                 logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
                 p = TaskProgress.new_failed(
                     task, f'CUDA out of memory and release, free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB', '')
+
                 self._set_task_status(p)
+                progress_callback(p)
 
                 if free / 2 ** 30 < 4:
                     logger.info("CUDA out of memory, quit...")
@@ -70,7 +74,9 @@ class TaskHandler:
                 msg = str(ex)
                 logger.exception('unhandle err')
                 p = TaskProgress.new_failed(task, msg, trace)
+
                 self._set_task_status(p)
+                progress_callback(p)
                 torch_gc()
                 if 'BrokenPipeError' in str(ex):
                     pass
@@ -82,8 +88,8 @@ class TaskHandler:
         p = TaskProgress.new_failed(task, desc)
         self._set_task_status(p)
 
-    def __call__(self, task: Task):
-        return self.do(task)
+    def __call__(self, *args, **kwargs):
+        return self.do(*args, **kwargs)
 
 
 class DumpTaskHandler(TaskHandler, abc.ABC):

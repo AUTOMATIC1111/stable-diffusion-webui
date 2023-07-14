@@ -31,7 +31,7 @@ def clean_models():
     pass
 
 
-def get_model_local_path(remoting_path: str, model_type: ModelType):
+def get_model_local_path(remoting_path: str, model_type: ModelType, progress_callback=None):
     if not remoting_path:
         raise OSError(f'remoting path is empty')
     if os.path.isfile(remoting_path):
@@ -47,7 +47,7 @@ def get_model_local_path(remoting_path: str, model_type: ModelType):
     if os.path.isfile(dst):
         return dst
 
-    dst = get_local_path(remoting_path, dst)
+    dst = get_local_path(remoting_path, dst, progress_callback=progress_callback)
     if os.path.isfile(dst):
         if model_type == ModelType.CheckPoint:
             checkpoint = CheckpointInfo(dst)

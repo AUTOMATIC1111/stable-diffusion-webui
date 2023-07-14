@@ -33,7 +33,7 @@ class OssFileStorage(FileStorage):
     def name(self):
         return 'aliyuncs'
 
-    def download(self, remoting_path, local_path) -> str:
+    def download(self, remoting_path, local_path, progress_callback=None) -> str:
         if self.auth and remoting_path and local_path:
             if os.path.isfile(local_path):
                 return local_path
@@ -44,7 +44,7 @@ class OssFileStorage(FileStorage):
                 self.logger.info(f"download {key} from oss to {local_path}")
                 tmp_file = os.path.join(self.tmp_dir, os.path.basename(local_path))
                 bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
-                oss2.resumable_download(bucket, key, tmp_file)
+                oss2.resumable_download(bucket, key, tmp_file, progress_callback=progress_callback)
                 if os.path.isfile(tmp_file):
                     shutil.move(tmp_file, local_path)
                     return local_path

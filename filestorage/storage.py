@@ -106,7 +106,7 @@ class FileStorage:
         return logger
 
     @abc.abstractmethod
-    def download(self, remoting_path, local_path) -> str:
+    def download(self, remoting_path, local_path, progress_callback=None) -> str:
         raise NotImplementedError
 
     @abc.abstractmethod

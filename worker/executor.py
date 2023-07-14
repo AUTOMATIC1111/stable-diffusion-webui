@@ -9,7 +9,7 @@ import time
 import typing
 from queue import Queue
 from loguru import logger
-from worker.task import Task
+from worker.task import Task, TaskProgress
 from datetime import datetime
 from worker.handler import TaskHandler
 from worker.task_recv import TaskReceiver, TaskTimeout
@@ -52,28 +52,41 @@ class TaskExecutor(Thread):
     def error_handler(self, task: Task, ex: Exception):
         logger.error(f'exec task failed: {task.desc()}, ex: {ex}')
 
+    def nofity(self):
+        if getattr(self.not_busy, "value", 0) == 0:
+            return
+
+        with self.not_busy:
+            self.not_busy.notify()
+            logger.debug("notify receiver ")
+            setattr(self.not_busy, "value", 0)
+
+    def task_progress(self, p: TaskProgress):
+        if p.pre_task_completed():
+            self.nofity()
+
     def exec_task(self):
         handlers = [x.name for x in self._handlers.keys()]
         logger.info(f"executor start with:{','.join(handlers)}")
         while not self.__stop:
-            task = self.queue.get()
-            logger.info(f"====>>> receive task:{task.desc()}")
-            logger.info(f"====>>> model history:{self.recorder.history()}")
+            try:
+                task = self.queue.get()
+                logger.info(f"====>>> receive task:{task.desc()}")
+                logger.info(f"====>>> model history:{self.recorder.history()}")
 
-            handler = self.get_handler(task)
-            if not handler:
-                self.error_handler(task, Exception('can not found task handler'))
-            # 判断TASK超时。
-            if self._is_timeout(task):
-                now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
-                create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(task.create_at))
-                handler.set_failed(task, f'task time out(task create time:{create_time}, now:{now})')
-                continue
-            handler(task)
-            if task.stop_receiver():
-                time.sleep(3)
-                with self.not_busy:
-                    self.not_busy.notify()
+                handler = self.get_handler(task)
+                if not handler:
+                    self.error_handler(task, Exception('can not found task handler'))
+                # 判断TASK超时。
+                if self._is_timeout(task):
+                    now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
+                    create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(task.create_at))
+                    handler.set_failed(task, f'task time out(task create time:{create_time}, now:{now})')
+                    continue
+                handler(task, progress_callback=self.task_progress)
+            except Exception:
+                logger.exception("executor err")
+                self.nofity()
 
         logger.info('executor stopping...')
         self._close()
@@ -83,11 +96,13 @@ class TaskExecutor(Thread):
             with self.not_busy:
                 if not self.queue.full():
                     for task in self.receiver.task_iter():
+                        logger.info(f"====>>> preload task:{task.id}")
                         self.queue.put(task)
-                        if isinstance(task, Task) and task.stop_receiver():
-                            logger.info(f"====>>> waiting train task:{task.id}, stop receive.")
+                        if isinstance(task, Task):
+                            logger.debug(f"====>>> waiting task:{task.id}, stop receive.")
+                            setattr(self.not_busy, "value", 1)
                             self.not_busy.wait()
-                            logger.info(f"====>>> waiting train task:{task.id}, begin receive.")
+                            logger.debug(f"====>>> waiting task:{task.id}, begin receive.")
                 else:
                     self.not_busy.wait()
         logger.info("=======> task receiver quit!!!!!!")
