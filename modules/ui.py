@@ -267,6 +267,30 @@ def update_token_counter(text, steps):
     token_count, max_length = max([model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
     return f"<span class='gr-box gr-text-input'>{token_count}/{max_length}</span>"
 
+def create_history_slider(tabname):
+   with FormGroup(elem_id=f"prompt_history_slider_{tabname}"):
+        history = gr.Slider(
+            minimum=1,
+            maximum=1,
+            step=1,
+            elem_id=f"{tabname}_prompt_history_slider",
+            label="Prompt History",
+            value=1,
+        )
+        history.input(
+            fn=lambda *x: x,
+            _js="function(){updatePromptHistory('" + tabname + "')}",
+            inputs=None,
+            outputs=None,
+        )
+        history.release( #this is for the case where the user goes too fast or off the page.
+            fn=lambda *x: x,
+            _js="function(){updatePromptHistory('" + tabname + "')}",
+            inputs=None,
+            outputs=None,
+        )
+
+        return history
 
 def create_toprow(is_img2img):
     id_part = "img2img" if is_img2img else "txt2img"
@@ -277,11 +301,23 @@ def create_toprow(is_img2img):
                 with gr.Column(scale=80):
                     with gr.Row():
                         prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+                        prompt.change(
+                            fn=lambda *x: x,
+                            _js="function(){watchPrompts('" + id_part + "')}",
+                            inputs=None,
+                            outputs=None,
+                        )
 
             with gr.Row():
                 with gr.Column(scale=80):
                     with gr.Row():
                         negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+                        negative_prompt.change(
+                            fn=lambda *x: x,
+                            _js="function(){watchPrompts('" + id_part + "')}",
+                            inputs=None,
+                            outputs=None,
+                        )
 
         button_interrogate = None
         button_deepbooru = None
@@ -331,8 +367,27 @@ def create_toprow(is_img2img):
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
                 create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
+    with gr.Row(elem_id="history_top_row", variant="compact"):
+        with gr.Column(elem_id="history_col", scale=11):
+            history_slider = create_history_slider(id_part)
+        with gr.Column(elem_id="history_col", scale=1):
+            with gr.Row(elem_id="history_button_row", variant="compact"):
+                clear_history = gr.Button("Clear", visible=True, label="Clear history")
+                clear_history.click(
+                    fn=lambda *x: x,
+                    _js="function(){confirm_clear_history('" + id_part + "')}",
+                    inputs=None,
+                    outputs=None,
+                )
+                load_history = gr.Button("Load", visible=True, label="Load history")
+                load_history.click(
+                    fn=lambda *x: x,
+                    _js="function(){load_history('" + id_part + "')}",
+                    inputs=None,
+                    outputs=None,
+                )
 
-    return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button
+    return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button, history_slider,
 
 
 def setup_progressbar(*args, **kwargs):
@@ -420,7 +475,7 @@ def create_ui():
     modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=False)
+        txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button, history_slider = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
@@ -663,7 +718,7 @@ def create_ui():
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=True)
+        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button, history_slider = create_toprow(is_img2img=True)
 
         img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 

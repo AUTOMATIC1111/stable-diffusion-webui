@@ -385,3 +385,115 @@ function switchWidthHeight(tabname) {
     updateInput(height);
     return [];
 }
+
+function updatePromptHistory(tabname) {
+    const slider = gradioApp().querySelector(
+        "#" + tabname + "_prompt_history_slider> input"
+    );
+    const prompt = gradioApp().querySelector("#" + tabname + "_prompt textarea");
+    const negprompt = gradioApp().querySelector(
+        "#" + tabname + "_neg_prompt textarea"
+    );
+    const key = buildKey(tabname, slider.value);
+    const value = JSON.parse(window.localStorage.getItem(key));
+
+    prompt.value = value.prompt;
+    negprompt.value = value.negative_prompt;
+}
+
+function watchPrompts(tabname) {
+    let isInit = document.cookie.match(new RegExp("isInit" + "=([^;]+)"));
+    const input = gradioApp().querySelector(
+        "#" + tabname + "_prompt_history_slider> div input"
+    );
+    const slider = gradioApp().querySelector(
+        "#" + tabname + "_prompt_history_slider> input"
+    );
+    if (!isInit) {
+        const value = {};
+        value.negative_prompt = "";
+        value.prompt = "";
+        window.localStorage.setItem(
+            buildKey(tabname, slider.value),
+            JSON.stringify(value)
+        );
+        document.cookie = "isInit=true";
+    }
+
+    slider.max = parseInt(slider.max) + 1;
+    slider.value = parseInt(slider.max);
+    input.value = parseInt(slider.value);
+
+    let value = capturePrompts(tabname);
+    let key = buildKey(tabname, slider.value);
+
+    window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+function load_history(tabname) {
+    const slider = gradioApp().querySelector(
+        "#" + tabname + "_prompt_history_slider> input"
+    );
+    const input = gradioApp().querySelector(
+        "#" + tabname + "_prompt_history_slider> div input"
+    );
+
+    const items = {...window.localStorage};
+
+    let count = 0;
+    let last_prompt = "";
+    let last_neg_prompt = "";
+    for (let key in items) {
+        const re = new RegExp(tabname + "_[0-9]+", "g");
+        if (key.match(re)) {
+            count++;
+        }
+    }
+
+    if (count > 0) {
+        const value = JSON.parse(items[tabname + "_" + count]);
+        last_prompt = value.prompt;
+        last_neg_prompt = value.negative_prompt;
+        slider.max = parseInt(count);
+        slider.value = parseInt(count);
+        input.value = parseInt(count);
+        document.cookie = "isInit=true";
+
+        const prompt = gradioApp().querySelector(
+            "#" + tabname + "_prompt textarea"
+        );
+        const negprompt = gradioApp().querySelector(
+            "#" + tabname + "_neg_prompt textarea"
+        );
+        prompt.value = last_prompt;
+        negprompt.value = last_neg_prompt;
+    }
+}
+
+function confirm_clear_history(tabname) {
+    const slider = gradioApp().querySelector(
+        "#" + tabname + "_prompt_history_slider> input"
+    );
+    const input = gradioApp().querySelector(
+        "#" + tabname + "_prompt_history_slider> div input"
+    );
+
+    if (confirm("Clear " + tabname + " prompt history?")) {
+        slider.max = 1;
+        slider.value = 1;
+        input.value = 1;
+        const items = {...window.localStorage};
+        for (let key in items) {
+            const re = new RegExp(tabname + "_[0-9]+", "g");
+            if (key.match(re)) {
+                window.localStorage.removeItem(key);
+            }
+        }
+
+        window.localStorage.setItem(
+            buildKey(tabname, slider.value),
+            JSON.stringify(capturePrompts(tabname))
+        );
+    }
+}
+

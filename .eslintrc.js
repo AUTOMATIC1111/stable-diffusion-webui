@@ -87,5 +87,8 @@ module.exports = {
         modalNextImage: "readonly",
         // token-counters.js
         setupTokenCounters: "readonly",
+        // historySlider.js
+        capturePrompts: "readonly",
+        buildKey: "readonly",
     }
 };
