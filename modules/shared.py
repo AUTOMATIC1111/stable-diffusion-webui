@@ -737,7 +737,7 @@ if cmd_opts.backend is None:
     backend = Backend.DIFFUSERS if opts.data['sd_backend'] == 'diffusers' else Backend.ORIGINAL
 else:
     backend = Backend.DIFFUSERS if cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
-    opts.data['sd_backend'] = 'original' if backend == Backend.ORIGINAL else 'diffusers'
+opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
 log.info(f'Pipeline: {backend}')
 
 
