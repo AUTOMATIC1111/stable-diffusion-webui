@@ -123,14 +123,6 @@ def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
     p.styles.extend(x.split(','))
 
 
-def apply_fallback(p, x, xs):
-    sampler_name = sd_samplers.samplers_map.get(x.lower(), None)
-    if sampler_name is None:
-        shared.log.warning(f"XYZ grid: unknown sampler: {x}")
-    else:
-        shared.opts.data["force_latent_sampler"] = sampler_name
-
-
 def apply_schedulers_solver_order(p, x, xs):
     shared.opts.data["schedulers_solver_order"] = min(x, p.steps - 1)
 
@@ -351,7 +343,6 @@ class SharedSettingsStackHelper(object):
         self.sd_model_checkpoint = shared.opts.sd_model_checkpoint
         self.sd_model_dict = shared.opts.sd_model_dict
         self.sd_vae_checkpoint = shared.opts.sd_vae
-        self.force_latent_sampler = shared.opts.force_latent_sampler
 
     def __exit__(self, exc_type, exc_value, tb):
         #Restore overriden settings after plot generation.
@@ -359,7 +350,6 @@ class SharedSettingsStackHelper(object):
         shared.opts.data["schedulers_solver_order"] = self.schedulers_solver_order
         shared.opts.data["token_merging_ratio_hr"] = self.token_merging_ratio_hr
         shared.opts.data["token_merging_ratio"] = self.token_merging_ratio
-        shared.opts.data["force_latent_sampler"] = self.force_latent_sampler
         if self.sd_model_dict != shared.opts.sd_model_dict:
             shared.opts.data["sd_model_dict"] = self.sd_model_dict
         if self.sd_model_checkpoint != shared.opts.sd_model_checkpoint:

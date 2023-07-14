@@ -66,12 +66,12 @@ restricted_opts = {
 ui_reorder_categories = [
     "inpaint",
     "sampler",
-    "checkboxes",
-    "hires_fix",
     "dimensions",
     "cfg",
     "seed",
     "batch",
+    "checkboxes",
+    "second_pass",
     "override_settings",
     "scripts",
 ]
@@ -370,6 +370,8 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_vae_slicing": OptionInfo(False, "Enable VAE slicing"),
     "diffusers_vae_tiling": OptionInfo(False, "Enable VAE tiling"),
     "diffusers_attention_slicing": OptionInfo(False, "Enable attention slicing"),
+    # "diffusers_force_zeros": OptionInfo(False, "Force zeros for prompts when empty"),
+    # "diffusers_aesthetics_score": OptionInfo(6.0, "Require aesthetic score", gr.Slider, {"minimum": 0, "maximum": 10, "step": 0.1}),
 }))
 
 options_templates.update(options_section(('system-paths', "System Paths"), {
@@ -488,10 +490,11 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
     "show_samplers": OptionInfo(["Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
     "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
-    "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
+    # "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
     'eta_noise_seed_delta': OptionInfo(0, "Noise seed delta (eta)", gr.Number, {"precision": 0}),
+    "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
 
     "schedulers_sep_diffusers": OptionInfo("<h2>Diffusers specific config</h2>", "", gr.HTML),
     "schedulers_prediction_type": OptionInfo("default", "Samplers override model prediction type", gr.Radio, lambda: {"choices": ['default', 'epsilon', 'sample', 'v-prediction']}),
@@ -514,7 +517,6 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
 
     "schedulers_sep_compvis": OptionInfo("<h2>CompVis specific config</h2>", "", gr.HTML),
     "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
-    "eta_ddim": OptionInfo(0.0, "Noise multiplier for DDIM (eta)", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
 }))
 
 options_templates.update(options_section(('postprocessing', "Postprocessing"), {
@@ -746,7 +748,7 @@ cmd_opts.disable_extension_access = (cmd_opts.share or cmd_opts.listen or (cmd_o
 devices.device, devices.device_interrogate, devices.device_gfpgan, devices.device_esrgan, devices.device_codeformer = (devices.cpu if any(y in cmd_opts.use_cpu for y in [x, 'all']) else devices.get_optimal_device() for x in ['sd', 'interrogate', 'gfpgan', 'esrgan', 'codeformer'])
 device = devices.device
 batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
-parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
+parallel_processing_allowed = not cmd_opts.lowvram
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
 if device.type == 'privateuseone':
