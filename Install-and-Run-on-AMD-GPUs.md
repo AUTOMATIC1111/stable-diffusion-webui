@@ -30,8 +30,8 @@ If you have 4-6gb vram, try adding these flags to `webui-user.bat` like so:
 1. Enter these commands, which will install webui to your current directory:
 
 ```
-sudo apt install git python3.10 python3.10-venv -y
-git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd https://github.com/AUTOMATIC1111/stable-diffusion-webui
+sudo apt install git python3.10-venv -y
+git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd stable-diffusion-webui
 python3.10 -m venv venv
 ```
 
