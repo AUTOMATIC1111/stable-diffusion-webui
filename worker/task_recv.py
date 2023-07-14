@@ -18,7 +18,6 @@ import redis_lock
 import requests
 from loguru import logger
 from .task import Task
-from threading import Timer
 from datetime import datetime, timedelta
 from modules.shared import cmd_opts
 from tools.redis import RedisPool
@@ -28,6 +27,7 @@ from tools.gpu import GpuInfo
 from tools.wrapper import timed_lru_cache
 from tools.host import get_host_name
 from modules.shared import mem_mon as vram_mon
+from apscheduler.schedulers.background import BackgroundScheduler
 from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api,\
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
@@ -122,6 +122,7 @@ def register_worker(worker_id):
             worker_id: int(time.time())
         })
         conn.expire(SDWorkerZset, timedelta(hours=1))
+        pool.close()
     except:
         pass
 
@@ -158,7 +159,9 @@ class TaskReceiver:
 
         self.register_time = 0
         self.local_cache = {}
-        self.timer = Timer(10, register_worker, (self.worker_id,))
+        self.timer = BackgroundScheduler()
+
+        self.timer.add_job(register_worker, 'interval', seconds=30, args=[self.worker_id])
         self.timer.start()
 
     def _worker_id(self):
@@ -462,4 +465,4 @@ class TaskReceiver:
         return self.release_flag
 
     def close(self):
-        self.timer.cancel()
+        self.timer.shutdown()
