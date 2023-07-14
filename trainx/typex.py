@@ -369,10 +369,14 @@ class TrainLoraTask(UserDict):
             self.train_params = TrainLoraParams(self.orig_task)
         return self.train_params
 
-    def dump_train_config(self, image_dir):
-        params = self.train_param()
+    def dump_train_config(self, image_dir, kwargs):
+        data = dict((k, v) for k, v in kwargs.items())
         with open(os.path.join(image_dir, 'train.json'), "w+") as f:
-            f.write(json.dumps(params.to_dict()))
+
+            for key in ['pretrained_model_name_or_path', 'network_weights']:
+                if key in data['base']:
+                    data[key] = '******.safetensors'
+            f.write(json.dumps(data))
 
     def build_command_args(self):
         image_dir = self.image_dir()
@@ -452,9 +456,9 @@ class TrainLoraTask(UserDict):
 
         return kwargs
 
-    def compress_train_material(self, train_log: str):
+    def compress_train_material(self, train_log: str, kwargs: typing.Mapping):
         image_dir = self.image_dir()
-        self.dump_train_config(image_dir)
+        self.dump_train_config(image_dir, kwargs)
         with open('train_log', 'w+') as f:
             f.write(train_log)
 
