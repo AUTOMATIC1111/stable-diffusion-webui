@@ -161,6 +161,8 @@ class TaskReceiver:
         self.local_cache = {}
         self.timer = BackgroundScheduler()
 
+        print(self.get_all_workers())
+
         self.timer.add_job(register_worker, 'interval', seconds=30, args=[self.worker_id])
         self.timer.start()
 
@@ -425,8 +427,15 @@ class TaskReceiver:
         worker_ids = [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
 
         def get_work_id_num(x: str):
+            # def hashs(s):
+            #     hash_md5 = hashlib.md5()
+            #     hash_md5.update(s.encode())
+            #
+            #     return hash_md5.hexdigest()[:8]
             if 'Host:' in x:
-                return x[-16:-8]
+                idx = x.index('Host:')
+                return x[idx:]
+
             return x.replace("-", "")[-8:]
 
         worker_ids = sorted(worker_ids, key=get_work_id_num)
