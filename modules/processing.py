@@ -732,9 +732,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             p.setup_conds()
 
-            if len(model_hijack.comments) > 0:
-                for comment in model_hijack.comments:
-                    comments[comment] = 1
+            for comment in model_hijack.comments:
+                comments[comment] = 1
+
+            p.extra_generation_params.update(model_hijack.extra_generation_params)
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"

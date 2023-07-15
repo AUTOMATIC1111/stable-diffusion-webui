@@ -229,9 +229,18 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
             z = self.process_tokens(tokens, multipliers)
             zs.append(z)
 
-        if len(used_embeddings) > 0:
-            embeddings_list = ", ".join([f'{name} [{embedding.checksum()}]' for name, embedding in used_embeddings.items()])
-            self.hijack.comments.append(f"Used embeddings: {embeddings_list}")
+        if opts.textual_inversion_add_hashes_to_infotext and used_embeddings:
+            hashes = []
+            for name, embedding in used_embeddings.items():
+                shorthash = embedding.shorthash
+                if not shorthash:
+                    continue
+
+                name = name.replace(":", "").replace(",", "")
+                hashes.append(f"{name}: {shorthash}")
+
+            if hashes:
+                self.hijack.extra_generation_params["TI hashes"] = ", ".join(hashes)
 
         return torch.hstack(zs)
 

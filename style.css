@@ -231,6 +231,10 @@ button.custom-button{
     padding-top: 0.5em;
 }
 
+.html-log .comments:empty{
+    padding-top: 0;
+}
+
 .html-log .performance {
     font-size: 0.85em;
     color: #444;

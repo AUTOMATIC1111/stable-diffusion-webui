@@ -147,7 +147,6 @@ def undo_weighted_forward(sd_model):
 
 class StableDiffusionModelHijack:
     fixes = None
-    comments = []
     layers = None
     circular_enabled = False
     clip = None
@@ -156,6 +155,9 @@ class StableDiffusionModelHijack:
     embedding_db = modules.textual_inversion.textual_inversion.EmbeddingDatabase()
 
     def __init__(self):
+        self.extra_generation_params = {}
+        self.comments = []
+
         self.embedding_db.add_embedding_dir(cmd_opts.embeddings_dir)
 
     def apply_optimizations(self, option=None):
@@ -236,6 +238,7 @@ class StableDiffusionModelHijack:
 
     def clear_comments(self):
         self.comments = []
+        self.extra_generation_params = {}
 
     def get_prompt_lengths(self, text):
         if self.clip is None:

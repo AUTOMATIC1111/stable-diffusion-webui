@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
 
-from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors
+from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors, hashes
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
@@ -49,6 +49,8 @@ class Embedding:
         self.sd_checkpoint_name = None
         self.optimizer_state_dict = None
         self.filename = None
+        self.hash = None
+        self.shorthash = None
 
     def save(self, filename):
         embedding_data = {
@@ -81,6 +83,10 @@ class Embedding:
 
         self.cached_checksum = f'{const_hash(self.vec.reshape(-1) * 100) & 0xffff:04x}'
         return self.cached_checksum
+
+    def set_hash(self, v):
+        self.hash = v
+        self.shorthash = self.hash[0:12]
 
 
 class DirWithTextualInversionEmbeddings:
@@ -199,6 +205,7 @@ class EmbeddingDatabase:
         embedding.vectors = vec.shape[0]
         embedding.shape = vec.shape[-1]
         embedding.filename = path
+        embedding.set_hash(hashes.sha256(embedding.filename, "textual_inversion/" + name) or '')
 
         if self.expected_shape == -1 or self.expected_shape == embedding.shape:
             self.register_embedding(embedding, shared.sd_model)
