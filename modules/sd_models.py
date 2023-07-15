@@ -778,7 +778,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         if sd_model is None:
             shared.log.error('Diffuser model not loaded')
-            return
+            return        
         sd_model.sd_checkpoint_info = checkpoint_info # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_checkpoint = checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_hash = checkpoint_info.hash # pylint: disable=attribute-defined-outside-init
@@ -809,6 +809,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     timer.record("load")
     shared.log.info(f"Model loaded in {timer.summary()}")
     devices.torch_gc(force=True)
+    script_callbacks.model_loaded_callback(sd_model)
     shared.log.info(f'Model load finished: {memory_stats()}')
 
 
@@ -1008,6 +1009,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
             shared.opts.data["sd_model_checkpoint"] = next_checkpoint_info.title
             reload_model_weights(reuse_dict=True) # ok we loaded dict now lets redo and load model on top of it
         return model_data.sd_model if op == 'model' or op == 'dict' else model_data.sd_refiner
+
     try:
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
     except Exception:

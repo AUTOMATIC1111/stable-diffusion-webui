@@ -4,13 +4,13 @@
 
 Stuff to be fixed, in no particular order...
 
-- SD-XL VAE `AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)`
+- SD-XL VAE
 - SD-XL Lora
 - SD-XL Sketch/Inpaint
 - Kandinsky 2.2 (2.1 is working)
 - Misterious Extensions auto-enabling
 - Misterious Extra network corruptions
-- script_callbacks.on_model_loaded 
+- script_callbacks.on_model_loaded
 
 ## Features
 
