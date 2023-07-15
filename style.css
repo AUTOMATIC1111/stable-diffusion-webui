@@ -1004,7 +1004,7 @@ footer {
 }
 
 div.block.gradio-box.edit-user-metadata {
-    min-width: 56em;
+    width: 56em;
     background: var(--body-background-fill);
     padding: 2em !important;
 }
@@ -1020,4 +1020,11 @@ div.block.gradio-box.edit-user-metadata {
 
 .edit-user-metadata .wrap.translucent{
     background: var(--body-background-fill);
+}
+.edit-user-metadata .gradio-highlightedtext span{
+    word-break: break-word;
+}
+
+.edit-user-metadata-buttons{
+    margin-top: 1.5em;
 }

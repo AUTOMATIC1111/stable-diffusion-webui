@@ -52,7 +52,7 @@ class UserMetadataEditor:
 
     def create_default_buttons(self):
 
-        with gr.Row():
+        with gr.Row(elem_classes="edit-user-metadata-buttons"):
             self.button_cancel = gr.Button('Cancel')
             self.button_replace_preview = gr.Button('Replace preview', variant='primary')
             self.button_save = gr.Button('Save', variant='primary')
@@ -88,8 +88,7 @@ class UserMetadataEditor:
             stats = os.stat(filename)
             params = [
                 ('File size: ', sysinfo.pretty_bytes(stats.st_size)),
-                ('Created: ', datetime.datetime.fromtimestamp(stats.st_ctime).strftime('%Y-%m-%d %H:%M')),
-                ('Last modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
+                ('Modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
             ]
 
             return params
@@ -100,7 +99,12 @@ class UserMetadataEditor:
     def put_values_into_components(self, name):
         user_metadata = self.get_user_metadata(name)
 
-        params = self.get_metadata_table(name)
+        try:
+            params = self.get_metadata_table(name)
+        except Exception as e:
+            errors.display(e, f"reading metadata info for {name}")
+            params = []
+
         table = '<table class="file-metadata">' + "".join(f"<tr><th>{name}</th><td>{value}</td></tr>" for name, value in params) + '</table>'
 
         return html.escape(name), user_metadata.get('description', ''), table, self.get_card_html(name)
@@ -128,7 +132,9 @@ class UserMetadataEditor:
             .click(fn=self.put_values_into_components, inputs=[self.edit_name_input], outputs=[self.edit_name, self.edit_description, self.html_filedata, self.html_preview])\
             .then(fn=lambda: gr.update(visible=True), inputs=[], outputs=[self.box])
 
-        self.button_save.click(fn=self.save_user_metadata, inputs=[self.edit_name_input, self.edit_description], outputs=[]).then(fn=None, _js="closePopup")
+        self.button_save\
+            .click(fn=self.save_user_metadata, inputs=[self.edit_name_input, self.edit_description], outputs=[])\
+            .then(fn=None, _js="extraNetworksReloadAll")
 
     def create_ui(self):
         with gr.Box(visible=False, elem_id=self.id_part, elem_classes="edit-user-metadata") as box:
@@ -142,7 +148,7 @@ class UserMetadataEditor:
     def save_preview(self, index, gallery, name):
         if len(gallery) == 0:
             print("There is no image in gallery to save as a preview.")
-            return [self.get_card_html(name)] + [page.create_html(self.ui.tabname) for page in self.ui.stored_extra_pages]
+            return [self.get_card_html(name)] + self.regenerate_ui_pages()
 
         item = self.page.items.get(name, {})
 
@@ -156,7 +162,10 @@ class UserMetadataEditor:
 
         images.save_image_with_geninfo(image, geninfo, item["local_preview"])
 
-        return [self.get_card_html(name)] + [page.create_html(self.tabname) for page in self.ui.stored_extra_pages]
+        return [self.get_card_html(name)] + self.regenerate_ui_pages()
+
+    def regenerate_ui_pages(self):
+        return [page.create_html(self.tabname) for page in self.ui.stored_extra_pages]
 
     def setup_ui(self, gallery):
         self.button_replace_preview.click(

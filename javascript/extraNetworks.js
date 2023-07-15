@@ -113,7 +113,7 @@ function setupExtraNetworks() {
 
 onUiLoaded(setupExtraNetworks);
 
-var re_extranet = /<([^:]+:[^:]+):[\d.]+>/;
+var re_extranet = /<([^:]+:[^:]+):[\d.]+>(.*)/;
 var re_extranet_g = /\s+<([^:]+:[^:]+):[\d.]+>/g;
 
 function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
@@ -121,15 +121,22 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
     var replaced = false;
     var newTextareaText;
     if (m) {
+        var extraTextAfterNet = m[2];
         var partToSearch = m[1];
-        newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found) {
+        var foundAtPosition = -1;
+        newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found, net, pos) {
             m = found.match(re_extranet);
             if (m[1] == partToSearch) {
                 replaced = true;
+                foundAtPosition = pos;
                 return "";
             }
             return found;
         });
+
+        if (foundAtPosition >= 0 && newTextareaText.substr(foundAtPosition, extraTextAfterNet.length) == extraTextAfterNet) {
+            newTextareaText = newTextareaText.substr(0, foundAtPosition) + newTextareaText.substr(foundAtPosition + extraTextAfterNet.length);
+        }
     } else {
         newTextareaText = textarea.value.replaceAll(new RegExp(text, "g"), function(found) {
             if (found == text) {
@@ -287,4 +294,11 @@ function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
     popup(editor.page);
 
     event.stopPropagation();
+}
+
+function extraNetworksReloadAll() {
+    closePopup();
+
+    gradioApp().getElementById('txt2img_extra_refresh').click();
+    gradioApp().getElementById('img2img_extra_refresh').click();
 }
