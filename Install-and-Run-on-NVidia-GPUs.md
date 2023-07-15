@@ -231,7 +231,23 @@ python3.10 -m venv venv
 
 (Red Hat-based)
 
-    sudo DND install git python3 -y && git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd stable-diffusion-webui && ./webui.sh
+    sudo dnf install git python3 -y && git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui && cd stable-diffusion-webui && ./webui.sh
+
+</details>
+
+<details><summary>For Installing Python 3.10</summary>
+
+Some distribution have older/newer system python versions than python 3.10. 
+
+```
+cd stable-diffusion-webui
+
+sudo pacman -S pyenv
+pyenv install 3.10.6
+pyenv local 3.10.6
+
+python -m venv
+```
 
 </details>
 
