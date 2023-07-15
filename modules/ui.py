@@ -301,7 +301,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
 
 
 def create_sampler_and_steps_selection(choices, tabname, primary: bool = True):
-    with FormRow(elem_id=f"sampler_selection_{tabname}'_alt' if not primary else ''"):
+    with FormRow(elem_id=f"sampler_selection_{tabname}{'_alt' if not primary else ''}"):
         if 'UniPC' in [sampler.name for sampler in choices]:
             default_sampler_name = 'UniPC'
         elif 'Euler a' in [sampler.name for sampler in choices]:
@@ -309,7 +309,7 @@ def create_sampler_and_steps_selection(choices, tabname, primary: bool = True):
         else:
             default_sampler_name = modules.sd_samplers.samplers[0].name
         sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling{'_alt' if not primary else ''}", choices=[x.name for x in choices], value=default_sampler_name, type="index")
-        steps = gr.Slider(minimum=0, maximum=99, step=1, elem_id=f"{tabname}_steps'_alt' if not primary else ''", label="Sampling steps", value=20)
+        steps = gr.Slider(minimum=0, maximum=99, step=1, elem_id=f"{tabname}_steps{'_alt' if not primary else ''}", label="Sampling steps", value=20)
     return steps, sampler_index
 
 

@@ -4,6 +4,7 @@
 
 Stuff to be fixed, in no particular order...
 
+- SD-XL VAE `AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)`
 - SD-XL Lora
 - SD-XL Sketch/Inpaint
 - Kandinsky 2.2 (2.1 is working)
