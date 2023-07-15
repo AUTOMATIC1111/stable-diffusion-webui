@@ -256,7 +256,7 @@ class EmbeddingDatabase:
         self.word_embeddings.update(sorted_word_embeddings)
 
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
-        if self.previously_displayed_embeddings != displayed_embeddings:
+        if shared.opts.textual_inversion_print_at_load and self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
             print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
             if self.skipped_embeddings:
