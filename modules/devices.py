@@ -4,6 +4,7 @@ import sys
 import contextlib
 import torch
 from modules import cmd_args, shared, memstats
+from modules.dml import directml_init
 
 if sys.platform == "darwin":
     from modules import mac_specific # pylint: disable=ungrouped-imports
@@ -30,6 +31,10 @@ def get_cuda_device_string():
         if shared.cmd_opts.device_id is not None:
             return f"xpu:{shared.cmd_opts.device_id}"
         return "xpu"
+    elif backend == 'directml' and torch.dml.is_available():
+        if shared.cmd_opts.device_id is not None:
+            return f"privateuseone:{shared.cmd_opts.device_id}"
+        return torch.dml.get_default_device_string()
     else:
         if shared.cmd_opts.device_id is not None:
             return f"cuda:{shared.cmd_opts.device_id}"
@@ -37,19 +42,10 @@ def get_cuda_device_string():
 
 
 def get_optimal_device_name():
-    if (cuda_ok or backend == 'ipex') and not shared.cmd_opts.use_directml:
+    if cuda_ok or backend == 'ipex' or backend == 'directml':
         return get_cuda_device_string()
     if has_mps():
         return "mps"
-    if shared.cmd_opts.use_directml:
-        import torch_directml # pylint: disable=import-error
-        if torch_directml.is_available():
-            torch.cuda.is_available = lambda: False
-            if shared.cmd_opts.device_id is not None:
-                return f"privateuseone:{shared.cmd_opts.device_id}"
-            return torch_directml.device()
-        else:
-            return "cpu"
     return "cpu"
 
 
@@ -255,6 +251,9 @@ if backend == 'ipex':
         args[4].to("cpu") if args[4] is not None else args[4],
         args[5], args[6], args[7], args[8]).to(get_cuda_device_string()),
         lambda *args, **kwargs: args[1].device != torch.device("cpu"))
+
+if backend == "directml":
+    directml_init()
 
 cuda_ok = torch.cuda.is_available() and not backend == 'ipex'
 cpu = torch.device("cpu")

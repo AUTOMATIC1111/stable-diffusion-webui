@@ -41,8 +41,8 @@ def get_available_vram():
             mem_free_total = 1024 * 1024 * 1024
         return mem_free_total
     elif shared.device.type == 'privateuseone':
-        mem_total, mem_active = torch.dml.memory_stats(shared.device)
-        return mem_total - mem_active * (1 << 20)
+        mem_free, mem_total = torch.dml.mem_get_info(shared.device)
+        return mem_total - mem_free
     else:
         return psutil.virtual_memory().available
 
@@ -194,8 +194,9 @@ def einsum_op_cuda(q, k, v):
     return einsum_op_tensor_mem(q, k, v, mem_free_total / 3.3 / (1 << 20))
 
 def einsum_op_dml(q, k, v):
-    mem_total, mem_active = torch.dml.memory_stats(q.device)
-    mem_reserved = mem_total / (1 << 20) * 0.7
+    mem_free, mem_total = torch.dml.mem_get_info(q.device)
+    mem_active = mem_total - mem_free
+    mem_reserved = mem_total * 0.7
     return einsum_op_tensor_mem(q, k, v, (mem_reserved - mem_active) if mem_reserved > mem_active else 1)
 
 def einsum_op(q, k, v):
