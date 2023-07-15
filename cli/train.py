@@ -12,22 +12,11 @@ import asyncio
 import logging
 import tempfile
 import argparse
-import warnings
-warnings.filterwarnings(action="ignore", category=DeprecationWarning)
-warnings.filterwarnings(action="ignore", category=UserWarning)
-warnings.filterwarnings(action="ignore", category=FutureWarning)
-
-# 3rd party imports
-import filetype
-import torch
-from tqdm.rich import tqdm
 
 # local imports
 import util
 import sdapi
 import options
-import process
-import latents
 
 
 # globals
@@ -65,6 +54,7 @@ def setup_logging():
 
 def mem_stats():
     gc.collect()
+    import torch
     if torch.cuda.is_available():
         with torch.no_grad():
             torch.cuda.empty_cache()
@@ -191,6 +181,7 @@ async def training_loop():
         log.info(f'train embedding result: {res}')
 
     async def async_monitor():
+        from tqdm.rich import tqdm
         await asyncio.sleep(3)
         res = util.Map(sdapi.progress())
         with tqdm(desc='train embedding', total=res.state.job_count) as pbar:
@@ -303,6 +294,8 @@ def prepare_options():
 
 
 def process_inputs():
+    import process
+    import filetype
     pathlib.Path(args.process_dir).mkdir(parents=True, exist_ok=True)
     processing_options = args.process.split(',') if isinstance(args.process, str) else args.process
     processing_options = [opt.strip() for opt in re.split(',| ', args.process)]
@@ -363,6 +356,7 @@ def process_inputs():
         with open(options.lora.in_json, "w", encoding='utf-8') as outfile: # write json at the end only
             outfile.write(json.dumps(metadata, indent=2))
         for folder in folders: # create latents
+            import latents
             latents.create_vae_latents(util.Map({ 'input': folder, 'json': options.lora.in_json }))
             latents.unload_vae()
     r = { 'inputs': len(files), 'outputs': results, 'metadata': options.lora.in_json }

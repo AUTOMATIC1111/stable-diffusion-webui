@@ -205,7 +205,7 @@ def update_token_counter(text, steps):
     if modules.shared.backend == modules.shared.Backend.ORIGINAL:
         token_count, max_length = max([sd_hijack.model_hijack.get_prompt_lengths(prompt) for prompt in prompts], key=lambda args: args[0])
     elif modules.shared.backend == modules.shared.Backend.DIFFUSERS:
-        if modules.shared.sd_model is not None:
+        if modules.shared.sd_model is not None and hasattr(modules.shared.sd_model, 'tokenizer'):
             tokenizer = modules.shared.sd_model.tokenizer
             has_bos_token = tokenizer.bos_token_id is not None
             has_eos_token = tokenizer.eos_token_id is not None
@@ -308,8 +308,8 @@ def create_sampler_and_steps_selection(choices, tabname, primary: bool = True):
             default_sampler_name = 'Euler a'
         else:
             default_sampler_name = modules.sd_samplers.samplers[0].name
-        sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling{'_alt' if not primary else ''}", choices=[x.name for x in choices], value=default_sampler_name, type="index")
-        steps = gr.Slider(minimum=0, maximum=99, step=1, elem_id=f"{tabname}_steps{'_alt' if not primary else ''}", label="Sampling steps", value=20)
+        sampler_index = gr.Dropdown(label='Sampling method' if primary else 'Secondary sampler', elem_id=f"{tabname}_sampling{'_alt' if not primary else ''}", choices=[x.name for x in choices], value=default_sampler_name, type="index")
+        steps = gr.Slider(minimum=0, maximum=99, step=1, label="Sampling steps" if primary else 'Secondary steps', elem_id=f"{tabname}_steps{'_alt' if not primary else ''}", value=20)
     return steps, sampler_index
 
 
@@ -397,7 +397,7 @@ def create_ui(startup_timer = None):
                             with FormRow():
                                 hr_refiner = FormHTML(value="Refiner", elem_id="txtimg_hr_finalres", interactive=False)
                             with FormRow(elem_id="txt2img_refiner_row1", variant="compact"):
-                                image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
+                                image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='Secondary CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
                                 diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
                                 refiner_denoise_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.0, elem_id="txt2img_refiner_denoise_start")
                                 refiner_denoise_end = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise end', value=1.0, elem_id="txt2img_refiner_denoise_end")

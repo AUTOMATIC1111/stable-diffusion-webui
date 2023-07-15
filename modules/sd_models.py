@@ -16,12 +16,16 @@ import tomesd
 from transformers import logging as transformers_logging
 import ldm.modules.midas as midas
 from ldm.util import instantiate_from_config
-import diffusers
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
 from modules.memstats import memory_stats
 from modules.paths_internal import models_path
+
+try:
+    import diffusers
+except Exception as ex:
+    shared.log.error(f'Failed to import diffusers: {ex}')
 
 
 transformers_logging.set_verbosity_error()
@@ -778,7 +782,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         if sd_model is None:
             shared.log.error('Diffuser model not loaded')
-            return        
+            return
         sd_model.sd_checkpoint_info = checkpoint_info # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_checkpoint = checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_hash = checkpoint_info.hash # pylint: disable=attribute-defined-outside-init

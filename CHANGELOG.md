@@ -1,6 +1,15 @@
 # Change Log for SD.Next
 
-## Update for 07/14/2023:
+## Update for 07/15/2023
+
+- **direct-ml** improvements: faster and less memory usage
+- basic support for one more model: [UniDiffuser](https://github.com/thu-ml/unidiffuser):
+  download using model downloader: `thu-ml/unidiffuser-v1`
+  use DDIM sampler & disable live preview (support for additional samplers and live previews can be added if there is interest)
+- force requirements check on each start  
+  there are too many misbehaving extensions that change system requirements  
+
+## Update for 07/14/2023
 
 Trying to unify settings for both original and diffusers backend without introducing duplicates...
 
