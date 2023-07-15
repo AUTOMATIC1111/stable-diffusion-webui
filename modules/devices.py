@@ -8,7 +8,6 @@ from modules import cmd_args, shared, memstats
 if sys.platform == "darwin":
     from modules import mac_specific # pylint: disable=ungrouped-imports
 
-cuda_ok = torch.cuda.is_available()
 previous_oom = 0
 
 
@@ -192,10 +191,28 @@ else:
     backend = 'cpu'
 
 if backend == 'ipex':
-    #Fix broken functions with ipex
-    from modules.sd_hijack_utils import CondFunc
+    #Fix functions with ipex
+    torch.cuda.is_available = torch.xpu.is_available
+    torch.cuda.current_device = torch.xpu.current_device
+    torch.cuda.get_device_name = torch.xpu.get_device_name
+    torch.cuda.get_device_properties = torch.xpu.get_device_properties
     torch.cuda.empty_cache = torch_gc
 
+    torch.cuda.memory_stats = torch.xpu.memory_stats
+    torch.cuda.mem_get_info = lambda device=None: [(torch.xpu.get_device_properties(device).total_memory - torch.xpu.memory_allocated(device)), torch.xpu.get_device_properties(device).total_memory]
+    torch.cuda.memory_allocated = torch.xpu.memory_allocated
+    torch.cuda.max_memory_allocated = torch.xpu.max_memory_allocated
+    torch.cuda.reset_peak_memory_stats = torch.xpu.reset_peak_memory_stats
+    torch.cuda.utilization = 0
+
+    torch.cuda.get_rng_state_all = torch.xpu.get_rng_state_all
+    torch.cuda.set_rng_state_all = torch.xpu.set_rng_state_all
+    try:
+        torch.cuda.amp.GradScaler = torch.xpu.amp.GradScaler
+    except Exception:
+        pass
+
+    from modules.sd_hijack_utils import CondFunc
     #Functions with dtype errors:
     CondFunc('torch.nn.modules.GroupNorm.forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
@@ -207,6 +224,7 @@ if backend == 'ipex':
     CondFunc('torch.nn.modules.Conv2d._conv_forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[2].data.dtype), args[2], args[3]),
         lambda *args, **kwargs: args[2].dtype != args[3].data.dtype)
+
     #Functions that does not work with the XPU:
     #UniPC:
     CondFunc('torch.linalg.solve',
@@ -238,6 +256,7 @@ if backend == 'ipex':
         args[5], args[6], args[7], args[8]).to(get_cuda_device_string()),
         lambda *args, **kwargs: args[1].device != torch.device("cpu"))
 
+cuda_ok = torch.cuda.is_available() and not backend == 'ipex'
 cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
 dtype = torch.float16

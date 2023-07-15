@@ -2,9 +2,7 @@
 __pycache__
 .ruff_cache
 /cache.json
-/metadata.json
-/config.json
-/ui-config.json
+/*.json
 /params.txt
 /styles.csv
 /user.css
@@ -16,6 +14,7 @@ node_modules
 pnpm-lock.yaml
 package-lock.json
 venv
+.history
 
 # all models and temp files
 *.log
@@ -38,6 +37,7 @@ venv
 /*.lnk
 !webui.bat
 !webui.sh
+!package.json
 
 # all dynamic stuff
 /repositories/**/*

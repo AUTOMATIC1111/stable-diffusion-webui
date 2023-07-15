@@ -247,7 +247,8 @@ class ExtraNetworksPage:
         return None
 
     def find_info(self, path):
-        for file in [f"{path}.info", f"{path}.civitai.info"]:
+        basename, _ext = os.path.splitext(path)
+        for file in [f"{path}.info", f"{path}.civitai.info", f"{basename}.info", f"{basename}.civitai.info"]:
             try:
                 with open(file, "r", encoding="utf-8", errors="replace") as f:
                     return f.read()

@@ -558,7 +558,7 @@ class PriorPipeline:
     def __call__(self, *args, **kwargs):
         unclip_outputs = self.prior(prompt=kwargs.get("prompt"), negative_prompt=kwargs.get("negative_prompt"))
 
-        if self.prior.device.type == "cuda" or self.prior.device.type == "xpu":
+        if self.prior.device.type == "cuda" or self.prior.device.type == "xpu" or self.prior.device.type == "mps":
             prior_device = self.prior.device
             self.prior.to("cpu")
             self.main.to(prior_device)
@@ -566,7 +566,7 @@ class PriorPipeline:
         kwargs = {**kwargs, **unclip_outputs}
         result = self.main(*args, **kwargs)
 
-        if self.main.device.type == "cuda" or self.main.device.type == "xpu":
+        if self.main.device.type == "cuda" or self.main.device.type == "xpu" or self.prior.device.type == "mps":
             main_device = self.main.device
             self.main.to("cpu")
             self.prior.to(main_device)
@@ -737,7 +737,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model.unet.to(memory_format=torch.channels_last)
 
         base_sent_to_cpu=False
-        if shared.opts.cuda_compile and (torch.cuda.is_available() or devices.backend == 'ipex'):
+        if shared.opts.cuda_compile and torch.cuda.is_available():
             if op == 'refiner':
                 gpu_vram = memory_stats().get('gpu', {})
                 free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)

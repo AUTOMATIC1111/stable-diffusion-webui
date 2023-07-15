@@ -30,7 +30,7 @@ class UniPCSampler(object):
         # value from the hires steps slider:
         num_inference_steps = t[0] + 1
         num_inference_steps / self.inflated_steps
-        self.denoise_steps = max(num_inference_steps, shared.opts.uni_pc_order)
+        self.denoise_steps = max(num_inference_steps, shared.opts.schedulers_solver_order)
 
         max(self.inflated_steps - self.denoise_steps, 0)
 
@@ -102,8 +102,8 @@ class UniPCSampler(object):
                 steps=self.denoise_steps,
                 skip_type=shared.opts.uni_pc_skip_type,
                 method="multistep",
-                order=shared.opts.uni_pc_order,
-                lower_order_final=shared.opts.uni_pc_lower_order_final,
+                order=shared.opts.schedulers_solver_order,
+                lower_order_final=shared.opts.schedulers_use_loworder,
                 denoise_to_zero=True,
                 timesteps=self.timesteps,
             )
@@ -187,6 +187,6 @@ class UniPCSampler(object):
         )
 
         uni_pc = UniPC(model_fn, self.noise_schedule, predict_x0=True, thresholding=False, variant=shared.opts.uni_pc_variant, condition=conditioning, unconditional_condition=unconditional_conditioning, before_sample=self.before_sample, after_sample=self.after_sample, after_update=self.after_update)
-        x = uni_pc.sample(img, steps=S, skip_type=shared.opts.uni_pc_skip_type, method="multistep", order=shared.opts.uni_pc_order, lower_order_final=shared.opts.uni_pc_lower_order_final)
+        x = uni_pc.sample(img, steps=S, skip_type=shared.opts.uni_pc_skip_type, method="multistep", order=shared.opts.schedulers_solver_order, lower_order_final=shared.opts.schedulers_use_loworder)
 
         return x.to(device), None

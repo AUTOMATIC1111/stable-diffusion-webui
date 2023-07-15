@@ -1,5 +1,6 @@
 :root, .dark{ --checkbox-label-gap: 0.25em 0.1em; --section-header-text-size: 12pt; --block-background-fill: transparent;}
 a { font-weight: bold; cursor: pointer; }
+h2 { margin-top: 1em !important; font-size: 1.4em !important; }
 div.gradio-container{ max-width: unset !important; padding: 8px !important; }
 div.tabitem { padding: 0 !important; }
 div.form{ border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 0.5em; }

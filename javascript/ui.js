@@ -10,6 +10,10 @@ let uiLoaded = false;
 let opts_metadata = {};
 const opts_tabs = {};
 
+function rememberGallerySelection(name) {
+  // dummy
+}
+
 function set_theme(theme) {
   const gradioURL = window.location.href;
   if (!gradioURL.includes('?__theme=')) window.location.replace(`${gradioURL}?__theme=${theme}`);

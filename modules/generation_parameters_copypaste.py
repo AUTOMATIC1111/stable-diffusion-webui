@@ -308,8 +308,8 @@ infotext_to_setting_name_mapping = [
     ('Discard penultimate sigma', 'always_discard_next_to_last_sigma'),
     ('UniPC variant', 'uni_pc_variant'),
     ('UniPC skip type', 'uni_pc_skip_type'),
-    ('UniPC order', 'uni_pc_order'),
-    ('UniPC lower order final', 'uni_pc_lower_order_final'),
+    ('UniPC order', 'schedulers_solver_order'),
+    ('UniPC lower order final', 'schedulers_use_loworder'),
     ('Token merging ratio', 'token_merging_ratio'),
     ('Token merging ratio hr', 'token_merging_ratio_hr'),
 ]

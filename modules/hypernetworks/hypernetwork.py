@@ -589,10 +589,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
             print("Cannot resume from saved optimizer!")
             print(e)
 
-    if devices.backend == 'ipex':
-        scaler = torch.xpu.amp.GradScaler()
-    else:
-        scaler = torch.cuda.amp.GradScaler()
+    scaler = torch.cuda.amp.GradScaler()
 
     batch_size = ds.batch_size
     gradient_step = ds.gradient_step
@@ -706,10 +703,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                     hypernetwork.eval()
                     rng_state = torch.get_rng_state()
                     cuda_rng_state = None
-                    if devices.backend == 'ipex':
-                        cuda_rng_state = torch.xpu.get_rng_state_all()
-                    elif torch.cuda.is_available():
-                        cuda_rng_state = torch.cuda.get_rng_state_all()
+                    cuda_rng_state = torch.cuda.get_rng_state_all()
                     shared.sd_model.cond_stage_model.to(devices.device)
                     shared.sd_model.first_stage_model.to(devices.device)
 
@@ -745,10 +739,7 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
                         shared.sd_model.cond_stage_model.to(devices.cpu)
                         shared.sd_model.first_stage_model.to(devices.cpu)
                     torch.set_rng_state(rng_state)
-                    if devices.backend == 'ipex':
-                        torch.xpu.set_rng_state_all(cuda_rng_state)
-                    elif torch.cuda.is_available():
-                        torch.cuda.set_rng_state_all(cuda_rng_state)
+                    torch.cuda.set_rng_state_all(cuda_rng_state)
                     hypernetwork.train()
                     if image is not None:
                         shared.state.assign_current_image(image)

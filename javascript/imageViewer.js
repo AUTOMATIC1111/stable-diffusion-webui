@@ -38,7 +38,6 @@ function modalSaveImage(event) {
 }
 
 function modalKeyHandler(event) {
-  console.log('HERE2', event.key);
   switch (event.key) {
     case 's':
       modalSaveImage();

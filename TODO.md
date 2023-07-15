@@ -4,8 +4,9 @@
 
 Stuff to be fixed, in no particular order...
 
+- SD-XL VAE `AutoencoderKL.from_pretrained("madebyollin/sdxl-vae-fp16-fix", torch_dtype=torch.float16)`
 - SD-XL Lora
-- SD-XL Img2Img/Inpaint
+- SD-XL Sketch/Inpaint
 - Kandinsky 2.2 (2.1 is working)
 - Misterious Extensions auto-enabling
 - Misterious Extra network corruptions
@@ -35,7 +36,7 @@ Stuff to be added, in no particular order...
 - Improve `lyco` logging
 - Cache models when switching backends
 - Style editor
-- Built-in notifications
+- Built-in motd-style notifications
 
 ## Investigate
 

@@ -21,12 +21,7 @@ class MemUsageMonitor(threading.Thread):
         self.run_flag = threading.Event()
         self.data = defaultdict(int)
         if not torch.cuda.is_available():
-            #torch.cuda.is_available() reports False when using IPEX.
-            if devices.backend == 'ipex':
-                self.cuda_mem_get_info()
-                torch.xpu.memory_stats(self.device)
-            else:
-                self.disabled = True
+            self.disabled = True
         else:
             try:
                 self.cuda_mem_get_info()
@@ -35,22 +30,15 @@ class MemUsageMonitor(threading.Thread):
                 self.disabled = True
 
     def cuda_mem_get_info(self):
-        if devices.backend == 'ipex':
-            index = self.device.index if self.device.index is not None else torch.xpu.current_device()
-            return [(torch.xpu.get_device_properties(index).total_memory - torch.xpu.memory_allocated(index)), torch.xpu.get_device_properties(index).total_memory]
-        else:
-            index = self.device.index if self.device.index is not None else torch.cuda.current_device()
-            return torch.cuda.mem_get_info(index)
+        index = self.device.index if self.device.index is not None else torch.cuda.current_device()
+        return torch.cuda.mem_get_info(index)
 
     def run(self):
         if self.disabled:
             return
         while True:
             self.run_flag.wait()
-            if devices.backend == 'ipex':
-                torch.xpu.reset_peak_memory_stats()
-            else:
-                torch.cuda.reset_peak_memory_stats()
+            torch.cuda.reset_peak_memory_stats()
             self.data.clear()
             if self.opts.memmon_poll_rate <= 0:
                 self.run_flag.clear()
@@ -70,10 +58,7 @@ class MemUsageMonitor(threading.Thread):
             self.data["free"] = free
             self.data["total"] = total
             try:
-                if devices.backend == 'ipex':
-                    torch_stats = torch.xpu.memory_stats(self.device)
-                else:
-                    torch_stats = torch.cuda.memory_stats(self.device)
+                torch_stats = torch.cuda.memory_stats(self.device)
                 self.data["active"] = torch_stats["active.all.current"]
                 self.data["active_peak"] = torch_stats["active_bytes.all.peak"]
                 self.data["reserved"] = torch_stats["reserved_bytes.all.current"]

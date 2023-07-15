@@ -603,23 +603,7 @@ class Api:
             ram = { 'error': f'{err}' }
         try:
             import torch
-            if devices.backend == 'ipex':
-                system = { 'free': (torch.xpu.get_device_properties(shared.device).total_memory - torch.xpu.memory_allocated()), 'used': torch.xpu.memory_allocated(), 'total': torch.xpu.get_device_properties(shared.device).total_memory }
-                s = dict(torch.xpu.memory_stats())
-                allocated = { 'current': s['allocated_bytes.all.current'], 'peak': s['allocated_bytes.all.peak'] }
-                reserved = { 'current': s['reserved_bytes.all.current'], 'peak': s['reserved_bytes.all.peak'] }
-                active = { 'current': s['active_bytes.all.current'], 'peak': s['active_bytes.all.peak'] }
-                inactive = { 'current': s['inactive_split_bytes.all.current'], 'peak': s['inactive_split_bytes.all.peak'] }
-                warnings = { 'retries': s['num_alloc_retries'], 'oom': s['num_ooms'] }
-                cuda = {
-                    'system': system,
-                    'active': active,
-                    'allocated': allocated,
-                    'reserved': reserved,
-                    'inactive': inactive,
-                    'events': warnings,
-                }
-            elif torch.cuda.is_available():
+            if torch.cuda.is_available():
                 s = torch.cuda.mem_get_info()
                 system = { 'free': s[0], 'used': s[1] - s[0], 'total': s[1] }
                 s = dict(torch.cuda.memory_stats(shared.device))
