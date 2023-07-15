@@ -12,12 +12,12 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
         shared.reload_hypernetworks()
 
     def list_items(self):
-        for index, (name, path) in enumerate(shared.hypernetworks.items()):
-            path, ext = os.path.splitext(path)
+        for index, (name, full_path) in enumerate(shared.hypernetworks.items()):
+            path, ext = os.path.splitext(full_path)
 
             yield {
                 "name": name,
-                "filename": path,
+                "filename": full_path,
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
                 "search_term": self.search_terms_from_path(path),

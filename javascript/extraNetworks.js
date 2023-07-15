@@ -182,19 +182,20 @@ function extraNetworksSearchButton(tabs_id, event) {
 
 var globalPopup = null;
 var globalPopupInner = null;
+function closePopup(){
+    if (!globalPopup) return;
+
+    globalPopup.style.display = "none";
+}
 function popup(contents) {
     if (!globalPopup) {
         globalPopup = document.createElement('div');
-        globalPopup.onclick = function() {
-            globalPopup.style.display = "none";
-        };
+        globalPopup.onclick = closePopup;
         globalPopup.classList.add('global-popup');
 
         var close = document.createElement('div');
         close.classList.add('global-popup-close');
-        close.onclick = function() {
-            globalPopup.style.display = "none";
-        };
+        close.onclick = closePopup;
         close.title = "Close";
         globalPopup.appendChild(close);
 
@@ -260,6 +261,30 @@ function extraNetworksRequestMetadata(event, extraPage, cardName) {
             showError();
         }
     }, showError);
+
+    event.stopPropagation();
+}
+
+extraPageUserMetadataEditors = {}
+
+function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
+    var id = tabname + '_' + extraPage + '_edit_user_metadata';
+
+    editor = extraPageUserMetadataEditors[id]
+    if(! editor){
+        editor = {};
+        editor.page = gradioApp().getElementById(id);
+        editor.nameTextarea = gradioApp().querySelector("#" + id + "_name" + ' textarea');
+        editor.button = gradioApp().querySelector("#" + id + "_button");
+        extraPageUserMetadataEditors[id] = editor;
+    }
+
+    editor.nameTextarea.value = cardName;
+    updateInput(editor.nameTextarea);
+
+    editor.button.click();
+
+    popup(editor.page);
 
     event.stopPropagation();
 }

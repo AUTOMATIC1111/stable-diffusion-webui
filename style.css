@@ -550,6 +550,9 @@ table.popup-table .link{
     background-color: rgba(20, 20, 20, 0.95);
 }
 
+.global-popup *{
+    box-sizing: border-box;
+}
 
 .global-popup-close:before {
     content: "×";
@@ -815,32 +818,42 @@ footer {
 }
 
 
-.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before{
-    content: "🛈";
-}
-.extra-network-cards .card .metadata-button, .extra-network-thumbs .card .metadata-button{
+.extra-network-cards .card .button-row, .extra-network-thumbs .card .button-row{
     display: none;
     position: absolute;
     color: white;
     right: 0;
 }
-.extra-network-cards .card .metadata-button {
+.extra-network-cards .card:hover .button-row, .extra-network-thumbs .card:hover .button-row{
+    display: flex;
+}
+
+.extra-network-cards .card .card-button, .extra-network-thumbs .card .card-button{
+    color: white;
+}
+
+.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before{
+    content: "🛈";
+}
+
+.extra-network-cards .card .edit-button:before, .extra-network-thumbs .card .edit-button:before{
+    content: "🛠";
+}
+
+.extra-network-cards .card .card-button {
     text-shadow: 2px 2px 3px black;
     padding: 0.25em;
     font-size: 22pt;
     width: 1.5em;
 }
-.extra-network-thumbs .card .metadata-button {
+.extra-network-thumbs .card .card-button {
     text-shadow: 1px 1px 2px black;
     padding: 0;
     font-size: 16pt;
     width: 1em;
     top: -0.25em;
 }
-.extra-network-cards .card:hover .metadata-button, .extra-network-thumbs .card:hover .metadata-button{
-    display: inline-block;
-}
-.extra-network-cards .card .metadata-button:hover, .extra-network-thumbs .card .metadata-button:hover{
+.extra-network-cards .card .card-button:hover, .extra-network-thumbs .card .card-button:hover{
     color: red;
 }
 
@@ -861,7 +874,7 @@ footer {
     position: relative;
 }
 
-.extra-network-thumbs .card .preview{
+.extra-network-thumbs .card .preview, .standalone-card-preview.card .preview{
     position: absolute;
     object-fit: cover;
     width: 100%;
@@ -905,7 +918,7 @@ footer {
     word-break: break-all;
 }
 
-.extra-network-cards .card{
+.extra-network-cards .card, .standalone-card-preview.card{
     display: inline-block;
     margin: 0.5em;
     width: 16em;
@@ -988,4 +1001,23 @@ footer {
     object-fit: cover;
     width: 100%;
     height:100%;
+}
+
+div.block.gradio-box.edit-user-metadata {
+    min-width: 56em;
+    background: var(--body-background-fill);
+    padding: 2em !important;
+}
+
+.edit-user-metadata .extra-network-name{
+    font-size: 18pt;
+    color: var(--body-text-color);
+}
+
+.edit-user-metadata .file-metadata th{
+    text-align: left;
+}
+
+.edit-user-metadata .wrap.translucent{
+    background: var(--body-background-fill);
 }

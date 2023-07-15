@@ -2,7 +2,7 @@ import os.path
 import urllib.parse
 from pathlib import Path
 
-from modules import shared
+from modules import shared, ui_extra_networks_user_metadata, errors
 from modules.images import read_info_from_image, save_image_with_geninfo
 from modules.ui import up_down_symbol
 import gradio as gr
@@ -60,12 +60,33 @@ class ExtraNetworksPage:
     def __init__(self, title):
         self.title = title
         self.name = title.lower()
+        self.id_page = self.name.replace(" ", "_")
         self.card_page = shared.html("extra-networks-card.html")
         self.allow_negative_prompt = False
         self.metadata = {}
+        self.items = {}
 
     def refresh(self):
         pass
+
+    def read_user_metadata(self, item):
+        filename = item.get("filename", None)
+        basename, ext = os.path.splitext(filename)
+        metadata_filename = basename + '.json'
+
+        metadata = {}
+        try:
+            if os.path.isfile(metadata_filename):
+                with open(metadata_filename, "r", encoding="utf8") as file:
+                    metadata = json.load(file)
+        except Exception as e:
+            errors.display(e, f"reading extra network user metadata from {metadata_filename}")
+
+        desc = metadata.get("description", None)
+        if desc is not None:
+            item["description"] = desc
+
+        item["user_metadata"] = metadata
 
     def link_preview(self, filename):
         quoted_filename = urllib.parse.quote(filename.replace('\\', '/'))
@@ -119,10 +140,14 @@ class ExtraNetworksPage:
 </button>
 """ for subdir in subdirs])
 
-        for item in self.list_items():
+        self.items = {x["name"]: x for x in self.list_items()}
+        for item in self.items.values():
             metadata = item.get("metadata")
             if metadata:
                 self.metadata[item["name"]] = metadata
+
+            if "user_metadata" not in item:
+                self.read_user_metadata(item)
 
             items_html += self.create_html_for_item(item, tabname)
 
@@ -166,7 +191,9 @@ class ExtraNetworksPage:
         metadata_button = ""
         metadata = item.get("metadata")
         if metadata:
-            metadata_button = f"<div class='metadata-button' title='Show metadata' onclick='extraNetworksRequestMetadata(event, {json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
+            metadata_button = f"<div class='metadata-button card-button' title='Show internal metadata' onclick='extraNetworksRequestMetadata(event, {json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
+
+        edit_button = f"<div class='edit-button card-button' title='Edit metadata' onclick='extraNetworksEditUserMetadata(event, {json.dumps(tabname)}, {json.dumps(self.id_page)}, {json.dumps(item['name'])})'></div>"
 
         local_path = ""
         filename = item.get("filename", "")
@@ -200,6 +227,7 @@ class ExtraNetworksPage:
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
+            "edit_button": edit_button,
             "search_only": " search_only" if search_only else "",
             "sort_keys": sort_keys,
         }
@@ -246,6 +274,9 @@ class ExtraNetworksPage:
             except OSError:
                 pass
         return None
+
+    def create_user_metadata_editor(self, ui, tabname):
+        return ui_extra_networks_user_metadata.UserMetadataEditor(ui, tabname, self)
 
 
 def initialize():
@@ -297,19 +328,22 @@ def create_ui(container, button, tabname):
     ui = ExtraNetworksUi()
     ui.pages = []
     ui.pages_contents = []
+    ui.user_metadata_editors = []
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
     with gr.Tabs(elem_id=tabname+"_extra_tabs"):
         for page in ui.stored_extra_pages:
-            page_id = page.title.lower().replace(" ", "_")
-
-            with gr.Tab(page.title, id=page_id):
-                elem_id = f"{tabname}_{page_id}_cards_html"
+            with gr.Tab(page.title, id=page.id_page):
+                elem_id = f"{tabname}_{page.id_page}_cards_html"
                 page_elem = gr.HTML('Loading...', elem_id=elem_id)
                 ui.pages.append(page_elem)
 
                 page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + json.dumps(tabname) + '); return []}', inputs=[], outputs=[])
+
+                editor = page.create_user_metadata_editor(ui, tabname)
+                editor.create_ui()
+                ui.user_metadata_editors.append(editor)
 
     gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     gr.Dropdown(choices=['Default Sort', 'Date Created', 'Date Modified', 'Name'], value='Default Sort', elem_id=tabname+"_extra_sort", multiselect=False, visible=False, show_label=False, interactive=True)
@@ -363,6 +397,8 @@ def path_is_parent(parent_path, child_path):
 
 def setup_ui(ui, gallery):
     def save_preview(index, images, filename):
+        # this function is here for backwards compatibility and likely will be removed soon
+
         if len(images) == 0:
             print("There is no image in gallery to save as a preview.")
             return [page.create_html(ui.tabname) for page in ui.stored_extra_pages]
@@ -393,4 +429,8 @@ def setup_ui(ui, gallery):
         inputs=[ui.preview_target_filename, gallery, ui.preview_target_filename],
         outputs=[*ui.pages]
     )
+
+    for editor in ui.user_metadata_editors:
+        editor.setup_ui(gallery)
+
 
