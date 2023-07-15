@@ -1014,6 +1014,10 @@ div.block.gradio-box.edit-user-metadata {
     color: var(--body-text-color);
 }
 
+.edit-user-metadata .file-metadata{
+    color: var(--body-text-color);
+}
+
 .edit-user-metadata .file-metadata th{
     text-align: left;
 }
