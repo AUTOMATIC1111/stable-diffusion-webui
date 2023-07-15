@@ -151,6 +151,7 @@ class StableDiffusionProcessing:
         self.clip_skip = clip_skip
         self.iteration = 0
         self.is_hr_pass = False
+        self.enable_hr = None
         self.refiner_denoise_start = 0
         opts.data['clip_skip'] = clip_skip
 
@@ -1102,6 +1103,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.refiner_denoise_end = refiner_denoise_end
         self.refiner_prompt = refiner_prompt
         self.refiner_negative = refiner_negative
+        self.enable_hr = None
 
 
     def init(self, all_prompts, all_seeds, all_subseeds):
