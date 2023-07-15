@@ -443,7 +443,6 @@ def fix_seed(p):
 def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
     index = position_in_batch + iteration * p.batch_size
 
-    enable_hr = getattr(p, 'enable_hr', False)
     token_merging_ratio = p.get_token_merging_ratio()
     token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True)
     uses_ensd = opts.eta_noise_seed_delta != 0
@@ -473,7 +472,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Init image hash": getattr(p, 'init_img_hash', None),
         "Version": git_commit,
         "Token merging ratio": None if token_merging_ratio == 0 else token_merging_ratio,
-        "Token merging ratio hr": None if not enable_hr or token_merging_ratio_hr == 0 else token_merging_ratio_hr,
+        "Token merging ratio hr": None if not p.enable_hr or token_merging_ratio_hr == 0 else token_merging_ratio_hr,
         "Parser": opts.prompt_attention,
     }
     generation_params.update(p.extra_generation_params)
@@ -974,7 +973,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     self.truncate_y = (self.hr_upscale_to_y - target_h) // opt_f
             # special case: the user has chosen to do nothing
             if self.hr_upscale_to_x == self.width and self.hr_upscale_to_y == self.height:
-                self.enable_hr = False
                 self.denoising_strength = None
                 self.extra_generation_params.pop("Hires upscale", None)
                 self.extra_generation_params.pop("Hires resize", None)
