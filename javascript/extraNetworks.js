@@ -182,7 +182,7 @@ function extraNetworksSearchButton(tabs_id, event) {
 
 var globalPopup = null;
 var globalPopupInner = null;
-function closePopup(){
+function closePopup() {
     if (!globalPopup) return;
 
     globalPopup.style.display = "none";
@@ -265,13 +265,13 @@ function extraNetworksRequestMetadata(event, extraPage, cardName) {
     event.stopPropagation();
 }
 
-extraPageUserMetadataEditors = {}
+var extraPageUserMetadataEditors = {};
 
 function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
     var id = tabname + '_' + extraPage + '_edit_user_metadata';
 
-    editor = extraPageUserMetadataEditors[id]
-    if(! editor){
+    var editor = extraPageUserMetadataEditors[id];
+    if (!editor) {
         editor = {};
         editor.page = gradioApp().getElementById(id);
         editor.nameTextarea = gradioApp().querySelector("#" + id + "_name" + ' textarea');
