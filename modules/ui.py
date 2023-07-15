@@ -83,8 +83,7 @@ detect_image_size_symbol = '\U0001F4D0'  # 📐
 up_down_symbol = '\u2195\ufe0f' # ↕️
 
 
-def plaintext_to_html(text):
-    return ui_common.plaintext_to_html(text)
+plaintext_to_html = ui_common.plaintext_to_html
 
 
 def send_gradio_gallery_to_image(x):

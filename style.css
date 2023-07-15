@@ -227,29 +227,33 @@ button.custom-button{
     align-self: end;
 }
 
-.performance {
+.html-log .comments{
+    padding-top: 0.5em;
+}
+
+.html-log .performance {
     font-size: 0.85em;
     color: #444;
     display: flex;
 }
 
-.performance p{
+.html-log .performance p{
     display: inline-block;
 }
 
-.performance p.time, .performance p.vram, .performance p.time abbr, .performance p.vram abbr {
+.html-log .performance p.time, .performance p.vram, .performance p.time abbr, .performance p.vram abbr {
     margin-bottom: 0;
     color: var(--block-title-text-color);
 }
 
-.performance p.time {
+.html-log .performance p.time {
 }
 
-.performance p.vram {
+.html-log .performance p.vram {
     margin-left: auto;
 }
 
-.performance .measurement{
+.html-log .performance .measurement{
     color: var(--body-text-color);
     font-weight: bold;
 }

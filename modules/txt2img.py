@@ -70,4 +70,4 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
     if opts.do_not_show_images:
         processed.images = []
 
-    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments)
+    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
