@@ -58,6 +58,12 @@ def apply_sampler(p, x, xs):
     else:
         p.sampler_name = sampler_name
 
+def apply_latent_sampler(p, x, xs):
+    latent_sampler = sd_samplers.samplers_map.get(x.lower(), None)
+    if latent_sampler is None:
+        shared.log.warning(f"XYZ grid: unknown sampler: {x}")
+    else:
+        p.latent_sampler = latent_sampler
 
 def confirm_samplers(p, xs):
     for x in xs:
@@ -227,6 +233,16 @@ axis_options = [
     AxisOption("Face restore", str, apply_face_restore, fmt=format_value),
     AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
     AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
+    #Second PASS
+    AxisOption("SecondPass Sampler", str, apply_latent_sampler, fmt=format_value, confirm=confirm_samplers, choices=lambda: [x.name for x in sd_samplers.samplers]),
+    AxisOption("SecondPass Denoising Strength", float, apply_field("denoising_strength")),
+    AxisOption("SecondPass Steps", int, apply_field("hr_second_pass_steps")),
+    AxisOption("SecondPass CFG Scale", float, apply_field("image_cfg_scale")),
+    AxisOption("SecondPass Guidance Rescale", float, apply_field("diffusers_guidance_rescale")),
+    AxisOption("SecondPass Denoise Start", float, apply_field("refiner_denoise_start")),
+    AxisOption("SecondPass Denoise End", float, apply_field("refiner_denoise_end")),
+
+
 ]
 
 
