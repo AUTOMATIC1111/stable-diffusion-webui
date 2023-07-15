@@ -1,4 +1,3 @@
-import os
 import gc
 import sys
 import contextlib
@@ -75,13 +74,7 @@ def torch_gc(force=False):
     if shared.opts.disable_gc and not force:
         return
     collected = gc.collect()
-    if backend == 'ipex' and "WSL2" not in os.popen("uname -a").read():
-        try:
-            with torch.xpu.device(get_cuda_device_string()):
-                torch.xpu.empty_cache()
-        except Exception:
-            pass
-    elif cuda_ok:
+    if cuda_ok or backend == 'ipex':
         try:
             with torch.cuda.device(get_cuda_device_string()):
                 torch.cuda.empty_cache()
@@ -187,19 +180,22 @@ else:
     backend = 'cpu'
 
 if backend == 'ipex':
+    import os
     #Fix functions with ipex
     torch.cuda.is_available = torch.xpu.is_available
+    torch.cuda.device = torch.xpu.device
     torch.cuda.current_device = torch.xpu.current_device
     torch.cuda.get_device_name = torch.xpu.get_device_name
     torch.cuda.get_device_properties = torch.xpu.get_device_properties
-    torch.cuda.empty_cache = torch_gc
+    torch.cuda.empty_cache = torch.xpu.empty_cache if "WSL2" not in os.popen("uname -a").read() else lambda: None
+    torch.cuda.ipc_collect = lambda: None
 
     torch.cuda.memory_stats = torch.xpu.memory_stats
     torch.cuda.mem_get_info = lambda device=None: [(torch.xpu.get_device_properties(device).total_memory - torch.xpu.memory_allocated(device)), torch.xpu.get_device_properties(device).total_memory]
     torch.cuda.memory_allocated = torch.xpu.memory_allocated
     torch.cuda.max_memory_allocated = torch.xpu.max_memory_allocated
     torch.cuda.reset_peak_memory_stats = torch.xpu.reset_peak_memory_stats
-    torch.cuda.utilization = 0
+    torch.cuda.utilization = lambda: 0
 
     torch.cuda.get_rng_state_all = torch.xpu.get_rng_state_all
     torch.cuda.set_rng_state_all = torch.xpu.set_rng_state_all
@@ -230,10 +226,14 @@ if backend == 'ipex':
     CondFunc('torch.Generator',
         lambda orig_func, device: torch.xpu.Generator(device),
         lambda orig_func, device: device != torch.device("cpu") and device != "cpu")
+    CondFunc('torch.nn.functional.interpolate',
+        lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False: orig_func(input.to("cpu"), size=size, scale_factor=scale_factor, mode=mode, align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias).to(get_cuda_device_string()),
+        lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False: antialias)
     #Diffusers Float64 (ARC GPUs doesn't support double or Float64):
-    CondFunc('torch.from_numpy',
-        lambda orig_func, *args, **kwargs: orig_func(args[0].astype('float32')),
-        lambda *args, **kwargs: args[1].dtype == float)
+    if not torch.xpu.has_fp64_dtype():
+        CondFunc('torch.from_numpy',
+            lambda orig_func, *args, **kwargs: orig_func(args[0].astype('float32')),
+            lambda *args, **kwargs: args[1].dtype == float)
     #ControlNet:
     CondFunc('torch.batch_norm',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
