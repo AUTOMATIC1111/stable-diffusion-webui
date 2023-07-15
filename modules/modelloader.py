@@ -56,11 +56,13 @@ def load_diffusers_models(model_path: str, command_path: str = None):
     import huggingface_hub as hf
     places = []
     places.append(model_path)
-    if command_path is not None and command_path != model_path and os.path.isdir(command_path):
+    if command_path is not None and command_path != model_path:
         places.append(command_path)
     diffuser_repos.clear()
     output = []
     for place in places:
+        if not os.path.isdir(place):
+            continue
         try:
             res = hf.scan_cache_dir(cache_dir=place)
             for r in list(res.repos):

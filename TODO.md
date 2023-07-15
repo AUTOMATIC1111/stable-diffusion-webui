@@ -10,7 +10,7 @@ Stuff to be fixed, in no particular order...
 - Kandinsky 2.2 (2.1 is working)
 - Misterious Extensions auto-enabling
 - Misterious Extra network corruptions
-- script_callbacks.on_model_loaded
+- Save interim image before refiner
 
 ## Features
 
