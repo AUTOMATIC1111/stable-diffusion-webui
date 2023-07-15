@@ -380,6 +380,7 @@ class FilenameGenerator:
         'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
         'user': lambda self: self.p.user,
         'vae_filename': lambda self: self.get_vae_filename(),
+        'none': lambda self: '', # Overrides the default so you can get just the sequence number
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -601,12 +602,12 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         else:
             file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
 
+        file_decoration = namegen.apply(file_decoration) + suffix
+
         add_number = opts.save_images_add_number or file_decoration == ''
 
         if file_decoration != "" and add_number:
             file_decoration = f"-{file_decoration}"
-
-        file_decoration = namegen.apply(file_decoration) + suffix
 
         if add_number:
             basecount = get_next_sequence_number(path, basename)
