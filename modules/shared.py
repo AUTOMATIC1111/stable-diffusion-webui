@@ -11,6 +11,7 @@ import tqdm
 import requests
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
+from modules.dml import directml_init
 import modules.interrogate
 import modules.memmon
 import modules.styles
@@ -766,8 +767,8 @@ batch_cond_uncond = opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cm
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 mem_mon = modules.memmon.MemUsageMonitor("MemMon", device, opts)
 mem_mon.start()
-if device.type == 'privateuseone':
-    import modules.dml # pylint: disable=ungrouped-imports
+if devices.backend == "directml":
+    directml_init()
 
 
 def reload_gradio_theme(theme_name=None):
