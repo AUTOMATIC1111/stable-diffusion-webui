@@ -1303,7 +1303,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         image = torch.from_numpy(batch_images)
         image = 2. * image - 1.
-        image = image.to(shared.device)
+        image = image.to(shared.device, dtype=devices.dtype_vae)
 
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
 
