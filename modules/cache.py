@@ -94,4 +94,4 @@ def cached_data_for_file(subsection, title, filename, func):
 
         dump_cache()
 
-    return entry['value']
+    return entry
