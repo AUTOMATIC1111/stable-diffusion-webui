@@ -278,7 +278,7 @@ class Processed:
         self.sd_model_hash = shared.sd_model.sd_model_hash
         self.seed_resize_from_w = p.seed_resize_from_w
         self.seed_resize_from_h = p.seed_resize_from_h
-        self.denoising_strength = getattr(p, 'denoising_strength', None)
+        self.denoising_strength = p.denoising_strength
         self.extra_generation_params = p.extra_generation_params
         self.index_of_first_image = index_of_first_image
         self.styles = p.styles
@@ -466,7 +466,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Variation seed": None if p.subseed_strength == 0 else all_subseeds[index],
         "Variation seed strength": None if p.subseed_strength == 0 else p.subseed_strength,
         "Seed resize from": None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}",
-        "Denoising strength": getattr(p, 'denoising_strength', None),
+        "Denoising strength": p.denoising_strength,
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": p.clip_skip if p.clip_skip > 1 else None,
         "ENSD": opts.eta_noise_seed_delta if uses_ensd else None,
@@ -728,11 +728,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 del samples_ddim
 
             elif shared.backend == Backend.DIFFUSERS:
-                if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name):
-                    sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
-                    if sampler is None:
-                        sampler = sd_samplers.all_samplers_map.get("UniPC")
-                    shared.sd_model.scheduler = sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
+                # if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name):
+                sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
+                if sampler is None:
+                    sampler = sd_samplers.all_samplers_map.get("UniPC")
+                sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
                 cross_attention_kwargs={}
                 if lora_state['active']:
@@ -745,7 +745,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
                     # TODO(PVP): change out to latents once possible with `diffusers`
                     task_specific_kwargs = {"image": p.init_images[0], "mask_image": p.image_mask, "strength": p.denoising_strength}
-
 
                 shared.sd_model.to(devices.device)
                 pipe_args = set_pipeline_args(
@@ -766,11 +765,11 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         shared.log.debug('Moving base model to CPU')
                         shared.sd_model.to('cpu')
 
-                    if (not hasattr(shared.sd_refiner.scheduler, 'name')) or (shared.sd_refiner.scheduler.name != p.latent_sampler):
-                        sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
-                        if sampler is None:
-                            sampler = sd_samplers.all_samplers_map.get("UniPC")
-                        shared.sd_refiner.scheduler = sd_samplers.create_sampler(sampler.name, shared.sd_refiner) # TODO(Patrick): For wrapped pipelines this is currently a no-op
+                    # if (not hasattr(shared.sd_refiner.scheduler, 'name')) or (shared.sd_refiner.scheduler.name != p.latent_sampler):
+                    sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
+                    if sampler is None:
+                        sampler = sd_samplers.all_samplers_map.get("UniPC")
+                    sd_samplers.create_sampler(sampler.name, shared.sd_refiner) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
                     shared.sd_refiner.to(devices.device)
                     devices.torch_gc()

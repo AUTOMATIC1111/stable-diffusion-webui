@@ -285,6 +285,8 @@ def check_python():
 def check_torch():
     if args.quick:
         return
+    if args.skip_torch:
+        log.info('Skipping Torch tests')
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
@@ -330,8 +332,6 @@ def check_torch():
             torch_command = os.environ.get('TORCH_COMMAND', 'torch torchvision')
     if 'torch' in torch_command and not args.version:
         install(torch_command, 'torch torchvision')
-    if args.skip_torch:
-        log.info('Skipping Torch tests')
     else:
         try:
             import torch

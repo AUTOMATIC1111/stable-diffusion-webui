@@ -22,20 +22,22 @@ except Exception as e:
     log.error(f'Diffusers import error: version={diffusers.__version__} error: {e}')
 
 config = {
-    'All': { 'num_train_timesteps': 1000, 'beta_schedule': 'linear', 'prediction_type': 'epsilon' },
-    'UniPC': { 'beta_start': 0.0001, 'beta_end': 0.02,'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'predict_x0': 'bh2', 'lower_order_final': True },
-    'DDIM': { 'beta_start': 0.0001, 'beta_end': 0.02,'clip_sample': True, 'set_alpha_to_one': True, 'steps_offset': 0, 'thresholding': False, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace', 'rescale_betas_zero_snr': False },
-    'DDPM': { 'beta_start': 0.0001, 'beta_end': 0.02,'variance_type': "fixed_small", 'clip_sample': True, 'thresholding': False, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace'},
-    'KDPM2': {'beta_start': 0.00085, 'beta_end': 0.012, 'steps_offset': 0 },
-    'KDPM2 a': {'beta_start': 0.00085, 'beta_end': 0.012, 'steps_offset': 0 },
-    'DEIS': { 'beta_start': 0.0001, 'beta_end': 0.02,'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "deis", 'solver_type': "logrho", 'lower_order_final': True },
-    'Euler': {'beta_start': 0.0001, 'beta_end': 0.02, 'interpolation_type': "linear", 'use_karras_sigmas': False },
-    'Euler a': { 'beta_start': 0.0001, 'beta_end': 0.02 },
-    'Heun': { 'beta_start': 0.0001, 'beta_end': 0.02,'use_karras_sigmas': False },
-    'PNDM': { 'beta_start': 0.0001, 'beta_end': 0.02,'skip_prk_steps': False, 'set_alpha_to_one': False, 'steps_offset': 0 },
-    'DPM 1S': { 'beta_start': 0.0001, 'beta_end': 0.02,'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
-    'DPM 2M': { 'beta_start': 0.0001, 'beta_end': 0.02,'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
-    'LMSD': { 'beta_start': 0.0001, 'beta_end': 0.02,'use_karras_sigmas': False, 'timestep_spacing': 'linspace', 'steps_offset': 0 },
+    # TODO beta_start, beta_end are typically per-scheduler, but we don't want them as they should be taken from the model itself as those are values model was trained on
+    # TODO prediction_type is ideally set in model as well, but it maybe needed that we do auto-detect of model type in the future
+    'All': { 'num_train_timesteps': 1000, 'beta_start': 0.0001, 'beta_end': 0.02, 'beta_schedule': 'linear', 'prediction_type': 'epsilon' },
+    'DDIM': { 'clip_sample': True, 'set_alpha_to_one': True, 'steps_offset': 0, 'thresholding': False, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace', 'rescale_betas_zero_snr': False },
+    'DDPM': { 'variance_type': "fixed_small", 'clip_sample': True, 'thresholding': False, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace'},
+    'DEIS': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "deis", 'solver_type': "logrho", 'lower_order_final': True },
+    'DPM 1S': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
+    'DPM 2M': { 'thresholding': False, 'sample_max_value': 1.0, 'algorithm_type': "dpmsolver++", 'solver_type': "midpoint", 'lower_order_final': True, 'use_karras_sigmas': False },
+    'Euler a': { },
+    'Euler': { 'interpolation_type': "linear", 'use_karras_sigmas': False },
+    'Heun': { 'use_karras_sigmas': False },
+    'KDPM2 a': { 'steps_offset': 0 },
+    'KDPM2': { 'steps_offset': 0 },
+    'LMSD': { 'use_karras_sigmas': False, 'timestep_spacing': 'linspace', 'steps_offset': 0 },
+    'PNDM': { 'skip_prk_steps': False, 'set_alpha_to_one': False, 'steps_offset': 0 },
+    'UniPC': { 'solver_order': 2, 'thresholding': False, 'sample_max_value': 1.0, 'predict_x0': 'bh2', 'lower_order_final': True },
 }
 
 samplers_data_diffusers = [
@@ -57,17 +59,22 @@ samplers_data_diffusers = [
 class DiffusionSampler:
     def __init__(self, name, constructor, model, **kwargs):
         self.config = {}
-        self.config = config['All'].copy()
+        self.config = config['All'].copy() # apply global defaults
         if not hasattr(model, 'scheduler'):
             return
-        for key, value in config.get(name, {}).items(): # diffusers defaults
+        for key, value in config.get(name, {}).items(): # apply diffusers per-scheduler defaults
             self.config[key] = value
-        for key, value in model.scheduler.config.items(): # model defaults
+        if hasattr(model.scheduler, 'scheduler_config'): # find model defaults
+            orig_config = model.scheduler.scheduler_config
+        else:
+            orig_config = model.scheduler.config
+        for key, value in orig_config.items(): # apply model defaults
             if key in self.config:
                 self.config[key] = value
-        for key, value in kwargs.items(): # user args
+        for key, value in kwargs.items(): # apply user args, if any
             if key in self.config:
                 self.config[key] = value
+        # finally apply user preferences
         if opts.schedulers_prediction_type != 'default':
             self.config['prediction_type'] = opts.schedulers_prediction_type
         if opts.schedulers_beta_schedule != 'default':

@@ -47,6 +47,8 @@ def create_sampler(name, model):
         return sampler
     elif shared.backend == shared.Backend.DIFFUSERS:
         sampler = config.constructor(model)
+        if not hasattr(model, 'scheduler_config'):
+            model.scheduler_config = sampler.sampler.config.copy()
         model.scheduler = sampler.sampler
         return sampler.sampler
     else:
