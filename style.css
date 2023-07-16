@@ -783,8 +783,7 @@ footer {
     margin: 0 0.15em;
 }
 .extra-networks .tab-nav .search,
-.extra-networks .tab-nav .sort,
-.extra-networks .tab-nav .sortorder{
+.extra-networks .tab-nav .sort{
     display: inline-block;
     margin: 0.3em;
     align-self: center;

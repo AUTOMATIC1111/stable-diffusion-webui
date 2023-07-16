@@ -11,6 +11,7 @@ import html
 from fastapi.exceptions import HTTPException
 
 from modules.generation_parameters_copypaste import image_from_url_text
+from modules.ui_components import ToolButton
 
 extra_pages = []
 allowed_dirs = set()
@@ -377,7 +378,7 @@ def create_ui(container, button, tabname):
 
     gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
     gr.Dropdown(choices=['Default Sort', 'Date Created', 'Date Modified', 'Name'], value='Default Sort', elem_id=tabname+"_extra_sort", multiselect=False, visible=False, show_label=False, interactive=True)
-    gr.Button(up_down_symbol, elem_id=tabname+"_extra_sortorder")
+    ToolButton(up_down_symbol, elem_id=tabname+"_extra_sortorder")
     button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
