@@ -271,6 +271,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
                         updown = torch.nn.functional.pad(updown, (0, 0, 0, 0, 0, 5))
 
                     self.weight += updown
+                    continue
 
             module_q = net.modules.get(network_layer_name + "_q_proj", None)
             module_k = net.modules.get(network_layer_name + "_k_proj", None)

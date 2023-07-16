@@ -27,9 +27,6 @@ class NetworkModuleHada(network_lyco.NetworkModuleLyco):
         self.t1 = weights.w.get("hada_t1")
         self.t2 = weights.w.get("hada_t2")
 
-        self.alpha = weights.w["alpha"].item() if "alpha" in weights.w else None
-        self.scale = weights.w["scale"].item() if "scale" in weights.w else None
-
     def calc_updown(self, orig_weight):
         w1a = self.w1a.to(orig_weight.device, dtype=orig_weight.dtype)
         w1b = self.w1b.to(orig_weight.device, dtype=orig_weight.dtype)
