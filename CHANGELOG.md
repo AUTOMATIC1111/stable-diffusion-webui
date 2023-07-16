@@ -1,3 +1,63 @@
+## 1.5.0
+
+### Features:
+ * SD XL support
+ * user metadata system for custom networks
+ * extended Lora metadata editor: set activation text, default weight, view tags, training info
+ * show github stars for extenstions
+ * img2img batch mode can read extra stuff from png info
+ * img2img batch works with subdirectories
+ * hotkeys to move prompt elements: alt+left/right
+ * restyle time taken/VRAM display
+ * add textual inversion hashes to infotext
+ * optimization: cache git extension repo information
+
+### Minor:
+ * checkbox to check/uncheck all extensions in the Installed tab
+ * add gradio user to infotext and to filename patterns
+ * allow gif for extra network previews
+ * add options to change colors in grid
+ * use natural sort for items in extra networks
+ * Mac: use empty_cache() from torch 2 to clear VRAM
+ * added automatic support for installing the right libraries for Navi3 (AMD)
+ * add option SWIN_torch_compile to accelerate SwinIR upscale
+ * suppress printing TI embedding info at start to console by default
+ * speedup extra networks listing
+ * added `[none]` filename token.
+ * removed thumbs extra networks view mode (use settings tab to change width/height/scale to get thumbs)
+ 
+### Extensions and API:
+ * api endpoints: /sdapi/v1/server-kill, /sdapi/v1/server-restart, /sdapi/v1/server-stop
+ * allow Script to have custom metaclass
+ * add model exists status check /sdapi/v1/options
+ * rename --add-stop-route to --api-server-stop
+ * add `before_hr` script callback
+ * add callback `after_extra_networks_activate`
+ * disable rich exception output in console for API by default, use WEBUI_RICH_EXCEPTIONS env var to enable
+ * return http 404 when thumb file not found
+ * allow replacing extensions index with environment variable
+ 
+### Bug Fixes:
+ * fix for catch errors when retrieving extension index #11290
+ * fix very slow loading speed of .safetensors files when reading from network drives
+ * API cache cleanup
+ * fix UnicodeEncodeError when writing to file CLIP Interrogator batch mode
+ * fix warning of 'has_mps' deprecated from PyTorch
+ * fix problem with extra network saving images as previews losing generation info
+ * fix throwing exception when trying to resize image with I;16 mode
+ * fix for #11534: canvas zoom and pan extension hijacking shortcut keys
+ * fixed launch script to be runnable from any directory
+ * don't add "Seed Resize: -1x-1" to API image metadata
+ * correctly remove end parenthesis with ctrl+up/down
+ * fixing --subpath on newer gradio version
+ * fix: check fill size none zero when resize  (fixes #11425)
+ * use submit and blur for quick settings textbox
+ * save img2img batch with images.save_image()
+ * 
+
+
+
+
 ## 1.4.1
 
 ### Bug Fixes:
