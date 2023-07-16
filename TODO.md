@@ -10,12 +10,12 @@ Stuff to be fixed, in no particular order...
 - Kandinsky 2.2 (2.1 is working)
 - Misterious Extensions auto-enabling
 - Misterious Extra network corruptions
-- Save interim image before refiner
 
 ## Features
 
 Stuff to be added, in no particular order...
 
+- Diffusers save before refiner
 - Update `Wiki`
 - Create new `GitHub` hooks/actions for CI/CD  
 - Import core repos

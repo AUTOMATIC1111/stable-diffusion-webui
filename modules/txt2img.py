@@ -44,7 +44,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         restore_faces=restore_faces,
         tiling=tiling,
         enable_hr=enable_hr,
-        denoising_strength=denoising_strength if enable_hr else None,
+        denoising_strength=denoising_strength,
         hr_scale=hr_scale,
         hr_upscaler=hr_upscaler,
         hr_second_pass_steps=hr_second_pass_steps,

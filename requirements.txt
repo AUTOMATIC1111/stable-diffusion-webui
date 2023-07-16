@@ -42,6 +42,7 @@ yapf
 scikit-image
 basicsr
 compel
+pyarrow==11.0.0
 typing-extensions==4.7.1
 antlr4-python3-runtime==4.9.3
 pydantic==1.10.11

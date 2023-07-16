@@ -41,6 +41,7 @@ config = {
 }
 
 samplers_data_diffusers = [
+    sd_samplers_common.SamplerData('Default', None, [], {}),
     sd_samplers_common.SamplerData('UniPC', lambda model: DiffusionSampler('UniPC', UniPCMultistepScheduler, model), [], {}),
     sd_samplers_common.SamplerData('DDIM', lambda model: DiffusionSampler('DDIM', DDIMScheduler, model), [], {}),
     sd_samplers_common.SamplerData('DDPM', lambda model: DiffusionSampler('DDPM', DDPMScheduler, model), [], {}),
@@ -58,6 +59,9 @@ samplers_data_diffusers = [
 
 class DiffusionSampler:
     def __init__(self, name, constructor, model, **kwargs):
+        if name == 'Default':
+            return
+        self.name = name
         self.config = {}
         self.config = config['All'].copy() # apply global defaults
         if not hasattr(model, 'scheduler'):
@@ -91,6 +95,9 @@ class DiffusionSampler:
             self.config['predict_x0'] = opts.uni_pc_variant
         if name == 'DPM 2M':
             self.config['algorithm_type'] = opts.schedulers_dpm_solver
+        if 'beta_start' in self.config and opts.schedulers_beta_start > 0:
+            self.config['beta_start'] = opts.schedulers_beta_start
+        if 'beta_end' in self.config and opts.schedulers_beta_end > 0:
+            self.config['beta_end'] = opts.schedulers_beta_end
         self.sampler = constructor(**self.config)
         self.sampler.name = name
-        log.debug(f'Diffusers sampler: {name} {self.config}')

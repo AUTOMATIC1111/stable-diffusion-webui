@@ -362,6 +362,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_allow_safetensors": OptionInfo(True, 'Diffusers allow loading from safetensors files'),
     "diffusers_pipeline": OptionInfo(pipelines[0], 'Select diffuser pipeline when loading from safetensors', gr.Dropdown, lambda: {"choices": pipelines}),
+    "diffusers_refiner_latents": OptionInfo(True, "Use latents when using refiner"),
     "diffusers_move_base": OptionInfo(False, "Move base model to CPU when using refiner"),
     "diffusers_move_refiner": OptionInfo(True, "Move refiner model to CPU when not in use"),
     "diffusers_extract_ema": OptionInfo(True, "Use model EMA weights when possible"),
@@ -413,8 +414,9 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "n_rows": OptionInfo(-1, "Grid row count", gr.Slider, {"minimum": -1, "maximum": 16, "step": 1}),
     "save_txt": OptionInfo(False, "Create text file next to every image with generation parameters"),
     "save_log_fn": OptionInfo("", "Create JSON log file for each saved image", component_args=hide_dirs),
-    "save_images_before_face_restoration": OptionInfo(False, "Save copy of image before doing face restoration"),
     "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying highres fix"),
+    # "save_images_before_refiner": OptionInfo(False, "Save copy of image before running refiner"),
+    "save_images_before_face_restoration": OptionInfo(False, "Save copy of image before doing face restoration"),
     "save_images_before_color_correction": OptionInfo(False, "Save copy of image before applying color correction"),
     "save_mask": OptionInfo(False, "Save copy of the inpainting greyscale mask"),
     "save_mask_composite": OptionInfo(False, "Save copy of inpainting masked composite"),
@@ -489,7 +491,7 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
 }))
 
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
-    "show_samplers": OptionInfo(["Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
+    "show_samplers": OptionInfo(["Default", "Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
     "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     # "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
@@ -500,11 +502,13 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
 
     "schedulers_sep_diffusers": OptionInfo("<h2>Diffusers specific config</h2>", "", gr.HTML),
     "schedulers_prediction_type": OptionInfo("default", "Samplers override model prediction type", gr.Radio, lambda: {"choices": ['default', 'epsilon', 'sample', 'v-prediction']}),
-    "schedulers_beta_schedule": OptionInfo("default", "Samplers override beta schedule", gr.Radio, lambda: {"choices": ['default', 'linear', 'scaled_linear', 'squaredcos_cap_v2']}),
     "schedulers_use_karras": OptionInfo(True, "Samplers should use Karras sigmas where applicable"),
     "schedulers_use_loworder": OptionInfo(True, "Samplers should use use lower-order solvers in the final steps where applicable"),
     "schedulers_use_thresholding": OptionInfo(False, "Samplers should use dynamic thresholding where applicable"),
     "schedulers_dpm_solver": OptionInfo("sde-dpmsolver++", "Samplers DPM solver algorithm", gr.Radio, lambda: {"choices": ['dpmsolver', 'dpmsolver++', 'sde-dpmsolver++']}),
+    "schedulers_beta_schedule": OptionInfo("default", "Samplers override beta schedule", gr.Radio, lambda: {"choices": ['default', 'linear', 'scaled_linear', 'squaredcos_cap_v2']}),
+    'schedulers_beta_start': OptionInfo(0, "Samplers override beta start", gr.Number, {}),
+    'schedulers_beta_end': OptionInfo(0, "Samplers override beta end", gr.Number, {}),
 
     "schedulers_sep_kdiffusers": OptionInfo("<h2>K-Diffusion specific config</h2>", "", gr.HTML),
     "always_batch_cond_uncond": OptionInfo(False, "Disable conditional batching enabled on low memory systems"),

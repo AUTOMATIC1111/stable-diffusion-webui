@@ -287,6 +287,7 @@ def check_torch():
         return
     if args.skip_torch:
         log.info('Skipping Torch tests')
+        return
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()

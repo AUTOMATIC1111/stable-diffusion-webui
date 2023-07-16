@@ -228,7 +228,6 @@ class TorchHijack:
 class KDiffusionSampler:
     def __init__(self, funcname, sd_model):
         denoiser = k_diffusion.external.CompVisVDenoiser if sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
-
         self.model_wrap = denoiser(sd_model, quantize=shared.opts.enable_quantization)
         self.funcname = funcname
         self.func = getattr(k_diffusion.sampling, self.funcname)
@@ -240,7 +239,6 @@ class KDiffusionSampler:
         self.config = None  # set by the function calling the constructor
         self.last_latent = None
         self.s_min_uncond = None
-
         self.conditioning_key = sd_model.model.conditioning_key
 
     def callback_state(self, d):

@@ -155,8 +155,8 @@ def create_seed_inputs(target_interface):
         reuse_subseed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_subseed")
         subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=f"{target_interface}_subseed_strength")
     with FormRow(visible=False):
-        seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from width", value=0, elem_id=f"{target_interface}_seed_resize_from_w")
-        seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from height", value=0, elem_id=f"{target_interface}_seed_resize_from_h")
+        seed_resize_from_w = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize seed from width", value=0, elem_id=f"{target_interface}_seed_resize_from_w")
+        seed_resize_from_h = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize seed from height", value=0, elem_id=f"{target_interface}_seed_resize_from_h")
     random_seed.click(fn=lambda: [-1, -1], show_progress=False, inputs=[], outputs=[seed, subseed])
     random_subseed.click(fn=lambda: -1, show_progress=False, inputs=[], outputs=[subseed])
     return seed, reuse_seed, subseed, reuse_subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w
@@ -302,13 +302,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
 
 def create_sampler_and_steps_selection(choices, tabname, primary: bool = True):
     with FormRow(elem_id=f"sampler_selection_{tabname}{'_alt' if not primary else ''}"):
-        if 'UniPC' in [sampler.name for sampler in choices]:
-            default_sampler_name = 'UniPC'
-        elif 'Euler a' in [sampler.name for sampler in choices]:
-            default_sampler_name = 'Euler a'
-        else:
-            default_sampler_name = modules.sd_samplers.samplers[0].name
-        sampler_index = gr.Dropdown(label='Sampling method' if primary else 'Secondary sampler', elem_id=f"{tabname}_sampling{'_alt' if not primary else ''}", choices=[x.name for x in choices], value=default_sampler_name, type="index")
+        sampler_index = gr.Dropdown(label='Sampling method' if primary else 'Secondary sampler', elem_id=f"{tabname}_sampling{'_alt' if not primary else ''}", choices=[x.name for x in choices], value='Default', type="index")
         steps = gr.Slider(minimum=0, maximum=99, step=1, label="Sampling steps" if primary else 'Secondary steps', elem_id=f"{tabname}_steps{'_alt' if not primary else ''}", value=20)
     return steps, sampler_index
 
@@ -360,8 +354,8 @@ def create_ui(startup_timer = None):
                         with FormRow():
                             with gr.Column(elem_id="txt2img_column_size", scale=4):
                                 with FormRow(elem_id="txt2img_row_dimension"):
-                                    width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="txt2img_width")
-                                    height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="txt2img_height")
+                                    width = gr.Slider(minimum=64, maximum=4096, step=8, label="Width", value=512, elem_id="txt2img_width")
+                                    height = gr.Slider(minimum=64, maximum=4096, step=8, label="Height", value=512, elem_id="txt2img_height")
                             with gr.Column(elem_id="txt2img_dimensions_row", scale=1, elem_classes="dimensions-tools"):
                                 res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn", label="Switch dims")
                             with gr.Column(elem_id="txt2img_column_batch"):
@@ -383,7 +377,7 @@ def create_ui(startup_timer = None):
                         with FormGroup(visible=False, elem_id="txt2img_second_pass") as hr_options:
                             hr_second_pass_steps, latent_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers, "txt2img", False)
                             with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
-                                denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.7, elem_id="txt2img_denoising_strength")
+                                denoising_strength = gr.Slider(minimum=0.0, maximum=1.0, step=0.01, label='Denoising strength', value=0.3, elem_id="txt2img_denoising_strength")
 
                             with FormRow():
                                 hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
@@ -391,13 +385,13 @@ def create_ui(startup_timer = None):
                                 hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*modules.shared.latent_upscale_modes, *[x.name for x in modules.shared.sd_upscalers]], value=modules.shared.latent_upscale_default_mode)
                                 hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
                             with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact"):
-                                hr_resize_x = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
-                                hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
+                                hr_resize_x = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
+                                hr_resize_y = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
 
                             with FormRow():
                                 hr_refiner = FormHTML(value="Refiner", elem_id="txtimg_hr_finalres", interactive=False)
                             with FormRow(elem_id="txt2img_refiner_row1", variant="compact"):
-                                image_cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='Secondary CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
+                                image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
                                 diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
                                 refiner_denoise_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.0, elem_id="txt2img_refiner_denoise_start")
                                 refiner_denoise_end = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise end', value=1.0, elem_id="txt2img_refiner_denoise_end")
@@ -619,8 +613,8 @@ def create_ui(startup_timer = None):
                                         with FormRow():
                                             with gr.Column(elem_id="img2img_column_size", scale=4):
                                                 with FormRow():
-                                                    width = gr.Slider(minimum=64, maximum=2048, step=8, label="Width", value=512, elem_id="img2img_width")
-                                                    height = gr.Slider(minimum=64, maximum=2048, step=8, label="Height", value=512, elem_id="img2img_height")
+                                                    width = gr.Slider(minimum=64, maximum=4096, step=8, label="Width", value=512, elem_id="img2img_width")
+                                                    height = gr.Slider(minimum=64, maximum=4096, step=8, label="Height", value=512, elem_id="img2img_height")
                                             with gr.Column(elem_id="img2img_column_dim", scale=1, elem_classes="dimensions-tools"):
                                                 with FormRow():
                                                     res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="img2img_res_switch_btn")
