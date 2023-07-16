@@ -1,9 +1,7 @@
 import os
 from collections import namedtuple
 
-import torch
-
-from modules import devices, sd_models, cache, errors, hashes, shared
+from modules import sd_models, cache, errors, hashes, shared
 
 NetworkWeights = namedtuple('NetworkWeights', ['network_key', 'sd_key', 'w', 'sd_module'])
 

@@ -1,8 +1,4 @@
-import torch
-
-import lyco_helpers
 import network
-from modules import devices
 
 
 class NetworkModuleLyco(network.NetworkModule):
