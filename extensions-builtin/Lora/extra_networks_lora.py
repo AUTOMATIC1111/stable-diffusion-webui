@@ -1,5 +1,5 @@
 from modules import extra_networks, shared
-import lora
+import networks
 
 
 class ExtraNetworkLora(extra_networks.ExtraNetwork):
@@ -9,7 +9,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
     def activate(self, p, params_list):
         additional = shared.opts.sd_lora
 
-        if additional != "None" and additional in lora.available_loras and not any(x for x in params_list if x.items[0] == additional):
+        if additional != "None" and additional in networks.available_networks and not any(x for x in params_list if x.items[0] == additional):
             p.all_prompts = [x + f"<lora:{additional}:{shared.opts.extra_networks_default_multiplier}>" for x in p.all_prompts]
             params_list.append(extra_networks.ExtraNetworkParams(items=[additional, shared.opts.extra_networks_default_multiplier]))
 
@@ -21,12 +21,12 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             names.append(params.items[0])
             multipliers.append(float(params.items[1]) if len(params.items) > 1 else 1.0)
 
-        lora.load_loras(names, multipliers)
+        networks.load_networks(names, multipliers)
 
         if shared.opts.lora_add_hashes_to_infotext:
-            lora_hashes = []
-            for item in lora.loaded_loras:
-                shorthash = item.lora_on_disk.shorthash
+            network_hashes = []
+            for item in networks.loaded_networks:
+                shorthash = item.network_on_disk.shorthash
                 if not shorthash:
                     continue
 
@@ -36,10 +36,10 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
 
                 alias = alias.replace(":", "").replace(",", "")
 
-                lora_hashes.append(f"{alias}: {shorthash}")
+                network_hashes.append(f"{alias}: {shorthash}")
 
-            if lora_hashes:
-                p.extra_generation_params["Lora hashes"] = ", ".join(lora_hashes)
+            if network_hashes:
+                p.extra_generation_params["Lora hashes"] = ", ".join(network_hashes)
 
     def deactivate(self, p):
         pass

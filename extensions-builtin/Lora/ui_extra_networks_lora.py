@@ -1,5 +1,5 @@
 import os
-import lora
+import networks
 
 from modules import shared, ui_extra_networks
 from modules.ui_extra_networks import quote_js
@@ -11,10 +11,10 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         super().__init__('Lora')
 
     def refresh(self):
-        lora.list_available_loras()
+        networks.list_available_networks()
 
     def create_item(self, name, index=None):
-        lora_on_disk = lora.available_loras.get(name)
+        lora_on_disk = networks.available_networks.get(name)
 
         path, ext = os.path.splitext(lora_on_disk.filename)
 
@@ -43,7 +43,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         return item
 
     def list_items(self):
-        for index, name in enumerate(lora.available_loras):
+        for index, name in enumerate(networks.available_networks):
             item = self.create_item(name, index)
             yield item
 
