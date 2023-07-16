@@ -355,7 +355,7 @@ def pages_in_preferred_order(pages):
     return sorted(pages, key=lambda x: tab_scores[x.name])
 
 
-def create_ui(container, button, tabname):
+def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     ui = ExtraNetworksUi()
     ui.pages = []
     ui.pages_contents = []
@@ -363,48 +363,35 @@ def create_ui(container, button, tabname):
     ui.stored_extra_pages = pages_in_preferred_order(extra_pages.copy())
     ui.tabname = tabname
 
-    with gr.Tabs(elem_id=tabname+"_extra_tabs"):
-        for page in ui.stored_extra_pages:
-            with gr.Tab(page.title, id=page.id_page):
-                elem_id = f"{tabname}_{page.id_page}_cards_html"
-                page_elem = gr.HTML('Loading...', elem_id=elem_id)
-                ui.pages.append(page_elem)
+    related_tabs = []
 
-                page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + quote_js(tabname) + '); return []}', inputs=[], outputs=[])
+    for page in ui.stored_extra_pages:
+        with gr.Tab(page.title, id=page.id_page) as tab:
+            elem_id = f"{tabname}_{page.id_page}_cards_html"
+            page_elem = gr.HTML('Loading...', elem_id=elem_id)
+            ui.pages.append(page_elem)
 
-                editor = page.create_user_metadata_editor(ui, tabname)
-                editor.create_ui()
-                ui.user_metadata_editors.append(editor)
+            page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + quote_js(tabname) + '); return []}', inputs=[], outputs=[])
 
-    gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", placeholder="Search...", visible=False)
-    gr.Dropdown(choices=['Default Sort', 'Date Created', 'Date Modified', 'Name'], value='Default Sort', elem_id=tabname+"_extra_sort", multiselect=False, visible=False, show_label=False, interactive=True)
-    ToolButton(up_down_symbol, elem_id=tabname+"_extra_sortorder")
-    button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh")
+            editor = page.create_user_metadata_editor(ui, tabname)
+            editor.create_ui()
+            ui.user_metadata_editors.append(editor)
+
+            related_tabs.append(tab)
+
+    edit_search = gr.Textbox('', show_label=False, elem_id=tabname+"_extra_search", elem_classes="search", placeholder="Search...", visible=False, interactive=True)
+    dropdown_sort = gr.Dropdown(choices=['Default Sort', 'Date Created', 'Date Modified', 'Name'], value='Default Sort', elem_id=tabname+"_extra_sort", elem_classes="sort", multiselect=False, visible=False, show_label=False, interactive=True)
+    button_sortorder = ToolButton(up_down_symbol, elem_id=tabname+"_extra_sortorder", elem_classes="sortorder", visible=False)
+    button_refresh = gr.Button('Refresh', elem_id=tabname+"_extra_refresh", visible=False)
 
     ui.button_save_preview = gr.Button('Save preview', elem_id=tabname+"_save_preview", visible=False)
     ui.preview_target_filename = gr.Textbox('Preview save filename', elem_id=tabname+"_preview_filename", visible=False)
 
-    def toggle_visibility(is_visible):
-        is_visible = not is_visible
+    for tab in unrelated_tabs:
+        tab.select(fn=lambda: [gr.update(visible=False) for _ in range(5)], inputs=[], outputs=[edit_search, edit_search, dropdown_sort, button_sortorder, button_refresh], show_progress=False)
 
-        return is_visible, gr.update(visible=is_visible), gr.update(variant=("secondary-down" if is_visible else "secondary"))
-
-    def fill_tabs(is_empty):
-        """Creates HTML for extra networks' tabs when the extra networks button is clicked for the first time."""
-
-        if not ui.pages_contents:
-            refresh()
-
-        if is_empty:
-            return True, *ui.pages_contents
-
-        return True, *[gr.update() for _ in ui.pages_contents]
-
-    state_visible = gr.State(value=False)
-    button.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container, button], show_progress=False)
-
-    state_empty = gr.State(value=True)
-    button.click(fn=fill_tabs, inputs=[state_empty], outputs=[state_empty, *ui.pages], show_progress=False)
+    for tab in related_tabs:
+        tab.select(fn=lambda: [gr.update(visible=True) for _ in range(5)], inputs=[], outputs=[edit_search, edit_search, dropdown_sort, button_sortorder, button_refresh], show_progress=False)
 
     def refresh():
         for pg in ui.stored_extra_pages:
@@ -414,6 +401,7 @@ def create_ui(container, button, tabname):
 
         return ui.pages_contents
 
+    interface.load(fn=refresh, inputs=[], outputs=[*ui.pages])
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     return ui
