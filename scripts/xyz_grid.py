@@ -97,6 +97,15 @@ def apply_clip_skip(p, x, xs):
     opts.data["CLIP_stop_at_last_layers"] = x
 
 
+def apply_always_discard_next_to_last_sigma(p, x, xs):
+    if len(x) == 0: 
+        p.override_settings['always_discard_next_to_last_sigma'] = False
+    if 'True' in x: 
+        p.override_settings['always_discard_next_to_last_sigma'] = True
+    else:
+        p.override_settings['always_discard_next_to_last_sigma'] = False
+
+
 def apply_upscale_latent_space(p, x, xs):
     if x.lower().strip() != '0':
         opts.data["use_scale_latent_for_hires_fix"] = True
@@ -226,6 +235,7 @@ axis_options = [
     AxisOption("Schedule rho", float, apply_override("rho")),
     AxisOption("Eta", float, apply_field("eta")),
     AxisOption("Clip skip", int, apply_clip_skip),
+    AxisOption("Always discard next-to-last sigma", str, apply_always_discard_next_to_last_sigma, choices=lambda: ["False", "True"]),
     AxisOption("Denoising", float, apply_field("denoising_strength")),
     AxisOptionTxt2Img("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
     AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
