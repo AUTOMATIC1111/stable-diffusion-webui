@@ -98,9 +98,9 @@ def apply_clip_skip(p, x, xs):
 
 
 def apply_always_discard_next_to_last_sigma(p, x, xs):
-    if len(x) == 0: 
+    if len(x) == 0:
         p.override_settings['always_discard_next_to_last_sigma'] = False
-    if 'True' in x: 
+    if 'True' in x:
         p.override_settings['always_discard_next_to_last_sigma'] = True
     else:
         p.override_settings['always_discard_next_to_last_sigma'] = False
