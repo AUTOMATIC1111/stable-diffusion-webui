@@ -73,6 +73,12 @@ def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/get-single-card", get_single_card, methods=["GET"])
 
 
+def quote_js(s):
+    s = s.replace('\\', '\\\\')
+    s = s.replace('"', '\\"')
+    return f'"{s}"'
+
+
 class ExtraNetworksPage:
     def __init__(self, title):
         self.title = title
@@ -203,7 +209,7 @@ class ExtraNetworksPage:
 
         onclick = item.get("onclick", None)
         if onclick is None:
-            onclick = '"' + html.escape(f"""return cardClicked({json.dumps(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
+            onclick = '"' + html.escape(f"""return cardClicked({quote_js(tabname)}, {item["prompt"]}, {"true" if self.allow_negative_prompt else "false"})""") + '"'
 
         height = f"height: {shared.opts.extra_networks_card_height}px;" if shared.opts.extra_networks_card_height else ''
         width = f"width: {shared.opts.extra_networks_card_width}px;" if shared.opts.extra_networks_card_width else ''
@@ -211,9 +217,9 @@ class ExtraNetworksPage:
         metadata_button = ""
         metadata = item.get("metadata")
         if metadata:
-            metadata_button = f"<div class='metadata-button card-button' title='Show internal metadata' onclick='extraNetworksRequestMetadata(event, {json.dumps(self.name)}, {json.dumps(item['name'])})'></div>"
+            metadata_button = f"<div class='metadata-button card-button' title='Show internal metadata' onclick='extraNetworksRequestMetadata(event, {quote_js(self.name)}, {quote_js(item['name'])})'></div>"
 
-        edit_button = f"<div class='edit-button card-button' title='Edit metadata' onclick='extraNetworksEditUserMetadata(event, {json.dumps(tabname)}, {json.dumps(self.id_page)}, {json.dumps(item['name'])})'></div>"
+        edit_button = f"<div class='edit-button card-button' title='Edit metadata' onclick='extraNetworksEditUserMetadata(event, {quote_js(tabname)}, {quote_js(self.id_page)}, {quote_js(item['name'])})'></div>"
 
         local_path = ""
         filename = item.get("filename", "")
@@ -239,12 +245,12 @@ class ExtraNetworksPage:
             "background_image": background_image,
             "style": f"'display: none; {height}{width}'",
             "prompt": item.get("prompt", None),
-            "tabname": json.dumps(tabname),
-            "local_preview": json.dumps(item["local_preview"]),
+            "tabname": quote_js(tabname),
+            "local_preview": quote_js(item["local_preview"]),
             "name": item["name"],
             "description": (item.get("description") or ""),
             "card_clicked": onclick,
-            "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(tabname)}, {json.dumps(item["local_preview"])})""") + '"',
+            "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
             "metadata_button": metadata_button,
             "edit_button": edit_button,
@@ -359,7 +365,7 @@ def create_ui(container, button, tabname):
                 page_elem = gr.HTML('Loading...', elem_id=elem_id)
                 ui.pages.append(page_elem)
 
-                page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + json.dumps(tabname) + '); return []}', inputs=[], outputs=[])
+                page_elem.change(fn=lambda: None, _js='function(){applyExtraNetworkFilter(' + quote_js(tabname) + '); return []}', inputs=[], outputs=[])
 
                 editor = page.create_user_metadata_editor(ui, tabname)
                 editor.create_ui()

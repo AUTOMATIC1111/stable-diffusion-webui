@@ -1,8 +1,8 @@
 import html
-import json
 import os
 
 from modules import shared, ui_extra_networks, sd_models
+from modules.ui_extra_networks import quote_js
 
 
 class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
@@ -21,7 +21,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             "preview": self.find_preview(path),
             "description": self.find_description(path),
             "search_term": self.search_terms_from_path(checkpoint.filename) + " " + (checkpoint.sha256 or ""),
-            "onclick": '"' + html.escape(f"""return selectCheckpoint({json.dumps(name)})""") + '"',
+            "onclick": '"' + html.escape(f"""return selectCheckpoint({quote_js(name)})""") + '"',
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "sort_keys": {'default': index, **self.get_sort_keys(checkpoint.filename)},
 

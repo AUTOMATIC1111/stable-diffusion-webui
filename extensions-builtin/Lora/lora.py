@@ -3,7 +3,7 @@ import re
 import torch
 from typing import Union
 
-from modules import shared, devices, sd_models, errors, scripts, sd_hijack, hashes
+from modules import shared, devices, sd_models, errors, scripts, sd_hijack, hashes, cache
 
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
 
@@ -78,9 +78,16 @@ class LoraOnDisk:
         self.metadata = {}
         self.is_safetensors = os.path.splitext(filename)[1].lower() == ".safetensors"
 
+        def read_metadata():
+            metadata = sd_models.read_metadata_from_safetensors(filename)
+            metadata.pop('ssmd_cover_images', None)  # those are cover images, and they are too big to display in UI as text
+
+            return metadata
+
         if self.is_safetensors:
             try:
-                self.metadata = sd_models.read_metadata_from_safetensors(filename)
+                #self.metadata = sd_models.read_metadata_from_safetensors(filename)
+                self.metadata = cache.cached_data_for_file('safetensors-metadata', "lora/" + self.name, filename, read_metadata)
             except Exception as e:
                 errors.display(e, f"reading lora {filename}")
 
@@ -91,7 +98,6 @@ class LoraOnDisk:
 
             self.metadata = m
 
-        self.ssmd_cover_images = self.metadata.pop('ssmd_cover_images', None)  # those are cover images and they are too big to display in UI as text
         self.alias = self.metadata.get('ss_output_name', self.name)
 
         self.hash = None

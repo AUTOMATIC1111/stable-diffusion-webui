@@ -1,5 +1,4 @@
 import html
-import json
 import random
 
 import gradio as gr
@@ -64,7 +63,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
     def get_metadata_table(self, name):
         table = super().get_metadata_table(name)
         item = self.page.items.get(name, {})
-        metadata = json.loads(item.get("metadata") or '{}')
+        metadata = item.get("metadata") or {}
 
         keys = [
             ('ss_sd_model_name', "Model:"),
@@ -91,7 +90,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         values = super().put_values_into_components(name)
 
         item = self.page.items.get(name, {})
-        metadata = json.loads(item.get("metadata") or '{}')
+        metadata = item.get("metadata") or {}
 
         tags = build_tags(metadata)
         gradio_tags = [(tag, str(count)) for tag, count in tags[0:24]]
@@ -108,7 +107,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
 
     def generate_random_prompt(self, name):
         item = self.page.items.get(name, {})
-        metadata = json.loads(item.get("metadata") or '{}')
+        metadata = item.get("metadata") or {}
         tags = build_tags(metadata)
 
         return self.generate_random_prompt_from_tags(tags)
@@ -142,7 +141,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
 
         self.edit_notes = gr.TextArea(label='Notes', lines=4)
 
-        generate_random_prompt.click(fn=self.generate_random_prompt, inputs=[self.edit_name_input], outputs=[random_prompt])
+        generate_random_prompt.click(fn=self.generate_random_prompt, inputs=[self.edit_name_input], outputs=[random_prompt], show_progress=False)
 
         def select_tag(activation_text, evt: gr.SelectData):
             tag = evt.value[0]

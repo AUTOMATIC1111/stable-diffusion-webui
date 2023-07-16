@@ -1,8 +1,8 @@
-import json
 import os
 import lora
 
 from modules import shared, ui_extra_networks
+from modules.ui_extra_networks import quote_js
 from ui_edit_user_metadata import LoraUserMetadataEditor
 
 
@@ -20,6 +20,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
 
         alias = lora_on_disk.get_alias()
 
+        # in 1.5 filename changes to be full filename instead of path without extension, and metadata is dict instead of json string
         item = {
             "name": name,
             "filename": lora_on_disk.filename,
@@ -27,17 +28,17 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             "description": self.find_description(path),
             "search_term": self.search_terms_from_path(lora_on_disk.filename),
             "local_preview": f"{path}.{shared.opts.samples_format}",
-            "metadata": json.dumps(lora_on_disk.metadata, indent=4) if lora_on_disk.metadata else None,
+            "metadata": lora_on_disk.metadata,
             "sort_keys": {'default': index, **self.get_sort_keys(lora_on_disk.filename)},
         }
 
         self.read_user_metadata(item)
         activation_text = item["user_metadata"].get("activation text")
         preferred_weight = item["user_metadata"].get("preferred weight", 0.0)
-        item["prompt"] = json.dumps(f"<lora:{alias}:") + " + " + (str(preferred_weight) if preferred_weight else "opts.extra_networks_default_multiplier") + " + " + json.dumps(">")
+        item["prompt"] = quote_js(f"<lora:{alias}:") + " + " + (str(preferred_weight) if preferred_weight else "opts.extra_networks_default_multiplier") + " + " + quote_js(">")
 
         if activation_text:
-            item["prompt"] += " + " + json.dumps(" " + activation_text)
+            item["prompt"] += " + " + quote_js(" " + activation_text)
 
         return item
 
