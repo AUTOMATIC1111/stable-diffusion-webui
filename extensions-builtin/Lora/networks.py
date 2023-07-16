@@ -5,6 +5,7 @@ import network
 import network_lora
 import network_hada
 import network_ia3
+import network_lokr
 
 import torch
 from typing import Union
@@ -15,6 +16,7 @@ module_types = [
     network_lora.ModuleTypeLora(),
     network_hada.ModuleTypeHada(),
     network_ia3.ModuleTypeIa3(),
+    network_lokr.ModuleTypeLokr(),
 ]
 
 

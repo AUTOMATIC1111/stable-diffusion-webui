@@ -1,4 +1,3 @@
-import lyco_helpers
 import network
 import network_lyco
 
