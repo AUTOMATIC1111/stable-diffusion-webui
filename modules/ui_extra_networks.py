@@ -393,6 +393,12 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
     for tab in related_tabs:
         tab.select(fn=lambda: [gr.update(visible=True) for _ in range(5)], inputs=[], outputs=[edit_search, edit_search, dropdown_sort, button_sortorder, button_refresh], show_progress=False)
 
+    def pages_html():
+        if not ui.pages_contents:
+            return refresh()
+
+        return ui.pages_contents
+
     def refresh():
         for pg in ui.stored_extra_pages:
             pg.refresh()
@@ -401,7 +407,7 @@ def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
 
         return ui.pages_contents
 
-    interface.load(fn=refresh, inputs=[], outputs=[*ui.pages])
+    interface.load(fn=pages_html, inputs=[], outputs=[*ui.pages])
     button_refresh.click(fn=refresh, inputs=[], outputs=ui.pages)
 
     return ui
