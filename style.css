@@ -766,6 +766,9 @@ footer {
 /* extra networks UI */
 
 .extra-network-cards{
+    height: 100vh;
+    overflow: scroll;
+    resize: vertical;
 }
 
 .extra-networks > div.tab-nav{
