@@ -84,7 +84,7 @@ def cached_data_for_file(subsection, title, filename, func):
         if ondisk_mtime > cached_mtime:
             entry = None
 
-    if not entry:
+    if not entry or 'value' not in entry:
         value = func()
         if value is None:
             return None
