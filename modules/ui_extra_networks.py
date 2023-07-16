@@ -8,6 +8,7 @@ from modules.ui import up_down_symbol
 import gradio as gr
 import json
 import html
+from fastapi.exceptions import HTTPException
 
 from modules.generation_parameters_copypaste import image_from_url_text
 
@@ -25,6 +26,9 @@ def register_page(page):
 
 def fetch_file(filename: str = ""):
     from starlette.responses import FileResponse
+
+    if not os.path.isfile(filename):
+        raise HTTPException(status_code=404, detail="File not found")
 
     if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
         raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
