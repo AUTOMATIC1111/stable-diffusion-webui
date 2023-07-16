@@ -52,14 +52,14 @@ def apply_order(p, x, xs):
 
 
 def apply_sampler(p, x, xs):
-    sampler_name = sd_samplers.samplers_map.get(x, None)
+    sampler_name = sd_samplers.samplers_map.get(x.lower(), None)
     if sampler_name is None:
         shared.log.warning(f"XYZ grid: unknown sampler: {x}")
     else:
         p.sampler_name = sampler_name
 
 def apply_latent_sampler(p, x, xs):
-    latent_sampler = sd_samplers.samplers_map.get(x, None)
+    latent_sampler = sd_samplers.samplers_map.get(x.lower(), None)
     if latent_sampler is None:
         shared.log.warning(f"XYZ grid: unknown sampler: {x}")
     else:
@@ -67,7 +67,7 @@ def apply_latent_sampler(p, x, xs):
 
 def confirm_samplers(p, xs):
     for x in xs:
-        if x not in sd_samplers.samplers_map:
+        if x.lower() not in sd_samplers.samplers_map:
             shared.log.warning(f"XYZ grid: unknown sampler: {x}")
 
 

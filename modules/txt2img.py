@@ -17,6 +17,11 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         shared.log.warning('Model not loaded')
         return [], '', '', 'Error: model not loaded'
 
+    if sampler_index is None:
+        sampler_index = 0
+    if latent_index is None:
+        latent_index = 0
+
     p = processing.StableDiffusionProcessingTxt2Img(
         sd_model=shared.sd_model,
         outpath_samples=shared.opts.outdir_samples or shared.opts.outdir_txt2img_samples,
