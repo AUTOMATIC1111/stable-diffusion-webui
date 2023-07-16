@@ -132,7 +132,6 @@ class ExtraNetworksPage:
         return ""
 
     def create_html(self, tabname):
-        view = shared.opts.extra_networks_default_view
         items_html = ''
 
         self.metadata = {}
@@ -186,10 +185,10 @@ class ExtraNetworksPage:
         self_name_id = self.name.replace(" ", "_")
 
         res = f"""
-<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-{view}'>
+<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs extra-network-subdirs-cards'>
 {subdirs_html}
 </div>
-<div id='{tabname}_{self_name_id}_cards' class='extra-network-{view}'>
+<div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>
 {items_html}
 </div>
 """
@@ -248,12 +247,12 @@ class ExtraNetworksPage:
 
         args = {
             "background_image": background_image,
-            "style": f"'display: none; {height}{width}'",
+            "style": f"'display: none; {height}{width}; font-size: {shared.opts.extra_networks_card_text_scale*100}%'",
             "prompt": item.get("prompt", None),
             "tabname": quote_js(tabname),
             "local_preview": quote_js(item["local_preview"]),
             "name": item["name"],
-            "description": (item.get("description") or ""),
+            "description": (item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),

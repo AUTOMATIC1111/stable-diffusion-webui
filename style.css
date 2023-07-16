@@ -804,127 +804,67 @@ footer {
     width: auto;
 }
 
-.extra-network-cards .nocards, .extra-network-thumbs .nocards{
+.extra-network-cards .nocards{
     margin: 1.25em 0.5em 0.5em 0.5em;
 }
 
-.extra-network-cards .nocards h1, .extra-network-thumbs .nocards h1{
+.extra-network-cards .nocards h1{
     font-size: 1.5em;
     margin-bottom: 1em;
 }
 
-.extra-network-cards .nocards li, .extra-network-thumbs .nocards li{
+.extra-network-cards .nocards li{
     margin-left: 0.5em;
 }
 
 
-.extra-network-cards .card .button-row, .extra-network-thumbs .card .button-row{
+.extra-network-cards .card .button-row{
     display: none;
     position: absolute;
     color: white;
     right: 0;
 }
-.extra-network-cards .card:hover .button-row, .extra-network-thumbs .card:hover .button-row{
+.extra-network-cards .card:hover .button-row{
     display: flex;
 }
 
-.extra-network-cards .card .card-button, .extra-network-thumbs .card .card-button{
+.extra-network-cards .card .card-button{
     color: white;
 }
 
-.extra-network-cards .card .metadata-button:before, .extra-network-thumbs .card .metadata-button:before{
+.extra-network-cards .card .metadata-button:before{
     content: "🛈";
 }
 
-.extra-network-cards .card .edit-button:before, .extra-network-thumbs .card .edit-button:before{
+.extra-network-cards .card .edit-button:before{
     content: "🛠";
 }
 
 .extra-network-cards .card .card-button {
     text-shadow: 2px 2px 3px black;
     padding: 0.25em;
-    font-size: 22pt;
+    font-size: 200%;
     width: 1.5em;
 }
-.extra-network-thumbs .card .card-button {
-    text-shadow: 1px 1px 2px black;
-    padding: 0;
-    font-size: 16pt;
-    width: 1em;
-    top: -0.25em;
-}
-.extra-network-cards .card .card-button:hover, .extra-network-thumbs .card .card-button:hover{
+.extra-network-cards .card .card-button:hover{
     color: red;
 }
 
 
-.extra-network-thumbs {
-    display: flex;
-    flex-flow: row wrap;
-    gap: 10px;
-}
-
-.extra-network-thumbs .card {
-    height: 6em;
-    width: 6em;
-    cursor: pointer;
-    background-image: url('./file=html/card-no-preview.png');
-    background-size: cover;
-    background-position: center center;
-    position: relative;
-}
-
-.extra-network-thumbs .card .preview, .standalone-card-preview.card .preview{
+.standalone-card-preview.card .preview{
     position: absolute;
     object-fit: cover;
     width: 100%;
     height:100%;
 }
 
-.extra-network-thumbs .card:hover .additional a {
-    display: inline-block;
-}
-
-.extra-network-thumbs .actions .additional a {
-    background-image: url('./file=html/image-update.svg');
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center center;
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 24px;
-    height: 24px;
-    display: none;
-    font-size: 0;
-    text-align: -9999;
-}
-
-.extra-network-thumbs .actions .name {
-    position: absolute;
-    bottom: 0;
-    font-size: 10px;
-    padding: 3px;
-    width: 100%;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    background: rgba(0,0,0,.5);
-    color: white;
-}
-
-.extra-network-thumbs .card:hover .actions .name {
-    white-space: normal;
-    word-break: break-all;
-}
-
 .extra-network-cards .card, .standalone-card-preview.card{
     display: inline-block;
-    margin: 0.5em;
-    width: 16em;
-    height: 24em;
+    margin: 0.5rem;
+    width: 16rem;
+    height: 24rem;
     box-shadow: 0 0 5px rgba(128, 128, 128, 0.5);
-    border-radius: 0.2em;
+    border-radius: 0.2rem;
     position: relative;
 
     background-size: auto 100%;
@@ -956,10 +896,6 @@ footer {
 
 .extra-network-cards .card .actions *{
     color: white;
-}
-
-.extra-network-cards .card .actions:hover{
-    box-shadow: 0 0 0.75em 0.75em rgba(0,0,0,0.5) !important;
 }
 
 .extra-network-cards .card .actions .name{
