@@ -3,7 +3,7 @@ a { font-weight: bold; cursor: pointer; }
 h2 { margin-top: 1em !important; font-size: 1.4em !important; }
 div.gradio-container{ max-width: unset !important; padding: 8px !important; }
 div.tabitem { padding: 0 !important; }
-div.form{ border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 0.5em; }
+div.form{ border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 1em; }
 div.compact{ gap: 1em; }
 div.gradio-html.min{ min-height: 0; }
 .block.gradio-checkbox { margin: 0.75em 1.5em 0 0; }
@@ -29,7 +29,7 @@ div.gradio-html.min{ min-height: 0; }
 footer { display: none; }
 
 /* general styled components */
-.gradio-button.tool{ max-width: 2.3em;  min-width: 2.3em !important; height: 2.3em; align-self: end; line-height: 1em }
+.gradio-button.tool{ max-width: 1em; min-width: 1em !important; align-self: end; font-size: 1.4em }
 .gradio-button.secondary-down{ background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); }
 .gradio-button.secondary-down, .gradio-button.secondary-down:hover{ box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset; }
 .gradio-button.secondary-down:hover{ background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
@@ -214,19 +214,9 @@ div#extras_scale_to_tab div.form{
 }
 
 /* settings */
-#quicksettings {
-    width: fit-content;
-    align-items: end;
-}
-
-#quicksettings > div, #quicksettings > fieldset{
-    max-width: 24em;
-    min-width: 24em;
-    padding: 0;
-    border: none;
-    box-shadow: none;
-    background: none;
-}
+#quicksettings { width: fit-content; align-items: end; }
+#quicksettings > div, #quicksettings > fieldset{ max-width: 20em; min-width: 20em; padding: 0; border: none; box-shadow: none; background: none; }
+#quicksettings > button { margin-left: -0.5em; }
 
 #settings{
     display: flex;

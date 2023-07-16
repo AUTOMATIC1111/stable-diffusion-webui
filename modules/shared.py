@@ -361,7 +361,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_allow_safetensors": OptionInfo(True, 'Diffusers allow loading from safetensors files'),
-    "diffusers_pipeline": OptionInfo(pipelines[0], 'Select diffuser pipeline when loading from safetensors', gr.Dropdown, lambda: {"choices": pipelines}),
+    "diffusers_pipeline": OptionInfo(pipelines[0], 'Diffusers pipeline', gr.Dropdown, lambda: {"choices": pipelines}),
     "diffusers_refiner_latents": OptionInfo(True, "Use latents when using refiner"),
     "diffusers_move_base": OptionInfo(False, "Move base model to CPU when using refiner"),
     "diffusers_move_refiner": OptionInfo(True, "Move refiner model to CPU when not in use"),
@@ -369,7 +369,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_generator_device": OptionInfo("default", "Generator device", gr.Radio, lambda: {"choices": ["default", "cpu"]}),
     "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload"),
     "diffusers_model_cpu_offload": OptionInfo(False, "Enable model CPU offload"),
-    "diffusers_vae_slicing": OptionInfo(False, "Enable VAE slicing"),
+    "diffusers_vae_slicing": OptionInfo(True, "Enable VAE slicing"),
     "diffusers_vae_tiling": OptionInfo(False, "Enable VAE tiling"),
     "diffusers_attention_slicing": OptionInfo(False, "Enable attention slicing"),
     # "diffusers_force_zeros": OptionInfo(False, "Force zeros for prompts when empty"),

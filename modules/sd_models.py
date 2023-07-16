@@ -638,10 +638,11 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 return
             shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
 
-            vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
-            vae = sd_vae.load_vae_diffusers(None, vae_file, vae_source)
-            if vae is not None:
-                diffusers_load_config["vae"] = vae
+            if op == 'model':
+                vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
+                vae = sd_vae.load_vae_diffusers(None, vae_file, vae_source)
+                if vae is not None:
+                    diffusers_load_config["vae"] = vae
 
             if not os.path.isfile(checkpoint_info.path):
                 try:

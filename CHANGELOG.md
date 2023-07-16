@@ -3,6 +3,7 @@
 ## Update for 07/16/2023
 
 - **diffusers**:
+  - vae: enable loading of external vae, documented in diffusers wiki
   - samplers: add concept of *default* sampler to avoid needing to tweak settings for primary or second pass  
     note that sampler details will be printed in log when running in debug level  
   - samplers: allow overriding of sampler beta values in settings
@@ -12,7 +13,7 @@
     download using model downloader: `thu-ml/unidiffuser-v1`  
     use Default or DDIM sampler & disable live preview  
     (support for additional samplers and live previews can be added if there is interest)  
-- **direct-ml** improvements: faster and less memory usage
+- add cmd flag to skip all torch checks
 - force requirements check on each start  
   there are too many misbehaving extensions that change system requirements  
 

@@ -23,6 +23,7 @@
   --radius-lg: 2px;
   --radius-sm: 1px;
   --spacing-md: 4px;
+  --spacing-xxl: 12px;
   --line-sm: 1.3em;
 }
 
@@ -39,8 +40,8 @@ input[type=range]::-moz-range-thumb { box-shadow: 2px 2px 3px #111111; border: 0
 ::-webkit-scrollbar { width: 12px; }
 ::-webkit-scrollbar-track { background: #333333; }
 ::-webkit-scrollbar-thumb { background-color: var(--highlight-color); border-radius: var(--radius-lg); border-width: 0; box-shadow: 2px 2px 3px #111111; }
-div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 0.5em; margin-bottom: 6px; }
-div.compact { gap: 0.8em; }
+div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 1em; margin-bottom: 6px; }
+div.compact { gap: 1em; }
 
 /* gradio style classes */
 fieldset .gr-block.gr-box, label.block span { padding: 0; margin-top: -4px; }
@@ -233,7 +234,6 @@ svg.feather.feather-image, .feather .feather-image { display: none }
   --spacing-sm: 4px;
   --spacing-lg: 8px;
   --spacing-xl: 10px;
-  --spacing-xxl: 18px;
   --radius-xxs: 0;
   --radius-xs: 0;
   --radius-md: 0;
