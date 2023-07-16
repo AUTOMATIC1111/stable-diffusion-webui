@@ -80,18 +80,18 @@ def cached_data_for_file(subsection, title, filename, func):
 
     entry = existing_cache.get(title)
     if entry:
-        cached_mtime = existing_cache[title].get("mtime", 0)
+        cached_mtime = entry.get("mtime", 0)
         if ondisk_mtime > cached_mtime:
             entry = None
 
     if not entry:
-        entry = func()
-        if entry is None:
+        value = func()
+        if value is None:
             return None
 
-        entry['mtime'] = ondisk_mtime
+        entry = {'mtime': ondisk_mtime, 'value': value}
         existing_cache[title] = entry
 
         dump_cache()
 
-    return entry
+    return entry['value']

@@ -52,7 +52,7 @@ def get_metadata(page: str = "", item: str = ""):
     if metadata is None:
         return JSONResponse({})
 
-    return JSONResponse({"metadata": metadata})
+    return JSONResponse({"metadata": json.dumps(metadata, indent=4, ensure_ascii=False)})
 
 
 def get_single_card(page: str = "", tabname: str = "", name: str = ""):
@@ -66,6 +66,7 @@ def get_single_card(page: str = "", tabname: str = "", name: str = ""):
         errors.display(e, "creating item for extra network")
         item = page.items.get(name)
 
+    page.read_user_metadata(item)
     item_html = page.create_html_for_item(item, tabname)
 
     return JSONResponse({"html": item_html})
