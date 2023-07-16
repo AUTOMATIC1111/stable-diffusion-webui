@@ -41,8 +41,7 @@ def get_available_vram():
             mem_free_total = 1024 * 1024 * 1024
         return mem_free_total
     elif shared.device.type == 'privateuseone':
-        mem_free, mem_total = torch.dml.mem_get_info(shared.device)
-        return mem_total - mem_free
+        return torch.dml.mem_get_info(shared.device)[0]
     else:
         return psutil.virtual_memory().available
 
