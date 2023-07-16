@@ -182,6 +182,4 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
             self.edit_notes,
         ]
 
-        self.button_save\
-            .click(fn=self.save_lora_user_metadata, inputs=[self.edit_name_input, *edited_components], outputs=[]) \
-            .then(fn=None, _js="extraNetworksReloadAll")
+        self.setup_save_handler(self.button_save, self.save_lora_user_metadata, edited_components)

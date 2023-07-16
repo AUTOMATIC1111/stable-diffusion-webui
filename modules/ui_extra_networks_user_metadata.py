@@ -23,8 +23,10 @@ class UserMetadataEditor:
 
         self.edit_name = None
         self.edit_description = None
+        self.edit_notes = None
         self.html_filedata = None
         self.html_preview = None
+        self.html_status = None
 
         self.button_cancel = None
         self.button_replace_preview = None
@@ -56,6 +58,8 @@ class UserMetadataEditor:
             self.button_cancel = gr.Button('Cancel')
             self.button_replace_preview = gr.Button('Replace preview', variant='primary')
             self.button_save = gr.Button('Save', variant='primary')
+
+        self.html_status = gr.HTML(elem_classes="edit-user-metadata-status")
 
         self.button_cancel.click(fn=None, _js="closePopup")
 
@@ -107,7 +111,7 @@ class UserMetadataEditor:
 
         table = '<table class="file-metadata">' + "".join(f"<tr><th>{name}</th><td>{value}</td></tr>" for name, value in params) + '</table>'
 
-        return html.escape(name), user_metadata.get('description', ''), table, self.get_card_html(name)
+        return html.escape(name), user_metadata.get('description', ''), table, self.get_card_html(name), user_metadata.get('notes', ''),
 
     def write_user_metadata(self, name, metadata):
         item = self.page.items.get(name, {})
@@ -117,24 +121,30 @@ class UserMetadataEditor:
         with open(basename + '.json', "w", encoding="utf8") as file:
             json.dump(metadata, file)
 
-    def save_user_metadata(self, name, desc):
+    def save_user_metadata(self, name, desc, notes):
         user_metadata = self.get_user_metadata(name)
         user_metadata["description"] = desc
+        user_metadata["notes"] = notes
 
         self.write_user_metadata(name, user_metadata)
+
+    def setup_save_handler(self, button, func, components):
+        button\
+            .click(fn=func, inputs=[self.edit_name_input, *components], outputs=[])\
+            .then(fn=None, _js="function(name){closePopup(); extraNetworksRefreshSingleCard(" + json.dumps(self.page.name) + "," + json.dumps(self.tabname) + ", name);}", inputs=[self.edit_name_input], outputs=[])
 
     def create_editor(self):
         self.create_default_editor_elems()
 
+        self.edit_notes = gr.TextArea(label='Notes', lines=4)
+
         self.create_default_buttons()
 
         self.button_edit\
-            .click(fn=self.put_values_into_components, inputs=[self.edit_name_input], outputs=[self.edit_name, self.edit_description, self.html_filedata, self.html_preview])\
+            .click(fn=self.put_values_into_components, inputs=[self.edit_name_input], outputs=[self.edit_name, self.edit_description, self.html_filedata, self.html_preview, self.edit_notes])\
             .then(fn=lambda: gr.update(visible=True), inputs=[], outputs=[self.box])
 
-        self.button_save\
-            .click(fn=self.save_user_metadata, inputs=[self.edit_name_input, self.edit_description], outputs=[])\
-            .then(fn=None, _js="extraNetworksReloadAll")
+        self.setup_save_handler(self.button_save, self.save_user_metadata, [self.edit_description, self.edit_notes])
 
     def create_ui(self):
         with gr.Box(visible=False, elem_id=self.id_part, elem_classes="edit-user-metadata") as box:
@@ -147,8 +157,7 @@ class UserMetadataEditor:
 
     def save_preview(self, index, gallery, name):
         if len(gallery) == 0:
-            print("There is no image in gallery to save as a preview.")
-            return [self.get_card_html(name)] + self.regenerate_ui_pages()
+            return self.get_card_html(name), "There is no image in gallery to save as a preview."
 
         item = self.page.items.get(name, {})
 
@@ -162,17 +171,20 @@ class UserMetadataEditor:
 
         images.save_image_with_geninfo(image, geninfo, item["local_preview"])
 
-        return [self.get_card_html(name)] + self.regenerate_ui_pages()
-
-    def regenerate_ui_pages(self):
-        return [page.create_html(self.tabname) for page in self.ui.stored_extra_pages]
+        return self.get_card_html(name), ''
 
     def setup_ui(self, gallery):
         self.button_replace_preview.click(
             fn=self.save_preview,
             _js="function(x, y, z){return [selected_gallery_index(), y, z]}",
             inputs=[self.edit_name_input, gallery, self.edit_name_input],
-            outputs=[self.html_preview, *self.ui.pages]
+            outputs=[self.html_preview, self.html_status]
+        ).then(
+            fn=None,
+            _js="function(name){extraNetworksRefreshSingleCard(" + json.dumps(self.page.name) + "," + json.dumps(self.tabname) + ", name);}",
+            inputs=[self.edit_name_input],
+            outputs=[]
         )
+
 
 

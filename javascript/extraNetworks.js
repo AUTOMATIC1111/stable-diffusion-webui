@@ -296,9 +296,18 @@ function extraNetworksEditUserMetadata(event, tabname, extraPage, cardName) {
     event.stopPropagation();
 }
 
-function extraNetworksReloadAll() {
-    closePopup();
+function extraNetworksRefreshSingleCard(page, tabname, name) {
+    requestGet("./sd_extra_networks/get-single-card", {page: page, tabname: tabname, name: name}, function(data) {
+        if (data && data.html) {
+            var card = gradioApp().querySelector('.card[data-name=' + JSON.stringify(name) + ']'); // likely using the wrong stringify function
 
-    gradioApp().getElementById('txt2img_extra_refresh').click();
-    gradioApp().getElementById('img2img_extra_refresh').click();
+            var newDiv = document.createElement('DIV');
+            newDiv.innerHTML = data.html;
+            var newCard = newDiv.firstElementChild;
+
+            newCard.style = '';
+            card.parentElement.insertBefore(newCard, card);
+            card.parentElement.removeChild(card);
+        }
+    });
 }

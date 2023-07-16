@@ -51,9 +51,26 @@ def get_metadata(page: str = "", item: str = ""):
     return JSONResponse({"metadata": metadata})
 
 
+def get_single_card(page: str = "", tabname: str = "", name: str = ""):
+    from starlette.responses import JSONResponse
+
+    page = next(iter([x for x in extra_pages if x.name == page]), None)
+
+    try:
+        item = page.create_item(name)
+    except Exception as e:
+        errors.display(e, "creating item for extra network")
+        item = page.items.get(name)
+
+    item_html = page.create_html_for_item(item, tabname)
+
+    return JSONResponse({"html": item_html})
+
+
 def add_pages_to_demo(app):
     app.add_api_route("/sd_extra_networks/thumb", fetch_file, methods=["GET"])
     app.add_api_route("/sd_extra_networks/metadata", get_metadata, methods=["GET"])
+    app.add_api_route("/sd_extra_networks/get-single-card", get_single_card, methods=["GET"])
 
 
 class ExtraNetworksPage:
@@ -167,6 +184,9 @@ class ExtraNetworksPage:
 """
 
         return res
+
+    def create_item(self, name, index=None):
+        raise NotImplementedError()
 
     def list_items(self):
         raise NotImplementedError()
