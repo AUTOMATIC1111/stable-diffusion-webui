@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 import network
 import networks
+import lora  # noqa:F401
 import extra_networks_lora
 import ui_extra_networks_lora
 from modules import script_callbacks, ui_extra_networks, extra_networks, shared
