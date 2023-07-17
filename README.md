@@ -9,10 +9,9 @@
 [![](https://img.shields.io/static/v1?label=Sponsor&message=%E2%9D%A4&logo=GitHub&color=%23fe8e86)](https://github.com/sponsors/vladmandic)
 ![Last Commit](https://img.shields.io/github/last-commit/vladmandic/automatic?svg=true)
 ![License](https://img.shields.io/github/license/vladmandic/automatic?svg=true)
-![GitHub Status Checks](https://img.shields.io/github/checks-status/vladmandic/automatic/main?svg=true)
 [![Discord](https://img.shields.io/discord/1101998836328697867?logo=Discord&svg=true)](https://discord.gg/VjvR2tabEX)
 
-### [Docs](README.md#docs) | [Discord](https://discord.gg/VjvR2tabEX) | [Changelog](CHANGELOG.md)
+### [Wiki](https://github.com/vladmandic/automatic/wiki) | [Discord](https://discord.gg/VjvR2tabEX) | [Changelog](CHANGELOG.md)
 
 </div>
 
@@ -22,11 +21,9 @@ This project started as a fork from [Automatic1111 WebUI](https://github.com/AUT
 
 All Individual features are not listed here, instead check [Changelog](CHANGELOG.md) for full list of changes.
 
-- Optimized backend with latest **torch** developments  
-  Including built-in support for `torch.compile`  
-- Support for `diffusers` as well as standard `ldm` backend  
-  Support for diffusers includes multiple models other than standard **Stable Diffusion**  
-  such as **SD-XL**, **Kandinsky**, **DeepFloyd IF** (and many more in the near future)  
+- Optimized backend with latest **torch** developments. Including built-in support for `torch.compile`
+- Support for `diffusers` as well as standard `ldm` backend.
+  Support for diffusers includes multiple models other than standard **Stable Diffusion** such as **SD-XL**, **Kandinsky**, **DeepFloyd IF** (and many more in the near future)  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
 - Improved prompt parser  
 - Enhanced Lora/Locon/Lyco code supporting latest trends in training  
@@ -41,9 +38,9 @@ All Individual features are not listed here, instead check [Changelog](CHANGELOG
 ## Platform support
 
 - *nVidia* GPUs using **CUDA** libraries on both *Windows and Linux*
-- *AMD* GPUs using **ROCm** libraries on *Linux*  
+- *AMD* GPUs using **ROCm** libraries on *Linux*.  
   Support will be extended to *Windows* once AMD releases ROCm for Windows
-- Any GPU compatibile with *DirectX* on *Windows* using **DirectML** libraries  
+- Any GPU compatibile with *DirectX* on *Windows* using **DirectML** libraries.  
   This includes support for AMD GPUs that are not supported by native ROCm libraries
 - *Intel Arc* GPUs using *Intel OneAPI* **Ipex/XPU** libraries  
 - *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
@@ -69,7 +66,7 @@ All Individual features are not listed here, instead check [Changelog](CHANGELOG
 ### Installation Notes
 
 - Server can run without virtual environment,  
-  but it is recommended to use it to avoid library version conflicts with other applications  
+  but it is recommended to use it to avoid library version conflicts with other applications. 
 - **nVidia/CUDA** and **AMD/ROCm** are auto-detected is present and available,  
    but for any other use case specify required parameter explicitly or wrong packages may be installed  
   as installer will assume CPU-only environment.
@@ -101,7 +98,7 @@ Below is partial list of all available parameters, run `webui --help` for the fu
 
 SD.Next comes with several extensions pre-installed:
 
-- [Dyanmic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding)
+- [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding)
 - [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
 - [Agent Scheduler](https://github.com/ArtVentureX/sd-webui-agent-scheduler)
 - [Multi-Diffusion Tiled Diffusion and VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111)
@@ -149,7 +146,7 @@ General goals:
 - [Wiki](https://github.com/vladmandic/automatic/wiki)
 - [ReadMe](README.md)
 - [ToDo](TODO.md)  
-- [Changelog](CHANGELOG.md)
+- [ChangeLog](CHANGELOG.md)
 - [CLI Tools](cli/README.md)
 
 <br>
