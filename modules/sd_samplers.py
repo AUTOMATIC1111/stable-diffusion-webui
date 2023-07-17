@@ -16,7 +16,7 @@ def list_samplers(backend_name = shared.backend):
     global samplers_for_img2img # pylint: disable=global-statement
     global samplers_map # pylint: disable=global-statement
     if backend_name == shared.Backend.ORIGINAL:
-        all_samplers = [*sd_samplers_kdiffusion.samplers_data_k_diffusion, *sd_samplers_compvis.samplers_data_compvis]
+        all_samplers = [*sd_samplers_compvis.samplers_data_compvis, *sd_samplers_kdiffusion.samplers_data_k_diffusion]
     else:
         all_samplers = [*sd_samplers_diffusers.samplers_data_diffusers]
     all_samplers_map = {x.name: x for x in all_samplers}

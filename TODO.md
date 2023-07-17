@@ -4,7 +4,6 @@
 
 Stuff to be fixed, in no particular order...
 
-- SD-XL VAE
 - SD-XL Lora
 - SD-XL Sketch/Inpaint
 - Kandinsky 2.2 (2.1 is working)
@@ -16,13 +15,14 @@ Stuff to be fixed, in no particular order...
 Stuff to be added, in no particular order...
 
 - Diffusers save before refiner
+- Diffusers prompt parser
 - Update `Wiki`
 - Create new `GitHub` hooks/actions for CI/CD  
 - Import core repos
-- Update `train.py` to use `interrogator`
-- Update `train.py` to use `rembg`
-- Create new **Lora** train UI
 - Docker PR
+- Train: use `interrogator`
+- Train: use `rembg`
+- Train: new **Lora** train UI
 - Port `p.all_hr_prompts`
 - Image watermark using `image-watermark`
 - Image phash and hdash using `imagehash`

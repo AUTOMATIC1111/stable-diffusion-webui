@@ -239,7 +239,6 @@ def select_checkpoint(op='model'):
     if len(checkpoints_list) == 0:
         shared.log.error("Cannot run without a checkpoint")
         shared.log.error("Use --ckpt <path-to-checkpoint> to force using existing checkpoint")
-        exit(1)
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
         shared.log.warning(f"Selected checkpoint not found: {model_checkpoint}")
@@ -584,6 +583,8 @@ def change_backend():
     checkpoints_loaded.clear()
     from modules.sd_samplers import list_samplers
     list_samplers(shared.backend)
+    from modules.sd_vae import refresh_vae_list
+    refresh_vae_list()
 
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
@@ -812,7 +813,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
     timer.record("load")
-    shared.log.info(f"Model loaded in {timer.summary()}")
+    shared.log.info(f"Model loaded in {timer.summary()} native={get_native(sd_model)}")
     devices.torch_gc(force=True)
     script_callbacks.model_loaded_callback(sd_model)
     shared.log.info(f'Model load finished: {memory_stats()}')
@@ -869,6 +870,16 @@ def set_diffuser_pipe(pipe, new_pipe_type):
 
     model_data.sd_model = new_pipe
     shared.log.info(f"Pipeline class changed from {pipe.__class__.__name__} to {new_pipe_cls.__name__}")
+
+
+def get_native(pipe: diffusers.DiffusionPipeline):
+    if pipe.__class__ == PriorPipeline:
+        pipe = pipe.main
+    try:
+        size = pipe.vae.config.sample_size
+    except Exception:
+        size = 0
+    return size
 
 
 def get_diffusers_task(pipe: diffusers.DiffusionPipeline) -> DiffusersTaskType:
@@ -1004,7 +1015,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     checkpoint_config = sd_models_config.find_checkpoint_config(state_dict, checkpoint_info)
     timer.record("config")
     if sd_model is None or checkpoint_config != sd_model.used_config:
-        del sd_model
+        sd_model = None
         if shared.backend == shared.Backend.ORIGINAL:
             load_model(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer, op=op)
         else:

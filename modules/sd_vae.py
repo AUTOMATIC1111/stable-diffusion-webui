@@ -75,7 +75,7 @@ def refresh_vae_list():
                 os.path.join(shared.opts.vae_dir, '**/*.pt'),
                 os.path.join(shared.opts.vae_dir, '**/*.safetensors'),
             ]
-    else:
+    elif shared.backend == shared.Backend.DIFFUSERS:
         vae_paths += [
             os.path.join(sd_models.model_path, 'VAE', '**/*.json'),
             os.path.join(shared.opts.vae_dir, '**/*.json'),
@@ -101,7 +101,6 @@ def find_vae_near_checkpoint(checkpoint_file):
 
 
 def resolve_vae(checkpoint_file):
-    print('HERE1', checkpoint_file, shared.opts.sd_vae)
     if shared.cmd_opts.vae is not None: # 1st
         return shared.cmd_opts.vae, 'forced'
     if shared.opts.sd_vae == "None": # 2nd
@@ -111,9 +110,7 @@ def resolve_vae(checkpoint_file):
         return vae_near_checkpoint, 'near checkpoint'
     if shared.opts.sd_vae == "Automatic": # 4th
         basename = os.path.splitext(os.path.basename(checkpoint_file))[0]
-        print('HERE2', basename)
         if vae_dict.get(basename, None) is not None:
-            print('HERE3', vae_dict[basename])
             return vae_dict[basename], 'in VAE dir'
     else:
         vae_from_options = vae_dict.get(shared.opts.sd_vae, None) # 5th
@@ -139,7 +136,9 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
             store_base_vae(model)
             _load_vae_dict(model, checkpoints_loaded[vae_file])
         else:
-            assert os.path.isfile(vae_file), f"VAE {vae_source} doesn't exist: {vae_file}"
+            if not os.path.isfile(vae_file):
+                shared.log.error(f"VAE {vae_source} doesn't exist: {vae_file}")
+                return
             store_base_vae(model)
             vae_dict_1 = load_vae_dict(vae_file)
             _load_vae_dict(model, vae_dict_1)

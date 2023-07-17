@@ -1,9 +1,10 @@
 # Change Log for SD.Next
 
-## Update for 07/16/2023
+## Update for 07/17/2023
 
 - **diffusers**:
-  - vae: enable loading of external vae, documented in diffusers wiki
+  - vae: enable loading of external vae, documented in diffusers wiki  
+    and mix&match continues, you can even use sd-xl vae with sd 1.5 models!  
   - samplers: add concept of *default* sampler to avoid needing to tweak settings for primary or second pass  
     note that sampler details will be printed in log when running in debug level  
   - samplers: allow overriding of sampler beta values in settings
@@ -11,11 +12,11 @@
   - refiner: allow using direct latents or processed output in refiner
   - model: basic support for one more model: [UniDiffuser](https://github.com/thu-ml/unidiffuser)  
     download using model downloader: `thu-ml/unidiffuser-v1`  
-    use Default or DDIM sampler & disable live preview  
-    (support for additional samplers and live previews can be added if there is interest)  
-- add cmd flag to skip all torch checks
-- force requirements check on each start  
-  there are too many misbehaving extensions that change system requirements  
+    and set resolution to 512x512
+- **other**
+  - add cmd flag to skip all torch checks
+  - force requirements check on each start  
+    there are too many misbehaving extensions that change system requirements  
 
 ## Update for 07/14/2023
 

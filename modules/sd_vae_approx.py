@@ -21,13 +21,14 @@ class VAEApprox(nn.Module):
 
     def forward(self, x):
         extra = 11
-        x = nn.functional.interpolate(x, (x.shape[2] * 2, x.shape[3] * 2))
-        x = nn.functional.pad(x, (extra, extra, extra, extra))
-
-        for layer in [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5, self.conv6, self.conv7, self.conv8, ]:
-            x = layer(x)
-            x = nn.functional.leaky_relu(x, 0.1)
-
+        try:
+            x = nn.functional.interpolate(x, (x.shape[2] * 2, x.shape[3] * 2))
+            x = nn.functional.pad(x, (extra, extra, extra, extra))
+            for layer in [self.conv1, self.conv2, self.conv3, self.conv4, self.conv5, self.conv6, self.conv7, self.conv8, ]:
+                x = layer(x)
+                x = nn.functional.leaky_relu(x, 0.1)
+        except Exception:
+            pass
         return x
 
 
@@ -55,7 +56,8 @@ def cheap_approximation(sample):
         [-0.158, 0.189, 0.264],
         [-0.184, -0.271, -0.473],
     ]).to(sample.device)
-
-    x_sample = torch.einsum("lxy,lr -> rxy", sample, coefs)
-
-    return x_sample
+    try:
+        x_sample = torch.einsum("lxy,lr -> rxy", sample, coefs)
+        return x_sample
+    except Exception:
+        return sample

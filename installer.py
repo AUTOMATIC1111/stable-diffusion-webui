@@ -380,11 +380,6 @@ def check_torch():
                 pip('uninstall xformers --yes --quiet', ignore=True, quiet=True)
     except Exception as e:
         log.debug(f'Cannot install xformers package: {e}')
-    try:
-        tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.12.0')
-        install(tensorflow_package, 'tensorflow', ignore=True)
-    except Exception as e:
-        log.debug(f'Cannot install tensorflow package: {e}')
     if opts.get('cuda_compile_mode', '') == 'hidet':
         install('hidet', 'hidet')
     if args.profile:
@@ -423,6 +418,8 @@ def install_packages():
     install(invisiblewatermark_package, 'invisible-watermark')
     install('onnxruntime==1.15.1', 'onnxruntime', ignore=True)
     install('pi-heif', 'pi_heif', ignore=True)
+    tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.12.0')
+    install(tensorflow_package, 'tensorflow', ignore=True)
     if args.profile:
         print_profile(pr, 'Packages')
 
