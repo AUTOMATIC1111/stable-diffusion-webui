@@ -773,7 +773,7 @@ footer {
 }
 
 .extra-networks > div.tab-nav{
-    height: 3.4rem;
+    min-height: 3.4rem;
 }
 
 .extra-networks > div > [id *= '_extra_']{
