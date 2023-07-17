@@ -181,12 +181,20 @@ else:
 
 if backend == 'ipex':
     import os
+    def ipex_no_cuda(orig_func, *args, **kwargs):
+        torch.cuda.is_available = lambda: False
+        orig_func(*args, **kwargs)
+        torch.cuda.is_available = torch.xpu.is_available
+
     #Fix functions with ipex
     torch.cuda.is_available = torch.xpu.is_available
     torch.cuda.device = torch.xpu.device
+    torch.cuda.device_count = torch.xpu.device_count
     torch.cuda.current_device = torch.xpu.current_device
     torch.cuda.get_device_name = torch.xpu.get_device_name
     torch.cuda.get_device_properties = torch.xpu.get_device_properties
+    torch._utils._get_available_device_type = lambda: "xpu"
+    torch.cuda.set_device = torch.xpu.set_device
     torch.cuda.empty_cache = torch.xpu.empty_cache if "WSL2" not in os.popen("uname -a").read() else lambda: None
     torch.cuda.ipc_collect = lambda: None
 
@@ -205,6 +213,11 @@ if backend == 'ipex':
         pass
 
     from modules.sd_hijack_utils import CondFunc
+    #Broken functions when torch.cuda.is_available is True:
+    CondFunc('torch.utils.data.dataloader._BaseDataLoaderIter.__init__',
+        lambda orig_func, *args, **kwargs: ipex_no_cuda(orig_func, *args, **kwargs),
+        lambda orig_func, *args, **kwargs: True)
+
     #Functions with dtype errors:
     CondFunc('torch.nn.modules.GroupNorm.forward',
         lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
@@ -226,6 +239,7 @@ if backend == 'ipex':
     CondFunc('torch.Generator',
         lambda orig_func, device: torch.xpu.Generator(device),
         lambda orig_func, device: device != torch.device("cpu") and device != "cpu")
+    #Latent antialias:
     CondFunc('torch.nn.functional.interpolate',
         lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False: orig_func(input.to("cpu"), size=size, scale_factor=scale_factor, mode=mode, align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias).to(get_cuda_device_string()),
         lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False: antialias)
