@@ -31,20 +31,21 @@ if log_level:
 logging.getLogger("torch.distributed.nn").setLevel(logging.ERROR)  # sshh...
 logging.getLogger("xformers").addFilter(lambda record: 'A matching Triton is not available' not in record.getMessage())
 
-from modules import paths, timer, import_hook, errors, devices  # noqa: F401
-
+from modules import timer
 startup_timer = timer.startup_timer
+startup_timer.record("launcher")
 
 import torch
 import pytorch_lightning   # noqa: F401 # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
-
-
 startup_timer.record("import torch")
 
 import gradio  # noqa: F401
 startup_timer.record("import gradio")
+
+from modules import paths, timer, import_hook, errors, devices  # noqa: F401
+startup_timer.record("setup paths")
 
 import ldm.modules.encoders.modules  # noqa: F401
 startup_timer.record("import ldm")

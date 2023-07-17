@@ -1,4 +1,5 @@
 # this scripts installs necessary requirements and launches main program in webui.py
+import re
 import subprocess
 import os
 import sys
@@ -9,6 +10,9 @@ from functools import lru_cache
 
 from modules import cmd_args, errors
 from modules.paths_internal import script_path, extensions_dir
+from modules import timer
+
+timer.startup_timer.record("start")
 
 args, _ = cmd_args.parser.parse_known_args()
 
@@ -226,6 +230,44 @@ def run_extensions_installers(settings_file):
         run_extension_installer(os.path.join(extensions_dir, dirname_extension))
 
 
+re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
+
+
+def requrements_met(requirements_file):
+    """
+    Does a simple parse of a requirements.txt file to determine if all rerqirements in it
+    are already installed. Returns True if so, False if not installed or parsing fails.
+    """
+
+    import importlib.metadata
+    import packaging.version
+
+    with open(requirements_file, "r", encoding="utf8") as file:
+        for line in file:
+            if line.strip() == "":
+                continue
+
+            m = re.match(re_requirement, line)
+            if m is None:
+                return False
+
+            package = m.group(1).strip()
+            version_required = (m.group(2) or "").strip()
+
+            if version_required == "":
+                continue
+
+            try:
+                version_installed = importlib.metadata.version(package)
+            except Exception:
+                return False
+
+            if packaging.version.parse(version_required) != packaging.version.parse(version_installed):
+                return False
+
+    return True
+
+
 def prepare_environment():
     torch_index_url = os.environ.get('TORCH_INDEX_URL', "https://download.pytorch.org/whl/cu118")
     torch_command = os.environ.get('TORCH_COMMAND', f"pip install torch==2.0.1 torchvision==0.15.2 --extra-index-url {torch_index_url}")
@@ -311,7 +353,9 @@ def prepare_environment():
 
     if not os.path.isfile(requirements_file):
         requirements_file = os.path.join(script_path, requirements_file)
-    run_pip(f"install -r \"{requirements_file}\"", "requirements")
+
+    if not requrements_met(requirements_file):
+        run_pip(f"install -r \"{requirements_file}\"", "requirements")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
 
