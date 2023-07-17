@@ -21,12 +21,12 @@ This project started as a fork from [Automatic1111 WebUI](https://github.com/AUT
 
 All Individual features are not listed here, instead check [Changelog](CHANGELOG.md) for full list of changes.
 
-- Optimized backend with latest **torch** developments. Including built-in support for `torch.compile`
-- Support for `diffusers` as well as standard `ldm` backend.
-  Support for diffusers includes multiple models other than standard **Stable Diffusion** such as **SD-XL**, **Kandinsky**, **DeepFloyd IF** (and many more in the near future)  
+- Optimized processingwith latest **torch** developments  
+  Including built-in support for `torch.compile`
+- Support for multiple backends: `diffusers` as well as standard `ldm` backend  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
 - Improved prompt parser  
-- Enhanced Lora/Locon/Lyco code supporting latest trends in training  
+- Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
 - Advanced metadata caching and handling to speed up operations  
 - Enterprise level logging and hardened API  
@@ -34,6 +34,16 @@ All Individual features are not listed here, instead check [Changelog](CHANGELOG
 - Broad compatibility with extisting extensions ecosystem and new extensions manager  
 - Built in installer with automatic updates and dependency management  
 - Modernized UI (still based on Gradio) with theme support  
+
+## Model support
+
+Additional models will be added as they become available and there is public interest in them
+
+- Stable Diffusion 1.x and 2.x including all variants
+- Stable Diffusion XL
+- Kandinsky 2.1
+- DeepFloyd IF
+- UniDiffusion
 
 ## Platform support
 
@@ -66,11 +76,11 @@ All Individual features are not listed here, instead check [Changelog](CHANGELOG
 ### Installation Notes
 
 - Server can run without virtual environment,  
-  but it is recommended to use it to avoid library version conflicts with other applications. 
+  but it is recommended to use it to avoid library version conflicts with other applications  
 - **nVidia/CUDA** and **AMD/ROCm** are auto-detected is present and available,  
    but for any other use case specify required parameter explicitly or wrong packages may be installed  
-  as installer will assume CPU-only environment.
-- Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first.
+  as installer will assume CPU-only environment  
+- Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  
 
 Below is partial list of all available parameters, run `webui --help` for the full list:
 

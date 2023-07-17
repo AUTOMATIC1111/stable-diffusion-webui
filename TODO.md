@@ -4,7 +4,6 @@
 
 Stuff to be fixed, in no particular order...
 
-- SD-XL Lora
 - SD-XL Sketch/Inpaint
 - Kandinsky 2.2 (2.1 is working)
 - Misterious Extensions auto-enabling
@@ -14,18 +13,19 @@ Stuff to be fixed, in no particular order...
 
 Stuff to be added, in no particular order...
 
-- Diffusers save before refiner
-- Diffusers prompt parser
-- Update `Wiki`
-- Create new `GitHub` hooks/actions for CI/CD  
-- Import core repos
-- Docker PR
+- Diffusers: save before refiner
+- Diffusers: prompt parser
+- Diffusers: SD-XL Lora
 - Train: use `interrogator`
 - Train: use `rembg`
 - Train: new **Lora** train UI
 - Port `p.all_hr_prompts`
 - Image watermark using `image-watermark`
 - Image phash and hdash using `imagehash`
+- Update `Wiki`
+- Create new `GitHub` hooks/actions for CI/CD  
+- Import core repos
+- Docker PR
 - Model merge using `git-rebasin`
 - Additional upscalers
 - XYZ grid upscalers
@@ -34,10 +34,12 @@ Stuff to be added, in no particular order...
 - Rename repo: **automatic** -> **sdnext**
 - New icons
 - Enable refiner workflow for `ldm` backend
+- Add `sgm` backend
 - Improve `lyco` logging
 - Cache models when switching backends
 - Style editor
 - Built-in motd-style notifications
+- [Localization](https://app.transifex.com/signup/open-source/)
 
 ## Investigate
 
