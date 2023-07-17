@@ -147,7 +147,7 @@ def apply_face_restore(p, opt, x):
 def apply_override(field, boolean: bool = False):
     def fun(p, x, xs):
         if boolean:
-            x = True if x == "True" else False
+            x = True if x.lower() == "true" else False
         p.override_settings[field] = x
     return fun
 
