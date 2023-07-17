@@ -1,6 +1,5 @@
 import lyco_helpers
 import network
-import network_lyco
 
 
 class ModuleTypeHada(network.ModuleType):
@@ -11,7 +10,7 @@ class ModuleTypeHada(network.ModuleType):
         return None
 
 
-class NetworkModuleHada(network_lyco.NetworkModuleLyco):
+class NetworkModuleHada(network.NetworkModule):
     def __init__(self,  net: network.Network, weights: network.NetworkWeights):
         super().__init__(net, weights)
 

@@ -2,7 +2,6 @@ import torch
 
 import lyco_helpers
 import network
-import network_lyco
 
 
 class ModuleTypeLokr(network.ModuleType):
@@ -22,7 +21,7 @@ def make_kron(orig_shape, w1, w2):
     return torch.kron(w1, w2).reshape(orig_shape)
 
 
-class NetworkModuleLokr(network_lyco.NetworkModuleLyco):
+class NetworkModuleLokr(network.NetworkModule):
     def __init__(self,  net: network.Network, weights: network.NetworkWeights):
         super().__init__(net, weights)
 

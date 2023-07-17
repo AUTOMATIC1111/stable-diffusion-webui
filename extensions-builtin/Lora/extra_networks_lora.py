@@ -14,14 +14,28 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             params_list.append(extra_networks.ExtraNetworkParams(items=[additional, shared.opts.extra_networks_default_multiplier]))
 
         names = []
-        multipliers = []
+        te_multipliers = []
+        unet_multipliers = []
+        dyn_dims = []
         for params in params_list:
             assert params.items
 
-            names.append(params.items[0])
-            multipliers.append(float(params.items[1]) if len(params.items) > 1 else 1.0)
+            names.append(params.positional[0])
 
-        networks.load_networks(names, multipliers)
+            te_multiplier = float(params.positional[1]) if len(params.positional) > 1 else 1.0
+            te_multiplier = float(params.named.get("te", te_multiplier))
+
+            unet_multiplier = float(params.positional[2]) if len(params.positional) > 2 else 1.0
+            unet_multiplier = float(params.named.get("unet", unet_multiplier))
+
+            dyn_dim = int(params.positional[3]) if len(params.positional) > 3 else None
+            dyn_dim = int(params.named["dyn"]) if "dyn" in params.named else dyn_dim
+
+            te_multipliers.append(te_multiplier)
+            unet_multipliers.append(unet_multiplier)
+            dyn_dims.append(dyn_dim)
+
+        networks.load_networks(names, te_multipliers, unet_multipliers, dyn_dims)
 
         if shared.opts.lora_add_hashes_to_infotext:
             network_hashes = []

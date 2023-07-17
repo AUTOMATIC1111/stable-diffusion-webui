@@ -6,6 +6,7 @@ import network_lora
 import network_hada
 import network_ia3
 import network_lokr
+import network_full
 
 import torch
 from typing import Union
@@ -17,6 +18,7 @@ module_types = [
     network_hada.ModuleTypeHada(),
     network_ia3.ModuleTypeIa3(),
     network_lokr.ModuleTypeLokr(),
+    network_full.ModuleTypeFull(),
 ]
 
 
@@ -51,6 +53,15 @@ def convert_diffusers_name_to_compvis(key, is_sd2):
         return True
 
     m = []
+
+    if match(m, r"lora_unet_conv_in(.*)"):
+        return f'diffusion_model_input_blocks_0_0{m[0]}'
+
+    if match(m, r"lora_unet_conv_out(.*)"):
+        return f'diffusion_model_out_2{m[0]}'
+
+    if match(m, r"lora_unet_time_embedding_linear_(\d+)(.*)"):
+        return f"diffusion_model_time_embed_{m[0] * 2 - 2}{m[1]}"
 
     if match(m, r"lora_unet_down_blocks_(\d+)_(attentions|resnets)_(\d+)_(.+)"):
         suffix = suffix_conversion.get(m[1], {}).get(m[3], m[3])
@@ -179,7 +190,7 @@ def load_network(name, network_on_disk):
     return net
 
 
-def load_networks(names, multipliers=None):
+def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=None):
     already_loaded = {}
 
     for net in loaded_networks:
@@ -218,7 +229,9 @@ def load_networks(names, multipliers=None):
             print(f"Couldn't find network with name {name}")
             continue
 
-        net.multiplier = multipliers[i] if multipliers else 1.0
+        net.te_multiplier = te_multipliers[i] if te_multipliers else 1.0
+        net.unet_multiplier = unet_multipliers[i] if unet_multipliers else 1.0
+        net.dyn_dim = dyn_dims[i] if dyn_dims else 1.0
         loaded_networks.append(net)
 
     if failed_to_load_networks:
@@ -250,7 +263,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
         return
 
     current_names = getattr(self, "network_current_names", ())
-    wanted_names = tuple((x.name, x.multiplier) for x in loaded_networks)
+    wanted_names = tuple((x.name, x.te_multiplier, x.unet_multiplier, x.dyn_dim) for x in loaded_networks)
 
     weights_backup = getattr(self, "network_weights_backup", None)
     if weights_backup is None:
@@ -288,9 +301,10 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
                     updown_k = module_k.calc_updown(self.in_proj_weight)
                     updown_v = module_v.calc_updown(self.in_proj_weight)
                     updown_qkv = torch.vstack([updown_q, updown_k, updown_v])
+                    updown_out = module_out.calc_updown(self.out_proj.weight)
 
                     self.in_proj_weight += updown_qkv
-                    self.out_proj.weight += module_out.calc_updown(self.out_proj.weight)
+                    self.out_proj.weight += updown_out
                     continue
 
             if module is None:
