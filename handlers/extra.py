@@ -41,7 +41,7 @@ class SingleUpscalerTask:
                  extras_upscaler_2_visibility: float = 0  # upscaler_2 可见度，0-1
                  ):
         self.resize_mode = resize_mode
-        self.extras_mode = 0   # 0-single, 1-batch
+        self.extras_mode = 0  # 0-single, 1-batch
         self.image_folder = ""
         self.input_dir = ""
         self.output_dir = ""
@@ -111,12 +111,19 @@ class ExtraTaskHandler(DumpTaskHandler):
             low_keys = upload_files(False, *low)
             image_keys = ImageKeys(high_keys, low_keys)
             images = result[0]
-            p.set_finish_result({
-                'all': image_keys.to_dict(),
-                'upscaler': {
-                    'size': '' if not images else f'{images[0].width}*{images[0].height}',
-                }
-            })
+            # p.set_finish_result({
+            #     'all': image_keys.to_dict(),
+            #     'upscaler': {
+            #         'size': '' if not images else f'{images[0].width}*{images[0].height}',
+            #     }
+            # })
+            p = TaskProgress.new_finish(task,
+                                        {
+                                            'all': image_keys.to_dict(),
+                                            'upscaler': {
+                                                'size': '' if not images else f'{images[0].width}*{images[0].height}',
+                                            }
+                                        })
             p.task_desc = f'upscaler task:{task.id} finished.'
         else:
             p.status = TaskStatus.Failed
@@ -138,6 +145,3 @@ class ExtraTaskHandler(DumpTaskHandler):
                 low.append(low_file)
 
         return high, low
-
-
-

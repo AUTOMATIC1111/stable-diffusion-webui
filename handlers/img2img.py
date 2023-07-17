@@ -499,8 +499,7 @@ class Img2ImgTaskHandler(TaskHandler):
         self._set_task_status(progress)
 
     def _update_preview(self, progress: TaskProgress):
-        if shared.state.current_image_sampling_step > 0 and \
-                shared.state.sampling_step - shared.state.current_image_sampling_step < 5:
+        if shared.state.sampling_step - shared.state.current_image_sampling_step < 5:
             return
         p = 0.01
 
@@ -515,7 +514,7 @@ class Img2ImgTaskHandler(TaskHandler):
         progress.task_progress = min(p, 0.99) * 100
         shared.state.set_current_image()
         if shared.state.current_image:
-            current = encode_pil_to_base64(shared.state.current_image, 60)
+            current = encode_pil_to_base64(shared.state.current_image, 40)
             if current:
                 progress.preview = current
             print("\n>>set preview!!\n")
