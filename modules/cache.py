@@ -1,6 +1,7 @@
 import json
 import os.path
 import threading
+import time
 
 from modules.paths import data_path, script_path
 
@@ -8,15 +9,37 @@ cache_filename = os.path.join(data_path, "cache.json")
 cache_data = None
 cache_lock = threading.Lock()
 
+dump_cache_after = None
+dump_cache_thread = None
+
 
 def dump_cache():
     """
-    Saves all cache data to a file.
+    Marks cache for writing to disk. 5 seconds after no one else flags the cache for writing, it is written.
     """
 
+    global dump_cache_after
+    global dump_cache_thread
+
+    def thread_func():
+        global dump_cache_after
+        global dump_cache_thread
+
+        while dump_cache_after is not None and time.time() < dump_cache_after:
+            time.sleep(1)
+
+        with cache_lock:
+            with open(cache_filename, "w", encoding="utf8") as file:
+                json.dump(cache_data, file, indent=4)
+
+            dump_cache_after = None
+            dump_cache_thread = None
+
     with cache_lock:
-        with open(cache_filename, "w", encoding="utf8") as file:
-            json.dump(cache_data, file, indent=4)
+        dump_cache_after = time.time() + 5
+        if dump_cache_thread is None:
+            dump_cache_thread = threading.Thread(name='cache-writer', target=thread_func)
+            dump_cache_thread.start()
 
 
 def cache(subsection):
