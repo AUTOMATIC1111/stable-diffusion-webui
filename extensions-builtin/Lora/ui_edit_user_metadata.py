@@ -46,14 +46,17 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
     def __init__(self, ui, tabname, page):
         super().__init__(ui, tabname, page)
 
+        self.select_sd_version = None
+
         self.taginfo = None
         self.edit_activation_text = None
         self.slider_preferred_weight = None
         self.edit_notes = None
 
-    def save_lora_user_metadata(self, name, desc, activation_text, preferred_weight, notes):
+    def save_lora_user_metadata(self, name, desc, sd_version, activation_text, preferred_weight, notes):
         user_metadata = self.get_user_metadata(name)
         user_metadata["description"] = desc
+        user_metadata["sd version"] = sd_version
         user_metadata["activation text"] = activation_text
         user_metadata["preferred weight"] = preferred_weight
         user_metadata["notes"] = notes
@@ -112,11 +115,11 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         gradio_tags = [(tag, str(count)) for tag, count in tags[0:24]]
 
         return [
-            *values[0:4],
+            *values[0:5],
+            item.get("sd_version", "Unknown"),
             gr.HighlightedText.update(value=gradio_tags, visible=True if tags else False),
             user_metadata.get('activation text', ''),
             float(user_metadata.get('preferred weight', 0.0)),
-            user_metadata.get('notes', ''),
             gr.update(visible=True if tags else False),
             gr.update(value=self.generate_random_prompt_from_tags(tags), visible=True if tags else False),
         ]
@@ -141,10 +144,15 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
 
         return ", ".join(sorted(res))
 
+    def create_extra_default_items_in_left_column(self):
+
+        # this would be a lot better as gr.Radio but I can't make it work
+        self.select_sd_version = gr.Dropdown(['SD1', 'SD2', 'SDXL', 'Unknown'], value='Unknown', label='Stable Diffusion version', interactive=True)
+
     def create_editor(self):
         self.create_default_editor_elems()
 
-        self.taginfo = gr.HighlightedText(label="Tags")
+        self.taginfo = gr.HighlightedText(label="Training dataset tags")
         self.edit_activation_text = gr.Text(label='Activation text', info="Will be added to prompt along with Lora")
         self.slider_preferred_weight = gr.Slider(label='Preferred weight', info="Set to 0 to disable", minimum=0.0, maximum=2.0, step=0.01)
 
@@ -178,10 +186,11 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
             self.edit_description,
             self.html_filedata,
             self.html_preview,
+            self.edit_notes,
+            self.select_sd_version,
             self.taginfo,
             self.edit_activation_text,
             self.slider_preferred_weight,
-            self.edit_notes,
             row_random_prompt,
             random_prompt,
         ]
@@ -192,6 +201,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
 
         edited_components = [
             self.edit_description,
+            self.select_sd_version,
             self.edit_activation_text,
             self.slider_preferred_weight,
             self.edit_notes,

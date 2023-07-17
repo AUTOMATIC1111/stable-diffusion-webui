@@ -42,12 +42,17 @@ class UserMetadataEditor:
 
         return user_metadata
 
+    def create_extra_default_items_in_left_column(self):
+        pass
+
     def create_default_editor_elems(self):
         with gr.Row():
             with gr.Column(scale=2):
                 self.edit_name = gr.HTML(elem_classes="extra-network-name")
                 self.edit_description = gr.Textbox(label="Description", lines=4)
                 self.html_filedata = gr.HTML()
+
+                self.create_extra_default_items_in_left_column()
 
             with gr.Column(scale=1, min_width=0):
                 self.html_preview = gr.HTML()
@@ -111,7 +116,7 @@ class UserMetadataEditor:
 
         table = '<table class="file-metadata">' + "".join(f"<tr><th>{name}</th><td>{value}</td></tr>" for name, value in params) + '</table>'
 
-        return html.escape(name), user_metadata.get('description', ''), table, self.get_card_html(name), user_metadata.get('notes', ''),
+        return html.escape(name), user_metadata.get('description', ''), table, self.get_card_html(name), user_metadata.get('notes', '')
 
     def write_user_metadata(self, name, metadata):
         item = self.page.items.get(name, {})

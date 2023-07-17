@@ -1,7 +1,9 @@
 import os
+
+import network
 import networks
 
-from modules import shared, ui_extra_networks
+from modules import shared, ui_extra_networks, paths
 from modules.ui_extra_networks import quote_js
 from ui_edit_user_metadata import LoraUserMetadataEditor
 
@@ -13,14 +15,13 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
     def refresh(self):
         networks.list_available_networks()
 
-    def create_item(self, name, index=None):
+    def create_item(self, name, index=None, enable_filter=True):
         lora_on_disk = networks.available_networks.get(name)
 
         path, ext = os.path.splitext(lora_on_disk.filename)
 
         alias = lora_on_disk.get_alias()
 
-        # in 1.5 filename changes to be full filename instead of path without extension, and metadata is dict instead of json string
         item = {
             "name": name,
             "filename": lora_on_disk.filename,
@@ -30,6 +31,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             "local_preview": f"{path}.{shared.opts.samples_format}",
             "metadata": lora_on_disk.metadata,
             "sort_keys": {'default': index, **self.get_sort_keys(lora_on_disk.filename)},
+            "sd_version": lora_on_disk.sd_version.name,
         }
 
         self.read_user_metadata(item)
@@ -40,15 +42,37 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         if activation_text:
             item["prompt"] += " + " + quote_js(" " + activation_text)
 
+        sd_version = item["user_metadata"].get("sd version")
+        if sd_version in network.SdVersion.__members__:
+            item["sd_version"] = sd_version
+            sd_version = network.SdVersion[sd_version]
+        else:
+            sd_version = lora_on_disk.sd_version
+
+        if shared.opts.lora_show_all or not enable_filter:
+            pass
+        elif sd_version == network.SdVersion.Unknown:
+            model_version = network.SdVersion.SDXL if shared.sd_model.is_sdxl else network.SdVersion.SD2 if shared.sd_model.is_sd2 else network.SdVersion.SD1
+            if model_version.name in shared.opts.lora_hide_unknown_for_versions:
+                return None
+        elif shared.sd_model.is_sdxl and sd_version != network.SdVersion.SDXL:
+            return None
+        elif shared.sd_model.is_sd2 and sd_version != network.SdVersion.SD2:
+            return None
+        elif shared.sd_model.is_sd1 and sd_version != network.SdVersion.SD1:
+            return None
+
         return item
 
     def list_items(self):
         for index, name in enumerate(networks.available_networks):
             item = self.create_item(name, index)
-            yield item
+
+            if item is not None:
+                yield item
 
     def allowed_directories_for_previews(self):
-        return [shared.cmd_opts.lora_dir]
+        return [shared.cmd_opts.lora_dir, os.path.join(paths.models_path, "LyCORIS")]
 
     def create_user_metadata_editor(self, ui, tabname):
         return LoraUserMetadataEditor(ui, tabname, self)

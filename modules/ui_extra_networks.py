@@ -62,7 +62,8 @@ def get_single_card(page: str = "", tabname: str = "", name: str = ""):
     page = next(iter([x for x in extra_pages if x.name == page]), None)
 
     try:
-        item = page.create_item(name)
+        item = page.create_item(name, enable_filter=False)
+        page.items[name] = item
     except Exception as e:
         errors.display(e, "creating item for extra network")
         item = page.items.get(name)

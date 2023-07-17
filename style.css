@@ -841,7 +841,7 @@ footer {
 
 .extra-network-cards .card .card-button {
     text-shadow: 2px 2px 3px black;
-    padding: 0.25em;
+    padding: 0.25em 0.1em;
     font-size: 200%;
     width: 1.5em;
 }
@@ -955,6 +955,10 @@ div.block.gradio-box.edit-user-metadata {
 
 .edit-user-metadata .file-metadata th{
     text-align: left;
+}
+
+.edit-user-metadata .file-metadata th, .edit-user-metadata .file-metadata td{
+    padding: 0.3em 1em;
 }
 
 .edit-user-metadata .wrap.translucent{

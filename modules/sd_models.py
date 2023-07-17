@@ -290,6 +290,9 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
 
     model.is_sdxl = hasattr(model, 'conditioner')
+    model.is_sd2 = not model.is_sdxl and hasattr(model.cond_stage_model, 'model')
+    model.is_sd1 = not model.is_sdxl and not model.is_sd2
+
     if model.is_sdxl:
         sd_models_xl.extend_sdxl(model)
 
