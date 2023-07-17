@@ -168,5 +168,6 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Security advice - RyotaK
 - UniPC sampler - Wenliang Zhao - https://github.com/wl-zhao/UniPC
 - TAESD - Ollin Boer Bohan - https://github.com/madebyollin/taesd
+- LyCORIS - KohakuBlueleaf
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
