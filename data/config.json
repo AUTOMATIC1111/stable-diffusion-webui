@@ -5,5 +5,5 @@
   "outdir_extras_samples": "outputs/extras-images",
   "outdir_txt2img_grids": "outputs/txt2img-grids",
   "outdir_img2img_grids": "outputs/img2img-grids",
-  "outdir_save": "log/images"
+  "outdir_save": "outputs/image-favorite"
 }
