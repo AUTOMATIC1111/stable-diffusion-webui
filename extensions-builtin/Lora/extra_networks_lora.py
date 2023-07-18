@@ -25,7 +25,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             te_multiplier = float(params.positional[1]) if len(params.positional) > 1 else 1.0
             te_multiplier = float(params.named.get("te", te_multiplier))
 
-            unet_multiplier = float(params.positional[2]) if len(params.positional) > 2 else 1.0
+            unet_multiplier = float(params.positional[2]) if len(params.positional) > 2 else te_multiplier
             unet_multiplier = float(params.named.get("unet", unet_multiplier))
 
             dyn_dim = int(params.positional[3]) if len(params.positional) > 3 else None
