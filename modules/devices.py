@@ -60,6 +60,13 @@ def torch_gc():
         with torch.cuda.device(get_cuda_device_string()):
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
+    elif has_mps():
+        try:
+            import torch.mps
+            if hasattr(torch.mps, 'empty_cache'):
+                torch.mps.empty_cache()
+        except ImportError:
+            pass
 
 
 def enable_tf32():

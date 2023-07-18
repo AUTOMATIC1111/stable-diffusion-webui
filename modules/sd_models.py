@@ -585,7 +585,6 @@ def unload_model_weights(sd_model=None, info=None):
         sd_model = None
         gc.collect()
         devices.torch_gc()
-        torch.cuda.empty_cache()
 
     print(f"Unloaded weights {timer.summary()}.")
 
