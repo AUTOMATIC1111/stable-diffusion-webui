@@ -1,4 +1,4 @@
-from modules import launch_utils
+from modules import launch_utils, timer
 
 
 args = launch_utils.args
@@ -25,6 +25,8 @@ start = launch_utils.start
 
 
 def main():
+    timer.startup_timer.record("start")
+
     if not args.skip_prepare_environment:
         prepare_environment()
 
