@@ -4,9 +4,9 @@
 # change the variables in webui-user.sh instead #
 #################################################
 
-usevenv=1
+use_venv=1
 if [[ $venv_dir == "-" ]]; then
-  usevenv=0
+  use_venv=0
 fi
 
 # If run from macOS, load defaults from webui-macos-env.sh
@@ -50,7 +50,7 @@ then
 fi
 
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
-if [[ -z "${venv_dir}" ]] && [[ $usevenv -eq 1 ]]
+if [[ -z "${venv_dir}" ]] && [[ $use_venv -eq 1 ]]
 then
     venv_dir="venv"
 fi
@@ -163,7 +163,7 @@ do
     fi
 done
 
-if [[ $usevenv -eq 1 ]] && ! "${python_cmd}" -c "import venv" &>/dev/null
+if [[ $use_venv -eq 1 ]] && ! "${python_cmd}" -c "import venv" &>/dev/null
 then
     printf "\n%s\n" "${delimiter}"
     printf "\e[1m\e[31mERROR: python3-venv is not installed, aborting...\e[0m"
@@ -183,7 +183,7 @@ else
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
 
-if [[ $usevenv -eq 1 ]] && [[ -z "${VIRTUAL_ENV}" ]];
+if [[ $use_venv -eq 1 ]] && [[ -z "${VIRTUAL_ENV}" ]];
 then
     printf "\n%s\n" "${delimiter}"
     printf "Create and activate python venv"
