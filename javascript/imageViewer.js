@@ -91,7 +91,7 @@ function setupImageForLightbox(e) {
   e.dataset.modded = true;
   e.style.cursor = 'pointer';
   e.style.userSelect = 'none';
-  e.addEventListener('mousedown', (evt) => {
+  e.addEventListener('click', (evt) => {
     if (evt.button !== 0) return;
     const initialZoom = (localStorage.getItem('modalZoom') || true) === 'yes';
     modalZoomSet(gradioApp().getElementById('modalImage'), initialZoom);
