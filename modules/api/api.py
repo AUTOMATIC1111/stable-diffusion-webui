@@ -434,9 +434,11 @@ class Api:
         return options
 
     def set_config(self, req: Dict[str, Any]):
+        updated = []
         for k, v in req.items():
-            shared.opts.set(k, v)
+            updated.append({ k: shared.opts.set(k, v) })
         shared.opts.save(shared.config_filename)
+        return { "updated": updated }
 
     def get_cmd_flags(self):
         return vars(shared.cmd_opts)

@@ -2,7 +2,9 @@
 
 function attachGalleryListeners(tab_name) {
   const gallery = gradioApp().querySelector(`#${tab_name}_gallery`);
-  gallery?.addEventListener('click', () => setTimeout(() => {
+  if (!gallery) return null;
+  gallery.addEventListener('click', () => setTimeout(() => {
+    console.log('galleryItemSelected:', tab_name);
     gradioApp().getElementById(`${tab_name}_generation_info_button`)?.click();
   }, 500));
   gallery?.addEventListener('keydown', (e) => {
@@ -20,7 +22,6 @@ function initiGenerationParams() {
   if (generationParamsInitialized) return;
   if (!modal) modal = gradioApp().getElementById('lightboxModal');
   if (!modal) return;
-  generationParamsInitialized = true;
 
   const modalObserver = new MutationObserver((mutations) => {
     mutations.forEach((mutationRecord) => {
@@ -32,6 +33,8 @@ function initiGenerationParams() {
 
   if (!txt2img_gallery) txt2img_gallery = attachGalleryListeners('txt2img');
   if (!img2img_gallery) img2img_gallery = attachGalleryListeners('img2img');
+  if (txt2img_gallery && img2img_gallery) generationParamsInitialized = true;
+  else return;
   modalObserver.observe(modal, { attributes: true, attributeFilter: ['style'] });
   console.log('initGenerationParams');
 }
