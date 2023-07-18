@@ -1,3 +1,8 @@
+## 1.4.1
+
+### Bug Fixes:
+ * add queue lock for refresh-checkpoints
+
 ## 1.4.0
 
 ### Features:
