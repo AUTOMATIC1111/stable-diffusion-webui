@@ -213,7 +213,7 @@ for key, metadata in opts.data_labels.items():
         value = None
     optType = opts.typemap.get(type(metadata.default), type(value))
 
-    if optType == types.NoneType:
+    if isinstance(optType, types.NoneType):
         pass
     elif metadata is not None:
         fields.update({key: (Optional[optType], Field(default=metadata.default, description=metadata.label))})
