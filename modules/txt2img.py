@@ -1,13 +1,15 @@
+from contextlib import closing
+
 import modules.scripts
 from modules import sd_samplers, processing
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.shared import opts, cmd_opts
 import modules.shared as shared
 from modules.ui import plaintext_to_html
+import gradio as gr
 
 
-
-def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, hr_sampler_index: int, hr_prompt: str, hr_negative_prompt, override_settings_texts, *args):
+def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, steps: int, sampler_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, hr_sampler_index: int, hr_prompt: str, hr_negative_prompt, override_settings_texts, request: gr.Request, *args):
     override_settings = create_override_settings_dict(override_settings_texts)
 
     p = processing.StableDiffusionProcessingTxt2Img(
@@ -48,15 +50,16 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
     p.scripts = modules.scripts.scripts_txt2img
     p.script_args = args
 
+    p.user = request.username
+
     if cmd_opts.enable_console_prompts:
         print(f"\ntxt2img: {prompt}", file=shared.progress_print_out)
 
-    processed = modules.scripts.scripts_txt2img.run(p, *args)
+    with closing(p):
+        processed = modules.scripts.scripts_txt2img.run(p, *args)
 
-    if processed is None:
-        processed = processing.process_images(p)
-
-    p.close()
+        if processed is None:
+            processed = processing.process_images(p)
 
     shared.total_tqdm.clear()
 
@@ -67,4 +70,4 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
     if opts.do_not_show_images:
         processed.images = []
 
-    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments)
+    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
