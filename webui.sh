@@ -5,7 +5,7 @@
 #################################################
 
 usevenv=1
-if [[ $@ == *"--novenv"* ]]; then
+if [[ $venv_dir == "-" ]]; then
   usevenv=0
 fi
 
