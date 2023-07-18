@@ -52,17 +52,17 @@ def get_watermark(image, params):
     data = np.asarray(image)
     decoder = WatermarkDecoder(options.type, params.length)
     decoded = decoder.decode(data, options.method)
-    try:
-        s = str(decoded, 'UTF-8').replace('\x00', '')
-    except Exception:
-        s = ''
-    return s
+    wm = decoded.decode(encoding='ascii', errors='ignore')
+    return wm
 
 
 def set_watermark(image, params):
     data = np.asarray(image)
     encoder = WatermarkEncoder()
-    encoder.set_watermark(options.type, params.wm.encode('utf-8'))
+    length = params.length // 8
+    text = f"{params.wm:<{length}}"[:length]
+    bytearr = text.encode(encoding='ascii', errors='ignore')
+    encoder.set_watermark(options.type, bytearr)
     encoded = encoder.encode(data, options.method)
     image = Image.fromarray(encoded)
     return image
@@ -83,8 +83,8 @@ def watermark(params, file):
     exif = get_exif(image)
 
     if params.command == 'read':
+        fn = params.input
         wm = get_watermark(image, params)
-        log.info({ 'file': file, 'watermark': wm, 'exif': exif, 'resolution': f'{image.width}x{image.height}' })
 
     elif params.command == 'write':
         metadata = b'' if params.strip else set_exif(exif)
@@ -95,17 +95,18 @@ def watermark(params, file):
         image.save(fn, exif=metadata)
 
         if params.verify:
+            image = Image.open(fn)
             data = np.asarray(image)
             decoder = WatermarkDecoder(options.type, params.length)
             decoded = decoder.decode(data, options.method)
-            if decoded.startswith(b'\xff'):
-                wm = ''
-            else:
-                wm = str(decoded, 'UTF-8').replace('\x00', '')
+            wm = decoded.decode(encoding='ascii', errors='ignore')
         else:
             wm = params.wm
 
-        log.info({ 'file': fn, 'watermark': wm, 'exif': None if params.strip else exif, 'resolution': f'{image.width}x{image.height}' })
+    log.info({ 'file': fn })
+    log.info({ 'resolution': f'{image.width}x{image.height}' })
+    log.info({ 'watermark': wm })
+    log.info({ 'exif': None if params.strip else exif })
 
 
 if __name__ == '__main__':
@@ -114,11 +115,11 @@ if __name__ == '__main__':
     parser.add_argument('--wm', type=str, required=False, default='sdnext', help='watermark string')
     parser.add_argument('--strip', default=False, action='store_true', help = "strip existing exif data")
     parser.add_argument('--verify', default=False, action='store_true', help = "verify watermark during write")
-    parser.add_argument('--length', type=int, default=16, help="watermark length in bits")
+    parser.add_argument('--length', type=int, default=32, help="watermark length in bits")
     parser.add_argument('--output', type=str, required=False, default='', help='folder to store images, default is overwrite in-place')
     parser.add_argument('input', type=str, nargs='*')
     args = parser.parse_args()
-    log.info({ 'watermark args': vars(args), 'options': options })
+    # log.info({ 'watermark args': vars(args), 'options': options })
     for arg in args.input:
         if os.path.isfile(arg):
             watermark(args, arg)

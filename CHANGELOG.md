@@ -1,22 +1,34 @@
 # Change Log for SD.Next
 
-## Update for 07/17/2023
+## Update for 07/18/2023
 
+While we're waiting for official SD-XL release, here's another update with some fixes and enhancements...
+
+- **global**
+  - image save: option to add invisible image watermark to all your generated images  
+    disabled by default, can be enabled in settings -> image options  
+    watermark information will be shown when loading image such as in process image tab  
+    also additional cli utility `/cli/image-watermark.py` to read/write/strip watermarks from images  
+  - batch processing: fix metadata saving, also allow to drag&drop images for batch processing  
+  - ui configuration: you can modify all ui default values from settings as usual,  
+    but only values that are non-default will be written to `ui-config.json`  
+  - startup: add cmd flag to skip all `torch` checks  
+  - startup: force requirements check on each server start  
+    there are too many misbehaving extensions that change system requirements  
+  - internal: safe handling of all config file read/write operations  
+    this allows sdnext to run in fully shared environments and prevents any possible configuration corruptions  
 - **diffusers**:
+  - sd-xl: remove image watermarks autocreated by 0.9 model  
   - vae: enable loading of external vae, documented in diffusers wiki  
     and mix&match continues, you can even use sd-xl vae with sd 1.5 models!  
   - samplers: add concept of *default* sampler to avoid needing to tweak settings for primary or second pass  
     note that sampler details will be printed in log when running in debug level  
-  - samplers: allow overriding of sampler beta values in settings
-  - refiner: fix refiner applying only to first image in batch
-  - refiner: allow using direct latents or processed output in refiner
+  - samplers: allow overriding of sampler beta values in settings  
+  - refiner: fix refiner applying only to first image in batch  
+  - refiner: allow using direct latents or processed output in refiner  
   - model: basic support for one more model: [UniDiffuser](https://github.com/thu-ml/unidiffuser)  
     download using model downloader: `thu-ml/unidiffuser-v1`  
-    and set resolution to 512x512
-- **other**
-  - add cmd flag to skip all torch checks
-  - force requirements check on each start  
-    there are too many misbehaving extensions that change system requirements  
+    and set resolution to 512x512  
 
 ## Update for 07/14/2023
 

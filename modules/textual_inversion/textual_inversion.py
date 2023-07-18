@@ -150,7 +150,6 @@ class EmbeddingDatabase:
             text_inv_tokens = [t for t in text_inv_tokens if not (len(t.split("_")) > 1 and t.split("_")[-1].isdigit())]
         except Exception:
             text_inv_tokens = []
-            pass
 
     def load_from_file(self, path, filename):
         name, ext = os.path.splitext(filename)
@@ -378,6 +377,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
     filename = os.path.join(shared.opts.embeddings_dir, f'{embedding_name}.pt')
 
+    if log_directory == '':
+        log_directory = f"{os.path.join(shared.cmd_opts.data_dir, 'train/log/embeddings')}"
     log_directory = os.path.join(log_directory, embedding_name)
     unload = shared.opts.unload_models_when_training
 

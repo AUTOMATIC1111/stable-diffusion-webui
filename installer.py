@@ -147,9 +147,13 @@ def installed(package, friendly: str = None):
                 version = pkg_resources.get_distribution(p[0]).version
                 # log.debug(f"Package version found: {p[0]} {version}")
                 if len(p) > 1:
-                    ok = ok and version == p[1]
-                    if not ok:
-                        log.warning(f"Package wrong version: {p[0]} {version} required {p[1]}")
+                    exact = version == p[1]
+                    ok = ok and (exact or args.experimental)
+                    if not exact:
+                        if args.experimental:
+                            log.warning(f"Package allowing experimental: {p[0]} {version} required {p[1]}")
+                        else:
+                            log.warning(f"Package wrong version: {p[0]} {version} required {p[1]}")
             else:
                 log.debug(f"Package version not found: {p[0]}")
         return ok

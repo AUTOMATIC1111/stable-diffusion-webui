@@ -1,7 +1,5 @@
 import hashlib
-import json
 import os.path
-import filelock
 from rich import progress
 from modules import shared
 from modules.paths import data_path
@@ -11,20 +9,16 @@ cache_data = None
 
 
 def dump_cache():
-    with filelock.FileLock(f"{cache_filename}.lock"):
-        with open(cache_filename, "w", encoding="utf8") as file:
-            json.dump(cache_data, file, indent=4)
+    shared.writefile(cache_data, cache_filename)
 
 
 def cache(subsection):
     global cache_data # pylint: disable=global-statement
     if cache_data is None:
-        with filelock.FileLock(f"{cache_filename}.lock"):
-            if not os.path.isfile(cache_filename):
-                cache_data = {}
-            else:
-                with open(cache_filename, "r", encoding="utf8") as file:
-                    cache_data = json.load(file)
+        if not os.path.isfile(cache_filename):
+            cache_data = {}
+        else:
+            cache_data = shared.readfile(cache_filename)
     s = cache_data.get(subsection, {})
     cache_data[subsection] = s
     return s

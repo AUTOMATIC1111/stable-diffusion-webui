@@ -188,7 +188,7 @@ def create_ui(txt2img_preview_params):
                             ti_save_every = gr.Number(label='Create interim embeddings', value=500, precision=0)
                         ti_save_image_with_stored_embedding = gr.Checkbox(label='Save images with embedding in PNG chunks', value=True)
                         ti_preview_from_txt2img = gr.Checkbox(label='Use current settings for previews', value=False)
-                        ti_log_directory = gr.Textbox(label='Log directory', placeholder="Path to directory where to write outputs", value=f"{os.path.join(shared.cmd_opts.data_dir, 'train/log/embeddings')}")
+                        ti_log_directory = gr.Textbox(label='Log directory', placeholder="Defaults to train/log/embedding", value="")
 
                     ti_stop.click(fn=lambda: shared.state.interrupt(), inputs=[], outputs=[])
 

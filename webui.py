@@ -2,6 +2,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import glob
 import signal
 import asyncio
 import logging
@@ -159,6 +160,11 @@ def initialize():
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(_sig, _frame):
         log.info('Exiting')
+        try:
+            for f in glob.glob("*.lock"):
+                os.remove(f)
+        except Exception:
+            pass
         sys.exit(0)
 
     signal.signal(signal.SIGINT, sigint_handler)

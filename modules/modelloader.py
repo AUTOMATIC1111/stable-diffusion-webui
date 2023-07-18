@@ -1,7 +1,6 @@
 import os
 import shutil
 import importlib
-import json
 from typing import Dict
 from urllib.parse import urlparse
 
@@ -37,7 +36,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         hf.login(token)
     pipeline_dir = DiffusionPipeline.download(hub_id, **download_config)
     try:
-        model_info_dict = hf.model_info(hub_id).cardData # TODO HF-Hub cardData invalid property
+        model_info_dict = hf.model_info(hub_id).cardData # pylint: disable=no-member # TODO Diffusers is this real error?
     except Exception:
         model_info_dict = None
     # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
@@ -47,8 +46,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         # mark prior as hidden
         with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f:
             f.write("True")
-    with open(os.path.join(pipeline_dir, "model_info.json"), "w", encoding="utf-8") as json_file:
-        json.dump(model_info_dict, json_file)
+    shared.writefile(model_info_dict, os.path.join(pipeline_dir, "model_info.json"))
     return pipeline_dir
 
 

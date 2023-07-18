@@ -143,7 +143,7 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
-        self.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List)
+        self.app.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List) # bypass auth
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
 

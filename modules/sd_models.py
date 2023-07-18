@@ -7,7 +7,6 @@ import threading
 from os import mkdir
 from urllib import request
 from enum import Enum
-import filelock
 from rich import progress # pylint: disable=redefined-builtin
 import torch
 import safetensors.torch
@@ -80,12 +79,7 @@ class CheckpointInfo:
             self.model_name = repo[0]['name']
             if os.path.isfile(repo[0]['model_info']):
                 file_path = repo[0]['model_info']
-                with open(file_path, "r", encoding="utf-8") as json_file:
-                    try:
-                        self.model_info = json.load(json_file)
-                    except Exception as e:
-                        shared.log.error(f'Error loading model info: {json_file} {e}')
-                        self.model_info = {}
+                self.model_info = shared.readfile(file_path, silent=True)
 
         self.shorthash = self.sha256[0:10] if self.sha256 else None
         self.title = self.name if self.shorthash is None else f'{self.name} [{self.shorthash}]'
@@ -114,6 +108,11 @@ class CheckpointInfo:
         self.title = f'{self.name} [{self.shorthash}]'
         self.register()
         return self.shorthash
+
+
+class NoWatermark:
+    def apply_watermark(self, img):
+        return img
 
 
 def setup_model():
@@ -276,20 +275,11 @@ def get_state_dict_from_checkpoint(pl_sd):
 
 
 def write_metadata():
-    def default(obj):
-        shared.log.debug(f"Model metadata not a valid object: {obj}")
-        return str(obj)
-
     global sd_metadata_pending # pylint: disable=global-statement
     if sd_metadata_pending == 0:
         shared.log.debug(f"Model metadata: {sd_metadata_file} no changes")
         return
-    with filelock.FileLock(f"{sd_metadata_file}.lock"):
-        try:
-            with open(sd_metadata_file, "w", encoding="utf8") as file:
-                json.dump(sd_metadata, file, indent=4, skipkeys=True, ensure_ascii=True, check_circular=True, allow_nan=True, default=default)
-        except Exception as e:
-            shared.log.error(f"Model metadata save error: {sd_metadata_file} {e}")
+    shared.writefile(sd_metadata, sd_metadata_file)
     shared.log.info(f"Model metadata saved: {sd_metadata_file} {sd_metadata_pending}")
     sd_metadata_pending = 0
 
@@ -297,15 +287,10 @@ def write_metadata():
 def read_metadata_from_safetensors(filename):
     global sd_metadata # pylint: disable=global-statement
     if sd_metadata is None:
-        with filelock.FileLock(f"{sd_metadata_file}.lock"):
-            if not os.path.isfile(sd_metadata_file):
-                sd_metadata = {}
-            else:
-                try:
-                    with open(sd_metadata_file, "r", encoding="utf8") as file:
-                        sd_metadata = json.load(file)
-                except Exception:
-                    sd_metadata = {}
+        if not os.path.isfile(sd_metadata_file):
+            sd_metadata = {}
+        else:
+            sd_metadata = shared.readfile(sd_metadata_file)
     res = sd_metadata.get(filename, None)
     if res is not None:
         return res
@@ -702,6 +687,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             pass # scheduler is created on first use
         elif "Kandinsky" in sd_model.__class__.__name__:
             sd_model.scheduler.name = 'DDIM'
+
+        if hasattr(sd_model, "watermark"):
+            sd_model.watermark = NoWatermark()
 
         # Prior pipelines
         if hasattr(checkpoint_info, 'model_info') and checkpoint_info.model_info is not None and "prior" in checkpoint_info.model_info:

@@ -15,16 +15,21 @@
 
 </div>
 
-This project started as a fork from [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/) and it grew significantly since then, but although it diverged considerably, any substantial features to original work is ported to this repository as well.
+This project started as a fork from [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/) and it grew significantly since then,  
+but although it diverged considerably, any substantial features to original work is ported to this repository as well.
 
 ## Top-10 Differentiators
 
 All Individual features are not listed here, instead check [Changelog](CHANGELOG.md) for full list of changes.
 
-- Optimized processingwith latest **torch** developments  
+- Optimized processing with latest **torch** developments  
   Including built-in support for `torch.compile`
-- Support for multiple backends: `diffusers` as well as standard `ldm` backend  
+- Support for multiple backends!  
+  **original** and **diffusers**
+- Support for multiple diffusion models!  
+  Stable Diffusion, SD-XL, Kandinsky, DeepFloyd IF, etc.  
 - Fully multiplatform with platform specific autodetection and tuning performed on install  
+  Windows / Linux / MacOS with CPU / nVidia / AMD / IntelArc / DirectML
 - Improved prompt parser  
 - Enhanced *Lora*/*Locon*/*Lyco* code supporting latest trends in training  
 - Built-in queue management  
@@ -34,6 +39,17 @@ All Individual features are not listed here, instead check [Changelog](CHANGELOG
 - Broad compatibility with extisting extensions ecosystem and new extensions manager  
 - Built in installer with automatic updates and dependency management  
 - Modernized UI (still based on Gradio) with theme support  
+
+## Backend support
+
+**SD.Next** supports two main backends: *Original* and *Diffusers* which can be switched on-the-fly:
+
+- **Original**: Based on [LDM](https://github.com/Stability-AI/stablediffusion) reference implementation and significantly expanded on by [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
+  This is the default backend and it is fully compatible with all existing functionality and extensions  
+- **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
+  It is also the only backend that supports **Stable Diffusion XL** model  
+  Support for legacy workflows and extensions is limited, but its being expanded  
+  See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
 
 ## Model support
 
@@ -64,7 +80,7 @@ Additional models will be added as they become available and there is public int
 3. Run launcher  
   `webui.bat` or `webui.sh`:  
     - Platform specific wrapper scripts For Windows, Linux and OSX  
-    - Starts `sdnext.py` in a Python virtual environment (`venv`)  
+    - Starts `launch.py` in a Python virtual environment (`venv`)  
     - Uses `install.py` to handle all actual requirements and dependencies
 
 

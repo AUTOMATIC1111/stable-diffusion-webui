@@ -1161,10 +1161,8 @@ def create_ui(startup_timer = None):
         )
 
     startup_timer.record("ui-defaults")
-
     loadsave.dump_defaults()
     demo.ui_loadsave = loadsave
-
     return demo
 
 

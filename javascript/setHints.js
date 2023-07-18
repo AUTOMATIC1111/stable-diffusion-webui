@@ -63,6 +63,7 @@ async function setHints() {
   let localized = 0;
   let hints = 0;
   locale.finished = true;
+  const t0 = performance.now();
   for (const el of elements) {
     const found = locale.data.find((l) => l.label === el.textContent.trim());
     if (found?.localized?.length > 0) {
@@ -82,8 +83,9 @@ async function setHints() {
       }
     }
   }
+  const t1 = performance.now();
   console.log('setHints', {
-    type: locale.type, elements: elements.length, localized, hints, data: locale.data.length,
+    type: locale.type, elements: elements.length, localized, hints, data: locale.data.length, time: t1 - t0,
   });
   // validateHints(elements, locale.data)
 }

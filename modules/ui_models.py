@@ -31,7 +31,7 @@ def create_ui():
                 with gr.Row():
                     custom_name = gr.Textbox(label="New model name")
                 with gr.Row():
-                    precision = gr.Radio(choices=["fp32", "fp16", "bf16"], value="fp32", label="Model precision")
+                    precision = gr.Radio(choices=["fp32", "fp16", "bf16"], value="fp16", label="Model precision")
                     m_type = gr.Radio(choices=["disabled", "no-ema", "ema-only"], value="disabled", label="Model pruning methods")
                 with gr.Row():
                     checkpoint_formats = gr.CheckboxGroup(choices=["ckpt", "safetensors"], value=["safetensors"], label="Model Format")

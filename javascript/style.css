@@ -27,6 +27,7 @@ div.gradio-html.min{ min-height: 0; }
 .gradio-slider input[type="number"]{ width: 6em; }
 .hidden { display: none; }
 footer { display: none; }
+td { border-bottom: none !important; }
 
 /* general styled components */
 .gradio-button.tool{ max-width: 1em; min-width: 1em !important; align-self: end; font-size: 1.4em }
