@@ -1,3 +1,4 @@
+import datetime
 import html
 import random
 
@@ -71,12 +72,17 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         keys = {
             'ss_sd_model_name': "Model:",
             'ss_clip_skip': "Clip skip:",
+            'ss_network_module': "Kohya module:",
         }
 
         for key, label in keys.items():
             value = metadata.get(key, None)
             if value is not None and str(value) != "None":
                 table.append((label, html.escape(value)))
+
+        ss_training_started_at = metadata.get('ss_training_started_at')
+        if ss_training_started_at:
+            table.append(("Date trained:", datetime.datetime.utcfromtimestamp(float(ss_training_started_at)).strftime('%Y-%m-%d %H:%M')))
 
         ss_bucket_info = metadata.get("ss_bucket_info")
         if ss_bucket_info and "buckets" in ss_bucket_info:
