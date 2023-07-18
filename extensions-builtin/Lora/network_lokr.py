@@ -28,11 +28,11 @@ class NetworkModuleLokr(network.NetworkModule):
         self.w1 = weights.w.get("lokr_w1")
         self.w1a = weights.w.get("lokr_w1_a")
         self.w1b = weights.w.get("lokr_w1_b")
-        self.dim = self.w1b.shape[0] if self.w1b else self.dim
+        self.dim = self.w1b.shape[0] if self.w1b is not None else self.dim
         self.w2 = weights.w.get("lokr_w2")
         self.w2a = weights.w.get("lokr_w2_a")
         self.w2b = weights.w.get("lokr_w2_b")
-        self.dim = self.w2b.shape[0] if self.w2b else self.dim
+        self.dim = self.w2b.shape[0] if self.w2b is not None else self.dim
         self.t2 = weights.w.get("lokr_t2")
 
     def calc_updown(self, orig_weight):
