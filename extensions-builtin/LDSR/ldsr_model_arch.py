@@ -113,7 +113,7 @@ class LDSR:
 
         gc.collect()
         devices.torch_gc()
-            
+
 
         im_og = image
         width_og, height_og = im_og.size
