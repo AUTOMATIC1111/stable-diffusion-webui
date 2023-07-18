@@ -1,5 +1,3 @@
-# export PIP_CACHE_DIR=/scratch/dengm/cache
-# export XDG_CACHE_HOME=/scratch/dengm/cache
 from collections import deque
 import torch
 import inspect
