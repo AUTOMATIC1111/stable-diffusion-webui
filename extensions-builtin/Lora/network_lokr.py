@@ -6,8 +6,8 @@ import network
 
 class ModuleTypeLokr(network.ModuleType):
     def create_module(self, net: network.Network, weights: network.NetworkWeights):
-        has_1 = "lokr_w1" in weights.w or ("lokr_w1a" in weights.w and "lokr_w1b" in weights.w)
-        has_2 = "lokr_w2" in weights.w or ("lokr_w2a" in weights.w and "lokr_w2b" in weights.w)
+        has_1 = "lokr_w1" in weights.w or ("lokr_w1_a" in weights.w and "lokr_w1_b" in weights.w)
+        has_2 = "lokr_w2" in weights.w or ("lokr_w2_a" in weights.w and "lokr_w2_b" in weights.w)
         if has_1 and has_2:
             return NetworkModuleLokr(net, weights)
 
@@ -28,11 +28,11 @@ class NetworkModuleLokr(network.NetworkModule):
         self.w1 = weights.w.get("lokr_w1")
         self.w1a = weights.w.get("lokr_w1_a")
         self.w1b = weights.w.get("lokr_w1_b")
-        self.dim = self.w1b.shape[0] if self.w1b else self.dim
+        self.dim = self.w1b.shape[0] if self.w1b is not None else self.dim
         self.w2 = weights.w.get("lokr_w2")
         self.w2a = weights.w.get("lokr_w2_a")
         self.w2b = weights.w.get("lokr_w2_b")
-        self.dim = self.w2b.shape[0] if self.w2b else self.dim
+        self.dim = self.w2b.shape[0] if self.w2b is not None else self.dim
         self.t2 = weights.w.get("lokr_t2")
 
     def calc_updown(self, orig_weight):
