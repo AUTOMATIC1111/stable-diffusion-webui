@@ -73,8 +73,7 @@ def to_half(tensor, enable):
 
 
 def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format, config_source, bake_in_vae, discard_weights, save_metadata):
-    shared.state.begin()
-    shared.state.job = 'model-merge'
+    shared.state.begin(job="model-merge")
 
     def fail(message):
         shared.state.textinfo = message

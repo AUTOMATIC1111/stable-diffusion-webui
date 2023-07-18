@@ -100,11 +100,12 @@ function keyupEditAttention(event) {
     if (String(weight).length == 1) weight += ".0";
 
     if (closeCharacter == ')' && weight == 1) {
-        text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + 5);
+        var endParenPos = text.substring(selectionEnd).indexOf(')');
+        text = text.slice(0, selectionStart - 1) + text.slice(selectionStart, selectionEnd) + text.slice(selectionEnd + endParenPos + 1);
         selectionStart--;
         selectionEnd--;
     } else {
-        text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + 1 + end - 1);
+        text = text.slice(0, selectionEnd + 1) + weight + text.slice(selectionEnd + end);
     }
 
     target.focus();

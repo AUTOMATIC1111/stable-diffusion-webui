@@ -200,7 +200,8 @@ onUiLoaded(async() => {
         canvas_hotkey_move: "KeyF",
         canvas_hotkey_overlap: "KeyO",
         canvas_disabled_functions: [],
-        canvas_show_tooltip: true
+        canvas_show_tooltip: true,
+        canvas_blur_prompt: false
     };
 
     const functionMap = {
@@ -608,6 +609,19 @@ onUiLoaded(async() => {
 
         // Handle keydown events
         function handleKeyDown(event) {
+            // Disable key locks to make pasting from the buffer work correctly
+            if ((event.ctrlKey && event.code === 'KeyV') || (event.ctrlKey && event.code === 'KeyC') || event.code === "F5") {
+                return;
+            }
+
+            // before activating shortcut, ensure user is not actively typing in an input field
+            if (!hotkeysConfig.canvas_blur_prompt) {
+                if (event.target.nodeName === 'TEXTAREA' || event.target.nodeName === 'INPUT') {
+                    return;
+                }
+            }
+
+
             const hotkeyActions = {
                 [hotkeysConfig.canvas_hotkey_reset]: resetZoom,
                 [hotkeysConfig.canvas_hotkey_overlap]: toggleOverlap,
@@ -686,6 +700,20 @@ onUiLoaded(async() => {
 
         // Handle the move event for pan functionality. Updates the panX and panY variables and applies the new transform to the target element.
         function handleMoveKeyDown(e) {
+
+            // Disable key locks to make pasting from the buffer work correctly
+            if ((e.ctrlKey && e.code === 'KeyV') || (e.ctrlKey && event.code === 'KeyC') || e.code === "F5") {
+                return;
+            }
+
+            // before activating shortcut, ensure user is not actively typing in an input field
+            if (!hotkeysConfig.canvas_blur_prompt) {
+                if (e.target.nodeName === 'TEXTAREA' || e.target.nodeName === 'INPUT') {
+                    return;
+                }
+            }
+
+
             if (e.code === hotkeysConfig.canvas_hotkey_move) {
                 if (!e.ctrlKey && !e.metaKey && isKeyDownHandlerAttached) {
                     e.preventDefault();
