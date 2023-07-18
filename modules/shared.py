@@ -11,6 +11,7 @@ import gradio as gr
 import torch
 import tqdm
 
+import launch
 import modules.interrogate
 import modules.memmon
 import modules.styles
@@ -26,7 +27,7 @@ demo = None
 
 parser = cmd_args.parser
 
-script_loading.preload_extensions(extensions_dir, parser)
+script_loading.preload_extensions(extensions_dir, parser, extension_list=launch.list_extensions(launch.args.ui_settings_file))
 script_loading.preload_extensions(extensions_builtin_dir, parser)
 
 if os.environ.get('IGNORE_CMD_ARGS_ERRORS', None) is None:

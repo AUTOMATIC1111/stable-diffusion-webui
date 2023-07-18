@@ -58,9 +58,7 @@
  * fix: check fill size none zero when resize  (fixes #11425)
  * use submit and blur for quick settings textbox
  * save img2img batch with images.save_image()
- * 
-
-
+ * prevent running preload.py for disabled extensions
 
 
 ## 1.4.1

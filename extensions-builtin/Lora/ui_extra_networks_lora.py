@@ -3,7 +3,7 @@ import os
 import network
 import networks
 
-from modules import shared, ui_extra_networks, paths
+from modules import shared, ui_extra_networks
 from modules.ui_extra_networks import quote_js
 from ui_edit_user_metadata import LoraUserMetadataEditor
 
@@ -72,7 +72,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
                 yield item
 
     def allowed_directories_for_previews(self):
-        return [shared.cmd_opts.lora_dir, os.path.join(paths.models_path, "LyCORIS")]
+        return [shared.cmd_opts.lora_dir, shared.cmd_opts.lyco_dir_backcompat]
 
     def create_user_metadata_editor(self, ui, tabname):
         return LoraUserMetadataEditor(ui, tabname, self)
