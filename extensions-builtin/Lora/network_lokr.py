@@ -6,8 +6,8 @@ import network
 
 class ModuleTypeLokr(network.ModuleType):
     def create_module(self, net: network.Network, weights: network.NetworkWeights):
-        has_1 = "lokr_w1" in weights.w or ("lokr_w1a" in weights.w and "lokr_w1b" in weights.w)
-        has_2 = "lokr_w2" in weights.w or ("lokr_w2a" in weights.w and "lokr_w2b" in weights.w)
+        has_1 = "lokr_w1" in weights.w or ("lokr_w1_a" in weights.w and "lokr_w1_b" in weights.w)
+        has_2 = "lokr_w2" in weights.w or ("lokr_w2_a" in weights.w and "lokr_w2_b" in weights.w)
         if has_1 and has_2:
             return NetworkModuleLokr(net, weights)
 
