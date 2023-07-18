@@ -535,7 +535,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
         return None, None
     if not check_grid_size([image]):
         return None, None
-    if path is None: # set default path to avoid errors when functions are triggered manually or via api and param is not set
+    if path is None or len(path) == 0: # set default path to avoid errors when functions are triggered manually or via api and param is not set
         path = shared.opts.outdir_save
     namegen = FilenameGenerator(p, seed, prompt, image)
     if save_to_dirs is None:

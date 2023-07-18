@@ -113,13 +113,19 @@ def apply_styles(prompt, prompt_neg, styles):
     return [gr.Textbox.update(value=prompt), gr.Textbox.update(value=prompt_neg), gr.Dropdown.update(value=[])]
 
 
-def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_dir, *ii_singles):
+def process_interrogate(interrogation_function, mode, ii_input_files, ii_input_dir, ii_output_dir, *ii_singles):
     if mode in {0, 1, 3, 4}:
         return [interrogation_function(ii_singles[mode]), None]
     if mode == 2:
         return [interrogation_function(ii_singles[mode]["image"]), None]
     if mode == 5:
-        images = modules.shared.listfiles(ii_input_dir)
+        if len(ii_input_files) > 0:
+            images = [f.name for f in ii_input_files]
+        else:
+            if not os.path.isdir(ii_input_dir):
+                modules.shared.log.error(f"Input directory not found: {ii_input_dir}")
+                return
+            images = modules.shared.listfiles(ii_input_dir)
         if ii_output_dir != "":
             os.makedirs(ii_output_dir, exist_ok=True)
         else:
@@ -562,11 +568,11 @@ def create_ui(startup_timer = None):
                     with gr.TabItem('Batch', id='batch', elem_id="img2img_batch_tab") as tab_batch:
                         hidden = '<br>Disabled when launched with --hide-ui-dir-config.' if modules.shared.cmd_opts.hide_ui_dir_config else ''
                         gr.HTML(
-                            "<p style='padding-bottom: 1em;' class=\"text-gray-500\">Process images in a directory on the same machine where the server is running" +
-                            "<br>Use an empty output directory to save pictures normally instead of writing to the output directory" +
+                            "<p style='padding-bottom: 1em;' class=\"text-gray-500\">Upload images or process images in a directory" +
                             "<br>Add inpaint batch mask directory to enable inpaint batch processing"
                             f"{hidden}</p>"
                         )
+                        img2img_batch_files = gr.Files(label="Batch Process", interactive=True, elem_id="img2img_image_batch")
                         img2img_batch_input_dir = gr.Textbox(label="Inpaint batch input directory", **modules.shared.hide_dirs, elem_id="img2img_batch_input_dir")
                         img2img_batch_output_dir = gr.Textbox(label="Inpaint batch output directory", **modules.shared.hide_dirs, elem_id="img2img_batch_output_dir")
                         img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory", **modules.shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
@@ -756,7 +762,7 @@ def create_ui(startup_timer = None):
                     scale_by,
                     resize_mode,
                     inpaint_full_res, inpaint_full_res_padding, inpainting_mask_invert,
-                    img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir,
+                    img2img_batch_files, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir,
                     override_settings,
                 ] + custom_inputs,
                 outputs=[
@@ -772,6 +778,7 @@ def create_ui(startup_timer = None):
                 _js="get_img2img_tab_index",
                 inputs=[
                     dummy_component,
+                    img2img_batch_files,
                     img2img_batch_input_dir,
                     img2img_batch_output_dir,
                     init_img,
