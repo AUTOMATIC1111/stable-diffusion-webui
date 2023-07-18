@@ -144,10 +144,19 @@ def apply_face_restore(p, opt, x):
     p.restore_faces = is_active
 
 
-def apply_override(field):
+def apply_override(field, boolean: bool = False):
     def fun(p, x, xs):
+        if boolean:
+            x = True if x.lower() == "true" else False
         p.override_settings[field] = x
     return fun
+
+
+def boolean_choice(reverse: bool = False):
+    def choice():
+        return ["False", "True"] if reverse else ["True", "False"]
+    return choice
+
 
 def format_value_add_label(p, opt, x):
     if type(x) == float:
@@ -235,6 +244,7 @@ axis_options = [
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
     AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
     AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
+    AxisOption("Always discard next-to-last sigma", str, apply_override('always_discard_next_to_last_sigma', boolean=True), choices=boolean_choice(reverse=True)),
 ]
 
 

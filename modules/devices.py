@@ -15,13 +15,6 @@ def has_mps() -> bool:
     else:
         return mac_specific.has_mps
 
-def extract_device_id(args, name):
-    for x in range(len(args)):
-        if name in args[x]:
-            return args[x + 1]
-
-    return None
-
 
 def get_cuda_device_string():
     from modules import shared
@@ -56,6 +49,7 @@ def get_device_for(task):
 
 
 def torch_gc():
+
     if torch.cuda.is_available():
         with torch.cuda.device(get_cuda_device_string()):
             torch.cuda.empty_cache()
@@ -67,6 +61,9 @@ def torch_gc():
                 torch.mps.empty_cache()
         except ImportError:
             pass
+
+    if has_mps():
+        mac_specific.torch_mps_gc()
 
 
 def enable_tf32():
