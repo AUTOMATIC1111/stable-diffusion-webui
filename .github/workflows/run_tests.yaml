@@ -41,6 +41,7 @@ jobs:
           --skip-prepare-environment
           --skip-torch-cuda-test
           --test-server
+          --do-not-download-clip
           --no-half
           --disable-opt-split-attention
           --use-cpu all
