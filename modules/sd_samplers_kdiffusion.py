@@ -35,17 +35,15 @@ samplers_k_diffusion = [
 
 
 @torch.no_grad()
-def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=None, s_noise=1., restart_list = {0.1: [10, 2, 2]}):
+def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=None, s_noise=1.):
     """Implements restart sampling in Restart Sampling for Improving Generative Processes (2023)"""
     '''Restart_list format: {min_sigma: [ restart_steps, restart_times, max_sigma]}'''
-    
-    from tqdm.auto import trange, tqdm
+    restart_list = {0.1: [10, 2, 2]}
+    from tqdm.auto import trange
     extra_args = {} if extra_args is None else extra_args
     s_in = x.new_ones([x.shape[0]])
     step_id = 0
-    
     from k_diffusion.sampling import to_d, append_zero
-
     def heun_step(x, old_sigma, new_sigma):
         nonlocal step_id
         denoised = model(x, old_sigma * s_in, **extra_args)
@@ -70,8 +68,6 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
     for key, value in restart_list.items():
         temp_list[int(torch.argmin(abs(sigmas - key), dim=0))] = value
     restart_list = temp_list
-        
-            
     def get_sigmas_karras(n, sigma_min, sigma_max, rho=7., device='cpu'):
         ramp = torch.linspace(0, 1, n).to(device)
         min_inv_rho = (sigma_min ** (1 / rho))
@@ -82,7 +78,6 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
             max_inv_rho = max_inv_rho.to(device)
         sigmas = (max_inv_rho + ramp * (min_inv_rho - max_inv_rho)) ** rho
         return append_zero(sigmas).to(device)
-
     for i in trange(len(sigmas) - 1, disable=disable):
         x = heun_step(x, sigmas[i], sigmas[i+1])
         if i + 1 in restart_list:
@@ -91,7 +86,8 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
             max_idx = int(torch.argmin(abs(sigmas - restart_max), dim=0))
             if max_idx < min_idx:
                 sigma_restart = get_sigmas_karras(restart_steps, sigmas[min_idx], sigmas[max_idx], device=sigmas.device)[:-1] # remove the zero at the end
-                for times in range(restart_times):
+                while restart_times > 0:
+                    restart_times -= 1
                     x = x + torch.randn_like(x) * s_noise * (sigmas[max_idx] ** 2 - sigmas[min_idx] ** 2) ** 0.5
                     for (old_sigma, new_sigma) in zip(sigma_restart[:-1], sigma_restart[1:]):
                         x = heun_step(x, old_sigma, new_sigma)
