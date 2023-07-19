@@ -1,5 +1,9 @@
 # Change Log for SD.Next
 
+## Update for 07/19/2023
+
+- extra networks: add add/remove tags to prompt (e.g. lora activation keywords)
+
 ## Update for 07/18/2023
 
 While we're waiting for official SD-XL release, here's another update with some fixes and enhancements...

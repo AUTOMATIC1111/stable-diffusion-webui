@@ -84,9 +84,8 @@ async function setHints() {
     }
   }
   const t1 = performance.now();
-  console.log('setHints', {
-    type: locale.type, elements: elements.length, localized, hints, data: locale.data.length, time: t1 - t0,
-  });
+  console.log('setHints', { type: locale.type, elements: elements.length, localized, hints, data: locale.data.length, time: t1 - t0 });
+  removeSplash();
   // validateHints(elements, locale.data)
 }
 

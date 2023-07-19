@@ -3,7 +3,6 @@ let logMonitorStatus = true;
 
 async function logMonitor() {
   if (logMonitorStatus) setTimeout(logMonitor, opts.logmonitor_refresh_period);
-  if (logMonitorEl) logMonitorEl.parentElement.style.display = opts.logmonitor_show ? 'block' : 'none';
   if (!opts.logmonitor_show) return;
   logMonitorStatus = false;
   let res;
@@ -12,8 +11,9 @@ async function logMonitor() {
     logMonitorStatus = true;
     if (!logMonitorEl) logMonitorEl = document.getElementById('logMonitorData');
     if (!logMonitorEl) return;
-    logMonitorEl.parentElement.style.display = 'block';
     const lines = await res.json();
+    console.log('HERE', logMonitorEl && lines?.length, opts.logmonitor_show);
+    if (logMonitorEl && lines?.length > 0) logMonitorEl.parentElement.parentElement.style.display = opts.logmonitor_show ? 'block' : 'none';
     for (const line of lines) {
       try {
         const l = JSON.parse(line);
@@ -37,7 +37,7 @@ async function initLogMonitor() {
   logMonitorInitialized = true;
   el.classList.add('log-monitor');
   el.innerHTML = `
-    <table style="width: 100%;">
+    <table id="logMonitor" style="width: 100%;">
       <thead style="display: block; text-align: left; border-bottom: solid 1px var(--button-primary-border-color)">
         <tr>
           <th style="width: 170px">Time</th>
@@ -51,6 +51,7 @@ async function initLogMonitor() {
       </tbody>
     </table>
   `;
+  el.style.display = 'none';
   logMonitor();
   console.log('initLogMonitor');
 }

@@ -75,7 +75,9 @@
     "requestProgress": "readonly",
     // imageviewer.js
     "modalPrevImage": "readonly",
-    "modalNextImage": "readonly"
+    "modalNextImage": "readonly",
+    // loader.js
+    "removeSplash": "readonly"
   },
   "ignorePatterns": [
     "node_modules",

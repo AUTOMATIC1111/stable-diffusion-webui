@@ -12,7 +12,7 @@ function initNotifications() {
   const galleryPreviews = gradioApp().querySelectorAll('div[id^="tab_"][style*="display: block"] div[id$="_results"] .thumbnail-item > img');
   if (!galleryPreviews) return;
   const headImg = galleryPreviews[0]?.src;
-  if (!headImg || headImg === lastHeadImg || headImg.endsWith('logo.png')) return;
+  if (!headImg || headImg === lastHeadImg || headImg.includes('logo-bg-')) return;
   const audioNotification = gradioApp().querySelector('#audio_notification audio');
   if (audioNotification) audioNotification.play();
   lastHeadImg = headImg;
