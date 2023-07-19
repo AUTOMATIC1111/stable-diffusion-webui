@@ -483,17 +483,12 @@ def run_extension_installer(folder):
         log.error(f'Exception running extension installer: {e}')
 
 # get list of all enabled extensions
-def list_extensions(folder, quiet=False):
+def list_extensions_folder(folder, quiet=False):
     name = os.path.basename(folder)
     disabled_extensions_all = opts.get('disable_all_extensions', 'none')
     if disabled_extensions_all != 'none':
-        if not quiet:
-            log.info(f'Disabled {name}: {disabled_extensions_all}')
         return []
     disabled_extensions = opts.get('disabled_extensions', [])
-    if len(disabled_extensions) > 0:
-        if not quiet:
-            log.info(f'Disabled {name}: {disabled_extensions}')
     enabled_extensions = [x for x in os.listdir(folder) if x not in disabled_extensions and not x.startswith('.')]
     if not quiet:
         log.info(f'Enabled {name}: {enabled_extensions}')
@@ -515,7 +510,7 @@ def install_extensions():
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
-        extensions = list_extensions(folder, quiet=True)
+        extensions = list_extensions_folder(folder, quiet=True)
         log.debug(f'Extensions all: {extensions}')
         for ext in extensions:
             if ext in extensions_enabled:
@@ -623,15 +618,18 @@ def set_environment():
 
 
 def check_extensions():
-    if args.quick:
-        return 0
     newest_all = os.path.getmtime('requirements.txt')
     from modules.paths_internal import extensions_builtin_dir, extensions_dir
     extension_folders = [extensions_builtin_dir] if args.safe else [extensions_builtin_dir, extensions_dir]
+    disabled_extensions_all = opts.get('disable_all_extensions', 'none')
+    if disabled_extensions_all != 'none':
+        log.info(f'Disabled extensions: {disabled_extensions_all}')
+    else:
+        log.info(f'Disabled extensions: {opts.get("disabled_extensions", [])}')
     for folder in extension_folders:
         if not os.path.isdir(folder):
             continue
-        extensions = list_extensions(folder)
+        extensions = list_extensions_folder(folder)
         for ext in extensions:
             newest = 0
             extension_dir = os.path.join(folder, ext)

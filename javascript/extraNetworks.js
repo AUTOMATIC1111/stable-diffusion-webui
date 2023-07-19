@@ -234,6 +234,16 @@ function readCardMetadata(event, extraPage, cardName) {
   event.preventDefault();
 }
 
+function readCardTags(event, extraPage, cardTags) {
+  if ((cardTags || []).length === 0) return;
+  const textarea = activePromptTextarea[getENActiveTab()];
+  const textToAdd = cardTags.join(' ');
+  if (!tryToRemoveExtraNetworkFromPrompt(textarea, textToAdd)) textarea.value = textarea.value + opts.extra_networks_add_text_separator + textToAdd;
+  updateInput(textarea);
+  event.stopPropagation();
+  event.preventDefault();
+}
+
 function readCardInformation(event, extraPage, cardName) {
   requestGet('./sd_extra_networks/info', { page: extraPage, item: cardName }, (data) => {
     if (data?.info && (typeof (data?.info) === 'string')) {

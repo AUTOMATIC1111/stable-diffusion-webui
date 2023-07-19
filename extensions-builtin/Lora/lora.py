@@ -87,24 +87,17 @@ class LoraOnDisk:
             m = {}
             for k, v in sorted(self.metadata.items(), key=lambda x: metadata_tags_order.get(x[0], 999)):
                 m[k] = v
-
             self.metadata = m
 
         self.ssmd_cover_images = self.metadata.pop('ssmd_cover_images', None)  # those are cover images and they are too big to display in UI as text
         self.alias = self.metadata.get('ss_output_name', self.name)
-
         self.hash = None
         self.shorthash = None
-        self.set_hash(
-            self.metadata.get('sshs_model_hash') or
-            hashes.sha256_from_cache(self.filename, "lora/" + self.name, use_addnet_hash=self.is_safetensors) or
-            ''
-        )
+        self.set_hash(self.metadata.get('sshs_model_hash') or (hashes.sha256_from_cache(self.filename, "lora/" + self.name, use_addnet_hash=self.is_safetensors)) or '')
 
     def set_hash(self, v):
         self.hash = v
         self.shorthash = self.hash[0:12]
-
         if self.shorthash:
             available_lora_hash_lookup[self.shorthash] = self
 

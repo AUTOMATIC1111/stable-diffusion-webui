@@ -17,7 +17,6 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
         multipliers = []
         for params in params_list:
             assert len(params.items) > 0
-
             names.append(params.items[0])
             multipliers.append(float(params.items[1]) if len(params.items) > 1 else 1.0)
 
@@ -29,15 +28,11 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
                 shorthash = item.lora_on_disk.shorthash
                 if not shorthash:
                     continue
-
                 alias = item.mentioned_name
                 if not alias:
                     continue
-
                 alias = alias.replace(":", "").replace(",", "")
-
                 lora_hashes.append(f"{alias}: {shorthash}")
-
             if lora_hashes:
                 p.extra_generation_params["Lora hashes"] = ", ".join(lora_hashes)
 

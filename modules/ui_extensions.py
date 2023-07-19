@@ -250,7 +250,7 @@ def refresh_extensions_list(search_text, sort_column):
         with open(os.path.join(paths.script_path, "html", "extensions.json"), "w", encoding="utf-8") as outfile:
             json_object = json.dumps(extensions_list, indent=2)
             outfile.write(json_object)
-            shared.log.debug(f'Updated extensions list: {len(extensions_list)} {extensions_index} {outfile}')
+            shared.log.debug(f'Updated extensions list: {len(extensions_list)} {extensions_index}')
     except Exception as e:
         shared.log.warning(f'Updated extensions list failed: {extensions_index} {e}')
     update_extension_list()

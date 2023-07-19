@@ -70,7 +70,7 @@ class ExtraNetworksPage:
         self.items = []
         self.missing_thumbs = []
         self.card = '''
-            <div class='card' onclick={card_click}>
+            <div class='card' onclick={card_click} title='{title}'>
                 <div class='overlay'>
                     <span style="display:none" class='search_term'>{search_term}</span>
                     <div class='name'>{name}</div>
@@ -81,6 +81,7 @@ class ExtraNetworksPage:
                         <span title="Save current description" onclick={card_save_desc}>🛅</span>
                         <span title="Read metadata" onclick={card_read_meta}>📘</span>
                         <span title="Read info" onclick={card_read_info}>ℹ️</span>
+                        <span title="Read tags" onclick={card_read_tags}>#️</span>
                     </div>
                 </div>
                 <img class='preview' src='{preview}' style='width: {width}px; height: {height}px; object-fit: {fit}' loading='{loading}'></img>
@@ -203,9 +204,8 @@ class ExtraNetworksPage:
         return []
 
     def create_html_for_item(self, item, tabname):
-        preview = item.get("preview", None)
         args = {
-            "preview": html.escape(preview),
+            "preview": html.escape(item.get("preview", None)),
             "width": shared.opts.extra_networks_card_size,
             "height": shared.opts.extra_networks_card_size if shared.opts.extra_networks_card_square else 'auto',
             "fit": shared.opts.extra_networks_card_fit,
@@ -221,8 +221,14 @@ class ExtraNetworksPage:
             "card_save_desc": '"' + html.escape(f"""return saveCardDescription(event, {json.dumps(item["local_preview"])})""") + '"',
             "card_read_meta": '"' + html.escape(f"""return readCardMetadata(event, {json.dumps(self.name)}, {json.dumps(item["name"])})""") + '"',
             "card_read_info": '"' + html.escape(f"""return readCardInformation(event, {json.dumps(self.name)}, {json.dumps(item["name"])})""") + '"',
+            "card_read_tags": '"' + html.escape(f"""return readCardTags(event, {json.dumps(self.name)}, {json.dumps(list(item.get("tags", {}).keys()))})""") + '"',
             "card_save_preview": '"' + html.escape(f"""return saveCardPreview(event, {json.dumps(item["local_preview"])})""") + '"',
+            "title": f'Name: {item["name"]}',
         }
+        if item.get("alias", None) is not None:
+            args['title'] += f'\nAlias: {item["alias"]}'
+        if item.get("tags", None) is not None:
+            args['title'] += f'\nTags: {", ".join(item["tags"].keys())}'
         self.card.format(**args)
         return self.card.format(**args)
 
