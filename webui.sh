@@ -4,31 +4,35 @@
 # change the variables in webui-user.sh instead #
 #################################################
 
+
 use_venv=1
 if [[ $venv_dir == "-" ]]; then
   use_venv=0
 fi
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+
 # If run from macOS, load defaults from webui-macos-env.sh
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -f webui-macos-env.sh ]]
+    if [[ -f "$SCRIPT_DIR"/webui-macos-env.sh ]]
         then
-        source ./webui-macos-env.sh
+        source "$SCRIPT_DIR"/webui-macos-env.sh
     fi
 fi
 
 # Read variables from webui-user.sh
 # shellcheck source=/dev/null
-if [[ -f webui-user.sh ]]
+if [[ -f "$SCRIPT_DIR"/webui-user.sh ]]
 then
-    source ./webui-user.sh
+    source "$SCRIPT_DIR"/webui-user.sh
 fi
 
 # Set defaults
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]
 then
-    install_dir="$(pwd)"
+    install_dir="$SCRIPT_DIR"
 fi
 
 # Name of the subdirectory (defaults to stable-diffusion-webui)
@@ -135,6 +139,10 @@ case "$gpu_info" in
         fi
     ;;
     *"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
+    ;;
+    *"Navi 3"*) [[ -z "${TORCH_COMMAND}" ]] && \
+        export TORCH_COMMAND="pip install --pre torch==2.1.0.dev-20230614+rocm5.5 torchvision==0.16.0.dev-20230614+rocm5.5 --index-url https://download.pytorch.org/whl/nightly/rocm5.5"
+        # Navi 3 needs at least 5.5 which is only on the nightly chain
     ;;
     *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
         printf "\n%s\n" "${delimiter}"

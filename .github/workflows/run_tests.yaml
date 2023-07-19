@@ -1,4 +1,4 @@
-name: Run basic features tests on CPU with empty SD model
+name: Tests
 
 on:
   - push
@@ -6,7 +6,9 @@ on:
 
 jobs:
   test:
+    name: tests on CPU with empty model
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -39,10 +41,11 @@ jobs:
           --skip-prepare-environment
           --skip-torch-cuda-test
           --test-server
+          --do-not-download-clip
           --no-half
           --disable-opt-split-attention
           --use-cpu all
-          --add-stop-route
+          --api-server-stop
           2>&1 | tee output.txt &
       - name: Run tests
         run: |
@@ -50,7 +53,7 @@ jobs:
           python -m pytest -vv --junitxml=test/results.xml --cov . --cov-report=xml --verify-base-url test
       - name: Kill test server
         if: always()
-        run: curl -vv -XPOST http://127.0.0.1:7860/_stop && sleep 10
+        run: curl -vv -XPOST http://127.0.0.1:7860/sdapi/v1/server-stop && sleep 10
       - name: Show coverage
         run: |
           python -m coverage combine .coverage*

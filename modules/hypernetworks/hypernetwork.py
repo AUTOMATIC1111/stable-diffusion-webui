@@ -3,6 +3,7 @@ import glob
 import html
 import os
 import inspect
+from contextlib import closing
 
 import modules.textual_inversion.dataset
 import torch
@@ -353,17 +354,6 @@ def load_hypernetworks(names, multipliers=None):
         shared.loaded_hypernetworks.append(hypernetwork)
 
 
-def find_closest_hypernetwork_name(search: str):
-    if not search:
-        return None
-    search = search.lower()
-    applicable = [name for name in shared.hypernetworks if search in name.lower()]
-    if not applicable:
-        return None
-    applicable = sorted(applicable, key=lambda name: len(name))
-    return applicable[0]
-
-
 def apply_single_hypernetwork(hypernetwork, context_k, context_v, layer=None):
     hypernetwork_layers = (hypernetwork.layers if hypernetwork is not None else {}).get(context_k.shape[2], None)
 
@@ -388,7 +378,7 @@ def apply_hypernetworks(hypernetworks, context, layer=None):
     return context_k, context_v
 
 
-def attention_CrossAttention_forward(self, x, context=None, mask=None):
+def attention_CrossAttention_forward(self, x, context=None, mask=None, **kwargs):
     h = self.heads
 
     q = self.to_q(x)
@@ -444,18 +434,6 @@ def statistics(data):
         std = stdev(recent_data)
     recent_information = f"recent 32 loss:{mean(recent_data):.3f}" + u"\u00B1" + f"({std / (len(recent_data) ** 0.5):.3f})"
     return total_information, recent_information
-
-
-def report_statistics(loss_info:dict):
-    keys = sorted(loss_info.keys(), key=lambda x: sum(loss_info[x]) / len(loss_info[x]))
-    for key in keys:
-        try:
-            print("Loss statistics for file " + key)
-            info, recent = statistics(list(loss_info[key]))
-            print(info)
-            print(recent)
-        except Exception as e:
-            print(e)
 
 
 def create_hypernetwork(name, enable_sizes, overwrite_old, layer_structure=None, activation_func=None, weight_init=None, add_layer_norm=False, use_dropout=False, dropout_structure=None):
@@ -734,8 +712,9 @@ def train_hypernetwork(id_task, hypernetwork_name, learn_rate, batch_size, gradi
 
                     preview_text = p.prompt
 
-                    processed = processing.process_images(p)
-                    image = processed.images[0] if len(processed.images) > 0 else None
+                    with closing(p):
+                        processed = processing.process_images(p)
+                        image = processed.images[0] if len(processed.images) > 0 else None
 
                     if unload:
                         shared.sd_model.cond_stage_model.to(devices.cpu)
@@ -770,7 +749,6 @@ Last saved image: {html.escape(last_saved_image)}<br/>
         pbar.leave = False
         pbar.close()
         hypernetwork.eval()
-        #report_statistics(loss_dict)
         sd_hijack_checkpoint.remove()
 
 

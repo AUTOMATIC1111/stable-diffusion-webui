@@ -15,6 +15,7 @@ parser.add_argument("--update-check", action='store_true', help="launch.py argum
 parser.add_argument("--test-server", action='store_true', help="launch.py argument: configure server for testing")
 parser.add_argument("--skip-prepare-environment", action='store_true', help="launch.py argument: skip all environment preparation")
 parser.add_argument("--skip-install", action='store_true', help="launch.py argument: skip installation of packages")
+parser.add_argument("--do-not-download-clip", action='store_true', help="do not download CLIP model even if it's not included in the checkpoint")
 parser.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="base path where all user data is stored")
 parser.add_argument("--config", type=str, default=sd_default_config, help="path to config which constructs model",)
 parser.add_argument("--ckpt", type=str, default=sd_model_file, help="path to checkpoint of stable diffusion model; if specified, this checkpoint will be added to the list of checkpoints and loaded",)
@@ -107,3 +108,5 @@ parser.add_argument("--no-hashing", action='store_true', help="disable sha256 ha
 parser.add_argument("--no-download-sd-model", action='store_true', help="don't download SD1.5 model even if no model is found in --ckpt-dir", default=False)
 parser.add_argument('--subpath', type=str, help='customize the subpath for gradio, use with reverse proxy')
 parser.add_argument('--add-stop-route', action='store_true', help='add /_stop route to stop server')
+parser.add_argument('--api-server-stop', action='store_true', help='enable server stop/restart/kill via api')
+parser.add_argument('--timeout-keep-alive', type=int, default=30, help='set timeout_keep_alive for uvicorn')
