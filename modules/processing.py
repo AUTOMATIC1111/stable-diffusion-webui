@@ -456,7 +456,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Sampler": p.sampler_name,
         "Latent sampler": p.latent_sampler,
         "CFG scale": p.cfg_scale,
-        "Image CFG scale": p.image_cfg_scale,
+        "Image CFG scale": p.image_cfg_scale if p.enable_hr else None,
         "Seed": all_seeds[index],
         "Face restoration": shared.opts.face_restoration_model if p.restore_faces else None,
         "Size": f"{p.width}x{p.height}",
@@ -467,7 +467,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Variation seed": None if p.subseed_strength == 0 else all_subseeds[index],
         "Variation seed strength": None if p.subseed_strength == 0 else p.subseed_strength,
         "Seed resize from": None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}",
-        "Denoising strength": p.denoising_strength,
+        "Denoising strength": p.denoising_strength if p.enable_hr else None,
         "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
         "Clip skip": p.clip_skip if p.clip_skip > 1 else None,
         "ENSD": shared.opts.eta_noise_seed_delta if uses_ensd else None,
@@ -476,6 +476,8 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Token merging ratio": None if token_merging_ratio == 0 else token_merging_ratio,
         "Token merging ratio hr": None if not p.enable_hr or token_merging_ratio_hr == 0 else token_merging_ratio_hr,
         "Parser": shared.opts.prompt_attention,
+        "Denoise start": p.refiner_denoise_start if p.enable_hr else None,
+        "Denoise end": p.refiner_denoise_end if p.enable_hr else None,
     }
     generation_params.update(p.extra_generation_params)
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])

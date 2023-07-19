@@ -18,9 +18,9 @@
 This project started as a fork from [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/) and it grew significantly since then,  
 but although it diverged considerably, any substantial features to original work is ported to this repository as well.
 
-## Top-10 Differentiators
+## Top-10 Features
 
-All Individual features are not listed here, instead check [Changelog](CHANGELOG.md) for full list of changes.
+All Individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
 
 - Optimized processing with latest **torch** developments  
   Including built-in support for `torch.compile`
