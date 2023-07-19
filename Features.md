@@ -468,6 +468,8 @@ And the number 0.99 is replaced with whatever you see in column labels on the im
 
 The last column in the picture is [male:female:0.0], which essentially means that you are asking the model to draw a female from the start, without starting with a male general, and that is why it looks so different from others.
 
+**Note**: This syntax does _not_ work with extra networks, such as LoRA. See [this discussion post](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/10897#discussioncomment-6055184) for details.
+
 ## Alternating Words
 
 Convenient Syntax for swapping every other step.
@@ -486,6 +488,8 @@ See more advanced example below. On step 8, the chain loops back from "man" to "
     [cow|cow|horse|man|siberian tiger|ox|man] in a field
 
 Prompt editing was first implemented by Doggettx in [this reddit post](https://www.reddit.com/r/StableDiffusion/comments/xas2os/simple_prompt2prompt_implementation_with_prompt/).
+
+**Note**: This syntax does _not_ work with extra networks, such as LoRA. See [this discussion post](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/10897#discussioncomment-6055184) for details.
 
 # Hires. fix
 A convenience option to partially render your image at a lower resolution, upscale it, and then add details at a high resolution. By default, txt2img  makes horrible images at very high resolutions, and this makes it possible to avoid using the small picture's composition. Enabled by checking the "Hires. fix" checkbox on the txt2img page.
