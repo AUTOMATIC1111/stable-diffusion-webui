@@ -55,3 +55,4 @@ class Script(scripts.Script):
                 url = storage.saveByte2Server(bytes_data, opts.samples_format.lower())
                 if checkbox_send_images_url:
                     processed.images[i] = url
+        return True
