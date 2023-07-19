@@ -232,6 +232,7 @@ four 640x640 tiles.
 Recommended parameters for upscaling:
  - Sampling method: Euler a
  - Denoising strength: 0.2, can go up to 0.4 if you feel adventurous
+   - A larger denoising strength is problematic due to the fact SD upscale works in tiles, as the diffusion process is then unable to give attention to the image as a whole.
 
 | Original                                  | RealESRGAN                                  | Topaz Gigapixel                                         | SD upscale                                  |
 |-------------------------------------------|---------------------------------------------|---------------------------------------------------------|---------------------------------------------|
