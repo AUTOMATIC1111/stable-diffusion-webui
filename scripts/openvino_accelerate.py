@@ -13,123 +13,104 @@ import modules.shared as shared
 
 from modules import images, devices, extra_networks, generation_parameters_copypaste, masking, sd_samplers, sd_samplers_compvis, sd_samplers_kdiffusion, shared
 from modules.processing import StableDiffusionProcessing, Processed, apply_overlay, process_images, get_fixed_seed, program_version, StableDiffusionProcessingImg2Img, create_random_tensors
+from modules.sd_models import list_models, CheckpointInfo
 from modules.sd_samplers_common import samples_to_image_grid, sample_to_image
-from modules.shared import cmd_opts, opts, state
-from modules.ui import plaintext_to_html
+from modules.shared import Shared, cmd_opts, opts, state
+from modules.ui import plaintext_to_html, create_sampler_and_steps_selection
+from webui import initialize_rest
 
 from diffusers import StableDiffusionPipeline
 from PIL import Image, ImageFilter, ImageOps
+from modules import sd_samplers_common
+from openvino.runtime import Core
 
 from diffusers import (
     DDIMScheduler,
-    DDPMScheduler,
-    DEISMultistepScheduler,
     DPMSolverMultistepScheduler,
+    DPMSolverSDEScheduler,
+    DPMSolverSinglestepScheduler,
     EulerAncestralDiscreteScheduler,
     EulerDiscreteScheduler,
     HeunDiscreteScheduler,
     IPNDMScheduler,
     KDPM2AncestralDiscreteScheduler,
+    KDPM2DiscreteScheduler,
+    LMSDiscreteScheduler,
     PNDMScheduler,
     UniPCMultistepScheduler,
-    # KarrasVeScheduler,
-    # RePaintScheduler,
-    # ScoreSdeVeScheduler,
-    # UnCLIPScheduler,
-    # VQDiffusionScheduler,
 )
-from modules import sd_samplers_common
-    # scheduler = diffusers.UniPCMultistepScheduler.from_pretrained(shared.cmd_opts.ckpt, subfolder="scheduler")
 
-samplers_data_diffusors = [
-    sd_samplers_common.SamplerData('UniPC', lambda model: DiffusionSampler('UniPC', UniPCMultistepScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('DDIM', lambda model: DiffusionSampler('DDIM', DDIMScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('DDPMS', lambda model: DiffusionSampler('DDPMS', DDPMScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('DEIS', lambda model: DiffusionSampler('DEIS', DEISMultistepScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('DPMSolver', lambda model: DiffusionSampler('DPMSolver', DPMSolverMultistepScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('Euler', lambda model: DiffusionSampler('Euler', EulerDiscreteScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('EulerAncestral', lambda model: DiffusionSampler('EulerAncestral', EulerAncestralDiscreteScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('Heun', lambda model: DiffusionSampler('Heun', HeunDiscreteScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('IPNDM', lambda model: DiffusionSampler('IPNDM', IPNDMScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('KDPM2Ancestral', lambda model: DiffusionSampler('KDPM2Ancestral', KDPM2AncestralDiscreteScheduler, model), [], {}),
-    sd_samplers_common.SamplerData('PNDMS', lambda model: DiffusionSampler('PNDMS', PNDMScheduler, model), [], {}),
-    # sd_samplers_common.SamplerData('KarrasVe', lambda model: DiffusionSampler('KarrasVe', KarrasVeScheduler, model), [], {}),
-    # sd_samplers_common.SamplerData('RePaint', lambda model: DiffusionSampler('RePaint', RePaintScheduler, model), [], {}),
-    # sd_samplers_common.SamplerData('ScoreSdeVe', lambda model: DiffusionSampler('ScoreSdeVe', ScoreSdeVeScheduler, model), [], {}),
-    # sd_samplers_common.SamplerData('UnCLIP', lambda model: DiffusionSampler('UnCLIP', UnCLIPScheduler, model), [], {}),
-    # sd_samplers_common.SamplerData('VQDiffusion', lambda model: DiffusionSampler('VQDiffusion', VQDiffusionScheduler, model), [], {}),
-]
+first_inference=1
+sampler_name_global="Euler a"
 
-class DiffusionSampler:
-    def __init__(self, name, constructor, sd_model):
-        self.sampler = constructor.from_pretrained(sd_model, subfolder="scheduler")
-        self.sampler.name = name
-
-
-all_samplers = [
-    *samplers_data_diffusors,
-]
-all_samplers_map = {x.name: x for x in all_samplers}
-
-samplers = []
-samplers_for_img2img = []
-samplers_map = {}
-
-def find_sampler_config(name):
-    if name is not None:
-        config = all_samplers_map.get(name, None)
-    else:
-        config = all_samplers[0]
-
-    return config
-
-
-def create_sampler(name, model):
-    config = find_sampler_config(name)
-
-    assert config is not None, f'bad sampler name: {name}'
-
-    sampler = config.constructor("runwayml/stable-diffusion-v1-5") 
-    model.scheduler = sampler.sampler
-    return sampler.sampler
-
-
-def set_samplers():
-    global samplers, samplers_for_img2img
-
-    hidden = set(shared.opts.hide_samplers)
-    hidden_img2img = set(shared.opts.hide_samplers + ['PLMS', 'UniPC'])
-
-    samplers = [x for x in all_samplers if x.name not in hidden]
-    samplers_for_img2img = [x for x in all_samplers if x.name not in hidden_img2img]
-
-    samplers_map.clear()
-    for sampler in all_samplers:
-        samplers_map[sampler.name.lower()] = sampler.name
-        for alias in sampler.aliases:
-            samplers_map[alias.lower()] = sampler.name
+def sd_diffusers_model(self):
+    import modules.sd_models
+    return modules.sd_models.model_data.get_sd_model()
 
 def cond_stage_key(self):
     return None
 
-set_samplers()
-first_inference = 1
+Shared.sd_diffusers_model = sd_diffusers_model
 
-def get_diffusers_sd_model():
-    global first_inference
+def set_scheduler(sd_model, sampler_name):
+    if (sampler_name == "Euler a"):
+        sd_model.scheduler = EulerAncestralDiscreteScheduler.from_config(sd_model.scheduler.config)
+    elif (sampler_name == "Euler"):
+        sd_model.scheduler = EulerDiscreteScheduler.from_config(sd_model.scheduler.config)
+    elif (sampler_name == "LMS"):
+        sd_model.scheduler = LMSDiscreteScheduler.from_config(sd_model.scheduler.config)
+    elif (sampler_name == "Huen"):
+        sd_model.scheduler = HuenDiscreteScheduler.from_config(sd_model.scheduler.config)
+    #elif (sampler_name == "DPM2"):
+    #    sd_model.scheduler = KDPM2DiscreteScheduler.from_config(sd_model.scheduler.config)
+    #elif (sampler_name == "DPM2 a"):
+    #    sd_model.scheduler = KDPM2AncestralDiscreteScheduler.from_config(sd_model.scheduler.config)
+    elif (sampler_name == "DPM++ 2M"):
+        sd_model.scheduler = DPMSolverMultistepScheduler.from_config(sd_model.scheduler.config, algorithm_type="dpmsolver++", use_karras_sigmas=False)
+    #elif (sampler_name == "DPM++ 2M SDE"):
+    #    sd_model.scheduler = DPMSolverMultistepScheduler.from_config(sd_model.scheduler.config, algorithm_type="sde-dpmsolver++", use_karras_sigmas=False)
+    elif (sampler_name == "LMS Karras"):
+        sd_model.scheduler = LMSDiscreteScheduler.from_config(sd_model.scheduler.config, use_karras_sigmas=True)
+    elif (sampler_name == "DPM++ 2M Karras"):
+        sd_model.scheduler = DPMSolverMultistepScheduler.from_config(sd_model.scheduler.config, algorithm_type="dpmsolver++", use_karras_sigmas=True)
+    #elif (sampler_name == "DPM++ 2M SDE Karras"):
+    #    sd_model.scheduler = DPMSolverMultistepScheduler.from_config(sd_model.scheduler.config, algorithm_type="sde-dpmsolver++", use_karras_sigmas=True)
+    elif (sampler_name == "DDIM"):
+        sd_model.scheduler = DDIMScheduler.from_config(sd_model.scheduler.config)
+    elif (sampler_name == "PLMS"):
+        sd_model.scheduler = PNDMScheduler.from_config(sd_model.scheduler.config)
+    #elif (sampler_name == "UniPC"):
+    #    sd_model.scheduler = UniPCMultistepScheduler.from_config(sd_model.scheduler.config)
+    else:
+        sd_model.scheduler = EulerAncestralDiscreteScheduler.from_config(sd_model.scheduler.config)
+
+    return sd_model.scheduler
+
+def get_diffusers_sd_model(sampler_name, exclude_warmup, enable_caching): 
+    global first_inference, sampler_name_global
     if (first_inference == 1):
-        model_id = "runwayml/stable-diffusion-v1-5"
-        sd_model = StableDiffusionPipeline.from_pretrained(model_id)
+        curr_dir_path = os.getcwd()
+        model_path = "/models/Stable-diffusion/"
+        checkpoint_name = shared.opts.sd_model_checkpoint.split(" ")[0]
+        checkpoint_path = curr_dir_path + model_path + checkpoint_name        
+        sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path)
+        checkpoint_info = CheckpointInfo(checkpoint_path)
+        sd_model.sd_checkpoint_info = checkpoint_info
+        sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
+
         sd_model.unet = torch.compile(sd_model.unet, backend="openvino")
         sd_model.safety_checker = None
-        sd_model.sd_model_hash = sd_model.unet.config._name_or_path.split("/")[-2]
-        warmup_prompt = "a dog walking in a park"
-        image = sd_model(warmup_prompt, num_inference_steps=1).images[0]
-        first_inference = 0    
-        shared.sd_model = sd_model
-        shared.sd_model.cond_stage_key = functools.partial(cond_stage_key, shared.sd_model)
-    return shared.sd_model
-
+        sd_model.scheduler = set_scheduler(sd_model, sampler_name)
+        sampler_name_global = sampler_name
+ 
+        if (exclude_warmup):
+            warmup_prompt = "a dog walking in a park"
+            image = sd_model(warmup_prompt, num_inference_steps=1).images[0]
+            first_inference = 0    
+        shared.sd_diffusers_model = sd_model
+        shared.sd_diffusers_model.cond_stage_key = functools.partial(cond_stage_key, shared.sd_diffusers_model)
+    
+    return shared.sd_diffusers_model 
 
 def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0):
     index = position_in_batch + iteration * p.batch_size
@@ -176,8 +157,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
 
-def init(self, all_prompts, all_seeds, all_subseeds):
-    self.sampler = create_sampler(self.sampler_name, shared.sd_model)
+def init_new(self, all_prompts, all_seeds, all_subseeds):
     crop_region = None
 
     image_mask = self.image_mask
@@ -277,7 +257,7 @@ def init(self, all_prompts, all_seeds, all_subseeds):
     image = 2. * image - 1.
     image = image.to(shared.device)
 
-    self.init_latent = shared.sd_model.vae.encode(image).latent_dist.sample()
+    self.init_latent = shared.sd_diffusers_model.vae.encode(image).latent_dist.sample()
 
     if self.resize_mode == 3:
         self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
@@ -290,8 +270,8 @@ def init(self, all_prompts, all_seeds, all_subseeds):
         latmask = np.around(latmask)
         latmask = np.tile(latmask[None], (4, 1, 1))
 
-        self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(shared.sd_model.vae.dtype)
-        self.nmask = torch.asarray(latmask).to(shared.device).type(shared.sd_model.vae.dtype)
+        self.mask = torch.asarray(1.0 - latmask).to(shared.device).type(shared.sd_diffusers_model.vae.dtype)
+        self.nmask = torch.asarray(latmask).to(shared.device).type(shared.sd_diffusers_model.vae.dtype)
 
         # this needs to be fixed to be done in sample() using actual seeds for batches
         if self.inpainting_fill == 2:
@@ -330,18 +310,15 @@ def process_images_openvino(p: StableDiffusionProcessing) -> Processed:
     def infotext(iteration=0, position_in_batch=0):
         return create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments, iteration, position_in_batch)
 
-    #if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
-        #model_hijack.embedding_db.load_textual_inversion_embeddings()
-
     if p.scripts is not None:
         p.scripts.process(p)
 
     infotexts = []
     output_images = []
 
-    #ema_scope_context = p.sd_model.ema_scope if shared.backend == shared.Backend.ORIG_SD else nullcontext
-    with torch.no_grad(): #, ema_scope_context():
+    with torch.no_grad(): 
         with devices.autocast():
+            print("In autocast")
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
 
         if state.job_count == -1:
@@ -369,6 +346,7 @@ def process_images_openvino(p: StableDiffusionProcessing) -> Processed:
                 break
 
             extra_network_data = p.parse_extra_network_prompts()
+            print("Extra network data: ", extra_network_data)
 
             if not p.disable_extra_networks:
                 with devices.autocast():
@@ -377,6 +355,7 @@ def process_images_openvino(p: StableDiffusionProcessing) -> Processed:
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
 
+            print("After process batch")
             
             # params.txt should be saved after scripts.process_batch, since the
             # infotext could be modified by that callback
@@ -386,12 +365,15 @@ def process_images_openvino(p: StableDiffusionProcessing) -> Processed:
                 with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
                     processed = Processed(p, [], p.seed, "")
                     file.write(create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments=[], position_in_batch=0 % p.batch_size, iteration=0 // p.batch_size))
+            print("After processed")
 
             if p.n_iter > 1:
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
+            print("After shared state job")
 
             generator = [torch.Generator(device="cpu").manual_seed(s) for s in p.seeds]
-            output = shared.sd_model(
+            print("prompts: ", p.prompts)
+            output = shared.sd_diffusers_model(
                 prompt=p.prompts,
                 negative_prompt=p.negative_prompts,
                 num_inference_steps=p.steps,
@@ -401,7 +383,7 @@ def process_images_openvino(p: StableDiffusionProcessing) -> Processed:
                 generator=generator,
                 output_type="np",
             )
-            x_samples_ddim = output.images
+            x_samples_ddim = output.images 
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
@@ -502,7 +484,6 @@ def process_images_openvino(p: StableDiffusionProcessing) -> Processed:
 
     return res
 
-
 class Script(scripts.Script):
     def title(self):
         return "Accelerate with OpenVINO"
@@ -510,19 +491,44 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return True
 
-    
-    def ui(self, is_img2img):
-        pass
+    def ui(self, is_img2img):        
+        core = Core()
+        openvino_device = gr.Dropdown(label="Select a device", choices=[device for device in core.available_devices], value="CPU")
+        sampler_name = gr.Dropdown(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Huen", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
+        exclude_warmup = gr.Checkbox(label="Run a warm up iteration to pre-load the model (Recommended for performance measurements)", value=True, elem_id=self.elem_id("exclude_warmup"))
+        run_warmup = gr.Button("Warm up run")
+        warmup_status = gr.Textbox()
+
+        def warmup(exclude_warmup):
+            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, exclude_warmup, enable_caching)
+            return "Warm up run completed"
+        run_warmup.click(warmup, exclude_warmup, warmup_status)
+
+        warmup_run_status = gr.Markdown("""Warm up run complete""", visible=False)      
+        #def change_warmup(choice):
+        #    if choice == True:
+        #        shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, exclude_warmup, enable_caching)
+        #        return gr.update(visible=True)
+        #    else:
+        #        return gr.update(visible=False)
+        #exclude_warmup.change(fn=change_warmup, inputs=exclude_warmup, outputs=warmup_run_status, show_progress=True)
+        enable_caching = gr.Checkbox(label="Cache the compiled models for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
+
+        return [openvino_device, sampler_name, exclude_warmup, enable_caching]
         
-    def run(self, p):
-        shared.sd_model = get_diffusers_sd_model()
+
+    def run(self, p, openvino_device, sampler_name, exclude_warmup, enable_caching):
+        global sampler_name_global, first_inference
+        if (exclude_warmup == False):
+            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, exclude_warmup, enable_caching)
+        if (sampler_name_global != sampler_name):
+            shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
+            sampler_name_global = sampler_name
+
         if self.is_txt2img:
             processed = process_images_openvino(p)
         else:
-            p.sampler_name = samplers_for_img2img[0].name 
-            p.init = functools.partial(init, p) 
-            #p.init(p.all_prompts, p.all_seeds, p.all_subseeds) 
+            p.init = functools.partial(init_new, p)
             processed = process_images_openvino(p)
-
         return processed
 
