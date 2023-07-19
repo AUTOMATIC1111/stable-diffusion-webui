@@ -12,7 +12,6 @@ async function logMonitor() {
     if (!logMonitorEl) logMonitorEl = document.getElementById('logMonitorData');
     if (!logMonitorEl) return;
     const lines = await res.json();
-    console.log('HERE', logMonitorEl && lines?.length, opts.logmonitor_show);
     if (logMonitorEl && lines?.length > 0) logMonitorEl.parentElement.parentElement.style.display = opts.logmonitor_show ? 'block' : 'none';
     for (const line of lines) {
       try {
