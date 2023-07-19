@@ -14,7 +14,7 @@ logging.basicConfig(
 
 
 def __delete_files(path, expiry_timestamp=14400):
-    print(f"清理目录：path={path},过期时间={expiry_timestamp} s")
+    logging.info(f"清理目录：path={path},过期时间={expiry_timestamp} s")
     current_timestamp = time.time()
     try:
         for root, dirs, files in os.walk(path):
@@ -38,8 +38,14 @@ def __delete_files(path, expiry_timestamp=14400):
 
 def clear_gradio_tmp():
     path = os.environ.get("GRADIO_TEMP_DIR") or str(Path(tempfile.gettempdir()) / "gradio")
-    __delete_files(path)
     logging.info("startting clear gradio tmp")
     timer = BackgroundScheduler()
-    timer.add_job(clear_gradio_tmp(), "interval ", seconds=3600)
+    timer.add_job(__delete_files, trigger="interval", seconds=3600, args=[path])
     timer.start()
+
+
+if __name__ == '__main__':
+    clear_gradio_tmp()
+    while True:
+        print(1)
+        time.sleep(10)
