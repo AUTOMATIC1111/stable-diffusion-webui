@@ -46,6 +46,7 @@ Env_Flexible_Res_Token = "FLEXIBLE_RESOURCE"
 Env_Worker_State_File = "WORKER_STATE_FILE_PATH"
 Env_GSS_Count_API = "GSS_COUNT_API"
 Env_HostName = "hostname"
+Env_WorkerRunTrainRatio = "RUN_TRAIN_RATIO"
 cache = {}
 
 
@@ -55,6 +56,12 @@ def is_flexible_worker():
 
 def pod_host():
     return os.getenv(Env_HostName)
+
+
+def run_train_ratio():
+    v = os.getenv(Env_WorkerRunTrainRatio, 0.8)
+    v = float(v)
+    return 0.8 if v > 0.8 else v
 
 
 def get_gss_count_api():
