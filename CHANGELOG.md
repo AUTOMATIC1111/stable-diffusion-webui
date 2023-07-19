@@ -59,6 +59,7 @@
  * use submit and blur for quick settings textbox
  * save img2img batch with images.save_image()
  * prevent running preload.py for disabled extensions
+ * fix: previously, model name was added together with directory name to infotext and to [model_name] filename pattern; directory name is now not included
 
 
 ## 1.4.1
