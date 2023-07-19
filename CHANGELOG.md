@@ -29,7 +29,8 @@
  * speedup extra networks listing
  * added `[none]` filename token.
  * removed thumbs extra networks view mode (use settings tab to change width/height/scale to get thumbs)
- * add always_discard_next_to_last_sigma option to XYZ plot 
+ * add always_discard_next_to_last_sigma option to XYZ plot
+ * automatically switch to 32-bit float VAE if the generated picture has NaNs without the need for `--no-half-vae` commandline flag.
  
 ### Extensions and API:
  * api endpoints: /sdapi/v1/server-kill, /sdapi/v1/server-restart, /sdapi/v1/server-stop

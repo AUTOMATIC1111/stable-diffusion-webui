@@ -14,7 +14,7 @@ from skimage import exposure
 from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors
 from modules.sd_hijack import model_hijack
 from modules.shared import opts, cmd_opts, state
 import modules.shared as shared
@@ -538,6 +538,40 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
     return x
 
 
+def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
+    samples = []
+
+    for i in range(batch.shape[0]):
+        sample = decode_first_stage(model, batch[i:i + 1])[0]
+
+        if check_for_nans:
+            try:
+                devices.test_for_nans(sample, "vae")
+            except devices.NansException as e:
+                if devices.dtype_vae == torch.float32 or not shared.opts.auto_vae_precision:
+                    raise e
+
+                errors.print_error_explanation(
+                    "A tensor with all NaNs was produced in VAE.\n"
+                    "Web UI will now convert VAE into 32-bit float and retry.\n"
+                    "To disable this behavior, disable the 'Automaticlly revert VAE to 32-bit floats' setting.\n"
+                    "To always start with 32-bit VAE, use --no-half-vae commandline flag."
+                )
+
+                devices.dtype_vae = torch.float32
+                model.first_stage_model.to(devices.dtype_vae)
+                batch = batch.to(devices.dtype_vae)
+
+                sample = decode_first_stage(model, batch[i:i + 1])[0]
+
+        if target_device is not None:
+            sample = sample.to(target_device)
+
+        samples.append(sample)
+
+    return samples
+
+
 def decode_first_stage(model, x):
     x = model.decode_first_stage(x.to(devices.dtype_vae))
 
@@ -758,10 +792,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
                 samples_ddim = p.sample(conditioning=p.c, unconditional_conditioning=p.uc, seeds=p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, prompts=p.prompts)
 
-            x_samples_ddim = [decode_first_stage(p.sd_model, samples_ddim[i:i+1].to(dtype=devices.dtype_vae))[0].cpu() for i in range(samples_ddim.size(0))]
-            for x in x_samples_ddim:
-                devices.test_for_nans(x, "vae")
-
+            x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
             x_samples_ddim = torch.stack(x_samples_ddim).float()
             x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
 
