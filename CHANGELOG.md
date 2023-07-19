@@ -4,6 +4,7 @@
  * SD XL support
  * user metadata system for custom networks
  * extended Lora metadata editor: set activation text, default weight, view tags, training info
+ * Lora extension rework to include other types of networks (all that were previously handled by LyCORIS extension)
  * show github stars for extenstions
  * img2img batch mode can read extra stuff from png info
  * img2img batch works with subdirectories
@@ -11,6 +12,9 @@
  * restyle time taken/VRAM display
  * add textual inversion hashes to infotext
  * optimization: cache git extension repo information
+ * move generate button next to the generated picture for mobile clients
+ * hide cards for networks of incompatible Stable Diffusion version in Lora extra networks interface
+ * skip installing packages with pip if they all are already installed - startup speedup of about 2 seconds
 
 ### Minor:
  * checkbox to check/uncheck all extensions in the Installed tab
@@ -25,6 +29,7 @@
  * speedup extra networks listing
  * added `[none]` filename token.
  * removed thumbs extra networks view mode (use settings tab to change width/height/scale to get thumbs)
+ * add always_discard_next_to_last_sigma option to XYZ plot 
  
 ### Extensions and API:
  * api endpoints: /sdapi/v1/server-kill, /sdapi/v1/server-restart, /sdapi/v1/server-stop
@@ -53,9 +58,7 @@
  * fix: check fill size none zero when resize  (fixes #11425)
  * use submit and blur for quick settings textbox
  * save img2img batch with images.save_image()
- * 
-
-
+ * prevent running preload.py for disabled extensions
 
 
 ## 1.4.1

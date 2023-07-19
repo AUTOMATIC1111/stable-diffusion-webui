@@ -494,7 +494,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     sd_model = None
     try:
-        with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd):
+        with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd or shared.cmd_opts.do_not_download_clip):
             sd_model = instantiate_from_config(sd_config.model)
     except Exception:
         pass
