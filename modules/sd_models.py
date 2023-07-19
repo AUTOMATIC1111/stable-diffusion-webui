@@ -606,7 +606,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     try:
         devices.set_cuda_params()
         if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
-            model_name = modelloader.find_diffuser(shared.cmd_opts.ckpt)
+            ckpt_basename = os.path.basename(shared.cmd_opts.ckpt)
+            model_name = modelloader.find_diffuser(ckpt_basename)
             if model_name is not None:
                 shared.log.info(f'Loading diffuser {op}: {model_name}')
                 model_file = modelloader.download_diffusers_model(hub_id=model_name)
