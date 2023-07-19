@@ -137,9 +137,7 @@ function initImageViewer() {
   modalImage.id = 'modalImage';
   // modalImage.addEventListener('keydown', modalKeyHandler, true);
   modalPreviewZone.appendChild(modalImage);
-  panzoom(modalImage, {
-    zoomSpeed: 0.05, minZoom: 0.25, maxZoom: 4.0, filterKey: (/* e, dx, dy, dz */) => true,
-  });
+  panzoom(modalImage, { zoomSpeed: 0.05, minZoom: 0.1, maxZoom: 5.0, filterKey: (/* e, dx, dy, dz */) => true });
 
   // toolbar
   const modalZoom = document.createElement('span');
