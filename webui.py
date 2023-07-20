@@ -387,6 +387,9 @@ def webui():
 
         gradio_auth_creds = list(get_gradio_auth_creds()) or None
 
+        root_path = ""
+        if cmd_opts.subpath:
+            root_path = f"/{cmd_opts.subpath}"
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=server_name,
@@ -403,6 +406,7 @@ def webui():
                 "docs_url": "/docs",
                 "redoc_url": "/redoc",
             },
+            root_path = root_path,
         )
         if cmd_opts.add_stop_route:
             app.add_route("/_stop", stop_route, methods=["POST"])
