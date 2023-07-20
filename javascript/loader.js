@@ -4,7 +4,7 @@ async function preloadImages() {
   const num = Math.floor(Math.random() * 7) + 1;
   const imageUrls = [
     `file=html/logo-bg-${dark ? 'dark' : 'light'}.jpg`,
-    `file=html/logo-bg-${num}.jpg`
+    `file=html/logo-bg-${num}.jpg`,
   ];
   for (const url of imageUrls) {
     const img = new Image();
@@ -23,7 +23,7 @@ async function preloadImages() {
 }
 
 async function createSplash() {
-  await preloadImages(); 
+  await preloadImages();
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const num = Math.floor(Math.random() * 7) + 1;
   const splash = `
