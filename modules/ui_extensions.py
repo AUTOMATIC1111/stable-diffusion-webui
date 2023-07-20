@@ -195,17 +195,19 @@ def uninstall_extension(extension_path, search_text, sort_column):
             os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
             func(path)
 
-    ext = [extension for extension in extensions.extensions if os.path.abspath(extension.path) == os.path.abspath(extension_path)]
-    if len(ext) > 0 and os.path.isdir(extension_path):
-        found = ext[0]
+    found = [extension for extension in extensions.extensions if os.path.abspath(extension.path) == os.path.abspath(extension_path)]
+    if len(found) > 0 and os.path.isdir(extension_path):
+        found = found[0]
         try:
             shutil.rmtree(found.path, ignore_errors=False, onerror=errorRemoveReadonly)
+            # extensions.extensions = [extension for extension in extensions.extensions if os.path.abspath(found.path) != os.path.abspath(extension_path)]
         except Exception as e:
             shared.log.warning(f'Extension uninstall failed: {found.path} {e}')
-        extensions.extensions = [extension for extension in extensions.extensions if os.path.abspath(found.path) != os.path.abspath(extension_path)]
         update_extension_list()
-        code = refresh_extensions_list_from_data(search_text, sort_column)
+        global extensions_list # pylint: disable=global-statement
+        extensions_list = [ext for ext in extensions_list if ext['name'] != found.name]
         shared.log.info(f'Extension uninstalled: {found.path}')
+        code = refresh_extensions_list_from_data(search_text, sort_column)
         return code, f"Extension uninstalled: {found.path} | Restart required"
     else:
         shared.log.warning(f'Extension uninstall cannot find extension: {extension_path}')
@@ -286,6 +288,8 @@ def refresh_extensions_list_from_data(search_text, sort_column):
             </tr>
         </thead>
         <tbody>"""
+    if len(extensions_list) == 0:
+        update_extension_list()
     for ext in extensions_list:
         extension = [e for e in extensions.extensions
                      if (e.name == ext['name'])
@@ -310,6 +314,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         else:
             return "N/A"
 
+    stats = { 'processed': 0, 'enabled': 0, 'hidden': 0, 'installed': 0 }
     for ext in sorted(extensions_list, key=sort_function, reverse=sort_reverse):
         name = ext.get("name", "unknown")
         added = dt('added')
@@ -340,14 +345,20 @@ def refresh_extensions_list_from_data(search_text, sort_column):
         tags = tags + ["installed"] if installed else tags
         if len([x for x in tags if x in hide_tags]) > 0:
             continue
+        visible = 'table-row'
         if search_text and search_text.strip():
             if search_text.lower() not in html.escape(name).lower() and search_text.lower() not in html.escape(description).lower() and search_text.lower() not in html.escape(tags_string).lower():
-                continue
+                stats['hidden'] += 1
+                visible = 'none'
+        stats['processed'] += 1
         version_code = ''
         type_code = ''
         install_code = ''
         enabled_code = ''
         if installed:
+            stats['installed'] += 1
+            if enabled:
+                stats['enabled'] += 1
             type_code = f"""<div class="type">{"SYSTEM" if ext['is_builtin'] else 'USER'}</div>"""
             version_code = f"""<div class="version" style="background: {"--input-border-color-focus" if update_available else "inherit"}">{ext['version']}</div>"""
             enabled_code = f"""<input class="gr-check-radio gr-checkbox" name="enable_{html.escape(name)}" type="checkbox" {'checked="checked"' if enabled else ''}>"""
@@ -360,7 +371,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
             install_code = f"""<button onclick="install_extension(this, '{html.escape(url)}')" class="lg secondary gradio-button custom-button extension-button">install</button>"""
         tags_text = ", ".join([f"<span class='extension-tag'>{x}</span>" for x in tags])
         code += f"""
-            <tr>
+            <tr style="display: {visible}">
                 <td{' class="extension_status"' if ext['installed'] else ''}>{enabled_code}</td>
                 <td><a href="{html.escape(url)}" target="_blank" class="name">{html.escape(name)}</a><br>{tags_text}</td>
                 <td>{html.escape(description)}
@@ -372,6 +383,7 @@ def refresh_extensions_list_from_data(search_text, sort_column):
                 <td>{install_code}</td>
             </tr>"""
     code += "</tbody></table>"
+    shared.log.debug(f'Extension list refresh: processed={stats["processed"]} installed={stats["installed"]} enabled={stats["enabled"]} disabled={stats["installed"] - stats["enabled"]} visible={stats["processed"] - stats["hidden"]} hidden={stats["hidden"]}')
     return code
 
 

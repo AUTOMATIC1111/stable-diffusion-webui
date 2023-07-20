@@ -13,6 +13,8 @@ function getUICurrentTabContent() {
   return gradioApp().querySelector('.tabitem[id^=tab_]:not([style*="display: none"])');
 }
 
+const get_uiCurrentTabContent = getUICurrentTabContent;
+const get_uiCurrentTab = getUICurrentTab;
 const uiAfterUpdateCallbacks = [];
 const uiUpdateCallbacks = [];
 const uiLoadedCallbacks = [];

@@ -2,7 +2,6 @@ async function preloadImages() {
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const imagePromises = [];
   const num = Math.floor(Math.random() * 7) + 1;
-
   const imageUrls = [
     `file=html/logo-bg-${dark ? 'dark' : 'light'}.jpg`,
     `file=html/logo-bg-${num}.jpg`
@@ -22,7 +21,9 @@ async function preloadImages() {
     console.error('Error preloading images:', error);
   }
 }
+
 async function createSplash() {
+  await preloadImages(); 
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const num = Math.floor(Math.random() * 7) + 1;
   const splash = `
@@ -38,8 +39,5 @@ async function removeSplash() {
   if (splash) splash.remove();
   console.log('removeSplash');
 }
-async function init() {
-  await preloadImages(); 
-  createSplash(); 
-}
-window.onload = init; 
+
+window.onload = createSplash;

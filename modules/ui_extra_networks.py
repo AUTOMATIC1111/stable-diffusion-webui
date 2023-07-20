@@ -69,6 +69,7 @@ class ExtraNetworksPage:
         self.html = ''
         self.items = []
         self.missing_thumbs = []
+        # class additional is to keep old extensions happy
         self.card = '''
             <div class='card' onclick={card_click} title='{title}'>
                 <div class='overlay'>
@@ -76,6 +77,7 @@ class ExtraNetworksPage:
                     <div class='name'>{name}</div>
                     <div class='description'>{description}</div>
                     <div class='actions'>
+                        <div class='additional'><ul></ul></div>
                         <span title="Save current image as preview image" onclick={card_save_preview}>💙</span>
                         <span title="Read description" onclick={card_read_desc}>📖</span>
                         <span title="Save current description" onclick={card_save_desc}>🛅</span>
