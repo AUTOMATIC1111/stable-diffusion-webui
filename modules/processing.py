@@ -444,41 +444,43 @@ def fix_seed(p):
 
 def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
     index = position_in_batch + iteration * p.batch_size
-
-    token_merging_ratio = p.get_token_merging_ratio()
-    token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True)
-    uses_ensd = shared.opts.eta_noise_seed_delta != 0
-    if uses_ensd:
-        uses_ensd = sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p)
-
     generation_params = {
+        "Version": git_commit,
+        "Pipeline": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
         "Steps": p.steps,
-        "Sampler": p.sampler_name,
-        "Latent sampler": p.latent_sampler,
-        "CFG scale": p.cfg_scale,
-        "Image CFG scale": p.image_cfg_scale if p.enable_hr else None,
         "Seed": all_seeds[index],
-        "Face restoration": shared.opts.face_restoration_model if p.restore_faces else None,
+        "Sampler": p.sampler_name,
+        "CFG scale": p.cfg_scale,
         "Size": f"{p.width}x{p.height}",
-        "Model hash": getattr(p, 'sd_model_hash', None if not shared.opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
+        "Parser": shared.opts.prompt_attention,
         "Model": None if not shared.opts.add_model_name_to_info or not shared.sd_model.sd_checkpoint_info.model_name else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', ''),
+        "Model hash": getattr(p, 'sd_model_hash', None if not shared.opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Refiner": None if not shared.opts.add_model_name_to_info or not shared.sd_refiner or not shared.sd_refiner.sd_checkpoint_info.model_name else shared.sd_refiner.sd_checkpoint_info.model_name.replace(',', '').replace(':', ''),
         "VAE": None if not shared.opts.add_model_name_to_info or sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(sd_vae.loaded_vae_file))[0],
+        # subseed
         "Variation seed": None if p.subseed_strength == 0 else all_subseeds[index],
         "Variation seed strength": None if p.subseed_strength == 0 else p.subseed_strength,
+        # seed resize
         "Seed resize from": None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}",
-        "Denoising strength": p.denoising_strength if p.enable_hr else None,
-        "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
-        "Clip skip": p.clip_skip if p.clip_skip > 1 else None,
-        "ENSD": shared.opts.eta_noise_seed_delta if uses_ensd else None,
         "Init image hash": getattr(p, 'init_img_hash', None),
-        "Version": git_commit,
-        "Token merging ratio": None if token_merging_ratio == 0 else token_merging_ratio,
-        "Token merging ratio hr": None if not p.enable_hr or token_merging_ratio_hr == 0 else token_merging_ratio_hr,
-        "Parser": shared.opts.prompt_attention,
+        "Conditional mask weight": getattr(p, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) if p.is_using_inpainting_conditioning else None,
+        # clip skip
+        "Clip skip": p.clip_skip if p.clip_skip > 1 else None,
+        # ensd
+        "ENSD": shared.opts.eta_noise_seed_delta if shared.opts.eta_noise_seed_delta != 0 and sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p) else None,
+        # enable_hr
+        "Latent sampler": p.latent_sampler if p.enable_hr else None,
+        "Image CFG scale": p.image_cfg_scale if p.enable_hr else None,
+        "Denoising strength": p.denoising_strength if p.enable_hr else None,
         "Denoise start": p.refiner_denoise_start if p.enable_hr else None,
         "Denoise end": p.refiner_denoise_end if p.enable_hr else None,
+        # restore_faces
+        "Face restoration": shared.opts.face_restoration_model if p.restore_faces else None,
     }
+    token_merging_ratio = p.get_token_merging_ratio()
+    token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True) if p.enable_hr else None
+    generation_params['Token merging ratio'] = token_merging_ratio if token_merging_ratio != 0 else None
+    generation_params['Token merging ratio hr'] = token_merging_ratio_hr if token_merging_ratio_hr != 0 else None
     generation_params.update(p.extra_generation_params)
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
     negative_prompt_text = f"\nNegative prompt: {p.all_negative_prompts[index]}" if p.all_negative_prompts[index] else ""

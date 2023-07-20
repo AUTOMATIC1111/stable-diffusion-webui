@@ -23,7 +23,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             for tag in possible_tags.keys():
                 if '_' not in tag:
                     tag = f'0_{tag}'
-                words = tag.split('_')
+                words = tag.split('_', 1)
                 tags[' '.join(words[1:])] = words[0]
             # shared.log.debug(f'Lora: {path}: name={name} alias={alias} tags={tags}')
             yield {

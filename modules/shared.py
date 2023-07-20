@@ -889,6 +889,7 @@ def restart_server(restart=True):
         demo.close(verbose=False)
         demo.server.close()
         demo.fns = []
+        # os._exit(0)
     except Exception:
         pass
     if restart:

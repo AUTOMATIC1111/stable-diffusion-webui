@@ -62,6 +62,8 @@ def is_sampler_using_eta_noise_seed_delta(p):
     """returns whether sampler from config will use eta noise seed delta for image creation"""
     sampler_config = sd_samplers.find_sampler_config(p.sampler_name)
     eta = p.eta
+    if not hasattr(p.sampler, "eta"):
+        return False
     if eta is None and p.sampler is not None:
         eta = p.sampler.eta
     if eta is None and sampler_config is not None:
