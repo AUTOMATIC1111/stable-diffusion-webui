@@ -4,42 +4,59 @@
 
 Stuff to be fixed, in no particular order...
 
-- SD-XL Sketch/Inpaint
-- Kandinsky 2.2 (2.1 is working)
-- Misterious Extensions auto-enabling
 - Misterious Extra network corruptions
+- Unet type mismatch/autocast issues on some platforms
 
 ## Features
 
 Stuff to be added, in no particular order...
 
-- Diffusers: save before refiner
-- Diffusers: prompt parser
-- Diffusers: SD-XL Lora
-- Train: use `interrogator`
-- Train: use `rembg`
-- Train: new **Lora** train UI
-- Port `p.all_hr_prompts`
-- Image watermark using `image-watermark`
-- Image phash and hdash using `imagehash`
-- Update `Wiki`
-- Create new `GitHub` hooks/actions for CI/CD  
-- Import core repos
-- Docker PR
-- Model merge using `git-rebasin`
-- Additional upscalers
-- XYZ grid upscalers
-- New image browser
-- Update `gradio`
-- Rename repo: **automatic** -> **sdnext**
-- New icons
-- Enable refiner workflow for `ldm` backend
-- Add `sgm` backend
-- Improve `lyco` logging
-- Cache models when switching backends
-- Style editor
-- Built-in motd-style notifications
-- [Localization](https://app.transifex.com/signup/open-source/)
+- Diffusers:
+  - Add SD-XL Lora
+  - Add SD-XL Sketch/Inpaint
+  - Add VAE direct load from safetensors
+  - Fix Kandinsky 2.2 model
+  - Fix DeepFloyd IF model
+  - Redo Prompt parser
+  - Add Explicit VAE step
+  - Add Save image before refiner (depends on explicit VAE)
+  - Add unCLIP model
+- Technical debt:
+  - Port **A1111** stuff
+  - Port `p.all_hr_prompts`
+  - Import core repos to reduce dependencies
+  - Update `gradio`
+- Non-technical:
+  - Create additional themes
+  - Update Wiki
+  - Get more high-quality upscalers
+  - Rename repo: **automatic** -> **sdnext**
+  - [Localization](https://app.transifex.com/signup/open-source/)
+- New Minor
+  - Prompt padding for positive/negative
+  - XYZ grid upscalers
+  - Built-in `motd`-style notifications
+  - Docker PR
+- New Major
+  - Style editor (use json format instead of csv)
+  - Profile manager (for config.json and ui-config.json)
+  - Multi-user support
+  - Image phash and hdash using `imagehash`
+  - Model merge using `git-rebasin`
+  - Enable refiner-style workflow for `ldm` backend
+  - Add `sgm` backend
+  - Cache models in VRAM
+  - Train:
+    - Use `interrogator`
+    - Use `rembg`
+    - Templates for SD-XL training
+    - Lora train UI
+- Redesign
+  - New UI
+  - New inpainting canvas controls (move from backend to purely frontend)
+  - New image browser (move from backend to purely frontend)
+  - New extra networks (move from backend to purely frontend)
+  - Change workflows from static/legacy to steps-based
 
 ## Investigate
 

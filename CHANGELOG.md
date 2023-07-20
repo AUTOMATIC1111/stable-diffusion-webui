@@ -1,8 +1,10 @@
 # Change Log for SD.Next
 
-## Update for 07/19/2023
+## Update for 07/20/2023
 
+- new loading screens and artwork
 - extra networks: add add/remove tags to prompt (e.g. lora activation keywords)
+- extensions: fix couple of compatibility items
 
 ## Update for 07/18/2023
 
