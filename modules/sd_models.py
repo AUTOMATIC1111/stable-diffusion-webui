@@ -521,8 +521,10 @@ class PriorPipeline:
     def __init__(self, prior, main):
         self.prior = prior
         self.main = main
+        self.main.safety_checker = None
         self.scheduler = main.scheduler
         self.tokenizer = self.prior.tokenizer
+        self.unet = self.main.unet
 
     def to(self, *args, **kwargs):
         # only the prior is moved to CUDA in a first step
