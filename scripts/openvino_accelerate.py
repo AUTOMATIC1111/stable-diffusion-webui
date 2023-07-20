@@ -1,3 +1,6 @@
+#Copyright (C) 2023 Intel Corporation
+#SPDX-License-Identifier: AGPL-3.0 
+
 import math
 import cv2
 import os
@@ -7,6 +10,7 @@ import gradio as gr
 import numpy as np
 import openvino.frontend.pytorch.torchdynamo.backend
 
+import modules
 import modules.paths as paths
 import modules.scripts as scripts
 import modules.shared as shared
@@ -40,8 +44,10 @@ from diffusers import (
     UniPCMultistepScheduler,
 )
 
-first_inference=1
-sampler_name_global="Euler a"
+first_inference_global = 1
+sampler_name_global = "Euler a"
+openvino_device_global = "CPU"
+warmed_up_global = 0
 
 def sd_diffusers_model(self):
     import modules.sd_models
@@ -86,9 +92,9 @@ def set_scheduler(sd_model, sampler_name):
 
     return sd_model.scheduler
 
-def get_diffusers_sd_model(sampler_name, exclude_warmup, enable_caching): 
-    global first_inference, sampler_name_global
-    if (first_inference == 1):
+def get_diffusers_sd_model(sampler_name, enable_caching): 
+    global first_inference_global, sampler_name_global
+    if (first_inference_global == 1):
         curr_dir_path = os.getcwd()
         model_path = "/models/Stable-diffusion/"
         checkpoint_name = shared.opts.sd_model_checkpoint.split(" ")[0]
@@ -98,16 +104,17 @@ def get_diffusers_sd_model(sampler_name, exclude_warmup, enable_caching):
         sd_model.sd_checkpoint_info = checkpoint_info
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
 
-        sd_model.unet = torch.compile(sd_model.unet, backend="openvino")
         sd_model.safety_checker = None
         sd_model.scheduler = set_scheduler(sd_model, sampler_name)
+        sd_model.unet = torch.compile(sd_model.unet, backend="openvino")
+        sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino")
         sampler_name_global = sampler_name
  
-        if (exclude_warmup):
-            warmup_prompt = "a dog walking in a park"
-            image = sd_model(warmup_prompt, num_inference_steps=1).images[0]
-            first_inference = 0    
+        warmup_prompt = "a dog walking in a park"
+        image = sd_model(warmup_prompt, num_inference_steps=1).images[0]
+        first_inference_global = 0    
         shared.sd_diffusers_model = sd_model
+        del sd_model
         shared.sd_diffusers_model.cond_stage_key = functools.partial(cond_stage_key, shared.sd_diffusers_model)
     
     return shared.sd_diffusers_model 
@@ -260,7 +267,7 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
     self.init_latent = shared.sd_diffusers_model.vae.encode(image).latent_dist.sample()
 
     if self.resize_mode == 3:
-        self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+        self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // 8, self.width // 8), mode="bilinear")
 
     if image_mask is not None:
         init_mask = latent_mask
@@ -484,6 +491,7 @@ def process_images_openvino(p: StableDiffusionProcessing) -> Processed:
 
     return res
 
+warm_up_triggered_global = 0
 class Script(scripts.Script):
     def title(self):
         return "Accelerate with OpenVINO"
@@ -493,35 +501,44 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):        
         core = Core()
+        global first_inference_global, warmed_up_global, warm_up_triggered_global
         openvino_device = gr.Dropdown(label="Select a device", choices=[device for device in core.available_devices], value="CPU")
-        sampler_name = gr.Dropdown(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Huen", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
-        exclude_warmup = gr.Checkbox(label="Run a warm up iteration to pre-load the model (Recommended for performance measurements)", value=True, elem_id=self.elem_id("exclude_warmup"))
-        run_warmup = gr.Button("Warm up run")
-        warmup_status = gr.Textbox()
-
-        def warmup(exclude_warmup):
-            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, exclude_warmup, enable_caching)
-            return "Warm up run completed"
-        run_warmup.click(warmup, exclude_warmup, warmup_status)
-
-        warmup_run_status = gr.Markdown("""Warm up run complete""", visible=False)      
-        #def change_warmup(choice):
-        #    if choice == True:
-        #        shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, exclude_warmup, enable_caching)
-        #        return gr.update(visible=True)
-        #    else:
-        #        return gr.update(visible=False)
-        #exclude_warmup.change(fn=change_warmup, inputs=exclude_warmup, outputs=warmup_run_status, show_progress=True)
+        override_sampler = gr.Checkbox(label="Override the sampling selection from the main UI (Recommended as only below sampling methods have been validated for OpenVINO)", value=True)
+        sampler_name = gr.Radio(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Huen", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
         enable_caching = gr.Checkbox(label="Cache the compiled models for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
+        run_warmup = gr.Button("Run a warmup iteration (recommended)")
+        warmup_status = gr.Textbox(label="Status of the warm up iteration", interactive=False)
+        
+        def device_change(choice):
+            global first_inference_global, warmed_up_global
+            warmed_up_global = 0
+            first_inference_global = 1
+            return gr.update(value="Device changed to " + choice + ". Press the button to run a new warmup iteration")
+        openvino_device.change(device_change, openvino_device, warmup_status)            
 
-        return [openvino_device, sampler_name, exclude_warmup, enable_caching]
+        def warmup(run_warmup):
+            global first_inference_global, warmed_up_global
+            first_inference_global = 1
+            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, enable_caching)
+            warmed_up_global = 1
+            return gr.update(value="Warm up run complete")
+        run_warmup.click(warmup, run_warmup, warmup_status)
+        
+        return [openvino_device, override_sampler, sampler_name, warmup_status, enable_caching]
         
 
-    def run(self, p, openvino_device, sampler_name, exclude_warmup, enable_caching):
-        global sampler_name_global, first_inference
-        if (exclude_warmup == False):
-            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, exclude_warmup, enable_caching)
+    def run(self, p, openvino_device, override_sampler, sampler_name, warmup_status, enable_caching):
+        global first_inference_global, warmed_up_global, sampler_name_global, openvino_device_global
+        os.environ["OPENVINO_DEVICE"] = str(openvino_device)
+        if enable_caching:
+            os.environ["OPENVINO_TORCH_MODEL_CACHING"] = "1"
+        if (openvino_device_global != openvino_device):
+            first_inference_global = 1
+            openvino_device_global = openvino_device
+        if (warmed_up_global == 0):
+            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, enable_caching)
         if (sampler_name_global != sampler_name):
+            print("Sampler name: ", sampler_name)
             shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
             sampler_name_global = sampler_name
 
