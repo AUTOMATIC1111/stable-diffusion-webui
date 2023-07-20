@@ -187,7 +187,7 @@ class MongoTaskDumper(TaskDumper):
         if now - self.clean_time > 3600:
             tasks = self.db.collect.find({
                 'status': 0,
-                'task.create_at': {'$lt': now - 3600*12},
+                'task.create_at': {'$lt': now - 3600*18},
             })
             tasks = list(tasks)
             for task in tasks:

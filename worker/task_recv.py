@@ -28,7 +28,7 @@ from tools.wrapper import timed_lru_cache
 from tools.host import get_host_name
 from modules.shared import mem_mon as vram_mon
 from apscheduler.schedulers.background import BackgroundScheduler
-from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, \
+from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, run_train_ratio,\
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
 try:
@@ -45,6 +45,7 @@ TaskTimeout = 20 * 3600 if not cmd_opts.train_only else 48 * 3600
 Tmp = 'tmp'
 SDWorkerZset = 'sd-workers'
 ElasticResWorkerFlag = "[ElasticRes]"
+TrainOnlyWorkerFlag = "[TrainOnly]"
 
 
 def find_files_from_dir(directory, *args):
@@ -149,7 +150,7 @@ class TaskReceiver:
                 return 24 + day_of_time
             return day_of_time
 
-        run_train_time_start = formate_day_of_time(int(run_train_time_start) - 8 if run_train_time_start else 15)
+        run_train_time_start = formate_day_of_time(int(run_train_time_start) - 8 if run_train_time_start else 10)
         run_train_time_end = formate_day_of_time(int(run_train_time_end) - 8 if run_train_time_end else 23)
 
         self.run_train_time_start = min(run_train_time_start, run_train_time_end)
@@ -194,6 +195,10 @@ class TaskReceiver:
 
         if is_flexible_worker():
             nvidia_video_card_id = ElasticResWorkerFlag + nvidia_video_card_id
+        if self.train_only:
+            nvidia_video_card_id = TrainOnlyWorkerFlag + nvidia_video_card_id
+            if is_flexible_worker():
+                raise OSError('elastic resource cannot run with train only mode')
 
         return f"{group_id}:{nvidia_video_card_id}"
 
@@ -260,9 +265,11 @@ class TaskReceiver:
             workers = group_workers.get(group_id) or []
             if workers:
                 # 1/5的WOEKER 生图，剩下的执行训练。
-                run_train_worker_num = len(workers) // 5
+                workers = [w for w in workers if TrainOnlyWorkerFlag not in w]
+                run_train_worker_num = int(len(workers) * run_train_ratio())
+
                 if run_train_worker_num >= 1:
-                    run_train_workers = workers[run_train_worker_num:]
+                    run_train_workers = workers[:run_train_worker_num]
                 else:
                     run_train_workers = []
 
@@ -273,7 +280,7 @@ class TaskReceiver:
                 logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
 
                 if run_train_worker_flag and free / 2 ** 30 > 16:
-                    logger.info(">>> worker can run train task.")
+                    logger.info(f">>> worker receive train task, train worker count:{run_train_worker_num}")
 
                 return run_train_worker_flag
 
