@@ -7,7 +7,7 @@
 # @Software: Hifive
 
 def write_healthy(status: bool):
-    with open("/var/healthy.txt") as f:
+    with open("/var/healthy.txt", "w+") as f:
         v = "0" if status else '1'
         f.write(v)
 

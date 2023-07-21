@@ -64,7 +64,7 @@ class ADetailerFormatter(AlwaysonScriptArgsFormatter):
                     'ad_controlnet_guidance_end': obj.get('ad_controlnet_guidance_end', 1),
                     'ad_controlnet_guidance_start': obj.get('ad_controlnet_guidance_start', 0),
                     'ad_controlnet_weight': obj.get('ad_controlnet_weight', 1),
-                    'ad_controlnet_module': obj.get('ad_controlnet_module', None),
+                    'ad_controlnet_module': obj.get('ad_controlnet_module', 'None'),
                     'ad_controlnet_model': obj.get('ad_controlnet_model', 'None'),
                     'ad_restore_face': obj.get('ad_restore_face', False),
                     'ad_noise_multiplier': obj.get('ad_noise_multiplier', 1),
@@ -97,12 +97,14 @@ class ADetailerFormatter(AlwaysonScriptArgsFormatter):
                 return [d]
             return [obj]
 
-        if isinstance(args, dict):
-            ad_script_args = obj_to_array(args)
-        else:
-            ad_script_args = []
-            for x in args:
-                ad_script_args.extend(obj_to_array(x))
+        ad_script_args = []
+        if args:
+            ad_script_args.append(True)
+            if isinstance(args, dict):
+                ad_script_args = obj_to_array(args)
+            else:
+                for x in args:
+                    ad_script_args.extend(obj_to_array(x))
 
         return ad_script_args
 
