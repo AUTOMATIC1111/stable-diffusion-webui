@@ -950,13 +950,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 samples = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(decoded_samples))
             image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
         shared.state.nextjob()
-        img2img_sampler_name = self.sampler_name
-        force_latent_upscaler = shared.opts.data.get('force_latent_sampler')
-        if force_latent_upscaler != 'None' and force_latent_upscaler != 'PLMS':
-            img2img_sampler_name = force_latent_upscaler
-        if img2img_sampler_name == 'PLMS':
-            img2img_sampler_name =  shared.opts.fallback_sampler if shared.opts.fallback_sampler != 'PLMS' else 'UniPC'
-        self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
+        if self.latent_sampler == "PLMS":
+            self.latent_sampler = 'UniPC'
+        self.sampler = sd_samplers.create_sampler(self.latent_sampler or self.sampler_name, self.sd_model)
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
         noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
         x = None

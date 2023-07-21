@@ -110,7 +110,6 @@ button.custom-button{
 #txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button { height: 2.2em; line-height: 0; min-width: unset; display: block !important; }
 #txt2img_tools > div, #img2img_tools > div { justify-content: space-around; margin-top: 0.5em; margin-bottom: 0em; }
 #txt2img_tools > div > button, #img2img_tools > div > button { scale: 120%; }
-#refresh_txt2img_styles, #refresh_img2img_styles { height: 2.46em; margin-left: -8px; }
 
 .interrogate-col{
     min-width: 0 !important;

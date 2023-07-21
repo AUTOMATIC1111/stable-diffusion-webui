@@ -103,6 +103,9 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txt2img_checkboxes, #img2img_checkboxes { background-color: transparent; }
 #txt2img_checkboxes, #img2img_checkboxes { margin-bottom: 0.2em; }
 #txt2img_gallery, #img2img_gallery, #extras_gallery { padding: 0; margin: 0; object-fit: contain; box-shadow: none; min-height: 0; }
+#txt2img_actions_column, #img2img_actions_column { display: -webkit-box; -webkit-box-pack: justify; }
+#txt2img_enqueue_wrapper, #img2img_enqueue_wrapper { min-width: unset; width: 48%; }
+#txt2img_generate_box, #img2img_generate_box { min-width: unset; width: 48%; }
 
 #extras_upscale { margin-top: 10px }
 #txt2img_progress_row > div { min-width: var(--left-column); max-width: var(--left-column); }
@@ -115,6 +118,7 @@ svg.feather.feather-image, .feather .feather-image { display: none }
 #txtimg_hr_finalres { max-width: 200px; }
 #pnginfo_html2_info { margin-top: -18px; background-color: var(--input-background-fill); padding: var(--input-padding) }
 #txt2img_tools > div > button, #img2img_tools > div > button { filter: hue-rotate(180deg) saturate(0.5); }
+#txt2img_tools, #img2img_tools { margin-top: -5px; margin-bottom: -5px; } 
 
 /* custom elements overrides */
 #steps-animation, #controlnet { border-width: 0; }
