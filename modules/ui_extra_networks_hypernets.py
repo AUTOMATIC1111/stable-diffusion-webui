@@ -13,13 +13,22 @@ class ExtraNetworksPageHypernetworks(ui_extra_networks.ExtraNetworksPage):
     def list_items(self):
         for name, path in shared.hypernetworks.items():
             path, _ext = os.path.splitext(path)
+            print('HERE', {
+                "name": name,
+                "filename": path,
+                "preview": self.find_preview(path),
+                "description": self.find_description(path),
+                "search_term": self.search_terms_from_path(path),
+                "prompt": json.dumps(f"<hypernet:{name}:{shared.opts.extra_networks_default_multiplier}>"),
+                "local_preview": f"{path}.preview.{shared.opts.samples_format}",
+            })
             yield {
                 "name": name,
                 "filename": path,
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
                 "search_term": self.search_terms_from_path(path),
-                "prompt": json.dumps(f"<hypernet:{name}:") + " + shared.opts.extra_networks_default_multiplier + " + json.dumps(">"),
+                "prompt": json.dumps(f"<hypernet:{name}:{shared.opts.extra_networks_default_multiplier}>"),
                 "local_preview": f"{path}.preview.{shared.opts.samples_format}",
             }
 
