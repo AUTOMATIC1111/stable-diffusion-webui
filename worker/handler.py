@@ -16,6 +16,7 @@ from modules.shared import mem_mon as vram_mon
 from worker.dumper import dumper
 from loguru import logger
 from modules.devices import torch_gc, get_cuda_device_string
+from worker.k8s_health import write_healthy
 from worker.task import Task, TaskProgress, TaskStatus, TaskType
 
 
@@ -62,10 +63,13 @@ class TaskHandler:
                 progress_callback(p)
 
                 if free / 2 ** 30 < 4:
+
                     logger.info("CUDA out of memory, quit...")
                     # kill process
                     from ctypes import CDLL
                     from ctypes.util import find_library
+
+                    write_healthy(False)
 
                     libc = CDLL(find_library("libc"))
                     libc.exit(1)

@@ -15,6 +15,7 @@ from worker.handler import TaskHandler
 from worker.task_recv import TaskReceiver, TaskTimeout
 from threading import Thread, Condition, Lock
 from tools.model_hist import CkptLoadRecorder
+from worker.k8s_health import write_healthy
 
 
 class TaskExecutor(Thread):
@@ -66,6 +67,7 @@ class TaskExecutor(Thread):
             self.nofity()
 
     def exec_task(self):
+        write_healthy(True)
         handlers = [x.name for x in self._handlers.keys()]
         logger.info(f"executor start with:{','.join(handlers)}")
         while not self.__stop:
