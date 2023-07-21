@@ -334,7 +334,8 @@ def configure_cors_middleware(app):
     cors_options = {
         "allow_methods": ["*"],
         "allow_headers": ["*"],
-        "allow_credentials": True,
+        "allow_credentials": False,
+        "allow_origins": ["*"]
     }
     if cmd_opts.cors_allow_origins:
         cors_options["allow_origins"] = cmd_opts.cors_allow_origins.split(',')
@@ -353,7 +354,7 @@ def api_only():
     initialize()
 
     app = FastAPI()
-    setup_middleware(app)
+    #setup_middleware(app)
     api = create_api(app)
 
     modules.script_callbacks.app_started_callback(None, app)
@@ -416,9 +417,10 @@ def webui():
         # an attacker to trick the user into opening a malicious HTML page, which makes a request to the
         # running web ui and do whatever the attacker wants, including installing an extension and
         # running its code. We disable this here. Suggested by RyotaK.
-        app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
 
-        setup_middleware(app)
+        #app.user_middleware = [x for x in app.user_middleware if x.cls.__name__ != 'CORSMiddleware']
+
+        #setup_middleware(app)
 
         modules.progress.setup_progress_api(app)
         modules.ui.setup_ui_api(app)
