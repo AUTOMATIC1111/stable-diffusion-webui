@@ -119,7 +119,7 @@ class Script:
 
     def after_extra_networks_activate(self, p, *args, **kwargs):
         """
-        Calledafter extra networks activation, before conds calculation
+        Called after extra networks activation, before conds calculation
         allow modification of the network after extra networks activation been applied
         won't be call if p.disable_extra_networks
 
