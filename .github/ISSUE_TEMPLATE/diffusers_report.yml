@@ -62,6 +62,11 @@ body:
       label: Relevant log output
       description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks
       render: shell
+  - type: markdown
+    attributes:
+      value: |
+        If unsure if this is a right place to ask your question, perhaps post on [Discussions](https://github.com/vladmandic/automatic/discussions)
+        Or reach-out to us on [Discord](https://discord.gg/WqMzTUDC)
   - type: checkboxes
     attributes:
       label: Acknowledgements
