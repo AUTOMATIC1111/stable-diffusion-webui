@@ -63,10 +63,5 @@ body:
       options:
         - label: I have read the above and searched for existing issues
           required: true
-  - type: checkboxes
-    attributes:
-      label: Acknowledgements
-      description: 
-      options:
         - label: I confirm that this is classified correctly and its not an extension or diffusers-specific issue
           required: true
