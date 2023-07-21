@@ -92,7 +92,7 @@ def set_scheduler(sd_model, sampler_name):
 
     return sd_model.scheduler
 
-def get_diffusers_sd_model(sampler_name, enable_caching): 
+def get_diffusers_sd_model(sampler_name, enable_caching, openvino_device): 
     global first_inference_global, sampler_name_global
     if (first_inference_global == 1):
         curr_dir_path = os.getcwd()
@@ -111,6 +111,9 @@ def get_diffusers_sd_model(sampler_name, enable_caching):
         sampler_name_global = sampler_name
  
         warmup_prompt = "a dog walking in a park"
+        os.environ["OPENVINO_DEVICE"] = openvino_device
+        if enable_caching:
+            os.environ["OPENVINO_TORCH_MODEL_CACHING"] = "1"
         image = sd_model(warmup_prompt, num_inference_steps=1).images[0]
         first_inference_global = 0    
         shared.sd_diffusers_model = sd_model
@@ -516,13 +519,13 @@ class Script(scripts.Script):
             return gr.update(value="Device changed to " + choice + ". Press the button to run a new warmup iteration")
         openvino_device.change(device_change, openvino_device, warmup_status)            
 
-        def warmup(run_warmup):
+        def warmup(run_warmup, openvino_device, enable_caching):
             global first_inference_global, warmed_up_global
             first_inference_global = 1
-            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, enable_caching)
+            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, enable_caching, openvino_device)
             warmed_up_global = 1
             return gr.update(value="Warm up run complete")
-        run_warmup.click(warmup, run_warmup, warmup_status)
+        run_warmup.click(warmup, [run_warmup, openvino_device, enable_caching], warmup_status)
         
         return [openvino_device, override_sampler, sampler_name, warmup_status, enable_caching]
         
@@ -536,7 +539,7 @@ class Script(scripts.Script):
             first_inference_global = 1
             openvino_device_global = openvino_device
         if (warmed_up_global == 0):
-            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, enable_caching)
+            shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, enable_caching, openvino_device)
         if (sampler_name_global != sampler_name):
             print("Sampler name: ", sampler_name)
             shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
