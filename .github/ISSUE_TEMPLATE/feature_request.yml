@@ -16,3 +16,8 @@ body:
       label: Version Platform Description
       description: Describe your platform (program version, OS, browser)
       value: 
+  - type: markdown
+    attributes:
+      value: |
+        If unsure if this is a right place to ask your question, perhaps post on [Discussions](https://github.com/vladmandic/automatic/discussions)
+        Or reach-out to us on [Discord](https://discord.gg/WqMzTUDC)
