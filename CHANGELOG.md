@@ -1,10 +1,23 @@
 # Change Log for SD.Next
 
-## Update for 07/20/2023
+## Update for 07/21/2023
 
 - new loading screens and artwork
 - extra networks: add add/remove tags to prompt (e.g. lora activation keywords)
 - extensions: fix couple of compatibility items
+- number of hires fixes
+- diffusers: option to set vae upcast in settings
+  - sd-xl: enable fp16 vae decode when using optimized vae  
+    this pretty much doubles performance of decode step (delay after generate is done)  
+  - sd-xl: loading vae now applies to both base and refiner  
+
+- diffusers 0.19.dev
+  - sd-xl: denoising_start/denoising_end
+  - sd-xl: enable dual prompts  
+    this is used regardless if refiner is enabled/loaded  
+    if refiner is loaded & enabled, refiner prompt will also be used for refiner pass  
+    - primary prompt goes to [OpenAI CLIP-ViT/L-14](https://huggingface.co/openai/clip-vit-large-patch14)
+    - refiner prompt goes to [OpenCLIP-ViT/bigG-14](https://huggingface.co/laion/CLIP-ViT-bigG-14-laion2B-39B-b160k)
 
 ## Update for 07/18/2023
 

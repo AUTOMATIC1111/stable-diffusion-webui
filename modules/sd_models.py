@@ -604,7 +604,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if (model_data.sd_refiner is not None) and (checkpoint_info is not None) and (checkpoint_info.hash == model_data.sd_refiner.sd_checkpoint_info.hash): # trying to load the same model
             return
 
-    shared.log.debug(f'Diffusers load config: {diffusers_load_config}')
+    shared.log.debug(f'Diffusers load {op} config: {diffusers_load_config}')
     sd_model = None
 
     try:
@@ -629,7 +629,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 return
             shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
 
-            if op == 'model':
+            vae = None
+            if op == 'model' or op == 'refiner':
                 vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
                 vae = sd_vae.load_vae_diffusers(None, vae_file, vae_source)
                 if vae is not None:
@@ -639,7 +640,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 try:
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
                 except Exception as e:
-                    shared.log.error(f'Diffusers failed loading model: {checkpoint_info.path} {e}')
+                    shared.log.error(f'Diffusers {op} failed loading model: {checkpoint_info.path} {e}')
             else:
                 diffusers_load_config["local_files_only "] = True
                 diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
@@ -669,9 +670,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     elif shared.opts.diffusers_pipeline == shared.pipelines[11]:
                         pipeline = diffusers.ShapEImg2ImgPipeline
                     else:
-                        shared.log.error(f'Diffusers unknown pipeline: {shared.opts.diffusers_pipeline}')
+                        shared.log.error(f'Diffusers {op} unknown pipeline: {shared.opts.diffusers_pipeline}')
                 except Exception as e:
-                    shared.log.error(f'Diffusers failed initializing pipeline: {shared.opts.diffusers_pipeline} {e}')
+                    shared.log.error(f'Diffusers {op} failed initializing pipeline: {shared.opts.diffusers_pipeline} {e}')
                     return
                 try:
                     if hasattr(pipeline, 'from_single_file'):
@@ -680,10 +681,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     elif hasattr(pipeline, 'from_ckpt'):
                         sd_model = pipeline.from_ckpt(checkpoint_info.path, **diffusers_load_config)
                     else:
-                        shared.log.error(f'Diffusers cannot load safetensor model: {checkpoint_info.path} {shared.opts.diffusers_pipeline}')
+                        shared.log.error(f'Diffusers {op} cannot load safetensor model: {checkpoint_info.path} {shared.opts.diffusers_pipeline}')
                         return
                     if sd_model is not None:
-                        shared.log.debug(f'Diffusers pipeline: {sd_model.__class__.__name__}') # pylint: disable=protected-access
+                        shared.log.debug(f'Diffusers {op}: pipeline={sd_model.__class__.__name__}') # pylint: disable=protected-access
                 except Exception as e:
                     shared.log.error(f'Diffusers failed loading model using pipeline: {checkpoint_info.path} {shared.opts.diffusers_pipeline} {e}')
                     return
@@ -705,34 +706,40 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         if hasattr(sd_model, "enable_model_cpu_offload"):
             if shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload:
-                shared.log.debug('Diffusers: enable model CPU offload')
+                shared.log.debug(f'Diffusers {op}: enable model CPU offload')
                 sd_model.enable_model_cpu_offload()
         if hasattr(sd_model, "enable_sequential_cpu_offload"):
             if shared.opts.diffusers_seq_cpu_offload:
                 sd_model.enable_sequential_cpu_offload()
-                shared.log.debug('Diffusers: enable sequential CPU offload')
+                shared.log.debug(f'Diffusers {op}: enable sequential CPU offload')
         if hasattr(sd_model, "enable_vae_slicing"):
             if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_slicing:
-                shared.log.debug('Diffusers: enable VAE slicing')
+                shared.log.debug(f'Diffusers {op}: enable VAE slicing')
                 sd_model.enable_vae_slicing()
             else:
                 sd_model.disable_vae_slicing()
         if hasattr(sd_model, "enable_vae_tiling"):
             if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_tiling:
-                shared.log.debug('Diffusers: enable VAE tiling')
+                shared.log.debug(f'Diffusers {op}: enable VAE tiling')
                 sd_model.enable_vae_tiling()
             else:
                 sd_model.disable_vae_tiling()
         if hasattr(sd_model, "enable_attention_slicing"):
             if shared.cmd_opts.lowvram or shared.opts.diffusers_attention_slicing:
-                shared.log.debug('Diffusers: enable attention slicing')
+                shared.log.debug(f'Diffusers {op}: enable attention slicing')
                 sd_model.enable_attention_slicing()
             else:
                 sd_model.disable_attention_slicing()
+        if hasattr(sd_model, "vae"):
+            if vae is not None:
+                shared.log.debug(f'Diffusers {op} VAE: name={vae.config.get("_name_or_path", "default")} upcast={vae.config.get("force_upcast", None)}')
+                sd_model.vae = vae # pylint: disable=attribute-defined-outside-init
+                if shared.opts.diffusers_vae_upcast != 'default':
+                    sd_model.vae.config.force_upcast = True if shared.opts.upcast_sampling == 'true' else False
         if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
             sd_model.enable_xformers_memory_efficient_attention()
         if shared.opts.opt_channelslast:
-            shared.log.debug('Diffusers: enable channels last')
+            shared.log.debug(f'Diffusers {op}: enable channels last')
             sd_model.unet.to(memory_format=torch.channels_last)
 
         base_sent_to_cpu=False

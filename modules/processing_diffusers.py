@@ -16,6 +16,16 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.state.sampling_steps = p.steps
         shared.state.current_latent = latents
 
+    def vae_decode(latents, model):
+        if hasattr(model, 'vae'):
+            shared.log.debug(f'Diffusers VAE decode: name={model.vae.config.get("_name_or_path", "default")} upcast={model.vae.config.get("force_upcast", None)}')
+            decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
+            images = model.image_processor.postprocess(decoded, output_type='np')
+            return images
+        else:
+            return latents
+
+
     def set_pipeline_args(model, prompt, negative_prompt, **kwargs):
         args = {}
         pipeline = model.main if model.__class__.__name__ == 'PriorPipeline' else model
@@ -83,13 +93,20 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         model=shared.sd_model,
         prompt=prompts,
         negative_prompt=negative_prompts,
+        prompt_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
+        negative_prompt_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
         eta=shared.opts.eta_ddim,
         guidance_rescale=p.diffusers_guidance_rescale,
+        denoising_start=p.refiner_denoise_start,
+        denoising_end=p.refiner_denoise_end,
         # aesthetic_score=shared.opts.diffusers_aesthetics_score,
-        output_type='np' if (shared.sd_refiner is None or p.enable_hr is False or not shared.opts.diffusers_refiner_latents) else 'latent',
+        output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
         **task_specific_kwargs
     )
     output = shared.sd_model(**pipe_args) # pylint: disable=not-callable
+
+    if shared.sd_refiner is None or not p.enable_hr:
+        output.images = vae_decode(output.images, shared.sd_model)
 
     if shared.sd_refiner is not None and p.enable_hr:
         if shared.opts.diffusers_move_base:
@@ -128,9 +145,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 denoising_start=p.refiner_denoise_start,
                 denoising_end=p.refiner_denoise_end,
                 image=output.images[i],
-                output_type='np',
+                output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
             )
             output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
+            output.images = vae_decode(output.images, shared.sd_model)
             results.append(output.images[0])
 
         if shared.opts.diffusers_move_refiner:

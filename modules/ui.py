@@ -399,7 +399,7 @@ def create_ui(startup_timer = None):
                             with FormRow(elem_id="txt2img_refiner_row1", variant="compact"):
                                 image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
                                 diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
-                                refiner_denoise_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.0, elem_id="txt2img_refiner_denoise_start")
+                                refiner_denoise_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.8, elem_id="txt2img_refiner_denoise_start")
                                 refiner_denoise_end = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise end', value=1.0, elem_id="txt2img_refiner_denoise_end")
                             with FormRow(elem_id="txt2img_refiner_row2", variant="compact"):
                                 refiner_prompt = gr.Textbox(value='', label='Prompt')

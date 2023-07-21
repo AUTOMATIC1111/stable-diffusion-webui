@@ -40,7 +40,7 @@ def infotext_to_html(text):
     return res
 
 
-def delete_files(js_data, images, _html_info, _do_make_zip, index):
+def delete_files(js_data, images, _html_info, index):
     try:
         data = json.loads(js_data)
     except Exception:

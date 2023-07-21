@@ -105,7 +105,7 @@ button.custom-button{
 #txt2img_footer, #img2img_footer { height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box { gap: 0.5em; flex-wrap: wrap-reverse; }
 #txt2img_actions_column, #img2img_actions_column { gap: 0.5em; }
-#txt2img_generate_box > button, #img2img_generate_box > button { height: 2.2em; line-height: 0; }
+#txt2img_generate_box > button, #img2img_generate_box > button { min-height: 36px; max-height: 42px; }
 #txt2img_generate_line2, #img2img_generate_line2 { display: flex; }
 #txt2img_generate_line2 > button, #img2img_generate_line2 > button, #extras_generate_box > button { height: 2.2em; line-height: 0; min-width: unset; display: block !important; }
 #txt2img_tools > div, #img2img_tools > div { justify-content: space-around; margin-top: 0.5em; margin-bottom: 0em; }

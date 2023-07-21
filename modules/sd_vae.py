@@ -177,6 +177,7 @@ def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
     try:
         import diffusers
         vae = diffusers.AutoencoderKL.from_pretrained(vae_file, **diffusers_load_config)
+        # shared.log.debug(f'Diffusers VAE config: {vae.config}')
         return vae
     except Exception as e:
         shared.log.error(f"Loading diffusers VAE failed: {vae_file} {e}")
