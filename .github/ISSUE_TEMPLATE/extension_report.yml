@@ -58,6 +58,11 @@ body:
       value: |
         If issue is extension installation or startup related, please check `sdnext.log` before reporting  
         And when posting console logs, please use code blocks ( \`\`\` ) to format them insead of uploading screenshots  
+  - type: markdown
+    attributes:
+      value: |
+        If unsure if this is a right place to ask your question, perhaps post on [Discussions](https://github.com/vladmandic/automatic/discussions)
+        Or reach-out to us on [Discord](https://discord.gg/WqMzTUDC)
   - type: checkboxes
     attributes:
       label: Acknowledgements
