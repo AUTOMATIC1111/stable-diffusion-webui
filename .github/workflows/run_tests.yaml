@@ -1,4 +1,4 @@
-name: Run basic features tests on CPU with empty SD model
+name: Tests
 
 on:
   - push
@@ -6,7 +6,9 @@ on:
 
 jobs:
   test:
+    name: tests on CPU with empty model
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -17,13 +19,55 @@ jobs:
           cache: pip
           cache-dependency-path: |
             **/requirements*txt
+            launch.py
+      - name: Install test dependencies
+        run: pip install wait-for-it -r requirements-test.txt
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+          PIP_PROGRESS_BAR: "off"
+      - name: Setup environment
+        run: python launch.py --skip-torch-cuda-test --exit
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+          PIP_PROGRESS_BAR: "off"
+          TORCH_INDEX_URL: https://download.pytorch.org/whl/cpu
+          WEBUI_LAUNCH_LIVE_OUTPUT: "1"
+          PYTHONUNBUFFERED: "1"
+      - name: Start test server
+        run: >
+          python -m coverage run
+          --data-file=.coverage.server
+          launch.py
+          --skip-prepare-environment
+          --skip-torch-cuda-test
+          --test-server
+          --do-not-download-clip
+          --no-half
+          --disable-opt-split-attention
+          --use-cpu all
+          --api-server-stop
+          2>&1 | tee output.txt &
       - name: Run tests
-        run: python launch.py --tests test --no-half --disable-opt-split-attention --use-cpu all --skip-torch-cuda-test
-      - name: Upload main app stdout-stderr
+        run: |
+          wait-for-it --service 127.0.0.1:7860 -t 600
+          python -m pytest -vv --junitxml=test/results.xml --cov . --cov-report=xml --verify-base-url test
+      - name: Kill test server
+        if: always()
+        run: curl -vv -XPOST http://127.0.0.1:7860/sdapi/v1/server-stop && sleep 10
+      - name: Show coverage
+        run: |
+          python -m coverage combine .coverage*
+          python -m coverage report -i
+          python -m coverage html -i
+      - name: Upload main app output
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: stdout-stderr
-          path: |
-            test/stdout.txt
-            test/stderr.txt
+          name: output
+          path: output.txt
+      - name: Upload coverage HTML
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: htmlcov
+          path: htmlcov

@@ -10,8 +10,11 @@ import subprocess as sp
 from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.images
+from modules.ui_components import ToolButton
+
 
 folder_symbol = '\U0001f4c2'  # 📂
+refresh_symbol = '\U0001f504'  # 🔄
 
 
 def update_generation_info(generation_info, html_info, img_index):
@@ -26,9 +29,10 @@ def update_generation_info(generation_info, html_info, img_index):
     return html_info, gr.update()
 
 
-def plaintext_to_html(text):
-    text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
-    return text
+def plaintext_to_html(text, classname=None):
+    content = "<br>\n".join(html.escape(x) for x in text.split('\n'))
+
+    return f"<p class='{classname}'>{content}</p>" if classname else f"<p>{content}</p>"
 
 
 def save_files(js_data, images, do_make_zip, index):
@@ -50,9 +54,10 @@ def save_files(js_data, images, do_make_zip, index):
     save_to_dirs = shared.opts.use_save_to_dirs_for_ui
     extension: str = shared.opts.samples_format
     start_index = 0
+    only_one = False
 
     if index > -1 and shared.opts.save_selected_only and (index >= data["index_of_first_image"]):  # ensures we are looking at a specific non-grid picture, and we have save_selected_only
-
+        only_one = True
         images = [images[index]]
         start_index = index
 
@@ -70,6 +75,7 @@ def save_files(js_data, images, do_make_zip, index):
             is_grid = image_index < p.index_of_first_image
             i = 0 if is_grid else (image_index - p.index_of_first_image)
 
+            p.batch_index = image_index-1
             fullfn, txt_fullfn = modules.images.save_image(image, path, "", seed=p.all_seeds[i], prompt=p.all_prompts[i], extension=extension, info=p.infotexts[image_index], grid=is_grid, p=p, save_to_dirs=save_to_dirs)
 
             filename = os.path.relpath(fullfn, path)
@@ -83,7 +89,10 @@ def save_files(js_data, images, do_make_zip, index):
 
     # Make Zip
     if do_make_zip:
-        zip_filepath = os.path.join(path, "images.zip")
+        zip_fileseed = p.all_seeds[index-1] if only_one else p.all_seeds[0]
+        namegen = modules.images.FilenameGenerator(p, zip_fileseed, p.all_prompts[0], image, True)
+        zip_filename = namegen.apply(shared.opts.grid_zip_filename_pattern or "[datetime]_[[model_name]]_[seed]-[seed_last]")
+        zip_filepath = os.path.join(path, f"{zip_filename}.zip")
 
         from zipfile import ZipFile
         with ZipFile(zip_filepath, "w") as zip_file:
@@ -125,7 +134,7 @@ Requested path was: {f}
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(grid=4)
+            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(columns=4)
 
         generation_info = None
         with gr.Column():
@@ -149,7 +158,7 @@ Requested path was: {f}
 
                 with gr.Group():
                     html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
-                    html_log = gr.HTML(elem_id=f'html_log_{tabname}')
+                    html_log = gr.HTML(elem_id=f'html_log_{tabname}', elem_classes="html-log")
 
                     generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
                     if tabname == 'txt2img' or tabname == 'img2img':
@@ -211,3 +220,23 @@ Requested path was: {f}
                 ))
 
             return result_gallery, generation_info if tabname != "extras" else html_info_x, html_info, html_log
+
+
+def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+    def refresh():
+        refresh_method()
+        args = refreshed_args() if callable(refreshed_args) else refreshed_args
+
+        for k, v in args.items():
+            setattr(refresh_component, k, v)
+
+        return gr.update(**(args or {}))
+
+    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
+    refresh_button.click(
+        fn=refresh,
+        inputs=[],
+        outputs=[refresh_component]
+    )
+    return refresh_button
+

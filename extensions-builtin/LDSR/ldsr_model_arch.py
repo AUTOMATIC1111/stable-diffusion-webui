@@ -12,7 +12,7 @@ import safetensors.torch
 
 from ldm.models.diffusion.ddim import DDIMSampler
 from ldm.util import instantiate_from_config, ismap
-from modules import shared, sd_hijack
+from modules import shared, sd_hijack, devices
 
 cached_ldsr_model: torch.nn.Module = None
 
@@ -88,7 +88,7 @@ class LDSR:
 
         x_t = None
         logs = None
-        for n in range(n_runs):
+        for _ in range(n_runs):
             if custom_shape is not None:
                 x_t = torch.randn(1, custom_shape[1], custom_shape[2], custom_shape[3]).to(model.device)
                 x_t = repeat(x_t, '1 c h w -> b c h w', b=custom_shape[0])
@@ -110,11 +110,9 @@ class LDSR:
         diffusion_steps = int(steps)
         eta = 1.0
 
-        down_sample_method = 'Lanczos'
 
         gc.collect()
-        if torch.cuda.is_available:
-            torch.cuda.empty_cache()
+        devices.torch_gc()
 
         im_og = image
         width_og, height_og = im_og.size
@@ -131,11 +129,11 @@ class LDSR:
             im_og = im_og.resize((width_downsampled_pre, height_downsampled_pre), Image.LANCZOS)
         else:
             print(f"Down sample rate is 1 from {target_scale} / 4 (Not downsampling)")
-        
+
         # pad width and height to multiples of 64, pads with the edge values of image to avoid artifacts
         pad_w, pad_h = np.max(((2, 2), np.ceil(np.array(im_og.size) / 64).astype(int)), axis=0) * 64 - im_og.size
         im_padded = Image.fromarray(np.pad(np.array(im_og), ((0, pad_h), (0, pad_w), (0, 0)), mode='edge'))
-        
+
         logs = self.run(model["model"], im_padded, diffusion_steps, eta)
 
         sample = logs["sample"]
@@ -151,14 +149,13 @@ class LDSR:
 
         del model
         gc.collect()
-        if torch.cuda.is_available:
-            torch.cuda.empty_cache()
+        devices.torch_gc()
 
         return a
 
 
 def get_cond(selected_path):
-    example = dict()
+    example = {}
     up_f = 4
     c = selected_path.convert('RGB')
     c = torch.unsqueeze(torchvision.transforms.ToTensor()(c), 0)
@@ -196,7 +193,7 @@ def convsample_ddim(model, cond, steps, shape, eta=1.0, callback=None, normals_s
 @torch.no_grad()
 def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize_x0=False, custom_shape=None, temperature=1., noise_dropout=0., corrector=None,
                               corrector_kwargs=None, x_T=None, ddim_use_x0_pred=False):
-    log = dict()
+    log = {}
 
     z, c, x, xrec, xc = model.get_input(batch, model.first_stage_key,
                                         return_first_stage_outputs=True,
@@ -244,7 +241,7 @@ def make_convolutional_sample(batch, model, custom_steps=None, eta=1.0, quantize
         x_sample_noquant = model.decode_first_stage(sample, force_not_quantize=True)
         log["sample_noquant"] = x_sample_noquant
         log["sample_diff"] = torch.abs(x_sample_noquant - x_sample)
-    except:
+    except Exception:
         pass
 
     log["sample"] = x_sample

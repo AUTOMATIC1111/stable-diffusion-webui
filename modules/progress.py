@@ -13,6 +13,8 @@ import modules.shared as shared
 current_task = None
 pending_tasks = {}
 finished_tasks = []
+recorded_results = []
+recorded_results_limit = 2
 
 
 def start_task(id_task):
@@ -31,6 +33,12 @@ def finish_task(id_task):
     finished_tasks.append(id_task)
     if len(finished_tasks) > 16:
         finished_tasks.pop(0)
+
+
+def record_results(id_task, res):
+    recorded_results.append((id_task, res))
+    if len(recorded_results) > recorded_results_limit:
+        recorded_results.pop(0)
 
 
 def add_task_to_queue(id_job):
@@ -87,8 +95,20 @@ def progressapi(req: ProgressRequest):
         image = shared.state.current_image
         if image is not None:
             buffered = io.BytesIO()
-            image.save(buffered, format="png")
-            live_preview = 'data:image/png;base64,' + base64.b64encode(buffered.getvalue()).decode("ascii")
+
+            if opts.live_previews_image_format == "png":
+                # using optimize for large images takes an enormous amount of time
+                if max(*image.size) <= 256:
+                    save_kwargs = {"optimize": True}
+                else:
+                    save_kwargs = {"optimize": False, "compress_level": 1}
+
+            else:
+                save_kwargs = {}
+
+            image.save(buffered, format=opts.live_previews_image_format, **save_kwargs)
+            base64_image = base64.b64encode(buffered.getvalue()).decode('ascii')
+            live_preview = f"data:image/{opts.live_previews_image_format};base64,{base64_image}"
             id_live_preview = shared.state.id_live_preview
         else:
             live_preview = None
@@ -97,3 +117,13 @@ def progressapi(req: ProgressRequest):
 
     return ProgressResponse(active=active, queued=queued, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)
 
+
+def restore_progress(id_task):
+    while id_task == current_task or id_task in pending_tasks:
+        time.sleep(0.1)
+
+    res = next(iter([x[1] for x in recorded_results if id_task == x[0]]), None)
+    if res is not None:
+        return res
+
+    return gr.update(), gr.update(), gr.update(), f"Couldn't restore progress for {id_task}: results either have been discarded or never were obtained"

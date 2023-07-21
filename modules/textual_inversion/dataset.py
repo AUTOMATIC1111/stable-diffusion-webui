@@ -32,7 +32,7 @@ class DatasetEntry:
 
 class PersonalizedBase(Dataset):
     def __init__(self, data_root, width, height, repeats, flip_p=0.5, placeholder_token="*", model=None, cond_model=None, device=None, template_file=None, include_cond=False, batch_size=1, gradient_step=1, shuffle_tags=False, tag_drop_out=0, latent_sampling_method='once', varsize=False, use_weight=False):
-        re_word = re.compile(shared.opts.dataset_filename_word_regex) if len(shared.opts.dataset_filename_word_regex) > 0 else None
+        re_word = re.compile(shared.opts.dataset_filename_word_regex) if shared.opts.dataset_filename_word_regex else None
 
         self.placeholder_token = placeholder_token
 
@@ -72,7 +72,7 @@ class PersonalizedBase(Dataset):
             except Exception:
                 continue
 
-            text_filename = os.path.splitext(path)[0] + ".txt"
+            text_filename = f"{os.path.splitext(path)[0]}.txt"
             filename = os.path.basename(path)
 
             if os.path.exists(text_filename):
@@ -118,7 +118,7 @@ class PersonalizedBase(Dataset):
                 weight = torch.ones(latent_sample.shape)
             else:
                 weight = None
-            
+
             if latent_sampling_method == "random":
                 entry = DatasetEntry(filename=path, filename_text=filename_text, latent_dist=latent_dist, weight=weight)
             else:

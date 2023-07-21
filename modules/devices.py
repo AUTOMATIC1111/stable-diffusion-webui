@@ -1,5 +1,7 @@
 import sys
 import contextlib
+from functools import lru_cache
+
 import torch
 from modules import errors
 
@@ -12,13 +14,6 @@ def has_mps() -> bool:
         return False
     else:
         return mac_specific.has_mps
-
-def extract_device_id(args, name):
-    for x in range(len(args)):
-        if name in args[x]:
-            return args[x + 1]
-
-    return None
 
 
 def get_cuda_device_string():
@@ -54,10 +49,14 @@ def get_device_for(task):
 
 
 def torch_gc():
+
     if torch.cuda.is_available():
         with torch.cuda.device(get_cuda_device_string()):
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()
+
+    if has_mps():
+        mac_specific.torch_mps_gc()
 
 
 def enable_tf32():
@@ -65,7 +64,7 @@ def enable_tf32():
 
         # enabling benchmark option seems to enable a range of cards to do fp16 when they otherwise can't
         # see https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/4407
-        if any([torch.cuda.get_device_capability(devid) == (7, 5) for devid in range(0, torch.cuda.device_count())]):
+        if any(torch.cuda.get_device_capability(devid) == (7, 5) for devid in range(0, torch.cuda.device_count())):
             torch.backends.cudnn.benchmark = True
 
         torch.backends.cuda.matmul.allow_tf32 = True
@@ -92,14 +91,18 @@ def cond_cast_float(input):
 
 
 def randn(seed, shape):
+    from modules.shared import opts
+
     torch.manual_seed(seed)
-    if device.type == 'mps':
+    if opts.randn_source == "CPU" or device.type == 'mps':
         return torch.randn(shape, device=cpu).to(device)
     return torch.randn(shape, device=device)
 
 
 def randn_without_seed(shape):
-    if device.type == 'mps':
+    from modules.shared import opts
+
+    if opts.randn_source == "CPU" or device.type == 'mps':
         return torch.randn(shape, device=cpu).to(device)
     return torch.randn(shape, device=device)
 
@@ -150,3 +153,19 @@ def test_for_nans(x, where):
     message += " Use --disable-nan-check commandline argument to disable this check."
 
     raise NansException(message)
+
+
+@lru_cache
+def first_time_calculation():
+    """
+    just do any calculation with pytorch layers - the first time this is done it allocaltes about 700MB of memory and
+    spends about 2.7 seconds doing that, at least wih NVidia.
+    """
+
+    x = torch.zeros((1, 1)).to(device, dtype)
+    linear = torch.nn.Linear(1, 1).to(device, dtype)
+    linear(x)
+
+    x = torch.zeros((1, 1, 3, 3)).to(device, dtype)
+    conv2d = torch.nn.Conv2d(1, 1, (3, 3)).to(device, dtype)
+    conv2d(x)

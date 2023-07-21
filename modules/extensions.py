@@ -1,17 +1,13 @@
 import os
-import sys
-import traceback
+import threading
 
-import time
-import git
-
-from modules import shared
-from modules.paths_internal import extensions_dir, extensions_builtin_dir
+from modules import shared, errors, cache
+from modules.gitpython_hack import Repo
+from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
 extensions = []
 
-if not os.path.exists(extensions_dir):
-    os.makedirs(extensions_dir)
+os.makedirs(extensions_dir, exist_ok=True)
 
 
 def active():
@@ -24,6 +20,9 @@ def active():
 
 
 class Extension:
+    lock = threading.Lock()
+    cached_fields = ['remote', 'commit_date', 'branch', 'commit_hash', 'version']
+
     def __init__(self, name, path, enabled=True, is_builtin=False):
         self.name = name
         self.path = path
@@ -31,36 +30,62 @@ class Extension:
         self.status = ''
         self.can_update = False
         self.is_builtin = is_builtin
+        self.commit_hash = ''
+        self.commit_date = None
         self.version = ''
+        self.branch = None
         self.remote = None
         self.have_info_from_repo = False
 
+    def to_dict(self):
+        return {x: getattr(self, x) for x in self.cached_fields}
+
+    def from_dict(self, d):
+        for field in self.cached_fields:
+            setattr(self, field, d[field])
+
     def read_info_from_repo(self):
-        if self.have_info_from_repo:
+        if self.is_builtin or self.have_info_from_repo:
             return
 
-        self.have_info_from_repo = True
+        def read_from_repo():
+            with self.lock:
+                if self.have_info_from_repo:
+                    return
 
+                self.do_read_info_from_repo()
+
+                return self.to_dict()
+
+        d = cache.cached_data_for_file('extensions-git', self.name, os.path.join(self.path, ".git"), read_from_repo)
+        self.from_dict(d)
+        self.status = 'unknown'
+
+    def do_read_info_from_repo(self):
         repo = None
         try:
             if os.path.exists(os.path.join(self.path, ".git")):
-                repo = git.Repo(self.path)
+                repo = Repo(self.path)
         except Exception:
-            print(f"Error reading github repository info from {self.path}:", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.report(f"Error reading github repository info from {self.path}", exc_info=True)
 
         if repo is None or repo.bare:
             self.remote = None
         else:
             try:
-                self.status = 'unknown'
                 self.remote = next(repo.remote().urls, None)
-                head = repo.head.commit
-                ts = time.asctime(time.gmtime(repo.head.commit.committed_date))
-                self.version = f'{head.hexsha[:8]} ({ts})'
+                commit = repo.head.commit
+                self.commit_date = commit.committed_date
+                if repo.active_branch:
+                    self.branch = repo.active_branch.name
+                self.commit_hash = commit.hexsha
+                self.version = self.commit_hash[:8]
 
             except Exception:
+                errors.report(f"Failed reading extension data from Git repository ({self.name})", exc_info=True)
                 self.remote = None
+
+        self.have_info_from_repo = True
 
     def list_files(self, subdir, extension):
         from modules import scripts
@@ -78,22 +103,34 @@ class Extension:
         return res
 
     def check_updates(self):
-        repo = git.Repo(self.path)
+        repo = Repo(self.path)
         for fetch in repo.remote().fetch(dry_run=True):
             if fetch.flags != fetch.HEAD_UPTODATE:
                 self.can_update = True
-                self.status = "behind"
+                self.status = "new commits"
                 return
+
+        try:
+            origin = repo.rev_parse('origin')
+            if repo.head.commit != origin:
+                self.can_update = True
+                self.status = "behind HEAD"
+                return
+        except Exception:
+            self.can_update = False
+            self.status = "unknown (remote error)"
+            return
 
         self.can_update = False
         self.status = "latest"
 
-    def fetch_and_reset_hard(self):
-        repo = git.Repo(self.path)
+    def fetch_and_reset_hard(self, commit='origin'):
+        repo = Repo(self.path)
         # Fix: `error: Your local changes to the following files would be overwritten by merge`,
         # because WSL2 Docker set 755 file permissions instead of 644, this results to the error.
         repo.git.fetch(all=True)
-        repo.git.reset('origin', hard=True)
+        repo.git.reset(commit, hard=True)
+        self.have_info_from_repo = False
 
 
 def list_extensions():

@@ -1,39 +1,38 @@
-# See https://github.com/actions/starter-workflows/blob/1067f16ad8a1eac328834e4b0ae24f7d206f810d/ci/pylint.yml for original reference file
-name: Run Linting/Formatting on Pull Requests
+name: Linter
 
 on:
   - push
   - pull_request
-  # See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#onpull_requestpull_request_targetbranchesbranches-ignore for syntax docs
-  # if you want to filter out branches, delete the `- pull_request` and uncomment these lines :
-  # pull_request:  
-  #  branches:
-  #    - master
-  #  branches-ignore:
-  #    - development
 
 jobs:
-  lint:
+  lint-python:
+    name: ruff
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
+      - uses: actions/setup-python@v4
         with:
-          python-version: 3.10.6
-          cache: pip
-          cache-dependency-path: |
-            **/requirements*txt
-      - name: Install PyLint
-        run: | 
-          python -m pip install --upgrade pip
-          pip install pylint
-      # This lets PyLint check to see if it can resolve imports
-      - name: Install dependencies
-        run: |
-          export COMMANDLINE_ARGS="--skip-torch-cuda-test --exit"
-          python launch.py
-      - name: Analysing the code with pylint
-        run: |
-          pylint $(git ls-files '*.py')
+          python-version: 3.11
+          # NB: there's no cache: pip here since we're not installing anything
+          #     from the requirements.txt file(s) in the repository; it's faster
+          #     not to have GHA download an (at the time of writing) 4 GB cache
+          #     of PyTorch and other dependencies.
+      - name: Install Ruff
+        run: pip install ruff==0.0.272
+      - name: Run Ruff
+        run: ruff .
+  lint-js:
+    name: eslint
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name != github.event.pull_request.base.repo.full_name
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm i --ci
+      - run: npm run lint

@@ -1,12 +1,10 @@
 import os
-import sys
-import traceback
 
 import facexlib
 import gfpgan
 
 import modules.face_restoration
-from modules import paths, shared, devices, modelloader
+from modules import paths, shared, devices, modelloader, errors
 
 model_dir = "GFPGAN"
 user_path = None
@@ -27,7 +25,7 @@ def gfpgann():
         return None
 
     models = modelloader.load_models(model_path, model_url, user_path, ext_filter="GFPGAN")
-    if len(models) == 1 and "http" in models[0]:
+    if len(models) == 1 and models[0].startswith("http"):
         model_file = models[0]
     elif len(models) != 0:
         latest_file = max(models, key=os.path.getctime)
@@ -72,13 +70,10 @@ gfpgan_constructor = None
 
 
 def setup_model(dirname):
-    global model_path
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
-
     try:
+        os.makedirs(model_path, exist_ok=True)
         from gfpgan import GFPGANer
-        from facexlib import detection, parsing
+        from facexlib import detection, parsing  # noqa: F401
         global user_path
         global have_gfpgan
         global gfpgan_constructor
@@ -112,5 +107,4 @@ def setup_model(dirname):
 
         shared.face_restorers.append(FaceRestorerGFPGAN())
     except Exception:
-        print("Error setting up GFPGAN:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        errors.report("Error setting up GFPGAN", exc_info=True)

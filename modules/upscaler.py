@@ -2,8 +2,6 @@ import os
 from abc import abstractmethod
 
 import PIL
-import numpy as np
-import torch
 from PIL import Image
 
 import modules.shared
@@ -36,6 +34,7 @@ class Upscaler:
         self.half = not modules.shared.cmd_opts.no_half
         self.pre_pad = 0
         self.mod_scale = None
+        self.model_download_path = None
 
         if self.model_path is None and self.name:
             self.model_path = os.path.join(shared.models_path, self.name)
@@ -43,9 +42,9 @@ class Upscaler:
             os.makedirs(self.model_path, exist_ok=True)
 
         try:
-            import cv2
+            import cv2  # noqa: F401
             self.can_tile = True
-        except:
+        except Exception:
             pass
 
     @abstractmethod
@@ -54,10 +53,10 @@ class Upscaler:
 
     def upscale(self, img: PIL.Image, scale, selected_model: str = None):
         self.scale = scale
-        dest_w = int(img.width * scale)
-        dest_h = int(img.height * scale)
+        dest_w = int((img.width * scale) // 8 * 8)
+        dest_h = int((img.height * scale) // 8 * 8)
 
-        for i in range(3):
+        for _ in range(3):
             shape = (img.width, img.height)
 
             img = self.do_upscale(img, selected_model)
@@ -78,7 +77,7 @@ class Upscaler:
         pass
 
     def find_models(self, ext_filter=None) -> list:
-        return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path)
+        return modelloader.load_models(model_path=self.model_path, model_url=self.model_url, command_path=self.user_path, ext_filter=ext_filter)
 
     def update_status(self, prompt):
         print(f"\nextras: {prompt}", file=shared.progress_print_out)

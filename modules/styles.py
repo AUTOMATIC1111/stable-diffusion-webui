@@ -1,17 +1,9 @@
-# We need this so Python doesn't complain about the unknown StableDiffusionProcessing-typehint at runtime
-from __future__ import annotations
-
 import csv
 import os
 import os.path
+import re
 import typing
-import collections.abc as abc
-import tempfile
 import shutil
-
-if typing.TYPE_CHECKING:
-    # Only import this when code is being type-checked, it doesn't have any effect at runtime
-    from .processing import StableDiffusionProcessing
 
 
 class PromptStyle(typing.NamedTuple):
@@ -37,6 +29,44 @@ def apply_styles_to_prompt(prompt, styles):
     return prompt
 
 
+re_spaces = re.compile("  +")
+
+
+def extract_style_text_from_prompt(style_text, prompt):
+    stripped_prompt = re.sub(re_spaces, " ", prompt.strip())
+    stripped_style_text = re.sub(re_spaces, " ", style_text.strip())
+    if "{prompt}" in stripped_style_text:
+        left, right = stripped_style_text.split("{prompt}", 2)
+        if stripped_prompt.startswith(left) and stripped_prompt.endswith(right):
+            prompt = stripped_prompt[len(left):len(stripped_prompt)-len(right)]
+            return True, prompt
+    else:
+        if stripped_prompt.endswith(stripped_style_text):
+            prompt = stripped_prompt[:len(stripped_prompt)-len(stripped_style_text)]
+
+            if prompt.endswith(', '):
+                prompt = prompt[:-2]
+
+            return True, prompt
+
+    return False, prompt
+
+
+def extract_style_from_prompts(style: PromptStyle, prompt, negative_prompt):
+    if not style.prompt and not style.negative_prompt:
+        return False, prompt, negative_prompt
+
+    match_positive, extracted_positive = extract_style_text_from_prompt(style.prompt, prompt)
+    if not match_positive:
+        return False, prompt, negative_prompt
+
+    match_negative, extracted_negative = extract_style_text_from_prompt(style.negative_prompt, negative_prompt)
+    if not match_negative:
+        return False, prompt, negative_prompt
+
+    return True, extracted_positive, extracted_negative
+
+
 class StyleDatabase:
     def __init__(self, path: str):
         self.no_style = PromptStyle("None", "", "")
@@ -52,7 +82,7 @@ class StyleDatabase:
             return
 
         with open(self.path, "r", encoding="utf-8-sig", newline='') as file:
-            reader = csv.DictReader(file)
+            reader = csv.DictReader(file, skipinitialspace=True)
             for row in reader:
                 # Support loading old CSV format with "name, text"-columns
                 prompt = row["prompt"] if "prompt" in row else row["text"]
@@ -72,16 +102,38 @@ class StyleDatabase:
         return apply_styles_to_prompt(prompt, [self.styles.get(x, self.no_style).negative_prompt for x in styles])
 
     def save_styles(self, path: str) -> None:
-        # Write to temporary file first, so we don't nuke the file if something goes wrong
-        fd, temp_path = tempfile.mkstemp(".csv")
+        # Always keep a backup file around
+        if os.path.exists(path):
+            shutil.copy(path, f"{path}.bak")
+
+        fd = os.open(path, os.O_RDWR | os.O_CREAT)
         with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:
             # _fields is actually part of the public API: typing.NamedTuple is a replacement for collections.NamedTuple,
             # and collections.NamedTuple has explicit documentation for accessing _fields. Same goes for _asdict()
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
             writer.writeheader()
-            writer.writerows(style._asdict() for k,     style in self.styles.items())
+            writer.writerows(style._asdict() for k, style in self.styles.items())
 
-        # Always keep a backup file around
-        if os.path.exists(path):
-            shutil.move(path, path + ".bak")
-        shutil.move(temp_path, path)
+    def extract_styles_from_prompt(self, prompt, negative_prompt):
+        extracted = []
+
+        applicable_styles = list(self.styles.values())
+
+        while True:
+            found_style = None
+
+            for style in applicable_styles:
+                is_match, new_prompt, new_neg_prompt = extract_style_from_prompts(style, prompt, negative_prompt)
+                if is_match:
+                    found_style = style
+                    prompt = new_prompt
+                    negative_prompt = new_neg_prompt
+                    break
+
+            if not found_style:
+                break
+
+            applicable_styles.remove(found_style)
+            extracted.append(found_style.name)
+
+        return list(reversed(extracted)), prompt, negative_prompt
