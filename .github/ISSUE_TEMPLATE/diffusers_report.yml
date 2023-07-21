@@ -1,6 +1,6 @@
-name: Issue Report
-description: Something is broken in the core app
-title: "[Issue]: "
+name: Diffusers Report
+description: Something is broken when using Diffusers backend
+title: "[Diffusers]: "
 labels: []
 
 body:
@@ -10,6 +10,12 @@ body:
       label: Issue Description
       description: Tell us what happened in a very clear and simple way
       value: Please fill this form with as much information as possible
+  - type: textarea
+    id: pipeline
+    attributes:
+      label: Diffusers pipeline used
+      description: Enter Diffusers pipeline and model used
+      value: 
   - type: textarea
     id: platform
     attributes:
@@ -62,11 +68,4 @@ body:
       description: 
       options:
         - label: I have read the above and searched for existing issues
-          required: true
-  - type: checkboxes
-    attributes:
-      label: Acknowledgements
-      description: 
-      options:
-        - label: I confirm that this is classified correctly and its not an extension or diffusers-specific issue
           required: true
