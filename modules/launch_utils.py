@@ -233,7 +233,7 @@ def run_extensions_installers(settings_file):
 re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
 
 
-def requrements_met(requirements_file):
+def requirements_met(requirements_file):
     """
     Does a simple parse of a requirements.txt file to determine if all rerqirements in it
     are already installed. Returns True if so, False if not installed or parsing fails.
@@ -293,7 +293,7 @@ def prepare_environment():
     try:
         # the existance of this file is a signal to webui.sh/bat that webui needs to be restarted when it stops execution
         os.remove(os.path.join(script_path, "tmp", "restart"))
-        os.environ.setdefault('SD_WEBUI_RESTARTING ', '1')
+        os.environ.setdefault('SD_WEBUI_RESTARTING', '1')
     except OSError:
         pass
 
@@ -354,7 +354,7 @@ def prepare_environment():
     if not os.path.isfile(requirements_file):
         requirements_file = os.path.join(script_path, requirements_file)
 
-    if not requrements_met(requirements_file):
+    if not requirements_met(requirements_file):
         run_pip(f"install -r \"{requirements_file}\"", "requirements")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
