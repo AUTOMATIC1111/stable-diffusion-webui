@@ -35,14 +35,15 @@ samplers_k_diffusion = [
 
 
 @torch.no_grad()
-def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=None, s_noise=1.):
+def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=None, s_noise=1., restart_list = None):
     """Implements restart sampling in Restart Sampling for Improving Generative Processes (2023)"""
     '''Restart_list format: {min_sigma: [ restart_steps, restart_times, max_sigma]}'''
+    '''If restart_list is None: will choose restart_list automatically, otherwise will use the given restart_list'''
     from tqdm.auto import trange
     extra_args = {} if extra_args is None else extra_args
     s_in = x.new_ones([x.shape[0]])
     step_id = 0
-    from k_diffusion.sampling import to_d, append_zero
+    from k_diffusion.sampling import to_d, append_zero, get_sigmas_karras
     def heun_step(x, old_sigma, new_sigma, second_order = True):
         nonlocal step_id
         denoised = model(x, old_sigma * s_in, **extra_args)
@@ -62,24 +63,15 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
             x = x + d_prime * dt
         step_id += 1
         return x
-    def get_sigmas_karras(n, sigma_min, sigma_max, rho=7., device='cpu'):
-        ramp = torch.linspace(0, 1, n).to(device)
-        min_inv_rho = (sigma_min ** (1 / rho))
-        max_inv_rho = (sigma_max ** (1 / rho))
-        if isinstance(min_inv_rho, torch.Tensor):
-            min_inv_rho = min_inv_rho.to(device)
-        if isinstance(max_inv_rho, torch.Tensor):
-            max_inv_rho = max_inv_rho.to(device)
-        sigmas = (max_inv_rho + ramp * (min_inv_rho - max_inv_rho)) ** rho
-        return append_zero(sigmas).to(device)
     steps = sigmas.shape[0] - 1
-    if steps >= 20:
-        restart_steps = 9
-        restart_times = 2 if steps >= 36 else 1
-        sigmas = get_sigmas_karras(steps - restart_steps * restart_times, sigmas[-2], sigmas[0], device=sigmas.device)
-        restart_list = {0.1: [restart_steps + 1, restart_times, 2]}
-    else:
-        restart_list = dict()
+    if restart_list is None:
+        if steps >= 20:
+            restart_steps = 9
+            restart_times = 2 if steps >= 36 else 1
+            sigmas = get_sigmas_karras(steps - restart_steps * restart_times, sigmas[-2].item(), sigmas[0].item(), device=sigmas.device)
+            restart_list = {0.1: [restart_steps + 1, restart_times, 2]}
+        else:
+            restart_list = dict()
     temp_list = dict()
     for key, value in restart_list.items():
         temp_list[int(torch.argmin(abs(sigmas - key), dim=0))] = value
@@ -91,7 +83,7 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
             min_idx = i + 1
             max_idx = int(torch.argmin(abs(sigmas - restart_max), dim=0))
             if max_idx < min_idx:
-                sigma_restart = get_sigmas_karras(restart_steps, sigmas[min_idx], sigmas[max_idx], device=sigmas.device)[:-1] # remove the zero at the end
+                sigma_restart = get_sigmas_karras(restart_steps, sigmas[min_idx].item(), sigmas[max_idx].item(), device=sigmas.device)[:-1] # remove the zero at the end
                 while restart_times > 0:
                     restart_times -= 1
                     x = x + torch.randn_like(x) * s_noise * (sigmas[max_idx] ** 2 - sigmas[min_idx] ** 2) ** 0.5
