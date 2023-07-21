@@ -395,8 +395,10 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
         model.first_stage_model = vae
         if depth_model:
             model.depth_model = depth_model
-    # devices.dtype_unet = model.model.diffusion_model.dtype
-    model.model.diffusion_model.to(devices.dtype_unet)
+    if shared.opts.cuda_cast_unet:
+        devices.dtype_unet = model.model.diffusion_model.dtype
+    else:
+        model.model.diffusion_model.to(devices.dtype_unet)
     model.first_stage_model.to(devices.dtype_vae)
     # clean up cache if limit is reached
     while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
@@ -727,7 +729,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model.enable_attention_slicing()
             else:
                 sd_model.disable_attention_slicing()
-        if shared.opts.cross_attention_optimization == "xFormers":
+        if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
             sd_model.enable_xformers_memory_efficient_attention()
         if shared.opts.opt_channelslast:
             shared.log.debug('Diffusers: enable channels last')

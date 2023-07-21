@@ -11,7 +11,7 @@ from modules.memstats import memory_stats
 def process_batch(p, input_files, input_dir, output_dir, inpaint_mask_dir, args):
     shared.log.debug(f'batch: {input_dir}|{output_dir}|{inpaint_mask_dir}')
     processing.fix_seed(p)
-    if len(input_files) > 0:
+    if input_files is not None and len(input_files) > 0:
         image_files = [f.name for f in input_files]
     else:
         if not os.path.isdir(input_dir):

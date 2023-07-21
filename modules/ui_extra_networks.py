@@ -1,3 +1,4 @@
+import re
 import json
 import html
 import os.path
@@ -249,7 +250,9 @@ class ExtraNetworksPage:
         for file in [f"{path}.txt", f"{path}.description.txt"]:
             try:
                 with open(file, "r", encoding="utf-8", errors="replace") as f:
-                    return f.read()
+                    txt = f.read()
+                    txt = re.sub('[<>]', '', txt)
+                    return txt
             except OSError:
                 pass
         return None
@@ -259,7 +262,9 @@ class ExtraNetworksPage:
         for file in [f"{path}.info", f"{path}.civitai.info", f"{basename}.info", f"{basename}.civitai.info"]:
             try:
                 with open(file, "r", encoding="utf-8", errors="replace") as f:
-                    return f.read()
+                    txt = f.read()
+                    txt = re.sub('[<>]', '', txt)
+                    return txt
             except OSError:
                 pass
         return None
