@@ -53,6 +53,7 @@ venv
 /log
 /cert
 .vscode/
+/localizations
 
 # unexcluded so folders get created
 !/repositories/.placeholder
