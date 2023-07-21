@@ -195,6 +195,7 @@ if backend == 'ipex':
     torch.cuda.get_device_properties = torch.xpu.get_device_properties
     torch._utils._get_available_device_type = lambda: "xpu"
     torch.cuda.set_device = torch.xpu.set_device
+    torch.Tensor.cuda = torch.Tensor.xpu
 
     torch.cuda.empty_cache = torch.xpu.empty_cache if "WSL2" not in os.popen("uname -a").read() else lambda: None
     torch.cuda.ipc_collect = lambda: None
