@@ -52,6 +52,7 @@ ignore = [
   "RUF005", # Consider concatenation
   "RUF012", # Mutable class attributes
   "RUF013", # Implict optional
+  "RUF015", # Prefer `next`
 ]
 
 [tool.ruff.flake8-bugbear]

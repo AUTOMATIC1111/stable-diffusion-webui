@@ -19,6 +19,8 @@
   - enable fp16 vae decode when using optimized vae  
     this pretty much doubles performance of decode step (delay after generate is done)  
   - sd-xl: loading vae now applies to both base and refiner and saves a bit of vram  
+  - vae: enable loading of pure-safetensors vae files without config  
+    also enable *automatic* selection to work with diffusers  
 - diffusers: future-proof  
   requires `diffusers==0.19.dev`, not yet released, but can be installed manually  
   - sd-xl: denoising_start/denoising_end

@@ -76,6 +76,12 @@ def refresh_vae_list():
                 os.path.join(shared.opts.vae_dir, '**/*.safetensors'),
             ]
     elif shared.backend == shared.Backend.DIFFUSERS:
+        if sd_models.model_path is not None and os.path.isdir(sd_models.model_path):
+            vae_paths += [os.path.join(sd_models.model_path, 'VAE', '**/*.vae.safetensors')]
+        if shared.opts.ckpt_dir is not None and os.path.isdir(shared.opts.ckpt_dir):
+            vae_paths += [os.path.join(shared.opts.ckpt_dir, '**/*.vae.safetensors')]
+        if shared.opts.vae_dir is not None and os.path.isdir(shared.opts.vae_dir):
+            vae_paths += [os.path.join(shared.opts.vae_dir, '**/*.safetensors')]
         vae_paths += [
             os.path.join(sd_models.model_path, 'VAE', '**/*.json'),
             os.path.join(shared.opts.vae_dir, '**/*.json'),
@@ -88,7 +94,10 @@ def refresh_vae_list():
         if shared.backend == shared.Backend.ORIGINAL:
             vae_dict[name] = filepath
         else:
-            vae_dict[name] = os.path.dirname(filepath)
+            if filepath.endswith(".json"):
+                vae_dict[name] = os.path.dirname(filepath)
+            else:
+                vae_dict[name] = filepath
     shared.log.info(f"Available VAEs: {vae_path} {len(vae_dict)}")
 
 
@@ -176,7 +185,12 @@ def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
     shared.log.debug(f'Diffusers VAE load config: {diffusers_load_config}')
     try:
         import diffusers
-        vae = diffusers.AutoencoderKL.from_pretrained(vae_file, **diffusers_load_config)
+        print('HERE', vae_file, diffusers_load_config)
+        if os.path.isfile(vae_file):
+            vae = diffusers.AutoencoderKL.from_single_file(vae_file)
+            vae = vae.to(devices.dtype_vae)
+        else:
+            vae = diffusers.AutoencoderKL.from_pretrained(vae_file, **diffusers_load_config)
         # shared.log.debug(f'Diffusers VAE config: {vae.config}')
         return vae
     except Exception as e:
