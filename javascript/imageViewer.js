@@ -85,21 +85,11 @@ function modalZoomSet(modalImage, enable) {
   if (modalImage) modalImage.classList.toggle('modalImageFullscreen', !!enable);
 }
 
-function setupImageForLightbox(e) {
-  if (e.dataset.modded) return;
-  console.log('setupImageForLightbox', e);
-  e.dataset.modded = true;
-  e.style.cursor = 'pointer';
-  e.style.userSelect = 'none';
-  const event = (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) ? 'mousedown' : 'click'; // silly firefox workaround since it triggers events in wrong order
-  e.addEventListener(event, (evt) => {
-    if (evt.button !== 0) return;
-    const initialZoom = (localStorage.getItem('modalZoom') || true) === 'yes';
-    modalZoomSet(gradioApp().getElementById('modalImage'), initialZoom);
-    evt.preventDefault();
-    evt.stopPropagation();
-    showModal(evt);
-  }, true);
+function setupImageForLightbox(image) {
+  if (image.dataset.modded) return;
+  image.dataset.modded = 'true';
+  image.style.cursor = 'pointer';
+  image.style.userSelect = 'none';
 }
 
 function modalZoomToggle(event) {
@@ -124,9 +114,26 @@ function modalTileToggle(event) {
 
 let imageViewerInitialized = false;
 
+function galleryClickEventHandler(event) {
+  if (event.button !== 0) return;
+  if (event.target.nodeName === 'IMG' && !event.target.parentNode.classList.contains('thumbnail-item')) {
+    const initialZoom = (localStorage.getItem('modalZoom') || true) === 'yes';
+    modalZoomSet(gradioApp().getElementById('modalImage'), initialZoom);
+    event.preventDefault();
+    showModal(event);
+  }
+}
+
 function initImageViewer() {
-  const fullImgPreview = gradioApp().querySelectorAll('.gradio-gallery > div > img');
-  if (fullImgPreview.length > 0) fullImgPreview.forEach(setupImageForLightbox);
+  const galleryPreview = gradioApp().querySelector('.gradio-gallery > div.preview')
+  if (galleryPreview) {
+    const fullImgPreview = galleryPreview.querySelectorAll('img');
+    if (fullImgPreview.length > 0) {
+      galleryPreview.addEventListener('click', galleryClickEventHandler, true);
+      fullImgPreview.forEach(setupImageForLightbox);
+    }
+  }
+
   if (imageViewerInitialized) return;
   imageViewerInitialized = true;
 
