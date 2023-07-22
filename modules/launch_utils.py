@@ -10,7 +10,7 @@ from functools import lru_cache
 
 from modules import cmd_args, errors
 from modules.paths_internal import script_path, extensions_dir
-from modules import timer  # noqa:F401
+from modules.timer import startup_timer
 
 args, _ = cmd_args.parser.parse_known_args()
 
@@ -194,7 +194,7 @@ def run_extension_installer(extension_dir):
 
     try:
         env = os.environ.copy()
-        env['PYTHONPATH'] = f"{os.path.abspath('.')}{os.pathsep}{env['PYTHONPATH']}"
+        env['PYTHONPATH'] = f"{os.path.abspath('.')}{os.pathsep}{env.get('PYTHONPATH', '')}"
 
         print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env))
     except Exception as e:
@@ -224,12 +224,14 @@ def run_extensions_installers(settings_file):
     if not os.path.isdir(extensions_dir):
         return
 
-    from tqdm.auto import tqdm
-    pbar_extensions = tqdm(list_extensions(settings_file),
-                bar_format="{desc}: |{bar}|{percentage:3.0f}% [{n_fmt}/{total_fmt} {elapsed}<{remaining}]")
-    for dirname_extension in pbar_extensions:
-        pbar_extensions.set_description("Installing %s" % dirname_extension)
-        run_extension_installer(os.path.join(extensions_dir, dirname_extension))
+    with startup_timer.subcategory("run extensions installers"):
+        from tqdm.auto import tqdm
+        pbar_extensions = tqdm(list_extensions(settings_file),
+                    bar_format="{desc}: |{bar}|{percentage:3.0f}% [{n_fmt}/{total_fmt} {elapsed}<{remaining}]")
+        for dirname_extension in pbar_extensions:
+            pbar_extensions.set_description("Installing %s" % dirname_extension)
+            run_extension_installer(os.path.join(extensions_dir, dirname_extension))
+            startup_timer.record(dirname_extension)
 
 
 re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
@@ -302,8 +304,11 @@ def prepare_environment():
     if not args.skip_python_version_check:
         check_python_version()
 
+    startup_timer.record("checks")
+
     commit = commit_hash()
     tag = git_tag()
+    startup_timer.record("git version info")
 
     print(f"Python {sys.version}")
     print(f"Version: {tag}")
@@ -311,21 +316,27 @@ def prepare_environment():
 
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
+        startup_timer.record("install torch")
 
     if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
         raise RuntimeError(
             'Torch is not able to use GPU; '
             'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
         )
+    startup_timer.record("torch GPU test")
+
 
     if not is_installed("gfpgan"):
         run_pip(f"install {gfpgan_package}", "gfpgan")
+        startup_timer.record("install gfpgan")
 
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
+        startup_timer.record("install clip")
 
     if not is_installed("open_clip"):
         run_pip(f"install {openclip_package}", "open_clip")
+        startup_timer.record("install open_clip")
 
     if (not is_installed("xformers") or args.reinstall_xformers) and args.xformers:
         if platform.system() == "Windows":
@@ -339,8 +350,11 @@ def prepare_environment():
         elif platform.system() == "Linux":
             run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
 
+        startup_timer.record("install xformers")
+
     if not is_installed("ngrok") and args.ngrok:
         run_pip("install ngrok", "ngrok")
+        startup_timer.record("install ngrok")
 
     os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 
@@ -350,22 +364,28 @@ def prepare_environment():
     git_clone(codeformer_repo, repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
+    startup_timer.record("clone repositores")
+
     if not is_installed("lpips"):
         run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\"", "requirements for CodeFormer")
+        startup_timer.record("install CodeFormer requirements")
 
     if not os.path.isfile(requirements_file):
         requirements_file = os.path.join(script_path, requirements_file)
 
     if not requirements_met(requirements_file):
         run_pip(f"install -r \"{requirements_file}\"", "requirements")
+        startup_timer.record("install requirements")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
 
     if args.update_check:
         version_check(commit)
+        startup_timer.record("check version")
 
     if args.update_all_extensions:
         git_pull_recursive(extensions_dir)
+        startup_timer.record("update extensions")
 
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")
