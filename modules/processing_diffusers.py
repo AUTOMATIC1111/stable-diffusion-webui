@@ -4,6 +4,7 @@ import modules.devices as devices
 import modules.shared as shared
 import modules.sd_samplers as sd_samplers
 import modules.sd_models as sd_models
+import modules.images as images
 from modules.lora_diffusers import lora_state, unload_diffusers_lora
 from modules.processing import StableDiffusionProcessing
 
@@ -16,12 +17,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.state.sampling_steps = p.steps
         shared.state.current_latent = latents
 
-    def vae_decode(latents, model):
+    def vae_decode(latents, model, output_type='np'):
         if hasattr(model, 'vae'):
             shared.log.debug(f'Diffusers VAE decode: name={model.vae.config.get("_name_or_path", "default")} upcast={model.vae.config.get("force_upcast", None)}')
             decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
-            images = model.image_processor.postprocess(decoded, output_type='np')
-            return images
+            imgs = model.image_processor.postprocess(decoded, output_type=output_type)
+            return imgs
         else:
             return latents
 
@@ -54,16 +55,23 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         for arg in kwargs:
             if arg in possible:
                 args[arg] = kwargs[arg]
-        shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} possible={possible}')
+            else:
+                pass
+                # shared.log.debug(f'Diffuser not supported: pipeline={pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} arg={arg}')
+        # shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} possible={possible}')
         clean = args.copy()
         clean.pop('callback', None)
         clean.pop('callback_steps', None)
-        clean.pop('image', None)
-        clean.pop('mask_image', None)
-        clean.pop('prompt', None)
-        clean.pop('negative_prompt', None)
+        if 'image' in clean:
+            clean['image'] = type(clean['image'])
+        if 'mask_image' in clean:
+            clean['mask_image'] = type(clean['mask_image'])
+        if 'prompt' in clean:
+            clean['prompt'] = len(clean['prompt'])
+        if 'negative_prompt' in clean:
+            clean['negative_prompt'] = len(clean['negative_prompt'])
         clean['generator'] = generator_device
-        shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} set={clean}')
+        shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
         return args
 
     if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name) and (p.sampler_name != 'Default'):
@@ -79,10 +87,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
         task_specific_kwargs = {"height": p.height, "width": p.width}
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
-        task_specific_kwargs = {"image": p.init_images[0], "strength": p.denoising_strength}
+        task_specific_kwargs = {"image": p.init_images, "strength": p.denoising_strength}
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
-        # TODO(PVP): change out to latents once possible with `diffusers`
-        task_specific_kwargs = {"image": p.init_images[0], "mask_image": p.image_mask, "strength": p.denoising_strength}
+        task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength}
 
     # TODO diffusers use transformers for prompt parsing
     # from modules.prompt_parser import parse_prompt_attention
@@ -124,13 +131,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
         for i in range(len(output.images)):
 
-            """
-            # TODO save before refiner
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
-                info=infotext(n, i)
-                image = decode_first_stage(shared.sd_model, output.images[i].to(dtype=devices.dtype_vae))
-                images.save_image(image, path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-refiner")
-            """
+                from modules.processing import create_infotext
+                info=create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, [], iteration=p.iteration, position_in_batch=i)
+                decoded = vae_decode(output.images, shared.sd_model, output_type='pil')
+                for i in range(len(decoded)):
+                    images.save_image(decoded[i], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-refiner")
 
             pipe_args = set_pipeline_args(
                 model=shared.sd_refiner,

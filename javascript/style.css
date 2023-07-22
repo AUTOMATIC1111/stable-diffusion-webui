@@ -355,7 +355,7 @@ div#extras_scale_to_tab div.form{
     flex-direction: row;
 }
 
-.modalControls { display: flex; justify-content: space-evenly; background-color: transparent; position: absolute; width: -webkit-fill-available; z-index: 1; }
+.modalControls { display: flex; justify-content: space-evenly; background-color: transparent; position: absolute; width: 99%; z-index: 1; }
 .modalControls:hover { background-color: #50505050; }
 .modalControls span { color: white; font-size: 2em; font-weight: bold; cursor: pointer; filter: grayscale(100%); }
 .modalControls span:hover, .modalControls span:focus { color: var(--highlight-color); filter: none; }

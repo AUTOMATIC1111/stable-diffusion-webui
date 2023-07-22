@@ -13,13 +13,11 @@ Stuff to be added, in no particular order...
 
 - Diffusers:
   - Add SD-XL Lora
-  - Add SD-XL Sketch/Inpaint
+  - Fix SD-XL Img2img/Inpaint
   - Add VAE direct load from safetensors
   - Fix Kandinsky 2.2 model
   - Fix DeepFloyd IF model
-  - Redo Prompt parser
-  - Add Explicit VAE step
-  - Add Save image before refiner (depends on explicit VAE)
+  - Redo Prompt parser for diffusers
   - Add unCLIP model
 - Technical debt:
   - Port **A1111** stuff

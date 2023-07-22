@@ -54,6 +54,8 @@ function modalKeyHandler(event) {
 }
 
 function showModal(event) {
+  // console.log('showModal', event);
+  // const source = gradioApp().querySelectorAll('.gradio-gallery > div > img')[0];
   const source = event.target || event.srcElement;
   const modalImage = gradioApp().getElementById('modalImage');
   const lb = gradioApp().getElementById('lightboxModal');
@@ -85,14 +87,17 @@ function modalZoomSet(modalImage, enable) {
 
 function setupImageForLightbox(e) {
   if (e.dataset.modded) return;
+  console.log('setupImageForLightbox', e);
   e.dataset.modded = true;
   e.style.cursor = 'pointer';
   e.style.userSelect = 'none';
-  e.addEventListener('click', (evt) => {
+  const event = (navigator.userAgent.toLowerCase().indexOf('firefox') > -1) ? 'mousedown' : 'click'; // silly firefox workaround since it triggers events in wrong order
+  e.addEventListener(event, (evt) => {
     if (evt.button !== 0) return;
     const initialZoom = (localStorage.getItem('modalZoom') || true) === 'yes';
     modalZoomSet(gradioApp().getElementById('modalImage'), initialZoom);
     evt.preventDefault();
+    evt.stopPropagation();
     showModal(evt);
   }, true);
 }

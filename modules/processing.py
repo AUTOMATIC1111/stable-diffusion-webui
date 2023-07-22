@@ -221,12 +221,16 @@ class StableDiffusionProcessing:
         image_conditioning = image_conditioning.to(device=shared.device, dtype=source_image.dtype)
         return image_conditioning
 
+    def diffusers_image_conditioning(self, _source_image, latent_image, _image_mask=None):
+        # shared.log.warning('Diffusers not implemented: img2img_image_conditioning')
+        return latent_image.new_zeros(latent_image.shape[0], 5, 1, 1)
+
     def img2img_image_conditioning(self, source_image, latent_image, image_mask=None):
         source_image = devices.cond_cast_float(source_image)
         # HACK: Using introspection as the Depth2Image model doesn't appear to uniquely
         # identify itself with a field common to all models. The conditioning_key is also hybrid.
         if shared.backend == shared.Backend.DIFFUSERS:
-            shared.log.warning('Diffusers not implemented: img2img_image_conditioning')
+            return self.diffusers_image_conditioning(source_image, latent_image, image_mask)
         if isinstance(self.sd_model, LatentDepth2ImageDiffusion):
             return self.depth2img_image_conditioning(source_image)
         if hasattr(self.sd_model, 'cond_stage_key') and self.sd_model.cond_stage_key == "edit":
@@ -992,20 +996,19 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.refiner_negative = refiner_negative
         self.enable_hr = None
 
-
     def init(self, all_prompts, all_seeds, all_subseeds):
-        image_mask = self.image_mask
-        if shared.backend == shared.Backend.DIFFUSERS and image_mask is None:
+        if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
             sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
-        elif shared.backend == shared.Backend.DIFFUSERS and image_mask is not None:
+        elif shared.backend == shared.Backend.DIFFUSERS and self.image_mask is not None:
             sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.INPAINTING)
             self.sd_model.dtype = self.sd_model.unet.dtype
 
-        force_latent_upscaler = shared.opts.data.get('force_latent_sampler')
-        if self.sampler_name in ['PLMS']:
-            self.sampler_name = force_latent_upscaler if force_latent_upscaler != 'None' else shared.opts.fallback_sampler # PLMS does not support img2img, use fallback instead
+        if self.sampler_name == "PLMS":
+            self.sampler_name = 'UniPC'
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
+
         crop_region = None
+        image_mask = self.image_mask
         if image_mask is not None:
             image_mask = image_mask.convert('L')
             if self.inpainting_mask_invert:
@@ -1043,11 +1046,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if image_mask is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
                 image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
+                self.mask = image_mask # assign early for diffusers
                 self.overlay_images.append(image_masked.convert('RGBA'))
             # crop_region is not None if we are doing inpaint full res
             if crop_region is not None:
                 image = image.crop(crop_region)
                 image = images.resize_image(2, image, self.width, self.height)
+            self.init_images = image # assign early for diffusers
             if image_mask is not None:
                 if self.inpainting_fill != 1:
                     image = masking.fill(image, latent_mask)
@@ -1067,16 +1072,14 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             batch_images = np.array(imgs)
         else:
             raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
+        if shared.backend == shared.Backend.DIFFUSERS:
+            # we've already set self.init_images and self.mask and we dont need any more processing
+            return
+
         image = torch.from_numpy(batch_images)
         image = 2. * image - 1.
         image = image.to(device=shared.device, dtype=devices.dtype_vae)
-
-        if shared.backend == shared.Backend.ORIGINAL:
-            self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
-        else:
-            # TODO Diffusers don't pre-encode the latents for diffusers to allow the UI to stay general for different model types
-            self.init_latent = torch.Tensor(1)
-
+        self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
         if self.resize_mode == 3:
             self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
         if image_mask is not None:
@@ -1084,11 +1087,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             latmask = init_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
             latmask = np.moveaxis(np.array(latmask, dtype=np.float32), 2, 0) / 255
             latmask = latmask[0]
-            latmask = np.around(latmask)
             latmask = np.tile(latmask[None], (4, 1, 1))
+            latmask = np.around(latmask)
             self.mask = torch.asarray(1.0 - latmask).to(device=shared.device, dtype=self.sd_model.dtype)
             self.nmask = torch.asarray(latmask).to(device=shared.device, dtype=self.sd_model.dtype)
-            # this needs to be fixed to be done in sample() using actual seeds for batches
             if self.inpainting_fill == 2:
                 self.init_latent = self.init_latent * self.mask + create_random_tensors(self.init_latent.shape[1:], all_seeds[0:self.init_latent.shape[0]]) * self.nmask
             elif self.inpainting_fill == 3:

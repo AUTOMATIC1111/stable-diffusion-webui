@@ -16,6 +16,7 @@
     "url": "git+https://github.com/vladmandic/automatic.git"
   },
   "devDependencies": {
+    "esbuild": "^0.18.15",
     "eslint": "^8.44.0",
     "eslint-config-airbnb-base": "^15.0.0"
   },

@@ -455,7 +455,7 @@ options_templates.update(options_section(('saving-images', "Image Options"), {
     "save_txt": OptionInfo(False, "Create text file next to every image with generation parameters"),
     "save_log_fn": OptionInfo("", "Create JSON log file for each saved image", component_args=hide_dirs),
     "save_images_before_highres_fix": OptionInfo(False, "Save copy of image before applying highres fix"),
-    # "save_images_before_refiner": OptionInfo(False, "Save copy of image before running refiner"),
+    "save_images_before_refiner": OptionInfo(False, "Save copy of image before running refiner"),
     "save_images_before_face_restoration": OptionInfo(False, "Save copy of image before doing face restoration"),
     "save_images_before_color_correction": OptionInfo(False, "Save copy of image before applying color correction"),
     "save_mask": OptionInfo(False, "Save copy of the inpainting greyscale mask"),
@@ -532,7 +532,7 @@ options_templates.update(options_section(('live-preview', "Live Previews"), {
 
 options_templates.update(options_section(('sampler-params', "Sampler Settings"), {
     "show_samplers": OptionInfo(["Default", "Euler a", "UniPC", "DEIS", "DDIM", "DPM 1S", "DPM 2M", "DPM++ 2M SDE", "DPM++ 2M SDE Karras", "DPM2 Karras", "DPM++ 2M Karras"], "Show samplers in user interface", gr.CheckboxGroup, lambda: {"choices": [x.name for x in list_samplers() if x.name != "PLMS"]}),
-    "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
+    # "fallback_sampler": OptionInfo("Euler a", "Secondary sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     # "force_latent_sampler": OptionInfo("None", "Force latent upscaler sampler", gr.Dropdown, lambda: {"choices": ["None"] + [x.name for x in list_samplers()]}),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
