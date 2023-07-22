@@ -153,7 +153,7 @@ def get_learned_conditioning(model, prompts, steps):
 
 
 re_AND = re.compile(r"\bAND\b")
-re_weight = re.compile(r"^(\s*.*?)(?:\s*:\s*([-+]?(?:\d+\.?|\d*\.\d+)))?\s*$")
+re_weight = re.compile(r"^((?:\s|.)*?)(?:\s*:\s*([-+]?(?:\d+\.?|\d*\.\d+)))?\s*$")
 
 def get_multicond_prompt_list(prompts):
     res_indexes = []
