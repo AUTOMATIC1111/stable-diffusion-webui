@@ -752,8 +752,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             devices.torch_gc()
 
+            x_samples_ddim_list = list(x_samples_ddim)
             if p.scripts is not None:
-                x_samples_ddim_list = list(x_samples_ddim)
                 p.scripts.postprocess_batch(p, x_samples_ddim, x_samples_ddim_list, batch_number=n)
 
             for i, x_sample in enumerate(x_samples_ddim_list):
