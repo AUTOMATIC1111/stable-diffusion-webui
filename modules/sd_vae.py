@@ -185,7 +185,6 @@ def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
     shared.log.debug(f'Diffusers VAE load config: {diffusers_load_config}')
     try:
         import diffusers
-        print('HERE', vae_file, diffusers_load_config)
         if os.path.isfile(vae_file):
             vae = diffusers.AutoencoderKL.from_single_file(vae_file)
             vae = vae.to(devices.dtype_vae)
