@@ -10,6 +10,7 @@ from functools import lru_cache
 
 from modules import cmd_args, errors
 from modules.paths_internal import script_path, extensions_dir
+from modules import timer  # noqa:F401
 
 args, _ = cmd_args.parser.parse_known_args()
 
