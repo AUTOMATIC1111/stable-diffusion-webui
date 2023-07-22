@@ -753,10 +753,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             devices.torch_gc()
 
             if p.scripts is not None:
-                x_samples_ddim = list(x_samples_ddim)
-                p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
+                x_samples_ddim_list = list(x_samples_ddim)
+                p.scripts.postprocess_batch(p, x_samples_ddim, x_samples_ddim_list, batch_number=n)
 
-            for i, x_sample in enumerate(x_samples_ddim):
+            for i, x_sample in enumerate(x_samples_ddim_list):
                 p.batch_index = i
 
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)

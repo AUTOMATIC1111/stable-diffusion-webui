@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import torch
 from collections import namedtuple
 
 import gradio as gr
@@ -499,13 +500,20 @@ class ScriptRunner:
             except Exception:
                 errors.report(f"Error running postprocess: {script.filename}", exc_info=True)
 
-    def postprocess_batch(self, p, images, **kwargs):
+    def postprocess_batch(self, p, images, image_list, **kwargs):
         for script in self.alwayson_scripts:
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
-                script.postprocess_batch(p, *script_args, images=images, **kwargs)
+                script.postprocess_batch(p, *script_args, images=images, image_list=image_list, **kwargs)
+
+                # make images and image_list share the same storage
+                images = torch.stack(image_list)
+                image_list = list(images)
             except Exception:
                 errors.report(f"Error running postprocess_batch: {script.filename}", exc_info=True)
+
+        # processing uses image_list to do its work
+        image_list[:] = list(images)
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         for script in self.alwayson_scripts:
