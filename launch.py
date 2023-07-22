@@ -25,9 +25,11 @@ start = launch_utils.start
 
 
 def main():
+    launch_utils.startup_timer.record("initial startup")
 
-    if not args.skip_prepare_environment:
-        prepare_environment()
+    with launch_utils.startup_timer.subcategory("prepare environment"):
+        if not args.skip_prepare_environment:
+            prepare_environment()
 
     if args.test_server:
         configure_for_tests()
