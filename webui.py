@@ -240,6 +240,8 @@ def initialize():
     modelloader.cleanup_models()
     configure_opts_onchange()
 
+    modules.sd_vae.refresh_vae_list()
+    startup_timer.record("refresh VAE")
     modules.sd_models.setup_model()
     startup_timer.record("setup SD model")
 
@@ -283,8 +285,6 @@ def initialize_rest(*, reload_script_modules=False):
     modelloader.load_upscalers()
     startup_timer.record("load upscalers")
 
-    modules.sd_vae.refresh_vae_list()
-    startup_timer.record("refresh VAE")
     modules.textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")
 
