@@ -759,7 +759,7 @@ def create_ui():
                     )
 
                 with FormRow():
-                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
+                    resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop to resize", "Fill to resize", "Just resize (latent upscale)"], type="index", value="Just resize")
 
                 modules.scripts.scripts_img2img.prepare_ui()
 
