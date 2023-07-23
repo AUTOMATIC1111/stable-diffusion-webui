@@ -379,6 +379,8 @@ table.settings-value-table td{
 
 .modalPrev, .modalNext {
   cursor: pointer;
+  position: relative;
+  z-index: 1;
   top: 0;
   width: auto;
   height: 100vh;
