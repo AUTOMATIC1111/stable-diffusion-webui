@@ -1,4 +1,4 @@
-name: Run Linting/Formatting on Pull Requests
+name: lint-on-push
 
 on:
   - push

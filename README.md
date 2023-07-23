@@ -175,4 +175,8 @@ General goals:
 - [ChangeLog](CHANGELOG.md)
 - [CLI Tools](cli/README.md)
 
+### **Sponsors**
+
+<!-- sponsors --> <!-- sponsors -->
+
 <br>

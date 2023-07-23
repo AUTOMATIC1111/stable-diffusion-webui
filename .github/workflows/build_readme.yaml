@@ -1,0 +1,23 @@
+name: update-readme
+
+on:
+  workflow_dispatch:
+  schedule:
+  - cron: '0 * * * *'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout-code
+        uses: actions/checkout@v3
+      - name: update-readme
+        uses: JamesIves/github-sponsors-readme-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          file: 'README.md'
+      - name: deploy-readme
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: main
+          folder: '.'
