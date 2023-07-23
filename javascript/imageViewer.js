@@ -54,8 +54,6 @@ function modalKeyHandler(event) {
 }
 
 function showModal(event) {
-  // console.log('showModal', event);
-  // const source = gradioApp().querySelectorAll('.gradio-gallery > div > img')[0];
   const source = event.target || event.srcElement;
   const modalImage = gradioApp().getElementById('modalImage');
   const lb = gradioApp().getElementById('lightboxModal');
@@ -125,7 +123,7 @@ function galleryClickEventHandler(event) {
 }
 
 function initImageViewer() {
-  const galleryPreview = gradioApp().querySelector('.gradio-gallery > div.preview')
+  const galleryPreview = gradioApp().querySelector('.gradio-gallery > div.preview');
   if (galleryPreview) {
     const fullImgPreview = galleryPreview.querySelectorAll('img');
     if (fullImgPreview.length > 0) {
@@ -133,7 +131,6 @@ function initImageViewer() {
       fullImgPreview.forEach(setupImageForLightbox);
     }
   }
-
   if (imageViewerInitialized) return;
   imageViewerInitialized = true;
 
