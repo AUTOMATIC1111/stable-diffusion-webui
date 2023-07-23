@@ -19,5 +19,5 @@ jobs:
       - name: deploy-readme
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          branch: main
+          branch: master
           folder: '.'
