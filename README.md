@@ -177,6 +177,8 @@ General goals:
 
 ### **Sponsors**
 
-<!-- sponsors --><a href="https://github.com/allangrant"><img src="https://github.com/allangrant.png" width="60px" alt="Allan Grant" /></a><a href="https://github.com/demib72"><img src="https://github.com/demib72.png" width="60px" alt="Michael Harris" /></a><a href="https://github.com/BrentOzar"><img src="https://github.com/BrentOzar.png" width="60px" alt="Brent Ozar" /></a><a href="https://github.com/AimwiseTonix"><img src="https://github.com/AimwiseTonix.png" width="60px" alt="ToniX" /></a><a href="https://github.com/inktomi"><img src="https://github.com/inktomi.png" width="60px" alt="Matthew Runo" /></a><a href="https://github.com/HELLO-WORLD-SAS"><img src="https://github.com/HELLO-WORLD-SAS.png" width="60px" alt="HELLO WORLD SAS" /></a><a href="https://github.com/4joeknight4"><img src="https://github.com/4joeknight4.png" width="60px" alt="" /></a><a href="https://github.com/SaladTechnologies"><img src="https://github.com/SaladTechnologies.png" width="60px" alt="Salad Technologies" /></a><!-- sponsors -->
+<div align="center">
+<!-- sponsors --> <!-- sponsors -->
+</div>
 
 <br>
