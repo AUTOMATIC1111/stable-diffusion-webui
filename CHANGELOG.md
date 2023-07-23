@@ -14,6 +14,8 @@
   - implement img2img and inpainting (experimental)  
     actual support and qualiy depends on model  
     it works as expected for sd 1.5, but not so much for sd-xl for now  
+  - implement limited stop/interrupt for diffusers
+    works between stages, not within steps  
   - add option to save image before refiner pass  
   - option to set vae upcast in settings  
   - enable fp16 vae decode when using optimized vae  

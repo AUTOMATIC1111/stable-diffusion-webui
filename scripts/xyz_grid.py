@@ -263,7 +263,6 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
         shared.state.job = f"{index(ix, iy, iz) + 1} out of {list_size}"
         processed: Processed = cell(x, y, z, ix, iy, iz)
         if processed_result is None:
-            # Use our first processed result object as a template container to hold our full results
             processed_result = copy(processed)
             processed_result.images = [None] * list_size
             processed_result.all_prompts = [None] * list_size
@@ -272,7 +271,6 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
             processed_result.index_of_first_image = 1
         idx = index(ix, iy, iz)
         if processed.images:
-            # Non-empty list indicates some degree of success.
             processed_result.images[idx] = processed.images[0]
             processed_result.all_prompts[idx] = processed.prompt
             processed_result.all_seeds[idx] = processed.seed
@@ -282,7 +280,6 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
             cell_size = (processed_result.width, processed_result.height)
             if processed_result.images[0] is not None:
                 cell_mode = processed_result.images[0].mode
-                #This corrects size in case of batches:
                 cell_size = processed_result.images[0].size
             processed_result.images[idx] = Image.new(cell_mode, cell_size)
 
@@ -318,7 +315,6 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
                         process_cell(x, y, z, ix, iy, iz)
 
     if not processed_result:
-        # Should never happen, I've only seen it on one of four open tabs and it needed to refresh.
         shared.log.error("XYZ grid: Processing could not begin, you may need to refresh the tab or restart the service")
         return Processed(p, [])
     elif not any(processed_result.images):

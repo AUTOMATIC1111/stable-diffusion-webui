@@ -112,10 +112,21 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     )
     output = shared.sd_model(**pipe_args) # pylint: disable=not-callable
 
+    if shared.state.interrupted or shared.state.skipped:
+        return results
+
     if shared.sd_refiner is None or not p.enable_hr:
         output.images = vae_decode(output.images, shared.sd_model)
 
     if shared.sd_refiner is not None and p.enable_hr:
+        for i in range(len(output.images)):
+            if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
+                from modules.processing import create_infotext
+                info=create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, [], iteration=p.iteration, position_in_batch=i)
+                decoded = vae_decode(output.images, shared.sd_model, output_type='pil')
+                for i in range(len(decoded)):
+                    images.save_image(decoded[i], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-refiner")
+
         if shared.opts.diffusers_move_base:
             shared.log.debug('Moving base model to CPU')
             shared.sd_model.to('cpu')
@@ -126,18 +137,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 sampler = sd_samplers.all_samplers_map.get("UniPC")
             sd_samplers.create_sampler(sampler.name, shared.sd_refiner) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
+        if shared.state.interrupted or shared.state.skipped:
+            return results
+
         shared.sd_refiner.to(devices.device)
         devices.torch_gc()
 
         for i in range(len(output.images)):
-
-            if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
-                from modules.processing import create_infotext
-                info=create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, [], iteration=p.iteration, position_in_batch=i)
-                decoded = vae_decode(output.images, shared.sd_model, output_type='pil')
-                for i in range(len(decoded)):
-                    images.save_image(decoded[i], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-refiner")
-
             pipe_args = set_pipeline_args(
                 model=shared.sd_refiner,
                 prompt=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
@@ -154,6 +160,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
             )
             output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
+            if shared.state.interrupted or shared.state.skipped:
+                return results
+
             output.images = vae_decode(output.images, shared.sd_model)
             results.append(output.images[0])
 
