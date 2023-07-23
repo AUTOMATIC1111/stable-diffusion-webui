@@ -230,8 +230,11 @@ def run_extensions_installers(settings_file):
                     bar_format="{desc}: |{bar}|{percentage:3.0f}% [{n_fmt}/{total_fmt} {elapsed}<{remaining}]")
         for dirname_extension in pbar_extensions:
             pbar_extensions.set_description("Installing %s" % dirname_extension)
-            run_extension_installer(os.path.join(extensions_dir, dirname_extension))
-            startup_timer.record(dirname_extension)
+            path = os.path.join(extensions_dir, dirname_extension)
+
+            if os.path.isdir(path):
+                run_extension_installer(path)
+                startup_timer.record(dirname_extension)
 
 
 re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
