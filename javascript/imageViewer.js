@@ -123,12 +123,15 @@ function galleryClickEventHandler(event) {
 }
 
 function initImageViewer() {
-  const galleryPreview = gradioApp().querySelector('.gradio-gallery > div.preview');
-  if (galleryPreview) {
-    const fullImgPreview = galleryPreview.querySelectorAll('img');
-    if (fullImgPreview.length > 0) {
-      galleryPreview.addEventListener('click', galleryClickEventHandler, true);
-      fullImgPreview.forEach(setupImageForLightbox);
+  // Each tab has its own gradio-gallery
+  const galleryPreviews = gradioApp().querySelectorAll('.gradio-gallery > div.preview');
+  if (galleryPreviews.length > 0) {
+    for (const galleryPreview of galleryPreviews) {
+      const fullImgPreview = galleryPreview.querySelectorAll('img');
+      if (fullImgPreview.length > 0) {
+        galleryPreview.addEventListener('click', galleryClickEventHandler, true);
+        fullImgPreview.forEach(setupImageForLightbox);
+      }
     }
   }
   if (imageViewerInitialized) return;
