@@ -14,7 +14,7 @@ jobs:
       - name: update-readme
         uses: JamesIves/github-sponsors-readme-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
           file: 'README.md'
       - name: deploy-readme
         uses: JamesIves/github-pages-deploy-action@v4
