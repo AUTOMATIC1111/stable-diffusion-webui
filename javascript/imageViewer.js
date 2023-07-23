@@ -2,9 +2,10 @@
 let previewDrag = false;
 let modalPreviewZone;
 
-function closeModal(force = false) {
+function closeModal(evt, force = false) {
   if (force) gradioApp().getElementById('lightboxModal').style.display = 'none';
   if (previewDrag) return;
+  if (evt?.button !== 0) return;
   gradioApp().getElementById('lightboxModal').style.display = 'none';
 }
 
@@ -47,7 +48,7 @@ function modalKeyHandler(event) {
       modalImageSwitch(1);
       break;
     case 'Escape':
-      closeModal(true);
+      closeModal(null, true);
       break;
   }
   event.stopPropagation();
@@ -185,7 +186,7 @@ function initImageViewer() {
   modalClose.className = 'cursor';
   modalClose.innerHTML = '🗙';
   modalClose.title = 'Close';
-  modalClose.addEventListener('click', closeModal, true);
+  modalClose.addEventListener('click', (evt) => closeModal(evt, true), true);
 
   // handlers
   modalPreviewZone.addEventListener('mousedown', () => { previewDrag = false; });
@@ -193,8 +194,8 @@ function initImageViewer() {
   modalPreviewZone.addEventListener('mousemove', () => { previewDrag = true; });
   modalPreviewZone.addEventListener('touchmove', () => { previewDrag = true; }, { passive: true });
   modalPreviewZone.addEventListener('scroll', () => { previewDrag = true; });
-  modalPreviewZone.addEventListener('mouseup', () => closeModal());
-  modalPreviewZone.addEventListener('touchend', () => closeModal());
+  modalPreviewZone.addEventListener('mouseup', (evt) => closeModal(evt));
+  modalPreviewZone.addEventListener('touchend', (evt) => closeModal(evt));
 
   const modalPrev = document.createElement('a');
   modalPrev.className = 'modalPrev';

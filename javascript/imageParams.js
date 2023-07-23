@@ -1,4 +1,9 @@
-window.onload = () => {
+let dragDropInitialized = false;
+
+async function initDragDrop() {
+  if (dragDropInitialized) return;
+  dragDropInitialized = true;
+  console.log('initDragDrop');
   window.addEventListener('drop', (e) => {
     const target = e.composedPath()[0];
     if (!target.placeholder) return;
@@ -16,4 +21,6 @@ window.onload = () => {
       console.log('dropEvent');
     }
   });
-};
+}
+
+onAfterUiUpdate(initDragDrop);
