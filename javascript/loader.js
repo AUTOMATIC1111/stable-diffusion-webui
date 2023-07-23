@@ -25,7 +25,7 @@ async function preloadImages() {
 async function createSplash() {
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   console.log('createSplash', { theme: dark ? 'dark' : 'light' });
-  const num = Math.floor(Math.random() * 7) + 1;
+  const num = Math.floor(11 * Math.random());
   const splash = `
     <div id="splash" class="splash" style="background: ${dark ? 'black' : 'white'}">
       <div class="loading"><div class="loader"></div></div>
