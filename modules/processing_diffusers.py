@@ -9,6 +9,16 @@ from modules.lora_diffusers import lora_state, unload_diffusers_lora
 from modules.processing import StableDiffusionProcessing
 
 
+def encode_prompt(encoder, prompt):
+    cfg = encoder.config
+    # TODO implement similar hijack for diffusers text encoder but following diffusers pipeline.encode_prompt concepts
+    # from modules import sd_hijack_clip
+    # model.text_encoder = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(model.text_encoder, None)
+    shared.log.debug(f'Diffuser encoder: {encoder.__class__.__name__} dict={getattr(cfg, "vocab_size", None)} layers={getattr(cfg, "num_hidden_layers", None)} tokens={getattr(cfg, "max_position_embeddings", None)}')
+    embeds = prompt
+    return embeds
+
+
 def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_prompts):
     results = []
 
@@ -19,7 +29,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def vae_decode(latents, model, output_type='np'):
         if hasattr(model, 'vae') and torch.is_tensor(latents):
-            shared.log.debug(f'Diffusers VAE decode: name={model.vae.config.get("_name_or_path", "default")} upcast={model.vae.config.get("force_upcast", None)}')
+            shared.log.debug(f'Diffusers VAE decode: name={model.vae.config.get("_name_or_path", "default")} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
+            latents.to(model.vae.device)
             decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
             imgs = model.image_processor.postprocess(decoded, output_type=output_type)
             return imgs
@@ -35,9 +46,17 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
         generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
         if 'prompt' in possible:
-            args['prompt'] = prompt
+            if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible:
+                # args['prompt_embeds'] = encode_prompt(model, prompt)
+                args['prompt'] = prompt
+            else:
+                args['prompt'] = prompt
         if 'negative_prompt' in possible:
-            args['negative_prompt'] = negative_prompt
+            if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible:
+                # args['negative_prompt_embeds'] = encode_prompt(model, negative_prompt)
+                args['negative_prompt'] = negative_prompt
+            else:
+                args['negative_prompt'] = negative_prompt
         if 'num_inference_steps' in possible:
             args['num_inference_steps'] = p.steps
         if 'guidance_scale' in possible:
