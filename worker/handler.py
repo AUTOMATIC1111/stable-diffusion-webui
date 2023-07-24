@@ -16,7 +16,7 @@ from modules.shared import mem_mon as vram_mon
 from worker.dumper import dumper
 from loguru import logger
 from modules.devices import torch_gc, get_cuda_device_string
-from worker.k8s_health import write_healthy
+from worker.k8s_health import write_healthy, system_exit
 from worker.task import Task, TaskProgress, TaskStatus, TaskType
 
 
@@ -48,8 +48,7 @@ class TaskHandler:
                     self._set_task_status(progress)
                     if callable(progress_callback):
                         progress_callback(progress)
-                if random.randint(0, 10) < 3:
-                    torch_gc()
+
             except torch.cuda.OutOfMemoryError:
                 torch_gc()
                 time.sleep(15)
@@ -57,22 +56,13 @@ class TaskHandler:
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
                 p = TaskProgress.new_failed(
-                    task, f'CUDA out of memory and release, free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB', '')
+                    task,
+                    'CUDA out of memory',
+                    f'CUDA out of memory and release, free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
 
                 self._set_task_status(p)
                 progress_callback(p)
-
-                if free / 2 ** 30 < 4:
-
-                    logger.info("CUDA out of memory, quit...")
-                    # kill process
-                    from ctypes import CDLL
-                    from ctypes.util import find_library
-
-                    write_healthy(False)
-
-                    libc = CDLL(find_library("libc"))
-                    libc.exit(1)
+                system_exit(free, total)
             except Exception as ex:
                 trace = traceback.format_exc()
                 msg = str(ex)

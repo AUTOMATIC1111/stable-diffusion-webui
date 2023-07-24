@@ -43,6 +43,8 @@ def clear_gradio_tmp():
     timer.add_job(__delete_files, trigger="interval", seconds=3600, args=[path])
     timer.start()
 
+    return timer
+
 
 if __name__ == '__main__':
     clear_gradio_tmp()

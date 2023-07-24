@@ -328,7 +328,10 @@ def configure_for_tests():
 def start():
     print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
+    from tools.mysql import dispose
     if '--nowebui' in sys.argv:
         webui.api_only()
     else:
         webui.webui()
+    dispose()
+

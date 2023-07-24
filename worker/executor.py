@@ -5,17 +5,19 @@
 # @Site    : 
 # @File    : executor.py
 # @Software: Hifive
+import random
 import time
 import typing
 from queue import Queue
 from loguru import logger
 from worker.task import Task, TaskProgress
-from datetime import datetime
+from modules.shared import mem_mon as vram_mon
 from worker.handler import TaskHandler
+from modules.devices import torch_gc
 from worker.task_recv import TaskReceiver, TaskTimeout
 from threading import Thread, Condition, Lock
 from tools.model_hist import CkptLoadRecorder
-from worker.k8s_health import write_healthy
+from worker.k8s_health import write_healthy, system_exit
 
 
 class TaskExecutor(Thread):
@@ -86,6 +88,10 @@ class TaskExecutor(Thread):
                     handler.set_failed(task, f'task time out(task create time:{create_time}, now:{now})')
                     continue
                 handler(task, progress_callback=self.task_progress)
+                if random.randint(1, 10) < 3:
+                    torch_gc()
+                    free, total = vram_mon.cuda_mem_get_info()
+                    system_exit(free, total)
             except Exception:
                 logger.exception("executor err")
                 self.nofity()

@@ -24,7 +24,7 @@ from tools.environment import get_file_storage_system_env, Env_BucketKey, S3Imag
 from filestorage import FileStorageCls, get_local_path, batch_download
 from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, UserModelLocation
 
-StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
+StrMapMap = typing.Dict[str, typing.Mapping[str, typing.Any]]
 
 
 def clean_models():
@@ -169,6 +169,15 @@ def script_name_to_index(name, scripts):
         raise Exception(f"Script '{name}' not found")
 
 
+default_alwayson_scripts = {
+    'ADetailer': {
+        'args': [{
+            'ad_model': 'mediapipe_face_full'
+        }]
+    }
+}
+
+
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
                      selectable_idx: int, request_script_args: typing.Sequence, script_runner: ScriptRunner):
     script_args = [x for x in default_script_args]
@@ -177,8 +186,11 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         script_args[selectable_scripts.args_from:selectable_scripts.args_to] = request_script_args
         script_args[0] = selectable_idx + 1
 
+    alwayson_scripts = alwayson_scripts or {}
+    alwayson_scripts.update(default_alwayson_scripts)
     # Now check for always on scripts
     if alwayson_scripts:
+
         for alwayson_script_name in alwayson_scripts.keys():
             alwayson_script = get_script(alwayson_script_name, script_runner)
             if not alwayson_script:

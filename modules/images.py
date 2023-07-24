@@ -606,7 +606,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         """
         save image with .tmp extension to avoid race condition when another process detects new image in the directory
         """
-        temp_file_path = f"{filename_without_extension}.tmp"
+
+        temp_file_path = f"{ filename_without_extension[:64]}.tmp"
 
         save_image_with_geninfo(image_to_save, info, temp_file_path, extension, params.pnginfo)
 
