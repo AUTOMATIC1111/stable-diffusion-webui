@@ -33,7 +33,7 @@ def get_cuda_device_string():
     elif backend == 'directml' and torch.dml.is_available():
         if shared.cmd_opts.device_id is not None:
             return f"privateuseone:{shared.cmd_opts.device_id}"
-        return torch.dml.get_default_device_string()
+        return torch.dml.get_device_string(torch.dml.default_device().index)
     else:
         if shared.cmd_opts.device_id is not None:
             return f"cuda:{shared.cmd_opts.device_id}"
@@ -70,6 +70,9 @@ def torch_gc(force=False):
     if used > 95:
         shared.log.warning(f'GPU high memory utilization: {used}% {mem}')
         force = True
+        if backend == "directml":
+            practical_used = round(100 * torch.cuda.memory_allocated() / (1 << 30) / gpu.get('total', 1))
+            shared.log.info(f'Practical GPU memory utilization: {practical_used}%')
 
     if shared.opts.disable_gc and not force:
         return
