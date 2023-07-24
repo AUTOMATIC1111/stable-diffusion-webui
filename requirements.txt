@@ -29,4 +29,5 @@ tomesd
 torch
 torchdiffeq
 torchsde
-transformers==4.25.1
+transformers==4.30.0
+diffusers
