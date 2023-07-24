@@ -5,6 +5,7 @@ from modules.paths_internal import models_path, script_path, data_path, extensio
 import modules.safe  # noqa: F401
 
 user_models_path = os.path.join(data_path, "user-models")
+user_out_path = os.path.join(data_path,"outputs")
 # data_path = cmd_opts_pre.data
 sys.path.insert(0, script_path)
 
