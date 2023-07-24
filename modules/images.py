@@ -562,7 +562,10 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
                 if not os.path.exists(fullfn):
                     break
         else:
-            fullfn = os.path.join(path, f"{file_decoration}.{extension}")
+            if basename == '':
+                fullfn = os.path.join(path, f"{file_decoration}.{extension}")
+            else:
+                fullfn = os.path.join(path, f"{basename}-{file_decoration}.{extension}")
     else:
         fullfn = os.path.join(path, f"{forced_filename}.{extension}")
     pnginfo = existing_info or {}
