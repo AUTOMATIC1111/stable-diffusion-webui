@@ -18,7 +18,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.state.current_latent = latents
 
     def vae_decode(latents, model, output_type='np'):
-        if hasattr(model, 'vae' and isinstance(latents, torch.Tensor)):
+        if hasattr(model, 'vae') and torch.is_tensor(latents):
             shared.log.debug(f'Diffusers VAE decode: name={model.vae.config.get("_name_or_path", "default")} upcast={model.vae.config.get("force_upcast", None)}')
             decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
             imgs = model.image_processor.postprocess(decoded, output_type=output_type)
