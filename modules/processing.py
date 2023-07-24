@@ -722,20 +722,20 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         all_subseeds = p.all_subseeds[:]
 
         # apply changes to generation data
-        all_prompts[n * p.batch_size:(n + 1) * p.batch_size] = p.prompts
-        all_seeds[n * p.batch_size:(n + 1) * p.batch_size] = p.seeds
-        all_subseeds[n * p.batch_size:(n + 1) * p.batch_size] = p.subseeds
+        all_prompts[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.prompts
+        all_seeds[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.seeds
+        all_subseeds[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.subseeds
 
         # update p.all_negative_prompts in case extensions changed the size of the batch
         # create_infotext below uses it
-        old_negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
-        p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size] = p.negative_prompts
+        old_negative_prompts = p.all_negative_prompts[iteration * p.batch_size:(iteration + 1) * p.batch_size]
+        p.all_negative_prompts[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.negative_prompts
 
         try:
             return create_infotext(p, all_prompts, all_seeds, all_subseeds, comments, iteration, position_in_batch, use_main_prompt)
         finally:
             # restore p.all_negative_prompts in case extensions changed the size of the batch
-            p.all_negative_prompts[n * p.batch_size:n * p.batch_size + len(p.negative_prompts)] = old_negative_prompts
+            p.all_negative_prompts[iteration * p.batch_size:iteration * p.batch_size + len(p.negative_prompts)] = old_negative_prompts
 
     if os.path.exists(cmd_opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
