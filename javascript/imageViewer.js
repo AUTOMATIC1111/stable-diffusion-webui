@@ -1,6 +1,7 @@
 // A full size 'lightbox' preview modal shown when left clicking on gallery previews
 let previewDrag = false;
 let modalPreviewZone;
+let previewInstance;
 
 function closeModal(evt, force = false) {
   if (force) gradioApp().getElementById('lightboxModal').style.display = 'none';
@@ -58,7 +59,11 @@ function showModal(event) {
   const source = event.target || event.srcElement;
   const modalImage = gradioApp().getElementById('modalImage');
   const lb = gradioApp().getElementById('lightboxModal');
-  modalImage.onload = () => modalPreviewZone.focus();
+  lb.ownerSVGElement = modalImage;
+  modalImage.onload = () => {
+    previewInstance.moveTo(0, 0);
+    modalPreviewZone.focus();
+  };
   modalImage.src = source.src;
   if (modalImage.style.display === 'none') lb.style.setProperty('background-image', `url(${source.src})`);
   lb.style.display = 'flex';
@@ -111,6 +116,12 @@ function modalTileToggle(event) {
   event.stopPropagation();
 }
 
+function modalResetInstance(event) {
+  const modalImage = document.getElementById('modalImage');
+  previewInstance.dispose();
+  previewInstance = panzoom(modalImage, { zoomSpeed: 0.05, minZoom: 0.1, maxZoom: 5.0, filterKey: (/* e, dx, dy, dz */) => true });
+}
+
 let imageViewerInitialized = false;
 
 function galleryClickEventHandler(event) {
@@ -141,16 +152,14 @@ function initImageViewer() {
   // main elements
   const modal = document.createElement('div');
   modal.id = 'lightboxModal';
-  // modal.addEventListener('keydown', modalKeyHandler, true);
 
   modalPreviewZone = document.createElement('div');
   modalPreviewZone.className = 'lightboxModalPreviewZone';
 
   const modalImage = document.createElement('img');
   modalImage.id = 'modalImage';
-  // modalImage.addEventListener('keydown', modalKeyHandler, true);
   modalPreviewZone.appendChild(modalImage);
-  panzoom(modalImage, { zoomSpeed: 0.05, minZoom: 0.1, maxZoom: 5.0, filterKey: (/* e, dx, dy, dz */) => true });
+  previewInstance = panzoom(modalImage, { zoomSpeed: 0.05, minZoom: 0.1, maxZoom: 5.0, filterKey: (/* e, dx, dy, dz */) => true });
 
   // toolbar
   const modalZoom = document.createElement('span');
@@ -159,6 +168,13 @@ function initImageViewer() {
   modalZoom.innerHTML = '🔍';
   modalZoom.title = 'Toggle zoomed view';
   modalZoom.addEventListener('click', modalZoomToggle, true);
+
+  const modalReset = document.createElement('span');
+  modalReset.id = 'modal_reset';
+  modalReset.className = 'cursor';
+  modalReset.innerHTML = '♻️';
+  modalReset.title = 'Reset zoomed view';
+  modalReset.addEventListener('click', modalResetInstance, true);
 
   const modalTile = document.createElement('span');
   modalTile.id = 'modal_tile';
@@ -218,6 +234,7 @@ function initImageViewer() {
   modal.appendChild(modalNext);
   modal.append(modalControls);
   modalControls.appendChild(modalZoom);
+  modalControls.appendChild(modalReset);
   modalControls.appendChild(modalTile);
   modalControls.appendChild(modalSave);
   modalControls.appendChild(modalDownload);

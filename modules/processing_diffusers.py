@@ -18,7 +18,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.state.current_latent = latents
 
     def vae_decode(latents, model, output_type='np'):
-        if hasattr(model, 'vae'):
+        if hasattr(model, 'vae' and isinstance(latents, torch.Tensor)):
             shared.log.debug(f'Diffusers VAE decode: name={model.vae.config.get("_name_or_path", "default")} upcast={model.vae.config.get("force_upcast", None)}')
             decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
             imgs = model.image_processor.postprocess(decoded, output_type=output_type)
@@ -95,7 +95,12 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     # from modules.prompt_parser import parse_prompt_attention
     # parsed_prompt = [parse_prompt_attention(prompt) for prompt in prompts]
 
-    shared.sd_model.to(devices.device)
+    if shared.state.interrupted or shared.state.skipped:
+        return results
+
+    if shared.opts.diffusers_move_base:
+        shared.sd_model.to(devices.device)
+
     pipe_args = set_pipeline_args(
         model=shared.sd_model,
         prompt=prompts,
@@ -128,8 +133,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     images.save_image(decoded[i], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-refiner")
 
         if shared.opts.diffusers_move_base:
-            shared.log.debug('Moving base model to CPU')
+            shared.log.debug('Diffusers: Moving base model to CPU')
             shared.sd_model.to('cpu')
+            devices.torch_gc()
 
         if (not hasattr(shared.sd_refiner.scheduler, 'name')) or (shared.sd_refiner.scheduler.name != p.latent_sampler) and (p.sampler_name != 'Default'):
             sampler = sd_samplers.all_samplers_map.get(p.latent_sampler, None)
@@ -140,8 +146,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if shared.state.interrupted or shared.state.skipped:
             return results
 
-        shared.sd_refiner.to(devices.device)
-        devices.torch_gc()
+        if shared.opts.diffusers_move_refiner:
+            shared.sd_refiner.to(devices.device)
 
         for i in range(len(output.images)):
             pipe_args = set_pipeline_args(
@@ -157,17 +163,15 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 denoising_start=p.refiner_denoise_start,
                 denoising_end=p.refiner_denoise_end,
                 image=output.images[i],
-                output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
+                output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
             )
             output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
-            if shared.state.interrupted or shared.state.skipped:
-                return results
-
-            output.images = vae_decode(output.images, shared.sd_model)
-            results.append(output.images[0])
+            if not shared.state.interrupted and not shared.state.skipped:
+                output.images = vae_decode(output.images, shared.sd_refiner)
+                results.append(output.images[i])
 
         if shared.opts.diffusers_move_refiner:
-            shared.log.debug('Moving refiner model to CPU')
+            shared.log.debug('Diffusers: Moving refiner model to CPU')
             shared.sd_refiner.to('cpu')
     else:
         results = output.images

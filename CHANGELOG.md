@@ -7,6 +7,7 @@
   - extra networks: add add/remove tags to prompt (e.g. lora activation keywords)
   - extensions: fix couple of compatibility items
   - firefox compatibility improvements
+  - minor image viewer improvements
 - original
   - fix hires secondary sampler  
     this now fully obsoletes `fallback_sampler` and `force_latent_sampler`  
