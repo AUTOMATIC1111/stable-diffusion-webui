@@ -18,8 +18,8 @@ def write_healthy(status: bool):
         os.remove("/var/healthy.txt")
 
 
-def system_exit(free, threshold=8):
-    if free / 2 ** 30 < threshold:
+def system_exit(free, total, threshold=0.4):
+    if free < threshold*total:
         logger.info("CUDA out of memory, quit...")
         # kill process
         from ctypes import CDLL

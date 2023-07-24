@@ -48,8 +48,7 @@ class TaskHandler:
                     self._set_task_status(progress)
                     if callable(progress_callback):
                         progress_callback(progress)
-                if random.randint(0, 10) < 3:
-                    torch_gc()
+
             except torch.cuda.OutOfMemoryError:
                 torch_gc()
                 time.sleep(15)
@@ -63,7 +62,7 @@ class TaskHandler:
 
                 self._set_task_status(p)
                 progress_callback(p)
-                system_exit(free)
+                system_exit(free, total)
             except Exception as ex:
                 trace = traceback.format_exc()
                 msg = str(ex)
