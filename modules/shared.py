@@ -892,8 +892,8 @@ def restart_server(restart=True):
         demo.server.close()
         demo.fns = []
         # os._exit(0)
-    except Exception:
-        pass
+    except Exception as e:
+        log.error(f'Server shutdown error: {e}')
     if restart:
         log.info('Server will restart')
 
