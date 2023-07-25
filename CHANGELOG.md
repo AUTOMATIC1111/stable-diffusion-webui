@@ -8,6 +8,7 @@
   - extensions: fix couple of compatibility items
   - firefox compatibility improvements
   - minor image viewer improvements
+  - add backend and operation info to metadata
 - original
   - fix hires secondary sampler  
     this now fully obsoletes `fallback_sampler` and `force_latent_sampler`  
@@ -21,6 +22,7 @@
   - option to set vae upcast in settings  
   - enable fp16 vae decode when using optimized vae  
     this pretty much doubles performance of decode step (delay after generate is done)  
+  - refiner: fix batch processing
   - sd-xl: loading vae now applies to both base and refiner and saves a bit of vram  
   - vae: enable loading of pure-safetensors vae files without config  
     also enable *automatic* selection to work with diffusers  

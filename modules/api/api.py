@@ -5,7 +5,7 @@ from io import BytesIO
 from typing import List, Dict, Any
 from threading import Lock
 from secrets import compare_digest
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import FastAPI, APIRouter, Depends
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.exceptions import HTTPException
 from PIL import PngImagePlugin,Image
@@ -143,7 +143,7 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
-        self.app.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List) # bypass auth
+        self.add_api_route("/sdapi/v1/log", self.get_log_buffer, methods=["GET"], response_model=List) # bypass auth
         self.default_script_arg_txt2img = []
         self.default_script_arg_img2img = []
 
@@ -157,7 +157,6 @@ class Api:
             if compare_digest(credentials.password, self.credentials[credentials.username]):
                 return True
         raise HTTPException(status_code=401, detail="Unauthorized", headers={"WWW-Authenticate": "Basic"})
-
 
     def get_log_buffer(self, req: models.LogRequest = Depends()):
         lines = shared.log.buffer[:req.lines] if req.lines > 0 else shared.log.buffer.copy()

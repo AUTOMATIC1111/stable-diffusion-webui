@@ -104,10 +104,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         cross_attention_kwargs['scale'] = lora_state['multiplier']
     task_specific_kwargs={}
     if sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.TEXT_2_IMAGE:
+        p.ops.append('txt2img')
         task_specific_kwargs = {"height": p.height, "width": p.width}
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE:
+        p.ops.append('img2img')
         task_specific_kwargs = {"image": p.init_images, "strength": p.denoising_strength}
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
+        p.ops.append('inpaint')
         task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength}
 
     # TODO diffusers use transformers for prompt parsing
@@ -167,7 +170,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
         if shared.opts.diffusers_move_refiner:
             shared.sd_refiner.to(devices.device)
-
+        p.ops.append('refine')
         for i in range(len(output.images)):
             pipe_args = set_pipeline_args(
                 model=shared.sd_refiner,

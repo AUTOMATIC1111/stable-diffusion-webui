@@ -381,7 +381,6 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
         subnoise = None
         if subseeds is not None:
             subseed = 0 if i >= len(subseeds) else subseeds[i]
-
             subnoise = devices.randn(subseed, noise_shape)
 
         # randn results depend on device; gpu and cpu get different results for same seed;
@@ -403,16 +402,13 @@ def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, see
             ty = 0 if dy < 0 else dy
             dx = max(-dx, 0)
             dy = max(-dy, 0)
-
             x[:, ty:ty+h, tx:tx+w] = noise[:, dy:dy+h, dx:dx+w]
             noise = x
 
         if sampler_noises is not None:
             cnt = p.sampler.number_of_needed_noises(p)
-
             if eta_noise_seed_delta > 0:
                 torch.manual_seed(seed + eta_noise_seed_delta)
-
             for j in range(cnt):
                 sampler_noises[j].append(devices.randn_without_seed(tuple(noise_shape)))
 
@@ -450,8 +446,6 @@ def fix_seed(p):
 def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
     index = position_in_batch + iteration * p.batch_size
     generation_params = {
-        "Version": git_commit,
-        "Pipeline": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
         "Steps": p.steps,
         "Seed": all_seeds[index],
         "Sampler": p.sampler_name,
@@ -481,7 +475,10 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Denoise end": p.refiner_denoise_end if p.enable_hr else None,
         # restore_faces
         "Face restoration": shared.opts.face_restoration_model if p.restore_faces else None,
-        "Operations": ', '.join(p.ops),
+        # sdnext
+        "Version": git_commit,
+        "Pipeline": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
+        "Operations": ', '.join(list(set(p.ops))),
     }
     token_merging_ratio = p.get_token_merging_ratio()
     token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True) if p.enable_hr else None
@@ -726,6 +723,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         info=infotext(n, i)
                         p.restore_faces = orig
                         images.save_image(Image.fromarray(x_sample), path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-face-restoration")
+                    p.ops.append('face')
                     x_sample = modules.face_restoration.restore_faces(x_sample)
                 image = Image.fromarray(x_sample)
                 if p.scripts is not None:
@@ -740,6 +738,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                         p.color_corrections = orig
                         image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
                         images.save_image(image_without_cc, path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-color-correction")
+                    p.ops.append('color')
                     image = apply_color_correction(p.color_corrections[i], image)
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
                 if shared.opts.samples_save and not p.do_not_save_samples:
@@ -840,7 +839,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.width = self.width or 512
         self.height = self.height or 512
 
+    def init_hr(self):
         if self.enable_hr:
+            self.ops.append('hires')
             if shared.opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):
                 self.hr_resize_x = self.width
                 self.hr_resize_y = self.height
@@ -908,6 +909,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if shared.backend == shared.Backend.DIFFUSERS:
             sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.TEXT_2_IMAGE)
 
+        self.ops.append('txt2img')
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
         latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
         if self.enable_hr and latent_scale_mode is None:
@@ -919,6 +921,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if not self.enable_hr or shared.state.interrupted or shared.state.skipped:
             return samples
         self.is_hr_pass = True
+        self.init_hr()
         target_width = self.hr_upscale_to_x
         target_height = self.hr_upscale_to_y
 
@@ -1009,6 +1012,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.sampler_name = 'UniPC'
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
+        if self.image_mask is not None:
+            self.ops.append('inpaint')
+        else:
+            self.ops.append('img2img')
         crop_region = None
         image_mask = self.image_mask
         if image_mask is not None:
