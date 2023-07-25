@@ -8,6 +8,7 @@ set PYTHON=python3.10.exe
 set GIT=
 set VENV_DIR=
 set COMMANDLINE_ARGS=^
+ --enable-insecure-extension-access^
  --listen^
  --xformers^
  --theme=dark^
