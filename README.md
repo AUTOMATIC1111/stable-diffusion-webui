@@ -48,7 +48,7 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
   This is the default backend and it is fully compatible with all existing functionality and extensions  
 - **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
   It is also the only backend that supports **Stable Diffusion XL** model  
-  Support for legacy workflows and extensions is limited, but its being expanded  
+  Support for legacy workflows and extensions is limited, but it's being expanded  
   See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
 
 ## Model support
@@ -137,7 +137,7 @@ SD.Next comes with several extensions pre-installed:
 
 - To avoid having this repo rely just on me, I'd love to have additional maintainers with full admin rights. If you're interested, ping me!  
 - In addition to general cross-platform code, desire is to have a lead for each of the main platforms.
-This should be fully cross-platform, but I would really love to have additional contibutors and/or maintainers to join and help lead the efforts on different platforms.
+This should be fully cross-platform, but I would really love to have additional contributors and/or maintainers to join and help lead the efforts on different platforms.
 
 ### **Goals**
 
