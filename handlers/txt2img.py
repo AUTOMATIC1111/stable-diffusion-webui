@@ -191,6 +191,8 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         progress.task_desc = f't2i task({task.id}) running'
         yield progress
         shared.state.begin()
+        # shared.state.job_count = process_args.n_iter * process_args.batch_size
+
         if process_args.selectable_scripts:
             processed = process_args.scripts.run(process_args, *process_args.script_args)
         else:

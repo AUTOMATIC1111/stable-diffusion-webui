@@ -455,6 +455,8 @@ class Img2ImgTaskHandler(TaskHandler):
         yield progress
 
         shared.state.begin()
+        # shared.state.job_count = process_args.n_iter * process_args.batch_size
+
         if process_args.is_batch:
             assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
@@ -504,14 +506,17 @@ class Img2ImgTaskHandler(TaskHandler):
         p = 0.01
 
         if shared.state.job_count > 0:
-            p += shared.state.job_no / shared.state.job_count
+            p += shared.state.job_no / (progress.task['n_iter'] * progress.task['batch_size'])
+            # p += (shared.state.job_no) / shared.state.job_count
         if shared.state.sampling_steps > 0:
-            p += 1 / shared.state.job_count * shared.state.sampling_step / shared.state.sampling_steps
+            p += 1 / (progress.task['n_iter'] * progress.task['batch_size']) * shared.state.sampling_step / shared.state.sampling_steps
 
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start / p)
         progress.eta_relative = eta - time_since_start
         progress.task_progress = min(p, 0.99) * 100
+        print(f"-> progress:{progress.task_progress}\n")
+
         shared.state.set_current_image()
         if shared.state.current_image:
             current = encode_pil_to_base64(shared.state.current_image, 40)
