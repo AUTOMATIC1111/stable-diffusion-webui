@@ -18,6 +18,7 @@ run_pip = launch_utils.run_pip
 check_run_python = launch_utils.check_run_python
 git_clone = launch_utils.git_clone
 git_pull_recursive = launch_utils.git_pull_recursive
+list_extensions = launch_utils.list_extensions
 run_extension_installer = launch_utils.run_extension_installer
 prepare_environment = launch_utils.prepare_environment
 configure_for_tests = launch_utils.configure_for_tests

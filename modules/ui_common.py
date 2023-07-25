@@ -29,9 +29,10 @@ def update_generation_info(generation_info, html_info, img_index):
     return html_info, gr.update()
 
 
-def plaintext_to_html(text):
-    text = "<p>" + "<br>\n".join([f"{html.escape(x)}" for x in text.split('\n')]) + "</p>"
-    return text
+def plaintext_to_html(text, classname=None):
+    content = "<br>\n".join(html.escape(x) for x in text.split('\n'))
+
+    return f"<p class='{classname}'>{content}</p>" if classname else f"<p>{content}</p>"
 
 
 def save_files(js_data, images, do_make_zip, index):
@@ -157,7 +158,7 @@ Requested path was: {f}
 
                 with gr.Group():
                     html_info = gr.HTML(elem_id=f'html_info_{tabname}', elem_classes="infotext")
-                    html_log = gr.HTML(elem_id=f'html_log_{tabname}')
+                    html_log = gr.HTML(elem_id=f'html_log_{tabname}', elem_classes="html-log")
 
                     generation_info = gr.Textbox(visible=False, elem_id=f'generation_info_{tabname}')
                     if tabname == 'txt2img' or tabname == 'img2img':

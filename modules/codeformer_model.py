@@ -15,7 +15,6 @@ model_dir = "Codeformer"
 model_path = os.path.join(models_path, model_dir)
 model_url = 'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth'
 
-have_codeformer = False
 codeformer = None
 
 
@@ -100,7 +99,7 @@ def setup_model(dirname):
                             output = self.net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight, adain=True)[0]
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output
-                        torch.cuda.empty_cache()
+                        devices.torch_gc()
                     except Exception:
                         errors.report('Failed inference for CodeFormer', exc_info=True)
                         restored_face = tensor2img(cropped_face_t, rgb2bgr=True, min_max=(-1, 1))
@@ -122,9 +121,6 @@ def setup_model(dirname):
                     self.send_model_to(devices.cpu)
 
                 return restored_img
-
-        global have_codeformer
-        have_codeformer = True
 
         global codeformer
         codeformer = FaceRestorerCodeFormer(dirname)
