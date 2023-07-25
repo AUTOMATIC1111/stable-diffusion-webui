@@ -1661,8 +1661,8 @@ def create_ui():
         (train_interface, "Train", "train"),
     ]
 
-    from .upload_model_ui import append_upload_model_ui
-    append_upload_model_ui(interfaces)
+    #from .upload_model_ui import append_upload_model_ui
+    #append_upload_model_ui(interfaces)
 
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]

@@ -3,7 +3,6 @@ import re
 import shutil
 import json
 
-
 import torch
 import tqdm
 
@@ -27,7 +26,7 @@ def run_pnginfo(image):
 <p><b>{plaintext_to_html(str(key))}</b></p>
 <p>{plaintext_to_html(str(text))}</p>
 </div>
-""".strip()+"\n"
+""".strip() + "\n"
 
     if len(info) == 0:
         message = "Nothing found in the image."
@@ -72,7 +71,9 @@ def to_half(tensor, enable):
     return tensor
 
 
-def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier, save_as_half, custom_name, checkpoint_format, config_source, bake_in_vae, discard_weights, save_metadata):
+def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_model_name, interp_method, multiplier,
+                    save_as_half, custom_name, checkpoint_format, config_source, bake_in_vae, discard_weights,
+                    save_metadata):
     shared.state.begin()
     shared.state.job = 'model-merge'
 
@@ -186,15 +187,19 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
             # have another 4 channels for unmasked picture's latent space, plus one channel for mask, for a total of 9
             if a.shape != b.shape and a.shape[0:1] + a.shape[2:] == b.shape[0:1] + b.shape[2:]:
                 if a.shape[1] == 4 and b.shape[1] == 9:
-                    raise RuntimeError("When merging inpainting model with a normal one, A must be the inpainting model.")
+                    raise RuntimeError(
+                        "When merging inpainting model with a normal one, A must be the inpainting model.")
                 if a.shape[1] == 4 and b.shape[1] == 8:
-                    raise RuntimeError("When merging instruct-pix2pix model with a normal one, A must be the instruct-pix2pix model.")
+                    raise RuntimeError(
+                        "When merging instruct-pix2pix model with a normal one, A must be the instruct-pix2pix model.")
 
-                if a.shape[1] == 8 and b.shape[1] == 4:#If we have an Instruct-Pix2Pix model...
-                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)#Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.
+                if a.shape[1] == 8 and b.shape[1] == 4:  # If we have an Instruct-Pix2Pix model...
+                    theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b,
+                                                             multiplier)  # Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.
                     result_is_instruct_pix2pix_model = True
                 else:
-                    assert a.shape[1] == 9 and b.shape[1] == 4, f"Bad dimensions for merged layer {key}: A={a.shape}, B={b.shape}"
+                    assert a.shape[1] == 9 and b.shape[
+                        1] == 4, f"Bad dimensions for merged layer {key}: A={a.shape}, B={b.shape}"
                     theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)
                     result_is_inpainting_model = True
             else:
@@ -229,8 +234,9 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
             if re.search(regex, key):
                 theta_0.pop(key, None)
 
-    ckpt_dir = shared.cmd_opts.ckpt_dir or sd_models.model_path
-
+    # ckpt_dir = shared.cmd_opts.ckpt_dir or sd_models.user_models_path
+    ckpt_dir = os.path.join(sd_models.user_models_path, "modelmerger")
+    os.makedirs(ckpt_dir, exist_ok=True)
     filename = filename_generator() if custom_name == '' else custom_name
     filename += ".inpainting" if result_is_inpainting_model else ""
     filename += ".instruct-pix2pix" if result_is_instruct_pix2pix_model else ""
@@ -248,7 +254,7 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
         metadata = {"format": "pt"}
 
         merge_recipe = {
-            "type": "webui", # indicate this model was merged with webui's built-in merger
+            "type": "webui",  # indicate this model was merged with webui's built-in merger
             "primary_model_hash": primary_model_info.sha256,
             "secondary_model_hash": secondary_model_info.sha256 if secondary_model_info else None,
             "tertiary_model_hash": tertiary_model_info.sha256 if tertiary_model_info else None,
@@ -301,4 +307,5 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
     shared.state.textinfo = "Checkpoint saved"
     shared.state.end()
 
-    return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)], "Checkpoint saved to " + output_modelname]
+    return [*[gr.Dropdown.update(choices=sd_models.checkpoint_tiles()) for _ in range(4)],
+            "Checkpoint saved to " + output_modelname]

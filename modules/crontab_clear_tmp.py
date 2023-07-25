@@ -40,7 +40,12 @@ def clear_gradio_tmp():
     path = os.environ.get("GRADIO_TEMP_DIR") or str(Path(tempfile.gettempdir()) / "gradio")
     logging.info("startting clear gradio tmp")
     timer = BackgroundScheduler()
+    ##清除gradio tmp 文件
     timer.add_job(__delete_files, trigger="interval", seconds=3600, args=[path])
+    ##清除一键插件生成文件
+    from modules.paths import user_out_path
+    one_path = os.path.join(user_out_path, "yijian")
+    timer.add_job(__delete_files, trigger="interval", seconds=7200, args=[one_path, 86400])
     timer.start()
 
     return timer
