@@ -429,8 +429,8 @@ def apply_image_settings(txt_prompt_img):
             img_data['img_prompt'] = ""
         if img_data['img_negative_prompt'] is None:
             img_data['img_negative_prompt'] = ""
-    
-    except:
+
+    except Exception:
         for key in img_data.keys():
             img_data[key] = gr.update()
 
