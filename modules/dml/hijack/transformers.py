@@ -1,4 +1,5 @@
 import torch
+from typing import Optional
 import transformers.models.clip.modeling_clip
 
 # Copied from transformers.models.bart.modeling_bart._make_causal_mask
@@ -19,4 +20,25 @@ def _make_causal_mask(
         mask = torch.cat([torch.zeros(tgt_len, past_key_values_length, dtype=dtype, device=device), mask], dim=-1)
     return mask[None, None, :, :].expand(bsz, 1, tgt_len, tgt_len + past_key_values_length)
 
+def CLIPTextEmbeddings_forward(
+    self: transformers.models.clip.modeling_clip.CLIPTextEmbeddings,
+    input_ids: Optional[torch.LongTensor] = None,
+    position_ids: Optional[torch.LongTensor] = None,
+    inputs_embeds: Optional[torch.FloatTensor] = None,
+) -> torch.Tensor:
+    from modules.devices import dtype
+    seq_length = input_ids.shape[-1] if input_ids is not None else inputs_embeds.shape[-2]
+
+    if position_ids is None:
+        position_ids = self.position_ids[:, :seq_length]
+
+    if inputs_embeds is None:
+        inputs_embeds = self.token_embedding(input_ids).type(dtype) # Type correction.
+
+    position_embeddings = self.position_embedding(position_ids)
+    embeddings = inputs_embeds + position_embeddings
+
+    return embeddings
+
 transformers.models.clip.modeling_clip._make_causal_mask = _make_causal_mask
+transformers.models.clip.modeling_clip.CLIPTextEmbeddings.forward = CLIPTextEmbeddings_forward

@@ -135,9 +135,6 @@ def set_cuda_params():
             except Exception:
                 pass
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
-    if shared.cmd_opts.use_directml and not shared.cmd_opts.experimental: # TODO DirectML does not have full autocast capabilities
-        shared.opts.no_half = True
-        shared.opts.no_half_vae = True
     if shared.opts.cuda_dtype == 'FP32':
         dtype = torch.float32
         dtype_vae = torch.float32

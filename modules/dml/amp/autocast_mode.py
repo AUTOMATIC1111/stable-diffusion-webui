@@ -2,18 +2,25 @@ import importlib
 from typing import Any, Optional
 import torch
 
-ops = ["torch.Tensor.__matmul__", "torch.addbmm", "torch.addmm", "torch.addmv", "torch.addr", "torch.baddbmm", "torch.bmm", "torch.chain_matmul", "torch.linalg.multi_dot", "torch.nn.functional.conv1d", "torch.nn.functional.conv2d", "torch.nn.functional.conv3d", "torch.nn.functional.conv_transpose1d", "torch.nn.functional.conv_transpose2d", "torch.nn.functional.conv_transpose3d", "torch.nn.GRUCell", "torch.nn.functional.linear", "torch.nn.LSTMCell", "torch.matmul", "torch.mm", "torch.mv", "torch.prelu", "torch.nn.RNNCell"]
+ops = ["torch.Tensor.__matmul__", "torch.addbmm", "torch.addmm", "torch.addmv", "torch.addr", "torch.baddbmm", "torch.bmm", "torch.chain_matmul", "torch.linalg.multi_dot", "torch.nn.functional.conv1d", "torch.nn.functional.conv2d", "torch.nn.functional.conv3d", "torch.nn.functional.conv_transpose1d", "torch.nn.functional.conv_transpose2d", "torch.nn.functional.conv_transpose3d", "torch.nn.GRUCell", "torch.nn.functional.linear", "torch.nn.LSTMCell", "torch.matmul", "torch.mm", "torch.mv", "torch.prelu", "torch.nn.RNNCell", "torch.embedding"]
+supported_cast_pairs = {
+    torch.float16: (torch.float32,),
+    torch.float32: (torch.float16,),
+}
 
-def pre_forward(forward, args, kwargs):
+def forward(op, args: tuple, kwargs: dict):
     if not torch.dml.is_autocast_enabled:
-        return forward(*args, **kwargs)
+        return op(*args, **kwargs)
     args = list(map(cast, args))
-    for keyword in kwargs:
-        kwargs[keyword] = cast(kwargs[keyword])
-    return forward(*args, **kwargs)
+    for kwarg in kwargs:
+        kwargs[kwarg] = cast(kwargs[kwarg])
+    return op(*args, **kwargs)
 
-def cast(tensor):
-    if not isinstance(tensor, torch.Tensor) or torch.dml.autocast_gpu_dtype == tensor.dtype:
+def cast(tensor: torch.Tensor):
+    if not torch.is_tensor(tensor):
+        return tensor
+    dtype: torch.dtype = tensor.dtype
+    if dtype not in supported_cast_pairs or (torch.dml.autocast_gpu_dtype != dtype and torch.dml.autocast_gpu_dtype not in supported_cast_pairs[dtype]):
         return tensor
     return tensor.type(torch.dml.autocast_gpu_dtype)
 
@@ -29,21 +36,25 @@ def cond(op: str):
         for attr_name in func_path[i:-1]:
             resolved_obj = getattr(resolved_obj, attr_name)
         op = getattr(resolved_obj, func_path[-1])
-        setattr(resolved_obj, func_path[-1], lambda *args, **kwargs: pre_forward(op, args, kwargs))
+        setattr(resolved_obj, func_path[-1], lambda *args, **kwargs: forward(op, args, kwargs))
 
 for op in ops:
     cond(op)
 
 class autocast:
-    def __init__(self, dtype: Optional[torch.dtype] = None):
-        self.fast_dtype = dtype or torch.dml.autocast_gpu_dtype
+    prev: bool
+
+    fast_dtype: torch.dtype = torch.float16
+    prev_fast_dtype: torch.dtype
+    def __init__(self, dtype: Optional[torch.dtype] = torch.float16):
+        self.fast_dtype = dtype
 
     def __enter__(self):
         self.prev = torch.dml.is_autocast_enabled
-        self.prev_fastdtype = torch.dml.autocast_gpu_dtype
+        self.prev_fast_dtype = torch.dml.autocast_gpu_dtype
         torch.dml.is_autocast_enabled = True
         torch.dml.autocast_gpu_dtype = self.fast_dtype
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any):
         torch.dml.is_autocast_enabled = self.prev
-        torch.dml.autocast_gpu_dtype = self.prev_fastdtype
+        torch.dml.autocast_gpu_dtype = self.prev_fast_dtype

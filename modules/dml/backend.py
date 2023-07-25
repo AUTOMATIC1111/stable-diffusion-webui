@@ -61,7 +61,7 @@ class DirectML:
         return f"privateuseone:{get_device(device).index}"
 
     def get_device_name(device: Optional[rDevice]=None) -> str:
-        return torch_directml.device_name(get_device(device))
+        return torch_directml.device_name(get_device(device).index)
 
     def get_device_properties(device: Optional[rDevice]=None) -> DeviceProperties:
         return DeviceProperties(get_device(device))
@@ -84,8 +84,7 @@ class DirectML:
         return (0 if available < 0 else available, DirectML.__gpu_memory_bound)
 
     def memory_allocated(device: Optional[rDevice]=None) -> int:
-        device = get_device(device)
-        return sum(torch_directml.gpu_memory(device.index)) * (1 << 20)
+        return sum(torch_directml.gpu_memory(get_device(device).index)) * (1 << 20)
 
     def max_memory_allocated(device: Optional[rDevice]=None):
         return DirectML.memory_allocated(device) # DirectML does not empty GPU memory
