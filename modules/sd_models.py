@@ -994,10 +994,6 @@ def apply_token_merging(sd_model, token_merging_ratio):
     if current_token_merging_ratio > 0:
         tomesd.remove_patch(sd_model)
 
-    if sd_model.__class__ == PriorPipeline:
-        # token merging is not supported for PriorPipelines currently
-        return
-
     if token_merging_ratio > 0:
         tomesd.apply_patch(
             sd_model,
