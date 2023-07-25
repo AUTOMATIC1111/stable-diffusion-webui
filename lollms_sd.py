@@ -13,7 +13,7 @@ import time
 import platform
 
 class SD:
-    def __init__(self, lollms_path:LollmsPaths, personality_config: TypedConfig, wm = "Artbot"):
+    def __init__(self, lollms_path:LollmsPaths, personality_config: TypedConfig, wm = "Artbot", max_retries=30):
         # Get the current directory
         root_dir = lollms_path.personal_path
         current_dir = Path(__file__).resolve().parent
@@ -35,14 +35,14 @@ class SD:
             subprocess.Popen(script_path, cwd=self.sd_folder)
 
         # Wait until the service is available at http://127.0.0.1:7860/
-        self.wait_for_service()
+        self.wait_for_service(max_retries=max_retries)
 
     def wait_for_service(self, max_retries = 30):
         url = f"{self.auto_sd_url}/internal/ping"
         # Adjust this value as needed
         retries = 0
 
-        while retries < max_retries:
+        while retries < max_retries or max_retries<0:
             try:
                 response = requests.get(url)
                 if response.status_code == 200:
