@@ -1,38 +1,11 @@
 import hashlib
-import json
 import os.path
 
-import filelock
-
 from modules import shared
-from modules.paths import data_path
+import modules.cache
 
-
-cache_filename = os.path.join(data_path, "cache.json")
-cache_data = None
-
-
-def dump_cache():
-    with filelock.FileLock(f"{cache_filename}.lock"):
-        with open(cache_filename, "w", encoding="utf8") as file:
-            json.dump(cache_data, file, indent=4)
-
-
-def cache(subsection):
-    global cache_data
-
-    if cache_data is None:
-        with filelock.FileLock(f"{cache_filename}.lock"):
-            if not os.path.isfile(cache_filename):
-                cache_data = {}
-            else:
-                with open(cache_filename, "r", encoding="utf8") as file:
-                    cache_data = json.load(file)
-
-    s = cache_data.get(subsection, {})
-    cache_data[subsection] = s
-
-    return s
+dump_cache = modules.cache.dump_cache
+cache = modules.cache.cache
 
 
 def calculate_sha256(filename):
