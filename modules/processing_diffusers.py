@@ -171,8 +171,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         for i in range(len(output.images)):
             pipe_args = set_pipeline_args(
                 model=shared.sd_refiner,
-                prompt=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
-                negative_prompt=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
+                prompt=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
+                negative_prompt=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts[i],
                 num_inference_steps=p.hr_second_pass_steps,
                 eta=shared.opts.eta_ddim,
                 strength=p.denoising_strength,
@@ -184,10 +184,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 image=output.images[i],
                 output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
             )
-            output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
+            refiner_output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
             if not shared.state.interrupted and not shared.state.skipped:
-                output.images = vae_decode(output.images, shared.sd_refiner)
-                results.append(output.images[i])
+                refiner_images = vae_decode(refiner_output.images, shared.sd_refiner)
+                results.append(refiner_images[0])
 
         if shared.opts.diffusers_move_refiner:
             shared.log.debug('Diffusers: Moving refiner model to CPU')

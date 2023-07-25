@@ -150,6 +150,7 @@ class StableDiffusionProcessing:
         self.is_hr_pass = False
         self.enable_hr = None
         self.refiner_denoise_start = 0
+        self.ops = []
         shared.opts.data['clip_skip'] = clip_skip
 
     @property
@@ -480,6 +481,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Denoise end": p.refiner_denoise_end if p.enable_hr else None,
         # restore_faces
         "Face restoration": shared.opts.face_restoration_model if p.restore_faces else None,
+        "Operations": ', '.join(p.ops),
     }
     token_merging_ratio = p.get_token_merging_ratio()
     token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True) if p.enable_hr else None
