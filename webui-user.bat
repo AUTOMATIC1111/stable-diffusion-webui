@@ -1,6 +1,6 @@
 @echo off
 
-git pull
+git pull upstream master
 
 set SD_ROOT=S:/StableDiffusion/data
 
