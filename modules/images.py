@@ -732,19 +732,22 @@ def image_data(data):
     try:
         image = Image.open(io.BytesIO(data))
         textinfo, _ = read_info_from_image(image)
-        return textinfo, None
+        print("\n")
+        print(textinfo)
+        print("\n")
+        return textinfo, True
     except Exception:
         pass
 
     try:
         text = data.decode('utf8')
         assert len(text) < 10000
-        return text, None
+        return text, False
 
     except Exception:
         pass
 
-    return gr.update(), None
+    return gr.update(), False
 
 
 def flatten(img, bgcolor):

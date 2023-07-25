@@ -2,6 +2,7 @@ import datetime
 import json
 import mimetypes
 import os
+import re
 import sys
 from functools import reduce
 import warnings
@@ -370,10 +371,74 @@ def apply_setting(key, value):
     opts.save(shared.config_filename)
     return getattr(opts, key)
 
+def apply_image_settings(txt_prompt_img):
+
+    img_data = {
+
+        'img_prompt': r"^(.*?)\n",
+        'img_negative_prompt': r"Negative prompt: (.*?)\n",
+        'steps': r"Steps: ([^,]+)",
+        'sampler': r"Sampler: ([^,]+)",
+        'cfg': r"CFG scale: ([^,]+)",
+        'seed': r"Seed: ([^,]+)",
+        'width': r"Size: (\d+)x\d+",
+        'height': r"Size: \d+x(\d+)",
+        'denoising_strength': r"Denoising strength: ([^,]+)",
+        'enable_hr': None,
+        'hr_scale': r"Hires scale: ([^,]+)",
+        'hr_upscaler': r"Hires upscaler: ([^,]+)",
+        'hr_second_pass_steps': r"Hires steps: ([^,]+)",
+        'hr_resize_x': r"Hires resize: (\d+)x\d+",
+        'hr_resize_y': r"Hires resize: \d+x(\d+)",
+
+        'model': r"Model: ([^,]+)"
+    }
+
+    try:
+        textinfo = modules.images.image_data(txt_prompt_img)
+
+        for key in img_data.keys():
+            if textinfo[0] is not None and key != 'enable_hr':
+                if textinfo[1]:
+                    try:
+                        search_result = re.search(img_data[key], textinfo[0]).group(1)
+                        if re.search(r"[^0-9. ]", search_result) is None:
+                            search_result = float(search_result)
+                        img_data[key] = search_result
+                        if key == 'model':
+                            apply_setting("sd_model_checkpoint", search_result)
+                    except Exception:
+                        img_data[key] = None
+                elif key == 'img_prompt':
+                    img_data[key] = textinfo[0]
+                else:
+                    img_data[key] = gr.update()
+            else:
+                img_data[key] = gr.update()
+
+        img_data.pop('model')
+
+        try:
+            if isinstance(img_data['denoising_strength'], (int, float)):
+                img_data['enable_hr'] = True
+        except Exception:
+            img_data['enable_hr'] = False
+            pass
+
+        if img_data['img_prompt'] is None:
+            img_data['img_prompt'] = ""
+        if img_data['img_negative_prompt'] is None:
+            img_data['img_negative_prompt'] = ""
+    
+    except:
+        for key in img_data.keys():
+            img_data[key] = gr.update()
+
+    return *img_data.values(), None
+
 
 def create_output_panel(tabname, outdir):
     return ui_common.create_output_panel(tabname, outdir)
-
 
 def create_sampler_and_steps_selection(choices, tabname):
     if opts.samplers_in_dropdown:
@@ -588,13 +653,27 @@ def create_ui():
             )
 
             txt_prompt_img.change(
-                fn=modules.images.image_data,
+                fn=apply_image_settings,
                 inputs=[
-                    txt_prompt_img
+                    txt_prompt_img,
                 ],
                 outputs=[
                     txt2img_prompt,
-                    txt_prompt_img
+                    txt2img_negative_prompt,
+                    steps,
+                    sampler_index,
+                    cfg_scale,
+                    seed,
+                    width,
+                    height,
+                    denoising_strength,
+                    enable_hr,
+                    hr_scale,
+                    hr_upscaler,
+                    hr_second_pass_steps,
+                    hr_resize_x,
+                    hr_resize_y,
+                    txt_prompt_img,
                 ],
                 show_progress=False,
             )
@@ -884,13 +963,27 @@ def create_ui():
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
 
             img2img_prompt_img.change(
-                fn=modules.images.image_data,
+                fn=apply_image_settings,
                 inputs=[
-                    img2img_prompt_img
+                    img2img_prompt_img,
                 ],
                 outputs=[
                     img2img_prompt,
-                    img2img_prompt_img
+                    img2img_negative_prompt,
+                    steps,
+                    sampler_index,
+                    cfg_scale,
+                    seed,
+                    width,
+                    height,
+                    denoising_strength,
+                    enable_hr,
+                    hr_scale,
+                    hr_upscaler,
+                    hr_second_pass_steps,
+                    hr_resize_x,
+                    hr_resize_y,
+                    img2img_prompt_img,
                 ],
                 show_progress=False,
             )
