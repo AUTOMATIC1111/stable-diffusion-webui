@@ -4,14 +4,20 @@ from collections import defaultdict
 from modules import errors
 
 extra_network_registry = {}
+extra_network_aliases = {}
 
 
 def initialize():
     extra_network_registry.clear()
+    extra_network_aliases.clear()
 
 
 def register_extra_network(extra_network):
     extra_network_registry[extra_network.name] = extra_network
+
+
+def register_extra_network_alias(extra_network, alias):
+    extra_network_aliases[alias] = extra_network
 
 
 def register_default_extra_networks():
@@ -82,26 +88,35 @@ def activate(p, extra_network_data):
     """call activate for extra networks in extra_network_data in specified order, then call
     activate for all remaining registered networks with an empty argument list"""
 
+    activated = []
+
     for extra_network_name, extra_network_args in extra_network_data.items():
         extra_network = extra_network_registry.get(extra_network_name, None)
+
+        if extra_network is None:
+            extra_network = extra_network_aliases.get(extra_network_name, None)
+
         if extra_network is None:
             print(f"Skipping unknown extra network: {extra_network_name}")
             continue
 
         try:
             extra_network.activate(p, extra_network_args)
+            activated.append(extra_network)
         except Exception as e:
             errors.display(e, f"activating extra network {extra_network_name} with arguments {extra_network_args}")
 
     for extra_network_name, extra_network in extra_network_registry.items():
-        args = extra_network_data.get(extra_network_name, None)
-        if args is not None:
+        if extra_network in activated:
             continue
 
         try:
             extra_network.activate(p, [])
         except Exception as e:
             errors.display(e, f"activating extra network {extra_network_name}")
+
+    if p.scripts is not None:
+        p.scripts.after_extra_networks_activate(p, batch_number=p.iteration, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds, extra_network_data=extra_network_data)
 
 
 def deactivate(p, extra_network_data):

@@ -88,8 +88,7 @@ interogate_bubble_symbol = '\U0001F5E8' # 🗨
 interogate_2bubble_symbol = '\U0001F5EA' # 🗪
 generate_forever_symbol = '\u267E' # ♾
 
-def plaintext_to_html(text):
-    return ui_common.plaintext_to_html(text)
+plaintext_to_html = ui_common.plaintext_to_html
 
 
 def send_gradio_gallery_to_image(x):
@@ -160,7 +159,7 @@ def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_di
             img = Image.open(image)
             filename = os.path.basename(image)
             left, _ = os.path.splitext(filename)
-            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, f"{left}.txt"), 'a'))
+            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, f"{left}.txt"), 'a', encoding='utf-8'))
 
         return [gr.update(), None]
 
@@ -913,7 +912,6 @@ def create_ui():
                             outputs=[],
                         )
 
-
                     for category in ordered_ui_categories():
                         
                         if category == "sampler":
@@ -1016,6 +1014,9 @@ def create_ui():
                     img2img_batch_output_dir,
                     img2img_batch_inpaint_mask_dir,
                     override_settings,
+                    img2img_batch_use_png_info,
+                    img2img_batch_png_info_props,
+                    img2img_batch_png_info_dir,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,

@@ -1,7 +1,8 @@
 <div class='card-container' >	
-	<div class='card' onclick={card_clicked}>	
+	<div class='card' onclick={card_clicked} data-name="{name}" {sort_keys}>	
 		<img src={preview_image} loading="lazy">
 		{metadata_button}
+		{edit_button}
 		<div class='actions'>
 			<div class='additional'>
 				<ul>
