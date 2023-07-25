@@ -1075,7 +1075,7 @@ onUiUpdate(function() {
       checked_header = "checked";
     }
     radio_hidden_html +=
-      '<label class="' +
+      '<label class="_' +
       tabvalue.toLowerCase() +
       ' svelte-1qxcj04"><input type="checkbox" name="uiha" class="svelte-1qxcj04" ' +
       checked_hidden +
@@ -1086,7 +1086,7 @@ onUiUpdate(function() {
       "</span></label>";
 
     radio_header_html +=
-      '<label class="' +
+      '<label class="_' +
       tabvalue.toLowerCase() +
       ' svelte-1qxcj04"><input type="checkbox" name="uiha" class="svelte-1qxcj04" ' +
       checked_header +

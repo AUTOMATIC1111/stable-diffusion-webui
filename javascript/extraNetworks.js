@@ -7,8 +7,8 @@ function setupExtraNetworksForTab(tabname) {
   let search = gradioApp().querySelector("#" + tabname + "_extra_search textarea" );
   let refresh = gradioApp().getElementById(tabname + "_extra_refresh");
 
-  let sort = gradioApp().getElementById(tabname + '_extra_sort');
-  let sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
+  //let sort = gradioApp().getElementById(tabname + '_extra_sort');
+  //let sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
 
   let clear = document.createElement("div");
   clear.id = tabname + "_extra_clear";
@@ -23,11 +23,12 @@ function setupExtraNetworksForTab(tabname) {
   tabs.appendChild(clear);
   tabs.appendChild(refresh);
 
-    sort.classList.add('sort');
-    sortOrder.classList.add('sortorder');
-    sort.dataset.sortkey = 'sortDefault';
-    tabs.appendChild(sort);
-    tabs.appendChild(sortOrder);
+/*     
+  sort.classList.add('sort');
+  sortOrder.classList.add('sortorder');
+  sort.dataset.sortkey = 'sortDefault';
+  tabs.appendChild(sort);
+  tabs.appendChild(sortOrder); */
 
   clear.addEventListener("click", function (evt) {
     search.value = "";

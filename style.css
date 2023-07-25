@@ -2919,6 +2919,15 @@ label.svelte-1qxcj04.svelte-1qxcj04.svelte-1qxcj04 {
 /*************/
 /* settings  */
 /*************/
+#audio_notification{
+  visibility:hidden !important;
+  height:0 !important;
+}
+
+input[type=checkbox]:checked {
+  background-color: var(--ae-primary-color) !important;
+}
+
 #row_setting_quicksettings_list,
 #row_setting_gradio_theme,
 #row_setting_hidden_tabs
@@ -3636,7 +3645,7 @@ li.coffee-circle p b {
 
 [id$="2img_settings_scroll"]::-webkit-scrollbar-thumb,
 [id$="2img_settings_scroll"]::-webkit-scrollbar-track {
-  border-left: solid 8px transparent;
+  border-left: solid 8px var(--ae-frame-bg-color);
 }
 
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
