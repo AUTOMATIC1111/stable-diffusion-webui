@@ -20,7 +20,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
             "force_download": False,
             "resume_download": True,
             "cache_dir": shared.opts.diffusers_dir,
-            # "use_auth_token": True,
+            "load_connected_pipeline": True,
         }
     if cache_dir is not None:
         download_config["cache_dir"] = cache_dir
@@ -41,7 +41,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         model_info_dict = None
     # some checkpoints need to be downloaded as "hidden" as they just serve as pre- or post-pipelines of other pipelines
     if model_info_dict is not None and "prior" in model_info_dict:
-        download_dir = DiffusionPipeline.download(model_info_dict["prior"], **download_config)
+        download_dir = DiffusionPipeline.download(model_info_dict["prior"][0], **download_config)
         model_info_dict["prior"] = download_dir
         # mark prior as hidden
         with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f:

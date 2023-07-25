@@ -9,6 +9,12 @@ from modules.lora_diffusers import lora_state, unload_diffusers_lora
 from modules.processing import StableDiffusionProcessing
 
 
+try:
+    import diffusers
+except Exception as ex:
+    shared.log.error(f'Failed to import diffusers: {ex}')
+
+
 def encode_prompt(encoder, prompt):
     cfg = encoder.config
     # TODO implement similar hijack for diffusers text encoder but following diffusers pipeline.encode_prompt concepts
@@ -40,7 +46,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def set_pipeline_args(model, prompt, negative_prompt, **kwargs):
         args = {}
-        pipeline = model.main if model.__class__.__name__ == 'PriorPipeline' else model
+        pipeline = model
         signature = inspect.signature(type(pipeline).__call__)
         possible = signature.parameters.keys()
         generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
@@ -93,7 +99,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
         return args
 
-    if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name) and (p.sampler_name != 'Default'):
+    is_karras_compatible = shared.sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
+    if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != p.sampler_name) and (p.sampler_name != 'Default') and is_karras_compatible:
         sampler = sd_samplers.all_samplers_map.get(p.sampler_name, None)
         if sampler is None:
             sampler = sd_samplers.all_samplers_map.get("UniPC")
