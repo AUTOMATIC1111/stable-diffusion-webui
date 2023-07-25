@@ -56,9 +56,11 @@ class Extension:
                 self.do_read_info_from_repo()
 
                 return self.to_dict()
-
-        d = cache.cached_data_for_file('extensions-git', self.name, os.path.join(self.path, ".git"), read_from_repo)
-        self.from_dict(d)
+        try:
+            d = cache.cached_data_for_file('extensions-git', self.name, os.path.join(self.path, ".git"), read_from_repo)
+            self.from_dict(d)
+        except FileNotFoundError:
+            pass
         self.status = 'unknown'
 
     def do_read_info_from_repo(self):
