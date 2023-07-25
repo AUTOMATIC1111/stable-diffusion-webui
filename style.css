@@ -3645,7 +3645,7 @@ li.coffee-circle p b {
 
 [id$="2img_settings_scroll"]::-webkit-scrollbar-thumb,
 [id$="2img_settings_scroll"]::-webkit-scrollbar-track {
-  border-left: solid 8px transparent;
+  border-left: solid 8px var(--ae-frame-bg-color);
 }
 
 @media screen and (-webkit-min-device-pixel-ratio: 0) {

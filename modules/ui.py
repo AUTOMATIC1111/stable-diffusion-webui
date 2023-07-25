@@ -88,8 +88,7 @@ interogate_bubble_symbol = '\U0001F5E8' # 🗨
 interogate_2bubble_symbol = '\U0001F5EA' # 🗪
 generate_forever_symbol = '\u267E' # ♾
 
-def plaintext_to_html(text):
-    return ui_common.plaintext_to_html(text)
+plaintext_to_html = ui_common.plaintext_to_html
 
 
 def send_gradio_gallery_to_image(x):
@@ -160,7 +159,7 @@ def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_di
             img = Image.open(image)
             filename = os.path.basename(image)
             left, _ = os.path.splitext(filename)
-            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, f"{left}.txt"), 'a'))
+            print(interrogation_function(img), file=open(os.path.join(ii_output_dir, f"{left}.txt"), 'a', encoding='utf-8'))
 
         return [gr.update(), None]
 
@@ -814,10 +813,15 @@ def create_ui():
                                 )
                                 img2img_batch_input_dir = gr.Textbox(label="Input directory", **shared.hide_dirs, elem_id="img2img_batch_input_dir")
                                 img2img_batch_output_dir = gr.Textbox(label="Output directory", **shared.hide_dirs, elem_id="img2img_batch_output_dir")
-                                img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")
-                                
+                                img2img_batch_inpaint_mask_dir = gr.Textbox(label="Inpaint batch mask directory (required for inpaint batch processing only)", **shared.hide_dirs, elem_id="img2img_batch_inpaint_mask_dir")          
+                                with gr.Accordion("PNG info", open=False):
+                                    img2img_batch_use_png_info = gr.Checkbox(label="Append png info to prompts", **shared.hide_dirs, elem_id="img2img_batch_use_png_info")
+                                    img2img_batch_png_info_dir = gr.Textbox(label="PNG info directory", **shared.hide_dirs, placeholder="Leave empty to use input directory", elem_id="img2img_batch_png_info_dir")
+                                    img2img_batch_png_info_props = gr.CheckboxGroup(["Prompt", "Negative prompt", "Seed", "CFG scale", "Sampler", "Steps"], label="Parameters to take from png info", info="Prompts from png info will be appended to prompts set in ui.")
+
+                        
                                 img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
-                                img2img_image_inputs = [init_img, sketch, init_img_with_mask, inpaint_color_sketch]
+                                #img2img_image_inputs = [init_img, sketch, init_img_with_mask, inpaint_color_sketch]
 
                                 for i, tab in enumerate(img2img_tabs):
                                     tab.select(fn=lambda tabnum=i: tabnum, inputs=[], outputs=[img2img_selected_tab])
@@ -912,7 +916,6 @@ def create_ui():
                             inputs=[],
                             outputs=[],
                         )
-
 
                     for category in ordered_ui_categories():
                         
@@ -1016,6 +1019,9 @@ def create_ui():
                     img2img_batch_output_dir,
                     img2img_batch_inpaint_mask_dir,
                     override_settings,
+                    img2img_batch_use_png_info,
+                    img2img_batch_png_info_props,
+                    img2img_batch_png_info_dir,
                 ] + custom_inputs,
                 outputs=[
                     img2img_gallery,

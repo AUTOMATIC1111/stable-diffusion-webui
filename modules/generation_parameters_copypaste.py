@@ -174,31 +174,6 @@ def send_image_and_dimensions(x):
     return img, w, h
 
 
-
-def find_hypernetwork_key(hypernet_name, hypernet_hash=None):
-    """Determines the config parameter name to use for the hypernet based on the parameters in the infotext.
-
-    Example: an infotext provides "Hypernet: ke-ta" and "Hypernet hash: 1234abcd". For the "Hypernet" config
-    parameter this means there should be an entry that looks like "ke-ta-10000(1234abcd)" to set it to.
-
-    If the infotext has no hash, then a hypernet with the same name will be selected instead.
-    """
-    hypernet_name = hypernet_name.lower()
-    if hypernet_hash is not None:
-        # Try to match the hash in the name
-        for hypernet_key in shared.hypernetworks.keys():
-            result = re_hypernet_hash.search(hypernet_key)
-            if result is not None and result[1] == hypernet_hash:
-                return hypernet_key
-    else:
-        # Fall back to a hypernet with the same name
-        for hypernet_key in shared.hypernetworks.keys():
-            if hypernet_key.lower().startswith(hypernet_name):
-                return hypernet_key
-
-    return None
-
-
 def restore_old_hires_fix_params(res):
     """for infotexts that specify old First pass size parameter, convert it into
     width, height, and hr scale"""
@@ -330,10 +305,6 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
         res["Schedule rho"] = 0
 
     return res
-
-
-settings_map = {}
-
 
 
 infotext_to_setting_name_mapping = [
