@@ -231,7 +231,7 @@ class ExtraNetworksPage:
         if item.get("alias", None) is not None:
             args['title'] += f'\nAlias: {item["alias"]}'
         if item.get("tags", None) is not None:
-            args['title'] += f'\nTags: {", ".join(item["tags"].keys())}'
+            args['title'] += f'\nTags: {", ".join(item.get("tags", {}).keys())}'
         self.card.format(**args)
         return self.card.format(**args)
 
