@@ -1053,8 +1053,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
                 self.width = image.width
                 self.height = image.height
+            if image_mask is not None:
                 image_masked = Image.new('RGBa', (image.width, image.height))
-                image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
+                image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')) if self.mask_for_overlay is not None else None)
                 self.mask = image_mask # assign early for diffusers
                 self.overlay_images.append(image_masked.convert('RGBA'))
             # crop_region is not None if we are doing inpaint full res
