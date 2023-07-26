@@ -86,7 +86,6 @@ def add_style(name: str, prompt: str, negative_prompt: str):
 
 
 def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y):
-    print('HERE', enable, width, height, hr_scale, hr_resize_x, hr_resize_y)
     from modules import processing, devices
     if not enable:
         return ""
@@ -359,7 +358,7 @@ def create_ui(startup_timer = None):
                     res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn", label="Switch dims")
 
                 with FormRow(elem_classes="checkboxes-row", variant="compact"):
-                    show_batch = gr.Checkbox(label='Batch', value=ui_defaults.get('txt2img/Batch/value', True), elem_id="txt2img_show_batch")
+                    show_batch = gr.Checkbox(label='Batch', value=ui_defaults.get('txt2img/Batch/value', False), elem_id="txt2img_show_batch")
                     show_seed = gr.Checkbox(label='Seed details', value=ui_defaults.get('txt2img/Seed details/value', False), elem_id="txt2img_show_seed")
                     show_advanced = gr.Checkbox(label='Advanced', value=ui_defaults.get('txt2img/Advanced/value', False), elem_id="txt2img_show_advanced")
                     show_second_pass = gr.Checkbox(label='Second pass', value=ui_defaults.get('txt2img/Second pass/value', False), elem_id="txt2img_show_second_pass")
