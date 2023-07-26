@@ -253,7 +253,7 @@ class ExtraNetworksPage:
             "prompt": item.get("prompt", None),
             "tabname": quote_js(tabname),
             "local_preview": quote_js(item["local_preview"]),
-            "name": item["name"],
+            "name": html.escape(item["name"]),
             "description": (item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',
