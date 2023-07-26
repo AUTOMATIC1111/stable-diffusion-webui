@@ -1,0 +1,19 @@
+name: Pull requests can't target master branch
+
+"on":
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - master
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Warning marge into master
+        run: |
+          echo -e "::warning::This pull request directly merge into \"master\" branch, normally development happens on \"dev\" branch."
+          exit 1

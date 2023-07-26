@@ -1,23 +1,26 @@
 import os
+from contextlib import closing
 from pathlib import Path
 
 import numpy as np
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
+import gradio as gr
 
-from modules import sd_samplers
-from modules.generation_parameters_copypaste import create_override_settings_dict
+from modules import sd_samplers, images as imgutil
+from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
+from modules.images import save_image
 import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
 import modules.scripts
 
 
-def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0):
+def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0, use_png_info=False, png_info_props=None, png_info_dir=None):
     processing.fix_seed(p)
 
-    images = shared.listfiles(input_dir)
+    images = list(shared.walk_files(input_dir, allowed_extensions=(".png", ".jpg", ".jpeg", ".webp")))
 
     is_inpaint_batch = False
     if inpaint_mask_dir:
@@ -35,6 +38,14 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
     p.do_not_save_samples = not save_normally
 
     state.job_count = len(images) * p.n_iter
+
+    # extract "default" params to use in case getting png info fails
+    prompt = p.prompt
+    negative_prompt = p.negative_prompt
+    seed = p.seed
+    cfg_scale = p.cfg_scale
+    sampler_name = p.sampler_name
+    steps = p.steps
 
     for i, image in enumerate(images):
         state.job = f"{i+1} out of {len(images)}"
@@ -79,25 +90,45 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
             mask_image = Image.open(mask_image_path)
             p.image_mask = mask_image
 
+        if use_png_info:
+            try:
+                info_img = img
+                if png_info_dir:
+                    info_img_path = os.path.join(png_info_dir, os.path.basename(image))
+                    info_img = Image.open(info_img_path)
+                geninfo, _ = imgutil.read_info_from_image(info_img)
+                parsed_parameters = parse_generation_parameters(geninfo)
+                parsed_parameters = {k: v for k, v in parsed_parameters.items() if k in (png_info_props or {})}
+            except Exception:
+                parsed_parameters = {}
+
+            p.prompt = prompt + (" " + parsed_parameters["Prompt"] if "Prompt" in parsed_parameters else "")
+            p.negative_prompt = negative_prompt + (" " + parsed_parameters["Negative prompt"] if "Negative prompt" in parsed_parameters else "")
+            p.seed = int(parsed_parameters.get("Seed", seed))
+            p.cfg_scale = float(parsed_parameters.get("CFG scale", cfg_scale))
+            p.sampler_name = parsed_parameters.get("Sampler", sampler_name)
+            p.steps = int(parsed_parameters.get("Steps", steps))
+
         proc = modules.scripts.scripts_img2img.run(p, *args)
         if proc is None:
             proc = process_images(p)
 
         for n, processed_image in enumerate(proc.images):
-            filename = image_path.name
+            filename = image_path.stem
+            infotext = proc.infotext(p, n)
+            relpath = os.path.dirname(os.path.relpath(image, input_dir))
 
             if n > 0:
-                left, right = os.path.splitext(filename)
-                filename = f"{left}-{n}{right}"
+                filename += f"-{n}"
 
             if not save_normally:
-                os.makedirs(output_dir, exist_ok=True)
+                os.makedirs(os.path.join(output_dir, relpath), exist_ok=True)
                 if processed_image.mode == 'RGBA':
                     processed_image = processed_image.convert("RGB")
-                processed_image.save(os.path.join(output_dir, filename))
+                save_image(processed_image, os.path.join(output_dir, relpath), None, extension=opts.samples_format, info=infotext, forced_filename=filename, save_to_dirs=False)
 
 
-def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, *args):
+def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
     override_settings = create_override_settings_dict(override_settings_texts)
 
     is_batch = mode == 5
@@ -180,24 +211,25 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     p.scripts = modules.scripts.scripts_img2img
     p.script_args = args
 
+    p.user = request.username
+
     if shared.cmd_opts.enable_console_prompts:
         print(f"\nimg2img: {prompt}", file=shared.progress_print_out)
 
     if mask:
         p.extra_generation_params["Mask blur"] = mask_blur
 
-    if is_batch:
-        assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
+    with closing(p):
+        if is_batch:
+            assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
-        process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by)
+            process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by, use_png_info=img2img_batch_use_png_info, png_info_props=img2img_batch_png_info_props, png_info_dir=img2img_batch_png_info_dir)
 
-        processed = Processed(p, [], p.seed, "")
-    else:
-        processed = modules.scripts.scripts_img2img.run(p, *args)
-        if processed is None:
-            processed = process_images(p)
-
-    p.close()
+            processed = Processed(p, [], p.seed, "")
+        else:
+            processed = modules.scripts.scripts_img2img.run(p, *args)
+            if processed is None:
+                processed = process_images(p)
 
     shared.total_tqdm.clear()
 
@@ -208,4 +240,4 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     if opts.do_not_show_images:
         processed.images = []
 
-    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments)
+    return processed.images, generation_info_js, plaintext_to_html(processed.info), plaintext_to_html(processed.comments, classname="comments")
