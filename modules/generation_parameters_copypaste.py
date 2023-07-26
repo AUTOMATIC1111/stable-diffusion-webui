@@ -351,7 +351,7 @@ def connect_paste(button, local_paste_fields, input_comp, override_settings_comp
                     prompt = file.read()
             else:
                 prompt = ''
-        shared.log.debug(f'paste prompt: {prompt}')
+        shared.log.debug(f'Paste prompt: {prompt}')
         params = parse_generation_parameters(prompt)
         script_callbacks.infotext_pasted_callback(prompt, params)
         res = []
