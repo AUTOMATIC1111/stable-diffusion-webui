@@ -131,8 +131,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         mask = None
     if image is not None:
         image = ImageOps.exif_transpose(image)
-        if selected_scale_tab == 1:
-            assert image, "Can't scale by because no image is selected"
+        if selected_scale_tab == 1 and resize_mode != 0:
             width = int(image.width * scale_by)
             height = int(image.height * scale_by)
 

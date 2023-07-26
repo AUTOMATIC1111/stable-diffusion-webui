@@ -1050,9 +1050,11 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 self.init_img_hash = hashlib.md5(img.tobytes()).hexdigest() # pylint: disable=attribute-defined-outside-init
                 images.save_image(img, path=shared.opts.outdir_init_images, basename=None, forced_filename=self.init_img_hash, save_to_dirs=False)
             image = images.flatten(img, shared.opts.img2img_background_color)
-            if crop_region is None and self.resize_mode != 3:
+            if crop_region is None and self.resize_mode != 4:
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
-            if image_mask is not None:
+                self.width = image.width
+                self.height = image.height
+                print('HERE2', self.width, self.height)
                 image_masked = Image.new('RGBa', (image.width, image.height))
                 image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
                 self.mask = image_mask # assign early for diffusers
@@ -1089,7 +1091,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         image = 2. * image - 1.
         image = image.to(device=shared.device, dtype=devices.dtype_vae)
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
-        if self.resize_mode == 3:
+        if self.resize_mode == 4:
             self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
         if image_mask is not None:
             init_mask = latent_mask

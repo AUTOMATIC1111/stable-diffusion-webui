@@ -65,18 +65,6 @@ restricted_opts = {
     "outdir_save",
     "outdir_init_images"
 }
-ui_reorder_categories = [
-    "inpaint",
-    "sampler",
-    "dimensions",
-    "cfg",
-    "seed",
-    "batch",
-    "checkboxes",
-    "second_pass",
-    "override_settings",
-    "scripts",
-]
 
 
 def is_url(string):
@@ -513,7 +501,6 @@ options_templates.update(options_section(('ui', "User Interface"), {
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}),
     "ui_tab_reorder": OptionInfo("From Text, From Image, Process Image", "UI tabs order"),
     "ui_scripts_reorder": OptionInfo("Enable Dynamic Thresholding, ControlNet", "UI scripts order"),
-    "ui_reorder": OptionInfo(", ".join(ui_reorder_categories), "txt2img/img2img UI item order"),
 }))
 
 options_templates.update(options_section(('live-preview', "Live Previews"), {

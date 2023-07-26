@@ -3,7 +3,7 @@ a { font-weight: bold; cursor: pointer; }
 h2 { margin-top: 1em !important; font-size: 1.4em !important; }
 div.gradio-container{ max-width: unset !important; padding: 8px !important; }
 div.tabitem { padding: 0 !important; }
-div.form{ border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 1em; }
+div.form { border-width: 0; box-shadow: none; background: transparent; overflow: visible; gap: 0.5em 1em; }
 div.compact{ gap: 1em; }
 div.gradio-html.min{ min-height: 0; }
 .block.gradio-checkbox { margin: 0.75em 1.5em 0 0; }
@@ -34,7 +34,7 @@ td { border-bottom: none !important; }
 .gradio-button.secondary-down{ background: var(--button-secondary-background-fill); color: var(--button-secondary-text-color); }
 .gradio-button.secondary-down, .gradio-button.secondary-down:hover{ box-shadow: 1px 1px 1px rgba(0,0,0,0.25) inset, 0px 0px 3px rgba(0,0,0,0.15) inset; }
 .gradio-button.secondary-down:hover{ background: var(--button-secondary-background-fill-hover); color: var(--button-secondary-text-color-hover); }
-.checkboxes-row{ margin-bottom: 0.5em; margin-left: 0em; }
+.checkboxes-row { margin-bottom: 1em; gap: 0 !important; justify-content: space-around; }
 .checkboxes-row > div{ flex: 0; white-space: nowrap; min-width: auto; }
 
 button.custom-button{
@@ -120,6 +120,8 @@ button.custom-button{
     flex: 1;
 }
 
+#img2img_copy_to_img2img { margin-bottom: 2em; }
+
 #txtimg_hr_finalres{
     min-height: 0 !important;
     padding: .625rem .75rem;
@@ -139,11 +141,6 @@ div#extras_scale_to_tab div.form{
   flex-direction: row;
 }
 
-#img2img_column_batch{
-  align-self: end;
-  margin-bottom: 0.9em;
-}
-
 #img2img_unused_scale_by_slider {
   visibility: hidden;
   width: 0.5em;
@@ -153,10 +150,6 @@ div#extras_scale_to_tab div.form{
 
 .inactive{
     opacity: 0.5;
-}
-
-[id$=_column_batch] {
-    min-width: min(13.5em, 100%) !important;
 }
 
 div.dimensions-tools {
@@ -215,7 +208,7 @@ div#extras_scale_to_tab div.form{
 
 /* settings */
 #quicksettings { width: fit-content; align-items: end; }
-#quicksettings > div, #quicksettings > fieldset{ max-width: 20em; min-width: 20em; padding: 0; border: none; box-shadow: none; background: none; }
+#quicksettings > div, #quicksettings > fieldset{ max-width: 20em; min-width: 24em; padding: 0; border: none; box-shadow: none; background: none; }
 #quicksettings > button { margin-left: -0.5em; }
 
 #settings{

@@ -236,8 +236,10 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
         return im
 
     if resize_mode == 0:
-        res = resize(im, width, height)
+        res = im.copy()
     elif resize_mode == 1:
+        res = resize(im, width, height)
+    elif resize_mode == 2:
         ratio = width / height
         src_ratio = im.width / im.height
         src_w = width if ratio > src_ratio else im.width * height // im.height
