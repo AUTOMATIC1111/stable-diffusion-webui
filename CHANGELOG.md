@@ -2,6 +2,20 @@
 
 ## Update for 07/22/2023
 
+This is a big one, new models, new diffusers, new features and updated UI...
+
+First, **SD-XL 1.0** is released and yes, SD.Next supports it out of the box!
+
+- [SD-XL Base](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/sd_xl_base_1.0.safetensors)
+- [SD-XL Refiner](https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/blob/main/sd_xl_refiner_1.0.safetensors)
+
+Also fresh is new **Kandinsky 2.2** model that does look quite nice:
+
+- [Kandinsky Decoder](https://huggingface.co/kandinsky-community/kandinsky-2-2-decoder)
+- [Kandinsky Prior](kandinsky-community/kandinsky-2-2-prior)
+
+Actual changelog is:
+
 - general:
   - new loading screens and artwork
   - major ui simplification for both txt2img and img2img  
@@ -17,6 +31,7 @@
   - fix hires secondary sampler  
     this now fully obsoletes `fallback_sampler` and `force_latent_sampler`  
 - diffusers:
+  - we're out of experimental phase and diffusers backend is considered stable  
   - implement img2img and inpainting (experimental)  
     actual support and qualiy depends on model  
     it works as expected for sd 1.5, but not so much for sd-xl for now  
@@ -30,8 +45,6 @@
   - sd-xl: loading vae now applies to both base and refiner and saves a bit of vram  
   - vae: enable loading of pure-safetensors vae files without config  
     also enable *automatic* selection to work with diffusers  
-- diffusers: future-proof  
-  requires `diffusers==0.19.dev`, not yet released, but can be installed manually  
   - sd-xl: denoising_start/denoising_end
   - sd-xl: enable dual prompts  
     dual prompt is used if set regardless if refiner is enabled/loaded  

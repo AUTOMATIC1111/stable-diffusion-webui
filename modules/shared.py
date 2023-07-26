@@ -240,6 +240,9 @@ def refresh_checkpoints():
     import modules.sd_models # pylint: disable=W0621
     return modules.sd_models.list_models()
 
+def refresh_vaes():
+    import modules.sd_vae # pylint: disable=W0621
+    modules.sd_vae.refresh_vae_list()
 
 def list_samplers():
     import modules.sd_samplers # pylint: disable=W0621

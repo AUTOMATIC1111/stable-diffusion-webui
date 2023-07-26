@@ -99,6 +99,7 @@ def refresh_vae_list():
             else:
                 vae_dict[name] = filepath
     shared.log.info(f"Available VAEs: {vae_path} {len(vae_dict)}")
+    return vae_dict
 
 
 def find_vae_near_checkpoint(checkpoint_file):

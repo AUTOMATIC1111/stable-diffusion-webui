@@ -573,6 +573,7 @@ def change_backend():
     checkpoints_loaded.clear()
     from modules.sd_samplers import list_samplers
     list_samplers(shared.backend)
+    list_models()
     from modules.sd_vae import refresh_vae_list
     refresh_vae_list()
 
