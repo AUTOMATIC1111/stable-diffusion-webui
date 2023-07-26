@@ -27,11 +27,24 @@ Actual changelog is:
   - firefox compatibility improvements
   - minor image viewer improvements
   - add backend and operation info to metadata
-- original
-  - fix hires secondary sampler  
-    this now fully obsoletes `fallback_sampler` and `force_latent_sampler`  
+
 - diffusers:
   - we're out of experimental phase and diffusers backend is considered stable  
+  - sd-xl: support for **sd-xl 1.0** official model
+  - sd-xl: loading vae now applies to both base and refiner and saves a bit of vram  
+  - sd-xl: denoising_start/denoising_end
+  - sd-xl: enable dual prompts  
+    dual prompt is used if set regardless if refiner is enabled/loaded  
+    if refiner is loaded & enabled, refiner prompt will also be used for refiner pass  
+    - primary prompt goes to [OpenAI CLIP-ViT/L-14](https://huggingface.co/openai/clip-vit-large-patch14)
+    - refiner prompt goes to [OpenCLIP-ViT/bigG-14](https://huggingface.co/laion/CLIP-ViT-bigG-14-laion2B-39B-b160k)
+  - **kandinsky 2.2** support  
+    note: kandinsky model must be downloaded using model downloader, not as safetensors due to specific model format  
+  - refiner: fix batch processing
+  - vae: enable loading of pure-safetensors vae files without config  
+    also enable *automatic* selection to work with diffusers  
+  - sd-xl: initial lora support  
+    right now this applies to official lora released by **stability-ai**, support for **kohya's** lora is expected soon  
   - implement img2img and inpainting (experimental)  
     actual support and qualiy depends on model  
     it works as expected for sd 1.5, but not so much for sd-xl for now  
@@ -41,16 +54,11 @@ Actual changelog is:
   - option to set vae upcast in settings  
   - enable fp16 vae decode when using optimized vae  
     this pretty much doubles performance of decode step (delay after generate is done)  
-  - refiner: fix batch processing
-  - sd-xl: loading vae now applies to both base and refiner and saves a bit of vram  
-  - vae: enable loading of pure-safetensors vae files without config  
-    also enable *automatic* selection to work with diffusers  
-  - sd-xl: denoising_start/denoising_end
-  - sd-xl: enable dual prompts  
-    dual prompt is used if set regardless if refiner is enabled/loaded  
-    if refiner is loaded & enabled, refiner prompt will also be used for refiner pass  
-    - primary prompt goes to [OpenAI CLIP-ViT/L-14](https://huggingface.co/openai/clip-vit-large-patch14)
-    - refiner prompt goes to [OpenCLIP-ViT/bigG-14](https://huggingface.co/laion/CLIP-ViT-bigG-14-laion2B-39B-b160k)
+
+- original
+  - fix hires secondary sampler  
+    this now fully obsoletes `fallback_sampler` and `force_latent_sampler`  
+
 
 ## Update for 07/18/2023
 
