@@ -254,7 +254,7 @@ class ExtraNetworksPage:
             "tabname": quote_js(tabname),
             "local_preview": quote_js(item["local_preview"]),
             "name": html.escape(item["name"]),
-            "description": html.escape(item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
+            "description": (item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',
             "search_term": item.get("search_term", ""),
