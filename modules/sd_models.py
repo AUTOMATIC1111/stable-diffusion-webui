@@ -520,53 +520,6 @@ class ModelData:
 
 model_data = ModelData()
 
-class PriorPipeline:
-    def __init__(self, prior, main):
-        self.prior = prior
-        self.main = main
-        self.main.safety_checker = None
-        self.scheduler = main.scheduler
-        self.tokenizer = self.prior.tokenizer
-        self.unet = self.main.unet
-
-    def to(self, *args, **kwargs):
-        # only the prior is moved to CUDA in a first step
-        self.prior.to(*args, **kwargs)
-
-    def enable_model_cpu_offload(self, *args, **kwargs):
-        if hasattr(self.prior, 'enable_model_cpu_offload'):
-            self.prior.enable_model_cpu_offload(*args, **kwargs)
-        self.main.enable_model_cpu_offload(*args, **kwargs)
-
-    def enable_sequential_cpu_offload(self, *args, **kwargs):
-        if hasattr(self.prior, 'enable_sequential_cpu_offload'):
-            self.prior.enable_sequential_cpu_offload(*args, **kwargs)
-        self.main.enable_sequential_cpu_offload(*args, **kwargs)
-
-    def enable_xformers_memory_efficient_attention(self, *args, **kwargs):
-        if hasattr(self.prior, 'enable_xformers_memory_efficient_attention'):
-            self.prior.enable_xformers_memory_efficient_attention(*args, **kwargs)
-        self.main.enable_xformers_memory_efficient_attention(*args, **kwargs)
-
-    def __call__(self, *args, **kwargs):
-        unclip_outputs = self.prior(prompt=kwargs.get("prompt"), negative_prompt=kwargs.get("negative_prompt"))
-
-        if self.prior.device.type == "cuda" or self.prior.device.type == "xpu" or self.prior.device.type == "mps":
-            prior_device = self.prior.device
-            self.prior.to("cpu")
-            self.main.to(prior_device)
-
-        kwargs = {**kwargs, **unclip_outputs}
-        result = self.main(*args, **kwargs)
-
-        if self.main.device.type == "cuda" or self.main.device.type == "xpu" or self.prior.device.type == "mps":
-            main_device = self.main.device
-            self.main.to("cpu")
-            self.prior.to(main_device)
-
-        return result
-
-
 def change_backend():
     shared.log.info(f'Pipeline changed: {shared.backend}')
     unload_model_weights()
@@ -591,6 +544,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         "safety_checker": None,
         "requires_safety_checker": False,
         "load_safety_checker": False,
+        "load_connected_pipeline": True  # always load end-to-end / connected pipelines
         # "use_safetensors": True,  # TODO(PVP) - we can't enable this for all checkpoints just yet
     }
     if devices.dtype == torch.float16:
@@ -698,13 +652,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         if hasattr(sd_model, "watermark"):
             sd_model.watermark = NoWatermark()
-
-        # Prior pipelines
-        if hasattr(checkpoint_info, 'model_info') and checkpoint_info.model_info is not None and "prior" in checkpoint_info.model_info:
-            prior_id = checkpoint_info.model_info["prior"]
-            shared.log.info(f"Loading diffuser prior: {checkpoint_info.filename} {prior_id}")
-            prior = diffusers.DiffusionPipeline.from_pretrained(prior_id, **diffusers_load_config)
-            sd_model = PriorPipeline(prior=prior, main=sd_model) # wrap sd_model
 
         if hasattr(sd_model, "enable_model_cpu_offload"):
             if shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload:
@@ -828,71 +775,48 @@ class DiffusersTaskType(Enum):
     INPAINTING = 3
 
 def set_diffuser_pipe(pipe, new_pipe_type):
-    wrapper_pipe = None
-
     sd_checkpoint_info = pipe.sd_checkpoint_info
     sd_model_checkpoint = pipe.sd_model_checkpoint
     sd_model_hash = pipe.sd_model_hash
 
-    if pipe.__class__ == PriorPipeline:
-        wrapper_pipe = pipe
-        pipe = pipe.main
-
-    pipe_name = pipe.__class__.__name__
-    pipe_name = pipe_name.replace("Img2Img", "").replace("Inpaint", "")
-    new_pipe_cls_str = None
     if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
-        new_pipe_cls_str = pipe_name
+        new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
     elif new_pipe_type == DiffusersTaskType.IMAGE_2_IMAGE:
-        tmp_pipe_name = pipe_name.replace("Pipeline", "Img2ImgPipeline")
-        if hasattr(diffusers, tmp_pipe_name):
-            new_pipe_cls_str = pipe_name.replace("Pipeline", "Img2ImgPipeline")
+        new_pipe = diffusers.AutoPipelineForImage2Image.from_pipe(pipe)
     elif new_pipe_type == DiffusersTaskType.INPAINTING:
-        tmp_pipe_name = pipe_name.replace("Pipeline", "InpaintPipeline")
-        if hasattr(diffusers, tmp_pipe_name):
-            new_pipe_cls_str = pipe_name.replace("Pipeline", "InpaintPipeline")
+        new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
 
-    if new_pipe_cls_str is None:
-        shared.log.warning(f'Diffusers unknown pipeline: {tmp_pipe_name}')
-        new_pipe_cls_str = pipe_name
-
-    new_pipe_cls = getattr(diffusers, new_pipe_cls_str)
-
-    if pipe.__class__ == new_pipe_cls:
+    if pipe.__class__ == new_pipe.__class__:
         return
-
-    new_pipe = new_pipe_cls(**pipe.components)
-
-    if wrapper_pipe is not None:
-        wrapper_pipe.main = new_pipe
-        new_pipe = wrapper_pipe
 
     new_pipe.sd_checkpoint_info = sd_checkpoint_info
     new_pipe.sd_model_checkpoint = sd_model_checkpoint
     new_pipe.sd_model_hash = sd_model_hash
 
     model_data.sd_model = new_pipe
-    shared.log.info(f"Pipeline class changed from {pipe.__class__.__name__} to {new_pipe_cls.__name__}")
+    shared.log.info(f"Pipeline class changed from {pipe.__class__.__name__} to {new_pipe.__class__.__name__}")
 
 
 def get_native(pipe: diffusers.DiffusionPipeline):
-    if pipe.__class__ == PriorPipeline:
-        pipe = pipe.main
-    try:
+    if hasattr(pipe, "vae") and hasattr(pipe.vae.config, "sample_size"):
+        # Stable Diffusion
         size = pipe.vae.config.sample_size
-    except Exception:
+    elif hasattr(pipe, "movq") and hasattr(pipe.movq.config, "sample_size"):
+        # Kandinsky
+        size = pipe.movq.config.sample_size
+    elif hasattr(pipe, "unet") and hasattr(pipe.unet.config, "sample_size"):
+        size = pipe.unet.config.sample_size
+    else:
         size = 0
     return size
 
 
 def get_diffusers_task(pipe: diffusers.DiffusionPipeline) -> DiffusersTaskType:
-    if pipe.__class__ == PriorPipeline:
-        pipe = pipe.main
-
-    if "Img2Img" in pipe.__class__.__name__:
+    if pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_IMAGE2IMAGE_PIPELINES_MAPPING.values():
         return DiffusersTaskType.IMAGE_2_IMAGE
-    elif "Inpaint" in pipe.__class__.__name__:
+    elif pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_INPAINT_PIPELINES_MAPPING.values():
         return DiffusersTaskType.INPAINTING
+
     return DiffusersTaskType.TEXT_2_IMAGE
 
 
@@ -1071,10 +995,6 @@ def apply_token_merging(sd_model, token_merging_ratio):
         return
     if current_token_merging_ratio > 0:
         tomesd.remove_patch(sd_model)
-
-    if sd_model.__class__ == PriorPipeline:
-        # token merging is not supported for PriorPipelines currently
-        return
 
     if token_merging_ratio > 0:
         tomesd.apply_patch(
