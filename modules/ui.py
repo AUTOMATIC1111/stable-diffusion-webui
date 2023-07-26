@@ -438,7 +438,7 @@ def create_ui(startup_timer = None):
                     clip_skip,
                     seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
                     height, width,
-                    second_pass, denoising_strength,
+                    show_second_pass, denoising_strength,
                     hr_scale, hr_upscaler, hr_second_pass_steps, hr_resize_x, hr_resize_y,
                     refiner_denoise_start, refiner_denoise_end, refiner_prompt, refiner_negative,
                     override_settings,
@@ -1189,8 +1189,8 @@ def html_css():
         if not os.path.isfile(cssfile):
             continue
         head += stylesheet(cssfile)
-    if opts.gradio_theme == 'black-orange':
-        head += stylesheet(os.path.join(script_path, "javascript", "black-orange.css"))
+    if opts.gradio_theme in modules.shared.list_builtin_themes():
+        head += stylesheet(os.path.join(script_path, "javascript", f"{opts.gradio_theme}.css"))
     if os.path.exists(os.path.join(data_path, "user.css")):
         head += stylesheet(os.path.join(data_path, "user.css"))
     added = [a.replace(script_path, '').replace('\\', '/') for a in added]

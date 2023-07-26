@@ -246,6 +246,10 @@ def list_samplers():
     modules.sd_samplers.set_samplers()
     return modules.sd_samplers.all_samplers
 
+def list_builtin_themes():
+    files = [os.path.splitext(f)[0] for f in os.listdir('javascript') if f.endswith('.css')]
+    return files
+
 def list_themes():
     fn = os.path.join('html', 'themes.json')
     if not os.path.exists(fn):
@@ -255,7 +259,8 @@ def list_themes():
             res = json.loads(f.read())
     else:
         res = []
-    builtin = ["black-orange", "gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
+    list_builtin_themes()
+    builtin = list_builtin_themes() + ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
     themes = sorted(set(builtin + [x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()]), key=str.casefold)
     return themes
 
@@ -811,7 +816,7 @@ def reload_gradio_theme(theme_name=None):
             'font':['Helvetica', 'ui-sans-serif', 'system-ui', 'sans-serif'],
             'font_mono':['IBM Plex Mono', 'ui-monospace', 'Consolas', 'monospace']
         }
-    if theme_name == "black-orange":
+    if theme_name in list_builtin_themes():
         gradio_theme = gr.themes.Default(**default_font_params)
     elif theme_name.startswith("gradio/"):
         if theme_name == "gradio/default":

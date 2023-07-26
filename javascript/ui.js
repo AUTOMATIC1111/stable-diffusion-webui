@@ -530,20 +530,18 @@ function create_theme_element() {
   return el;
 }
 
-function preview_theme() {
-  const name = gradioApp().getElementById('setting_gradio_theme').querySelectorAll('input')?.[0].value || '';
-  if (name === 'black-orange' || name.startsWith('gradio/')) {
+async function preview_theme() {
+  let name = gradioApp().getElementById('setting_gradio_theme').querySelectorAll('input')?.[0].value || '';
+  const res = await fetch('/file=html/themes.json');
+  const themes = await res.json();
+  const theme = themes.find((t) => t.id === name);
+  if (theme) {
+    window.open(theme.subdomain, '_blank');
+  } else {
     const el = document.getElementById('theme-preview') || create_theme_element();
     el.style.display = el.style.display === 'block' ? 'none' : 'block';
-    if (name === 'black-orange') el.src = '/file=html/black-orange.jpg';
-    else el.src = `/file=html/${name.replace('/', '-')}.jpg`;
-  } else {
-    fetch('/file=html/themes.json')
-      .then((r) => r.json())
-      .then((themes) => {
-        const theme = themes.find((t) => t.id === name);
-        window.open(theme.subdomain, '_blank');
-      });
+    name = name.replace('/', '-');
+    el.src = `/file=html/${name}.jpg`;
   }
 }
 
