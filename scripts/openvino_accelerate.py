@@ -5,6 +5,7 @@ import math
 import cv2
 import os
 import torch
+import time
 import functools
 import gradio as gr
 import numpy as np
@@ -15,13 +16,12 @@ import modules.paths as paths
 import modules.scripts as scripts
 import modules.shared as shared
 
-from modules import images, devices, extra_networks, generation_parameters_copypaste, masking, sd_samplers, sd_samplers_compvis, sd_samplers_kdiffusion, shared
+from modules import images, devices, extra_networks, generation_parameters_copypaste, masking, sd_samplers, sd_samplers_compvis, sd_samplers_kdiffusion, shared, call_queue
 from modules.processing import StableDiffusionProcessing, Processed, apply_overlay, process_images, get_fixed_seed, program_version, StableDiffusionProcessingImg2Img, create_random_tensors, create_infotext
 from modules.sd_models import list_models, CheckpointInfo
 from modules.sd_samplers_common import samples_to_image_grid, sample_to_image
 from modules.shared import Shared, cmd_opts, opts, state
 from modules.ui import plaintext_to_html, create_sampler_and_steps_selection
-from webui import initialize_rest
 
 from diffusers import StableDiffusionPipeline
 from PIL import Image, ImageFilter, ImageOps
@@ -44,9 +44,12 @@ from diffusers import (
     UniPCMultistepScheduler,
 )
 
-first_inference_global = 1
-sampler_name_global = "Euler a"
-openvino_device_global = "CPU"
+class ModelState:
+    def __init__(self):
+        self.recompile = 1
+        self.device = "CPU"
+
+model_state = ModelState()
 
 def sd_diffusers_model(self):
     import modules.sd_models
@@ -66,34 +69,23 @@ def set_scheduler(sd_model, sampler_name):
         sd_model.scheduler = LMSDiscreteScheduler.from_config(sd_model.scheduler.config)
     elif (sampler_name == "Heun"):
         sd_model.scheduler = HeunDiscreteScheduler.from_config(sd_model.scheduler.config)
-    #elif (sampler_name == "DPM2"):
-    #    sd_model.scheduler = KDPM2DiscreteScheduler.from_config(sd_model.scheduler.config)
-    #elif (sampler_name == "DPM2 a"):
-    #    sd_model.scheduler = KDPM2AncestralDiscreteScheduler.from_config(sd_model.scheduler.config)
     elif (sampler_name == "DPM++ 2M"):
         sd_model.scheduler = DPMSolverMultistepScheduler.from_config(sd_model.scheduler.config, algorithm_type="dpmsolver++", use_karras_sigmas=False)
-    #elif (sampler_name == "DPM++ 2M SDE"):
-    #    sd_model.scheduler = DPMSolverMultistepScheduler.from_config(sd_model.scheduler.config, algorithm_type="sde-dpmsolver++", use_karras_sigmas=False)
     elif (sampler_name == "LMS Karras"):
         sd_model.scheduler = LMSDiscreteScheduler.from_config(sd_model.scheduler.config, use_karras_sigmas=True)
     elif (sampler_name == "DPM++ 2M Karras"):
         sd_model.scheduler = DPMSolverMultistepScheduler.from_config(sd_model.scheduler.config, algorithm_type="dpmsolver++", use_karras_sigmas=True)
-    #elif (sampler_name == "DPM++ 2M SDE Karras"):
-    #    sd_model.scheduler = DPMSolverMultistepScheduler.from_config(sd_model.scheduler.config, algorithm_type="sde-dpmsolver++", use_karras_sigmas=True)
     elif (sampler_name == "DDIM"):
         sd_model.scheduler = DDIMScheduler.from_config(sd_model.scheduler.config)
     elif (sampler_name == "PLMS"):
         sd_model.scheduler = PNDMScheduler.from_config(sd_model.scheduler.config)
-    #elif (sampler_name == "UniPC"):
-    #    sd_model.scheduler = UniPCMultistepScheduler.from_config(sd_model.scheduler.config)
     else:
         sd_model.scheduler = EulerAncestralDiscreteScheduler.from_config(sd_model.scheduler.config)
 
     return sd_model.scheduler
 
 def get_diffusers_sd_model(sampler_name, enable_caching, openvino_device): 
-    global first_inference_global, sampler_name_global
-    if (first_inference_global == 1):
+    if (model_state.recompile == 1):
         torch._dynamo.reset()
         torch._dynamo.config.verbose=True
         curr_dir_path = os.getcwd()
@@ -106,20 +98,9 @@ def get_diffusers_sd_model(sampler_name, enable_caching, openvino_device):
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
         sd_model.safety_checker = None
         sd_model.cond_stage_key = functools.partial(cond_stage_key, shared.sd_model)
-
         sd_model.scheduler = set_scheduler(sd_model, sampler_name)
         sd_model.unet = torch.compile(sd_model.unet, backend="openvino")
         sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino")
-        sampler_name_global = sampler_name
- 
-        warmup_prompt = "a dog walking in a park"
-        os.environ["OPENVINO_DEVICE"] = openvino_device
-        if enable_caching:
-            os.environ["OPENVINO_TORCH_MODEL_CACHING"] = "1"
-        image = sd_model(warmup_prompt, num_inference_steps=1).images[0]
-        print("warm up run complete")
-
-        first_inference_global = 0    
         shared.sd_diffusers_model = sd_model
         del sd_model
     return shared.sd_diffusers_model 
@@ -286,7 +267,6 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
 
     with torch.no_grad(): 
         with devices.autocast():
-            print("In autocast")
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
 
         if state.job_count == -1:
@@ -314,6 +294,7 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
                 break
           
             shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, enable_caching, openvino_device)
+            shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
 
             extra_network_data = p.parse_extra_network_prompts()
 
@@ -326,7 +307,6 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
                 import lora
                 for lora_model in lora.loaded_loras:
                     shared.sd_diffusers_model.load_lora_weights(os.getcwd() + "/models/Lora/", weight_name=lora_model.name + ".safetensors")
-
 
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
@@ -344,7 +324,13 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             generator = [torch.Generator(device="cpu").manual_seed(s) for s in p.seeds]
+            
+            time_stamps = []
 
+            def callback(iter, t, latents):
+                time_stamps.append(time.time())
+
+            time_stamps.append(time.time())
             output = shared.sd_diffusers_model(
                 prompt=p.prompts,
                 negative_prompt=p.negative_prompts,
@@ -354,7 +340,15 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
                 width=p.width,
                 generator=generator,
                 output_type="np",
+                callback = callback,
+                callback_steps = 1
             )
+
+            model_state.recompile = 0
+
+            warmup_duration = time_stamps[1] - time_stamps[0]
+            generation_rate = (p.steps - 1) / (time_stamps[-1] - time_stamps[1])
+
             x_samples_ddim = output.images 
 
             for i, x_sample in enumerate(x_samples_ddim):
@@ -439,7 +433,7 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
         extra_networks.deactivate(p, p.extra_network_data)
 
     devices.torch_gc()
-
+ 
     res = Processed(
         p,
         images_list=output_images,
@@ -450,6 +444,14 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
         index_of_first_image=index_of_first_image,
         infotexts=infotexts,
     )
+
+    res.info = res.info + ", Warm up time: " + str(round(warmup_duration, 2)) + " secs "
+    
+    if (generation_rate >= 1.0):
+        res.info = res.info + ", Performance: " + str(round(generation_rate, 2)) + " it/s "
+    else:
+        res.info = res.info + ", Performance: " + str(round(1/generation_rate, 2)) + " s/it "
+    
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
@@ -465,34 +467,41 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):        
         core = Core()
-        global first_inference_global 
         openvino_device = gr.Dropdown(label="Select a device", choices=[device for device in core.available_devices], value="CPU")
         override_sampler = gr.Checkbox(label="Override the sampling selection from the main UI (Recommended as only below sampling methods have been validated for OpenVINO)", value=True)
         sampler_name = gr.Radio(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Heun", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
-        enable_caching = gr.Checkbox(label="Cache the compiled models for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
+        enable_caching = gr.Checkbox(label="Cache the compiled models on disk for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
         warmup_status = gr.Textbox(label="Device", interactive=False, visible=False)
+        warmup_note = gr.Markdown(
+                      """
+                      ###
+                      ### Note:
+                      First inference involves compilation of the model for best performance. 
+                      Excluding the first inference (or warm up inference) is recommended for 
+                      performance measurements. When resolution, batchsize, or device is changed, 
+                      or samplers like DPM++ or Karras are selected, model is recompiled. Subsequent 
+                      iterations use the cached compiled model for faster inference.
+                      """)        
         
-        def device_change(choice):
-            global first_inference_global, openvino_device_global
-            if (openvino_device_global == choice):
+        def device_change(choice): 
+            if (model_state.device == choice):
                 return gr.update(value="Device selected is " + choice, visible=True)
             else:
-                first_inference_global = 1
+                model_state.recompile = 1 
                 return gr.update(value="Device changed to " + choice + ". Model will be re-compiled", visible=True)
         openvino_device.change(device_change, openvino_device, warmup_status)            
 
-        return [openvino_device, override_sampler, sampler_name, warmup_status, enable_caching]
+        return [openvino_device, override_sampler, sampler_name, enable_caching]
         
 
-    def run(self, p, openvino_device, override_sampler, sampler_name, warmup_status, enable_caching):
-        global first_inference_global, sampler_name_global, openvino_device_global
+    def run(self, p, openvino_device, override_sampler, sampler_name, enable_caching):
         os.environ["OPENVINO_DEVICE"] = str(openvino_device)
         if enable_caching:
             os.environ["OPENVINO_TORCH_MODEL_CACHING"] = "1"
 
-        if (openvino_device_global != openvino_device):
-            first_inference_global = 1
-            openvino_device_global = openvino_device
+        if (model_state.device != openvino_device):
+            model_state.recompile = 1 
+            model_state.device = openvino_device
 
         if override_sampler:
             p.sampler_name = sampler_name
@@ -501,14 +510,11 @@ class Script(scripts.Script):
             if (p.sampler_name not in supported_samplers):
                 p.sampler_name = "Euler a"
 
-        if (sampler_name_global != p.sampler_name):     
-            shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, p.sampler_name)
-            sampler_name_global = p.sampler_name
-
         if self.is_txt2img:
             processed = process_images_openvino(p, p.sampler_name, enable_caching, openvino_device)
         else:
             p.init = functools.partial(init_new, p)
             processed = process_images_openvino(p, p.sampler_name, enable_caching, openvino_device)
         return processed
+
 
