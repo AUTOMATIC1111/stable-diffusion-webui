@@ -27,7 +27,7 @@ from enum import Enum
 from typing import List, Dict, Any
 
 
-def raw_b64_img(self, image: Image) -> str:
+def raw_b64_img(image: Image) -> str:
     # XXX controlnet only accepts RAW base64 without headers
     with io.BytesIO() as output_bytes:
         metadata = None
