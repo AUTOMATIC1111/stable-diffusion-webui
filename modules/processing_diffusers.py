@@ -130,6 +130,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.opts.diffusers_move_base:
         shared.sd_model.to(devices.device)
 
+    refiner_enabled = shared.sd_refiner is not None and p.enable_hr
     pipe_args = set_pipeline_args(
         model=shared.sd_model,
         prompt=prompts,
@@ -138,8 +139,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_prompt_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
         eta=shared.opts.eta_ddim,
         guidance_rescale=p.diffusers_guidance_rescale,
-        denoising_start=p.refiner_denoise_start,
-        denoising_end=p.refiner_denoise_end,
+        denoising_end=p.refiner_denoise_start if refiner_enabled else None,
         # aesthetic_score=shared.opts.diffusers_aesthetics_score,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
         **task_specific_kwargs
@@ -152,7 +152,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.sd_refiner is None or not p.enable_hr:
         output.images = vae_decode(output.images, shared.sd_model)
 
-    if shared.sd_refiner is not None and p.enable_hr:
+    if refiner_enabled:
         for i in range(len(output.images)):
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
                 from modules.processing import create_infotext
