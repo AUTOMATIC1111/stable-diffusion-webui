@@ -723,8 +723,10 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         all_subseeds = p.all_subseeds[:]
 
         # apply changes to generation data
-        all_prompts[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.prompts
-        all_negative_prompts[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.negative_prompts
+        position = iteration * p.batch_size + position_in_batch
+        for i in range(iteration * p.batch_size, (iteration + 1) * p.batch_size):
+            all_prompts[i] = str(p.all_prompts[position])
+            all_negative_prompts[i] = str(p.all_negative_prompts[iteration])
         all_seeds[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.seeds
         all_subseeds[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.subseeds
 
