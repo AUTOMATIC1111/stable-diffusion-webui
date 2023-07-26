@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 07/22/2023
+## Update for 07/26/2023
 
 This is a big one, new models, new diffusers, new features and updated UI...
 
