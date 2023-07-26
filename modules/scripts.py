@@ -17,8 +17,23 @@ class PostprocessImageArgs:
 
 
 class PostprocessBatchListArgs:
-    def __init__(self, images):
+    def __init__(self, images, prompts, prompts_with_extra_network_data, negative_prompts, seeds, subseeds):
         self.images = images
+        self.prompts = prompts
+        self.prompts_with_extra_network_data = prompts_with_extra_network_data
+        self.negative_prompts = negative_prompts
+        self.seeds = seeds
+        self.subseeds = subseeds
+
+    def as_tuple(self):
+        return (
+            self.images,
+            self.prompts,
+            self.prompts_with_extra_network_data,
+            self.negative_prompts,
+            self.seeds,
+            self.subseeds,
+        )
 
 
 class Script:
@@ -167,13 +182,12 @@ class Script:
         This is useful when you want to update the entire batch instead of individual images.
 
         You can modify the postprocessing object (pp) to update the images in the batch, remove images, add images, etc.
-        If the number of images is different from the batch size when returning,
-        then the script has the responsibility to also update the following attributes in the processing object (p):
-          - p.prompts
-          - p.prompts_with_extra_network_data
-          - p.negative_prompts
-          - p.seeds
-          - p.subseeds
+        If the size of pp.images is changed, then the following attributes on pp must also all be resized accordingly:
+          - pp.prompts
+          - pp.prompts_with_extra_network_data
+          - pp.negative_prompts
+          - pp.seeds
+          - pp.subseeds
 
         **kwargs will have same items as process_batch, and also:
           - batch_number - index of current batch, from 0 to number of batches-1
