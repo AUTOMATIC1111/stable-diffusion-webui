@@ -771,7 +771,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 break
 
             p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
-            p.prompts_with_extra_network_data = p.prompts[:]
             p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             p.seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             p.subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
@@ -824,6 +823,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             devices.torch_gc()
 
+            p.prompts_with_extra_network_data = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
