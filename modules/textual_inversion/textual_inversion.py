@@ -1,5 +1,6 @@
 import os
 from collections import namedtuple
+from contextlib import closing
 
 import torch
 import tqdm
@@ -12,7 +13,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin
 from torch.utils.tensorboard import SummaryWriter
 
-from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors
+from modules import shared, devices, sd_hijack, processing, sd_models, images, sd_samplers, sd_hijack_checkpoint, errors, hashes
 import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 
@@ -48,6 +49,8 @@ class Embedding:
         self.sd_checkpoint_name = None
         self.optimizer_state_dict = None
         self.filename = None
+        self.hash = None
+        self.shorthash = None
 
     def save(self, filename):
         embedding_data = {
@@ -80,6 +83,10 @@ class Embedding:
 
         self.cached_checksum = f'{const_hash(self.vec.reshape(-1) * 100) & 0xffff:04x}'
         return self.cached_checksum
+
+    def set_hash(self, v):
+        self.hash = v
+        self.shorthash = self.hash[0:12]
 
 
 class DirWithTextualInversionEmbeddings:
@@ -198,6 +205,7 @@ class EmbeddingDatabase:
         embedding.vectors = vec.shape[0]
         embedding.shape = vec.shape[-1]
         embedding.filename = path
+        embedding.set_hash(hashes.sha256(embedding.filename, "textual_inversion/" + name) or '')
 
         if self.expected_shape == -1 or self.expected_shape == embedding.shape:
             self.register_embedding(embedding, shared.sd_model)
@@ -248,7 +256,7 @@ class EmbeddingDatabase:
         self.word_embeddings.update(sorted_word_embeddings)
 
         displayed_embeddings = (tuple(self.word_embeddings.keys()), tuple(self.skipped_embeddings.keys()))
-        if self.previously_displayed_embeddings != displayed_embeddings:
+        if shared.opts.textual_inversion_print_at_load and self.previously_displayed_embeddings != displayed_embeddings:
             self.previously_displayed_embeddings = displayed_embeddings
             print(f"Textual inversion embeddings loaded({len(self.word_embeddings)}): {', '.join(self.word_embeddings.keys())}")
             if self.skipped_embeddings:
@@ -584,8 +592,9 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
 
                     preview_text = p.prompt
 
-                    processed = processing.process_images(p)
-                    image = processed.images[0] if len(processed.images) > 0 else None
+                    with closing(p):
+                        processed = processing.process_images(p)
+                        image = processed.images[0] if len(processed.images) > 0 else None
 
                     if unload:
                         shared.sd_model.first_stage_model.to(devices.cpu)
