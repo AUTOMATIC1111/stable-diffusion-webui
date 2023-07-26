@@ -54,15 +54,18 @@ class ProgressResponse(BaseModel):
     active: bool = Field(title="Whether the task is being worked on right now")
     queued: bool = Field(title="Whether the task is in queue")
     completed: bool = Field(title="Whether the task has already finished")
-    progress: float = Field(default=None, title="Progress", description="The progress with a range of 0 to 1")
-    eta: float = Field(default=None, title="ETA in secs")
-    live_preview: str = Field(default=None, title="Live preview image", description="Current live preview; a data: uri")
-    id_live_preview: int = Field(default=None, title="Live preview image ID", description="Send this together with next request to prevent receiving same image")
-    textinfo: str = Field(default=None, title="Info text", description="Info text used by WebUI.")
+    progress: float = Field(default=0.0, title="Progress", description="The progress with a range of 0 to 1")
+    eta: float = Field(default=0.0, title="ETA in secs")
+    live_preview: str = Field(default="", title="Live preview image", description="Current live preview; a data: uri")
+    id_live_preview: int = Field(default=0, title="Live preview image ID", description="Send this together with next request to prevent receiving same image")
+    textinfo: str = Field(default="", title="Info text", description="Info text used by WebUI.")
 
 
 def setup_progress_api(app):
     return app.add_api_route("/internal/progress", progressapi, methods=["POST"], response_model=ProgressResponse)
+
+
+BLACK_PIXEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAUEBAAAACwAAAAAAQABAAACAkQBADs="
 
 
 def progressapi(req: ProgressRequest):
@@ -87,7 +90,7 @@ def progressapi(req: ProgressRequest):
 
     elapsed_since_start = time.time() - shared.state.time_start
     predicted_duration = elapsed_since_start / progress if progress > 0 else None
-    eta = predicted_duration - elapsed_since_start if predicted_duration is not None else None
+    eta = predicted_duration - elapsed_since_start if predicted_duration is not None else 0.0
 
     id_live_preview = req.id_live_preview
     shared.state.set_current_image()
@@ -111,11 +114,13 @@ def progressapi(req: ProgressRequest):
             live_preview = f"data:image/{opts.live_previews_image_format};base64,{base64_image}"
             id_live_preview = shared.state.id_live_preview
         else:
-            live_preview = None
+            live_preview = BLACK_PIXEL
     else:
-        live_preview = None
+        live_preview = BLACK_PIXEL
 
-    return ProgressResponse(active=active, queued=queued, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)
+    textinfo = shared.state.textinfo or ""
+
+    return ProgressResponse(active=active, queued=queued, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=textinfo)
 
 
 def restore_progress(id_task):
