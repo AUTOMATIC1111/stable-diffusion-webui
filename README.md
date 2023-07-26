@@ -57,7 +57,7 @@ Additional models will be added as they become available and there is public int
 
 - Stable Diffusion 1.x and 2.x including all variants
 - Stable Diffusion XL
-- Kandinsky 2.1 (2.2 Coming very soon!)
+- Kandinsky 2.1
 - DeepFloyd IF
 - UniDiffusion
 
