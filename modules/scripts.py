@@ -170,6 +170,7 @@ class Script:
         If the number of images is different from the batch size when returning,
         then the script has the responsibility to also update the following attributes in the processing object (p):
           - p.prompts
+          - p.prompts_with_extra_network_data
           - p.negative_prompts
           - p.seeds
           - p.subseeds

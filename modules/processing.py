@@ -723,7 +723,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         all_subseeds = p.all_subseeds[:]
 
         # apply changes to generation data
-        all_prompts[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.prompts
+        all_prompts[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.prompts_with_extra_network_data
         all_negative_prompts[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.negative_prompts
         all_seeds[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.seeds
         all_subseeds[iteration * p.batch_size:(iteration + 1) * p.batch_size] = p.subseeds
@@ -771,6 +771,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 break
 
             p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
+            p.prompts_with_extra_network_data = p.prompts[:]
             p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             p.seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             p.subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
