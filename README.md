@@ -18,7 +18,7 @@
 This project started as a fork from [Automatic1111 WebUI](https://github.com/AUTOMATIC1111/stable-diffusion-webui/) and it grew significantly since then,  
 but although it diverged considerably, any substantial features to original work is ported to this repository as well.
 
-## Top-10 Features
+## Top-13 Features (10 wasn't enough)
 
 All Individual features are not listed here, instead check [ChangeLog](CHANGELOG.md) for full list of changes.
 
@@ -57,7 +57,7 @@ Additional models will be added as they become available and there is public int
 
 - Stable Diffusion 1.x and 2.x including all variants
 - Stable Diffusion XL
-- Kandinsky 2.1
+- Kandinsky 2.1 (2.2 Coming very soon!)
 - DeepFloyd IF
 - UniDiffusion
 
@@ -71,22 +71,11 @@ Additional models will be added as they become available and there is public int
 - *Intel Arc* GPUs using *Intel OneAPI* **Ipex/XPU** libraries  
 - *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
 
-## Install
-
-1. Install first:  
-**Python** & **Git**  
-2. Clone repository  
-`git clone https://github.com/vladmandic/automatic`
-3. Run launcher  
-  `webui.bat` or `webui.sh`:  
-    - Platform specific wrapper scripts For Windows, Linux and OSX  
-    - Starts `launch.py` in a Python virtual environment (`venv`)  
-    - Uses `install.py` to handle all actual requirements and dependencies
-
+## [Installation Instructions](https://github.com/vladmandic/automatic/wiki/Installation)
 
 ### Common Problems
 
-- [Common Installation Errors](https://github.com/vladmandic/automatic/discussions/1627)  
+- [Common Installation Errors ](https://github.com/vladmandic/automatic/discussions/1627)  
 - [Q&A Discussions](https://github.com/vladmandic/automatic/discussions/1011)
 
 ### Installation Notes
