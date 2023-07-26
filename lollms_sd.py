@@ -179,6 +179,7 @@ class SD:
                    steps=50,
                    width=512,
                    height=512,
+                   denoising_strength=0.75,
                    tiling=False,
                    restore_faces=False,
                    styles=None, 
@@ -193,7 +194,7 @@ class SD:
         data = {
             "init_images": init_images,
             "resize_mode": 0,
-            "denoising_strength": 0.75,
+            "denoising_strength": denoising_strength,
             "image_cfg_scale": 0,
             "mask": "string",
             "mask_blur": 0,
