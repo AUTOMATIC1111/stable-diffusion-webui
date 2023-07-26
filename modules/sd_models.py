@@ -238,6 +238,7 @@ def select_checkpoint(op='model'):
     if len(checkpoints_list) == 0:
         shared.log.error("Cannot run without a checkpoint")
         shared.log.error("Use --ckpt <path-to-checkpoint> to force using existing checkpoint")
+        return None
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
         shared.log.warning(f"Selected checkpoint not found: {model_checkpoint}")
