@@ -13,7 +13,7 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_grad
 from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, ui_loadsave, ui_train, ui_models
 from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, FormHTML # pylint: disable=unused-import
 from modules.paths import script_path, data_path
-from modules.shared import opts, cmd_opts
+from modules.shared import opts, cmd_opts, readfile
 from modules import prompt_parser
 import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -86,12 +86,14 @@ def add_style(name: str, prompt: str, negative_prompt: str):
 
 
 def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y):
+    print('HERE', enable, width, height, hr_scale, hr_resize_x, hr_resize_y)
     from modules import processing, devices
     if not enable:
         return ""
     if modules.shared.backend == modules.shared.Backend.DIFFUSERS:
         return "Hires resize: disabled"
     p = processing.StableDiffusionProcessingTxt2Img(width=width, height=height, enable_hr=True, hr_scale=hr_scale, hr_resize_x=hr_resize_x, hr_resize_y=hr_resize_y)
+    p.init_hr()
     with devices.autocast():
         p.init([""], [0], [0])
     return f"Hires resize: from <span class='resolution'>{p.width}x{p.height}</span> to <span class='resolution'>{p.hr_resize_x or p.hr_upscale_to_x}x{p.hr_resize_y or p.hr_upscale_to_y}</span>"
@@ -334,6 +336,7 @@ def create_ui(startup_timer = None):
         startup_timer = timer.Timer()
     reload_javascript()
     parameters_copypaste.reset()
+    ui_defaults = readfile(cmd_opts.ui_config)
 
     import modules.txt2img # pylint: disable=redefined-outer-name
     modules.scripts.scripts_current = modules.scripts.scripts_txt2img
@@ -356,10 +359,10 @@ def create_ui(startup_timer = None):
                     res_switch_btn = ToolButton(value=switch_values_symbol, elem_id="txt2img_res_switch_btn", label="Switch dims")
 
                 with FormRow(elem_classes="checkboxes-row", variant="compact"):
-                    show_batch = gr.Checkbox(label='Batch', value=True, elem_id="txt2img_show_batch")
-                    show_seed = gr.Checkbox(label='Seed', value=False, elem_id="txt2img_show_seed")
-                    show_advanced = gr.Checkbox(label='Advanced', value=False, elem_id="txt2img_show_advanced")
-                    show_second_pass = gr.Checkbox(label='Second pass', value=False, elem_id="txt2img_show_second_pass")
+                    show_batch = gr.Checkbox(label='Batch', value=ui_defaults.get('txt2img/Batch/value', True), elem_id="txt2img_show_batch")
+                    show_seed = gr.Checkbox(label='Seed details', value=ui_defaults.get('txt2img/Seed details/value', False), elem_id="txt2img_show_seed")
+                    show_advanced = gr.Checkbox(label='Advanced', value=ui_defaults.get('txt2img/Advanced/value', False), elem_id="txt2img_show_advanced")
+                    show_second_pass = gr.Checkbox(label='Second pass', value=ui_defaults.get('txt2img/Second pass/value', False), elem_id="txt2img_show_second_pass")
 
                 with FormGroup(visible=show_batch.value, elem_id="txt2img_batch") as batch_group:
                     with FormRow(elem_id="txt2img_row_batch"):
@@ -377,11 +380,11 @@ def create_ui(startup_timer = None):
                         restore_faces = gr.Checkbox(label='Face restore', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                         tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
 
-                with FormGroup(visible=show_second_pass.value, elem_id="txt2img_second_pass") as second_pass:
+                with FormGroup(visible=show_second_pass.value, elem_id="txt2img_second_pass") as second_pass_group:
                     hr_second_pass_steps, latent_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers, "txt2img", False)
                     with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
                         denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.3, elem_id="txt2img_denoising_strength")
-                    with FormRow():
+                    with FormRow(elem_id="txt2img_hires_finalres", variant="compact"):
                         hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
                     with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
                         hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*modules.shared.latent_upscale_modes, *[x.name for x in modules.shared.sd_upscalers]], value=modules.shared.latent_upscale_default_mode)
@@ -460,7 +463,7 @@ def create_ui(startup_timer = None):
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
             batch_switch_btn.click(lambda w, h: (h, w), inputs=[batch_count, batch_size], outputs=[batch_count, batch_size], show_progress=False)
             txt_prompt_img.change(fn=modules.images.image_data, inputs=[txt_prompt_img], outputs=[txt2img_prompt, txt_prompt_img])
-            show_second_pass.change(enable_hr_change, inputs=[show_second_pass], outputs=[second_pass, hr_refiner], show_progress = False)
+            show_second_pass.change(enable_hr_change, inputs=[show_second_pass], outputs=[second_pass_group, hr_refiner], show_progress = False)
             show_seed.change(gr_show, inputs=[show_seed], outputs=[seed_group], show_progress = False)
             show_batch.change(gr_show, inputs=[show_batch], outputs=[batch_group], show_progress = False)
             show_advanced.change(gr_show, inputs=[show_advanced], outputs=[advanced_group], show_progress = False)
@@ -483,8 +486,8 @@ def create_ui(startup_timer = None):
                 (seed_resize_from_w, "Seed resize from-1"),
                 (seed_resize_from_h, "Seed resize from-2"),
                 (denoising_strength, "Denoising strength"),
-                (second_pass, lambda d: "Denoising strength" in d),
-                (second_pass, lambda d: gr.Row.update(visible="Denoising strength" in d)),
+                (show_second_pass, lambda d: "Denoising strength" in d),
+                (show_second_pass, lambda d: gr.Row.update(visible="Denoising strength" in d)),
                 (hr_scale, "Hires upscale"),
                 (hr_upscaler, "Hires upscaler"),
                 (hr_second_pass_steps, "Hires steps"),
@@ -589,11 +592,11 @@ def create_ui(startup_timer = None):
                 steps, sampler_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers_for_img2img, "img2img", True)
 
                 with FormRow(elem_classes="checkboxes-row", variant="compact"):
-                    show_seed = gr.Checkbox(label='Seed', value=False, elem_id="img2img_show_seed")
-                    show_resize = gr.Checkbox(label='Resize', value=False, elem_id="img2img_show_resize")
-                    show_batch = gr.Checkbox(label='Batch', value=False, elem_id="img2img_show_batch")
-                    show_denoise = gr.Checkbox(label='Denoise', value=True, elem_id="img2img_show_denoise")
-                    show_advanced = gr.Checkbox(label='Advanced', value=False, elem_id="txt2img_show_advanced")
+                    show_seed = gr.Checkbox(label='Seed details', value=ui_defaults.get('img2img/Seed details/value', False), elem_id="img2img_show_seed")
+                    show_resize = gr.Checkbox(label='Resize', value=ui_defaults.get('img2img/Resize/value', False), elem_id="img2img_show_resize")
+                    show_batch = gr.Checkbox(label='Batch', value=ui_defaults.get('img2img/Batch/value', False), elem_id="img2img_show_batch")
+                    show_denoise = gr.Checkbox(label='Denoise', value=ui_defaults.get('img2img/Denoise/value', True), elem_id="img2img_show_denoise")
+                    show_advanced = gr.Checkbox(label='Advanced', value=ui_defaults.get('img2img/Advanced/value', False), elem_id="txt2img_show_advanced")
 
                 with FormGroup(visible=show_resize.value, elem_id=f"{tab}_resize_group") as resize_group:
                     with FormRow():
