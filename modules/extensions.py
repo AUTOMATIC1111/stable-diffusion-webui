@@ -61,7 +61,7 @@ class Extension:
             self.from_dict(d)
         except FileNotFoundError:
             pass
-        self.status = 'unknown'
+        self.status = 'unknown' if self.status == '' else self.status
 
     def do_read_info_from_repo(self):
         repo = None
