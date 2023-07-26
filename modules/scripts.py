@@ -17,8 +17,12 @@ class PostprocessImageArgs:
 
 
 class PostprocessBatchListArgs:
-    def __init__(self, images):
+    def __init__(self, images, prompts, negative_prompts, seeds, subseeds):
         self.images = images
+        self.prompts = prompts
+        self.negative_prompts = negative_prompts
+        self.seeds = seeds
+        self.subseeds = subseeds
 
 
 class Script:
