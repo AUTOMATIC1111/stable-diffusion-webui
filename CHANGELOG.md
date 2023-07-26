@@ -2,11 +2,13 @@
 
 ### Minor:
  * support parsing text encoder blocks in some new LoRAs
+ * delete scale checker script due to user demand
 
 ### Extensions and API:
  * add postprocess_batch_list script callback
 
 ### Bug Fixes:
+ * fix TI training for SD1
  * fix reload altclip model error
  * prepend the pythonpath instead of overriding it
  * fix typo in SD_WEBUI_RESTARTING
@@ -15,6 +17,9 @@
  * restyle Startup profile for black users
  * fix webui not launching with --nowebui
  * catch exception for non git extensions
+ * fix some options missing from /sdapi/v1/options
+ * fix for extension update status always saying "unknown"
+ * fix display of extra network cards that have `<>` in the name
 
 
 ## 1.5.0
