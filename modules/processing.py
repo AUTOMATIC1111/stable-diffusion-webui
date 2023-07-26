@@ -478,7 +478,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         # sdnext
         "Version": git_commit,
         "Pipeline": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
-        "Operations": ', '.join(list(set(p.ops))),
+        "Operations": ', '.join(list(set(p.ops))) if len(p.ops) > 0 else None
     }
     token_merging_ratio = p.get_token_merging_ratio()
     token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True) if p.enable_hr else None
