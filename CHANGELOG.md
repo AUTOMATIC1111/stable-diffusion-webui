@@ -7,6 +7,7 @@
   - major ui simplification for both txt2img and img2img  
     nothing is removed, but you can show/hide invidividual sections  
     default is very simple interface, but you can enable any sections and save it as default in settings  
+  - themes: add additional built-in theme, `amethyst-nightfall`
   - extra networks: add add/remove tags to prompt (e.g. lora activation keywords)
   - extensions: fix couple of compatibility items
   - firefox compatibility improvements

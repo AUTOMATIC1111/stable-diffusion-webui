@@ -261,7 +261,7 @@ def list_themes():
         res = []
     list_builtin_themes()
     builtin = list_builtin_themes() + ["gradio/default", "gradio/base", "gradio/glass", "gradio/monochrome", "gradio/soft"]
-    themes = sorted(set(builtin + [x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()]), key=str.casefold)
+    themes = sorted(builtin) + sorted({x['id'] for x in res if x['status'] == 'RUNNING' and 'test' not in x['id'].lower()}, key=str.casefold)
     return themes
 
 

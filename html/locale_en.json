@@ -9,7 +9,7 @@
   {"id":"","label":"📒","localized":"","hint":"Fill"},
   {"id":"","label":"🎲️","localized":"","hint":"Use random seed"},
   {"id":"","label":"♻️","localized":"","hint":"Reuse previous seed"},
-  {"id":"","label":"⇅","localized":"","hint":"Swap image height and width values"}
+  {"id":"","label":"⇅","localized":"","hint":"Swap values"}
 ],
 "prompts": [
   {"id":"","label":"Prompt","localized":"","hint":"Type what you want to see in the image"},

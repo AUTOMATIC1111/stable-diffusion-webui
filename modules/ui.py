@@ -1181,10 +1181,12 @@ def html_body():
 
 def html_css():
     added = []
+
     def stylesheet(fn):
         added.append(fn)
         return f'<link rel="stylesheet" property="stylesheet" href="{webpath(fn)}">'
-    head = stylesheet('javascript/style.css')
+
+    head = stylesheet(os.path.join(script_path, 'javascript/style.css'))
     for cssfile in modules.scripts.list_files_with_name("style.css"):
         if not os.path.isfile(cssfile):
             continue

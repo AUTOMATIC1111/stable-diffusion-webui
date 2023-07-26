@@ -1054,7 +1054,6 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 image = images.resize_image(self.resize_mode, image, self.width, self.height)
                 self.width = image.width
                 self.height = image.height
-                print('HERE2', self.width, self.height)
                 image_masked = Image.new('RGBa', (image.width, image.height))
                 image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
                 self.mask = image_mask # assign early for diffusers
