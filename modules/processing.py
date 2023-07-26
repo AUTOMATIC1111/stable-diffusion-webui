@@ -716,8 +716,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     else:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
 
-    prompts_with_extra_network_data = []
-
     def infotext(iteration=0, position_in_batch=0, use_main_prompt=False):
         all_prompts = p.all_prompts[:]
         all_negative_prompts = p.all_negative_prompts[:]
@@ -832,7 +830,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
                 postprocess_batch_list_args = scripts.PostprocessBatchListArgs(list(x_samples_ddim), p.prompts[:], prompts_with_extra_network_data[:], p.negative_prompts[:], p.seeds[:], p.subseeds[:])
                 p.scripts.postprocess_batch_list(p, postprocess_batch_list_args, batch_number=n)
-                x_samples_ddim, p.prompts, prompts_with_extra_network_data, p.negative_prompts, p.seeds, p.subseeds = postprocess_batch_list_args.as_tuple()
+                x_samples_ddim, p.prompts, prompts_with_extra_network_data, p.negative_prompts, p.seeds, p.subseeds = postprocess_batch_list_args.get_lists()
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i

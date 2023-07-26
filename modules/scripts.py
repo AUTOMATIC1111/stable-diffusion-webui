@@ -25,7 +25,7 @@ class PostprocessBatchListArgs:
         self.seeds = seeds
         self.subseeds = subseeds
 
-    def as_tuple(self):
+    def get_lists(self):
         return (
             self.images,
             self.prompts,
