@@ -183,7 +183,11 @@ class ExtraNetworksPage:
                 res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
                 return res
             self.html = ''
-            self.items = list(self.list_items())
+            try:
+                self.items = list(self.list_items())
+            except Exception:
+                self.items = []
+                shared.log.error(f'Extra networks error listing items: {self.__class__}')
             self.create_xyz_grid()
             for item in self.items:
                 self.metadata[item["name"]] = item.get("metadata", {})
