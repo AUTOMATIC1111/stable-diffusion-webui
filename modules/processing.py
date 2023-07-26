@@ -621,12 +621,12 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Sampler": p.sampler_name,
         "CFG scale": p.cfg_scale,
         "Image CFG scale": getattr(p, 'image_cfg_scale', None),
-        "Seed": all_seeds[index],
+        "Seed": p.all_seeds[0] if use_main_prompt else all_seeds[index],
         "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
         "Size": f"{p.width}x{p.height}",
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Model": (None if not opts.add_model_name_to_info else shared.sd_model.sd_checkpoint_info.name_for_extra),
-        "Variation seed": (None if p.subseed_strength == 0 else all_subseeds[index]),
+        "Variation seed": (None if p.subseed_strength == 0 else (p.all_subseeds[0] if use_main_prompt else all_subseeds[index])),
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w <= 0 or p.seed_resize_from_h <= 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
         "Denoising strength": getattr(p, 'denoising_strength', None),
@@ -807,20 +807,24 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
 
-            batch_params = scripts.PostprocessBatchListArgs(
-                list(x_samples_ddim),
-                p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size],
-                p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size],
-                p.seeds,
-                p.subseeds,
-            )
+                batch_params = scripts.PostprocessBatchListArgs(
+                    list(x_samples_ddim),
+                    p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size],
+                    p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size],
+                    p.seeds,
+                    p.subseeds,
+                )
 
-            if p.scripts is not None:
                 p.scripts.postprocess_batch_list(p, batch_params, batch_number=n)
+
                 x_samples_ddim = batch_params.images
+                p.prompts = batch_params.prompts
+                p.negative_prompts = batch_params.negative_prompts
+                p.seeds = batch_params.seeds
+                p.subseeds = batch_params.subseeds
 
             def infotext(index=0, use_main_prompt=False):
-                return create_infotext(p, batch_params.prompts, batch_params.seeds, batch_params.subseeds, use_main_prompt=use_main_prompt, index=index, all_negative_prompts=batch_params.negative_prompts)
+                return create_infotext(p, p.prompts, p.seeds, p.subseeds, use_main_prompt=use_main_prompt, index=index, all_negative_prompts=p.negative_prompts)
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
@@ -910,7 +914,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p,
         images_list=output_images,
         seed=p.all_seeds[0],
-        info=infotext(),
+        info=infotexts[0],
         comments="".join(f"{comment}\n" for comment in comments),
         subseed=p.all_subseeds[0],
         index_of_first_image=index_of_first_image,
