@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from collections import namedtuple
 import enum
 
@@ -99,7 +100,7 @@ class Network:  # LoraModule
 
 
 class ModuleType:
-    def create_module(self, net: Network, weights: NetworkWeights) -> Network | None:
+    def create_module(self, net: Network, weights: NetworkWeights) -> Optional[Network]:
         return None
 
 
