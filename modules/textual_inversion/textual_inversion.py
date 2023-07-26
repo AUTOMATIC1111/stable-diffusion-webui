@@ -358,8 +358,6 @@ def validate_train_inputs(model_name, learn_rate, batch_size, gradient_step, dat
     assert save_model_every >= 0, "Save {name} must be positive or 0"
     assert isinstance(create_image_every, int), "Create image must be integer"
     assert create_image_every >= 0, "Create image must be positive or 0"
-    if save_model_every or create_image_every:
-        assert log_directory, "Log directory is empty"
 
 
 def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_step, data_root, log_directory, training_width, training_height, varsize, steps, clip_grad_mode, clip_grad_value, shuffle_tags, tag_drop_out, latent_sampling_method, use_weight, create_image_every, save_embedding_every, template_filename, save_image_with_stored_embedding, preview_from_txt2img, preview_prompt, preview_negative_prompt, preview_steps, preview_sampler_index, preview_cfg_scale, preview_seed, preview_width, preview_height): # pylint: disable=unused-argument
@@ -369,6 +367,8 @@ def train_embedding(id_task, embedding_name, learn_rate, batch_size, gradient_st
     create_image_every = create_image_every or 0
     template_file = textual_inversion_templates.get(template_filename, None)
     validate_train_inputs(embedding_name, learn_rate, batch_size, gradient_step, data_root, template_file, template_filename, steps, save_embedding_every, create_image_every, log_directory, name="embedding")
+    if log_directory is None or log_directory == '':
+        log_directory = f"{os.path.join(shared.cmd_opts.data_dir, 'train/log/embeddings')}"
     template_file = template_file.path
 
     shared.state.job = "train-embedding"
