@@ -29,3 +29,4 @@ torch
 torchdiffeq==0.2.3
 torchsde==0.2.5
 transformers==4.25.1
+pydantic==2.1.1
