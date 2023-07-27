@@ -124,7 +124,7 @@
   {"id":"","label":"Secondary steps","localized":"","hint":"Number of steps to use for second pass"},
   {"id":"","label":"Secondary CFG Scale","localized":"","hint":"CFG scale used for refiner pass"},
   {"id":"","label":"Guidance rescale","localized":"","hint":"Rescale CFG generated noise to avoid overexposed images"},
-  {"id":"","label":"Secondary prompt","localized":"","hint":"Prompt used for both second encoder in base model (if it exists) and for refiner pass (if enabled)"},
+  {"id":"","label":"Secondary Prompt","localized":"","hint":"Prompt used for both second encoder in base model (if it exists) and for refiner pass (if enabled)"},
   {"id":"","label":"Secondary negative prompt","localized":"","hint":"Negative prompt used for both second encoder in base model (if it exists) and for refiner pass (if enabled)"},
   {"id":"","label":"Width","localized":"","hint":"Image width"},
   {"id":"","label":"Height","localized":"","hint":"Image height"},
@@ -315,12 +315,12 @@
   {"id":"","label":"create emebedding","localized":"","hint":""},
   {"id":"","label":"gradient clip value","localized":"","hint":""},
   {"id":"","label":"create interim hypernetworks","localized":"","hint":""},
-  {"id":"","label":"original model","localized":"","hint":""}
+  {"id":"","label":"Original model","localized":"","hint":""}
 ],
 "settings": [
   {"id":"","label":"Stable Diffusion checkpoint","localized":"","hint":""},
   {"id":"","label":"Stable Diffusion refiner","localized":"","hint":""},
-  {"id":"","label":"stable diffusion checkpoint autoload on server start","localized":"","hint":""},
+  {"id":"","label":"Stable Diffusion checkpoint autoload on server start","localized":"","hint":""},
   {"id":"","label":"stable diffusion checkpoint dict","localized":"","hint":""},
   {"id":"","label":"disallow usage of checkpoints in ckpt format","localized":"","hint":""},
   {"id":"","label":"model compile fullgraph","localized":"","hint":""},
