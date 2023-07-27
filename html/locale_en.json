@@ -39,7 +39,7 @@
 ],
 "action panel": [
   {"id":"","label":"Generate","localized":"","hint":"Start processing"},
-  {"id":"","label":"Enqueue","localized":"","hint":"Add task to background queueu in Agent Scheduler"},
+  {"id":"","label":"Enqueue","localized":"","hint":"Add task to background queue in Agent Scheduler"},
   {"id":"","label":"Stop","localized":"","hint":"Stop processing"},
   {"id":"","label":"Skip","localized":"","hint":"Stop processing current job and continue processing"},
   {"id":"","label":"Interrupt","localized":"","hint":"Interrupt current processing job"},
@@ -48,7 +48,7 @@
   {"id":"","label":"Interrogate\nDeepBooru","localized":"","hint":"Run interrogate using DeepBooru model"}
 ],
 "extra networks": [
-  {"id":"","label":"Extra networks tab order","localized":"","hint":"Comma-separated list of tab names; tabs listed here will appear in the extra networks UI first and in order lsited"},
+  {"id":"","label":"Extra networks tab order","localized":"","hint":"Comma-separated list of tab names; tabs listed here will appear in the extra networks UI first and in order listed"},
   {"id":"","label":"UI position","localized":"","hint":""},
   {"id":"","label":"UI height (%)","localized":"","hint":""},
   {"id":"","label":"UI sidebar width (%)","localized":"","hint":""},
@@ -95,7 +95,7 @@
   {"id":"","label":"Manage extensions","localized":"","hint":"Manage extensions"},
   {"id":"","label":"Manual install","localized":"","hint":"Manually install extension"},
   {"id":"","label":"Extension GIT repository URL","localized":"","hint":"Specify extension repository URL on GitHub"},
-  {"id":"","label":"Specific branch name","localized":"","hint":"Specify extension branch namem, leave blank for default"},
+  {"id":"","label":"Specific branch name","localized":"","hint":"Specify extension branch name, leave blank for default"},
   {"id":"","label":"Local directory name","localized":"","hint":"Directory where to install extension, leave blank for default"},
   {"id":"","label":"Refresh extension list","localized":"","hint":"Refresh list of available extensions"},
   {"id":"","label":"Update installed extensions","localized":"","hint":"Update installed extensions to their latest available version"},
@@ -103,7 +103,7 @@
   {"id":"","label":"install","localized":"","hint":"install this extension"},
   {"id":"","label":"uninstall","localized":"","hint":"uninstall this extension"},
   {"id":"","label":"User interface defaults","localized":"","hint":"Review and set current values as default values for the user interface"},
-  {"id":"","label":"View changes","localized":"","hint":"Review changes between default user interface values and and current values"},
+  {"id":"","label":"View changes","localized":"","hint":"Review changes between default user interface values and current values"},
   {"id":"","label":"Set new defaults","localized":"","hint":"Set current values as default values for the user interface"},
   {"id":"","label":"Restore system defaults","localized":"","hint":"Restore default user interface values"}
 ],
@@ -116,7 +116,7 @@
   {"id":"","label":"Denoising strength","localized":"","hint":"Determines how little respect the algorithm should have for image's content. At 0, nothing will change, and at 1 you'll get an unrelated image. With values below 1.0, processing will take less steps than the Sampling Steps slider specifies"},
   {"id":"","label":"Denoise start","localized":"","hint":"Override denoise strength by stating how early base model should finish and when refiner should start. Only applicable to refiner usage. If set to 0 or 1, denoising strength will be used"},
   {"id":"","label":"Hires steps","localized":"","hint":"Number of sampling steps for upscaled picture. If 0, uses same as for original"},
-  {"id":"","label":"Upscaler","localized":"","hint":"Which pre-tarined model to use for the upscaling process."},
+  {"id":"","label":"Upscaler","localized":"","hint":"Which pre-trained model to use for the upscaling process."},
   {"id":"","label":"Upscale by","localized":"","hint":"Adjusts the size of the image by multiplying the original width and height by the selected value. Ignored if either Resize width to or Resize height to are non-zero"},
   {"id":"","label":"Resize width to","localized":"","hint":"Resizes image to this width. If 0, width is inferred from either of two nearby sliders"},
   {"id":"","label":"Resize height to","localized":"","hint":"Resizes image to this height. If 0, height is inferred from either of two nearby sliders"},
@@ -155,7 +155,7 @@
   {"id":"","label":"Upscaler 2 visibility","localized":"","hint":"Strength of the secondary upscaler"},
   {"id":"","label":"GFPGAN visibility","localized":"","hint":"Strength of GFPGAN face restore network, 0=disabled"},
   {"id":"","label":"CodeFormer visibility","localized":"","hint":"Strength of CodeFormer face restore network, 0=disabled"},
-  {"id":"","label":"CodeFormer weight","localized":"","hint":"0=maximum strength, 1=minimium strength"}
+  {"id":"","label":"CodeFormer weight","localized":"","hint":"0=maximum strength, 1=minimum strength"}
 ],
 "settings menu": [
   {"id":"settings_submit","label":"Apply settings","localized":"","hint":"Save current settings, server restart is recommended"},
@@ -224,7 +224,7 @@
   {"id":"","label":"Validate","localized":"","hint":""},
   {"id":"","label":"List model details","localized":"","hint":""},
   {"id":"","label":"Calculate hash for all models (may take a long time)","localized":"","hint":""},
-  {"id":"","label":"seach models","localized":"","hint":""},
+  {"id":"","label":"search models","localized":"","hint":""},
   {"id":"","label":"select model","localized":"","hint":""},
   {"id":"","label":"specify model variant","localized":"","hint":""},
   {"id":"","label":"specify model revision","localized":"","hint":""},
@@ -255,7 +255,7 @@
   {"id":"","label":"Secondary","localized":"","hint":""},
   {"id":"","label":"Tertiary","localized":"","hint":""},
   {"id":"","label":"Bake in VAE","localized":"","hint":""},
-  {"id":"","label":"Discard weights with matching name","localized":"","hint":"Regular expression; if weights's name matches it, the weights is not written to the resulting checkpoint. Use ^model_ema to discard EMA weights"},
+  {"id":"","label":"Discard weights with matching name","localized":"","hint":"Regular expression; if weight's name matches it, the weights are not written to the resulting checkpoint. Use ^model_ema to discard EMA weights"},
   {"id":"","label":"Name","localized":"","hint":""},
   {"id":"","label":"Initialization text","localized":"","hint":"If the number of tokens is more than the number of vectors, some may be skipped.\nLeave the textbox empty to start with zeroed out vectors"},
   {"id":"","label":"Number of vectors per token","localized":"","hint":""},
@@ -312,7 +312,7 @@
   {"id":"","label":"once","localized":"","hint":""},
   {"id":"","label":"deterministic","localized":"","hint":""},
   {"id":"","label":"select embedding","localized":"","hint":""},
-  {"id":"","label":"create emebedding","localized":"","hint":""},
+  {"id":"","label":"create embedding","localized":"","hint":""},
   {"id":"","label":"gradient clip value","localized":"","hint":""},
   {"id":"","label":"create interim hypernetworks","localized":"","hint":""},
   {"id":"","label":"Original model","localized":"","hint":""}
@@ -517,7 +517,7 @@
   {"id":"","label":"logSNR","localized":"","hint":""},
   {"id":"","label":"UniPC order (must be < sampling steps)","localized":"","hint":""},
   {"id":"","label":"UniPC lower order final","localized":"","hint":""},
-  {"id":"","label":"Enable addtional postprocessing operations","localized":"","hint":""},
+  {"id":"","label":"Enable additional postprocessing operations","localized":"","hint":""},
   {"id":"","label":"Postprocessing operation order","localized":"","hint":""},
   {"id":"","label":"Maximum number of images in upscaling cache","localized":"","hint":""},
   {"id":"","label":"Move VAE and CLIP to RAM when training if possible","localized":"","hint":""},
