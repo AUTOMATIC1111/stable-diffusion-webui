@@ -5,9 +5,9 @@ All examples are non-cherrypicked unless specified otherwise.
 # SD-XL
 ## SD-XL BASE
 
-[PR](https://github.com/AUTOMATIC1111/stable-diffusion-webgenerative-models), [Github](https://github.com/Stability-AI/generative-models)
+[PR](https://github.com/AUTOMATIC1111/stable-diffusion-webgenerative-models), [Github](https://github.com/Stability-AI/generative-models).
 
-This is a txt2img model designed for 1024×1024 sized images. It is not meant to run at 512×512.
+This is a txt2img model designed for geneeating quality 1024×1024 sized images. It is not meant to run at 512×512.
 
 >Initial loading of these models require those with 24gb cpu memory (RAM) and under to setup a large pagefile. This may change in the future.
 
@@ -17,7 +17,7 @@ Downloading:
 
 The base model's VAE has problems running in fp16.  https://github.com/madebyollin has kindly trained a vae to remedy this: 
 
-- https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/tree/main
+- https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors
  
  Please use both of these to avoid performance issues. 
 
