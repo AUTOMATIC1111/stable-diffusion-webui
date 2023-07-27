@@ -205,7 +205,7 @@ class AxisOptionTxt2Img(AxisOption):
 
 axis_options = [
     AxisOption("Nothing", str, do_nothing, fmt=format_nothing),
-    AxisOption("Checkpoint name", str, apply_checkpoint, fmt=format_value, cost=1.0, choices=lambda: list(sd_models.checkpoints_list)),
+    AxisOption("Checkpoint name", str, apply_checkpoint, fmt=format_value, cost=1.0, choices=lambda: sorted(sd_models.checkpoints_list)),
     AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: ['None'] + list(sd_vae.vae_dict)),
     AxisOption("Dict name", str, apply_dict, fmt=format_value, cost=1.0, choices=lambda: ['None'] + list(sd_models.checkpoints_list)),
     AxisOption("Prompt S/R", str, apply_prompt, fmt=format_value),

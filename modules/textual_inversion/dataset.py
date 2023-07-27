@@ -32,14 +32,10 @@ class PersonalizedBase(Dataset):
         re_word = re.compile(shared.opts.dataset_filename_word_regex) if len(shared.opts.dataset_filename_word_regex) > 0 else None
 
         self.placeholder_token = placeholder_token
-
         self.flip = transforms.RandomHorizontalFlip(p=flip_p)
-
         self.dataset = []
-
-        with open(template_file, "r") as file:
+        with open(template_file, "r", encoding="utf8") as file:
             lines = [x.strip() for x in file.readlines()]
-
         self.lines = lines
 
         assert data_root, 'dataset directory not specified'
@@ -47,20 +43,16 @@ class PersonalizedBase(Dataset):
         assert os.listdir(data_root), "Dataset directory is empty"
 
         self.image_paths = [os.path.join(data_root, file_path) for file_path in os.listdir(data_root)]
-
         self.shuffle_tags = shuffle_tags
         self.tag_drop_out = tag_drop_out
         groups = defaultdict(list)
-
-        print("Preparing dataset...")
+        shared.log.info(f"TI Training: Preparing dataset: {data_root}")
         for path in tqdm.tqdm(self.image_paths):
             alpha_channel = None
             if shared.state.interrupted:
-                raise Exception("interrupted")
+                raise RuntimeError("interrupted")
             try:
                 image = Image.open(path)
-                #Currently does not work for single color transparency
-                #We would need to read image.info['transparency'] for that
                 if use_weight and 'A' in image.getbands():
                     alpha_channel = image.getchannel('A')
                 image = image.convert('RGB')
@@ -91,12 +83,9 @@ class PersonalizedBase(Dataset):
             with devices.autocast():
                 latent_dist = model.encode_first_stage(torchdata.unsqueeze(dim=0))
 
-            #Perform latent sampling, even for random sampling.
-            #We need the sample dimensions for the weights
             if latent_sampling_method == "deterministic":
                 if isinstance(latent_dist, DiagonalGaussianDistribution):
-                    # Works only for DiagonalGaussianDistribution
-                    latent_dist.std = 0
+                    latent_dist.std = torch.exp(0 * latent_dist.logvar)
                 else:
                     latent_sampling_method = "once"
             latent_sample = model.get_first_stage_encoding(latent_dist).squeeze().to(devices.cpu)

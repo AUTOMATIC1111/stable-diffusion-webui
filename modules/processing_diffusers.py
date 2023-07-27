@@ -139,8 +139,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_prompt_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
         eta=shared.opts.eta_ddim,
         guidance_rescale=p.diffusers_guidance_rescale,
+        denoising_start=0 if refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
         denoising_end=p.refiner_start if refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
-        # aesthetic_score=shared.opts.diffusers_aesthetics_score,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
         **task_specific_kwargs
     )
@@ -188,8 +188,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 strength=p.denoising_strength,
                 guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                 guidance_rescale=p.diffusers_guidance_rescale,
-                # aesthetic_score=shared.opts.diffusers_aesthetics_score,
                 denoising_start=p.refiner_start if p.refiner_start > 0 and p.refiner_start < 1 else None,
+                denoising_end=1 if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 image=output.images[i],
                 output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
             )
