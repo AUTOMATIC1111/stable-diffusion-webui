@@ -2,6 +2,25 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 
 All examples are non-cherrypicked unless specified otherwise.
 
+# SD-XL
+## SD-XL BASE
+
+[PR](https://github.com/AUTOMATIC1111/stable-diffusion-webgenerative-models), [Github](https://github.com/Stability-AI/generative-models)
+
+This is a txt2img model designed for 1024×1024 sized images. It is not meant to run at 512×512.
+
+>Initial loading of these models require those with 24gb cpu memory (RAM) and under to setup a large pagefile. This may change in the future.
+
+
+Downloading: 
+- https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/sd_xl_base_1.0.safetensors
+
+The base model's VAE has problems running in fp16.  https://github.com/madebyollin has kindly trained a vae to remedy this: 
+
+- https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/tree/main
+ 
+ Please use both of these to avoid performance issues. 
+
 # SD2 Variation Models
 [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8958), ([more info.](https://github.com/Stability-AI/stablediffusion/blob/main/doc/UNCLIP.MD))
 
