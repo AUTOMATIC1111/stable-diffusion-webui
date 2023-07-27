@@ -7,4 +7,6 @@ else
 	compose='docker compose'
 fi
 
+cp ../webui.sh .
+
 $compose build

@@ -27,5 +27,4 @@ jobs:
     - name: Build and push Docker image
       run: |
         cd docker
-        docker-compose build
-        docker-compose push
+        ./build.sh

@@ -3,8 +3,8 @@ services:
     runtime: nvidia
     image: emsi/stable-diffusion-webui
     build:
-      context: ../
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "7860"
     environment:
