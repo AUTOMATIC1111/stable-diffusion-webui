@@ -1,3 +1,28 @@
+## 1.5.1
+
+### Minor:
+ * support parsing text encoder blocks in some new LoRAs
+ * delete scale checker script due to user demand
+
+### Extensions and API:
+ * add postprocess_batch_list script callback
+
+### Bug Fixes:
+ * fix TI training for SD1
+ * fix reload altclip model error
+ * prepend the pythonpath instead of overriding it
+ * fix typo in SD_WEBUI_RESTARTING
+ * if txt2img/img2img raises an exception, finally call state.end()
+ * fix composable diffusion weight parsing
+ * restyle Startup profile for black users
+ * fix webui not launching with --nowebui
+ * catch exception for non git extensions
+ * fix some options missing from /sdapi/v1/options
+ * fix for extension update status always saying "unknown"
+ * fix display of extra network cards that have `<>` in the name
+ * update lora extension to work with python 3.8
+
+
 ## 1.5.0
 
 ### Features:

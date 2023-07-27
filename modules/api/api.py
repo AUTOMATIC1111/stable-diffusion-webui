@@ -333,14 +333,16 @@ class Api:
                 p.outpath_grids = opts.outdir_txt2img_grids
                 p.outpath_samples = opts.outdir_txt2img_samples
 
-                shared.state.begin(job="scripts_txt2img")
-                if selectable_scripts is not None:
-                    p.script_args = script_args
-                    processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
-                else:
-                    p.script_args = tuple(script_args) # Need to pass args as tuple here
-                    processed = process_images(p)
-                shared.state.end()
+                try:
+                    shared.state.begin(job="scripts_txt2img")
+                    if selectable_scripts is not None:
+                        p.script_args = script_args
+                        processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
+                    else:
+                        p.script_args = tuple(script_args) # Need to pass args as tuple here
+                        processed = process_images(p)
+                finally:
+                    shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -390,14 +392,16 @@ class Api:
                 p.outpath_grids = opts.outdir_img2img_grids
                 p.outpath_samples = opts.outdir_img2img_samples
 
-                shared.state.begin(job="scripts_img2img")
-                if selectable_scripts is not None:
-                    p.script_args = script_args
-                    processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
-                else:
-                    p.script_args = tuple(script_args) # Need to pass args as tuple here
-                    processed = process_images(p)
-                shared.state.end()
+                try:
+                    shared.state.begin(job="scripts_img2img")
+                    if selectable_scripts is not None:
+                        p.script_args = script_args
+                        processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
+                    else:
+                        p.script_args = tuple(script_args) # Need to pass args as tuple here
+                        processed = process_images(p)
+                finally:
+                    shared.state.end()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -720,9 +724,9 @@ class Api:
             cuda = {'error': f'{err}'}
         return models.MemoryResponse(ram=ram, cuda=cuda)
 
-    def launch(self, server_name, port):
+    def launch(self, server_name, port, root_path):
         self.app.include_router(self.router)
-        uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=shared.cmd_opts.timeout_keep_alive)
+        uvicorn.run(self.app, host=server_name, port=port, timeout_keep_alive=shared.cmd_opts.timeout_keep_alive, root_path=root_path)
 
     def kill_webui(self):
         restart.stop_program()

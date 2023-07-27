@@ -178,7 +178,7 @@ def get_learned_conditioning(model, prompts: SdConditioning | list[str], steps):
 
 
 re_AND = re.compile(r"\bAND\b")
-re_weight = re.compile(r"^(.*?)(?:\s*:\s*([-+]?(?:\d+\.?|\d*\.\d+)))?\s*$")
+re_weight = re.compile(r"^((?:\s|.)*?)(?:\s*:\s*([-+]?(?:\d+\.?|\d*\.\d+)))?\s*$")
 
 
 def get_multicond_prompt_list(prompts: SdConditioning | list[str]):
