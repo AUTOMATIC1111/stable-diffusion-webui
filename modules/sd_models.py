@@ -64,7 +64,8 @@ class CheckpointInfo:
         _, ext = os.path.splitext(self.filename)
         if ext.lower() == ".safetensors":
             try:
-                self.metadata = read_metadata_from_safetensors(filename)
+                if os.path.isfile(filename):
+                    self.metadata = read_metadata_from_safetensors(filename)
             except Exception as e:
                 errors.display(e, f"reading checkpoint metadata: {filename}")
 

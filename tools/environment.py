@@ -34,6 +34,7 @@ Env_EndponitKey = 'StorageEndponit'
 Env_AccessKey = 'StorageAK'
 Env_SecretKey = 'StorageSK'
 Env_BucketKey = 'StorageBucket'
+Env_Ticket = "Ticket"
 
 # 标记 WORKER执行TRAIN 的时机，不配做默认23~7点
 Env_Run_Train_Time_Start = "RUN_TRAIN_TIME_START"
@@ -146,3 +147,8 @@ def get_mongo_env() -> typing.Mapping[str, str]:
         d[key] = cache.get(key) or os.getenv(key)
         cache[key] = d[key]
     return d
+
+
+def get_ticket():
+    return os.getenv(Env_Ticket, -1)
+
