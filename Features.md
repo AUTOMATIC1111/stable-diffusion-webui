@@ -5,11 +5,23 @@ All examples are non-cherrypicked unless specified otherwise.
 # SD-XL
 ## SD-XL BASE
 
-[PR](https://github.com/AUTOMATIC1111/stable-diffusion-webgenerative-models), [Github](https://github.com/Stability-AI/generative-models).
+[PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11757), [Github](https://github.com/Stability-AI/generative-models).
 
 ### Info
 
 This is a txt2img model designed for generating quality 1024×1024-sized images. It is not meant to generate good pictures at 512×512.
+
+It's tested to produce same (or very close) images as Stability-AI's repo (need to set Random number generator source = CPU in settings)
+
+- textual inversion should not work, embeddings need to be created specifically for SDXL.
+- train tab will not work.
+- DDIM, PLMS, UniPC samplers do not work for SDXL
+
+- `--lowvram`, `--medvram` works
+- attention optimizations work
+- SDXL Loras work
+- works at minimum 4gb gpu (30XX) (use --lowvram --xformers for max of 1280×1280) 
+
 
 >NOTE: Initial loading of these models require those with 24gb cpu memory (RAM) and under to setup a large pagefile. This may change in the future.
 
@@ -22,6 +34,7 @@ This is a txt2img model designed for generating quality 1024×1024-sized images.
 - https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors
  
 (Please use both of these to avoid performance issues.) 
+
 
 # SD2 Variation Models
 [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8958), ([more info.](https://github.com/Stability-AI/stablediffusion/blob/main/doc/UNCLIP.MD))
