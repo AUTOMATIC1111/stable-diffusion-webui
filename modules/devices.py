@@ -250,14 +250,6 @@ if backend == 'ipex':
             lambda orig_func, *args, **kwargs: orig_func(args[0].astype('float32')),
             lambda *args, **kwargs: args[1].dtype == float)
     #ControlNet:
-    CondFunc('torch.batch_norm',
-        lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
-        args[1].to("cpu") if args[1] is not None else args[1],
-        args[2].to("cpu") if args[2] is not None else args[2],
-        args[3].to("cpu") if args[3] is not None else args[3],
-        args[4].to("cpu") if args[4] is not None else args[4],
-        args[5], args[6], args[7], args[8]).to(get_cuda_device_string()),
-        lambda *args, **kwargs: args[1].device != torch.device("cpu"))
     CondFunc('torch.instance_norm',
         lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
         args[1].to("cpu") if args[1] is not None else args[1],
@@ -266,6 +258,14 @@ if backend == 'ipex':
         args[4].to("cpu") if args[4] is not None else args[4],
         args[5], args[6], args[7], args[8]).to(get_cuda_device_string()),
         lambda *args, **kwargs: args[1].device != torch.device("cpu"))
+    #Tiled VAE:
+    #Create xpu tensors for weight (ones) and bias (zeros) if they're not provided
+    CondFunc('torch.batch_norm',
+        lambda orig_func, *args, **kwargs: orig_func(args[0],
+        args[1] or torch.ones(args[0].size()[1], device=get_cuda_device_string()),
+        args[2] or torch.zeros(args[0].size()[1], device=get_cuda_device_string()),
+        args[3], args[4], args[5], args[6], args[7], args[8]),
+        lambda orig_func, *args, **kwargs: args[0].device != torch.device("cpu"))
 
 if backend == "directml":
     directml_init()
