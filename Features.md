@@ -5,35 +5,42 @@ All examples are non-cherrypicked unless specified otherwise.
 # SD-XL
 ## SD-XL BASE
 
-[PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11757), [Github](https://github.com/Stability-AI/generative-models).
+[[PR]](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11757) | [[Stability-AI Github]](https://github.com/Stability-AI/generative-models)
 
 ### Info
 
-This is a txt2img model designed for generating quality 1024×1024-sized images. It is not meant to generate good pictures at 512×512.
+This is a model designed for generating quality 1024×1024-sized images. It is not meant to generate good pictures at 512×512.
+
 
 It's tested to produce same (or very close) images as Stability-AI's repo (need to set Random number generator source = CPU in settings)
 
+
+![img](https://user-images.githubusercontent.com/20920490/253218112-c7c02951-0c1c-47f8-98a4-4fbdcb028712.png)
+
+```
 - textual inversion should not work, embeddings need to be created specifically for SDXL.
 - train tab will not work.
 - DDIM, PLMS, UniPC samplers do not work for SDXL
+```
 
-- `--lowvram`, `--medvram` works
+```
+- --lowvram, --medvram works
 - attention optimizations work
 - SDXL Loras work
-- works at minimum 4gb gpu (30XX) (use --lowvram --xformers for max of 1280×1280) 
-
+- works at minimum 4gb gpu (30XX)  
+```
 
 >NOTE: Initial loading of these models require those with 24gb cpu memory (RAM) and under to setup a large pagefile. This may change in the future.
 
 
 ### Downloading: 
-- https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/sd_xl_base_1.0.safetensors
+1. [sd_xl_base_1.0](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/sd_xl_base_1.0.safetensors)
 
 >The base model's VAE has problems running in fp16.  [madebyollin](https://github.com/madebyollin) has kindly trained a vae to mostly remedy this: 
 
-- https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors
+2. [sdxl-vae-fp16-fix](https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors)
  
-(Please use both of these to avoid performance issues.) 
+(Please use both of these to avoid slow speeds, and GPU out-of-vram issues.) 
 
 
 # SD2 Variation Models
