@@ -1,55 +1,61 @@
-#Copyright (C) 2023 Intel Corporation
-#SPDX-License-Identifier: AGPL-3.0 
+# Copyright (C) 2023 Intel Corporation
+# SPDX-License-Identifier: AGPL-3.0
 
 import math
 import cv2
 import os
 import torch
 import time
+import hashlib
 import functools
 import gradio as gr
 import numpy as np
-import openvino.frontend.pytorch.torchdynamo.backend
 
 import modules
 import modules.paths as paths
 import modules.scripts as scripts
-import modules.shared as shared
 
-from modules import images, devices, extra_networks, generation_parameters_copypaste, masking, sd_samplers, sd_samplers_compvis, sd_samplers_kdiffusion, shared, call_queue
-from modules.processing import StableDiffusionProcessing, Processed, apply_overlay, process_images, get_fixed_seed, program_version, StableDiffusionProcessingImg2Img, create_random_tensors, create_infotext
-from modules.sd_models import list_models, CheckpointInfo
-from modules.sd_samplers_common import samples_to_image_grid, sample_to_image
-from modules.shared import Shared, cmd_opts, opts, state
-from modules.ui import plaintext_to_html, create_sampler_and_steps_selection
+from modules import images, devices, extra_networks, masking, shared
+from modules.processing import (
+    StableDiffusionProcessing, Processed, apply_overlay, apply_color_correction,
+    get_fixed_seed, create_random_tensors, create_infotext, setup_color_correction
+)
+from modules.sd_models import CheckpointInfo
+from modules.shared import Shared, opts, state
 
-from diffusers import StableDiffusionPipeline
-from PIL import Image, ImageFilter, ImageOps
-from modules import sd_samplers_common
+from PIL import Image, ImageOps
+
+import openvino.frontend.pytorch.torchdynamo.backend
+from openvino.frontend.pytorch.torchdynamo.execute import partitioned_modules, compiled_cache
 from openvino.runtime import Core
 
 from diffusers import (
+    StableDiffusionPipeline,
     DDIMScheduler,
     DPMSolverMultistepScheduler,
-    DPMSolverSDEScheduler,
-    DPMSolverSinglestepScheduler,
     EulerAncestralDiscreteScheduler,
     EulerDiscreteScheduler,
     HeunDiscreteScheduler,
-    IPNDMScheduler,
-    KDPM2AncestralDiscreteScheduler,
-    KDPM2DiscreteScheduler,
     LMSDiscreteScheduler,
     PNDMScheduler,
-    UniPCMultistepScheduler,
 )
 
 class ModelState:
     def __init__(self):
         self.recompile = 1
         self.device = "CPU"
+        self.height = 512
+        self.width = 512
+        self.batch_size = 1
 
 model_state = ModelState()
+
+def openvino_clear_caches():
+    global partitioned_modules
+    global compiled_cache
+
+    compiled_cache.clear()
+    partitioned_modules.clear()
 
 def sd_diffusers_model(self):
     import modules.sd_models
@@ -58,7 +64,7 @@ def sd_diffusers_model(self):
 def cond_stage_key(self):
     return None
 
-Shared.sd_diffusers_model = sd_diffusers_model
+shared.sd_diffusers_model = sd_diffusers_model
 
 def set_scheduler(sd_model, sampler_name):
     if (sampler_name == "Euler a"):
@@ -84,14 +90,14 @@ def set_scheduler(sd_model, sampler_name):
 
     return sd_model.scheduler
 
-def get_diffusers_sd_model(sampler_name, enable_caching, openvino_device): 
+def get_diffusers_sd_model(sampler_name, enable_caching, openvino_device):
     if (model_state.recompile == 1):
         torch._dynamo.reset()
-        torch._dynamo.config.verbose=True
+        openvino_clear_caches()
         curr_dir_path = os.getcwd()
         model_path = "/models/Stable-diffusion/"
         checkpoint_name = shared.opts.sd_model_checkpoint.split(" ")[0]
-        checkpoint_path = curr_dir_path + model_path + checkpoint_name        
+        checkpoint_path = curr_dir_path + model_path + checkpoint_name
         sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path)
         checkpoint_info = CheckpointInfo(checkpoint_path)
         sd_model.sd_checkpoint_info = checkpoint_info
@@ -103,7 +109,7 @@ def get_diffusers_sd_model(sampler_name, enable_caching, openvino_device):
         sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino")
         shared.sd_diffusers_model = sd_model
         del sd_model
-    return shared.sd_diffusers_model 
+    return shared.sd_diffusers_model
 
 
 def init_new(self, all_prompts, all_seeds, all_subseeds):
@@ -265,7 +271,7 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
     infotexts = []
     output_images = []
 
-    with torch.no_grad(): 
+    with torch.no_grad():
         with devices.autocast():
             p.init(p.all_prompts, p.all_seeds, p.all_subseeds)
 
@@ -292,7 +298,13 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
 
             if len(p.prompts) == 0:
                 break
-          
+
+            if (model_state.height != p.height or model_state.width != p.width or model_state.batch_size != p.batch_size):
+                model_state.recompile = 1
+                model_state.height = p.height
+                model_state.width = p.width
+                model_state.batch_size = p.batch_size
+
             shared.sd_diffusers_model = get_diffusers_sd_model(sampler_name, enable_caching, openvino_device)
             shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
 
@@ -324,7 +336,7 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
                 shared.state.job = f"Batch {n+1} out of {p.n_iter}"
 
             generator = [torch.Generator(device="cpu").manual_seed(s) for s in p.seeds]
-            
+
             time_stamps = []
 
             def callback(iter, t, latents):
@@ -349,7 +361,7 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
             warmup_duration = time_stamps[1] - time_stamps[0]
             generation_rate = (p.steps - 1) / (time_stamps[-1] - time_stamps[1])
 
-            x_samples_ddim = output.images 
+            x_samples_ddim = output.images
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
@@ -433,7 +445,7 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
         extra_networks.deactivate(p, p.extra_network_data)
 
     devices.torch_gc()
- 
+
     res = Processed(
         p,
         images_list=output_images,
@@ -446,12 +458,12 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
     )
 
     res.info = res.info + ", Warm up time: " + str(round(warmup_duration, 2)) + " secs "
-    
+
     if (generation_rate >= 1.0):
         res.info = res.info + ", Performance: " + str(round(generation_rate, 2)) + " it/s "
     else:
         res.info = res.info + ", Performance: " + str(round(1/generation_rate, 2)) + " s/it "
-    
+
 
     if p.scripts is not None:
         p.scripts.postprocess(p, res)
@@ -465,9 +477,9 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return True
 
-    def ui(self, is_img2img):        
+    def ui(self, is_img2img):
         core = Core()
-        openvino_device = gr.Dropdown(label="Select a device", choices=[device for device in core.available_devices], value="CPU")
+        openvino_device = gr.Dropdown(label="Select a device", choices=[device for device in core.available_devices], value=model_state.device)
         override_sampler = gr.Checkbox(label="Override the sampling selection from the main UI (Recommended as only below sampling methods have been validated for OpenVINO)", value=True)
         sampler_name = gr.Radio(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Heun", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
         enable_caching = gr.Checkbox(label="Cache the compiled models on disk for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
@@ -476,32 +488,28 @@ class Script(scripts.Script):
                       """
                       ###
                       ### Note:
-                      First inference involves compilation of the model for best performance. 
-                      Excluding the first inference (or warm up inference) is recommended for 
-                      performance measurements. When resolution, batchsize, or device is changed, 
-                      or samplers like DPM++ or Karras are selected, model is recompiled. Subsequent 
+                      First inference involves compilation of the model for best performance.
+                      Excluding the first inference (or warm up inference) is recommended for
+                      performance measurements. When resolution, batchsize, or device is changed,
+                      or samplers like DPM++ or Karras are selected, model is recompiled. Subsequent
                       iterations use the cached compiled model for faster inference.
-                      """)        
-        
-        def device_change(choice): 
+                      """)
+
+        def device_change(choice):
             if (model_state.device == choice):
                 return gr.update(value="Device selected is " + choice, visible=True)
             else:
-                model_state.recompile = 1 
+                model_state.device = choice
+                model_state.recompile = 1
                 return gr.update(value="Device changed to " + choice + ". Model will be re-compiled", visible=True)
-        openvino_device.change(device_change, openvino_device, warmup_status)            
+        openvino_device.change(device_change, openvino_device, warmup_status)
 
         return [openvino_device, override_sampler, sampler_name, enable_caching]
-        
 
     def run(self, p, openvino_device, override_sampler, sampler_name, enable_caching):
-        os.environ["OPENVINO_DEVICE"] = str(openvino_device)
+        os.environ["OPENVINO_TORCH_BACKEND_DEVICE"] = str(openvino_device)
         if enable_caching:
             os.environ["OPENVINO_TORCH_MODEL_CACHING"] = "1"
-
-        if (model_state.device != openvino_device):
-            model_state.recompile = 1 
-            model_state.device = openvino_device
 
         if override_sampler:
             p.sampler_name = sampler_name
