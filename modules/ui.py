@@ -384,6 +384,7 @@ def create_ui(startup_timer = None):
                     hr_second_pass_steps, latent_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers, "txt2img", False)
                     with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
                         denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.3, elem_id="txt2img_denoising_strength")
+                        refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=1.0, elem_id="txt2img_refiner_start")
                     with FormRow(elem_id="txt2img_hires_finalres", variant="compact"):
                         hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
                     with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
@@ -398,12 +399,10 @@ def create_ui(startup_timer = None):
                     with FormRow(elem_id="txt2img_refiner_row1", variant="compact"):
                         image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
                         diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
-                        refiner_denoise_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.8, elem_id="txt2img_refiner_denoise_start")
-                        refiner_denoise_end = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise end', value=1.0, elem_id="txt2img_refiner_denoise_end")
                     with FormRow(elem_id="txt2img_refiner_row2", variant="compact"):
-                        refiner_prompt = gr.Textbox(value='', label='Prompt')
+                        refiner_prompt = gr.Textbox(value='', label='Secondary Prompt')
                     with FormRow(elem_id="txt2img_refiner_row3", variant="compact"):
-                        refiner_negative = gr.Textbox(value='', label='Negative prompt')
+                        refiner_negative = gr.Textbox(value='', label='Secondary negative prompt')
 
                 with FormRow(elem_id="txt2img_override_settings_row") as row:
                     override_settings = create_override_settings_dropdown('txt2img', row)
@@ -443,7 +442,7 @@ def create_ui(startup_timer = None):
                     height, width,
                     show_second_pass, denoising_strength,
                     hr_scale, hr_upscaler, hr_second_pass_steps, hr_resize_x, hr_resize_y,
-                    refiner_denoise_start, refiner_denoise_end, refiner_prompt, refiner_negative,
+                    refiner_start, refiner_prompt, refiner_negative,
                     override_settings,
                 ] + custom_inputs,
                 outputs=[
@@ -482,8 +481,7 @@ def create_ui(startup_timer = None):
                 (clip_skip, "Clip skip"),
                 (latent_index, "Latent sampler"),
                 (denoising_strength, "Denoising strength"),
-                (refiner_denoise_start, "Denoise start"),
-                (refiner_denoise_end, "Denoise end"),
+                (refiner_start, "Refiner start"),
                 (restore_faces, "Face restoration"),
                 (batch_size, "Batch size"),
                 (batch_count, "Batch count"),
@@ -657,8 +655,7 @@ def create_ui(startup_timer = None):
                 with FormGroup(visible=show_denoise.value, elem_id=f"{tab}_denoise_group") as denoise_group:
                     with FormRow():
                         denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.75, elem_id="img2img_denoising_strength")
-                        refiner_denoise_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.0, elem_id="txt2img_refiner_denoise_start")
-                        refiner_denoise_end = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise end', value=1.0, elem_id="txt2img_refiner_denoise_end")
+                        refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.0, elem_id="txt2img_refiner_start")
 
                 with FormGroup(visible=show_advanced.value, elem_id=f"{tab}_advanced_group") as advanced_group:
                     with FormRow():
@@ -739,7 +736,7 @@ def create_ui(startup_timer = None):
                     batch_count, batch_size,
                     cfg_scale, image_cfg_scale,
                     diffusers_guidance_rescale,
-                    refiner_denoise_start, refiner_denoise_end,
+                    refiner_start,
                     clip_skip,
                     denoising_strength,
                     seed, subseed, subseed_strength, seed_resize_from_h, seed_resize_from_w,
@@ -836,8 +833,7 @@ def create_ui(startup_timer = None):
                 (clip_skip, "Clip skip"),
                 (latent_index, "Latent sampler"),
                 (denoising_strength, "Denoising strength"),
-                (refiner_denoise_start, "Denoise start"),
-                (refiner_denoise_end, "Denoise end"),
+                (refiner_start, "Refiner start"),
                 (restore_faces, "Face restoration"),
                 (batch_size, "Batch size"),
                 (batch_count, "Batch count"),

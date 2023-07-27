@@ -239,10 +239,7 @@ axis_options = [
     AxisOption("SecondPass Steps", int, apply_field("hr_second_pass_steps")),
     AxisOption("SecondPass CFG Scale", float, apply_field("image_cfg_scale")),
     AxisOption("SecondPass Guidance Rescale", float, apply_field("diffusers_guidance_rescale")),
-    AxisOption("SecondPass Denoise Start", float, apply_field("refiner_denoise_start")),
-    AxisOption("SecondPass Denoise End", float, apply_field("refiner_denoise_end")),
-
-
+    AxisOption("SecondPass Refiner Start", float, apply_field("refiner_start")),
 ]
 
 

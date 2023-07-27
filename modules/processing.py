@@ -149,7 +149,7 @@ class StableDiffusionProcessing:
         self.iteration = 0
         self.is_hr_pass = False
         self.enable_hr = None
-        self.refiner_denoise_start = 0
+        self.refiner_start = 0
         self.ops = []
         shared.opts.data['clip_skip'] = clip_skip
 
@@ -471,8 +471,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Latent sampler": p.latent_sampler if p.enable_hr else None,
         "Image CFG scale": p.image_cfg_scale if p.enable_hr else None,
         "Denoising strength": p.denoising_strength if p.enable_hr else None,
-        "Denoise start": p.refiner_denoise_start if p.enable_hr else None,
-        "Denoise end": p.refiner_denoise_end if p.enable_hr else None,
+        "Refiner start": p.refiner_start if p.enable_hr else None,
         # restore_faces
         "Face restoration": shared.opts.face_restoration_model if p.restore_faces else None,
         # sdnext
@@ -807,7 +806,7 @@ def old_hires_fix_first_pass_dimensions(width, height):
 class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, refiner_denoise_start: float = 0, refiner_denoise_end: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
+    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
 
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
@@ -827,8 +826,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.truncate_x = 0
         self.truncate_y = 0
         self.applied_old_hires_behavior_to = None
-        self.refiner_denoise_start = refiner_denoise_start
-        self.refiner_denoise_end = refiner_denoise_end
+        self.refiner_start = refiner_start
         self.refiner_prompt = refiner_prompt
         self.refiner_negative = refiner_negative
 
@@ -975,7 +973,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
     sampler = None
 
-    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.3, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, refiner_denoise_start: float = 0, refiner_denoise_end: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
+    def __init__(self, init_images: list = None, resize_mode: int = 0, denoising_strength: float = 0.3, image_cfg_scale: float = None, mask: Any = None, mask_blur: int = 4, inpainting_fill: int = 0, inpaint_full_res: bool = True, inpaint_full_res_padding: int = 0, inpainting_mask_invert: int = 0, initial_noise_multiplier: float = None, refiner_start: float = 0, refiner_prompt: str = '', refiner_negative: str = '', **kwargs):
         super().__init__(**kwargs)
         self.init_images = init_images
         self.resize_mode: int = resize_mode
@@ -994,8 +992,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask = None
         self.nmask = None
         self.image_conditioning = None
-        self.refiner_denoise_start = refiner_denoise_start
-        self.refiner_denoise_end = refiner_denoise_end
+        self.refiner_start = refiner_start
         self.refiner_prompt = refiner_prompt
         self.refiner_negative = refiner_negative
         self.enable_hr = None
