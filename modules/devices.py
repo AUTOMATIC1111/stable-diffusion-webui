@@ -221,21 +221,21 @@ if backend == 'ipex':
 
     #Functions with dtype errors:
     CondFunc('torch.nn.modules.GroupNorm.forward',
-        lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
-        lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
+        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
+        lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
     CondFunc('torch.nn.modules.Linear.forward',
-        lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[0].weight.data.dtype)),
-        lambda *args, **kwargs: args[2].dtype != args[1].weight.data.dtype)
+        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
+        lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
     #Diffusers bfloat16:
     CondFunc('torch.nn.modules.Conv2d._conv_forward',
-        lambda orig_func, *args, **kwargs: orig_func(args[0], args[1].to(args[2].data.dtype), args[2], args[3]),
-        lambda *args, **kwargs: args[2].dtype != args[3].data.dtype)
+        lambda orig_func, self, input, weight, bias=None: orig_func(self, input.to(weight.data.dtype), weight, bias=bias),
+        lambda orig_func, self, input, weight, bias=None: input.dtype != weight.data.dtype)
 
     #Functions that does not work with the XPU:
     #UniPC:
     CondFunc('torch.linalg.solve',
-        lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"), args[1].to("cpu")).to(get_cuda_device_string()),
-        lambda *args, **kwargs: args[1].device != torch.device("cpu"))
+        lambda orig_func, A, B, *args, left=True, out=None: orig_func(A.to("cpu"), B.to("cpu"), *args, left=left, out=out).to(get_cuda_device_string()),
+        lambda orig_func, A, B, *args, left=True, out=None: A.device != torch.device("cpu") or B.device != torch.device("cpu"))
     #SDE Samplers:
     CondFunc('torch.Generator',
         lambda orig_func, device: torch.xpu.Generator(device),
@@ -247,25 +247,22 @@ if backend == 'ipex':
     #Diffusers Float64 (ARC GPUs doesn't support double or Float64):
     if not torch.xpu.has_fp64_dtype():
         CondFunc('torch.from_numpy',
-            lambda orig_func, *args, **kwargs: orig_func(args[0].astype('float32')),
-            lambda *args, **kwargs: args[1].dtype == float)
-    #ControlNet:
-    CondFunc('torch.instance_norm',
-        lambda orig_func, *args, **kwargs: orig_func(args[0].to("cpu"),
-        args[1].to("cpu") if args[1] is not None else args[1],
-        args[2].to("cpu") if args[2] is not None else args[2],
-        args[3].to("cpu") if args[3] is not None else args[3],
-        args[4].to("cpu") if args[4] is not None else args[4],
-        args[5], args[6], args[7], args[8]).to(get_cuda_device_string()),
-        lambda *args, **kwargs: args[1].device != torch.device("cpu"))
-    #Tiled VAE:
-    #Create xpu tensors for weight (ones) and bias (zeros) if they're not provided
+            lambda orig_func, ndarray: orig_func(ndarray.astype('float32')),
+            lambda orig_func, ndarray: ndarray.dtype == float)
+    #ControlNet and TiledVAE:
     CondFunc('torch.batch_norm',
-        lambda orig_func, *args, **kwargs: orig_func(args[0],
-        args[1] or torch.ones(args[0].size()[1], device=get_cuda_device_string()),
-        args[2] or torch.zeros(args[0].size()[1], device=get_cuda_device_string()),
-        args[3], args[4], args[5], args[6], args[7], args[8]),
-        lambda orig_func, *args, **kwargs: args[0].device != torch.device("cpu"))
+        lambda orig_func, input, running_mean=None, running_var=None, weight=None, bias=None, training=False, momentum=0.1, eps=1e-5, cudnn_enabled=True: orig_func(input,
+        running_mean if running_mean is not None else torch.ones(input.size()[1], device=get_cuda_device_string()),
+        running_var if running_var is not None else torch.zeros(input.size()[1], device=get_cuda_device_string()),
+        weight, bias, training, momentum, eps, cudnn_enabled),
+        lambda orig_func, input, running_mean=None, running_var=None, weight=None, bias=None, training=False, momentum=0.1, eps=1e-5, cudnn_enabled=True: input.device != torch.device("cpu"))
+    #ControlNet
+    CondFunc('torch.instance_norm',
+        lambda orig_func, input, running_mean=None, running_var=None, weight=None, bias=None, use_input_stats=True, momentum=0.1, eps=1e-5, cudnn_enabled=True: orig_func(input,
+        running_mean if running_mean is not None else torch.ones(input.size()[1], device=get_cuda_device_string()),
+        running_var if running_var is not None else torch.zeros(input.size()[1], device=get_cuda_device_string()),
+        weight, bias, use_input_stats, momentum, eps, cudnn_enabled),
+        lambda orig_func, input, running_mean=None, running_var=None, weight=None, bias=None, use_input_stats=True, momentum=0.1, eps=1e-5, cudnn_enabled=True: input.device != torch.device("cpu"))
 
 if backend == "directml":
     directml_init()
