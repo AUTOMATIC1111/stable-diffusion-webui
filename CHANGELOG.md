@@ -20,6 +20,7 @@
  * fix some options missing from /sdapi/v1/options
  * fix for extension update status always saying "unknown"
  * fix display of extra network cards that have `<>` in the name
+ * update lora extension to work with python 3.8
 
 
 ## 1.5.0
