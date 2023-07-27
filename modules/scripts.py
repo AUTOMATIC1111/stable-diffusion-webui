@@ -1,6 +1,7 @@
 import os
 import re
 import sys
+import inspect
 from collections import namedtuple
 
 import gradio as gr
@@ -13,6 +14,11 @@ AlwaysVisible = object()
 class PostprocessImageArgs:
     def __init__(self, image):
         self.image = image
+
+
+class PostprocessBatchListArgs:
+    def __init__(self, images):
+        self.images = images
 
 
 class Script:
@@ -116,6 +122,21 @@ class Script:
 
         pass
 
+    def after_extra_networks_activate(self, p, *args, **kwargs):
+        """
+        Called after extra networks activation, before conds calculation
+        allow modification of the network after extra networks activation been applied
+        won't be call if p.disable_extra_networks
+
+        **kwargs will have those items:
+          - batch_number - index of current batch, from 0 to number of batches-1
+          - prompts - list of prompts for current batch; you can change contents of this list but changing the number of entries will likely break things
+          - seeds - list of seeds for current batch
+          - subseeds - list of subseeds for current batch
+          - extra_network_data - list of ExtraNetworkParams for current stage
+        """
+        pass
+
     def process_batch(self, p, *args, **kwargs):
         """
         Same as process(), but called for every batch.
@@ -136,6 +157,25 @@ class Script:
         **kwargs will have same items as process_batch, and also:
           - batch_number - index of current batch, from 0 to number of batches-1
           - images - torch tensor with all generated images, with values ranging from 0 to 1;
+        """
+
+        pass
+
+    def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, *args, **kwargs):
+        """
+        Same as postprocess_batch(), but receives batch images as a list of 3D tensors instead of a 4D tensor.
+        This is useful when you want to update the entire batch instead of individual images.
+
+        You can modify the postprocessing object (pp) to update the images in the batch, remove images, add images, etc.
+        If the number of images is different from the batch size when returning,
+        then the script has the responsibility to also update the following attributes in the processing object (p):
+          - p.prompts
+          - p.negative_prompts
+          - p.seeds
+          - p.subseeds
+
+        **kwargs will have same items as process_batch, and also:
+          - batch_number - index of current batch, from 0 to number of batches-1
         """
 
         pass
@@ -186,6 +226,11 @@ class Script:
 
         return f'script_{tabname}{title}_{item_id}'
 
+    def before_hr(self, p, *args):
+        """
+        This function is called before hires fix start.
+        """
+        pass
 
 current_basedir = paths.script_path
 
@@ -249,7 +294,7 @@ def load_scripts():
 
     def register_scripts_from_module(module):
         for script_class in module.__dict__.values():
-            if type(script_class) != type:
+            if not inspect.isclass(script_class):
                 continue
 
             if issubclass(script_class, Script):
@@ -483,6 +528,14 @@ class ScriptRunner:
             except Exception:
                 errors.report(f"Error running before_process_batch: {script.filename}", exc_info=True)
 
+    def after_extra_networks_activate(self, p, **kwargs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.after_extra_networks_activate(p, *script_args, **kwargs)
+            except Exception:
+                errors.report(f"Error running after_extra_networks_activate: {script.filename}", exc_info=True)
+
     def process_batch(self, p, **kwargs):
         for script in self.alwayson_scripts:
             try:
@@ -506,6 +559,14 @@ class ScriptRunner:
                 script.postprocess_batch(p, *script_args, images=images, **kwargs)
             except Exception:
                 errors.report(f"Error running postprocess_batch: {script.filename}", exc_info=True)
+
+    def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, **kwargs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.postprocess_batch_list(p, pp, *script_args, **kwargs)
+            except Exception:
+                errors.report(f"Error running postprocess_batch_list: {script.filename}", exc_info=True)
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         for script in self.alwayson_scripts:
@@ -546,6 +607,15 @@ class ScriptRunner:
                     self.scripts[si].filename = filename
                     self.scripts[si].args_from = args_from
                     self.scripts[si].args_to = args_to
+
+
+    def before_hr(self, p):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.before_hr(p, *script_args)
+            except Exception:
+                errors.report(f"Error running before_hr: {script.filename}", exc_info=True)
 
 
 scripts_txt2img: ScriptRunner = None

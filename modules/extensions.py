@@ -1,7 +1,7 @@
 import os
 import threading
 
-from modules import shared, errors
+from modules import shared, errors, cache
 from modules.gitpython_hack import Repo
 from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
@@ -21,6 +21,7 @@ def active():
 
 class Extension:
     lock = threading.Lock()
+    cached_fields = ['remote', 'commit_date', 'branch', 'commit_hash', 'version']
 
     def __init__(self, name, path, enabled=True, is_builtin=False):
         self.name = name
@@ -36,15 +37,31 @@ class Extension:
         self.remote = None
         self.have_info_from_repo = False
 
+    def to_dict(self):
+        return {x: getattr(self, x) for x in self.cached_fields}
+
+    def from_dict(self, d):
+        for field in self.cached_fields:
+            setattr(self, field, d[field])
+
     def read_info_from_repo(self):
         if self.is_builtin or self.have_info_from_repo:
             return
 
-        with self.lock:
-            if self.have_info_from_repo:
-                return
+        def read_from_repo():
+            with self.lock:
+                if self.have_info_from_repo:
+                    return
 
-            self.do_read_info_from_repo()
+                self.do_read_info_from_repo()
+
+                return self.to_dict()
+        try:
+            d = cache.cached_data_for_file('extensions-git', self.name, os.path.join(self.path, ".git"), read_from_repo)
+            self.from_dict(d)
+        except FileNotFoundError:
+            pass
+        self.status = 'unknown' if self.status == '' else self.status
 
     def do_read_info_from_repo(self):
         repo = None
@@ -58,7 +75,6 @@ class Extension:
             self.remote = None
         else:
             try:
-                self.status = 'unknown'
                 self.remote = next(repo.remote().urls, None)
                 commit = repo.head.commit
                 self.commit_date = commit.committed_date

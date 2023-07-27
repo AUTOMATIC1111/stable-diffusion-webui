@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import datetime
 
 import pytz
@@ -10,7 +12,7 @@ import re
 import numpy as np
 import piexif
 import piexif.helper
-from PIL import Image, ImageFont, ImageDraw, PngImagePlugin
+from PIL import Image, ImageFont, ImageDraw, ImageColor, PngImagePlugin
 import string
 import json
 import hashlib
@@ -139,6 +141,11 @@ class GridAnnotation:
 
 
 def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
+
+    color_active = ImageColor.getcolor(opts.grid_text_active_color, 'RGB')
+    color_inactive = ImageColor.getcolor(opts.grid_text_inactive_color, 'RGB')
+    color_background = ImageColor.getcolor(opts.grid_background_color, 'RGB')
+
     def wrap(drawing, text, font, line_length):
         lines = ['']
         for word in text.split():
@@ -168,9 +175,6 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
     fnt = get_font(fontsize)
 
-    color_active = (0, 0, 0)
-    color_inactive = (153, 153, 153)
-
     pad_left = 0 if sum([sum([len(line.text) for line in lines]) for lines in ver_texts]) == 0 else width * 3 // 4
 
     cols = im.width // width
@@ -179,7 +183,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
     assert cols == len(hor_texts), f'bad number of horizontal texts: {len(hor_texts)}; must be {cols}'
     assert rows == len(ver_texts), f'bad number of vertical texts: {len(ver_texts)}; must be {rows}'
 
-    calc_img = Image.new("RGB", (1, 1), "white")
+    calc_img = Image.new("RGB", (1, 1), color_background)
     calc_d = ImageDraw.Draw(calc_img)
 
     for texts, allowed_width in zip(hor_texts + ver_texts, [width] * len(hor_texts) + [pad_left] * len(ver_texts)):
@@ -200,7 +204,7 @@ def draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin=0):
 
     pad_top = 0 if sum(hor_text_heights) == 0 else max(hor_text_heights) + line_spacing * 2
 
-    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + margin * (rows-1)), "white")
+    result = Image.new("RGB", (im.width + pad_left + margin * (cols-1), im.height + pad_top + margin * (rows-1)), color_background)
 
     for row in range(rows):
         for col in range(cols):
@@ -302,12 +306,14 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
 
         if ratio < src_ratio:
             fill_height = height // 2 - src_h // 2
-            res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
-            res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
+            if fill_height > 0:
+                res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
+                res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)), box=(0, fill_height + src_h))
         elif ratio > src_ratio:
             fill_width = width // 2 - src_w // 2
-            res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
-            res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
+            if fill_width > 0:
+                res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
+                res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)), box=(fill_width + src_w, 0))
 
     return res
 
@@ -357,7 +363,7 @@ class FilenameGenerator:
         'styles': lambda self: self.p and sanitize_filename_part(", ".join([style for style in self.p.styles if not style == "None"]) or "None", replace_spaces=False),
         'sampler': lambda self: self.p and sanitize_filename_part(self.p.sampler_name, replace_spaces=False),
         'model_hash': lambda self: getattr(self.p, "sd_model_hash", shared.sd_model.sd_model_hash),
-        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.model_name, replace_spaces=False),
+        'model_name': lambda self: sanitize_filename_part(shared.sd_model.sd_checkpoint_info.name_for_extra, replace_spaces=False),
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
@@ -372,8 +378,9 @@ class FilenameGenerator:
         'hasprompt': lambda self, *args: self.hasprompt(*args),  # accepts formats:[hasprompt<prompt1|default><prompt2>..]
         'clip_skip': lambda self: opts.data["CLIP_stop_at_last_layers"],
         'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
+        'user': lambda self: self.p.user,
         'vae_filename': lambda self: self.get_vae_filename(),
-
+        'none': lambda self: '', # Overrides the default so you can get just the sequence number
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -497,13 +504,23 @@ def get_next_sequence_number(path, basename):
     return result + 1
 
 
-def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_pnginfo=None):
+def save_image_with_geninfo(image, geninfo, filename, extension=None, existing_pnginfo=None, pnginfo_section_name='parameters'):
+    """
+    Saves image to filename, including geninfo as text information for generation info.
+    For PNG images, geninfo is added to existing pnginfo dictionary using the pnginfo_section_name argument as key.
+    For JPG images, there's no dictionary and geninfo just replaces the EXIF description.
+    """
+
     if extension is None:
         extension = os.path.splitext(filename)[1]
 
     image_format = Image.registered_extensions()[extension]
 
     if extension.lower() == '.png':
+        existing_pnginfo = existing_pnginfo or {}
+        if opts.enable_pnginfo:
+            existing_pnginfo[pnginfo_section_name] = geninfo
+
         if opts.enable_pnginfo:
             pnginfo_data = PngImagePlugin.PngInfo()
             for k, v in (existing_pnginfo or {}).items():
@@ -585,12 +602,12 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         else:
             file_decoration = opts.samples_filename_pattern or "[seed]-[prompt_spaces]"
 
+        file_decoration = namegen.apply(file_decoration) + suffix
+
         add_number = opts.save_images_add_number or file_decoration == ''
 
         if file_decoration != "" and add_number:
             file_decoration = f"-{file_decoration}"
-
-        file_decoration = namegen.apply(file_decoration) + suffix
 
         if add_number:
             basecount = get_next_sequence_number(path, basename)
@@ -622,7 +639,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         """
         temp_file_path = f"{filename_without_extension}.tmp"
 
-        save_image_with_geninfo(image_to_save, info, temp_file_path, extension, params.pnginfo)
+        save_image_with_geninfo(image_to_save, info, temp_file_path, extension, existing_pnginfo=params.pnginfo, pnginfo_section_name=pnginfo_section_name)
 
         os.replace(temp_file_path, filename_without_extension + extension)
 
@@ -639,12 +656,18 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     oversize = image.width > opts.target_side_length or image.height > opts.target_side_length
     if opts.export_for_4chan and (oversize or os.stat(fullfn).st_size > opts.img_downscale_threshold * 1024 * 1024):
         ratio = image.width / image.height
-
+        resize_to = None
         if oversize and ratio > 1:
-            image = image.resize((round(opts.target_side_length), round(image.height * opts.target_side_length / image.width)), LANCZOS)
+            resize_to = round(opts.target_side_length), round(image.height * opts.target_side_length / image.width)
         elif oversize:
-            image = image.resize((round(image.width * opts.target_side_length / image.height), round(opts.target_side_length)), LANCZOS)
+            resize_to = round(image.width * opts.target_side_length / image.height), round(opts.target_side_length)
 
+        if resize_to is not None:
+            try:
+                # Resizing image with LANCZOS could throw an exception if e.g. image mode is I;16
+                image = image.resize(resize_to, LANCZOS)
+            except Exception:
+                image = image.resize(resize_to)
         try:
             _atomically_save_image(image, fullfn_without_extension, ".jpg")
         except Exception as e:
@@ -662,8 +685,15 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
     return fullfn, txt_fullfn
 
 
-def read_info_from_image(image):
-    items = image.info or {}
+IGNORED_INFO_KEYS = {
+    'jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
+    'loop', 'background', 'timestamp', 'duration', 'progressive', 'progression',
+    'icc_profile', 'chromaticity', 'photoshop',
+}
+
+
+def read_info_from_image(image: Image.Image) -> tuple[str | None, dict]:
+    items = (image.info or {}).copy()
 
     geninfo = items.pop('parameters', None)
 
@@ -679,9 +709,7 @@ def read_info_from_image(image):
             items['exif comment'] = exif_comment
             geninfo = exif_comment
 
-    for field in ['jfif', 'jfif_version', 'jfif_unit', 'jfif_density', 'dpi', 'exif',
-                    'loop', 'background', 'timestamp', 'duration', 'progressive', 'progression',
-                    'icc_profile', 'chromaticity']:
+    for field in IGNORED_INFO_KEYS:
         items.pop(field, None)
 
     if items.get("Software", None) == "NovelAI":
