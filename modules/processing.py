@@ -104,6 +104,7 @@ class StableDiffusionProcessing:
         self.batch_size: int = batch_size
         self.n_iter: int = n_iter
         self.steps: int = steps
+        self.hr_second_pass_steps = 0
         self.cfg_scale: float = cfg_scale
         self.image_cfg_scale = image_cfg_scale
         self.diffusers_guidance_rescale = diffusers_guidance_rescale
@@ -472,6 +473,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Image CFG scale": p.image_cfg_scale if p.enable_hr else None,
         "Denoising strength": p.denoising_strength if p.enable_hr else None,
         "Refiner start": p.refiner_start if p.enable_hr else None,
+        "Secondary steps": p.hr_second_pass_steps if p.enable_hr else None,
         # restore_faces
         "Face restoration": shared.opts.face_restoration_model if p.restore_faces else None,
         # sdnext

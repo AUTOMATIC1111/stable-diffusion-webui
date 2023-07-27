@@ -490,6 +490,7 @@ def create_ui(startup_timer = None):
                 (hr_scale, "Hires upscale"),
                 (hr_upscaler, "Hires upscaler"),
                 (hr_second_pass_steps, "Hires steps"),
+                (hr_second_pass_steps, "Secondary steps"),
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
                 *modules.scripts.scripts_txt2img.infotext_fields
@@ -839,6 +840,7 @@ def create_ui(startup_timer = None):
                 (hr_scale, "Hires upscale"),
                 (hr_upscaler, "Hires upscaler"),
                 (hr_second_pass_steps, "Hires steps"),
+                (hr_second_pass_steps, "Secondary steps"),
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
                 (image_cfg_scale, "Image CFG scale"),
