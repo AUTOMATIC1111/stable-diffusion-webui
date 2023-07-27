@@ -80,7 +80,7 @@ button.custom-button{
 #txt2img_tools > div > button, #img2img_tools > div > button { scale: 120%; }
 .interrogate-col{ min-width: 0 !important; max-width: fit-content; gap: 0.5em; }
 .interrogate-col > button{ flex: 1; }
-#img2img_copy_to_img2img { margin-bottom: 2em; }
+#sampler_selection_img2img { margin-top: 1em; }
 #txtimg_hr_finalres{ min-height: 0 !important; padding: .625rem .75rem; margin-left: -0.75em }
 #img2img_scale_resolution_preview.block{ display: flex; align-items: end; }
 #txtimg_hr_finalres .resolution, #img2img_scale_resolution_preview .resolution{ font-weight: bold; }

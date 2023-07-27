@@ -668,28 +668,19 @@ def create_ui(startup_timer = None):
                         restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="img2img_restore_faces")
                         tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
 
-                with FormRow(elem_id="img2img_override_settings_row") as row:
-                    override_settings = create_override_settings_dropdown('img2img', row)
-
-                with FormGroup(elem_id="img2img_script_container"):
-                    custom_inputs = modules.scripts.scripts_img2img.setup_ui()
-
                 with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
                     with FormRow():
                         mask_blur = gr.Slider(label='Mask blur', minimum=0, maximum=64, step=1, value=4, elem_id="img2img_mask_blur")
                         mask_alpha = gr.Slider(label="Mask transparency", visible=False, elem_id="img2img_mask_alpha")
-
                     with FormRow():
-                        inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
-
-                    with FormRow():
-                        inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
-
+                        with gr.Column():
+                            inpainting_mask_invert = gr.Radio(label='Mask mode', choices=['Inpaint masked', 'Inpaint not masked'], value='Inpaint masked', type="index", elem_id="img2img_mask_mode")
+                        with gr.Column():
+                            inpainting_fill = gr.Radio(label='Masked content', choices=['fill', 'original', 'latent noise', 'latent nothing'], value='original', type="index", elem_id="img2img_inpainting_fill")
                     with FormRow():
                         with gr.Column():
                             inpaint_full_res = gr.Radio(label="Inpaint area", choices=["Whole picture", "Only masked"], type="index", value="Whole picture", elem_id="img2img_inpaint_full_res")
-
-                        with gr.Column(scale=4):
+                        with gr.Column():
                             inpaint_full_res_padding = gr.Slider(label='Only masked padding, pixels', minimum=0, maximum=256, step=4, value=32, elem_id="img2img_inpaint_full_res_padding")
 
                     def select_img2img_tab(tab):
@@ -697,6 +688,12 @@ def create_ui(startup_timer = None):
 
                     for i, elem in enumerate(img2img_tabs):
                         elem.select(fn=lambda tab=i: select_img2img_tab(tab), inputs=[], outputs=[inpaint_controls, mask_alpha]) # pylint: disable=cell-var-from-loop
+
+                with FormRow(elem_id="img2img_override_settings_row") as row:
+                    override_settings = create_override_settings_dropdown('img2img', row)
+
+                with FormGroup(elem_id="img2img_script_container"):
+                    custom_inputs = modules.scripts.scripts_img2img.setup_ui()
 
             img2img_gallery, generation_info, html_info, _html_info_formatted, html_log = ui_common.create_output_panel("img2img", opts.outdir_img2img_samples)
 
