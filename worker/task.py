@@ -221,8 +221,8 @@ class TaskProgress(SerializationObj):
 
     def update_seed(self, seed, sub_seed):
         if isinstance(self.task, Task):
-            self.task['seed'] = seed
-            self.task['sub_seed'] = sub_seed
+            self.task['all_seed'] = seed
+            self.task['all_sub_seed'] = sub_seed
 
     @classmethod
     def new_failed(cls, task: Task, desc: str, trace: str = None):
