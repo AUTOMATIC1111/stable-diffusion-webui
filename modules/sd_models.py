@@ -654,7 +654,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model.watermark = NoWatermark()
 
         if hasattr(sd_model, "enable_model_cpu_offload"):
-            if shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload:
+            if (shared.cmd_opts.medvram and devices.backend != "directml") or shared.opts.diffusers_model_cpu_offload:
                 shared.log.debug(f'Diffusers {op}: enable model CPU offload')
                 sd_model.enable_model_cpu_offload()
         if hasattr(sd_model, "enable_sequential_cpu_offload"):

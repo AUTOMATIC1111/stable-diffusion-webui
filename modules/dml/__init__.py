@@ -65,7 +65,8 @@ def directml_override_opts():
         item = opts_override_table[key]
         if getattr(shared.opts, key) != item.value and (item.condition is None or item.condition(shared.opts)):
             setattr(shared.opts, key, item.value)
-            shared.log.warning(item.message)
+            if item.message is not None:
+                shared.log.warning(item.message)
             shared.log.warning(f'{key} is automatically overriden to {item.value}.')
     
     if count > 0:
