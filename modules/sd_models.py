@@ -591,6 +591,11 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 vae = sd_vae.load_vae_diffusers(None, vae_file, vae_source)
                 if vae is not None:
                     diffusers_load_config["vae"] = vae
+                elif shared.opts.diffusers_vae_upcast != 'default':
+                     # There is no good way to change vae.force_upcast while VAE is loading
+                    # as part of the pipeline or to override it after.
+                    # ?? =  True if shared.opts.diffusers_vae_upcast == 'true' else False
+                    shared.info(f'Diffusers VAE force upcast ({shared.opts.diffusers_vae_upcast}) is only supported with an explicit VAE.')
 
             if not os.path.isfile(checkpoint_info.path):
                 try:
@@ -686,11 +691,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             else:
                 sd_model.disable_attention_slicing()
         if hasattr(sd_model, "vae"):
-            if vae is not None:
-                shared.log.debug(f'Diffusers {op} VAE: name={vae.config.get("_name_or_path", "default")} upcast={vae.config.get("force_upcast", None)}')
-                sd_model.vae = vae # pylint: disable=attribute-defined-outside-init
-                if shared.opts.diffusers_vae_upcast != 'default':
-                    sd_model.vae.config.force_upcast = True if shared.opts.upcast_sampling == 'true' else False
+            shared.log.debug(f'Diffusers {op} VAE: name={sd_model.vae.config.get("_name_or_path", "default")} upcast={sd_model.vae.config.get("force_upcast", None)}')
         if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
             sd_model.enable_xformers_memory_efficient_attention()
         if shared.opts.opt_channelslast:

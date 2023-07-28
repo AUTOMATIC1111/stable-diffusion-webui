@@ -183,10 +183,17 @@ def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
     }
     if devices.dtype_vae == torch.float16:
         diffusers_load_config['variant'] = 'fp16'
+
+    if shared.opts.diffusers_vae_upcast != 'default':
+        diffusers_load_config['force_upcast'] = True if shared.opts.diffusers_vae_upcast == 'true' else False
+
     shared.log.debug(f'Diffusers VAE load config: {diffusers_load_config}')
     try:
         import diffusers
         if os.path.isfile(vae_file):
+            # load_config passed to from_single_file doesn't apply
+            # from_single_file by default downloads VAE1.5 config
+            shared.log.warning("Using SDXL VAE loaded from singular file will result in low contrast images.")
             vae = diffusers.AutoencoderKL.from_single_file(vae_file)
             vae = vae.to(devices.dtype_vae)
         else:
