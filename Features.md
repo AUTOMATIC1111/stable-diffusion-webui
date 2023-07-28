@@ -538,7 +538,8 @@ Prompt editing was first implemented by Doggettx in [this reddit post](https://w
 **Note**: This syntax does _not_ work with extra networks, such as LoRA. See [this discussion post](https://github.com/AUTOMATIC1111/stable-diffusion-webui/discussions/10897#discussioncomment-6055184) for details. For similar functionality, see the [sd-webui-loractl extension](https://github.com/cheald/sd-webui-loractl).
 
 # Hires. fix
-A convenience option to partially render your image at a lower resolution, upscale it, and then add details at a high resolution. By default, txt2img  makes horrible images at very high resolutions, and this makes it possible to avoid using the small picture's composition. Enabled by checking the "Hires. fix" checkbox on the txt2img page.
+A convenience option to partially render your image at a lower resolution, upscale it, and then add details at a high resolution. In other words, this is equivalent to generating an image in txt2img, upscaling it via a method of your choice, and running a second pass on the now upscaled image in img2img to further refine the upscale and create the final result.
+By default, SD1/2 based models create horrible images at very high resolutions, as these models were only trained at 512px or 768px. This method makes it possible to avoid this issue by utilizing the small picture's composition in the denoising process of the larger version. Enabled by checking the "Hires. fix" checkbox on the txt2img page.
 
 | Without                      | With                |
 |-------------------------------|---------------------------------|
