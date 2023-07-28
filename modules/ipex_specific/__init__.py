@@ -19,6 +19,7 @@ def ipex_init():
     torch.cuda.get_device_properties = torch.xpu.get_device_properties
     torch._utils._get_available_device_type = lambda: "xpu" # pylint: disable=protected-access
     torch.cuda.set_device = torch.xpu.set_device
+    torch.cuda.synchronize = torch.xpu.synchronize
     torch.Tensor.cuda = torch.Tensor.xpu
 
     torch.xpu.empty_cache = torch.xpu.empty_cache if "WSL2" not in os.popen("uname -a").read() else lambda: None
@@ -37,6 +38,17 @@ def ipex_init():
         torch.cuda.amp.GradScaler = torch.xpu.amp.GradScaler
     except Exception:
         torch.cuda.amp.GradScaler = ipex.cpu.autocast._grad_scaler.GradScaler
+
+    #Adetailer and more:
+    CondFunc('torch.Tensor.to',
+        lambda orig_func, self, device=None, dtype=None, non_blocking=False, copy=False, memory_format=torch.preserve_format: orig_func(self,
+        shared.device, dtype=dtype, non_blocking=non_blocking, copy=copy, memory_format=memory_format),
+        lambda orig_func, self, device=None, dtype=None, non_blocking=False, copy=False, memory_format=torch.preserve_format: (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
+    CondFunc('torch.empty',
+        lambda orig_func, *args, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format: orig_func(*args,
+        out=out, dtype=dtype, layout=layout, device=shared.device, requires_grad=requires_grad, pin_memory=pin_memory, memory_format=memory_format),
+        lambda orig_func, *args, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format:
+        (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
 
     #Broken functions when torch.cuda.is_available is True:
     CondFunc('torch.utils.data.dataloader._BaseDataLoaderIter.__init__',
