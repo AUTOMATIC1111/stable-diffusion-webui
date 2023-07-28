@@ -533,6 +533,7 @@ def change_backend():
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
     import torch # pylint: disable=reimported,redefined-outer-name
+    devices.set_cuda_params()
     if timer is None:
         timer = Timer()
     import logging
@@ -564,7 +565,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     sd_model = None
 
     try:
-        devices.set_cuda_params()
         if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
             ckpt_basename = os.path.basename(shared.cmd_opts.ckpt)
             model_name = modelloader.find_diffuser(ckpt_basename)
@@ -659,7 +659,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model.enable_model_cpu_offload()
         if hasattr(sd_model, "enable_sequential_cpu_offload"):
             if shared.opts.diffusers_seq_cpu_offload:
-                sd_model.enable_sequential_cpu_offload()
+                sd_model.enable_sequential_cpu_offload(device=devices.device)
                 shared.log.debug(f'Diffusers {op}: enable sequential CPU offload')
         if hasattr(sd_model, "enable_vae_slicing"):
             if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_slicing:

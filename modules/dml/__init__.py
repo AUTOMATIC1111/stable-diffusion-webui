@@ -1,5 +1,6 @@
 import os
 import torch
+from typing import NamedTuple, Callable
 
 from modules.sd_hijack_utils import CondFunc
 
@@ -41,7 +42,31 @@ def directml_do_hijack():
             lambda orig_func, *args, **kwargs: orig_func(args[0].astype('float32')),
             lambda *args, **kwargs: args[1].dtype == float)
 
+class OverrideItem(NamedTuple):
+    value: str
+    condition: Callable | None
+    message: str | None
+
+opts_override_table = {
+    "diffusers_generator_device": OverrideItem("cpu", None, "DirectML does not support torch Generator API."),
+    "diffusers_model_cpu_offload": OverrideItem(False, None, "Diffusers' model CPU offloading does not support DirectML devices."),
+    "diffusers_seq_cpu_offload": OverrideItem(False, lambda opts: opts.diffusers_pipeline != "Stable Diffusion XL", "Diffusers' sequential CPU offloading is available only on StableDiffusionXLPipeline with DirectML devices."),
+}
+
 def directml_override_opts():
     from modules import shared
-    if shared.backend == shared.Backend.DIFFUSERS:
-        shared.opts.diffusers_generator_device = "cpu" # DirectML does not support torch.Generator API.
+
+    if shared.cmd_opts.experimental:
+        return
+
+    count = 0
+    for key in opts_override_table:
+        count += 1
+        item = opts_override_table[key]
+        if getattr(shared.opts, key) != item.value and (item.condition is None or item.condition(shared.opts)):
+            setattr(shared.opts, key, item.value)
+            shared.log.warning(item.message)
+            shared.log.warning(f'{key} is automatically overriden to {item.value}.')
+    
+    if count > 0:
+        shared.log.info(f'{count} options are automatically overriden. If you want to keep them from overriding, run with --experimental argument.')

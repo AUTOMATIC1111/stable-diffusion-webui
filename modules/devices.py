@@ -3,7 +3,6 @@ import sys
 import contextlib
 import torch
 from modules import cmd_args, shared, memstats
-from modules.dml import directml_init
 
 if sys.platform == "darwin":
     from modules import mac_specific # pylint: disable=ungrouped-imports
@@ -172,6 +171,8 @@ if args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available()):
     ipex_init()
 elif args.use_directml:
     backend = 'directml'
+    from modules.dml import directml_init
+    directml_init()
 elif torch.cuda.is_available() and torch.version.cuda:
     backend = 'cuda'
 elif torch.cuda.is_available() and torch.version.hip:
@@ -180,9 +181,6 @@ elif sys.platform == 'darwin':
     backend = 'mps'
 else:
     backend = 'cpu'
-
-if backend == "directml":
-    directml_init()
 
 cuda_ok = torch.cuda.is_available() and not backend == 'ipex'
 cpu = torch.device("cpu")
