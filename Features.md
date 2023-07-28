@@ -257,6 +257,9 @@ Another example, this time with 5 prompts and 16 variations:
 You can find the feature at the bottom, under Script -> Prompt matrix.
 
 # Stable Diffusion upscale
+
+**Note:** This is not the preferred method of upscaling, as this causes SD to lose attention to the rest of the image due to tiling. It should only be used if VRAM bound. For the preferred method, see [Hires. fix](#hires-fix). 
+
 Upscale image using RealESRGAN/ESRGAN and then go through tiles of the result, improving them with img2img.
 It also has an option to let you do the upscaling part yourself in an external program, and just go through tiles with img2img.
 
