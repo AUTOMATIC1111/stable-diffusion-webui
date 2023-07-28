@@ -41,12 +41,13 @@ def ipex_init():
 
     #Adetailer and more:
     CondFunc('torch.Tensor.to',
-        lambda orig_func, self, device=None, dtype=None, non_blocking=False, copy=False, memory_format=torch.preserve_format: orig_func(self,
-        shared.device, dtype=dtype, non_blocking=non_blocking, copy=copy, memory_format=memory_format),
-        lambda orig_func, self, device=None, dtype=None, non_blocking=False, copy=False, memory_format=torch.preserve_format: (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
+        lambda orig_func, self, device=None, dtype=None, non_blocking=False, copy=False, memory_format=torch.preserve_format:
+        orig_func(self, shared.device, dtype=dtype, non_blocking=non_blocking, copy=copy, memory_format=memory_format),
+        lambda orig_func, self, device=None, dtype=None, non_blocking=False, copy=False, memory_format=torch.preserve_format:
+        (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
     CondFunc('torch.empty',
-        lambda orig_func, *args, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format: orig_func(*args,
-        out=out, dtype=dtype, layout=layout, device=shared.device, requires_grad=requires_grad, pin_memory=pin_memory, memory_format=memory_format),
+        lambda orig_func, *args, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format:
+        orig_func(*args, out=out, dtype=dtype, layout=layout, device=shared.device, requires_grad=requires_grad, pin_memory=pin_memory, memory_format=memory_format),
         lambda orig_func, *args, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format:
         (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
 
@@ -78,7 +79,8 @@ def ipex_init():
         lambda orig_func, device: device != torch.device("cpu") and device != "cpu")
     #Latent antialias:
     CondFunc('torch.nn.functional.interpolate',
-        lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False: orig_func(input.to("cpu"), size=size, scale_factor=scale_factor, mode=mode, align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias).to(shared.device),
+        lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False:
+        orig_func(input.to("cpu"), size=size, scale_factor=scale_factor, mode=mode, align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias).to(shared.device),
         lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False: antialias)
     #Diffusers Float64 (ARC GPUs doesn't support double or Float64):
     if not torch.xpu.has_fp64_dtype():
