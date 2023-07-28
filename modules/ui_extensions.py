@@ -164,7 +164,7 @@ def extension_table():
             ext_status = ext.status
 
         style = ""
-        if shared.opts.disable_all_extensions == "extra" and not ext.is_builtin or shared.opts.disable_all_extensions == "all":
+        if shared.cmd_opts.disable_extra_extensions and not ext.is_builtin or shared.opts.disable_all_extensions == "extra" and not ext.is_builtin or shared.cmd_opts.disable_all_extensions or shared.opts.disable_all_extensions == "all":
             style = STYLE_PRIMARY
 
         version_link = ext.version
@@ -537,12 +537,16 @@ def create_ui():
                     extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)
 
                 html = ""
-                if shared.opts.disable_all_extensions != "none":
-                    html = """
-<span style="color: var(--primary-400);">
-    "Disable all extensions" was set, change it to "none" to load all extensions again
-</span>
-                    """
+
+                if shared.cmd_opts.disable_all_extensions or shared.cmd_opts.disable_extra_extensions or shared.opts.disable_all_extensions != "none":
+                    if shared.cmd_opts.disable_all_extensions:
+                        msg = '"--disable-all-extensions" was used, remove it to load all extensions again'
+                    elif shared.opts.disable_all_extensions != "none":
+                        msg = '"Disable all extensions" was set, change it to "none" to load all extensions again'
+                    elif shared.cmd_opts.disable_extra_extensions:
+                        msg = '"--disable-extra-extensions" was used, remove it to load all extensions again'
+                    html = f'<span style="color: var(--primary-400);">{msg}</span>'
+
                 info = gr.HTML(html)
                 extensions_table = gr.HTML('Loading...')
                 ui.load(fn=extension_table, inputs=[], outputs=[extensions_table])
