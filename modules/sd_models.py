@@ -987,7 +987,8 @@ def unload_model_weights(op='model'):
             shared.log.debug(f'Weights unloaded {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
-            model_data.sd_refiner.to(devices.cpu)
+            if shared.backend == shared.Backend.ORIGINAL or not shared.opts.diffusers_seq_cpu_offload:
+                model_data.sd_refiner.to(devices.cpu)
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
             model_data.sd_refiner = None
