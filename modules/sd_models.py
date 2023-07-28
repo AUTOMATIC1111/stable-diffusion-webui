@@ -661,6 +661,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             if shared.opts.diffusers_seq_cpu_offload:
                 sd_model.enable_sequential_cpu_offload(device=devices.device)
                 shared.log.debug(f'Diffusers {op}: enable sequential CPU offload')
+                if shared.opts.diffusers_move_base or shared.opts.diffusers_move_refiner:
+                    shared.log.warning("Moving base or refiner model to CPU is not supported with sequential CPU offload")
+                    shared.log.debug('Disabled moving base model to CPU')
+                    shared.log.debug('Disabled moving refiner model to CPU')
+                    shared.opts.diffusers_move_base=False
+                    shared.opts.diffusers_move_refiner=False
         if hasattr(sd_model, "enable_vae_slicing"):
             if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_slicing:
                 shared.log.debug(f'Diffusers {op}: enable VAE slicing')
@@ -693,7 +699,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         base_sent_to_cpu=False
         if shared.opts.cuda_compile and torch.cuda.is_available():
-            if op == 'refiner':
+            if op == 'refiner' and not shared.opts.diffusers_seq_cpu_offload:
                 gpu_vram = memory_stats().get('gpu', {})
                 free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)
                 refiner_enough_vram = free_vram >= 7 if "StableDiffusionXL" in sd_model.__class__.__name__ else 3
@@ -712,7 +718,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     devices.torch_gc(force=True)
                     sd_model.to(devices.device)
                     base_sent_to_cpu=True
-            else:
+            elif not shared.opts.diffusers_seq_cpu_offload:
                 sd_model.to(devices.device)
             try:
                 shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_mode}")
@@ -743,7 +749,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if op == 'refiner' and shared.opts.diffusers_move_refiner:
             shared.log.debug('Moving refiner model to CPU')
             sd_model.to("cpu")
-        else:
+        elif not shared.opts.diffusers_seq_cpu_offload:
             sd_model.to(devices.device)
         if op == 'refiner' and base_sent_to_cpu:
             shared.log.debug('Moving base model back to GPU')

@@ -951,7 +951,8 @@ def create_ui(startup_timer = None):
                 continue
             if opts.set(key, value):
                 changed.append(key)
-        directml_override_opts()
+        if cmd_opts.use_directml:
+            directml_override_opts()
         try:
             opts.save(modules.shared.config_filename)
             modules.shared.log.info(f'Settings changed: {len(changed)} {changed}')
@@ -965,7 +966,8 @@ def create_ui(startup_timer = None):
             return gr.update(visible=True), opts.dumpjson()
         if not opts.set(key, value):
             return gr.update(value=getattr(opts, key)), opts.dumpjson()
-        directml_override_opts()
+        if cmd_opts.use_directml:
+            directml_override_opts()
         opts.save(modules.shared.config_filename)
         modules.shared.log.debug(f'Setting changed: key={key}, value={value}')
         return get_value_for_setting(key), opts.dumpjson()
