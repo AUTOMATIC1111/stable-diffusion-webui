@@ -4,10 +4,13 @@ import os.path
 import time
 
 import filelock
-
+import modules.cache
 from modules import shared
 from modules.paths import data_path
 from tools.mysql import get_mysql_cli, MySQLClient
+
+# dump_cache = modules.cache.dump_cache
+cache = modules.cache.cache
 
 cache_filename = os.path.join(data_path, "cache.json")
 cache_data = None
@@ -61,20 +64,20 @@ def dump_cache(title, sha256):
         write_model_hash(cli)
 
 
-def cache(subsection):
-    global cache_data
-
-    if cache_data is None:
-        with filelock.FileLock(f"{cache_filename}.lock"):
-            if not os.path.isfile(cache_filename):
-                cache_data = {}
-            else:
-                with open(cache_filename, "r", encoding="utf8") as file:
-                    cache_data = json.load(file)
-
-    s = cache_data.get(subsection, {})
-    cache_data[subsection] = s
-    return s
+# def cache(subsection):
+#     global cache_data
+#
+#     if cache_data is None:
+#         with filelock.FileLock(f"{cache_filename}.lock"):
+#             if not os.path.isfile(cache_filename):
+#                 cache_data = {}
+#             else:
+#                 with open(cache_filename, "r", encoding="utf8") as file:
+#                     cache_data = json.load(file)
+#
+#     s = cache_data.get(subsection, {})
+#     cache_data[subsection] = s
+#     return s
 
 
 def calculate_sha256(filename):
@@ -126,7 +129,6 @@ def sha256_from_cache(filename, title, use_addnet_hash=False):
 
     if ondisk_mtime > cached_mtime or cached_sha256 is None:
         return None
-
 
     return cached_sha256
 

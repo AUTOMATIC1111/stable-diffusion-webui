@@ -1,7 +1,6 @@
 import os
 import shutil
 import sys
-import traceback
 from collections import namedtuple
 from pathlib import Path
 import re
@@ -188,8 +187,7 @@ class InterrogateModels:
 
     def interrogate(self, pil_image):
         res = ""
-        shared.state.begin()
-        shared.state.job = 'interrogate'
+        shared.state.begin(job="interrogate")
         try:
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
                 lowvram.send_everything_to_cpu()
@@ -217,13 +215,14 @@ class InterrogateModels:
                             res += f", ({match}:{score/100:.3f})"
                         else:
                             res += f", {match}"
+
+                            res += f", {match}"
         except torch.cuda.OutOfMemoryError:
             lowvram.send_everything_to_cpu()
             devices.torch_gc()
             raise
         except Exception:
-            print("Error interrogating", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+            errors.report("Error interrogating", exc_info=True)
             res += "<error>"
 
         self.unload()

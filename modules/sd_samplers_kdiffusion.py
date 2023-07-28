@@ -20,7 +20,7 @@ samplers_k_diffusion = [
     ('DPM++ 2S a', 'sample_dpmpp_2s_ancestral', ['k_dpmpp_2s_a'], {"uses_ensd": True, "second_order": True}),
     ('DPM++ 2M', 'sample_dpmpp_2m', ['k_dpmpp_2m'], {}),
     ('DPM++ SDE', 'sample_dpmpp_sde', ['k_dpmpp_sde'], {"second_order": True, "brownian_noise": True}),
-    ('DPM++ 2M SDE', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {"brownian_noise": True, 'discard_next_to_last_sigma': True}),
+    ('DPM++ 2M SDE', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {"brownian_noise": True}),
     ('DPM fast', 'sample_dpm_fast', ['k_dpm_fast'], {"uses_ensd": True}),
     ('DPM adaptive', 'sample_dpm_adaptive', ['k_dpm_ad'], {"uses_ensd": True}),
     ('LMS Karras', 'sample_lms', ['k_lms_ka'], {'scheduler': 'karras'}),
@@ -29,7 +29,7 @@ samplers_k_diffusion = [
     ('DPM++ 2S a Karras', 'sample_dpmpp_2s_ancestral', ['k_dpmpp_2s_a_ka'], {'scheduler': 'karras', "uses_ensd": True, "second_order": True}),
     ('DPM++ 2M Karras', 'sample_dpmpp_2m', ['k_dpmpp_2m_ka'], {'scheduler': 'karras'}),
     ('DPM++ SDE Karras', 'sample_dpmpp_sde', ['k_dpmpp_sde_ka'], {'scheduler': 'karras', "second_order": True, "brownian_noise": True}),
-    ('DPM++ 2M SDE Karras', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {'scheduler': 'karras', "brownian_noise": True, 'discard_next_to_last_sigma': True}),
+    ('DPM++ 2M SDE Karras', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {'scheduler': 'karras', "brownian_noise": True}),
 ]
 
 samplers_data_k_diffusion = [
@@ -43,6 +43,36 @@ sampler_extra_params = {
     'sample_heun': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
     'sample_dpm_2': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
 }
+
+k_diffusion_samplers_map = {x.name: x for x in samplers_data_k_diffusion}
+k_diffusion_scheduler = {
+    'Automatic': None,
+    'karras': k_diffusion.sampling.get_sigmas_karras,
+    'exponential': k_diffusion.sampling.get_sigmas_exponential,
+    'polyexponential': k_diffusion.sampling.get_sigmas_polyexponential
+}
+
+
+def catenate_conds(conds):
+    if not isinstance(conds[0], dict):
+        return torch.cat(conds)
+
+    return {key: torch.cat([x[key] for x in conds]) for key in conds[0].keys()}
+
+
+def subscript_cond(cond, a, b):
+    if not isinstance(cond, dict):
+        return cond[a:b]
+
+    return {key: vec[a:b] for key, vec in cond.items()}
+
+
+def pad_cond(tensor, repeats, empty):
+    if not isinstance(tensor, dict):
+        return torch.cat([tensor, empty.repeat((tensor.shape[0], repeats, 1))], axis=1)
+
+    tensor['crossattn'] = pad_cond(tensor['crossattn'], repeats, empty)
+    return tensor
 
 
 class CFGDenoiser(torch.nn.Module):
@@ -61,6 +91,7 @@ class CFGDenoiser(torch.nn.Module):
         self.init_latent = None
         self.step = 0
         self.image_cfg_scale = None
+        self.padded_cond_uncond = False
 
     def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
         denoised_uncond = x_out[-uncond.shape[0]:]
@@ -96,10 +127,13 @@ class CFGDenoiser(torch.nn.Module):
 
         if shared.sd_model.model.conditioning_key == "crossattn-adm":
             image_uncond = torch.zeros_like(image_cond)
-            make_condition_dict = lambda c_crossattn, c_adm: {"c_crossattn": c_crossattn, "c_adm": c_adm}
+            make_condition_dict = lambda c_crossattn, c_adm: {"c_crossattn": [c_crossattn], "c_adm": c_adm}
         else:
             image_uncond = image_cond
-            make_condition_dict = lambda c_crossattn, c_concat: {"c_crossattn": c_crossattn, "c_concat": [c_concat]}
+            if isinstance(uncond, dict):
+                make_condition_dict = lambda c_crossattn, c_concat: {**c_crossattn, "c_concat": [c_concat]}
+            else:
+                make_condition_dict = lambda c_crossattn, c_concat: {"c_crossattn": [c_crossattn], "c_concat": [c_concat]}
 
         if not is_edit_model:
             x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
@@ -125,22 +159,34 @@ class CFGDenoiser(torch.nn.Module):
             x_in = x_in[:-batch_size]
             sigma_in = sigma_in[:-batch_size]
 
+        self.padded_cond_uncond = False
+        if shared.opts.pad_cond_uncond and tensor.shape[1] != uncond.shape[1]:
+            empty = shared.sd_model.cond_stage_model_empty_prompt
+            num_repeats = (tensor.shape[1] - uncond.shape[1]) // empty.shape[1]
+
+            if num_repeats < 0:
+                tensor = pad_cond(tensor, -num_repeats, empty)
+                self.padded_cond_uncond = True
+            elif num_repeats > 0:
+                uncond = pad_cond(uncond, num_repeats, empty)
+                self.padded_cond_uncond = True
+
         if tensor.shape[1] == uncond.shape[1] or skip_uncond:
             if is_edit_model:
-                cond_in = torch.cat([tensor, uncond, uncond])
+                cond_in = catenate_conds([tensor, uncond, uncond])
             elif skip_uncond:
                 cond_in = tensor
             else:
-                cond_in = torch.cat([tensor, uncond])
+                cond_in = catenate_conds([tensor, uncond])
 
             if shared.batch_cond_uncond:
-                x_out = self.inner_model(x_in, sigma_in, cond=make_condition_dict([cond_in], image_cond_in))
+                x_out = self.inner_model(x_in, sigma_in, cond=make_condition_dict(cond_in, image_cond_in))
             else:
                 x_out = torch.zeros_like(x_in)
                 for batch_offset in range(0, x_out.shape[0], batch_size):
                     a = batch_offset
                     b = a + batch_size
-                    x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict([cond_in[a:b]], image_cond_in[a:b]))
+                    x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict(subscript_cond(cond_in, a, b), image_cond_in[a:b]))
         else:
             x_out = torch.zeros_like(x_in)
             batch_size = batch_size*2 if shared.batch_cond_uncond else batch_size
@@ -149,14 +195,14 @@ class CFGDenoiser(torch.nn.Module):
                 b = min(a + batch_size, tensor.shape[0])
 
                 if not is_edit_model:
-                    c_crossattn = [tensor[a:b]]
+                    c_crossattn = subscript_cond(tensor, a, b)
                 else:
                     c_crossattn = torch.cat([tensor[a:b]], uncond)
 
                 x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict(c_crossattn, image_cond_in[a:b]))
 
             if not skip_uncond:
-                x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict([uncond], image_cond_in[-uncond.shape[0]:]))
+                x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict(uncond, image_cond_in[-uncond.shape[0]:]))
 
         denoised_image_indexes = [x[0][0] for x in conds_list]
         if skip_uncond:
@@ -255,6 +301,13 @@ class KDiffusionSampler:
 
         try:
             return func()
+        except RecursionError:
+            print(
+                'Encountered RecursionError during sampling, returning last latent. '
+                'rho >5 with a polyexponential scheduler may cause this error. '
+                'You should try to use a smaller rho value instead.'
+            )
+            return self.last_latent
         except sd_samplers_common.InterruptedException:
             return self.last_latent
 
@@ -294,6 +347,31 @@ class KDiffusionSampler:
 
         if p.sampler_noise_scheduler_override:
             sigmas = p.sampler_noise_scheduler_override(steps)
+        elif opts.k_sched_type != "Automatic":
+            m_sigma_min, m_sigma_max = (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
+            sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (m_sigma_min, m_sigma_max)
+            sigmas_kwargs = {
+                'sigma_min': sigma_min,
+                'sigma_max': sigma_max,
+            }
+
+            sigmas_func = k_diffusion_scheduler[opts.k_sched_type]
+            p.extra_generation_params["Schedule type"] = opts.k_sched_type
+
+            if opts.sigma_min != m_sigma_min and opts.sigma_min != 0:
+                sigmas_kwargs['sigma_min'] = opts.sigma_min
+                p.extra_generation_params["Schedule min sigma"] = opts.sigma_min
+            if opts.sigma_max != m_sigma_max and opts.sigma_max != 0:
+                sigmas_kwargs['sigma_max'] = opts.sigma_max
+                p.extra_generation_params["Schedule max sigma"] = opts.sigma_max
+
+            default_rho = 1. if opts.k_sched_type == "polyexponential" else 7.
+
+            if opts.k_sched_type != 'exponential' and opts.rho != 0 and opts.rho != default_rho:
+                sigmas_kwargs['rho'] = opts.rho
+                p.extra_generation_params["Schedule rho"] = opts.rho
+
+            sigmas = sigmas_func(n=steps, **sigmas_kwargs, device=shared.device)
         elif self.config is not None and self.config.options.get('scheduler', None) == 'karras':
             sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
 
@@ -355,6 +433,9 @@ class KDiffusionSampler:
 
         samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
+        if self.model_wrap_cfg.padded_cond_uncond:
+            p.extra_generation_params["Pad conds"] = True
+
         return samples
 
     def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
@@ -387,6 +468,9 @@ class KDiffusionSampler:
             'cond_scale': p.cfg_scale,
             's_min_uncond': self.s_min_uncond
         }, disable=False, callback=self.callback_state, **extra_params_kwargs))
+
+        if self.model_wrap_cfg.padded_cond_uncond:
+            p.extra_generation_params["Pad conds"] = True
 
         return samples
 

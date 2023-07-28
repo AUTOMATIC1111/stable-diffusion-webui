@@ -1,17 +1,13 @@
 <div>
-    <a onClick="toPage('docs')">API</a>
-     • 
-    <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui">Github</a>
-     • 
-    <a href="https://gradio.app">Gradio</a>
-     • 
-<!--    <a onclick="javascript:  window.location.href = window.location.origin + window.location.pathname + 'notice' ;">用户告知</a>-->
-    <!--         • -->
-            <a href="/" onclick="javascript:gradioApp().getElementById('settings_restart_gradio').click(); return false">Reload UI</a>
-</div>
-<br/>
-<div>
-    <span>{notice}</span>
+        <a href="{api_docs}">API</a>
+         • 
+        <a href="https://github.com/AUTOMATIC1111/stable-diffusion-webui">Github</a>
+         • 
+        <a href="https://gradio.app">Gradio</a>
+         • 
+        <a href="#" onclick="showProfile('./internal/profile-startup'); return false;">Startup profile</a>
+         • 
+        <a href="/" onclick="javascript:gradioApp().getElementById('settings_restart_gradio').click(); return false">Reload UI</a>
 </div>
 <br/>
 <div class="versions">

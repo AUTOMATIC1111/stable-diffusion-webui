@@ -1,13 +1,11 @@
 import os
-import sys
-import traceback
 
 import cv2
 import torch
 
 import modules.face_restoration
 import modules.shared
-from modules import shared, devices, modelloader
+from modules import shared, devices, modelloader, errors
 from modules.paths import models_path
 
 # codeformer people made a choice to include modified basicsr library to their project which makes
@@ -17,14 +15,11 @@ model_dir = "Codeformer"
 model_path = os.path.join(models_path, model_dir)
 model_url = 'https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth'
 
-have_codeformer = False
 codeformer = None
 
 
 def setup_model(dirname):
-    global model_path
-    if not os.path.exists(model_path):
-        os.makedirs(model_path)
+    os.makedirs(model_path, exist_ok=True)
 
     path = modules.paths.paths.get("CodeFormer", None)
     if path is None:
@@ -104,9 +99,9 @@ def setup_model(dirname):
                             output = self.net(cropped_face_t, w=w if w is not None else shared.opts.code_former_weight, adain=True)[0]
                             restored_face = tensor2img(output, rgb2bgr=True, min_max=(-1, 1))
                         del output
-                        torch.cuda.empty_cache()
-                    except Exception as error:
-                        print(f'\tFailed inference for CodeFormer: {error}', file=sys.stderr)
+                        devices.torch_gc()
+                    except Exception:
+                        errors.report('Failed inference for CodeFormer', exc_info=True)
                         restored_face = tensor2img(cropped_face_t, rgb2bgr=True, min_max=(-1, 1))
 
                     restored_face = restored_face.astype('uint8')
@@ -127,15 +122,11 @@ def setup_model(dirname):
 
                 return restored_img
 
-        global have_codeformer
-        have_codeformer = True
-
         global codeformer
         codeformer = FaceRestorerCodeFormer(dirname)
         shared.face_restorers.append(codeformer)
 
     except Exception:
-        print("Error setting up CodeFormer:", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        errors.report("Error setting up CodeFormer", exc_info=True)
 
    # sys.path = stored_sys_path

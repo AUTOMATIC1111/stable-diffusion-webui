@@ -1,3 +1,175 @@
+## 1.5.1
+
+### Minor:
+ * support parsing text encoder blocks in some new LoRAs
+ * delete scale checker script due to user demand
+
+### Extensions and API:
+ * add postprocess_batch_list script callback
+
+### Bug Fixes:
+ * fix TI training for SD1
+ * fix reload altclip model error
+ * prepend the pythonpath instead of overriding it
+ * fix typo in SD_WEBUI_RESTARTING
+ * if txt2img/img2img raises an exception, finally call state.end()
+ * fix composable diffusion weight parsing
+ * restyle Startup profile for black users
+ * fix webui not launching with --nowebui
+ * catch exception for non git extensions
+ * fix some options missing from /sdapi/v1/options
+ * fix for extension update status always saying "unknown"
+ * fix display of extra network cards that have `<>` in the name
+ * update lora extension to work with python 3.8
+
+
+## 1.5.0
+
+### Features:
+ * SD XL support
+ * user metadata system for custom networks
+ * extended Lora metadata editor: set activation text, default weight, view tags, training info
+ * Lora extension rework to include other types of networks (all that were previously handled by LyCORIS extension)
+ * show github stars for extenstions
+ * img2img batch mode can read extra stuff from png info
+ * img2img batch works with subdirectories
+ * hotkeys to move prompt elements: alt+left/right
+ * restyle time taken/VRAM display
+ * add textual inversion hashes to infotext
+ * optimization: cache git extension repo information
+ * move generate button next to the generated picture for mobile clients
+ * hide cards for networks of incompatible Stable Diffusion version in Lora extra networks interface
+ * skip installing packages with pip if they all are already installed - startup speedup of about 2 seconds
+
+### Minor:
+ * checkbox to check/uncheck all extensions in the Installed tab
+ * add gradio user to infotext and to filename patterns
+ * allow gif for extra network previews
+ * add options to change colors in grid
+ * use natural sort for items in extra networks
+ * Mac: use empty_cache() from torch 2 to clear VRAM
+ * added automatic support for installing the right libraries for Navi3 (AMD)
+ * add option SWIN_torch_compile to accelerate SwinIR upscale
+ * suppress printing TI embedding info at start to console by default
+ * speedup extra networks listing
+ * added `[none]` filename token.
+ * removed thumbs extra networks view mode (use settings tab to change width/height/scale to get thumbs)
+ * add always_discard_next_to_last_sigma option to XYZ plot
+ * automatically switch to 32-bit float VAE if the generated picture has NaNs without the need for `--no-half-vae` commandline flag.
+ 
+### Extensions and API:
+ * api endpoints: /sdapi/v1/server-kill, /sdapi/v1/server-restart, /sdapi/v1/server-stop
+ * allow Script to have custom metaclass
+ * add model exists status check /sdapi/v1/options
+ * rename --add-stop-route to --api-server-stop
+ * add `before_hr` script callback
+ * add callback `after_extra_networks_activate`
+ * disable rich exception output in console for API by default, use WEBUI_RICH_EXCEPTIONS env var to enable
+ * return http 404 when thumb file not found
+ * allow replacing extensions index with environment variable
+ 
+### Bug Fixes:
+ * fix for catch errors when retrieving extension index #11290
+ * fix very slow loading speed of .safetensors files when reading from network drives
+ * API cache cleanup
+ * fix UnicodeEncodeError when writing to file CLIP Interrogator batch mode
+ * fix warning of 'has_mps' deprecated from PyTorch
+ * fix problem with extra network saving images as previews losing generation info
+ * fix throwing exception when trying to resize image with I;16 mode
+ * fix for #11534: canvas zoom and pan extension hijacking shortcut keys
+ * fixed launch script to be runnable from any directory
+ * don't add "Seed Resize: -1x-1" to API image metadata
+ * correctly remove end parenthesis with ctrl+up/down
+ * fixing --subpath on newer gradio version
+ * fix: check fill size none zero when resize  (fixes #11425)
+ * use submit and blur for quick settings textbox
+ * save img2img batch with images.save_image()
+ * prevent running preload.py for disabled extensions
+ * fix: previously, model name was added together with directory name to infotext and to [model_name] filename pattern; directory name is now not included
+
+
+## 1.4.1
+
+### Bug Fixes:
+ * add queue lock for refresh-checkpoints
+
+## 1.4.0
+
+### Features:
+ * zoom controls for inpainting
+ * run basic torch calculation at startup in parallel to reduce the performance impact of first generation
+ * option to pad prompt/neg prompt to be same length
+ * remove taming_transformers dependency
+ * custom k-diffusion scheduler settings
+ * add an option to show selected settings in main txt2img/img2img UI
+ * sysinfo tab in settings
+ * infer styles from prompts when pasting params into the UI
+ * an option to control the behavior of the above
+
+### Minor:
+ * bump Gradio to 3.32.0
+ * bump xformers to 0.0.20
+ * Add option to disable token counters
+ * tooltip fixes & optimizations
+ * make it possible to configure filename for the zip download
+ * `[vae_filename]` pattern for filenames
+ * Revert discarding penultimate sigma for DPM-Solver++(2M) SDE
+ * change UI reorder setting to multiselect
+ * read version info form CHANGELOG.md if git version info is not available
+ * link footer API to Wiki when API is not active
+ * persistent conds cache (opt-in optimization)
+ 
+### Extensions:
+ * After installing extensions, webui properly restarts the process rather than reloads the UI 
+ * Added VAE listing to web API. Via: /sdapi/v1/sd-vae
+ * custom unet support
+ * Add onAfterUiUpdate callback
+ * refactor EmbeddingDatabase.register_embedding() to allow unregistering
+ * add before_process callback for scripts
+ * add ability for alwayson scripts to specify section and let user reorder those sections
+ 
+### Bug Fixes:
+ * Fix dragging text to prompt
+ * fix incorrect quoting for infotext values with colon in them
+ * fix "hires. fix" prompt sharing same labels with txt2img_prompt
+ * Fix s_min_uncond default type int
+ * Fix for #10643 (Inpainting mask sometimes not working)
+ * fix bad styling for thumbs view in extra networks #10639
+ * fix for empty list of optimizations #10605
+ * small fixes to prepare_tcmalloc for Debian/Ubuntu compatibility
+ * fix --ui-debug-mode exit
+ * patch GitPython to not use leaky persistent processes
+ * fix duplicate Cross attention optimization after UI reload
+ * torch.cuda.is_available() check for SdOptimizationXformers
+ * fix hires fix using wrong conds in second pass if using Loras.
+ * handle exception when parsing generation parameters from png info
+ * fix upcast attention dtype error
+ * forcing Torch Version to 1.13.1 for RX 5000 series GPUs
+ * split mask blur into X and Y components, patch Outpainting MK2 accordingly
+ * don't die when a LoRA is a broken symlink
+ * allow activation of Generate Forever during generation
+
+
+## 1.3.2
+
+### Bug Fixes:
+ * fix files served out of tmp directory even if they are saved to disk
+ * fix postprocessing overwriting parameters
+
+## 1.3.1
+
+### Features:
+ * revert default cross attention optimization to Doggettx
+
+### Bug Fixes:
+ * fix bug: LoRA don't apply on dropdown list sd_lora
+ * fix png info always added even if setting is not enabled
+ * fix some fields not applying in xyz plot
+ * fix "hires. fix" prompt sharing same labels with txt2img_prompt
+ * fix lora hashes not being added properly to infotex if there is only one lora
+ * fix --use-cpu failing to work properly at startup
+ * make --disable-opt-split-attention command line option work again
+
 ## 1.3.0
 
 ### Features:

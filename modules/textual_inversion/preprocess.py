@@ -1,6 +1,8 @@
 import os
 from PIL import Image, ImageOps
 import math
+import platform
+import sys
 import tqdm
 import time
 from enum import Enum
@@ -8,13 +10,7 @@ from modules import paths, shared, images, deepbooru
 from modules.textual_inversion import autocrop
 
 
-def preprocess(id_task, process_src, process_dst, process_width, process_height, preprocess_txt_action,
-               process_keep_original_size, process_flip,
-               process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2,
-               process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3,
-               process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None,
-               process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None,
-               process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None):
+def preprocess(id_task, process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size, process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.15, process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None):
     try:
         if process_caption:
             shared.interrogator.load()
@@ -22,13 +18,7 @@ def preprocess(id_task, process_src, process_dst, process_width, process_height,
         if process_caption_deepbooru:
             deepbooru.model.start()
 
-        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action,
-                        process_keep_original_size, process_flip,
-                        process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio,
-                        process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight,
-                        process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop,
-                        process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea,
-                        process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold)
+        preprocess_work(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size, process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold, overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight, process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop, process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea, process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold)
 
     finally:
 
@@ -77,7 +67,7 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
         caption += shared.interrogator.generate_caption(image)
 
     if params.process_caption_deepbooru and params.do_caption(existing_caption):
-        if len(caption) > 0:
+        if caption:
             caption += ", "
         caption += deepbooru.model.tag_multi(image)
 
@@ -89,15 +79,15 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
     image.save(os.path.join(params.dstdir, f"{basename}.png"))
 
     if params.preprocess_txt_action == 'prepend' and existing_caption:
-        caption = existing_caption + ',' + caption
+        caption = f"{existing_caption} {caption}"
     elif params.preprocess_txt_action == 'append' and existing_caption:
-        caption = caption + ',' + existing_caption
+        caption = f"{caption} {existing_caption}"
     elif params.preprocess_txt_action == 'copy' and existing_caption:
         caption = existing_caption
 
     caption = caption.strip()
 
-    if len(caption) > 0:
+    if caption:
         with open(os.path.join(params.dstdir, f"{basename}.txt"), "w", encoding="utf8") as file:
             file.write(caption)
 
@@ -235,9 +225,7 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
             try:
                 dnn_model_path = autocrop.download_and_cache_models(os.path.join(paths.models_path, "opencv"))
             except Exception as e:
-                print(
-                    "Unable to load face detection model for auto crop selection. Falling back to lower quality haar method.",
-                    e)
+                print("Unable to load face detection model for auto crop selection. Falling back to lower quality haar method.", e)
 
             autocrop_settings = autocrop.Settings(
                 crop_width=width,
@@ -253,13 +241,11 @@ def preprocess_work(process_src, process_dst, process_width, process_height, pre
             process_default_resize = False
 
         if process_multicrop:
-            cropped = multicrop_pic(img, process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea,
-                                    process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold)
+            cropped = multicrop_pic(img, process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea, process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold)
             if cropped is not None:
                 save_pic(cropped, index, params, existing_caption=existing_caption)
             else:
-                print(
-                    f"skipped {img.width}x{img.height} image {filename} (can't find suitable size within error threshold)")
+                print(f"skipped {img.width}x{img.height} image {filename} (can't find suitable size within error threshold)")
             process_default_resize = False
 
         if process_keep_original_size:
