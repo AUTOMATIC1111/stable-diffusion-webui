@@ -227,7 +227,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         return
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.send_everything_to_cpu()
-    else:
+    elif shared.backend == shared.Backend.ORIGINAL or not shared.opts.diffusers_seq_cpu_offload:
         sd_model.to(devices.cpu)
 
     if shared.backend == shared.Backend.ORIGINAL:
@@ -238,7 +238,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         sd_hijack.model_hijack.hijack(sd_model)
         script_callbacks.model_loaded_callback(sd_model)
 
-    if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
+    if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and (shared.backend == shared.Backend.ORIGINAL or not shared.opts.diffusers_seq_cpu_offload):
         sd_model.to(devices.device)
     shared.log.info(f"VAE weights loaded: {vae_file}")
     return sd_model
