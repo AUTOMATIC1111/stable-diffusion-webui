@@ -4,6 +4,13 @@ import intel_extension_for_pytorch as ipex
 from modules import shared
 from modules.sd_hijack_utils import CondFunc
 
+#ControlNet depth_leres++
+class DummyDataParallel(torch.nn.Module):
+    def __new__(cls, module, device_ids=None, output_device=None, dim=0):
+        if type(device_ids) is list and len(device_ids) > 1:
+            shared.log.warning("IPEX backend doesn't support DataParallel on multiple XPU devices")
+        return module.to(shared.device)
+
 def ipex_no_cuda(orig_func, *args, **kwargs): # pylint: disable=redefined-outer-name
     torch.cuda.is_available = lambda: False
     orig_func(*args, **kwargs)
@@ -21,7 +28,9 @@ def ipex_init():
     torch.cuda.set_device = torch.xpu.set_device
     torch.cuda.synchronize = torch.xpu.synchronize
     torch.Tensor.cuda = torch.Tensor.xpu
+    torch.nn.DataParallel = DummyDataParallel
 
+    #Memory:
     torch.xpu.empty_cache = torch.xpu.empty_cache if "WSL2" not in os.popen("uname -a").read() else lambda: None
     torch.cuda.empty_cache = torch.xpu.empty_cache
     torch.cuda.ipc_collect = lambda: None
@@ -32,6 +41,7 @@ def ipex_init():
     torch.cuda.reset_peak_memory_stats = torch.xpu.reset_peak_memory_stats
     torch.cuda.utilization = lambda: 0
 
+    #Training:
     torch.cuda.get_rng_state_all = torch.xpu.get_rng_state_all
     torch.cuda.set_rng_state_all = torch.xpu.set_rng_state_all
     try:
@@ -39,19 +49,21 @@ def ipex_init():
     except Exception:
         torch.cuda.amp.GradScaler = ipex.cpu.autocast._grad_scaler.GradScaler
 
-    #Adetailer and more:
+    #Libraries that blindly uses cuda:
+    #Adetailer:
     CondFunc('torch.Tensor.to',
-        lambda orig_func, self, device=None, dtype=None, non_blocking=False, copy=False, memory_format=torch.preserve_format:
-        orig_func(self, shared.device, dtype=dtype, non_blocking=non_blocking, copy=copy, memory_format=memory_format),
-        lambda orig_func, self, device=None, dtype=None, non_blocking=False, copy=False, memory_format=torch.preserve_format:
-        (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
+        lambda orig_func, self, device=None, *args, **kwargs: orig_func(self, shared.device, *args, **kwargs),
+        lambda orig_func, self, device=None, *args, **kwargs: (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
     CondFunc('torch.empty',
-        lambda orig_func, *args, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format:
-        orig_func(*args, out=out, dtype=dtype, layout=layout, device=shared.device, requires_grad=requires_grad, pin_memory=pin_memory, memory_format=memory_format),
-        lambda orig_func, *args, out=None, dtype=None, layout=torch.strided, device=None, requires_grad=False, pin_memory=False, memory_format=torch.contiguous_format:
-        (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=shared.device, **kwargs),
+        lambda orig_func, *args, device=None, **kwargs: (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
+    #ControlNet depth_leres
+    CondFunc('torch.load',
+        lambda orig_func, f, map_location=None, *args, **kwargs: orig_func(f, shared.device, *args, **kwargs),
+        lambda orig_func, f, map_location=None, *args, **kwargs: (map_location is None) or (type(map_location) is torch.device and map_location.type == "cuda") or (type(map_location) is str and "cuda" in map_location))
 
     #Broken functions when torch.cuda.is_available is True:
+    #Pin Memory:
     CondFunc('torch.utils.data.dataloader._BaseDataLoaderIter.__init__',
         lambda orig_func, *args, **kwargs: ipex_no_cuda(orig_func, *args, **kwargs),
         lambda orig_func, *args, **kwargs: True)
@@ -71,45 +83,30 @@ def ipex_init():
     #Functions that does not work with the XPU:
     #UniPC:
     CondFunc('torch.linalg.solve',
-        lambda orig_func, A, B, *args, left=True, out=None: orig_func(A.to("cpu"), B.to("cpu"), *args, left=left, out=out).to(shared.device),
-        lambda orig_func, A, B, *args, left=True, out=None: A.device != torch.device("cpu") or B.device != torch.device("cpu"))
+        lambda orig_func, A, B, *args, **kwargs: orig_func(A.to("cpu"), B.to("cpu"), *args, **kwargs).to(shared.device),
+        lambda orig_func, A, B, *args, **kwargs: A.device != torch.device("cpu") or B.device != torch.device("cpu"))
     #SDE Samplers:
     CondFunc('torch.Generator',
         lambda orig_func, device: torch.xpu.Generator(device),
         lambda orig_func, device: device != torch.device("cpu") and device != "cpu")
     #Latent antialias:
     CondFunc('torch.nn.functional.interpolate',
-        lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False:
-        orig_func(input.to("cpu"), size=size, scale_factor=scale_factor, mode=mode, align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias).to(shared.device),
+        lambda orig_func, input, *args, **kwargs: orig_func(input.to("cpu"), *args, **kwargs).to(shared.device),
         lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False: antialias)
     #Diffusers Float64 (ARC GPUs doesn't support double or Float64):
     if not torch.xpu.has_fp64_dtype():
         CondFunc('torch.from_numpy',
-            lambda orig_func, ndarray: orig_func(ndarray.astype('float32')),
-            lambda orig_func, ndarray: ndarray.dtype == float)
+        lambda orig_func, ndarray: orig_func(ndarray.astype('float32')),
+        lambda orig_func, ndarray: ndarray.dtype == float)
     #ControlNet and TiledVAE:
     CondFunc('torch.batch_norm',
-        lambda orig_func, input, weight=None, bias=None, running_mean=None, running_var=None, training=False, momentum=0.1, eps=1e-5, cudnn_enabled=True: orig_func(input,
+        lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(input,
         weight if weight is not None else torch.ones(input.size()[1], device=shared.device),
-        bias if bias is not None else torch.zeros(input.size()[1], device=shared.device),
-        running_mean, running_var, training, momentum, eps, cudnn_enabled),
-        lambda orig_func, input, weight=None, bias=None, running_mean=None, running_var=None, training=False, momentum=0.1, eps=1e-5, cudnn_enabled=True: input.device != torch.device("cpu"))
+        bias if bias is not None else torch.zeros(input.size()[1], device=shared.device), *args, **kwargs),
+        lambda orig_func, input, *args, **kwargs: input.device != torch.device("cpu"))
     #ControlNet
     CondFunc('torch.instance_norm',
-        lambda orig_func, input, weight=None, bias=None, running_mean=None, running_var=None, use_input_stats=True, momentum=0.1, eps=1e-5, cudnn_enabled=True: orig_func(input,
+        lambda orig_func, input, weight, bias, *args, **kwargs: orig_func(input,
         weight if weight is not None else torch.ones(input.size()[1], device=shared.device),
-        bias if bias is not None else torch.zeros(input.size()[1], device=shared.device),
-        running_mean, running_var, use_input_stats, momentum, eps, cudnn_enabled),
-        lambda orig_func, input, weight=None, bias=None, running_mean=None, running_var=None, use_input_stats=True, momentum=0.1, eps=1e-5, cudnn_enabled=True: input.device != torch.device("cpu"))
-    #ControlNet depth_leres
-    import pickle
-    CondFunc('torch.load',
-        lambda orig_func, f, map_location=None, pickle_module=pickle, *, weights_only=False, **pickle_load_args: orig_func(f, shared.device, pickle_module, weights_only=weights_only, **pickle_load_args),
-        lambda orig_func, f, map_location=None, *args, **kwargs: (map_location is None) or (type(map_location) is torch.device and map_location.type == "cuda") or (type(map_location) is str and "cuda" in map_location))
-    #ControlNet depth_leres++
-    class DummyDataParallel(torch.nn.Module):
-        def __new__(cls, module, device_ids=None, output_device=None, dim=0):
-            if type(device_ids) is list and len(device_ids) > 1:
-                shared.log.warning("IPEX backend doesn't support DataParallel on multiple XPU devices")
-            return module.to(shared.device)
-    torch.nn.DataParallel = DummyDataParallel
+        bias if bias is not None else torch.zeros(input.size()[1], device=shared.device), *args, **kwargs),
+        lambda orig_func, input, *args, **kwargs: input.device != torch.device("cpu"))

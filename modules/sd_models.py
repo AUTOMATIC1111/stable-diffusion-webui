@@ -935,7 +935,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
             return
         if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
             lowvram.send_everything_to_cpu()
-        else:
+        elif not shared.opts.diffusers_seq_cpu_offload:
             sd_model.to(devices.cpu)
     if reuse_dict or (shared.opts.model_reuse_dict and sd_model is not None):
         shared.log.info('Reusing previous model dictionary')
@@ -979,7 +979,8 @@ def unload_model_weights(op='model'):
     from modules import sd_hijack
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
-            model_data.sd_model.to(devices.cpu)
+            if not shared.opts.diffusers_seq_cpu_offload:
+                model_data.sd_model.to(devices.cpu)
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
             model_data.sd_model = None
