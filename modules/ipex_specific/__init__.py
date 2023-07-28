@@ -101,3 +101,15 @@ def ipex_init():
         bias if bias is not None else torch.zeros(input.size()[1], device=shared.device),
         running_mean, running_var, use_input_stats, momentum, eps, cudnn_enabled),
         lambda orig_func, input, weight=None, bias=None, running_mean=None, running_var=None, use_input_stats=True, momentum=0.1, eps=1e-5, cudnn_enabled=True: input.device != torch.device("cpu"))
+    #ControlNet depth_leres
+    import pickle
+    CondFunc('torch.load',
+        lambda orig_func, f, map_location=None, pickle_module=pickle, *, weights_only=False, **pickle_load_args: orig_func(f, shared.device, pickle_module, weights_only=weights_only, **pickle_load_args),
+        lambda orig_func, f, map_location=None, *args, **kwargs: (map_location is None) or (type(map_location) is torch.device and map_location.type == "cuda") or (type(map_location) is str and "cuda" in map_location))
+    #ControlNet depth_leres++
+    class DummyDataParallel(torch.nn.Module):
+        def __new__(cls, module, device_ids=None, output_device=None, dim=0):
+            if type(device_ids) is list and len(device_ids) > 1:
+                shared.log.warning("IPEX backend doesn't support DataParallel on multiple XPU devices")
+            return module.to(shared.device)
+    torch.nn.DataParallel = DummyDataParallel
