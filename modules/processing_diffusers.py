@@ -152,6 +152,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.sd_refiner is None or not p.enable_hr:
         output.images = vae_decode(output.images, shared.sd_model)
 
+    if lora_state['active']:
+        unload_diffusers_lora()
+        
     if refiner_enabled:
         for i in range(len(output.images)):
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
@@ -207,7 +210,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if p.is_hr_pass:
         shared.log.warning('Diffusers not implemented: hires fix')
 
-    if lora_state['active']:
-        unload_diffusers_lora()
+    
 
     return results
