@@ -595,7 +595,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                      # There is no good way to change vae.force_upcast while VAE is loading
                     # as part of the pipeline or to override it after.
                     # ?? =  True if shared.opts.diffusers_vae_upcast == 'true' else False
-                    shared.info(f'Diffusers VAE force upcast ({shared.opts.diffusers_vae_upcast}) is only supported with an explicit VAE.')
+                    shared.log.info(f'Diffusers VAE force upcast ({shared.opts.diffusers_vae_upcast}) is only supported with an explicit VAE.')
 
             if not os.path.isfile(checkpoint_info.path):
                 try:
@@ -934,10 +934,11 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         current_checkpoint_info = getattr(sd_model, 'sd_checkpoint_info', None)
         if current_checkpoint_info is not None and checkpoint_info is not None and current_checkpoint_info.filename == checkpoint_info.filename:
             return
-        if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-            lowvram.send_everything_to_cpu()
-        elif shared.backend == shared.Backend.ORIGINAL or not shared.opts.diffusers_seq_cpu_offload:
-            sd_model.to(devices.cpu)
+        if shared.backend == shared.Backend.ORIGINAL or not shared.opts.diffusers_seq_cpu_offload:
+            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+                lowvram.send_everything_to_cpu()
+            else:
+                sd_model.to(devices.cpu)
     if reuse_dict or (shared.opts.model_reuse_dict and sd_model is not None):
         shared.log.info('Reusing previous model dictionary')
         sd_hijack.model_hijack.undo_hijack(sd_model)
@@ -970,7 +971,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         timer.record("hijack")
         script_callbacks.model_loaded_callback(sd_model)
         timer.record("callbacks")
-        if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
+        if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and (shared.backend == shared.Backend.ORIGINAL or not shared.opts.diffusers_seq_cpu_offload):
             sd_model.to(devices.device)
             timer.record("device")
     shared.log.info(f"Weights loaded in {timer.summary()}")

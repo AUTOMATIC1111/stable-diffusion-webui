@@ -232,10 +232,11 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         vae_source = "from function argument"
     if loaded_vae_file == vae_file:
         return
-    if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-        lowvram.send_everything_to_cpu()
-    elif shared.backend == shared.Backend.ORIGINAL or not shared.opts.diffusers_seq_cpu_offload:
-        sd_model.to(devices.cpu)
+    if shared.backend == shared.Backend.ORIGINAL or not shared.opts.diffusers_seq_cpu_offload:
+        if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+            lowvram.send_everything_to_cpu()
+        else:
+            sd_model.to(devices.cpu)
 
     if shared.backend == shared.Backend.ORIGINAL:
         sd_hijack.model_hijack.undo_hijack(sd_model)
