@@ -555,6 +555,8 @@ Large picture's dimensions are controlled by three sliders: "Scale by" multiplie
 * If "Resize height to" is 0, "Resize width to" is calculated from width and height.
 * If both "Resize width to" and "Resize height to" are non-zero, image is upscaled to be at least those dimensions, and some parts are cropped.
 
+In older versions of the webui, the final width and height were input manually (the last option listed above). In new versions, the default is to use the "Scale by" factor, which is the default and preferred.
+
 ## Upscalers
 
 A dropdown allows you to to select the kind of upscaler to use for resizing the image. In addition to all upscalers you have available on extras tab, there is an option to upscale a latent space image, which is what stable diffusion works with internally - for a 3x512x512 RGB image, its latent space representation would be 4x64x64. To see what each latent space upscaler does, you can set Denoising strength to 0 and Hires steps to 1 - you'll get a very good approximation of what stable diffusion would be working with on upscaled image.
