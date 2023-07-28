@@ -210,7 +210,7 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
                                        task.id)
 
         progress = TaskProgress.new_finish(task, images)
-        progress.update_seed(processed.seed, processed.subseed)
+        progress.update_seed(processed.all_seeds, processed.all_subseeds)
 
         yield progress
 
