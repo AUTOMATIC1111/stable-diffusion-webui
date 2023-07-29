@@ -460,7 +460,6 @@ def get_empty_cond(sd_model):
         return sd_model.cond_stage_model([""])
 
 
-
 def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     from modules import lowvram, sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
@@ -495,19 +494,24 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     sd_model = None
     try:
         with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd or shared.cmd_opts.do_not_download_clip):
-            sd_model = instantiate_from_config(sd_config.model)
-    except Exception:
-        pass
+            with sd_disable_initialization.InitializeOnMeta():
+                sd_model = instantiate_from_config(sd_config.model)
+
+    except Exception as e:
+        errors.display(e, "creating model quickly", full_traceback=True)
 
     if sd_model is None:
         print('Failed to create model quickly; will retry using slow method.', file=sys.stderr)
-        sd_model = instantiate_from_config(sd_config.model)
+
+        with sd_disable_initialization.InitializeOnMeta():
+            sd_model = instantiate_from_config(sd_config.model)
 
     sd_model.used_config = checkpoint_config
 
     timer.record("create model")
 
-    load_model_weights(sd_model, checkpoint_info, state_dict, timer)
+    with sd_disable_initialization.LoadStateDictOnMeta(state_dict, devices.cpu):
+        load_model_weights(sd_model, checkpoint_info, state_dict, timer)
 
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.setup_for_low_vram(sd_model, shared.cmd_opts.medvram)
