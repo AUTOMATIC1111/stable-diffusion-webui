@@ -666,12 +666,14 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             if shared.opts.diffusers_seq_cpu_offload:
                 sd_model.enable_sequential_cpu_offload(device=devices.device)
                 shared.log.debug(f'Diffusers {op}: enable sequential CPU offload')
-                if shared.opts.diffusers_move_base or shared.opts.diffusers_move_refiner:
-                    shared.log.warning("Moving base or refiner model to CPU is not supported with sequential CPU offload")
+                if shared.opts.diffusers_move_base or shared.opts.diffusers_move_refiner or shared.opts.diffusers_move_unet:
+                    shared.log.warning("Moving models to CPU is not compatible with sequential CPU offload")
                     shared.log.debug('Disabled moving base model to CPU')
                     shared.log.debug('Disabled moving refiner model to CPU')
+                    shared.log.debug('Disabled moving UNet to CPU')
                     shared.opts.diffusers_move_base=False
                     shared.opts.diffusers_move_refiner=False
+                    shared.opts.diffusers_move_unet=False
         if hasattr(sd_model, "enable_vae_slicing"):
             if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_slicing:
                 shared.log.debug(f'Diffusers {op}: enable VAE slicing')
