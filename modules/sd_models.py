@@ -790,6 +790,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     sd_checkpoint_info = pipe.sd_checkpoint_info
     sd_model_checkpoint = pipe.sd_model_checkpoint
     sd_model_hash = pipe.sd_model_hash
+    has_accelerate = pipe.has_accelerate
 
     if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
         new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
@@ -804,6 +805,7 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     new_pipe.sd_checkpoint_info = sd_checkpoint_info
     new_pipe.sd_model_checkpoint = sd_model_checkpoint
     new_pipe.sd_model_hash = sd_model_hash
+    new_pipe.has_accelerate = has_accelerate
 
     model_data.sd_model = new_pipe
     shared.log.info(f"Pipeline class changed from {pipe.__class__.__name__} to {new_pipe.__class__.__name__}")
@@ -930,7 +932,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     else:
         model_data.sd_dict = 'None'
         shared.log.debug(f'Load model weights: existing={sd_model is not None} target={checkpoint_info.filename} info={info}')
-    if not sd_model:
+    if sd_model is None:
         sd_model = model_data.sd_model if op == 'model' or op == 'dict' else model_data.sd_refiner
     if sd_model is None:  # previous model load failed
         current_checkpoint_info = None
