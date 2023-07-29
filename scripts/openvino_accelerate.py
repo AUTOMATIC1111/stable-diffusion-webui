@@ -243,6 +243,11 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
     else:
         assert p.prompt is not None
 
+    if openvino_device[:3] == "GPU":
+        img_size_err_message = "Image height and width should be equal or less than 728 for GPU execution"
+        assert p.height <= 728, img_size_err_message
+        assert p.width <= 728, img_size_err_message
+
     devices.torch_gc()
 
     seed = get_fixed_seed(p.seed)
