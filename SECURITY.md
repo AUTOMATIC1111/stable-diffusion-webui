@@ -11,7 +11,6 @@ All issues are tracked publicly on GitHub: <https://github.com/vladmandic/automa
 ## Vulnerabilities
 
 `SD.Next` code base and included dependencies are automatically scanned against known security vulnerabilities
-
 Any code commit is validated before merge
 
 - [Dependencies](https://github.com/vladmandic/automatic/security/dependabot)
