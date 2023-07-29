@@ -161,7 +161,7 @@ class FrozenCLIPEmbedderWithCustomWordsBase(torch.nn.Module):
                     position += 1
                     continue
 
-                emb_len = int(embedding.vec.shape[0])
+                emb_len = int(embedding.vectors)
                 if len(chunk.tokens) + emb_len > self.chunk_length:
                     next_chunk()
 
