@@ -510,7 +510,7 @@ To take advantage of new out-of-the-box tunings, its recommended to delete your 
 
 a bit shorter list as:
 
-- i've been busy with buxfixing  
+- i've been busy with bugfixing  
   there are a lot of them, not going to list each here.  
   but seems like critical issues backlog is quieting down and soon i can focus on new features development.  
 - i've started collaboration with couple of major projects,
