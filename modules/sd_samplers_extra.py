@@ -1,17 +1,20 @@
 import torch
+import tqdm
 import k_diffusion.sampling
 
+
 @torch.no_grad()
-def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=None, s_noise=1., restart_list = None):
-    """Implements restart sampling in Restart Sampling for Improving Generative Processes (2023)"""
-    '''Restart_list format: {min_sigma: [ restart_steps, restart_times, max_sigma]}'''
-    '''If restart_list is None: will choose restart_list automatically, otherwise will use the given restart_list'''
-    from tqdm.auto import trange
+def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=None, s_noise=1., restart_list=None):
+    """Implements restart sampling in Restart Sampling for Improving Generative Processes (2023)
+    Restart_list format: {min_sigma: [ restart_steps, restart_times, max_sigma]}
+    If restart_list is None: will choose restart_list automatically, otherwise will use the given restart_list
+    """
     extra_args = {} if extra_args is None else extra_args
     s_in = x.new_ones([x.shape[0]])
     step_id = 0
     from k_diffusion.sampling import to_d, get_sigmas_karras
-    def heun_step(x, old_sigma, new_sigma, second_order = True):
+
+    def heun_step(x, old_sigma, new_sigma, second_order=True):
         nonlocal step_id
         denoised = model(x, old_sigma * s_in, **extra_args)
         d = to_d(x, old_sigma, denoised)
@@ -30,6 +33,7 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
             x = x + d_prime * dt
         step_id += 1
         return x
+
     steps = sigmas.shape[0] - 1
     if restart_list is None:
         if steps >= 20:
@@ -41,11 +45,10 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
             sigmas = get_sigmas_karras(steps - restart_steps * restart_times, sigmas[-2].item(), sigmas[0].item(), device=sigmas.device)
             restart_list = {0.1: [restart_steps + 1, restart_times, 2]}
         else:
-            restart_list = dict()
-    temp_list = dict()
-    for key, value in restart_list.items():
-        temp_list[int(torch.argmin(abs(sigmas - key), dim=0))] = value
-    restart_list = temp_list
+            restart_list = {}
+
+    restart_list = {int(torch.argmin(abs(sigmas - key), dim=0)): value for key, value in restart_list.items()}
+
     step_list = []
     for i in range(len(sigmas) - 1):
         step_list.append((sigmas[i], sigmas[i + 1]))
@@ -58,13 +61,14 @@ def restart_sampler(model, x, sigmas, extra_args=None, callback=None, disable=No
                 while restart_times > 0:
                     restart_times -= 1
                     step_list.extend([(old_sigma, new_sigma) for (old_sigma, new_sigma) in zip(sigma_restart[:-1], sigma_restart[1:])])
-    last_sigma = None
-    for i in trange(len(step_list), disable=disable):
-        if last_sigma is None:
-            last_sigma = step_list[i][0]
-        elif last_sigma < step_list[i][0]:
-            x = x + k_diffusion.sampling.torch.randn_like(x) * s_noise * (step_list[i][0] ** 2 - last_sigma ** 2) ** 0.5
-        x = heun_step(x, step_list[i][0], step_list[i][1])
-        last_sigma = step_list[i][1]
-    return x
 
+    last_sigma = None
+    for old_sigma, new_sigma in tqdm.tqdm(step_list, disable=disable):
+        if last_sigma is None:
+            last_sigma = old_sigma
+        elif last_sigma < old_sigma:
+            x = x + k_diffusion.sampling.torch.randn_like(x) * s_noise * (old_sigma ** 2 - last_sigma ** 2) ** 0.5
+        x = heun_step(x, old_sigma, new_sigma)
+        last_sigma = new_sigma
+
+    return x
