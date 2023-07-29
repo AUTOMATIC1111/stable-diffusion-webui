@@ -19,7 +19,7 @@ Actual changelog is:
 - general:
   - new loading screens and artwork
   - major ui simplification for both txt2img and img2img  
-    nothing is removed, but you can show/hide invidividual sections  
+    nothing is removed, but you can show/hide individual sections  
     default is very simple interface, but you can enable any sections and save it as default in settings  
   - themes: add additional built-in theme, `amethyst-nightfall`
   - extra networks: add add/remove tags to prompt (e.g. lora activation keywords)
@@ -46,7 +46,7 @@ Actual changelog is:
   - sd-xl: initial lora support  
     right now this applies to official lora released by **stability-ai**, support for **kohya's** lora is expected soon  
   - implement img2img and inpainting (experimental)  
-    actual support and qualiy depends on model  
+    actual support and quality depends on model  
     it works as expected for sd 1.5, but not so much for sd-xl for now  
   - implement limited stop/interrupt for diffusers
     works between stages, not within steps  
@@ -230,7 +230,7 @@ But even if not, it still includes bunch of cumulative fixes since last release 
 
 - minor improvements to extra networks ui  
 - more hints/tooltips integrated into ui  
-- new decidated api server  
+- new dedicated api server  
   - but highly promising for high throughput server  
 - improve server logging and monitoring with  
   - server log file rotation  
@@ -248,7 +248,7 @@ Second stage of a jumbo merge from upstream plus few minor changes...
   - skipped/did-not-port:  
     add separate hires prompt: unnecessarily complicated and spread over large number of commits due to many regressions  
     allow external scripts to add cross-optimization methods: dangerous and i don't see a use case for it so far  
-    load extension info in threads: unnecessary as other optimizations ive already put place perform equally good  
+    load extension info in threads: unnecessary as other optimizations i've already put place perform equally good  
   - broken/reverted:  
     sub-quadratic optimization changes  
 
@@ -315,18 +315,18 @@ that caused my phone to go crazy with notifications over the weekend...
 
 Some quality-of-life improvements while working on larger stuff in the background...
 
-- redesign action box to be uniform accross all themes  
+- redesign action box to be uniform across all themes  
 - add **pause** option next to stop/skip  
 - redesigned progress bar  
 - add new built-in extension: **agent-scheduler**  
-  very elegant way to getting full queing capabilies, thank @artventurdev  
+  very elegant way to getting full queueing capabilities, thank @artventurdev  
 - enable more image formats  
   note: not all are understood by browser so previews and images may appear as blank  
   unless you have some browser extensions that can handle them  
   but they are saved correctly. and cant beat raw quality of 32-bit `tiff` or `psd` :)  
 - change in behavior: `xformers` will be uninstalled on startup if they are not active  
   if you do have `xformers` selected as your desired cross-optimization method, then they will be used  
-  reason is that a lot of libaries try to blindy import xformers even if they are not selected or not functional  
+  reason is that a lot of libaries try to blindly import xformers even if they are not selected or not functional  
 
 ## Update for 05/30/2023
 
@@ -577,7 +577,7 @@ what's new:
 - merge tomesd token merging  
 - merge 23 PRs pending from a1111 backlog (!!)
 
-*expect shorter updates for the next few days as i'll be partically ooo*
+*expect shorter updates for the next few days as i'll be partially ooo*
 
 ## Update for 04/20/2023
 
@@ -619,7 +619,7 @@ note: if you previously had command line optimizations such as --no-half, those 
   this forces it to use HTTP instead of WebSockets and can help on unreliable network connections  
 - set scripts & extensions loading priority and allow custom priorities  
   fixes random extension issues:  
-  `ScuNet` upscaler dissapearing, `Additional Networks` not showing up on XYZ axis, etc.
+  `ScuNet` upscaler disappearing, `Additional Networks` not showing up on XYZ axis, etc.
 - improve html loading order
 - remove some `asserts` causing runtime errors and replace with user-friendly messages
 - update README.md
@@ -643,7 +643,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 - ability to restart server from ui
 - updated requirements
 - removed `styles.csv` from repo, its now fully under user control
-- removed model-keyword extension as overly aggresive
+- removed model-keyword extension as overly aggressive
 - rewrite of the fastapi middleware handlers
 - install bugfixes, hopefully new installer is now ok  \
   i really want to focus on features and not troubleshooting installer
@@ -652,7 +652,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 
 - update default values
 - remove `ui-config.json` from repo, its not fully under user control
-- updated extensions mangager
+- updated extensions manager
 - updated locon/lycoris plugin
 - enable quick launch by default
 - add multidiffusion upscaler extensions
