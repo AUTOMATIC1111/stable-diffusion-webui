@@ -343,6 +343,7 @@ class Api:
                         processed = process_images(p)
                 finally:
                     shared.state.end()
+                    shared.total_tqdm.clear()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -402,6 +403,7 @@ class Api:
                         processed = process_images(p)
                 finally:
                     shared.state.end()
+                    shared.total_tqdm.clear()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
