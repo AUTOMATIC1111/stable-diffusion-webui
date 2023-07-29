@@ -3,13 +3,22 @@ This is a feature showcase page for [Stable Diffusion web UI](https://github.com
 All examples are non-cherrypicked unless specified otherwise.
 
 # SD-XL
-## SD-XL BASE
 
+## Downloading: 
+1. [sd_xl_base_1.0_0.9vae](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/sd_xl_base_1.0_0.9vae.safetensors)
+
+2. [sd_xl_refiner_1.0_0.9vae](https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/blob/main/sd_xl_refiner_1.0_0.9vae.safetensors)
+
+These models are recommended for generating, merging and training.
+
+>They have a built-in trained vae by https://github.com/madebyollin which fixes NaN infinity calculations running in fp16. ([Vae](https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors) ) for reference 
+
+## SD-XL BASE
 [[PR]](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11757) | [[Stability-AI Github]](https://github.com/Stability-AI/generative-models)
 
 ### Info
 
-This is a model designed for generating quality 1024×1024-sized images. It is not meant to generate good pictures at 512×512.
+This is a model designed for generating quality `1024×1024`-sized images. It is **not** meant to generate good pictures at `512×512`.
 
 
 It's tested to produce same (or very close) images as Stability-AI's repo (need to set Random number generator source = CPU in settings)
@@ -30,18 +39,16 @@ It's tested to produce same (or very close) images as Stability-AI's repo (need 
 - works at minimum 4gb gpu (30XX)  
 ```
 
->NOTE: Initial loading of these models require those with 24gb cpu memory (RAM) and under to setup a large pagefile. This may change in the future.
+>NOTE: Initial loading of these models require those with 24gb cpu memory (RAM) and under to setup a large pagefile. This may change in the future .
 
 
-### Downloading: 
-1. [sd_xl_base_1.0](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/blob/main/sd_xl_base_1.0.safetensors)
+## SD-XL REFINER 
 
->The base model's VAE has problems running in fp16.  [madebyollin](https://github.com/madebyollin) has kindly trained a vae to mostly remedy this: 
+This secondary model is **designed** to process the `1024×1024` SD-XL image **near completion***, to further enhance and refine details in your final output picture. You could use it to refine finished pictures in the img2img tab as well.
 
-2. [sdxl-vae-fp16-fix](https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors)
- 
-(Please use both of these to avoid slow speeds, and GPU out-of-vram issues.) 
+To try this kind of generation, you can use this extension - https://github.com/wcde/sd-webui-refiner
 
+You will want 6gb minimum as `--lowvram` currently isn't supported.
 
 # SD2 Variation Models
 [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8958), ([more info.](https://github.com/Stability-AI/stablediffusion/blob/main/doc/UNCLIP.MD))
