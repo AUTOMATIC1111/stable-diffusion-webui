@@ -1,5 +1,5 @@
 # pylint: disable=no-member,no-self-argument,no-method-argument
-from typing import Optional
+from typing import Optional, Union
 import torch
 import torch_directml # pylint: disable=import-error
 import modules.dml.amp as amp
@@ -13,9 +13,9 @@ class DirectML:
     amp = amp
     device = device
 
-    context_device: torch.device | None = None
+    context_device: Union[torch.device, None] = None
 
-    __gpu_memory_bound: int | None = None
+    __gpu_memory_bound: Union[int, None] = None
     
     is_autocast_enabled = False
     autocast_gpu_dtype = torch.float16
@@ -36,7 +36,7 @@ class DirectML:
         except Exception:
             return UnknownMemoryControl
         
-    def set_gpu_memory_bound(bound: int | None):
+    def set_gpu_memory_bound(bound: Union[int, None]):
         DirectML.__gpu_memory_bound = bound
 
     def is_available() -> bool:
