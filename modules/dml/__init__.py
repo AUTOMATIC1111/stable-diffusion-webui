@@ -1,6 +1,6 @@
 import os
 import torch
-from typing import NamedTuple, Callable, Union
+from typing import NamedTuple, Callable, Optional
 
 from modules.sd_hijack_utils import CondFunc
 
@@ -44,8 +44,8 @@ def directml_do_hijack():
 
 class OverrideItem(NamedTuple):
     value: str
-    condition: Union[Callable, None]
-    message: Union[str, None]
+    condition: Optional[Callable]
+    message: Optional[str]
 
 opts_override_table = {
     "diffusers_generator_device": OverrideItem("cpu", None, "DirectML does not support torch Generator API."),
