@@ -36,7 +36,7 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
 - Advanced metadata caching and handling to speed up operations  
 - Enterprise level logging and hardened API  
 - Modern localization and hints engine  
-- Broad compatibility with extisting extensions ecosystem and new extensions manager  
+- Broad compatibility with existing extensions ecosystem and new extensions manager  
 - Built in installer with automatic updates and dependency management  
 - Modernized UI (still based on Gradio) with theme support  
 
@@ -82,7 +82,7 @@ Additional models will be added as they become available and there is public int
 
 - Server can run without virtual environment,  
   but it is recommended to use it to avoid library version conflicts with other applications  
-- **nVidia/CUDA** and **AMD/ROCm** are auto-detected is present and available,  
+- **nVidia/CUDA** and **AMD/ROCm** are auto-detected if present and available,  
    but for any other use case specify required parameter explicitly or wrong packages may be installed  
   as installer will assume CPU-only environment  
 - Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  
