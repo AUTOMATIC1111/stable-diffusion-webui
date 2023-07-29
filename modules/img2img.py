@@ -115,7 +115,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
 
         for n, processed_image in enumerate(proc.images):
             filename = image_path.stem
-            infotext = proc.infotext(p, n)
+            infotext = proc.infotext(p, 0)
             relpath = os.path.dirname(os.path.relpath(image, input_dir))
 
             if n > 0:
