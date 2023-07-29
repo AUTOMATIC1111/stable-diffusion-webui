@@ -565,6 +565,7 @@
   {"id":"","label":"Select diffuser pipeline when loading from safetensors","localized":"","hint":""},
   {"id":"","label":"Move base model to CPU when using refiner","localized":"","hint":""},
   {"id":"","label":"Move refiner model to CPU when not in use","localized":"","hint":""},
+  {"id":"","label":"Move UNet to CPU while VAE decoding","localized":"","hint":""},
   {"id":"","label":"Use model EMA weights when possible","localized":"","hint":""},
   {"id":"","label":"Generator device","localized":"","hint":""},
   {"id":"","label":"Enable sequential CPU offload","localized":"","hint":"Reduces GPU memory usage by transferring weights to the CPU. Increases inference time approximately 10%. Use with Enable Attention slicing for minimal memory consumption"},

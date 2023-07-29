@@ -36,9 +36,16 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     def vae_decode(latents, model, output_type='np'):
         if hasattr(model, 'vae') and torch.is_tensor(latents):
             shared.log.debug(f'Diffusers VAE decode: name={model.vae.config.get("_name_or_path", "default")} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
+            if shared.opts.diffusers_move_unet:
+                shared.log.debug('Diffusers: Moving UNet to CPU')
+                unet_device = model.unet.device
+                model.unet.to(devices.cpu)
+                devices.torch_gc()
             latents.to(model.vae.device)
             decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
             imgs = model.image_processor.postprocess(decoded, output_type=output_type)
+            if shared.opts.diffusers_move_unet:
+                model.unet.to(unet_device)
             return imgs
         else:
             return latents

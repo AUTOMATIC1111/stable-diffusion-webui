@@ -565,6 +565,7 @@
   {"id":"","label":"Select diffuser pipeline when loading from safetensors","localized":"safetensors 파일에서 로드할 때 사용할 파이프라인 선택","hint":""},
   {"id":"","label":"Move base model to CPU when using refiner","localized":"리파이너를 사용 중일 때 base 모델을 CPU로 이동","hint":""},
   {"id":"","label":"Move refiner model to CPU when not in use","localized":"사용 중이지 않을 때 리파이너 모델을 CPU로 이동","hint":""},
+  {"id":"","label":"Move UNet to CPU while VAE decoding","localized":"","hint":""},
   {"id":"","label":"Use model EMA weights when possible","localized":"가능하다면 모델의 EMA 가중치 사용","hint":""},
   {"id":"","label":"Generator device","localized":"Generator 디바이스","hint":""},
   {"id":"","label":"Enable sequential CPU offload","localized":"순차 CPU 오프로드 활성화","hint":"가중치를 CPU로 옮겨 GPU 메모리 사용률을 낮춘다. 속도가 약 10% 느려진다. Use with 어텐션 슬라이싱 활성화 for minimal memory consumption"},
