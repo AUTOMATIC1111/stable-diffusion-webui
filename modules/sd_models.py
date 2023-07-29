@@ -903,6 +903,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     sd_hijack.model_hijack.hijack(sd_model)
     timer.record("hijack")
     sd_model.eval()
+    sd_model.has_accelerate = False
     if op == 'refiner':
         model_data.sd_refiner = sd_model
     else:
