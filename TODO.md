@@ -4,7 +4,7 @@
 
 Stuff to be fixed, in no particular order...
 
-- Misterious Extra network corruptions
+- Mysterious Extra network corruptions
 - Unet type mismatch/autocast issues on some platforms
 
 ## Features
