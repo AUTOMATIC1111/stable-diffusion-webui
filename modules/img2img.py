@@ -10,7 +10,6 @@ from modules import sd_samplers, images as imgutil
 from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
-from modules.images import save_image
 import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
