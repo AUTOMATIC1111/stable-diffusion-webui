@@ -20,8 +20,6 @@ These models **specifically** are recommended for generating, merging and traini
 
 ## SD-XL BASE
 
->NOTE: Initial loading of these models require those with 24gb cpu memory (RAM) and under to setup a large pagefile. This may change in the future.
-
 This is a model designed for generating quality `1024×1024`-sized images. It is **not** meant to generate good pictures at `512×512`.
 
 
