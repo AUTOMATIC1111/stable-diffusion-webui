@@ -1069,7 +1069,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             return samples
 
         if self.latent_scale_mode is None:
-            decoded_samples = decode_first_stage(self.sd_model, samples)
+            decoded_samples = torch.stack(decode_latent_batch(self.sd_model, samples, target_device=devices.cpu, check_for_nans=True))
         else:
             decoded_samples = None
 
