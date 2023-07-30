@@ -112,6 +112,7 @@ class StyleDatabase:
             # and collections.NamedTuple has explicit documentation for accessing _fields. Same goes for _asdict()
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
             writer.writeheader()
+            writer.writerow({})
             writer.writerows(style._asdict() for k, style in self.styles.items())
 
     def extract_styles_from_prompt(self, prompt, negative_prompt):
