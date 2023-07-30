@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 07/26/2023
+## Update for 2023-07-26
 
 This is a big one, new models, new diffusers, new features and updated UI...
 
@@ -60,7 +60,7 @@ Actual changelog is:
     this now fully obsoletes `fallback_sampler` and `force_latent_sampler`  
 
 
-## Update for 07/18/2023
+## Update for 2023-07-18
 
 While we're waiting for official SD-XL release, here's another update with some fixes and enhancements...
 
@@ -90,7 +90,7 @@ While we're waiting for official SD-XL release, here's another update with some 
     download using model downloader: `thu-ml/unidiffuser-v1`  
     and set resolution to 512x512  
 
-## Update for 07/14/2023
+## Update for 2023-07-14
 
 Trying to unify settings for both original and diffusers backend without introducing duplicates...
 
@@ -107,7 +107,7 @@ Trying to unify settings for both original and diffusers backend without introdu
 - reorganized settings -> samplers to show which section refers to which backend  
 - added diffusers **lmsd** sampler  
 
-## Update for 07/13/2023
+## Update for 2023-07-13
 
 Another big one, but now improvements to both **diffusers** and **original** backends as well plus ability to dynamically switch between them!
 
@@ -136,7 +136,7 @@ Another big one, but now improvements to both **diffusers** and **original** bac
 big thanks to @huggingface team for great communication, support and fixing all the reported issues asap!
 
 
-## Update for 07/10/2023
+## Update for 2023-07-10
 
 Service release with some fixes and enhancements:
 
@@ -158,7 +158,7 @@ Service release with some fixes and enhancements:
   - fix startup issue with incorrect config  
   - installer should always check requirements on upgrades
 
-## Update for 07/08/2023
+## Update for 2023-07-08
 
 This is a massive update which has been baking in a `dev` branch for a while now
 
@@ -179,7 +179,7 @@ Release also contains number of smaller updates:
   speeds up app start if you have a lot of extra networks and you want to build them manually when needed  
 - extra network ui tweaks  
 
-## Update for 07/01/2023
+## Update for 2023-07-01
 
 Small quality-of-life updates and bugfixes:
 
@@ -191,7 +191,7 @@ Small quality-of-life updates and bugfixes:
 - folder `Show` button is present only when working on localhost,  
   otherwise its replaced with `Copy` that places image URLs on clipboard so they can be used in other apps
 
-## Update for 06/30/2023
+## Update for 2023-06-30
 
 A bit bigger update this time, but contained to specific areas...
 
@@ -213,7 +213,7 @@ A bit bigger update this time, but contained to specific areas...
 - **extensions sort** by trending  
 - add requirements check for training  
 
-## Update for 06/26/2023
+## Update for 2023-06-26
 
 - new training tab interface  
   - redesigned preprocess, train embedding, train hypernetwork  
@@ -222,7 +222,7 @@ A bit bigger update this time, but contained to specific areas...
   - new model verify functionality  
 - lot of ipex specific fixes/optimizations, thanks @disty0  
 
-## Update for 06/20/2023
+## Update for 2023-06-20
 
 This one is less relevant for standard users, but pretty major if you're running an actual server  
 But even if not, it still includes bunch of cumulative fixes since last release - and going by number of new issues, this is probably the most stable release so far...
@@ -237,7 +237,7 @@ But even if not, it still includes bunch of cumulative fixes since last release 
   - ring buffer with api endpoint `/sdapi/v1/log`  
   - real-time status and load endpoint `/sdapi/v1/system-info/status`
 
-## Update for 06/14/2023
+## Update for 2023-06-14
 
 Second stage of a jumbo merge from upstream plus few minor changes...
 
@@ -252,7 +252,7 @@ Second stage of a jumbo merge from upstream plus few minor changes...
   - broken/reverted:  
     sub-quadratic optimization changes  
 
-## Update for 06/13/2023
+## Update for 2023-06-14
 
 Just a day later and one *bigger update*...
 Both some **new functionality** as well as **massive merges** from upstream  
@@ -270,7 +270,7 @@ Both some **new functionality** as well as **massive merges** from upstream
   this was a massive merge, hopefully this does not cause any regressions  
   and still a bit more pending...
 
-## Update for 06/12/2023
+## Update for 2023-06-12
 
 - updated ui labels and hints to improve clarity and provide some extra info  
   this is 1st stage of the process, more to come...  
@@ -291,7 +291,7 @@ Both some **new functionality** as well as **massive merges** from upstream
   results? who am i to judge :)
 
 
-## Update for 06/05/2023
+## Update for 2023-06-05
 
 Few new features and extra handling for broken extensions  
 that caused my phone to go crazy with notifications over the weekend...
@@ -311,7 +311,7 @@ that caused my phone to go crazy with notifications over the weekend...
 - some work on bfloat16 which nobody really should be using, but why not 🙂
 
 
-## Update for 06/02/2023
+## Update for 2023-06-02
 
 Some quality-of-life improvements while working on larger stuff in the background...
 
@@ -328,7 +328,7 @@ Some quality-of-life improvements while working on larger stuff in the backgroun
   if you do have `xformers` selected as your desired cross-optimization method, then they will be used  
   reason is that a lot of libaries try to blindly import xformers even if they are not selected or not functional  
 
-## Update for 05/30/2023
+## Update for 2023-05-30
 
 Another bigger one...And more to come in the next few days...
 
@@ -344,7 +344,7 @@ Another bigger one...And more to come in the next few days...
 - updated lora, swinir, scunet and ldsr code from upstream  
 - start of merge from a1111 v1.3  
 
-## Update for 05/26/2023
+## Update for 2023-05-26
 
 Some quality-of-life improvements...
 
@@ -372,7 +372,7 @@ other than that - first stage of [Diffusers](https://github.com/huggingface/diff
 i don't recommend anyone to try it (and dont even think reporting issues for it)  
 but if anyone wants to contribute, take a look at [project page](https://github.com/users/vladmandic/projects/1/views/1)
 
-## Update for 05/23/2023
+## Update for 2023-05-23
 
 Major internal work with perhaps not that much user-facing to show for it ;)
 
@@ -398,7 +398,7 @@ Major internal work with perhaps not that much user-facing to show for it ;)
 - fixes...amazing how many issues were introduced by porting a1111 v1.20 code without adding almost no new functionality  
   next one is v1.30 (still in dev) which does bring a lot of new features  
 
-## Update for 05/17/2023
+## Update for 2023-05-17
 
 This is a massive one due to huge number of changes,  
 but hopefully it will go ok...
@@ -419,7 +419,7 @@ but hopefully it will go ok...
 - port *all* upstream changes from [A1111](https://github.com/AUTOMATIC1111/stable-diffusion-webui)  
   up to today - commit hash `89f9faa`  
 
-## Update for 05/15/2023
+## Update for 2023-05-15
 
 - major work on **prompt parsing**
   this can cause some differences in results compared to what you're used to, but its all about fixes & improvements
@@ -431,7 +431,7 @@ but hopefully it will go ok...
 - add option in settings to force different **latent sampler** instead of using primary only
 - add **interrupt/skip** capabilities to process images
 
-## Update for 05/13/2023
+## Update for 2023-05-13
 
 This is mostly about optimizations...
 
@@ -448,7 +448,7 @@ This is mostly about optimizations...
 - allow per-extension updates in extension manager  
 - option to reset configuration in settings  
 
-## Update for 05/11/2023
+## Update for 2023-05-11
 
 - brand new **extension manager**  
   this is pretty much a complete rewrite, so new issues are possible
@@ -459,7 +459,7 @@ This is mostly about optimizations...
 - auto-recover & re-attempt when `--upgrade` is requested but fails
 - check for duplicate extensions  
 
-## Update for 05/08/2023
+## Update for 2023-05-08
 
 Back online with few updates:
 
@@ -470,7 +470,7 @@ Back online with few updates:
 - configurable order of scripts in txt2img and img2img  
   for both, see sections in ui-> settings -> user interface
 
-## Update for 05/04/2023
+## Update for 2023-05-04
 
 Again, few days later...
 
@@ -487,7 +487,7 @@ Again, few days later...
 - better logging  
   this includes new `--debug` flag for more verbose logging when troubleshooting  
 
-## Update for 05/01/2023
+## Update for 2023-05-01
 
 Been a bit quieter for last few days as changes were quite significant, but finally here we are...
 
@@ -506,7 +506,7 @@ Been a bit quieter for last few days as changes were quite significant, but fina
 
 To take advantage of new out-of-the-box tunings, its recommended to delete your `config.json` so new defaults are applied. Its not necessary, but otherwise you may need to play with UI Settings to get the best of Intel ARC, TorchML, ROCm or Apple M1/M2.
 
-## Update for 04/27/2023
+## Update for 2023-04-27
 
 a bit shorter list as:
 
@@ -527,7 +527,7 @@ what's new:
 - set defaults for Apple M1/M2  
   if you have issues, you may want to start with a fresh install so configuration can be created from scratch
 
-## Update for 04/25/2023
+## Update for 2023-04-25
 
 - update process image -> info
 - add VAE info to metadata
@@ -540,7 +540,7 @@ what's new:
 - validate script args for always-on scripts  
   fixes: deforum with controlnet  
 
-## Update for 04/24/2023
+## Update for 2023-04-24
 
 - identify race condition where generate locks up while fetching preview
 - add pulldowns to x/y/z script
@@ -552,7 +552,7 @@ what's new:
 - fix setup not installing `tensorflow` dependencies
 - update default git flags to reduce number of warnings
 
-## Update for 04/23/2023
+## Update for 2023-04-23
 
 - fix VAE dtype  
   should fix most issues with NaN or black images  
@@ -567,7 +567,7 @@ what's new:
 - mark tensorflow as optional
 - add additional image name templates
 
-## Update for 04/22/2023
+## Update for 2023-04-22
 
 - autodetect which system libs should be installed  
   this is a first pass of autoconfig for **nVidia** vs **AMD** environments  
@@ -579,7 +579,7 @@ what's new:
 
 *expect shorter updates for the next few days as i'll be partially ooo*
 
-## Update for 04/20/2023
+## Update for 2023-04-20
 
 - full CUDA tuning section in UI Settings
 - improve exif/pnginfo metadata parsing  
@@ -593,7 +593,7 @@ what's new:
 
 note: if you previously had command line optimizations such as --no-half, those are now ignored and moved to ui settings
 
-## Update for 04/19/2023
+## Update for 2023-04-19
 
 - fix live preview
 - fix model merge
@@ -605,7 +605,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 - created initial merge backlog from pending prs on a1111 repo  
   see #258 for details
 
-## Update for 04/18/2023
+## Update for 2023-04-18
 
 - reconnect ui to active session on browser restart  
   this is one of most frequently asked for items, finally figured it out  
@@ -625,7 +625,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 - update README.md
 - update TODO.md
 
-## Update for 04/17/2023
+## Update for 2023-04-17
 
 - **themes** are now dynamic and discovered from list of available gradio themes on huggingface  
   its quite a list of 30+ supported themes so far  
@@ -636,7 +636,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 - updated github integration
 - make model download as optional if no models found
 
-## Update for 04/16/2023
+## Update for 2023-04-16
 
 - support for ui themes! to to *settings* -> *user interface* -> "ui theme*
   includes 12 predefined themes
@@ -648,7 +648,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 - install bugfixes, hopefully new installer is now ok  \
   i really want to focus on features and not troubleshooting installer
 
-## Update for 04/15/2023
+## Update for 2023-04-15
 
 - update default values
 - remove `ui-config.json` from repo, its not fully under user control
@@ -663,7 +663,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 - fix git update issues
 - update github templates
 
-## Update for 04/14/2023
+## Update for 2023-04-14
 
 - handle duplicate extensions
 - redo exception handler
@@ -675,7 +675,7 @@ note: if you previously had command line optimizations such as --no-half, those 
 - pin transformers version to last known good version
 - fix extension loader
 
-## Update for 04/12/2023
+## Update for 2023-04-12
 
 This has been pending for a while, but finally uploaded some massive changes
 
