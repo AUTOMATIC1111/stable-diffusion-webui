@@ -56,7 +56,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         pipeline = model
         signature = inspect.signature(type(pipeline).__call__)
         possible = signature.parameters.keys()
-        generator_device = 'cpu' if shared.opts.diffusers_generator_device == "cpu" else shared.device
+        generator_device = devices.cpu if shared.opts.diffusers_generator_device == "cpu" else shared.device
         generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible:
@@ -161,7 +161,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     if refiner_enabled:
         for i in range(len(output.images)):
-            if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
+            #shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload:
+            #Model CPU Offload doesn't unload the base model without this.
+            if ((shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner) or shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload) and hasattr(shared.sd_model, 'vae'):
                 from modules.processing import create_infotext
                 info=create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, [], iteration=p.iteration, position_in_batch=i)
                 decoded = vae_decode(output.images, shared.sd_model, output_type='pil')
@@ -170,7 +172,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
         if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
             shared.log.debug('Diffusers: Moving base model to CPU')
-            shared.sd_model.to('cpu')
+            shared.sd_model.to(devices.cpu)
             devices.torch_gc()
 
         if (not hasattr(shared.sd_refiner.scheduler, 'name')) or (shared.sd_refiner.scheduler.name != p.latent_sampler) and (p.sampler_name != 'Default'):
@@ -207,7 +209,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
         if shared.opts.diffusers_move_refiner and not shared.sd_refiner.has_accelerate:
             shared.log.debug('Diffusers: Moving refiner model to CPU')
-            shared.sd_refiner.to('cpu')
+            shared.sd_refiner.to(devices.cpu)
     else:
         results = output.images
 
