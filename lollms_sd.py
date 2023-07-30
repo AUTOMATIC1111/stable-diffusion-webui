@@ -640,7 +640,7 @@ class LollmsSD:
     """
     def interrogate(self, image, model="clip"):
         payload = {
-            "image": b64_img(image) if isinstance(image, Image.Image) else image,
+            "image": b64_img(image) if isinstance(image, Image.Image) else b64_img(Image.open(image)),
             "model": model,
         }
 
