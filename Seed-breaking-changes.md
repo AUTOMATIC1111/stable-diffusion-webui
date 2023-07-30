@@ -1,3 +1,6 @@
+## [2023-07-30](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12177) - add support for whitespace after the number in constructions like [fo…
+Before the PR, whitespace after the number in prompt editing (`[foo:0.5]`), and also before and after number in emphasis (`(foo:0.5)`) them to not work and just be treated as plain text. The PR changes this and now `[foo : 0.5 ]` and `(foo : 0.5 )` work. Prompts where the user erroneously written whitespaces where they are not allowed will generate different pictures.
+
 ## [2023-04-29](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9669) - Fix prompt schedule for second order samplers
 Second order samplers (Heun, DPM2/a, DPM++ 2S/a, DPM++ SDE / Karras) cause the prompt schedule to run twice as fast when prompting something like `[dog:cat:0.5]` (i.e. for 100 steps, prompt is `dog` until step 25, `cat` until 50, and remains `dog` until 100). This fixes that by checking if the sampler is any of these second order samplers and multiplies the step count by 2 for calculating the prompt schedule.
 
