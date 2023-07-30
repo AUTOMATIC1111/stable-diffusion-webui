@@ -161,7 +161,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     if lora_state['active']:
         unload_diffusers_lora()
-        
+
     if refiner_enabled:
         for i in range(len(output.images)):
             #shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload:
@@ -219,6 +219,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if p.is_hr_pass:
         shared.log.warning('Diffusers not implemented: hires fix')
 
-    
+
 
     return results
