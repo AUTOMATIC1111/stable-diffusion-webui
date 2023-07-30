@@ -1,5 +1,10 @@
 # Change Log for SD.Next
 
+## Update for 2023-07-30
+
+- Update `diffusers`
+- Minor bugfixes
+
 ## Update for 2023-07-26
 
 This is a big one, new models, new diffusers, new features and updated UI...
@@ -252,7 +257,7 @@ Second stage of a jumbo merge from upstream plus few minor changes...
   - broken/reverted:  
     sub-quadratic optimization changes  
 
-## Update for 2023-06-14
+## Update for 2023-06-13
 
 Just a day later and one *bigger update*...
 Both some **new functionality** as well as **massive merges** from upstream  
