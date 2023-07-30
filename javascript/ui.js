@@ -247,6 +247,13 @@ function confirm_clear_prompt(prompt, negative_prompt) {
     return [prompt, negative_prompt];
 }
 
+function confirm_delete_style(...args) {
+    if (confirm("Delete style?")) {
+        return args;
+    }
+    return null;
+}
+
 
 var opts = {};
 onAfterUiUpdate(function() {

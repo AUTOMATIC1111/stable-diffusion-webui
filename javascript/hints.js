@@ -24,6 +24,9 @@ var titles = {
     "\u{1f4d2}": "Paste available values into the field",
     "\u{1f3b4}": "Show/hide extra networks",
     "\u{1f300}": "Restore progress",
+    "\u{1f527}": "Edit Style",
+    "\u{0270f}\ufe0f": "Save Style",
+    "\u{0274c}\ufe0f": "Delete Style",
 
     "Inpaint a part of image": "Draw a mask over an image, and the script will regenerate the masked area with content according to prompt",
     "SD upscale": "Upscale image normally, split result into tiles, improve each tile using img2img, merge whole image back",

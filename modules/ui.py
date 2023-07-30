@@ -63,6 +63,10 @@ if cmd_opts.ngrok is not None:
 def gr_show(visible=True):
     return {"visible": visible, "__type__": "update"}
 
+def gr_toggle(visible=True):
+    visible = not visible
+    return visible, {"visible": visible, "__type__": "update"}
+
 
 sample_img2img = "assets/stable-samples/img2img/sketch-mountains-input.jpg"
 sample_img2img = sample_img2img if os.path.exists(sample_img2img) else None
@@ -73,6 +77,9 @@ random_symbol = '\U0001f3b2\ufe0f'  # 🎲️
 reuse_symbol = '\u267b\ufe0f'  # ♻️
 paste_symbol = '\u2199\ufe0f'  # ↙
 refresh_symbol = '\U0001f504'  # 🔄
+edit_style_symbol = '\U0001f527'  # 🔧
+edit_style_save_symbol = '\U0000270f\ufe0f'  # ✏️
+edit_style_delete_symbol = '\U0000274c\ufe0f'  # ❌
 save_style_symbol = '\U0001f4be'  # 💾
 apply_style_symbol = '\U0001f4cb'  # 📋
 clear_prompt_symbol = '\U0001f5d1\ufe0f'  # 🗑️
@@ -105,6 +112,22 @@ def add_style(name: str, prompt: str, negative_prompt: str):
     return [gr.Dropdown.update(visible=True, choices=list(shared.prompt_styles.styles)) for _ in range(2)]
 
 
+def add_style_latest(prompt: str, negative_prompt: str, styles):
+    try:
+        return add_style(styles[-1], prompt, negative_prompt)
+    except Exception:
+        return [gr_show() for x in range(4)]
+
+
+def delete_style_latest(styles):
+    try:
+        del shared.prompt_styles.styles[styles[-1]]
+        shared.prompt_styles.save_styles(shared.styles_filename)
+        return [gr.Dropdown.update(visible=True, value=styles[:-1], choices=list(shared.prompt_styles.styles)) for _ in range(2)]
+    except Exception:
+        return [gr_show() for x in range(4)]
+
+
 def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y):
     from modules import processing, devices
 
@@ -134,6 +157,16 @@ def apply_styles(prompt, prompt_neg, styles):
     prompt_neg = shared.prompt_styles.apply_negative_styles_to_prompt(prompt_neg, styles)
 
     return [gr.Textbox.update(value=prompt), gr.Textbox.update(value=prompt_neg), gr.Dropdown.update(value=[])]
+
+
+def apply_style(prompt, prompt_neg, styles):
+    try:
+        style = styles[-1]
+        prompt = shared.prompt_styles.apply_styles_to_prompt("", [style])
+        prompt_neg = shared.prompt_styles.apply_negative_styles_to_prompt("", [style])
+        return [gr.Textbox.update(label="Style: "+str(style), value=prompt), gr.Textbox.update(value=prompt_neg)]
+    except Exception:
+        return [gr.Textbox.update(label="Style: ", value = ""), gr.Textbox.update(value="")]
 
 
 def process_interrogate(interrogation_function, mode, ii_input_dir, ii_output_dir, *ii_singles):
@@ -330,8 +363,26 @@ def create_toprow(is_img2img):
             with gr.Row(elem_id=f"{id_part}_styles_row"):
                 prompt_styles = gr.Dropdown(label="Styles", elem_id=f"{id_part}_styles", choices=[k for k, v in shared.prompt_styles.styles.items()], value=[], multiselect=True)
                 create_refresh_button(prompt_styles, shared.prompt_styles.reload, lambda: {"choices": [k for k, v in shared.prompt_styles.styles.items()]}, f"refresh_{id_part}_styles")
+                edit_style = ToolButton(value=edit_style_symbol, elem_id=f"{id_part}_edit_style")
 
-    return prompt, prompt_styles, negative_prompt, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button
+    edit_style_visible = gr.State(value=False)
+    with FormRow(variant='compact', elem_id="edit_style_row", visible=False) as edit_style_row:
+        with gr.Column(scale=50):
+            with gr.Row():
+                edit_style_prompt = gr.Textbox(label="Style: ", elem_id="edit_style_prompt", show_label=True, lines=2, placeholder="Prompt")
+                edit_style_negative_prompt = gr.Textbox(label="", elem_id="edit_style_negative_prompt", show_label=True, lines=2, placeholder="Negative prompt")
+        with gr.Column(scale=1, min_width=25):
+            edit_style_save_button = ToolButton(value=edit_style_save_symbol, elem_id="edit_style_save")
+            edit_style_delete_button = ToolButton(value=edit_style_delete_symbol, elem_id="edit_style_delete")
+
+    edit_style.click(
+        fn=gr_toggle,
+        inputs=[edit_style_visible],
+        outputs=[edit_style_visible, edit_style_row],
+        show_progress = False,
+    )
+
+    return prompt, prompt_styles, negative_prompt, edit_style_prompt, edit_style_negative_prompt, edit_style_save_button, edit_style_delete_button, submit, button_interrogate, button_deepbooru, prompt_style_apply, save_style, paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button
 
 
 def setup_progressbar(*args, **kwargs):
@@ -419,7 +470,7 @@ def create_ui():
     modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=False)
+        txt2img_prompt, txt2img_prompt_styles, txt2img_negative_prompt, edit_style_prompt, edit_style_negative_prompt, edit_style_save_button, edit_style_delete_button, submit, _, _, txt2img_prompt_style_apply, txt2img_save_style, txt2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
@@ -662,7 +713,7 @@ def create_ui():
     modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=True)
+        img2img_prompt, img2img_prompt_styles, img2img_negative_prompt, img2img_edit_style_prompt, img2img_edit_style_negative_prompt, img2img_edit_style_save_button, img2img_edit_style_delete_button, submit, img2img_interrogate, img2img_deepbooru, img2img_prompt_style_apply, img2img_save_style, img2img_paste, extra_networks_button, token_counter, token_button, negative_token_counter, negative_token_button, restore_progress_button = create_toprow(is_img2img=True)
 
         img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 
@@ -1002,7 +1053,37 @@ def create_ui():
             )
 
             prompts = [(txt2img_prompt, txt2img_negative_prompt), (img2img_prompt, img2img_negative_prompt)]
+            edit_prompts = [(edit_style_prompt, edit_style_negative_prompt), (img2img_edit_style_prompt, img2img_edit_style_negative_prompt)]
             style_dropdowns = [txt2img_prompt_styles, img2img_prompt_styles]
+
+            for dropdown, (prompt, negative_prompt) in zip(style_dropdowns, edit_prompts):
+                dropdown.change(
+                    fn=apply_style,
+                    inputs=[prompt, negative_prompt, dropdown],
+                    outputs=[prompt, negative_prompt],
+                    show_progress=False,
+                )
+
+            for button, (prompt, negative_prompt) in zip([edit_style_save_button, img2img_edit_style_save_button], edit_prompts):
+                if button == img2img_edit_style_save_button:
+                    style_dropdown = img2img_prompt_styles
+                else:
+                    style_dropdown = txt2img_prompt_styles
+
+                button.click(
+                    fn=add_style_latest,
+                    inputs=[prompt, negative_prompt, style_dropdown],
+                    outputs=[txt2img_prompt_styles, img2img_prompt_styles],
+                )
+
+            for button, dropdown in zip([edit_style_delete_button, img2img_edit_style_delete_button], style_dropdowns):
+                button.click(
+                    fn=delete_style_latest,
+                    _js="confirm_delete_style",
+                    inputs=[dropdown],
+                    outputs=[txt2img_prompt_styles, img2img_prompt_styles],
+                )
+
             style_js_funcs = ["update_txt2img_tokens", "update_img2img_tokens"]
 
             for button, (prompt, negative_prompt) in zip([txt2img_save_style, img2img_save_style], prompts):
