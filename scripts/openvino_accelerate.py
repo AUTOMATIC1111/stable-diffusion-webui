@@ -182,7 +182,6 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
             image_masked = Image.new('RGBa', (image.width, image.height))
             image_masked.paste(image.convert("RGBA").convert("RGBa"), mask=ImageOps.invert(self.mask_for_overlay.convert('L')))
             self.mask = image_mask
-            image_mask.save("/home/yamini/pytorch_fx/test/mask_image.jpg")
             self.overlay_images.append(image_masked.convert('RGBA'))
 
         # crop_region is not None if we are doing inpaint full res
