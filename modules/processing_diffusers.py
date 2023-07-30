@@ -36,7 +36,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     def vae_decode(latents, model, output_type='np'):
         if hasattr(model, 'vae') and torch.is_tensor(latents):
             shared.log.debug(f'Diffusers VAE decode: name={model.vae.config.get("_name_or_path", "default")} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
-            if shared.opts.diffusers_move_unet:
+            if shared.opts.diffusers_move_unet and not model.has_accelerate:
                 shared.log.debug('Diffusers: Moving UNet to CPU')
                 unet_device = model.unet.device
                 model.unet.to(devices.cpu)
@@ -44,7 +44,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             latents.to(model.vae.device)
             decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
             imgs = model.image_processor.postprocess(decoded, output_type=output_type)
-            if shared.opts.diffusers_move_unet:
+            if shared.opts.diffusers_move_unet and not model.has_accelerate:
                 model.unet.to(unet_device)
             return imgs
         else:
@@ -134,7 +134,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.state.interrupted or shared.state.skipped:
         return results
 
-    if shared.opts.diffusers_move_base:
+    if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
         shared.sd_model.to(devices.device)
 
     refiner_enabled = shared.sd_refiner is not None and p.enable_hr
@@ -168,7 +168,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 for i in range(len(decoded)):
                     images.save_image(decoded[i], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-refiner")
 
-        if shared.opts.diffusers_move_base:
+        if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
             shared.log.debug('Diffusers: Moving base model to CPU')
             shared.sd_model.to('cpu')
             devices.torch_gc()
@@ -182,7 +182,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if shared.state.interrupted or shared.state.skipped:
             return results
 
-        if shared.opts.diffusers_move_refiner:
+        if shared.opts.diffusers_move_refiner and not shared.sd_refiner.has_accelerate:
             shared.sd_refiner.to(devices.device)
         p.ops.append('refine')
         for i in range(len(output.images)):
@@ -205,7 +205,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 refiner_images = vae_decode(refiner_output.images, shared.sd_refiner)
                 results.append(refiner_images[0])
 
-        if shared.opts.diffusers_move_refiner:
+        if shared.opts.diffusers_move_refiner and not shared.sd_refiner.has_accelerate:
             shared.log.debug('Diffusers: Moving refiner model to CPU')
             shared.sd_refiner.to('cpu')
     else:

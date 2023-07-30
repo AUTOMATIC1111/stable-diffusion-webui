@@ -659,18 +659,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 sd_model.enable_model_cpu_offload()
                 sd_model.has_accelerate = True
         if hasattr(sd_model, "enable_sequential_cpu_offload"):
-            if shared.opts.diffusers_seq_cpu_offload:
+            if shared.cmd_opts.lowvram or shared.opts.diffusers_seq_cpu_offload:
+                shared.log.debug(f'Diffusers {op}: enable sequential CPU offload')
                 sd_model.enable_sequential_cpu_offload(device=devices.device)
                 sd_model.has_accelerate = True
-                shared.log.debug(f'Diffusers {op}: enable sequential CPU offload')
-        if sd_model.has_accelerate and (shared.opts.diffusers_move_base or shared.opts.diffusers_move_refiner or shared.opts.diffusers_move_unet):
-            shared.log.warning("Moving models to CPU is not compatible with sequential CPU offload")
-            shared.log.debug('Disabled moving base model to CPU')
-            shared.log.debug('Disabled moving refiner model to CPU')
-            shared.log.debug('Disabled moving UNet to CPU')
-            shared.opts.diffusers_move_base=False
-            shared.opts.diffusers_move_refiner=False
-            shared.opts.diffusers_move_unet=False
         if hasattr(sd_model, "enable_vae_slicing"):
             if shared.cmd_opts.lowvram or shared.opts.diffusers_vae_slicing:
                 shared.log.debug(f'Diffusers {op}: enable VAE slicing')
@@ -753,7 +745,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         sd_model.sd_model_hash = checkpoint_info.hash # pylint: disable=attribute-defined-outside-init
         if hasattr(sd_model, "set_progress_bar_config"):
             sd_model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining}', ncols=80, colour='#327fba')
-        if op == 'refiner' and shared.opts.diffusers_move_refiner:
+        if op == 'refiner' and shared.opts.diffusers_move_refiner and not sd_model.has_accelerate:
             shared.log.debug('Moving refiner model to CPU')
             sd_model.to("cpu")
         elif not sd_model.has_accelerate:
@@ -943,12 +935,12 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         current_checkpoint_info = getattr(sd_model, 'sd_checkpoint_info', None)
         if current_checkpoint_info is not None and checkpoint_info is not None and current_checkpoint_info.filename == checkpoint_info.filename:
             return
-        if shared.backend == shared.Backend.ORIGINAL or not sd_model.has_accelerate:
+        if not sd_model.has_accelerate:
             if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
                 lowvram.send_everything_to_cpu()
             else:
                 sd_model.to(devices.cpu)
-    if reuse_dict or (shared.opts.model_reuse_dict and sd_model is not None):
+    if (reuse_dict or (shared.opts.model_reuse_dict and sd_model is not None)) and not sd_model.has_accelerate:
         shared.log.info('Reusing previous model dictionary')
         sd_hijack.model_hijack.undo_hijack(sd_model)
     else:
@@ -980,7 +972,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         timer.record("hijack")
         script_callbacks.model_loaded_callback(sd_model)
         timer.record("callbacks")
-        if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and (shared.backend == shared.Backend.ORIGINAL or not sd_model.has_accelerate):
+        if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
             sd_model.to(devices.device)
             timer.record("device")
     shared.log.info(f"Weights loaded in {timer.summary()}")
@@ -990,7 +982,7 @@ def unload_model_weights(op='model'):
     from modules import sd_hijack
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
-            if shared.backend == shared.Backend.ORIGINAL or not model_data.sd_model.has_accelerate:
+            if not model_data.sd_model.has_accelerate:
                 model_data.sd_model.to(devices.cpu)
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
@@ -998,7 +990,7 @@ def unload_model_weights(op='model'):
             shared.log.debug(f'Weights unloaded {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
-            if shared.backend == shared.Backend.ORIGINAL or not model_data.sd_refiner.has_accelerate:
+            if not model_data.sd_refiner.has_accelerate:
                 model_data.sd_refiner.to(devices.cpu)
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
