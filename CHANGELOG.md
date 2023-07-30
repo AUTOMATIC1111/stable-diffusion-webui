@@ -20,7 +20,7 @@ First, **SD-XL 1.0** is released and yes, SD.Next supports it out of the box!
 Also fresh is new **Kandinsky 2.2** model that does look quite nice:
 
 - [Kandinsky Decoder](https://huggingface.co/kandinsky-community/kandinsky-2-2-decoder)
-- [Kandinsky Prior](kandinsky-community/kandinsky-2-2-prior)
+- [Kandinsky Prior](https://huggingface.co/kandinsky-community/kandinsky-2-2-prior)
 
 Actual changelog is:
 
