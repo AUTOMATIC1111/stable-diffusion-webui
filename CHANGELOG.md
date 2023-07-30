@@ -2,8 +2,11 @@
 
 ## Update for 2023-07-30
 
-- Update `diffusers`
-- Minor bugfixes
+- diffusers:
+  - update packages
+  - memory optimizations: Enhanced sequential CPU offloading, model CPU offload, FP16 VAE
+    - significant impact if running SD-XL (for example, but applies to any model) with only 8GB VRAM
+- minor bugfixes
 
 ## Update for 2023-07-26
 
