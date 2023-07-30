@@ -476,6 +476,10 @@ def create_ui():
                                 hr_resize_y = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize height to", value=0, elem_id="txt2img_hr_resize_y")
 
                             with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact", visible=opts.hires_fix_show_sampler) as hr_sampler_container:
+                                checkpoint_choices = lambda: ["Use same checkpoint"] + modules.sd_models.checkpoint_tiles(use_short=True)
+                                hr_checkpoint_name = gr.Dropdown(label='Hires checkpoint', elem_id="hr_checkpoint", choices=checkpoint_choices(), value="Use same checkpoint")
+                                create_refresh_button(hr_checkpoint_name, modules.sd_models.list_models, lambda: {"choices": checkpoint_choices()}, "hr_checkpoint_refresh")
+
                                 hr_sampler_index = gr.Dropdown(label='Hires sampling method', elem_id="hr_sampler", choices=["Use same sampler"] + [x.name for x in samplers_for_img2img], value="Use same sampler", type="index")
 
                             with FormRow(elem_id="txt2img_hires_fix_row4", variant="compact", visible=opts.hires_fix_show_prompts) as hr_prompts_container:
@@ -553,6 +557,7 @@ def create_ui():
                     hr_second_pass_steps,
                     hr_resize_x,
                     hr_resize_y,
+                    hr_checkpoint_name,
                     hr_sampler_index,
                     hr_prompt,
                     hr_negative_prompt,
@@ -630,8 +635,9 @@ def create_ui():
                 (hr_second_pass_steps, "Hires steps"),
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
+                (hr_checkpoint_name, "Hires checkpoint"),
                 (hr_sampler_index, "Hires sampler"),
-                (hr_sampler_container, lambda d: gr.update(visible=True) if d.get("Hires sampler", "Use same sampler") != "Use same sampler" else gr.update()),
+                (hr_sampler_container, lambda d: gr.update(visible=True) if d.get("Hires sampler", "Use same sampler") != "Use same sampler" or d.get("Hires checkpoint", "Use same checkpoint") != "Use same checkpoint" else gr.update()),
                 (hr_prompt, "Hires prompt"),
                 (hr_negative_prompt, "Hires negative prompt"),
                 (hr_prompts_container, lambda d: gr.update(visible=True) if d.get("Hires prompt", "") != "" or d.get("Hires negative prompt", "") != "" else gr.update()),

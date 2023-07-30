@@ -220,12 +220,19 @@ class State:
             return
 
         import modules.sd_samplers
-        if opts.show_progress_grid:
-            self.assign_current_image(modules.sd_samplers.samples_to_image_grid(self.current_latent))
-        else:
-            self.assign_current_image(modules.sd_samplers.sample_to_image(self.current_latent))
 
-        self.current_image_sampling_step = self.sampling_step
+        try:
+            if opts.show_progress_grid:
+                self.assign_current_image(modules.sd_samplers.samples_to_image_grid(self.current_latent))
+            else:
+                self.assign_current_image(modules.sd_samplers.sample_to_image(self.current_latent))
+
+            self.current_image_sampling_step = self.sampling_step
+
+        except Exception:
+            # when switching models during genration, VAE would be on CPU, so creating an image will fail.
+            # we silently ignore this error
+            errors.record_exception()
 
     def assign_current_image(self, image):
         self.current_image = image
@@ -512,7 +519,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_tab_order": OptionInfo([], "UI tab order", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
     "hidden_tabs": OptionInfo([], "Hidden UI tabs", ui_components.DropdownMulti, lambda: {"choices": list(tab_names)}).needs_restart(),
     "ui_reorder_list": OptionInfo([], "txt2img/img2img UI item order", ui_components.DropdownMulti, lambda: {"choices": list(shared_items.ui_reorder_categories())}).info("selected items appear first").needs_restart(),
-    "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires sampler selection").needs_restart(),
+    "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires checkpoint and sampler selection").needs_restart(),
     "hires_fix_show_prompts": OptionInfo(False, "Hires fix: show hires prompt and negative prompt").needs_restart(),
     "disable_token_counters": OptionInfo(False, "Disable prompt token counters").needs_restart(),
 }))

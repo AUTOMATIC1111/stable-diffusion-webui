@@ -280,6 +280,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Hires sampler" not in res:
         res["Hires sampler"] = "Use same sampler"
 
+    if "Hires checkpoint" not in res:
+        res["Hires checkpoint"] = "Use same checkpoint"
+
     if "Hires prompt" not in res:
         res["Hires prompt"] = ""
 

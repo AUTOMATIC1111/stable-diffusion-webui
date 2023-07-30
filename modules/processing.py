@@ -935,7 +935,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     cached_hr_uc = [None, None]
     cached_hr_c = [None, None]
 
-    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, hr_sampler_name: str = None, hr_prompt: str = '', hr_negative_prompt: str = '', **kwargs):
+    def __init__(self, enable_hr: bool = False, denoising_strength: float = 0.75, firstphase_width: int = 0, firstphase_height: int = 0, hr_scale: float = 2.0, hr_upscaler: str = None, hr_second_pass_steps: int = 0, hr_resize_x: int = 0, hr_resize_y: int = 0, hr_checkpoint_name: str = None, hr_sampler_name: str = None, hr_prompt: str = '', hr_negative_prompt: str = '', **kwargs):
         super().__init__(**kwargs)
         self.enable_hr = enable_hr
         self.denoising_strength = denoising_strength
@@ -946,11 +946,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_resize_y = hr_resize_y
         self.hr_upscale_to_x = hr_resize_x
         self.hr_upscale_to_y = hr_resize_y
+        self.hr_checkpoint_name = hr_checkpoint_name
+        self.hr_checkpoint_info = None
         self.hr_sampler_name = hr_sampler_name
         self.hr_prompt = hr_prompt
         self.hr_negative_prompt = hr_negative_prompt
         self.all_hr_prompts = None
         self.all_hr_negative_prompts = None
+        self.latent_scale_mode = None
 
         if firstphase_width != 0 or firstphase_height != 0:
             self.hr_upscale_to_x = self.width
@@ -973,6 +976,14 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
+            if self.hr_checkpoint_name:
+                self.hr_checkpoint_info = sd_models.get_closet_checkpoint_match(self.hr_checkpoint_name)
+
+                if self.hr_checkpoint_info is None:
+                    raise Exception(f'Could not find checkpoint with name {self.hr_checkpoint_name}')
+
+                self.extra_generation_params["Hires checkpoint"] = self.hr_checkpoint_info.short_title
+
             if self.hr_sampler_name is not None and self.hr_sampler_name != self.sampler_name:
                 self.extra_generation_params["Hires sampler"] = self.hr_sampler_name
 
@@ -981,6 +992,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
             if tuple(self.hr_negative_prompt) != tuple(self.negative_prompt):
                 self.extra_generation_params["Hires negative prompt"] = self.hr_negative_prompt
+
+            self.latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
+            if self.enable_hr and self.latent_scale_mode is None:
+                if not any(x.name == self.hr_upscaler for x in shared.sd_upscalers):
+                    raise Exception(f"could not find upscaler named {self.hr_upscaler}")
 
             if opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):
                 self.hr_resize_x = self.width
@@ -1020,14 +1036,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                     self.truncate_x = (self.hr_upscale_to_x - target_w) // opt_f
                     self.truncate_y = (self.hr_upscale_to_y - target_h) // opt_f
 
-            # special case: the user has chosen to do nothing
-            if self.hr_upscale_to_x == self.width and self.hr_upscale_to_y == self.height:
-                self.enable_hr = False
-                self.denoising_strength = None
-                self.extra_generation_params.pop("Hires upscale", None)
-                self.extra_generation_params.pop("Hires resize", None)
-                return
-
             if not state.processing_has_refined_job_count:
                 if state.job_count == -1:
                     state.job_count = self.n_iter
@@ -1045,17 +1053,22 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
-        latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
-        if self.enable_hr and latent_scale_mode is None:
-            if not any(x.name == self.hr_upscaler for x in shared.sd_upscalers):
-                raise Exception(f"could not find upscaler named {self.hr_upscaler}")
-
         x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
 
         if not self.enable_hr:
             return samples
 
+        current = shared.sd_model.sd_checkpoint_info
+        try:
+            if self.hr_checkpoint_info is not None:
+                sd_models.reload_model_weights(info=self.hr_checkpoint_info)
+
+            return self.sample_hr_pass(samples, seeds, subseeds, subseed_strength, prompts)
+        finally:
+            sd_models.reload_model_weights(info=current)
+
+    def sample_hr_pass(self, samples, seeds, subseeds, subseed_strength, prompts):
         self.is_hr_pass = True
 
         target_width = self.hr_upscale_to_x
@@ -1073,11 +1086,11 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             info = create_infotext(self, self.all_prompts, self.all_seeds, self.all_subseeds, [], iteration=self.iteration, position_in_batch=index)
             images.save_image(image, self.outpath_samples, "", seeds[index], prompts[index], opts.samples_format, info=info, p=self, suffix="-before-highres-fix")
 
-        if latent_scale_mode is not None:
+        if self.latent_scale_mode is not None:
             for i in range(samples.shape[0]):
                 save_intermediate(samples, i)
 
-            samples = torch.nn.functional.interpolate(samples, size=(target_height // opt_f, target_width // opt_f), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
+            samples = torch.nn.functional.interpolate(samples, size=(target_height // opt_f, target_width // opt_f), mode=self.latent_scale_mode["mode"], antialias=self.latent_scale_mode["antialias"])
 
             # Avoid making the inpainting conditioning unless necessary as
             # this does need some extra compute to decode / encode the image again.
@@ -1193,7 +1206,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_uc = None
         self.hr_c = None
 
-        if self.enable_hr:
+        if self.enable_hr and self.hr_checkpoint_info is None:
             if shared.opts.hires_fix_use_firstpass_conds:
                 self.calculate_hr_conds()
 
