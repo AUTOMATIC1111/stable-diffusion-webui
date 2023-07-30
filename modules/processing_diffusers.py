@@ -164,16 +164,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     if refiner_enabled:
         for i in range(len(output.images)):
-            #shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload:
-            #Model CPU Offload doesn't unload the base model without this.
-            if ((shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner) or shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload) and hasattr(shared.sd_model, 'vae'):
+            if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
                 from modules.processing import create_infotext
                 info=create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, [], iteration=p.iteration, position_in_batch=i)
                 decoded = vae_decode(output.images, shared.sd_model, output_type='pil')
                 for i in range(len(decoded)):
                     images.save_image(decoded[i], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-refiner")
 
-        if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
+        if (shared.opts.diffusers_move_base or shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload) and not (shared.cmd_opts.lowvram or shared.opts.diffusers_seq_cpu_offload):
             shared.log.debug('Diffusers: Moving base model to CPU')
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()
