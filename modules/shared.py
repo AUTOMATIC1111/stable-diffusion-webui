@@ -12,7 +12,7 @@ import requests
 import fasteners
 from modules import errors, ui_components, shared_items, cmd_args
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir # pylint: disable=W0611
-from modules.dml import directml_do_hijack
+from modules.dml import memory_providers, default_memory_provider, directml_do_hijack
 import modules.interrogate
 import modules.memmon
 import modules.styles
@@ -390,6 +390,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
     "disable_gc": OptionInfo(True, "Disable Torch memory garbage collection"),
+    "directml_memory_provider": OptionInfo(default_memory_provider, '[DirectML] Memory stats provider', gr.Dropdown, lambda: {"choices": memory_providers}),
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {

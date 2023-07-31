@@ -1,13 +1,24 @@
 # pylint: disable=no-member,no-self-argument,no-method-argument
-from typing import Optional
+from typing import Optional, Callable
 import torch
 import torch_directml # pylint: disable=import-error
 import modules.dml.amp as amp
 
-from .memctl.unknown import UnknownMemoryControl
 from .utils import rDevice, get_device
 from .device import device
 from .device_properties import DeviceProperties
+from .memory_amd import AMDMemoryProvider
+from .memory import MemoryProvider
+
+def amd_mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
+    return AMDMemoryProvider.mem_get_info(get_device(device).index)
+
+def pdh_mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
+    mem_info = DirectML.memory_provider.get_memory(get_device(device).index)
+    return (mem_info["total_committed"] - mem_info["dedicated_usage"], mem_info["total_committed"])
+
+def mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
+    return (8589934592, 8589934592)
 
 class DirectML:
     amp = amp
@@ -15,29 +26,10 @@ class DirectML:
 
     context_device: Optional[torch.device] = None
 
-    __gpu_memory_bound: Optional[int] = None
-    
     is_autocast_enabled = False
     autocast_gpu_dtype = torch.float16
 
-    def __get_memory_control(device: torch.device):
-        assert device.type == 'privateuseone'
-        try:
-            device_name = torch_directml.device_name(device.index)
-            if 'NVIDIA' in device_name or 'GeForce' in device_name:
-                from .memctl.nvidia import nVidiaMemoryControl as memory_control
-            elif 'AMD' in device_name or 'Radeon' in device_name:
-                from .memctl.amd import AMDMemoryControl as memory_control
-            elif 'Intel' in device_name:
-                from .memctl.intel import IntelMemoryControl as memory_control
-            else:
-                return UnknownMemoryControl
-            return memory_control
-        except Exception:
-            return UnknownMemoryControl
-        
-    def set_gpu_memory_bound(bound: Optional[int]):
-        DirectML.__gpu_memory_bound = bound
+    memory_provider: Optional[MemoryProvider] = None
 
     def is_available() -> bool:
         return torch_directml.is_available()
@@ -73,15 +65,7 @@ class DirectML:
             "num_alloc_retries": mem_stat_fill,
         }
 
-    def mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
-        device = get_device(device)
-        memory_control = DirectML.__get_memory_control(device)
-        mem_info = memory_control.mem_get_info(device.index)
-        if DirectML.__gpu_memory_bound is None:
-            return mem_info
-        used = mem_info[1] - mem_info[0]
-        available = DirectML.__gpu_memory_bound - used
-        return (0 if available < 0 else available, DirectML.__gpu_memory_bound)
+    mem_get_info: Callable = mem_get_info
 
     def memory_allocated(device: Optional[rDevice]=None) -> int:
         return sum(torch_directml.gpu_memory(get_device(device).index)) * (1 << 20)
