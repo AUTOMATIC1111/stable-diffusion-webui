@@ -1076,13 +1076,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         current = shared.sd_model.sd_checkpoint_info
         try:
             if self.hr_checkpoint_info is not None:
-                del self.sampler
+                self.sampler = None
                 sd_models.reload_model_weights(info=self.hr_checkpoint_info)
                 devices.torch_gc()
 
             return self.sample_hr_pass(samples, decoded_samples, seeds, subseeds, subseed_strength, prompts)
         finally:
-            del self.sampler
+            self.sampler = None
             sd_models.reload_model_weights(info=current)
             devices.torch_gc()
 
