@@ -14,7 +14,8 @@ def record_exception():
     if exception_records and exception_records[-1] == e:
         return
 
-    exception_records.append((e, tb))
+    from modules import sysinfo
+    exception_records.append(sysinfo.format_exception(e, tb))
 
     if len(exception_records) > 5:
         exception_records.pop(0)
