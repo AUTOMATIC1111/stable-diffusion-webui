@@ -582,7 +582,10 @@ def reload_model_weights(sd_model=None, info=None):
     timer.record("find config")
 
     if sd_model is None or checkpoint_config != sd_model.used_config:
-        del sd_model
+        if sd_model is not None:
+            sd_model.to(device="meta")
+
+        devices.torch_gc()
         load_model(checkpoint_info, already_loaded_state_dict=state_dict)
         return model_data.sd_model
 
