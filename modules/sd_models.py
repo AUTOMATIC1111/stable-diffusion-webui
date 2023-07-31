@@ -655,6 +655,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         elif "Kandinsky" in sd_model.__class__.__name__:
             sd_model.scheduler.name = 'DDIM'
 
+        if (shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) and (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram):
+            shared.log.warning(f'Diffusers {op}: Model CPU offload (--medvram) and Sequential CPU offload (--lowvram) are not compatible')
+            shared.log.debug(f'Diffusers {op}: disable model CPU offload and --medvram')
+            shared.opts.diffusers_model_cpu_offload=False
+            shared.cmd_opts.medvram=False
+
         if hasattr(sd_model, "watermark"):
             sd_model.watermark = NoWatermark()
         sd_model.has_accelerate = False

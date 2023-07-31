@@ -211,6 +211,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if shared.opts.diffusers_move_refiner and not shared.sd_refiner.has_accelerate:
             shared.log.debug('Diffusers: Moving refiner model to CPU')
             shared.sd_refiner.to(devices.cpu)
+            devices.torch_gc()
     else:
         results = output.images
 
