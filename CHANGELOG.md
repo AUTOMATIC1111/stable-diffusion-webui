@@ -2,10 +2,13 @@
 
 ## Update for 2023-07-30
 
+Smaller release, but IMO worth a post...
+
 - diffusers:
-  - update packages
+  - sd-xl lora's are now supported!
   - memory optimizations: Enhanced sequential CPU offloading, model CPU offload, FP16 VAE
     - significant impact if running SD-XL (for example, but applies to any model) with only 8GB VRAM
+  - update packages
 - minor bugfixes
 
 ## Update for 2023-07-26
@@ -20,7 +23,7 @@ First, **SD-XL 1.0** is released and yes, SD.Next supports it out of the box!
 Also fresh is new **Kandinsky 2.2** model that does look quite nice:
 
 - [Kandinsky Decoder](https://huggingface.co/kandinsky-community/kandinsky-2-2-decoder)
-- [Kandinsky Prior](kandinsky-community/kandinsky-2-2-prior)
+- [Kandinsky Prior](https://huggingface.co/kandinsky-community/kandinsky-2-2-prior)
 
 Actual changelog is:
 

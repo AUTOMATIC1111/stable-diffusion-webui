@@ -548,8 +548,13 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         "load_connected_pipeline": True  # always load end-to-end / connected pipelines
         # "use_safetensors": True,  # TODO(PVP) - we can't enable this for all checkpoints just yet
     }
-    if devices.dtype == torch.float16:
-        diffusers_load_config['variant'] = 'fp16'
+    if shared.opts.diffusers_model_load_variant == 'default':
+        if devices.dtype == torch.float16:
+            diffusers_load_config['variant'] = 'fp16'
+    elif shared.opts.diffusers_model_load_variant == 'fp32':
+        pass
+    else:
+        diffusers_load_config['variant'] = shared.opts.diffusers_model_load_variant
 
     if shared.opts.data.get('sd_model_checkpoint', '') == 'model.ckpt' or shared.opts.data.get('sd_model_checkpoint', '') == '':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"

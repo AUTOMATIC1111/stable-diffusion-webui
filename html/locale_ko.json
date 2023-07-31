@@ -572,7 +572,9 @@
   {"id":"","label":"Enable model CPU offload","localized":"모델 CPU 오프로드 활성화","hint":"전체 모델을 GPU로 옮긴다. 여전히 GPU 메모리 사용률을 약간 낮춰주지만 생성 속도에는 무시할 수 있는 정도의 영향을 준다. 추가적인 메모리 절약을 위해서는 어텐션 슬라이싱과 함께 사용한다."},
   {"id":"","label":"Enable VAE slicing","localized":"VAE 슬라이싱 활성화","hint":"Decodes batch latents one image at a time with limited VRAM. 여러 이미지를 다룰 때 VAE 해독 시 작은 성능 향상이 있다. 어텐션 슬라이싱과 함께 사용한다."},
   {"id":"","label":"Enable VAE tiling","localized":"VAE 타일링 활성화","hint":"Divide large images into overlapping tiles with limited VRAM. 생성 시간이 약간 늘어날 수 있다. 어텐션 슬라이싱과 함께 사용한다."},
-  {"id":"","label":"Enable attention slicing","localized":"어텐션 슬라이싱 활성화","hint":"Performs attention computation in steps instead of all at once. 생성이 10% 느려지지만 메모리 사용률을 매우 크게 줄여준다."}
+  {"id":"","label":"Enable attention slicing","localized":"어텐션 슬라이싱 활성화","hint":"Performs attention computation in steps instead of all at once. 생성이 10% 느려지지만 메모리 사용률을 매우 크게 줄여준다."},
+  {"id":"","label":"Diffusers model loading variant","localized":"","hint":""},
+  {"id":"","label":"Diffusers VAE loading variant","localized":"","hint":""}
 ],
 "scripts": [
   {"id":"","label":"Script","localized":"스크립트","hint":""},

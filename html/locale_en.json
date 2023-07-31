@@ -572,7 +572,10 @@
   {"id":"","label":"Enable model CPU offload","localized":"","hint":"Transferring of entire models to the GPU, negligible impact on inference time while still providing some memory savings. Use with Enable Attention slicing for additional memory savings"},
   {"id":"","label":"Enable VAE slicing","localized":"","hint":"Decodes batch latents one image at a time with limited VRAM. Small performance boost in VAE decode on multi-image batches. Use with Enable Attention slicing"},
   {"id":"","label":"Enable VAE tiling","localized":"","hint":"Divide large images into overlapping tiles with limited VRAM. Might result in a minor increase in processing time. Use with Enable Attention Slicing"},
-  {"id":"","label":"Enable attention slicing","localized":"","hint":"Performs attention computation in steps instead of all at once. 10% slower inference times. Greatly reduces memory usage. Best used, period"}
+  {"id":"","label":"Enable attention slicing","localized":"","hint":"Performs attention computation in steps instead of all at once. 10% slower inference times. Greatly reduces memory usage. Best used, period"},
+  {"id":"","label":"Diffusers model loading variant","localized":"","hint":""},
+  {"id":"","label":"Diffusers VAE loading variant","localized":"","hint":""}
+
 ],
 "scripts": [
   {"id":"","label":"Script","localized":"","hint":""},

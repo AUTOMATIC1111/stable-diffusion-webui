@@ -181,8 +181,13 @@ def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
         "torch_dtype": devices.dtype_vae,
         "use_safetensors": True,
     }
-    if devices.dtype_vae == torch.float16:
-        diffusers_load_config['variant'] = 'fp16'
+    if shared.opts.diffusers_vae_load_variant == 'default':
+        if devices.dtype_vae == torch.float16:
+            diffusers_load_config['variant'] = 'fp16'
+    elif shared.opts.diffusers_vae_load_variant == 'fp32':
+        pass
+    else:
+        diffusers_load_config['variant'] = shared.opts.diffusers_vae_load_variant
 
     if shared.opts.diffusers_vae_upcast != 'default':
         diffusers_load_config['force_upcast'] = True if shared.opts.diffusers_vae_upcast == 'true' else False
