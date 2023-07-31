@@ -6,7 +6,7 @@ import modules.textual_inversion.textual_inversion
 from modules import devices, sd_hijack_optimizations, shared, script_callbacks, errors, sd_unet
 from modules.hypernetworks import hypernetwork
 from modules.shared import cmd_opts
-from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr
+from modules import sd_hijack_clip, sd_hijack_open_clip, sd_hijack_unet, sd_hijack_xlmr, xlmr, sd_hijack_inpainting
 
 import ldm.modules.attention
 import ldm.modules.diffusionmodules.model
@@ -34,6 +34,8 @@ ldm.modules.attention.print = shared.ldm_print
 ldm.modules.diffusionmodules.model.print = shared.ldm_print
 ldm.util.print = shared.ldm_print
 ldm.models.diffusion.ddpm.print = shared.ldm_print
+
+sd_hijack_inpainting.do_inpainting_hijack()
 
 optimizers = []
 current_optimizer: sd_hijack_optimizations.SdOptimization = None

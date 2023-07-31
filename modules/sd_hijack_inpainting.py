@@ -91,4 +91,5 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
     return x_prev, pred_x0, e_t
 
 
-ldm.models.diffusion.plms.PLMSSampler.p_sample_plms = p_sample_plms
+def do_inpainting_hijack():
+    ldm.models.diffusion.plms.PLMSSampler.p_sample_plms = p_sample_plms
