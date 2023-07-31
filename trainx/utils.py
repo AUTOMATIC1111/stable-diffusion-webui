@@ -5,6 +5,7 @@
 # @Site    : 
 # @File    : utils.py
 # @Software: Hifive
+import hashlib
 import os
 from enum import IntEnum
 from worker.task_recv import Tmp
@@ -30,6 +31,17 @@ UserModelLocation = {
     ModelType.CheckPoint: 'user-models/Stable-diffusion',
     ModelType.Lora: 'user-models/Lora'
 }
+
+
+def calculate_sha256(filename, size=0):
+    hash_sha256 = hashlib.sha256()
+    blksize = size if size > 0 else 1024 * 1024
+
+    with open(filename, "rb") as f:
+        for chunk in iter(lambda: f.read(blksize), b""):
+            hash_sha256.update(chunk)
+
+    return hash_sha256.hexdigest()
 
 
 def get_model_local_path(remoting_path: str, model_type: ModelType):

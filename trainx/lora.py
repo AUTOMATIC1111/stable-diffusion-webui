@@ -20,6 +20,7 @@ from .typex import TrainLoraTask
 from .utils import upload_files
 from worker.task_send import RedisSender
 from multiprocessing import Process
+from trainx.utils import calculate_sha256
 from modules.devices import torch_gc
 
 
@@ -156,7 +157,8 @@ def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
             dirname = os.path.dirname(m)
             basename = os.path.basename(m)
             without, ex = os.path.splitext(basename)
-            sha256 = SHA256.new(basename.encode()).hexdigest()
+            # sha256 = SHA256.new(basename.encode()).hexdigest()
+            sha256 = calculate_sha256(m, 1024*1024*512)
             array = without.split('-')
             epoch = array[-1] if len(array) > 1 else ''
             hash_file_path = os.path.join(dirname, sha256 + ex)

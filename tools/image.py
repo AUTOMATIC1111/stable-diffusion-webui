@@ -71,7 +71,7 @@ def compress_image(infile, outfile, kb=400, step=25, quality=70):
         shutil.copy(infile, outfile)
 
 
-def thumbnail(infile, outfile, scale=0.1, w=0, h=0, quality=70):
+def thumbnail(infile, outfile, scale=0.4, w=0, h=0, quality=70):
     img = Image.open(infile)
     if w == 0 or h == 0:
         w, h = img.size

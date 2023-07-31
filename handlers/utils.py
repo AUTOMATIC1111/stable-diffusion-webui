@@ -263,6 +263,10 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
             filename = f"{task_id}{ex}"
             out_obj = out_grid_image
         elif n <= proc.index_of_end_image:
+            seed = proc.all_seeds[n - proc.index_of_first_image]
+            sub_seed = proc.all_subseeds[n - proc.index_of_first_image]
+
+            print(f"seed:{seed},sub_seed:{sub_seed}")
             filename = f"{task_id}-{n}{ex}"
             out_obj = out_image
         else:
