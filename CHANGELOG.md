@@ -2,10 +2,13 @@
 
 ## Update for 2023-07-30
 
+Smaller release, but IMO worth a post...
+
 - diffusers:
-  - update packages
+  - sd-xl lora's are now supported!
   - memory optimizations: Enhanced sequential CPU offloading, model CPU offload, FP16 VAE
     - significant impact if running SD-XL (for example, but applies to any model) with only 8GB VRAM
+  - update packages
 - minor bugfixes
 
 ## Update for 2023-07-26
