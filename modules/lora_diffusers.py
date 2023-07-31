@@ -10,6 +10,7 @@ lora_state = { # TODO Lora state for Diffusers
 def unload_diffusers_lora():
     try:
         pipe = shared.sd_model
+        pipe.unload_lora_weights()
         lora_state['active'] = False
         lora_state['loaded'] = 0
         pipe._remove_text_encoder_monkey_patch() # pylint: disable=W0212
@@ -24,7 +25,7 @@ def unload_diffusers_lora():
 def load_diffusers_lora(name, lora, strength = 1.0):
     try:
         pipe = shared.sd_model
-        pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
+        pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True, lora_scale=strength)
         lora_state['active'] = True
         lora_state['loaded'] += 1
         lora_state['multiplier'] = strength

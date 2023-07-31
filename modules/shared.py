@@ -408,6 +408,8 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_vae_slicing": OptionInfo(True, "Enable VAE slicing"),
     "diffusers_vae_tiling": OptionInfo(False, "Enable VAE tiling"),
     "diffusers_attention_slicing": OptionInfo(False, "Enable attention slicing"),
+    "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
+    "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
     # "diffusers_force_zeros": OptionInfo(False, "Force zeros for prompts when empty"),
     # "diffusers_aesthetics_score": OptionInfo(6.0, "Require aesthetic score", gr.Slider, {"minimum": 0, "maximum": 10, "step": 0.1}),
 }))

@@ -181,8 +181,13 @@ def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
         "torch_dtype": devices.dtype_vae,
         "use_safetensors": True,
     }
-    if devices.dtype_vae == torch.float16:
-        diffusers_load_config['variant'] = 'fp16'
+    if shared.opts.diffusers_vae_load_variant == 'default':
+        if devices.dtype_vae == torch.float16:
+            diffusers_load_config['variant'] = 'fp16'
+    elif shared.opts.diffusers_vae_load_variant == 'fp32':
+        pass
+    else:
+        diffusers_load_config['variant'] = shared.opts.diffusers_vae_load_variant
 
     if shared.opts.diffusers_vae_upcast != 'default':
         diffusers_load_config['force_upcast'] = True if shared.opts.diffusers_vae_upcast == 'true' else False
@@ -232,7 +237,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         vae_source = "from function argument"
     if loaded_vae_file == vae_file:
         return
-    if shared.backend == shared.Backend.ORIGINAL or not sd_model.has_accelerate:
+    if not sd_model.has_accelerate:
         if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
             lowvram.send_everything_to_cpu()
         else:
@@ -246,7 +251,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         sd_hijack.model_hijack.hijack(sd_model)
         script_callbacks.model_loaded_callback(sd_model)
 
-    if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and (shared.backend == shared.Backend.ORIGINAL or not sd_model.has_accelerate):
+    if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
         sd_model.to(devices.device)
     shared.log.info(f"VAE weights loaded: {vae_file}")
     return sd_model
