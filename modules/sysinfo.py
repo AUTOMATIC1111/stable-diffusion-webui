@@ -109,11 +109,15 @@ def format_traceback(tb):
     return [[f"{x.filename}, line {x.lineno}, {x.name}", x.line] for x in traceback.extract_tb(tb)]
 
 
+def format_exception(e, tb):
+    return {"exception": str(e), "traceback": format_traceback(tb)}
+
+
 def get_exceptions():
     try:
         from modules import errors
 
-        return [{"exception": str(e), "traceback": format_traceback(tb)} for e, tb in reversed(errors.exception_records)]
+        return list(reversed(errors.exception_records))
     except Exception as e:
         return str(e)
 
