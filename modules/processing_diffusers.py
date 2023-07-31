@@ -7,6 +7,7 @@ import modules.sd_models as sd_models
 import modules.images as images
 from modules.lora_diffusers import lora_state, unload_diffusers_lora
 from modules.processing import StableDiffusionProcessing
+from compel import Compel, ReturnedEmbeddingsType
 
 
 try:
@@ -23,6 +24,28 @@ def encode_prompt(encoder, prompt):
     shared.log.debug(f'Diffuser encoder: {encoder.__class__.__name__} dict={getattr(cfg, "vocab_size", None)} layers={getattr(cfg, "num_hidden_layers", None)} tokens={getattr(cfg, "max_position_embeddings", None)}')
     embeds = prompt
     return embeds
+    
+def compel_encode_prompt(pipeline, prompt, negative_prompt):
+    compel = Compel(
+    truncate_long_prompts=True,
+    tokenizer=[
+        pipeline.tokenizer,
+        pipeline.tokenizer_2
+    ],
+    text_encoder=[
+        pipeline.text_encoder,
+        pipeline.text_encoder_2
+    ],
+    returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
+    requires_pooled=[
+        False,
+        True
+    ]
+    )
+    prompt_embed, pooled = compel(prompt)
+    negative_embed, negative_pooled = compel(negative_prompt)
+    [prompt_embed, negative_embed] = compel.pad_conditioning_tensors_to_same_length([prompt_embed, negative_embed])
+    return prompt_embed, pooled, negative_embed, negative_pooled
 
 
 def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_prompts):
@@ -58,16 +81,22 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         possible = signature.parameters.keys()
         generator_device = devices.cpu if shared.opts.diffusers_generator_device == "cpu" else shared.device
         generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
+        prompt_embed = None
+        pooled = None
+        negative_embed = None
+        negative_pooled = None
+        if shared.opts.data['prompt_attention'] == 'Compel parser' and (shared.opts.diffusers_pipeline == shared.pipelines[1] or shared.opts.diffusers_pipeline == shared.pipelines[7]): #Gated for SDXL only
+            prompt_embed, pooled, negative_embed, negative_pooled = compel_encode_prompt(model, prompt, negative_prompt)
         if 'prompt' in possible:
-            if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible:
-                # args['prompt_embeds'] = encode_prompt(model, prompt)
-                args['prompt'] = prompt
+            if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
+                args['prompt_embeds'] = prompt_embed
+                args['pooled_prompt_embeds'] = pooled
             else:
                 args['prompt'] = prompt
         if 'negative_prompt' in possible:
-            if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible:
-                # args['negative_prompt_embeds'] = encode_prompt(model, negative_prompt)
-                args['negative_prompt'] = negative_prompt
+            if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible and negative_embed is not None:
+                args['negative_prompt_embeds'] = negative_embed
+                args['negative_pooled_prompt_embeds'] = negative_pooled
             else:
                 args['negative_prompt'] = negative_prompt
         if 'num_inference_steps' in possible:
@@ -89,6 +118,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 args[arg] = kwargs[arg]
             else:
                 pass
+        if prompt_embed is not None: #Cannot pass prompts when passing embeds
+          del args['prompt_2']
+          del args['negative_prompt_2']
+        
                 # shared.log.debug(f'Diffuser not supported: pipeline={pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} arg={arg}')
         # shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} possible={possible}')
         clean = args.copy()
