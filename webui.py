@@ -5,7 +5,7 @@ import time
 import importlib
 import signal
 import re
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
@@ -132,12 +132,41 @@ def wait_on_server(demo=None):
             break
 
 
+def api_middleware(app: FastAPI):
+    @app.middleware("http")
+    async def log_and_time(req: Request, call_next):
+        ts = time.time()
+        res: Response = await call_next(req)
+        duration = str(round(time.time() - ts, 4))
+        res.headers["X-Process-Time"] = duration
+        endpoint = req.scope.get('path', 'err')
+        if shared.cmd_opts.api_log and endpoint.startswith('/sdapi'):
+            print('API {t} {code} {prot}/{ver} {method} {endpoint} {cli} {duration}'.format(
+                t = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"),
+                code = res.status_code,
+                ver = req.scope.get('http_version', '0.0'),
+                cli = req.scope.get('client', ('0:0.0.0', 0))[0],
+                prot = req.scope.get('scheme', 'err'),
+                method = req.scope.get('method', 'err'),
+                endpoint = endpoint,
+                duration = duration,
+            ))
+        return res
+
+
+def hijacked_create_app(*args, **kwargs) -> FastAPI:
+    app = gradio.routes.App.create_app(*args, **kwargs)
+    api_middleware(app)
+    return app
+
+
 def api_only():
     initialize()
 
     app = FastAPI()
     setup_cors(app)
     app.add_middleware(GZipMiddleware, minimum_size=1000)
+    api_middleware(app)
     api = create_api(app)
 
     modules.script_callbacks.app_started_callback(None, app)
@@ -154,6 +183,9 @@ def webui():
             ui_tempdir.cleanup_tmpdr()
 
         shared.demo = modules.ui.create_ui()
+
+        if launch_api:
+            gradio.routes.App.create_app = hijacked_create_app
 
         app, local_url, share_url = shared.demo.queue(default_enabled=False).launch(
             share=cmd_opts.share,
