@@ -139,7 +139,7 @@ def check_run_python(code: str) -> bool:
     return result.returncode == 0
 
 
-def git_fix_workspace(dir):
+def git_fix_workspace(dir, name):
     run(f'"{git}" -C "{dir}" fetch --refetch --no-auto-gc', f"Fetching all contents for {name}", f"Couldn't fetch {name}", live=True)
     run(f'"{git}" -C "{dir}" gc --aggressive --prune=now', f"Pruning {name}", f"Couldn't prune {name}", live=True)
     return
@@ -158,7 +158,7 @@ def git_clone(url, dir, name, commithash=None):
                 return
         except Exception:
             print(f"Unable to determine {name}'s hash, attempting autofix...")
-            git_fix_workspace(dir)
+            git_fix_workspace(dir, name)
             current_hash = subprocess.check_output([git, "-C", dir, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
             if current_hash == commithash:
                 return
@@ -169,7 +169,7 @@ def git_clone(url, dir, name, commithash=None):
             run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
         except RuntimeError:
             print(f"Unable to checkout {name} with hash {commithash}, attempting autofix...")
-            git_fix_workspace(dir)
+            git_fix_workspace(dir, name)
             run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
 
         return
