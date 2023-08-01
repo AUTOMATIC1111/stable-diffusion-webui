@@ -18,7 +18,8 @@ import modules.scripts as scripts
 from modules import images, devices, extra_networks, masking, shared
 from modules.processing import (
     StableDiffusionProcessing, Processed, apply_overlay, apply_color_correction,
-    get_fixed_seed, create_random_tensors, create_infotext, setup_color_correction
+    get_fixed_seed, create_random_tensors, create_infotext, setup_color_correction,
+    process_images
 )
 from modules.sd_models import CheckpointInfo
 from modules.shared import Shared, opts, state
@@ -217,7 +218,6 @@ def get_diffusers_sd_model(sampler_name, enable_caching, openvino_device, mode):
         torch._dynamo.reset()
         openvino_clear_caches()
         curr_dir_path = os.getcwd()
-        #model_path = "/models/Stable-diffusion/"
         checkpoint_name = shared.opts.sd_model_checkpoint.split(" ")[0]
         checkpoint_path = os.path.join(curr_dir_path, 'models', 'Stable-diffusion', checkpoint_name)
         config_name = checkpoint_name.split(".")[0] + ".yaml"
@@ -228,7 +228,6 @@ def get_diffusers_sd_model(sampler_name, enable_caching, openvino_device, mode):
         elif (mode == 2):
             sd_model = StableDiffusionInpaintPipeline(**sd_model.components)
         checkpoint_info = CheckpointInfo(checkpoint_path)
-        #model_state.mode = mode
         sd_model.sd_checkpoint_info = checkpoint_info
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
         sd_model.safety_checker = None
@@ -341,6 +340,9 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
 def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_caching, openvino_device, mode) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
+    if p.enable_hr:
+        return process_images(p)
+
     if type(p.prompt) == list:
         assert(len(p.prompt) > 0)
     else:
@@ -370,6 +372,9 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
 
     if p.scripts is not None:
         p.scripts.process(p)
+
+    if 'ControlNet' in p.extra_generation_params:
+        return process_images(p)
 
     infotexts = []
     output_images = []
@@ -422,7 +427,7 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
             if ('lora' in modules.extra_networks.extra_network_registry):
                 import lora
                 for lora_model in lora.loaded_loras:
-                    shared.sd_diffusers_model.load_lora_weights(os.getcwd() + "/models/Lora/", weight_name=lora_model.name + ".safetensors")
+                    shared.sd_diffusers_model.load_lora_weights(os.path.join(os.getcwd(), "models", "Lora"), weight_name=lora_model.name + ".safetensors")
 
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
