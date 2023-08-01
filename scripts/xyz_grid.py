@@ -11,7 +11,7 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, sd_samplers, processing, sd_models, sd_vae, sd_samplers_kdiffusion
+from modules import images, sd_samplers, processing, sd_models, sd_vae, sd_samplers_kdiffusion, errors
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, state
 import modules.shared as shared
@@ -651,7 +651,12 @@ class Script(scripts.Script):
             y_opt.apply(pc, y, ys)
             z_opt.apply(pc, z, zs)
 
-            res = process_images(pc)
+            try:
+                res = process_images(pc)
+            except Exception as e:
+                errors.display(e, "generating image for xyz plot")
+
+                res = Processed(p, [], p.seed, "")
 
             # Sets subgrid infotexts
             subgrid_index = 1 + iz
