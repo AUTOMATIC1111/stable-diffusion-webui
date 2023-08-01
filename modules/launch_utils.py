@@ -152,27 +152,25 @@ def git_clone(url, dir, name, commithash=None):
         if commithash is None:
             return
 
-        current_hash = run(f'"{git}" -C "{dir}" rev-parse HEAD', None, f"Couldn't determine {name}'s hash: {commithash}", live=False).strip()
-        if current_hash == commithash:
-            return
+        try:
+            current_hash = subprocess.check_output([git, "-C", dir, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
+            if current_hash == commithash:
+                return
+        except RuntimeError:
+            print(f"Unable to determine {name}'s hash, attempting autofix...")
+            git_fix_workspace(dir)
+            current_hash = subprocess.check_output([git, "-C", dir, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
+            if current_hash == commithash:
+                return
 
         run(f'"{git}" -C "{dir}" fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
 
-        if commithash is not None:
-            try:
-                run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
-            except RuntimeError:
-                print(f"Unable to checkout {name} with hash {commithash}, attempting autofix...")
-                git_fix_workspace(dir)
-                run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
-        else:
-            try:
-                run(f'"{git}" -C "{dir}" reset --hard FETCH_HEAD', f"Checking out latest commit for {name}...", f"Couldn't checkout latest commit for {name}", live=True)
-            except RuntimeError:
-                print(f"Unable to checkout {name}, attempting autofix...")
-                git_fix_workspace(dir)
-                run(f'"{git}" -C "{dir}" reset --hard FETCH_HEAD', f"Checking out latest commit for {name}...", f"Couldn't checkout latest commit for {name}", live=True)
-
+        try:
+            run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
+        except RuntimeError:
+            print(f"Unable to checkout {name} with hash {commithash}, attempting autofix...")
+            git_fix_workspace(dir)
+            run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
 
         return
 
