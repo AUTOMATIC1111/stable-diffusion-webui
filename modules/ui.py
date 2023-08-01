@@ -12,7 +12,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, sd_vae, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path
 from modules.ui_common import create_refresh_button
@@ -1083,58 +1083,7 @@ def create_ui():
             outputs=[html, generation_info, html2],
         )
 
-    def update_interp_description(value):
-        interp_description_css = "<p style='margin-bottom: 2.5em'>{}</p>"
-        interp_descriptions = {
-            "No interpolation": interp_description_css.format("No interpolation will be used. Requires one model; A. Allows for format conversion and VAE baking."),
-            "Weighted sum": interp_description_css.format("A weighted sum will be used for interpolation. Requires two models; A and B. The result is calculated as A * (1 - M) + B * M"),
-            "Add difference": interp_description_css.format("The difference between the last two models will be added to the first. Requires three models; A, B and C. The result is calculated as A + (B - C) * M")
-        }
-        return interp_descriptions[value]
-
-    with gr.Blocks(analytics_enabled=False) as modelmerger_interface:
-        with gr.Row().style(equal_height=False):
-            with gr.Column(variant='compact'):
-                interp_description = gr.HTML(value=update_interp_description("Weighted sum"), elem_id="modelmerger_interp_description")
-
-                with FormRow(elem_id="modelmerger_models"):
-                    primary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_primary_model_name", label="Primary model (A)")
-                    create_refresh_button(primary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_A")
-
-                    secondary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_secondary_model_name", label="Secondary model (B)")
-                    create_refresh_button(secondary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_B")
-
-                    tertiary_model_name = gr.Dropdown(modules.sd_models.checkpoint_tiles(), elem_id="modelmerger_tertiary_model_name", label="Tertiary model (C)")
-                    create_refresh_button(tertiary_model_name, modules.sd_models.list_models, lambda: {"choices": modules.sd_models.checkpoint_tiles()}, "refresh_checkpoint_C")
-
-                custom_name = gr.Textbox(label="Custom Name (Optional)", elem_id="modelmerger_custom_name")
-                interp_amount = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Multiplier (M) - set to 0 to get model A', value=0.3, elem_id="modelmerger_interp_amount")
-                interp_method = gr.Radio(choices=["No interpolation", "Weighted sum", "Add difference"], value="Weighted sum", label="Interpolation Method", elem_id="modelmerger_interp_method")
-                interp_method.change(fn=update_interp_description, inputs=[interp_method], outputs=[interp_description])
-
-                with FormRow():
-                    checkpoint_format = gr.Radio(choices=["ckpt", "safetensors"], value="safetensors", label="Checkpoint format", elem_id="modelmerger_checkpoint_format")
-                    save_as_half = gr.Checkbox(value=False, label="Save as float16", elem_id="modelmerger_save_as_half")
-                    save_metadata = gr.Checkbox(value=True, label="Save metadata (.safetensors only)", elem_id="modelmerger_save_metadata")
-
-                with FormRow():
-                    with gr.Column():
-                        config_source = gr.Radio(choices=["A, B or C", "B", "C", "Don't"], value="A, B or C", label="Copy config from", type="index", elem_id="modelmerger_config_method")
-
-                    with gr.Column():
-                        with FormRow():
-                            bake_in_vae = gr.Dropdown(choices=["None"] + list(sd_vae.vae_dict), value="None", label="Bake in VAE", elem_id="modelmerger_bake_in_vae")
-                            create_refresh_button(bake_in_vae, sd_vae.refresh_vae_list, lambda: {"choices": ["None"] + list(sd_vae.vae_dict)}, "modelmerger_refresh_bake_in_vae")
-
-                with FormRow():
-                    discard_weights = gr.Textbox(value="", label="Discard weights with matching name", elem_id="modelmerger_discard_weights")
-
-                with gr.Row():
-                    modelmerger_merge = gr.Button(elem_id="modelmerger_merge", value="Merge", variant='primary')
-
-            with gr.Column(variant='compact', elem_id="modelmerger_results_container"):
-                with gr.Group(elem_id="modelmerger_results_panel"):
-                    modelmerger_result = gr.HTML(elem_id="modelmerger_result", show_label=False)
+    modelmerger_ui = ui_checkpoint_merger.UiCheckpointMerger()
 
     with gr.Blocks(analytics_enabled=False) as train_interface:
         with gr.Row().style(equal_height=False):
@@ -1464,7 +1413,7 @@ def create_ui():
         (img2img_interface, "img2img", "img2img"),
         (extras_interface, "Extras", "extras"),
         (pnginfo_interface, "PNG Info", "pnginfo"),
-        (modelmerger_interface, "Checkpoint Merger", "modelmerger"),
+        (modelmerger_ui.blocks, "Checkpoint Merger", "modelmerger"),
         (train_interface, "Train", "train"),
     ]
 
@@ -1516,48 +1465,10 @@ def create_ui():
         settings.text_settings.change(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
         demo.load(fn=update_image_cfg_scale_visibility, inputs=[], outputs=[image_cfg_scale])
 
-        def modelmerger(*args):
-            try:
-                results = modules.extras.run_modelmerger(*args)
-            except Exception as e:
-                errors.report("Error loading/saving model file", exc_info=True)
-                modules.sd_models.list_models()  # to remove the potentially missing models from the list
-                return [*[gr.Dropdown.update(choices=modules.sd_models.checkpoint_tiles()) for _ in range(4)], f"Error merging checkpoints: {e}"]
-            return results
-
-        modelmerger_merge.click(fn=lambda: '', inputs=[], outputs=[modelmerger_result])
-        modelmerger_merge.click(
-            fn=wrap_gradio_gpu_call(modelmerger, extra_outputs=lambda: [gr.update() for _ in range(4)]),
-            _js='modelmerger',
-            inputs=[
-                dummy_component,
-                primary_model_name,
-                secondary_model_name,
-                tertiary_model_name,
-                interp_method,
-                interp_amount,
-                save_as_half,
-                custom_name,
-                checkpoint_format,
-                config_source,
-                bake_in_vae,
-                discard_weights,
-                save_metadata,
-            ],
-            outputs=[
-                primary_model_name,
-                secondary_model_name,
-                tertiary_model_name,
-                settings.component_dict['sd_model_checkpoint'],
-                modelmerger_result,
-            ]
-        )
+        modelmerger_ui.setup_ui(dummy_component=dummy_component, sd_model_checkpoint_component=settings.component_dict['sd_model_checkpoint'])
 
     loadsave.dump_defaults()
     demo.ui_loadsave = loadsave
-
-    # Required as a workaround for change() event not triggering when loading values from ui-config.json
-    interp_description.value = update_interp_description(interp_method.value)
 
     return demo
 
