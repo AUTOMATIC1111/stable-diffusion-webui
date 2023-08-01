@@ -101,11 +101,11 @@ def get_diffusers_sd_model(sampler_name, enable_caching, openvino_device, mode):
         model_path = "/models/Stable-diffusion/"
         checkpoint_name = shared.opts.sd_model_checkpoint.split(" ")[0]
         checkpoint_path = curr_dir_path + model_path + checkpoint_name
-        sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path)
+        sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, load_safety_checker=False)
         if (mode == 1):
-            sd_model = StableDiffusionImg2ImgPipeline.from_single_file(checkpoint_path)
+            sd_model = StableDiffusionImg2ImgPipeline(**sd_model.components)
         elif (mode == 2):
-            sd_model = StableDiffusionInpaintPipeline.from_pretrained(curr_dir_path + model_path, **sd_model.components, local_files_only=True)
+            sd_model = StableDiffusionInpaintPipeline(**sd_model.components)
         checkpoint_info = CheckpointInfo(checkpoint_path)
         #model_state.mode = mode
         sd_model.sd_checkpoint_info = checkpoint_info
