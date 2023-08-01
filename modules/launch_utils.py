@@ -156,7 +156,7 @@ def git_clone(url, dir, name, commithash=None):
             current_hash = subprocess.check_output([git, "-C", dir, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
             if current_hash == commithash:
                 return
-        except RuntimeError:
+        except Exception:
             print(f"Unable to determine {name}'s hash, attempting autofix...")
             git_fix_workspace(dir)
             current_hash = subprocess.check_output([git, "-C", dir, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
