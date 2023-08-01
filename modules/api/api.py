@@ -1,19 +1,17 @@
 import base64
 import io
-import os
 import time
-import datetime
 import uvicorn
 import gradio as gr
 from threading import Lock
 from io import BytesIO
-from fastapi import APIRouter, Depends, FastAPI
+from fastapi import APIRouter, Depends, FastAPI, Response
+from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items
+from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, restart, shared_items
 from modules.api import models
 from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
