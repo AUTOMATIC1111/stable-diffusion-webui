@@ -67,7 +67,7 @@ def _summarize_chunk(
     max_score, _ = torch.max(attn_weights, -1, keepdim=True)
     max_score = max_score.detach()
     exp_weights = torch.exp(attn_weights - max_score)
-    exp_values = torch.bmm(exp_weights, value)
+    exp_values = torch.bmm(exp_weights, value) if query.device.type == 'mps' else torch.bmm(exp_weights, value.to(exp_weights.dtype)).to(value.dtype)
     max_score = max_score.squeeze(-1)
     return AttnChunk(exp_values, exp_weights.sum(dim=-1), max_score)
 
@@ -129,7 +129,7 @@ def _get_attention_scores_no_kv_chunking(
     )
     attn_probs = attn_scores.softmax(dim=-1)
     del attn_scores
-    hidden_states_slice = torch.bmm(attn_probs, value)
+    hidden_states_slice = torch.bmm(attn_probs, value) if query.device.type == 'mps' else torch.bmm(attn_probs, value.to(attn_probs.dtype)).to(value.dtype)
     return hidden_states_slice
 
 
@@ -179,7 +179,7 @@ def efficient_dot_product_attention(
             chunk_idx,
             min(query_chunk_size, q_tokens)
         )
-    
+
     summarize_chunk: SummarizeChunk = partial(_summarize_chunk, scale=scale)
     summarize_chunk: SummarizeChunk = partial(checkpoint, summarize_chunk) if use_checkpoint else summarize_chunk
     compute_query_chunk_attn: ComputeQueryChunkAttn = partial(
@@ -201,14 +201,15 @@ def efficient_dot_product_attention(
             key=key,
             value=value,
         )
-    
-    # TODO: maybe we should use torch.empty_like(query) to allocate storage in-advance,
-    # and pass slices to be mutated, instead of torch.cat()ing the returned slices
-    res = torch.cat([
-        compute_query_chunk_attn(
+
+    res = torch.zeros_like(query)
+    for i in range(math.ceil(q_tokens / query_chunk_size)):
+        attn_scores = compute_query_chunk_attn(
             query=get_query_chunk(i * query_chunk_size),
             key=key,
             value=value,
-        ) for i in range(math.ceil(q_tokens / query_chunk_size))
-    ], dim=1)
+        )
+
+        res[:, i * query_chunk_size:i * query_chunk_size + attn_scores.shape[1], :] = attn_scores
+
     return res

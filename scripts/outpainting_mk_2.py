@@ -7,9 +7,9 @@ import modules.scripts as scripts
 import gradio as gr
 from PIL import Image, ImageDraw
 
-from modules import images, processing, devices
+from modules import images
 from modules.processing import Processed, process_images
-from modules.shared import opts, cmd_opts, state
+from modules.shared import opts, state
 
 
 # this function is taken from https://github.com/parlance-zz/g-diffuser-bot
@@ -72,7 +72,7 @@ def get_matched_noise(_np_src_image, np_mask_rgb, noise_q=1, color_variation=0.0
     height = _np_src_image.shape[1]
     num_channels = _np_src_image.shape[2]
 
-    np_src_image = _np_src_image[:] * (1. - np_mask_rgb)
+    _np_src_image[:] * (1. - np_mask_rgb)
     np_mask_grey = (np.sum(np_mask_rgb, axis=2) / 3.)
     img_mask = np_mask_grey > 1e-6
     ref_mask = np_mask_grey < 1e-3
@@ -145,7 +145,6 @@ class Script(scripts.Script):
         process_width = p.width
         process_height = p.height
 
-        p.mask_blur = mask_blur*4
         p.inpaint_full_res = False
         p.inpainting_fill = 1
         p.do_not_save_samples = True
@@ -155,6 +154,19 @@ class Script(scripts.Script):
         right = pixels if "right" in direction else 0
         up = pixels if "up" in direction else 0
         down = pixels if "down" in direction else 0
+
+        if left > 0 or right > 0:
+            mask_blur_x = mask_blur
+        else:
+            mask_blur_x = 0
+
+        if up > 0 or down > 0:
+            mask_blur_y = mask_blur
+        else:
+            mask_blur_y = 0
+
+        p.mask_blur_x = mask_blur_x*4
+        p.mask_blur_y = mask_blur_y*4
 
         init_img = p.init_images[0]
         target_w = math.ceil((init_img.width + left + right) / 64) * 64
@@ -191,10 +203,10 @@ class Script(scripts.Script):
                 mask = Image.new("RGB", (process_res_w, process_res_h), "white")
                 draw = ImageDraw.Draw(mask)
                 draw.rectangle((
-                    expand_pixels + mask_blur if is_left else 0,
-                    expand_pixels + mask_blur if is_top else 0,
-                    mask.width - expand_pixels - mask_blur if is_right else res_w,
-                    mask.height - expand_pixels - mask_blur if is_bottom else res_h,
+                    expand_pixels + mask_blur_x if is_left else 0,
+                    expand_pixels + mask_blur_y if is_top else 0,
+                    mask.width - expand_pixels - mask_blur_x if is_right else res_w,
+                    mask.height - expand_pixels - mask_blur_y if is_bottom else res_h,
                 ), fill="black")
 
                 np_image = (np.asarray(img) / 255.0).astype(np.float64)
@@ -224,10 +236,10 @@ class Script(scripts.Script):
             latent_mask = Image.new("RGB", (p.width, p.height), "white")
             draw = ImageDraw.Draw(latent_mask)
             draw.rectangle((
-                expand_pixels + mask_blur * 2 if is_left else 0,
-                expand_pixels + mask_blur * 2 if is_top else 0,
-                mask.width - expand_pixels - mask_blur * 2 if is_right else res_w,
-                mask.height - expand_pixels - mask_blur * 2 if is_bottom else res_h,
+                expand_pixels + mask_blur_x * 2 if is_left else 0,
+                expand_pixels + mask_blur_y * 2 if is_top else 0,
+                mask.width - expand_pixels - mask_blur_x * 2 if is_right else res_w,
+                mask.height - expand_pixels - mask_blur_y * 2 if is_bottom else res_h,
             ), fill="black")
             p.latent_mask = latent_mask
 
@@ -275,7 +287,7 @@ class Script(scripts.Script):
 
         if opts.samples_save:
             for img in all_processed_images:
-                images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.grid_format, info=res.info, p=p)
+                images.save_image(img, p.outpath_samples, "", res.seed, p.prompt, opts.samples_format, info=res.info, p=p)
 
         if opts.grid_save and not unwanted_grid_because_of_img_count:
             images.save_image(combined_grid_image, p.outpath_grids, "grid", res.seed, p.prompt, opts.grid_format, info=res.info, short_filename=not opts.grid_extended_filename, grid=True, p=p)

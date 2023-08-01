@@ -6,23 +6,21 @@ from tqdm import trange
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import processing, shared, sd_samplers, prompt_parser
-from modules.processing import Processed
-from modules.shared import opts, cmd_opts, state
+from modules import processing, shared, sd_samplers, sd_samplers_common
 
 import torch
 import k_diffusion as K
-
-from PIL import Image
-from torch import autocast
-from einops import rearrange, repeat
-
 
 def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
     x = p.init_latent
 
     s_in = x.new_ones([x.shape[0]])
-    dnw = K.external.CompVisDenoiser(shared.sd_model)
+    if shared.sd_model.parameterization == "v":
+        dnw = K.external.CompVisVDenoiser(shared.sd_model)
+        skip = 1
+    else:
+        dnw = K.external.CompVisDenoiser(shared.sd_model)
+        skip = 0
     sigmas = dnw.get_sigmas(steps).flip(0)
 
     shared.state.sampling_steps = steps
@@ -37,7 +35,7 @@ def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
         image_conditioning = torch.cat([p.image_conditioning] * 2)
         cond_in = {"c_concat": [image_conditioning], "c_crossattn": [cond_in]}
 
-        c_out, c_in = [K.utils.append_dims(k, x_in.ndim) for k in dnw.get_scalings(sigma_in)]
+        c_out, c_in = [K.utils.append_dims(k, x_in.ndim) for k in dnw.get_scalings(sigma_in)[skip:]]
         t = dnw.sigma_to_t(sigma_in)
 
         eps = shared.sd_model.apply_model(x_in * c_in, t, cond=cond_in)
@@ -50,7 +48,7 @@ def find_noise_for_image(p, cond, uncond, cfg_scale, steps):
 
         x = x + d * dt
 
-        sd_samplers.store_latent(x)
+        sd_samplers_common.store_latent(x)
 
         # This shouldn't be necessary, but solved some VRAM issues
         del x_in, sigma_in, cond_in, c_out, c_in, t,
@@ -69,7 +67,12 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
     x = p.init_latent
 
     s_in = x.new_ones([x.shape[0]])
-    dnw = K.external.CompVisDenoiser(shared.sd_model)
+    if shared.sd_model.parameterization == "v":
+        dnw = K.external.CompVisVDenoiser(shared.sd_model)
+        skip = 1
+    else:
+        dnw = K.external.CompVisDenoiser(shared.sd_model)
+        skip = 0
     sigmas = dnw.get_sigmas(steps).flip(0)
 
     shared.state.sampling_steps = steps
@@ -84,7 +87,7 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
         image_conditioning = torch.cat([p.image_conditioning] * 2)
         cond_in = {"c_concat": [image_conditioning], "c_crossattn": [cond_in]}
 
-        c_out, c_in = [K.utils.append_dims(k, x_in.ndim) for k in dnw.get_scalings(sigma_in)]
+        c_out, c_in = [K.utils.append_dims(k, x_in.ndim) for k in dnw.get_scalings(sigma_in)[skip:]]
 
         if i == 1:
             t = dnw.sigma_to_t(torch.cat([sigmas[i] * s_in] * 2))
@@ -104,7 +107,7 @@ def find_noise_for_image_sigma_adjustment(p, cond, uncond, cfg_scale, steps):
         dt = sigmas[i] - sigmas[i - 1]
         x = x + d * dt
 
-        sd_samplers.store_latent(x)
+        sd_samplers_common.store_latent(x)
 
         # This shouldn't be necessary, but solved some VRAM issues
         del x_in, sigma_in, cond_in, c_out, c_in, t,
@@ -125,7 +128,7 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return is_img2img
 
-    def ui(self, is_img2img):     
+    def ui(self, is_img2img):
         info = gr.Markdown('''
         * `CFG Scale` should be 2 or lower.
         ''')
@@ -146,9 +149,9 @@ class Script(scripts.Script):
         sigma_adjustment = gr.Checkbox(label="Sigma adjustment for finding noise for image", value=False, elem_id=self.elem_id("sigma_adjustment"))
 
         return [
-            info, 
+            info,
             override_sampler,
-            override_prompt, original_prompt, original_negative_prompt, 
+            override_prompt, original_prompt, original_negative_prompt,
             override_steps, st,
             override_strength,
             cfg, randomness, sigma_adjustment,
@@ -188,17 +191,17 @@ class Script(scripts.Script):
                 self.cache = Cached(rec_noise, cfg, st, lat, original_prompt, original_negative_prompt, sigma_adjustment)
 
             rand_noise = processing.create_random_tensors(p.init_latent.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w, p=p)
-            
+
             combined_noise = ((1 - randomness) * rec_noise + randomness * rand_noise) / ((randomness**2 + (1-randomness)**2) ** 0.5)
-            
+
             sampler = sd_samplers.create_sampler(p.sampler_name, p.sd_model)
 
             sigmas = sampler.model_wrap.get_sigmas(p.steps)
-            
+
             noise_dt = combined_noise - (p.init_latent / sigmas[0])
-            
+
             p.seed = p.seed + 1
-            
+
             return sampler.sample_img2img(p, p.init_latent, noise_dt, conditioning, unconditional_conditioning, image_conditioning=p.image_conditioning)
 
         p.sample = sample_extra
@@ -213,4 +216,3 @@ class Script(scripts.Script):
         processed = processing.process_images(p)
 
         return processed
-
