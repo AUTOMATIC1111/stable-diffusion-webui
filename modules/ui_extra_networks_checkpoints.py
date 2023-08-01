@@ -23,6 +23,7 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             "search_term": self.search_terms_from_path(checkpoint.filename) + " " + (checkpoint.sha256 or ""),
             "onclick": '"' + html.escape(f"""return selectCheckpoint({quote_js(name)})""") + '"',
             "local_preview": f"{path}.{shared.opts.samples_format}",
+            "metadata": checkpoint.metadata,
             "sort_keys": {'default': index, **self.get_sort_keys(checkpoint.filename)},
         }
 
