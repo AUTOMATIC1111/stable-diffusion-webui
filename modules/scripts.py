@@ -124,7 +124,6 @@ class Script:
           - p.negative_prompts
           - p.seeds
           - p.subseeds
-
         **kwargs will have same items as process_batch, and also:
           - batch_number - index of current batch, from 0 to number of batches-1
         """
