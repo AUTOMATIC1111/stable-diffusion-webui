@@ -46,16 +46,19 @@ user can chain these patterns together, forming a filename that suits their use 
 | `[datetime]`                   | Datetime in "%Y%m%d%H%M%S"                           | 20221025013106                                                                                                                        |
 | `[datetime<Format>]`           | Datetime in specified \<Format\>                       | \[datetime<%Y%m%d_%H%M%S_%f>]<br>20221025_014350_733877                                                                                   |
 | `[datetime<Format><TimeZone>]` | Datetime at specific \<Time Zone\> in specified \<Format\> | \[datetime<%Y%m%d_%H%M%S_%f><Asia/Tokyo>]`<br>20221025_014350_733877                                                                                       |
+| `[job_timestamp]`  | job start time in "%Y%m%d%H%M%S" | 20221025013106 |
 | `[prompt_no_styles]`           | Prompt without Styles                                | 1girl,   white space, ((very important)), [not important], (some value_1.5), (whatever), the end<br>                                     |
 | `[prompt_spaces]`              | Prompt with Styles                                   | 1girl,   white space, ((very important)), [not important], (some value_1.5), (whatever), the end<br>,   (((crystals texture Hair)))，((( |
 | `[prompt]`                     | Prompt with Styles, `Space bar` replaced with`_`       | 1girl,\_\_\_white_space,\_((very\_important)),\_[not\_important],\_(some\_value\_1.5),\_(whatever),\_the\_end,\_(((crystals_texture_Hair)))，(((     |
 | `[prompt_words]`               | Prompt   with Styles, Bracket and Comma removed      | 1gir white space very important not important some value 1 5 whatever the   end crystals texture Hair ， extremely detailed           |
 | `[prompt_hash]` | The first 8 characters of the prompt's SHA-256 hash | 1girl -> 6362d0d2<br>(1girl:1.1) -> 0102e068 |
 | `[clip_skip]` | CLIP stop at last layers | 1 |
+| `denoising` | denoising_strength if applicable | 0.5 |
 | `[batch_number]` | the Nth image in a single batch job | BatchNo_[batch_number] -> BatchNo_3
 | `[batch_size]`   | Batch size | [1234567890,1234567891,1234567892,1234567893] -> 4
 | `[generation_number]` | the Nth image in an entire job | GenNo_[generation_number] -> GenNo_9
 | `[hasprompt<prompt1\|default><prompt2>...]` | if specified `prompt` is found in prompts then `prompt` will be added to filename, else `default` will be added to filename (`default` can be blank) | [hasprompt<girl><boy>] -> girl<br>[hasprompt<girl\|no girl><boy\|no boy>] -> girlno boy
+| `[user]` | the username used to login to webui when using `--gradio-auth username:pass` | username |
 
 If `<Format>` is blank or invalid, it will use the default time format "%Y%m%d%H%M%S"
 tip: you can use extra characters inside `<Format>` for punctuation, such as `_ -`
