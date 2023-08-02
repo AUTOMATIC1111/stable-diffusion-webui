@@ -444,8 +444,13 @@ def fix_seed(p):
     p.subseed = get_fixed_seed(p.subseed)
 
 
-def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0): # pylint: disable=unused-argument
-    index = position_in_batch + iteration * p.batch_size
+def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, index=None, all_negative_prompts=None): # pylint: disable=unused-argument
+    if index is None:
+        index = position_in_batch + iteration * p.batch_size
+
+    if all_negative_prompts is None:
+        all_negative_prompts = p.all_negative_prompts
+
     generation_params = {
         "Steps": p.steps,
         "Seed": all_seeds[index],
@@ -487,7 +492,7 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     generation_params['Token merging ratio hr'] = token_merging_ratio_hr if token_merging_ratio_hr != 0 else None
     generation_params.update(p.extra_generation_params)
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
-    negative_prompt_text = f"\nNegative prompt: {p.all_negative_prompts[index]}" if p.all_negative_prompts[index] else ""
+    negative_prompt_text = f"\nNegative prompt: {all_negative_prompts[index]}" if all_negative_prompts[index] else ""
     return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
 
 
@@ -599,9 +604,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     else:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
 
-    def infotext(iteration=0, position_in_batch=0):
-        return create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments, iteration, position_in_batch)
-
     if os.path.exists(shared.opts.embeddings_dir) and not p.do_not_reload_embeddings:
         model_hijack.embedding_db.load_textual_inversion_embeddings()
     if p.scripts is not None:
@@ -709,6 +711,17 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 devices.torch_gc()
             if p.scripts is not None:
                 p.scripts.postprocess_batch(p, x_samples_ddim, batch_number=n)
+            p.seeds = seeds
+            p.subseeds = subseeds
+            if p.scripts is not None:
+                p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
+                p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
+                batch_params = scripts.PostprocessBatchListArgs(list(x_samples_ddim))
+                p.scripts.postprocess_batch_list(p, batch_params, batch_number=n)
+                x_samples_ddim = batch_params.images
+
+            def infotext(index=0):
+                return create_infotext(p, p.prompts, p.seeds, p.subseeds, index=index, all_negative_prompts=p.negative_prompts)
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
@@ -721,9 +734,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_face_restoration:
                         orig = p.restore_faces
                         p.restore_faces = False
-                        info=infotext(n, i)
+                        info = infotext(i)
                         p.restore_faces = orig
-                        images.save_image(Image.fromarray(x_sample), path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-face-restoration")
+                        images.save_image(Image.fromarray(x_sample), path=p.outpath_samples, basename="", seed=p.seeds[i], prompt=p.prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-face-restoration")
                     p.ops.append('face')
                     x_sample = modules.face_restoration.restore_faces(x_sample)
                 image = Image.fromarray(x_sample)
@@ -735,16 +748,16 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_color_correction:
                         orig = p.color_corrections
                         p.color_corrections = None
-                        info=infotext(n, i)
+                        info = infotext(i)
                         p.color_corrections = orig
                         image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                        images.save_image(image_without_cc, path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-color-correction")
+                        images.save_image(image_without_cc, path=p.outpath_samples, basename="", seed=p.seeds[i], prompt=p.prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-color-correction")
                     p.ops.append('color')
                     image = apply_color_correction(p.color_corrections[i], image)
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
                 if shared.opts.samples_save and not p.do_not_save_samples:
-                    images.save_image(image, p.outpath_samples, "", seeds[i], prompts[i], shared.opts.samples_format, info=infotext(n, i), p=p)
-                text = infotext(n, i)
+                    images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], shared.opts.samples_format, info=infotext(i), p=p)
+                text = infotext(i)
                 infotexts.append(text)
                 image.info["parameters"] = text
                 output_images.append(image)
@@ -752,9 +765,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     image_mask = p.mask_for_overlay.convert('RGB')
                     image_mask_composite = Image.composite(image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(3, p.mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
                     if shared.opts.save_mask:
-                        images.save_image(image_mask, p.outpath_samples, "", seeds[i], prompts[i], shared.opts.samples_format, info=infotext(n, i), p=p, suffix="-mask")
+                        images.save_image(image_mask, p.outpath_samples, "", p.seeds[i], p.prompts[i], shared.opts.samples_format, info=infotext(i), p=p, suffix="-mask")
                     if shared.opts.save_mask_composite:
-                        images.save_image(image_mask_composite, p.outpath_samples, "", seeds[i], prompts[i], shared.opts.samples_format, info=infotext(n, i), p=p, suffix="-mask-composite")
+                        images.save_image(image_mask_composite, p.outpath_samples, "", p.seeds[i], p.prompts[i], shared.opts.samples_format, info=infotext(i), p=p, suffix="-mask-composite")
                     if shared.opts.return_mask:
                         output_images.append(image_mask)
                     if shared.opts.return_mask_composite:
