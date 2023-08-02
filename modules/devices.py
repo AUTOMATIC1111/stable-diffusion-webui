@@ -3,7 +3,7 @@ import contextlib
 from functools import lru_cache
 
 import torch
-from modules import errors
+from modules import errors, rng_philox
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -90,21 +90,56 @@ def cond_cast_float(input):
     return input.float() if unet_needs_upcast else input
 
 
+nv_rng = None
+
+
 def randn(seed, shape):
     from modules.shared import opts
 
-    torch.manual_seed(seed)
+    manual_seed(seed)
+
+    if opts.randn_source == "NV":
+        return torch.asarray(nv_rng.randn(shape), device=device)
+
     if opts.randn_source == "CPU" or device.type == 'mps':
         return torch.randn(shape, device=cpu).to(device)
+
     return torch.randn(shape, device=device)
+
+
+def randn_like(x):
+    from modules.shared import opts
+
+    if opts.randn_source == "NV":
+        return torch.asarray(nv_rng.randn(x.shape), device=x.device, dtype=x.dtype)
+
+    if opts.randn_source == "CPU" or x.device.type == 'mps':
+        return torch.randn_like(x, device=cpu).to(x.device)
+
+    return torch.randn_like(x)
 
 
 def randn_without_seed(shape):
     from modules.shared import opts
 
+    if opts.randn_source == "NV":
+        return torch.asarray(nv_rng.randn(shape), device=device)
+
     if opts.randn_source == "CPU" or device.type == 'mps':
         return torch.randn(shape, device=cpu).to(device)
+
     return torch.randn(shape, device=device)
+
+
+def manual_seed(seed):
+    from modules.shared import opts
+
+    if opts.randn_source == "NV":
+        global nv_rng
+        nv_rng = rng_philox.Generator(seed)
+        return
+
+    torch.manual_seed(seed)
 
 
 def autocast(disable=False):
