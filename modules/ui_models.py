@@ -142,7 +142,7 @@ def create_ui():
                     model_checkhash_btn.click(fn=sd_models.update_model_hashes, inputs=[], outputs=[models_outcome])
                 with gr.Row():
                     model_table = gr.DataFrame(
-                        data = model_data,
+                        value = model_data,
                         headers = model_headers,
                         label = 'Model data',
                         show_label = True,
