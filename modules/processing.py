@@ -1348,6 +1348,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         image = image.to(shared.device, dtype=devices.dtype_vae)
 
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
+        devices.torch_gc()
 
         if self.resize_mode == 3:
             self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
