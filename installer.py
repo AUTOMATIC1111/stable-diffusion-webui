@@ -234,14 +234,18 @@ def branch(folder):
 
 # update git repository
 def update(folder, current_branch = False):
+    try:
+        git('config rebase.Autostash true')
+    except Exception:
+        pass
     if current_branch:
-        git('pull --autostash --rebase --force', folder)
+        git('pull --rebase --force', folder)
         return
     b = branch(folder)
     if branch is None:
-        git('pull --autostash --rebase --force', folder)
+        git('pull --rebase --force', folder)
     else:
-        git(f'pull origin {b} --autostash --rebase --force', folder)
+        git(f'pull origin {b} --rebase --force', folder)
 
 
 # clone git repository
