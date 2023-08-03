@@ -548,8 +548,13 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         "load_connected_pipeline": True  # always load end-to-end / connected pipelines
         # "use_safetensors": True,  # TODO(PVP) - we can't enable this for all checkpoints just yet
     }
-    if devices.dtype == torch.float16:
-        diffusers_load_config['variant'] = 'fp16'
+    if shared.opts.diffusers_model_load_variant == 'default':
+        if devices.dtype == torch.float16:
+            diffusers_load_config['variant'] = 'fp16'
+    elif shared.opts.diffusers_model_load_variant == 'fp32':
+        pass
+    else:
+        diffusers_load_config['variant'] = shared.opts.diffusers_model_load_variant
 
     if shared.opts.data.get('sd_model_checkpoint', '') == 'model.ckpt' or shared.opts.data.get('sd_model_checkpoint', '') == '':
         shared.opts.data['sd_model_checkpoint'] = "runwayml/stable-diffusion-v1-5"
@@ -649,6 +654,12 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             pass # scheduler is created on first use
         elif "Kandinsky" in sd_model.__class__.__name__:
             sd_model.scheduler.name = 'DDIM'
+
+        if (shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) and (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram):
+            shared.log.warning(f'Diffusers {op}: Model CPU offload (--medvram) and Sequential CPU offload (--lowvram) are not compatible')
+            shared.log.debug(f'Diffusers {op}: disable model CPU offload and --medvram')
+            shared.opts.diffusers_model_cpu_offload=False
+            shared.cmd_opts.medvram=False
 
         if hasattr(sd_model, "watermark"):
             sd_model.watermark = NoWatermark()
