@@ -25,6 +25,7 @@ import modules.hypernetworks.ui as hypernetworks_ui
 import modules.textual_inversion.ui as textual_inversion_ui
 import modules.textual_inversion.textual_inversion as textual_inversion
 import modules.shared as shared
+import modules.images
 from modules import prompt_parser
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
@@ -241,6 +242,8 @@ def update_token_counter(text, steps):
 
 
 class Toprow:
+    """Creates a top row UI with prompts, generate button, styles, extra little buttons for things, and enables some functionality related to their operation"""
+
     def __init__(self, is_img2img):
         id_part = "img2img" if is_img2img else "txt2img"
         self.id_part = id_part
@@ -251,11 +254,13 @@ class Toprow:
                     with gr.Column(scale=80):
                         with gr.Row():
                             self.prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+                            self.prompt_img = gr.File(label="", elem_id=f"{id_part}_prompt_image", file_count="single", type="binary", visible=False)
 
                 with gr.Row():
                     with gr.Column(scale=80):
                         with gr.Row():
                             self.negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+
 
             self.button_interrogate = None
             self.button_deepbooru = None
@@ -301,6 +306,13 @@ class Toprow:
                     )
 
                 self.ui_styles = ui_prompt_styles.UiPromptStyles(id_part, self.prompt, self.negative_prompt)
+
+        self.prompt_img.change(
+            fn=modules.images.image_data,
+            inputs=[self.prompt_img],
+            outputs=[self.prompt, self.prompt_img],
+            show_progress=False,
+        )
 
 
 def setup_progressbar(*args, **kwargs):
@@ -391,7 +403,6 @@ def create_ui():
         toprow = Toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
-        txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
 
         with FormRow(variant='compact', elem_id="txt2img_extra_networks", visible=False) as extra_networks:
             from modules import ui_extra_networks
@@ -556,18 +567,6 @@ def create_ui():
                 show_progress=False,
             )
 
-            txt_prompt_img.change(
-                fn=modules.images.image_data,
-                inputs=[
-                    txt_prompt_img
-                ],
-                outputs=[
-                    toprow.prompt,
-                    txt_prompt_img
-                ],
-                show_progress=False,
-            )
-
             enable_hr.change(
                 fn=lambda x: gr_show(x),
                 inputs=[enable_hr],
@@ -632,8 +631,6 @@ def create_ui():
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         toprow = Toprow(is_img2img=True)
-
-        img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 
         with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks:
             from modules import ui_extra_networks
@@ -851,18 +848,6 @@ def create_ui():
 
             connect_reuse_seed(seed, reuse_seed, generation_info, dummy_component, is_subseed=False)
             connect_reuse_seed(subseed, reuse_subseed, generation_info, dummy_component, is_subseed=True)
-
-            img2img_prompt_img.change(
-                fn=modules.images.image_data,
-                inputs=[
-                    img2img_prompt_img
-                ],
-                outputs=[
-                    toprow.prompt,
-                    img2img_prompt_img
-                ],
-                show_progress=False,
-            )
 
             img2img_args = dict(
                 fn=wrap_gradio_gpu_call(modules.img2img.img2img, extra_outputs=[None, '', '']),
