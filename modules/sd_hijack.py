@@ -183,10 +183,10 @@ class StableDiffusionModelHijack:
             except Exception as err:
                 shared.log.warning(f"IPEX Optimize not supported: {err}")
 
-        if opts.cuda_compile and opts.cuda_compile_mode != 'none' and shared.backend == shared.Backend.ORIGINAL:
+        if opts.cuda_compile and opts.cuda_compile_backend != 'none' and shared.backend == shared.Backend.ORIGINAL:
             try:
                 import logging
-                shared.log.info(f"Compiling pipeline={m.model.__class__.__name__} mode={opts.cuda_compile_mode}")
+                shared.log.info(f"Compiling pipeline={m.model.__class__.__name__} mode={opts.cuda_compile_backend}")
                 import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                 log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                 if hasattr(torch, '_logging'):
@@ -194,11 +194,11 @@ class StableDiffusionModelHijack:
                 torch._dynamo.config.verbose = opts.cuda_compile_verbose # pylint: disable=protected-access
                 torch._dynamo.config.suppress_errors = opts.cuda_compile_errors # pylint: disable=protected-access
                 torch.backends.cudnn.benchmark = True
-                if opts.cuda_compile_mode == 'hidet':
+                if opts.cuda_compile_backend == 'hidet':
                     import hidet
                     hidet.torch.dynamo_config.use_tensor_core(True)
                     hidet.torch.dynamo_config.search_space(2)
-                m.model = torch.compile(m.model, mode=opts.cuda_compile_type, backend=opts.cuda_compile_mode, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
+                m.model = torch.compile(m.model, mode=opts.cuda_compile_mode, backend=opts.cuda_compile_backend, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
                 shared.log.info("Model complilation done.")
             except Exception as err:
                 shared.log.warning(f"Model compile not supported: {err}")

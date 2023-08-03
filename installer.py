@@ -387,7 +387,7 @@ def check_torch():
                 pip('uninstall xformers --yes --quiet', ignore=True, quiet=True)
     except Exception as e:
         log.debug(f'Cannot install xformers package: {e}')
-    if opts.get('cuda_compile_mode', '') == 'hidet':
+    if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
     if args.profile:
         print_profile(pr, 'Torch')
