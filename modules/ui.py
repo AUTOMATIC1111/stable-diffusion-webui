@@ -12,30 +12,23 @@ import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles, scripts
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path
 from modules.ui_common import create_refresh_button
 from modules.ui_gradio_extensions import reload_javascript
 
-
 from modules.shared import opts, cmd_opts
 
-import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
-import modules.gfpgan_model
-import modules.hypernetworks.ui
-import modules.scripts
+import modules.hypernetworks.ui as hypernetworks_ui
+import modules.textual_inversion.ui as textual_inversion_ui
+import modules.textual_inversion.textual_inversion as textual_inversion
 import modules.shared as shared
-import modules.styles
-import modules.textual_inversion.ui
 from modules import prompt_parser
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers import samplers, samplers_for_img2img
-from modules.textual_inversion import textual_inversion
-import modules.hypernetworks.ui
 from modules.generation_parameters_copypaste import image_from_url_text
-import modules.extras
 
 create_setting_component = ui_settings.create_setting_component
 
@@ -391,11 +384,11 @@ def create_ui():
 
     parameters_copypaste.reset()
 
-    modules.scripts.scripts_current = modules.scripts.scripts_txt2img
-    modules.scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
+    scripts.scripts_current = scripts.scripts_txt2img
+    scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        toprow = txt2img_toprow = Toprow(is_img2img=False)
+        toprow = Toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
         txt_prompt_img = gr.File(label="", elem_id="txt2img_prompt_image", file_count="single", type="binary", visible=False)
@@ -406,7 +399,7 @@ def create_ui():
 
         with gr.Row().style(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
-                modules.scripts.scripts_txt2img.prepare_ui()
+                scripts.scripts_txt2img.prepare_ui()
 
                 for category in ordered_ui_categories():
                     if category == "sampler":
@@ -474,10 +467,10 @@ def create_ui():
 
                     elif category == "scripts":
                         with FormGroup(elem_id="txt2img_script_container"):
-                            custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
+                            custom_inputs = scripts.scripts_txt2img.setup_ui()
 
                     else:
-                        modules.scripts.scripts_txt2img.setup_ui_for_section(category)
+                        scripts.scripts_txt2img.setup_ui_for_section(category)
 
             hr_resolution_preview_inputs = [enable_hr, width, height, hr_scale, hr_resize_x, hr_resize_y]
 
@@ -611,7 +604,7 @@ def create_ui():
                 (hr_prompt, "Hires prompt"),
                 (hr_negative_prompt, "Hires negative prompt"),
                 (hr_prompts_container, lambda d: gr.update(visible=True) if d.get("Hires prompt", "") != "" or d.get("Hires negative prompt", "") != "" else gr.update()),
-                *modules.scripts.scripts_txt2img.infotext_fields
+                *scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
@@ -634,11 +627,11 @@ def create_ui():
 
             ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
 
-    modules.scripts.scripts_current = modules.scripts.scripts_img2img
-    modules.scripts.scripts_img2img.initialize_scripts(is_img2img=True)
+    scripts.scripts_current = scripts.scripts_img2img
+    scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        toprow = img2img_toprow = Toprow(is_img2img=True)
+        toprow = Toprow(is_img2img=True)
 
         img2img_prompt_img = gr.File(label="", elem_id="img2img_prompt_image", file_count="single", type="binary", visible=False)
 
@@ -740,7 +733,7 @@ def create_ui():
                 with FormRow():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
-                modules.scripts.scripts_img2img.prepare_ui()
+                scripts.scripts_img2img.prepare_ui()
 
                 for category in ordered_ui_categories():
                     if category == "sampler":
@@ -821,7 +814,7 @@ def create_ui():
 
                     elif category == "scripts":
                         with FormGroup(elem_id="img2img_script_container"):
-                            custom_inputs = modules.scripts.scripts_img2img.setup_ui()
+                            custom_inputs = scripts.scripts_img2img.setup_ui()
 
                     elif category == "inpaint":
                         with FormGroup(elem_id="inpaint_controls", visible=False) as inpaint_controls:
@@ -852,7 +845,7 @@ def create_ui():
                                     outputs=[inpaint_controls, mask_alpha],
                                 )
                     else:
-                        modules.scripts.scripts_img2img.setup_ui_for_section(category)
+                        scripts.scripts_img2img.setup_ui_for_section(category)
 
             img2img_gallery, generation_info, html_info, html_log = create_output_panel("img2img", opts.outdir_img2img_samples)
 
@@ -1001,7 +994,7 @@ def create_ui():
                 (toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
                 (denoising_strength, "Denoising strength"),
                 (mask_blur, "Mask blur"),
-                *modules.scripts.scripts_img2img.infotext_fields
+                *scripts.scripts_img2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)
             parameters_copypaste.add_paste_fields("inpaint", init_img_with_mask, img2img_paste_fields, override_settings)
@@ -1009,7 +1002,7 @@ def create_ui():
                 paste_button=toprow.paste, tabname="img2img", source_text_component=toprow.prompt, source_image_component=None,
             ))
 
-    modules.scripts.scripts_current = None
+    scripts.scripts_current = None
 
     with gr.Blocks(analytics_enabled=False) as extras_interface:
         ui_postprocessing.create_ui()
@@ -1063,7 +1056,7 @@ def create_ui():
                     new_hypernetwork_name = gr.Textbox(label="Name", elem_id="train_new_hypernetwork_name")
                     new_hypernetwork_sizes = gr.CheckboxGroup(label="Modules", value=["768", "320", "640", "1280"], choices=["768", "1024", "320", "640", "1280"], elem_id="train_new_hypernetwork_sizes")
                     new_hypernetwork_layer_structure = gr.Textbox("1, 2, 1", label="Enter hypernetwork layer structure", placeholder="1st and last digit must be 1. ex:'1, 2, 1'", elem_id="train_new_hypernetwork_layer_structure")
-                    new_hypernetwork_activation_func = gr.Dropdown(value="linear", label="Select activation function of hypernetwork. Recommended : Swish / Linear(none)", choices=modules.hypernetworks.ui.keys, elem_id="train_new_hypernetwork_activation_func")
+                    new_hypernetwork_activation_func = gr.Dropdown(value="linear", label="Select activation function of hypernetwork. Recommended : Swish / Linear(none)", choices=hypernetworks_ui.keys, elem_id="train_new_hypernetwork_activation_func")
                     new_hypernetwork_initialization_option = gr.Dropdown(value = "Normal", label="Select Layer weights initialization. Recommended: Kaiming for relu-like, Xavier for sigmoid-like, Normal otherwise", choices=["Normal", "KaimingUniform", "KaimingNormal", "XavierUniform", "XavierNormal"], elem_id="train_new_hypernetwork_initialization_option")
                     new_hypernetwork_add_layer_norm = gr.Checkbox(label="Add layer normalization", elem_id="train_new_hypernetwork_add_layer_norm")
                     new_hypernetwork_use_dropout = gr.Checkbox(label="Use dropout", elem_id="train_new_hypernetwork_use_dropout")
@@ -1208,7 +1201,7 @@ def create_ui():
                 ti_outcome = gr.HTML(elem_id="ti_error", value="")
 
         create_embedding.click(
-            fn=modules.textual_inversion.ui.create_embedding,
+            fn=textual_inversion_ui.create_embedding,
             inputs=[
                 new_embedding_name,
                 initialization_text,
@@ -1223,7 +1216,7 @@ def create_ui():
         )
 
         create_hypernetwork.click(
-            fn=modules.hypernetworks.ui.create_hypernetwork,
+            fn=hypernetworks_ui.create_hypernetwork,
             inputs=[
                 new_hypernetwork_name,
                 new_hypernetwork_sizes,
@@ -1243,7 +1236,7 @@ def create_ui():
         )
 
         run_preprocess.click(
-            fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.preprocess, extra_outputs=[gr.update()]),
+            fn=wrap_gradio_gpu_call(textual_inversion_ui.preprocess, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
             inputs=[
                 dummy_component,
@@ -1279,7 +1272,7 @@ def create_ui():
         )
 
         train_embedding.click(
-            fn=wrap_gradio_gpu_call(modules.textual_inversion.ui.train_embedding, extra_outputs=[gr.update()]),
+            fn=wrap_gradio_gpu_call(textual_inversion_ui.train_embedding, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
             inputs=[
                 dummy_component,
@@ -1313,7 +1306,7 @@ def create_ui():
         )
 
         train_hypernetwork.click(
-            fn=wrap_gradio_gpu_call(modules.hypernetworks.ui.train_hypernetwork, extra_outputs=[gr.update()]),
+            fn=wrap_gradio_gpu_call(hypernetworks_ui.train_hypernetwork, extra_outputs=[gr.update()]),
             _js="start_training_textual_inversion",
             inputs=[
                 dummy_component,
