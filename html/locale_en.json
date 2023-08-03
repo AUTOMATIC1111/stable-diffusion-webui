@@ -383,6 +383,7 @@
   {"id":"","label":"Model compile suppress errors","localized":"","hint":""},
   {"id":"","label":"Disable Torch memory garbage collection","localized":"","hint":"Disable Torch memory garbage collection on each generation. CG will still run before & after model load as well when low GPU memory threshold is reached."},
   {"id":"","label":"Directory for temporary images; leave empty for default","localized":"","hint":""},
+  {"id":"","label":"Enable IPEX Optimize for Intel GPUs","localized":"","hint":""},
   {"id":"","label":"Cleanup non-default temporary directory when starting webui","localized":"","hint":""},
   {"id":"","label":"Path to directory with stable diffusion checkpoints","localized":"","hint":""},
   {"id":"","label":"Path to directory with stable diffusion diffusers","localized":"","hint":""},

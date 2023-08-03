@@ -382,6 +382,7 @@
   {"id":"","label":"Model compile verbose mode","localized":"","hint":""},
   {"id":"","label":"Model compile suppress errors","localized":"모델 컴파일 시 오류 억제","hint":""},
   {"id":"","label":"Disable Torch memory garbage collection","localized":"Torch 메모리 정리 비활성화","hint":"이미지 생성 시 메모리 정리를 하지 않는다. CG will still run before & after model load as well when low GPU memory threshold is reached."},
+  {"id":"","label":"Enable IPEX Optimize for Intel GPUs","localized":"","hint":""},
   {"id":"","label":"Directory for temporary images; leave empty for default","localized":"임시 이미지 저장 위치 (비워 놓으면 기본값)","hint":""},
   {"id":"","label":"Cleanup non-default temporary directory when starting webui","localized":"임시 위치가 기본값이 아닌 경우 WebUI 시작 시 비우기","hint":""},
   {"id":"","label":"Path to directory with stable diffusion checkpoints","localized":"체크포인트 위치","hint":""},

@@ -185,8 +185,6 @@ def install(package, friendly: str = None, ignore: bool = False):
     if args.reinstall or args.upgrade:
         global quick_allowed # pylint: disable=global-statement
         quick_allowed = False
-    if args.use_ipex and package == "pytorch_lightning==1.9.4":
-        package = "pytorch_lightning==1.8.6"
     if args.reinstall or not installed(package, friendly):
         pip(f"install --upgrade {package}", ignore=ignore)
 
