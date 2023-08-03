@@ -198,7 +198,7 @@ class StableDiffusionModelHijack:
                     import hidet
                     hidet.torch.dynamo_config.use_tensor_core(True)
                     hidet.torch.dynamo_config.search_space(2)
-                m.model = torch.compile(m.model, mode="default", backend=opts.cuda_compile_mode, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
+                m.model = torch.compile(m.model, mode=opts.cuda_compile_type, backend=opts.cuda_compile_mode, fullgraph=opts.cuda_compile_fullgraph, dynamic=False)
                 shared.log.info("Model complilation done.")
             except Exception as err:
                 shared.log.warning(f"Model compile not supported: {err}")
