@@ -1,4 +1,5 @@
 import os
+import contextlib
 import torch
 import intel_extension_for_pytorch as ipex
 from modules import shared
@@ -16,6 +17,9 @@ def ipex_no_cuda(orig_func, *args, **kwargs): # pylint: disable=redefined-outer-
     orig_func(*args, **kwargs)
     torch.cuda.is_available = torch.xpu.is_available
 
+def return_null_context(*args, **kwargs):
+    return contextlib.nullcontext()
+
 def ipex_init():
     #Fix functions with ipex
     torch.cuda.is_available = torch.xpu.is_available
@@ -27,6 +31,7 @@ def ipex_init():
     torch._utils._get_available_device_type = lambda: "xpu" # pylint: disable=protected-access
     torch.cuda.set_device = torch.xpu.set_device
     torch.cuda.synchronize = torch.xpu.synchronize
+    torch.backends.cuda.sdp_kernel = return_null_context
     torch.Tensor.cuda = torch.Tensor.xpu
     torch.nn.DataParallel = DummyDataParallel
 
