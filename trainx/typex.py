@@ -25,6 +25,14 @@ class PreprocessTask(UserDict):
         return self.get('zip_key')
 
     @property
+    def id(self):
+        return self["task_id"]
+
+    @property
+    def image_keys(self):
+        return self.get('image_keys')
+
+    @property
     def ignore(self):
         return self.get('ignore')
 
@@ -100,6 +108,7 @@ class PreprocessTask(UserDict):
 class TrainMinorTaskType(IntEnum):
     Preprocess = 1
     Lora = 2
+    DigitalDoppelganger = 3
 
 
 # ===================================================================
@@ -515,3 +524,8 @@ class TrainLoraTask(UserDict):
         }
 
         return Task(**t)
+
+
+class DigitalDoppelgangerTask(TrainLoraTask, PreprocessTask):
+
+    pass

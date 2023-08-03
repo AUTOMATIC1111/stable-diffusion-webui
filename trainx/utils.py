@@ -68,14 +68,15 @@ def get_model_local_path(remoting_path: str, model_type: ModelType):
         return dst
 
 
-def get_tmp_local_path(remoting_path: str):
+def get_tmp_local_path(remoting_path: str, dir=None):
     if not remoting_path:
         raise OSError(f'remoting path is empty')
     if os.path.isfile(remoting_path):
         return remoting_path
 
-    os.makedirs(Tmp, exist_ok=True)
-    dst = os.path.join(Tmp, os.path.basename(remoting_path))
+    dirname = Tmp if not dir else dir
+    os.makedirs(dirname, exist_ok=True)
+    dst = os.path.join(dirname, os.path.basename(remoting_path))
     return get_local_path(remoting_path, dst)
 
 
