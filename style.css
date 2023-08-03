@@ -972,3 +972,16 @@ div.block.gradio-box.edit-user-metadata {
 .edit-user-metadata-buttons{
     margin-top: 1.5em;
 }
+
+
+
+
+div.block.gradio-box.popup-dialog, .popup-dialog {
+    width: 56em;
+    background: var(--body-background-fill);
+    padding: 2em !important;
+}
+
+div.block.gradio-box.popup-dialog > div:last-child, .popup-dialog > div:last-child{
+    margin-top: 1em;
+}

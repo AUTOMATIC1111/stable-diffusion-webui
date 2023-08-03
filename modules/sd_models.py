@@ -68,7 +68,7 @@ class CheckpointInfo:
 
         self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
 
-        self.ids = [self.hash, self.model_name, self.title, name, f'{name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
+        self.ids = [self.hash, self.model_name, self.title, name, self.name_for_extra, f'{name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
 
     def register(self):
         checkpoints_list[self.title] = self
