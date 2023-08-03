@@ -2,10 +2,8 @@ from collections import namedtuple
 import numpy as np
 import torch
 from PIL import Image
-from modules import devices, processing, images, sd_vae_approx, sd_samplers, sd_vae_taesd
-
+from modules import devices, processing, images, sd_vae_approx, sd_samplers, sd_vae_taesd, shared
 from modules.shared import opts, state
-import modules.shared as shared
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
 
@@ -85,11 +83,13 @@ class InterruptedException(BaseException):
     pass
 
 
-if opts.randn_source == "CPU":
+def replace_torchsde_browinan():
     import torchsde._brownian.brownian_interval
 
     def torchsde_randn(size, dtype, device, seed):
-        generator = torch.Generator(devices.cpu).manual_seed(int(seed))
-        return torch.randn(size, dtype=dtype, device=devices.cpu, generator=generator).to(device)
+        return devices.randn_local(seed, size).to(device=device, dtype=dtype)
 
     torchsde._brownian.brownian_interval._randn = torchsde_randn
+
+
+replace_torchsde_browinan()
