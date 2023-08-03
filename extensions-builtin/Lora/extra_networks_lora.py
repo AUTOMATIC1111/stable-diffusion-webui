@@ -60,7 +60,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
 
         if shared.opts.lora_add_hashes_to_infotext:
             lora_hashes = []
-            for item in networks.loaded_loras:
+            for item in networks.loaded_networks:
                 shorthash = item.lora_on_disk.shorthash
                 if not shorthash:
                     continue
