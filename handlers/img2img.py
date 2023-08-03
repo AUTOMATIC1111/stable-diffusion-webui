@@ -503,10 +503,15 @@ class Img2ImgTaskHandler(TaskHandler):
     def _update_preview(self, progress: TaskProgress):
         if shared.state.sampling_step - shared.state.current_image_sampling_step < 5:
             return
-        p = 0.01
+        p = 0
 
+        #     if job_count > 0:
+        #         progress += job_no / job_count
+        #     if sampling_steps > 0 and job_count > 0:
+        #         progress += 1 / job_count * sampling_step / sampling_steps
         if shared.state.job_count > 0:
-            p += shared.state.job_no / (progress.task['n_iter'] * progress.task['batch_size'])
+            job_no = shared.state.job_no - 1 if shared.state.job_no > 0 else 0
+            p += job_no / (progress.task['n_iter'] * progress.task['batch_size'])
             # p += (shared.state.job_no) / shared.state.job_count
         if shared.state.sampling_steps > 0:
             p += 1 / (progress.task['n_iter'] * progress.task['batch_size']) * shared.state.sampling_step / shared.state.sampling_steps
@@ -515,7 +520,7 @@ class Img2ImgTaskHandler(TaskHandler):
         eta = (time_since_start / p)
         progress.eta_relative = eta - time_since_start
         progress.task_progress = min(p, 0.99) * 100
-        print(f"-> progress:{progress.task_progress}\n")
+        # print(f"-> progress: {progress.task_progress}, real:{p}\n")
 
         shared.state.set_current_image()
         if shared.state.current_image:
