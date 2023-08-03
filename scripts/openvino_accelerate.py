@@ -340,7 +340,7 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
 def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_caching, openvino_device, mode) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
-    if p.enable_hr:
+    if (mode == 0 and p.enable_hr):
         return process_images(p)
 
     if type(p.prompt) == list:
@@ -645,6 +645,7 @@ class Script(scripts.Script):
 
     def run(self, p, openvino_device, override_sampler, sampler_name, enable_caching):
         os.environ["OPENVINO_TORCH_BACKEND_DEVICE"] = str(openvino_device)
+
         if enable_caching:
             os.environ["OPENVINO_TORCH_MODEL_CACHING"] = "1"
 
