@@ -588,7 +588,7 @@ def install_requirements():
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
-    if args.skip_requirements:
+    if args.skip_requirements and not args.requirements:
         return
     log.info('Verifying requirements')
     with open('requirements.txt', 'r', encoding='utf8') as f:
@@ -751,6 +751,7 @@ def add_args(parser):
     group.add_argument('--debug', default = False, action='store_true', help = "Run installer with debug logging, default: %(default)s")
     group.add_argument('--reset', default = False, action='store_true', help = "Reset main repository to latest version, default: %(default)s")
     group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
+    group.add_argument('--requirements', default = False, action='store_true', help = "Force re-check of requirements, default: %(default)s")
     group.add_argument('--quick', default = False, action='store_true', help = "Run with startup sequence only, default: %(default)s")
     group.add_argument("--use-ipex", default = False, action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s")
     group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")

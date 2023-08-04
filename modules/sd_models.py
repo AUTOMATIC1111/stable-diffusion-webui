@@ -67,9 +67,11 @@ class CheckpointInfo:
         else: # maybe a diffuser
             repo = [r for r in modelloader.diffuser_repos if filename == r['filename']]
             if len(repo) == 0:
-                error_message = f'Cannot find diffuser model: {filename}'
-                shared.log.error(error_message)
-                raise ValueError(error_message)
+                if filename.lower() != 'none':
+                    shared.log.error(f'Cannot find diffuser model: {filename}')
+                else:
+                    shared.log.info(f'Skipping model load: {filename}')
+                return
             self.name = repo[0]['name']
             self.hash = repo[0]['hash'][:8]
             self.sha256 = repo[0]['hash']
@@ -532,6 +534,8 @@ def change_backend():
 
 
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
+    if op != 'model' and checkpoint_info is None and (shared.cmd_opts.ckpt is None or shared.cmd_opts.ckpt.lower() == 'none'):
+        return
     import torch # pylint: disable=reimported,redefined-outer-name
     devices.set_cuda_params()
     if timer is None:
@@ -570,7 +574,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     sd_model = None
 
     try:
-        if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
+        if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load\
             ckpt_basename = os.path.basename(shared.cmd_opts.ckpt)
             model_name = modelloader.find_diffuser(ckpt_basename)
             if model_name is not None:

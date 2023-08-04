@@ -12,12 +12,11 @@ Stuff to be fixed, in no particular order...
 Stuff to be added, in no particular order...
 
 - Diffusers:
-  - Add SD-XL Lora
+  - Add Hires
+  - Add Lora/Lyco mixer
   - Add ControlNet
   - Fix SD-XL Img2img/Inpaint
   - Add SD and SD-XL Pix2Pix
-  - Add VAE direct load from safetensors
-  - Fix Kandinsky 2.2 model
   - Fix DeepFloyd IF model
   - Redo Prompt parser for diffusers
   - Add unCLIP model
@@ -54,6 +53,7 @@ Stuff to be added, in no particular order...
     - Templates for SD-XL training
     - Lora train UI
 - Redesign
+  - Extensions reporting framework
   - New UI
   - New inpainting canvas controls (move from backend to purely frontend)
   - New image browser (move from backend to purely frontend)
