@@ -2,7 +2,7 @@ from collections import namedtuple
 import numpy as np
 import torch
 from PIL import Image
-from modules import devices, processing, images, sd_vae_approx, sd_samplers, sd_vae_taesd, shared
+from modules import devices, images, sd_vae_approx, sd_samplers, sd_vae_taesd, shared
 from modules.shared import opts, state
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
@@ -35,13 +35,19 @@ def single_sample_to_image(sample, approximation=None):
         x_sample = sample * 1.5
         x_sample = sd_vae_taesd.model()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
     else:
-        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
+        x_sample = decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
 
     x_sample = torch.clamp(x_sample, min=0.0, max=1.0)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
     x_sample = x_sample.astype(np.uint8)
 
     return Image.fromarray(x_sample)
+
+
+def decode_first_stage(model, x):
+    x = model.decode_first_stage(x.to(devices.dtype_vae))
+
+    return x
 
 
 def sample_to_image(samples, index=0, approximation=None):

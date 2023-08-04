@@ -30,6 +30,7 @@ from ldm.models.diffusion.ddpm import LatentDepth2ImageDiffusion
 from einops import repeat, rearrange
 from blendmodes.blend import blendLayers, BlendType
 
+decode_first_stage = sd_samplers_common.decode_first_stage
 
 # some of those options should not be changed at all because they would break the model, so I removed them from options.
 opt_C = 4
@@ -570,12 +571,6 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
         samples.append(sample)
 
     return samples
-
-
-def decode_first_stage(model, x):
-    x = model.decode_first_stage(x.to(devices.dtype_vae))
-
-    return x
 
 
 def get_fixed_seed(seed):
