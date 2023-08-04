@@ -1,6 +1,6 @@
 import os
 import collections
-from modules import paths, shared, devices, script_callbacks, sd_models
+from modules import paths, shared, devices, script_callbacks, sd_models, extra_networks
 import glob
 from copy import deepcopy
 
@@ -15,6 +15,7 @@ loaded_vae_file = None
 checkpoint_info = None
 
 checkpoints_loaded = collections.OrderedDict()
+
 
 def get_base_vae(model):
     if base_vae is not None and checkpoint_info == model.sd_checkpoint_info and model:
@@ -99,6 +100,16 @@ def find_vae_near_checkpoint(checkpoint_file):
 def resolve_vae(checkpoint_file):
     if shared.cmd_opts.vae_path is not None:
         return shared.cmd_opts.vae_path, 'from commandline argument'
+
+    metadata = extra_networks.get_user_metadata(checkpoint_file)
+    vae_metadata = metadata.get("vae", None)
+    if vae_metadata is not None and vae_metadata != "Automatic":
+        if vae_metadata == "None":
+            return None, None
+
+        vae_from_metadata = vae_dict.get(vae_metadata, None)
+        if vae_from_metadata is not None:
+            return vae_from_metadata, "from user metadata"
 
     is_automatic = shared.opts.sd_vae in {"Automatic", "auto"}  # "auto" for people with old config
 
