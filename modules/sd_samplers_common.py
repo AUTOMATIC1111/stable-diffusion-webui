@@ -2,7 +2,7 @@ from collections import namedtuple
 import numpy as np
 import torch
 from PIL import Image
-from modules import devices, processing, images, sd_vae_approx, sd_samplers, sd_vae_taesd, shared
+from modules import devices, images, sd_vae_approx, sd_samplers, sd_vae_taesd, shared
 from modules.shared import opts, state
 
 SamplerData = namedtuple('SamplerData', ['name', 'constructor', 'aliases', 'options'])
@@ -40,7 +40,7 @@ def samples_to_images_tensor(sample, approximation=None, model=None):
         if model is None:
             model = shared.sd_model
         x_sample = model.decode_first_stage(sample)
-    
+
     return x_sample
 
 
