@@ -55,9 +55,9 @@ def single_sample_to_image(sample, approximation=None):
 
 
 def decode_first_stage(model, x):
-    x = model.decode_first_stage(x.to(devices.dtype_vae))
-
-    return x
+    x = x.to(devices.dtype_vae)
+    approx_index = approximation_indexes.get(opts.sd_vae_decode_method, 0)
+    return samples_to_images_tensor(x, approx_index, model)
 
 
 def sample_to_image(samples, index=0, approximation=None):
