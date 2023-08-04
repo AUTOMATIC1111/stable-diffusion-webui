@@ -615,10 +615,12 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     fullfn_without_extension, extension = os.path.splitext(params.filename)
     
-    max_name_len = 64
-    fullfn_without_extension = fullfn_without_extension[:max_name_len - max(4, len(extension))]
-    params.filename = fullfn_without_extension + extension
-    fullfn = params.filename   
+    fn_base = os.path.basename(params.filename)
+    dirname = os.path.dirname(params.filename)
+    params.filename = os.path.join(dirname, fn_base[-64:])
+    fullfn = params.filename
+    fullfn_without_extension = os.path.join(dirname, fn_base[-64:-len(extension)])
+    
     _atomically_save_image(image, fullfn_without_extension, extension)
 
     image.already_saved_as = fullfn
