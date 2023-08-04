@@ -26,19 +26,16 @@ from modules.shared import opts, state
 from PIL import Image, ImageOps
 from pathlib import Path
 
-#from openvino.frontend import FrontEndManager
 from openvino.frontend.pytorch.torchdynamo import backend, compile # noqa: F401
 from openvino.frontend.pytorch.torchdynamo.execute import execute, partitioned_modules, compiled_cache # noqa: F401
 from openvino.frontend.pytorch.torchdynamo.partition import Partitioner
-from openvino.runtime import Core, Type, PartialShape #, serialize
+from openvino.runtime import Core, Type, PartialShape 
 
 from torch._dynamo.backends.common import fake_tensor_unsupported
 from torch._dynamo.backends.registry import register_backend
 from torch._inductor.compile_fx import compile_fx
-#from torch.fx import GraphModule
 from torch.fx.experimental.proxy_tensor import make_fx
 
-#from typing import Callable, Optional
 from hashlib import sha256
 
 from diffusers import (
