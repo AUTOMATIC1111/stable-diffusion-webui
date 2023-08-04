@@ -611,7 +611,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
         save_image_with_geninfo(image_to_save, info, temp_file_path, extension, params.pnginfo)
 
-        os.replace(temp_file_path, filename_without_extension + extension)
+        os.replace(temp_file_path, filename_without_extension[:64] + extension)
 
     fullfn_without_extension, extension = os.path.splitext(params.filename)
     if hasattr(os, 'statvfs'):
