@@ -303,12 +303,13 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         sd_models_xl.extend_sdxl(model)
 
     model.load_state_dict(state_dict, strict=False)
-    del state_dict
     timer.record("apply weights to model")
 
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
-        checkpoints_loaded[checkpoint_info] = model.state_dict().copy()
+        checkpoints_loaded[checkpoint_info] = state_dict
+
+    del state_dict
 
     if shared.cmd_opts.opt_channelslast:
         model.to(memory_format=torch.channels_last)
