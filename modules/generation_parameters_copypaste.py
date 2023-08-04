@@ -291,6 +291,8 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
 
     if "Hires noisy latent" not in res:
         res["Hires noisy latent"] = False
+    elif res["Hires noisy latent"] is True:
+        res["Denoising strength"] = 1.0
 
     restore_old_hires_fix_params(res)
 

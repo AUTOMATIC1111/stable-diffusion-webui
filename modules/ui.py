@@ -614,6 +614,13 @@ def create_ui():
                 show_progress = False,
             )
 
+            hr_use_noisy.change(
+                fn=lambda x: gr_show(not x),
+                inputs=[hr_use_noisy],
+                outputs=[denoising_strength],
+                show_progress = False,
+            )
+
             txt2img_paste_fields = [
                 (txt2img_prompt, "Prompt"),
                 (txt2img_negative_prompt, "Negative prompt"),
