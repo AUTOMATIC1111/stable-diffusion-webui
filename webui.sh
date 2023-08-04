@@ -99,7 +99,7 @@ then
 elif [[ -z "${first_launch}" ]] && [ -x "$(command -v ipexrun)" ] && [ -x "$(command -v numactl)" ] && [ -x "$(command -v sycl-ls)" ]
 then
     echo "Launching ipexrun launch.py..."
-    exec ipexrun --latency-mode launch.py "$@"
+    exec ipexrun launch.py "$@"
 else
     echo "Launching launch.py..."
     exec "${python_cmd}" launch.py "$@"
