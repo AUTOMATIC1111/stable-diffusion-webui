@@ -340,6 +340,17 @@ class KDiffusionSampler:
         return extra_params_kwargs
 
     def get_sigmas(self, p, steps):
+        if getattr(p, 'enable_hr', False) and getattr(p, 'hr_use_noisy', False) and getattr(p, 'hr_second_pass_steps', 0) > 0:
+            p.extra_generation_params["Hires noisy latent"] = True
+            if p.is_hr_pass:
+                trim_steps = p.steps
+            else:
+                hr_second_pass_steps, hr_second_pass_t_enc = sd_samplers_common.setup_img2img_steps(p, p.hr_second_pass_steps)
+                trim_steps = hr_second_pass_t_enc + 1
+            steps += trim_steps
+        else:
+            trim_steps = 0
+
         discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
         if opts.always_discard_next_to_last_sigma and not discard_next_to_last_sigma:
             discard_next_to_last_sigma = True
@@ -383,6 +394,12 @@ class KDiffusionSampler:
 
         if discard_next_to_last_sigma:
             sigmas = torch.cat([sigmas[:-2], sigmas[-1:]])
+
+        if trim_steps > 0:
+            if p.is_hr_pass:
+                sigmas = sigmas[trim_steps:]
+            else:
+                sigmas = sigmas[:-trim_steps]
 
         return sigmas
 

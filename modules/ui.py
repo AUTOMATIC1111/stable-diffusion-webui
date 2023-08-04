@@ -482,6 +482,8 @@ def create_ui():
 
                                 hr_sampler_index = gr.Dropdown(label='Hires sampling method', elem_id="hr_sampler", choices=["Use same sampler"] + [x.name for x in samplers_for_img2img], value="Use same sampler", type="index")
 
+                                hr_use_noisy = gr.Checkbox(label='Hires noisy latent', value=False, elem_id="hr_use_noisy_latent")
+
                             with FormRow(elem_id="txt2img_hires_fix_row4", variant="compact", visible=opts.hires_fix_show_prompts) as hr_prompts_container:
                                 with gr.Column(scale=80):
                                     with gr.Row():
@@ -559,6 +561,7 @@ def create_ui():
                     hr_resize_y,
                     hr_checkpoint_name,
                     hr_sampler_index,
+                    hr_use_noisy,
                     hr_prompt,
                     hr_negative_prompt,
                     override_settings,
@@ -637,6 +640,7 @@ def create_ui():
                 (hr_resize_y, "Hires resize-2"),
                 (hr_checkpoint_name, "Hires checkpoint"),
                 (hr_sampler_index, "Hires sampler"),
+                (hr_use_noisy, "Hires noisy latent"),
                 (hr_sampler_container, lambda d: gr.update(visible=True) if d.get("Hires sampler", "Use same sampler") != "Use same sampler" or d.get("Hires checkpoint", "Use same checkpoint") != "Use same checkpoint" else gr.update()),
                 (hr_prompt, "Hires prompt"),
                 (hr_negative_prompt, "Hires negative prompt"),

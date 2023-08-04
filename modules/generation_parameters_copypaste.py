@@ -289,6 +289,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Hires negative prompt" not in res:
         res["Hires negative prompt"] = ""
 
+    if "Hires noisy latent" not in res:
+        res["Hires noisy latent"] = False
+
     restore_old_hires_fix_params(res)
 
     # Missing RNG means the default was set, which is GPU RNG
