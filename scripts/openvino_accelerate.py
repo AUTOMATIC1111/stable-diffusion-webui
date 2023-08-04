@@ -1,7 +1,6 @@
 # Copyright (C) 2023 Intel Corporation
 # SPDX-License-Identifier: AGPL-3.0
 
-import math
 import cv2
 import os
 import torch
@@ -18,17 +17,17 @@ import modules.scripts as scripts
 from modules import images, devices, extra_networks, masking, shared
 from modules.processing import (
     StableDiffusionProcessing, Processed, apply_overlay, apply_color_correction,
-    get_fixed_seed, create_random_tensors, create_infotext, setup_color_correction,
+    get_fixed_seed, create_infotext, setup_color_correction,
     process_images
 )
 from modules.sd_models import CheckpointInfo
-from modules.shared import Shared, opts, state
+from modules.shared import opts, state
 
 from PIL import Image, ImageOps
 from pathlib import Path
 
-import openvino.frontend.pytorch.torchdynamo.backend
-from openvino.frontend.pytorch.torchdynamo.execute import partitioned_modules, compiled_cache
+import openvino.frontend.pytorch.torchdynamo.backend # noqa: F401
+from openvino.frontend.pytorch.torchdynamo.execute import partitioned_modules, compiled_cache # noqa: F401
 from openvino.runtime import Core
 
 from diffusers import (
@@ -82,7 +81,7 @@ def from_single_file(self, pretrained_model_link_or_path, **kwargs):
     text_encoder = kwargs.pop("text_encoder", None)
     tokenizer = kwargs.pop("tokenizer", None)
     local_config_file = kwargs.pop("local_config_file", None)
-  
+
     torch_dtype = kwargs.pop("torch_dtype", None)
 
     use_safetensors = kwargs.pop("use_safetensors", None if is_safetensors_available() else False)
@@ -135,6 +134,7 @@ def from_single_file(self, pretrained_model_link_or_path, **kwargs):
         if file_path.startswith("main/"):
             file_path = file_path[len("main/") :]
 
+        from huggingface_hub import hf_hub_download
         pretrained_model_link_or_path = hf_hub_download(
             repo_id,
             filename=file_path,
@@ -323,7 +323,6 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
         imgs.append(image)
 
     if len(imgs) == 1:
-        batch_images = np.expand_dims(imgs[0], axis=0).repeat(self.batch_size, axis=0)
         if self.overlay_images is not None:
             self.overlay_images = self.overlay_images * self.batch_size
 
@@ -332,7 +331,6 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
 
     elif len(imgs) <= self.batch_size:
         self.batch_size = len(imgs)
-        batch_images = np.array(imgs)
     else:
         raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
@@ -354,6 +352,7 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
     subseed = get_fixed_seed(p.subseed)
 
     comments = {}
+    custom_inputs = {}
 
     p.setup_prompts()
 
@@ -423,11 +422,13 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
                 with devices.autocast():
                     extra_networks.activate(p, p.extra_network_data)
 
-            # TODO: support multiplier
             if ('lora' in modules.extra_networks.extra_network_registry):
                 import lora
-                for lora_model in lora.loaded_loras:
+                # TODO: multiple Loras aren't supported for Diffusers now, needs to add warning
+                if lora.loaded_loras:
+                    lora_model = lora.loaded_loras[0]
                     shared.sd_diffusers_model.load_lora_weights(os.path.join(os.getcwd(), "models", "Lora"), weight_name=lora_model.name + ".safetensors")
+                    custom_inputs.update(cross_attention_kwargs={"scale" : lora_model.te_multiplier})
 
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
@@ -438,7 +439,6 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
             # strength, which is saved as "Model Strength: 1.0" in the infotext
             if n == 0:
                 with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-                    processed = Processed(p, [], p.seed, "")
                     file.write(create_infotext(p, p.all_prompts, p.all_seeds, p.all_subseeds, comments=[], position_in_batch=0 % p.batch_size, iteration=0 // p.batch_size))
 
             if p.n_iter > 1:
@@ -449,50 +449,38 @@ def process_images_openvino(p: StableDiffusionProcessing, sampler_name, enable_c
             time_stamps = []
 
             def callback(iter, t, latents):
-                time_stamps.append(time.time())
+                time_stamps.append(time.time()) # noqa: B023
 
             time_stamps.append(time.time())
+
             if (mode == 0):
-                output = shared.sd_diffusers_model(
-                    prompt=p.prompts,
-                    negative_prompt=p.negative_prompts,
-                    num_inference_steps=p.steps,
-                    guidance_scale=p.cfg_scale,
-                    width = p.width,
-                    height = p.height,
-                    generator=generator,
-                    output_type="np",
-                    callback = callback,
-                    callback_steps = 1,
-                )
+                custom_inputs.update({
+                    'width': p.width,
+                    'height': p.height,
+                })
             elif (mode == 1):
-                output = shared.sd_diffusers_model(
-                    prompt=p.prompts,
-                    negative_prompt=p.negative_prompts,
-                    num_inference_steps=p.steps,
-                    guidance_scale=p.cfg_scale,
-                    image = p.init_images,
-                    strength = p.denoising_strength,
-                    generator=generator,
-                    output_type="np",
-                    callback = callback,
-                    callback_steps = 1,
-                )
+                custom_inputs.update({
+                    'image': p.init_images,
+                    'strength':p.denoising_strength,
+                })
             else:
-                output = shared.sd_diffusers_model(
+                custom_inputs.update({
+                    'image': p.init_images,
+                    'strength':p.denoising_strength,
+                    'mask_image': p.mask,
+                })
+            output = shared.sd_diffusers_model(
                     prompt=p.prompts,
                     negative_prompt=p.negative_prompts,
                     num_inference_steps=p.steps,
                     guidance_scale=p.cfg_scale,
-                    mask_image = p.mask,
-                    image = p.init_images,
-                    strength = p.denoising_strength,
                     generator=generator,
                     output_type="np",
                     callback = callback,
                     callback_steps = 1,
-                )
-            
+                    **custom_inputs
+            )
+
             model_state.recompile = 0
 
             warmup_duration = time_stamps[1] - time_stamps[0]
@@ -616,21 +604,21 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         core = Core()
-        openvino_device = gr.Dropdown(label="Select a device", choices=[device for device in core.available_devices], value=model_state.device)
+        openvino_device = gr.Dropdown(label="Select a device", choices=list(core.available_devices), value=model_state.device)
         override_sampler = gr.Checkbox(label="Override the sampling selection from the main UI (Recommended as only below sampling methods have been validated for OpenVINO)", value=True)
         sampler_name = gr.Radio(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Heun", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
         enable_caching = gr.Checkbox(label="Cache the compiled models on disk for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
         warmup_status = gr.Textbox(label="Device", interactive=False, visible=False)
-        warmup_note = gr.Markdown(
-                      """
-                      ###
-                      ### Note:
-                      First inference involves compilation of the model for best performance.
-                      Excluding the first inference (or warm up inference) is recommended for
-                      performance measurements. When resolution, batchsize, or device is changed,
-                      or samplers like DPM++ or Karras are selected, model is recompiled. Subsequent
-                      iterations use the cached compiled model for faster inference.
-                      """)
+        gr.Markdown(
+        """
+        ###
+        ### Note:
+        First inference involves compilation of the model for best performance.
+        Excluding the first inference (or warm up inference) is recommended for
+        performance measurements. When resolution, batchsize, or device is changed,
+        or samplers like DPM++ or Karras are selected, model is recompiled. Subsequent
+        iterations use the cached compiled model for faster inference.
+        """)
 
         def device_change(choice):
             if (model_state.device == choice):
@@ -663,7 +651,7 @@ class Script(scripts.Script):
             processed = process_images_openvino(p, p.sampler_name, enable_caching, openvino_device, mode)
         else:
             if p.image_mask is None:
-                mode = 1 
+                mode = 1
             else:
                 mode = 2
             p.init = functools.partial(init_new, p)
