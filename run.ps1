@@ -1,1 +1,0 @@
-.\venv\Scripts\accelerate-launch.exe --num_cpu_threads_per_process=6 --api .\launch.py --listen --port 17415 --xformers --opt-channelslast
