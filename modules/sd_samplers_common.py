@@ -23,19 +23,29 @@ def setup_img2img_steps(p, steps=None):
 approximation_indexes = {"Full": 0, "Approx NN": 1, "Approx cheap": 2, "TAESD": 3}
 
 
-def single_sample_to_image(sample, approximation=None):
+def samples_to_images_tensor(sample, approximation=None, model=None):
+    '''latents -> images [-1, 1]'''
     if approximation is None:
         approximation = approximation_indexes.get(opts.show_progress_type, 0)
 
     if approximation == 2:
-        x_sample = sd_vae_approx.cheap_approximation(sample) * 0.5 + 0.5
+        x_sample = sd_vae_approx.cheap_approximation(sample)
     elif approximation == 1:
-        x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach() * 0.5 + 0.5
+        x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype)).detach()
     elif approximation == 3:
         x_sample = sample * 1.5
-        x_sample = sd_vae_taesd.model()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
+        x_sample = sd_vae_taesd.decoder_model()(x_sample.to(devices.device, devices.dtype)).detach()
+        x_sample = x_sample * 2 - 1
     else:
-        x_sample = processing.decode_first_stage(shared.sd_model, sample.unsqueeze(0))[0] * 0.5 + 0.5
+        if model is None:
+            model = shared.sd_model
+        x_sample = model.decode_first_stage(sample)
+    
+    return x_sample
+
+
+def single_sample_to_image(sample, approximation=None):
+    x_sample = samples_to_images_tensor(sample.unsqueeze(0), approximation)[0] * 0.5 + 0.5
 
     x_sample = torch.clamp(x_sample, min=0.0, max=1.0)
     x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
@@ -50,6 +60,24 @@ def sample_to_image(samples, index=0, approximation=None):
 
 def samples_to_image_grid(samples, approximation=None):
     return images.image_grid([single_sample_to_image(sample, approximation) for sample in samples])
+
+
+def images_tensor_to_samples(image, approximation=None, model=None):
+    '''image[0, 1] -> latent'''
+    if approximation is None:
+        approximation = approximation_indexes.get(opts.sd_vae_encode_method, 0)
+
+    if approximation == 3:
+        image = image.to(devices.device, devices.dtype)
+        x_latent = sd_vae_taesd.encoder_model()(image) / 1.5
+    else:
+        if model is None:
+            model = shared.sd_model
+        image = image.to(shared.device, dtype=devices.dtype_vae)
+        image = image * 2 - 1
+        x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
+
+    return x_latent
 
 
 def store_latent(decoded):

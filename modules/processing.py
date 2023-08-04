@@ -573,9 +573,10 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
 
 
 def decode_first_stage(model, x):
-    x = model.decode_first_stage(x.to(devices.dtype_vae))
-
-    return x
+    from modules.sd_samplers_common import samples_to_images_tensor, approximation_indexes
+    x = x.to(devices.dtype_vae)
+    approx_index = approximation_indexes.get(opts.sd_vae_decode_method, 0)
+    return samples_to_images_tensor(x, approx_index, model)
 
 
 def get_fixed_seed(seed):
@@ -1344,10 +1345,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
         image = torch.from_numpy(batch_images)
-        image = 2. * image - 1.
-        image = image.to(shared.device, dtype=devices.dtype_vae)
-
-        self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
+        from modules.sd_samplers_common import images_tensor_to_samples, approximation_indexes
+        self.init_latent = images_tensor_to_samples(image, approximation_indexes.get(opts.sd_vae_encode_method), self.sd_model)
         devices.torch_gc()
 
         if self.resize_mode == 3:
