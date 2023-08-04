@@ -54,6 +54,12 @@ def single_sample_to_image(sample, approximation=None):
     return Image.fromarray(x_sample)
 
 
+def decode_first_stage(model, x):
+    x = model.decode_first_stage(x.to(devices.dtype_vae))
+
+    return x
+
+
 def sample_to_image(samples, index=0, approximation=None):
     return single_sample_to_image(samples[index], approximation)
 
