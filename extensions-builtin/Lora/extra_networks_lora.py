@@ -1,8 +1,5 @@
-import os.path
-
 from modules import extra_networks, shared
 import networks
-
 
 
 class ExtraNetworkLora(extra_networks.ExtraNetwork):
@@ -58,28 +55,10 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
             if network_hashes:
                 p.extra_generation_params["Lora hashes"] = ", ".join(network_hashes)
 
-        if shared.opts.lora_add_hashes_to_infotext:
-            lora_hashes = []
-            for item in lora.loaded_loras:
-                shorthash = item.lora_on_disk.shorthash
-                if not shorthash:
-                    continue
-
-                alias = item.mentioned_name
-                if not alias:
-                    continue
-
-                alias = alias.replace(":", "").replace(",", "")
-
-                lora_hashes.append(f"{alias}: {shorthash}")
-
-            if lora_hashes:
-                p.extra_generation_params["Lora hashes"] = ", ".join(lora_hashes)
-
     def deactivate(self, p):
         pass
 
     def set_loras(self, files):
         print(f"set user loras")
-        lora.set_available_loras(files)
+        networks.set_available_loras(files)
 

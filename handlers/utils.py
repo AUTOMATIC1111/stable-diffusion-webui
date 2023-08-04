@@ -17,6 +17,7 @@ from worker.task_recv import Tmp
 from PIL.PngImagePlugin import PngInfo
 from tools.encryptor import des_encrypt
 from modules.processing import Processed
+from modules.shared import cmd_opts
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
 from handlers.formatter import format_alwayson_script_args
@@ -237,8 +238,8 @@ def close_pil(image: Image):
     image.close()
 
 
-def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
-                          script_dir: str, task_id: str, clean_upload_files: bool = True):
+def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, script_dir: str, task_id: str,
+                          clean_upload_files: bool = True, encrypt_info: bool = True):
     if not output_dir:
         raise ValueError('output is empty')
 
@@ -277,8 +278,10 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
         pnginfo_data.add_text('by', 'xing-zhe')
         size = f"{processed_image.width}*{processed_image.height}"
         for k, v in processed_image.info.items():
-            if 'parameters' == k:
+            if 'parameters' == k and encrypt_info and not cmd_opts.no_encrypt_info:
                 v = des_encrypt(v)
+            if cmd_opts.no_encrypt_info:
+                print(v)
             pnginfo_data.add_text(k, str(v))
 
         processed_image.save(full_path, pnginfo=pnginfo_data)

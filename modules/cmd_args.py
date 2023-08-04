@@ -93,6 +93,7 @@ parser.add_argument("--api-auth", type=str, help='Set authentication for API lik
 parser.add_argument("--api-log", action='store_true', help="use api-log=True to enable logging of all API requests")
 parser.add_argument("--nowebui", action='store_true', help="use api=True to launch the API instead of the webui")
 parser.add_argument("--worker", action='store_true', help="run worker", default=False)
+parser.add_argument("--no-encrypt-info", action='store_true', help="do not encrypt image information in worker mode", default=False)
 # parser.add_argument("--lyco-debug", type=str, help="lycoris dir.", default="off")
 # parser.add_argument("--lyco-dir", type=str, help="lycoris dir.", default="user-models/LyCORIS")
 # parser.add_argument("--lyco-patch-lora", type=str, help="lycoris dir.", default="off")
