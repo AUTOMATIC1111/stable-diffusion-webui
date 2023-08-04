@@ -533,8 +533,8 @@ def create_ui():
                     apply = gr.Button(value=apply_label, variant="primary")
                     check = gr.Button(value="Check for updates")
                     extensions_disable_all = gr.Radio(label="Disable all extensions", choices=["none", "extra", "all"], value=shared.opts.disable_all_extensions, elem_id="extensions_disable_all")
-                    extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False).style(container=False)
-                    extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False).style(container=False)
+                    extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False, container=False)
+                    extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False, container=False)
 
                 html = ""
 
@@ -569,7 +569,7 @@ def create_ui():
                 with gr.Row():
                     refresh_available_extensions_button = gr.Button(value="Load from:", variant="primary")
                     extensions_index_url = os.environ.get('WEBUI_EXTENSIONS_INDEX', "https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui-extensions/master/index.json")
-                    available_extensions_index = gr.Text(value=extensions_index_url, label="Extension index URL").style(container=False)
+                    available_extensions_index = gr.Text(value=extensions_index_url, label="Extension index URL", container=False)
                     extension_to_install = gr.Text(elem_id="extension_to_install", visible=False)
                     install_extension_button = gr.Button(elem_id="install_extension_button", visible=False)
 
@@ -578,7 +578,7 @@ def create_ui():
                     sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order",'update time', 'create time', "stars"], type="index")
 
                 with gr.Row():
-                    search_extensions_text = gr.Text(label="Search").style(container=False)
+                    search_extensions_text = gr.Text(label="Search", container=False)
 
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()

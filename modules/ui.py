@@ -12,6 +12,7 @@ import numpy as np
 from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
+from modules import gradio_extensons  # noqa: F401
 from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles, scripts
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path
@@ -34,6 +35,7 @@ from modules.generation_parameters_copypaste import image_from_url_text
 create_setting_component = ui_settings.create_setting_component
 
 warnings.filterwarnings("default" if opts.show_warnings else "ignore", category=UserWarning)
+warnings.filterwarnings("default" if opts.show_gradio_deprecation_warnings else "ignore", category=gr.deprecation.GradioDeprecationWarning)
 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
@@ -146,7 +148,6 @@ def interrogate_deepbooru(image):
 def create_seed_inputs(target_interface):
     with FormRow(elem_id=f"{target_interface}_seed_row", variant="compact"):
         seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=f"{target_interface}_seed")
-        seed.style(container=False)
         random_seed = ToolButton(random_symbol, elem_id=f"{target_interface}_random_seed", label='Random seed')
         reuse_seed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_seed", label='Reuse seed')
 
@@ -158,7 +159,6 @@ def create_seed_inputs(target_interface):
     with FormRow(visible=False, elem_id=f"{target_interface}_subseed_row") as seed_extra_row_1:
         seed_extras.append(seed_extra_row_1)
         subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{target_interface}_subseed")
-        subseed.style(container=False)
         random_subseed = ToolButton(random_symbol, elem_id=f"{target_interface}_random_subseed")
         reuse_subseed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_subseed")
         subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=f"{target_interface}_subseed_strength")
@@ -408,7 +408,7 @@ def create_ui():
             from modules import ui_extra_networks
             extra_networks_ui = ui_extra_networks.create_ui(extra_networks, toprow.extra_networks_button, 'txt2img')
 
-        with gr.Row().style(equal_height=False):
+        with gr.Row(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
                 scripts.scripts_txt2img.prepare_ui()
 
@@ -636,7 +636,7 @@ def create_ui():
             from modules import ui_extra_networks
             extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, toprow.extra_networks_button, 'img2img')
 
-        with FormRow().style(equal_height=False):
+        with FormRow(equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
                 copy_image_buttons = []
                 copy_image_destinations = {}
@@ -658,19 +658,19 @@ def create_ui():
                     img2img_selected_tab = gr.State(0)
 
                     with gr.TabItem('img2img', id='img2img', elem_id="img2img_img2img_tab") as tab_img2img:
-                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA").style(height=opts.img2img_editor_height)
+                        init_img = gr.Image(label="Image for img2img", elem_id="img2img_image", show_label=False, source="upload", interactive=True, type="pil", tool="editor", image_mode="RGBA", height=opts.img2img_editor_height)
                         add_copy_image_controls('img2img', init_img)
 
                     with gr.TabItem('Sketch', id='img2img_sketch', elem_id="img2img_img2img_sketch_tab") as tab_sketch:
-                        sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=opts.img2img_editor_height)
+                        sketch = gr.Image(label="Image for img2img", elem_id="img2img_sketch", show_label=False, source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA", height=opts.img2img_editor_height)
                         add_copy_image_controls('sketch', sketch)
 
                     with gr.TabItem('Inpaint', id='inpaint', elem_id="img2img_inpaint_tab") as tab_inpaint:
-                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA").style(height=opts.img2img_editor_height)
+                        init_img_with_mask = gr.Image(label="Image for inpainting with mask", show_label=False, elem_id="img2maskimg", source="upload", interactive=True, type="pil", tool="sketch", image_mode="RGBA", height=opts.img2img_editor_height)
                         add_copy_image_controls('inpaint', init_img_with_mask)
 
                     with gr.TabItem('Inpaint sketch', id='inpaint_sketch', elem_id="img2img_inpaint_sketch_tab") as tab_inpaint_color:
-                        inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA").style(height=opts.img2img_editor_height)
+                        inpaint_color_sketch = gr.Image(label="Color sketch inpainting", show_label=False, elem_id="inpaint_sketch", source="upload", interactive=True, type="pil", tool="color-sketch", image_mode="RGBA", height=opts.img2img_editor_height)
                         inpaint_color_sketch_orig = gr.State(None)
                         add_copy_image_controls('inpaint_sketch', inpaint_color_sketch)
 
@@ -993,7 +993,7 @@ def create_ui():
         ui_postprocessing.create_ui()
 
     with gr.Blocks(analytics_enabled=False) as pnginfo_interface:
-        with gr.Row().style(equal_height=False):
+        with gr.Row(equal_height=False):
             with gr.Column(variant='panel'):
                 image = gr.Image(elem_id="pnginfo_image", label="Source", source="upload", interactive=True, type="pil")
 
@@ -1018,10 +1018,10 @@ def create_ui():
     modelmerger_ui = ui_checkpoint_merger.UiCheckpointMerger()
 
     with gr.Blocks(analytics_enabled=False) as train_interface:
-        with gr.Row().style(equal_height=False):
+        with gr.Row(equal_height=False):
             gr.HTML(value="<p style='margin-bottom: 0.7em'>See <b><a href=\"https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Textual-Inversion\">wiki</a></b> for detailed explanation.</p>")
 
-        with gr.Row(variant="compact").style(equal_height=False):
+        with gr.Row(variant="compact", equal_height=False):
             with gr.Tabs(elem_id="train_tabs"):
 
                 with gr.Tab(label="Create embedding", id="create_embedding"):
@@ -1181,7 +1181,7 @@ def create_ui():
 
             with gr.Column(elem_id='ti_gallery_container'):
                 ti_output = gr.Text(elem_id="ti_output", value="", show_label=False)
-                gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery').style(columns=4)
+                gr.Gallery(label='Output', show_label=False, elem_id='ti_gallery', columns=4)
                 gr.HTML(elem_id="ti_progress", value="")
                 ti_outcome = gr.HTML(elem_id="ti_error", value="")
 
