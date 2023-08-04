@@ -592,7 +592,7 @@ def create_ui():
                 (toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
                 (denoising_strength, "Denoising strength"),
                 (enable_hr, lambda d: "Denoising strength" in d and any(x in ["Hires upscale", "Hires upscaler"] for x in d)),
-                (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d and any(x in ["Hires upscale", "Hires upscaler"] for x in d))),
+                (hr_options, lambda d: gr.Row.update(visible="Denoising strength" in d and ("Hires upscale" in d or "Hires upscaler" in d or "Hires resize-1" in d))),
                 (hr_scale, "Hires upscale"),
                 (hr_upscaler, "Hires upscaler"),
                 (hr_second_pass_steps, "Hires steps"),
