@@ -35,8 +35,8 @@ def compel_encode_prompt_sdxl(pipeline: diffusers.StableDiffusionXLPipeline, pro
     else:
       positive, pooled = compel_te2(prompt)
       negative, negative_pooled = compel_te2(negative_prompt)
-    
-    
+
+
     [prompt_embed, negative_embed] = compel_te2.pad_conditioning_tensors_to_same_length([positive, negative])
     return prompt_embed, pooled, negative_embed, negative_pooled
 
