@@ -3,7 +3,7 @@ from contextlib import closing
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
+from PIL import Image, ImageOps, ImageFilter, ImageEnhance, UnidentifiedImageError
 import gradio as gr
 
 from modules import sd_samplers, images as imgutil
