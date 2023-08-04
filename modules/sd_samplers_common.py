@@ -75,7 +75,7 @@ def images_tensor_to_samples(image, approximation=None, model=None):
 
     if approximation == 3:
         image = image.to(devices.device, devices.dtype)
-        x_latent = sd_vae_taesd.encoder_model()(image) / 1.5
+        x_latent = sd_vae_taesd.encoder_model()(image)
     else:
         if model is None:
             model = shared.sd_model
