@@ -50,6 +50,7 @@ def get_filename(filepath):
 
 
 def refresh_vae_list():
+    global vae_dict
     vae_dict.clear()
 
     paths = [
@@ -82,6 +83,8 @@ def refresh_vae_list():
     for filepath in candidates:
         name = get_filename(filepath)
         vae_dict[name] = filepath
+
+    vae_dict = dict(sorted(vae_dict.items(), key=lambda item: shared.natural_sort_key(item[0])))
 
 
 def find_vae_near_checkpoint(checkpoint_file):
