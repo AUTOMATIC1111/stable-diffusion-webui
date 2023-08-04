@@ -1,9 +1,35 @@
+## 1.5.1
+
+### Minor:
+ * support parsing text encoder blocks in some new LoRAs
+ * delete scale checker script due to user demand
+
+### Extensions and API:
+ * add postprocess_batch_list script callback
+
+### Bug Fixes:
+ * fix TI training for SD1
+ * fix reload altclip model error
+ * prepend the pythonpath instead of overriding it
+ * fix typo in SD_WEBUI_RESTARTING
+ * if txt2img/img2img raises an exception, finally call state.end()
+ * fix composable diffusion weight parsing
+ * restyle Startup profile for black users
+ * fix webui not launching with --nowebui
+ * catch exception for non git extensions
+ * fix some options missing from /sdapi/v1/options
+ * fix for extension update status always saying "unknown"
+ * fix display of extra network cards that have `<>` in the name
+ * update lora extension to work with python 3.8
+
+
 ## 1.5.0
 
 ### Features:
  * SD XL support
  * user metadata system for custom networks
  * extended Lora metadata editor: set activation text, default weight, view tags, training info
+ * Lora extension rework to include other types of networks (all that were previously handled by LyCORIS extension)
  * show github stars for extenstions
  * img2img batch mode can read extra stuff from png info
  * img2img batch works with subdirectories
@@ -11,6 +37,9 @@
  * restyle time taken/VRAM display
  * add textual inversion hashes to infotext
  * optimization: cache git extension repo information
+ * move generate button next to the generated picture for mobile clients
+ * hide cards for networks of incompatible Stable Diffusion version in Lora extra networks interface
+ * skip installing packages with pip if they all are already installed - startup speedup of about 2 seconds
 
 ### Minor:
  * checkbox to check/uncheck all extensions in the Installed tab
@@ -25,6 +54,8 @@
  * speedup extra networks listing
  * added `[none]` filename token.
  * removed thumbs extra networks view mode (use settings tab to change width/height/scale to get thumbs)
+ * add always_discard_next_to_last_sigma option to XYZ plot
+ * automatically switch to 32-bit float VAE if the generated picture has NaNs without the need for `--no-half-vae` commandline flag.
  
 ### Extensions and API:
  * api endpoints: /sdapi/v1/server-kill, /sdapi/v1/server-restart, /sdapi/v1/server-stop
@@ -53,9 +84,8 @@
  * fix: check fill size none zero when resize  (fixes #11425)
  * use submit and blur for quick settings textbox
  * save img2img batch with images.save_image()
- * 
-
-
+ * prevent running preload.py for disabled extensions
+ * fix: previously, model name was added together with directory name to infotext and to [model_name] filename pattern; directory name is now not included
 
 
 ## 1.4.1

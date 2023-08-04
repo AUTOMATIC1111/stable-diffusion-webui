@@ -134,7 +134,7 @@ Requested path was: {f}
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery").style(columns=4)
+            result_gallery = gr.Gallery(label='Output', show_label=False, elem_id=f"{tabname}_gallery", columns=4)
 
         generation_info = None
         with gr.Column():
@@ -223,20 +223,44 @@ Requested path was: {f}
 
 
 def create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id):
+    refresh_components = refresh_component if isinstance(refresh_component, list) else [refresh_component]
+
+    label = None
+    for comp in refresh_components:
+        label = getattr(comp, 'label', None)
+        if label is not None:
+            break
+
     def refresh():
         refresh_method()
         args = refreshed_args() if callable(refreshed_args) else refreshed_args
 
         for k, v in args.items():
-            setattr(refresh_component, k, v)
+            for comp in refresh_components:
+                setattr(comp, k, v)
 
-        return gr.update(**(args or {}))
+        return [gr.update(**(args or {})) for _ in refresh_components]
 
-    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id)
+    refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id, tooltip=f"{label}: refresh" if label else "Refresh")
     refresh_button.click(
         fn=refresh,
         inputs=[],
-        outputs=[refresh_component]
+        outputs=[*refresh_components]
     )
     return refresh_button
+
+
+def setup_dialog(button_show, dialog, *, button_close=None):
+    """Sets up the UI so that the dialog (gr.Box) is invisible, and is only shown when buttons_show is clicked, in a fullscreen modal window."""
+
+    dialog.visible = False
+
+    button_show.click(
+        fn=lambda: gr.update(visible=True),
+        inputs=[],
+        outputs=[dialog],
+    ).then(fn=None, _js="function(){ popup(gradioApp().getElementById('" + dialog.elem_id + "')); }")
+
+    if button_close:
+        button_close.click(fn=None, _js="closePopup")
 

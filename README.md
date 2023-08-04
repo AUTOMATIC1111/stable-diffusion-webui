@@ -88,7 +88,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - [Alt-Diffusion](https://arxiv.org/abs/2211.06679) support - see [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#alt-diffusion) for instructions
 - Now without any bad letters!
 - Load checkpoints in safetensors format
-- Eased resolution restriction: generated image's domension must be a multiple of 8 rather than 64
+- Eased resolution restriction: generated image's dimension must be a multiple of 8 rather than 64
 - Now with a license!
 - Reorder elements in the UI from settings screen
 
@@ -168,5 +168,7 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - Security advice - RyotaK
 - UniPC sampler - Wenliang Zhao - https://github.com/wl-zhao/UniPC
 - TAESD - Ollin Boer Bohan - https://github.com/madebyollin/taesd
+- LyCORIS - KohakuBlueleaf
+- Restart sampling - lambertae - https://github.com/Newbeeer/diffusion_restart_sampling
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)

@@ -16,6 +16,11 @@ class PostprocessImageArgs:
         self.image = image
 
 
+class PostprocessBatchListArgs:
+    def __init__(self, images):
+        self.images = images
+
+
 class Script:
     name = None
     """script's internal name derived from title"""
@@ -119,7 +124,7 @@ class Script:
 
     def after_extra_networks_activate(self, p, *args, **kwargs):
         """
-        Calledafter extra networks activation, before conds calculation
+        Called after extra networks activation, before conds calculation
         allow modification of the network after extra networks activation been applied
         won't be call if p.disable_extra_networks
 
@@ -152,6 +157,25 @@ class Script:
         **kwargs will have same items as process_batch, and also:
           - batch_number - index of current batch, from 0 to number of batches-1
           - images - torch tensor with all generated images, with values ranging from 0 to 1;
+        """
+
+        pass
+
+    def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, *args, **kwargs):
+        """
+        Same as postprocess_batch(), but receives batch images as a list of 3D tensors instead of a 4D tensor.
+        This is useful when you want to update the entire batch instead of individual images.
+
+        You can modify the postprocessing object (pp) to update the images in the batch, remove images, add images, etc.
+        If the number of images is different from the batch size when returning,
+        then the script has the responsibility to also update the following attributes in the processing object (p):
+          - p.prompts
+          - p.negative_prompts
+          - p.seeds
+          - p.subseeds
+
+        **kwargs will have same items as process_batch, and also:
+          - batch_number - index of current batch, from 0 to number of batches-1
         """
 
         pass
@@ -536,6 +560,14 @@ class ScriptRunner:
             except Exception:
                 errors.report(f"Error running postprocess_batch: {script.filename}", exc_info=True)
 
+    def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, **kwargs):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.postprocess_batch_list(p, pp, *script_args, **kwargs)
+            except Exception:
+                errors.report(f"Error running postprocess_batch_list: {script.filename}", exc_info=True)
+
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         for script in self.alwayson_scripts:
             try:
@@ -599,49 +631,3 @@ def reload_script_body_only():
 
 
 reload_scripts = load_scripts  # compatibility alias
-
-
-def add_classes_to_gradio_component(comp):
-    """
-    this adds gradio-* to the component for css styling (ie gradio-button to gr.Button), as well as some others
-    """
-
-    comp.elem_classes = [f"gradio-{comp.get_block_name()}", *(comp.elem_classes or [])]
-
-    if getattr(comp, 'multiselect', False):
-        comp.elem_classes.append('multiselect')
-
-
-
-def IOComponent_init(self, *args, **kwargs):
-    if scripts_current is not None:
-        scripts_current.before_component(self, **kwargs)
-
-    script_callbacks.before_component_callback(self, **kwargs)
-
-    res = original_IOComponent_init(self, *args, **kwargs)
-
-    add_classes_to_gradio_component(self)
-
-    script_callbacks.after_component_callback(self, **kwargs)
-
-    if scripts_current is not None:
-        scripts_current.after_component(self, **kwargs)
-
-    return res
-
-
-original_IOComponent_init = gr.components.IOComponent.__init__
-gr.components.IOComponent.__init__ = IOComponent_init
-
-
-def BlockContext_init(self, *args, **kwargs):
-    res = original_BlockContext_init(self, *args, **kwargs)
-
-    add_classes_to_gradio_component(self)
-
-    return res
-
-
-original_BlockContext_init = gr.blocks.BlockContext.__init__
-gr.blocks.BlockContext.__init__ = BlockContext_init

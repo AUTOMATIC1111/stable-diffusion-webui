@@ -62,7 +62,8 @@ def get_single_card(page: str = "", tabname: str = "", name: str = ""):
     page = next(iter([x for x in extra_pages if x.name == page]), None)
 
     try:
-        item = page.create_item(name)
+        item = page.create_item(name, enable_filter=False)
+        page.items[name] = item
     except Exception as e:
         errors.display(e, "creating item for extra network")
         item = page.items.get(name)
@@ -252,7 +253,7 @@ class ExtraNetworksPage:
             "prompt": item.get("prompt", None),
             "tabname": quote_js(tabname),
             "local_preview": quote_js(item["local_preview"]),
-            "name": item["name"],
+            "name": html.escape(item["name"]),
             "description": (item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',

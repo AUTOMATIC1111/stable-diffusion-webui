@@ -1,4 +1,5 @@
 # this scripts installs necessary requirements and launches main program in webui.py
+import re
 import subprocess
 import os
 import sys
@@ -9,6 +10,7 @@ from functools import lru_cache
 
 from modules import cmd_args, errors
 from modules.paths_internal import script_path, extensions_dir
+from modules.timer import startup_timer
 
 args, _ = cmd_args.parser.parse_known_args()
 
@@ -192,7 +194,7 @@ def run_extension_installer(extension_dir):
 
     try:
         env = os.environ.copy()
-        env['PYTHONPATH'] = os.path.abspath(".")
+        env['PYTHONPATH'] = f"{os.path.abspath('.')}{os.pathsep}{env.get('PYTHONPATH', '')}"
 
         print(run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env))
     except Exception as e:
@@ -222,8 +224,51 @@ def run_extensions_installers(settings_file):
     if not os.path.isdir(extensions_dir):
         return
 
-    for dirname_extension in list_extensions(settings_file):
-        run_extension_installer(os.path.join(extensions_dir, dirname_extension))
+    with startup_timer.subcategory("run extensions installers"):
+        for dirname_extension in list_extensions(settings_file):
+            path = os.path.join(extensions_dir, dirname_extension)
+
+            if os.path.isdir(path):
+                run_extension_installer(path)
+                startup_timer.record(dirname_extension)
+
+
+re_requirement = re.compile(r"\s*([-_a-zA-Z0-9]+)\s*(?:==\s*([-+_.a-zA-Z0-9]+))?\s*")
+
+
+def requirements_met(requirements_file):
+    """
+    Does a simple parse of a requirements.txt file to determine if all rerqirements in it
+    are already installed. Returns True if so, False if not installed or parsing fails.
+    """
+
+    import importlib.metadata
+    import packaging.version
+
+    with open(requirements_file, "r", encoding="utf8") as file:
+        for line in file:
+            if line.strip() == "":
+                continue
+
+            m = re.match(re_requirement, line)
+            if m is None:
+                return False
+
+            package = m.group(1).strip()
+            version_required = (m.group(2) or "").strip()
+
+            if version_required == "":
+                continue
+
+            try:
+                version_installed = importlib.metadata.version(package)
+            except Exception:
+                return False
+
+            if packaging.version.parse(version_required) != packaging.version.parse(version_installed):
+                return False
+
+    return True
 
 
 def prepare_environment():
@@ -251,15 +296,18 @@ def prepare_environment():
     try:
         # the existance of this file is a signal to webui.sh/bat that webui needs to be restarted when it stops execution
         os.remove(os.path.join(script_path, "tmp", "restart"))
-        os.environ.setdefault('SD_WEBUI_RESTARTING ', '1')
+        os.environ.setdefault('SD_WEBUI_RESTARTING', '1')
     except OSError:
         pass
 
     if not args.skip_python_version_check:
         check_python_version()
 
+    startup_timer.record("checks")
+
     commit = commit_hash()
     tag = git_tag()
+    startup_timer.record("git version info")
 
     print(f"Python {sys.version}")
     print(f"Version: {tag}")
@@ -267,21 +315,27 @@ def prepare_environment():
 
     if args.reinstall_torch or not is_installed("torch") or not is_installed("torchvision"):
         run(f'"{python}" -m {torch_command}', "Installing torch and torchvision", "Couldn't install torch", live=True)
+        startup_timer.record("install torch")
 
     if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
         raise RuntimeError(
             'Torch is not able to use GPU; '
             'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
         )
+    startup_timer.record("torch GPU test")
+
 
     if not is_installed("gfpgan"):
         run_pip(f"install {gfpgan_package}", "gfpgan")
+        startup_timer.record("install gfpgan")
 
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
+        startup_timer.record("install clip")
 
     if not is_installed("open_clip"):
         run_pip(f"install {openclip_package}", "open_clip")
+        startup_timer.record("install open_clip")
 
     if (not is_installed("xformers") or args.reinstall_xformers) and args.xformers:
         if platform.system() == "Windows":
@@ -295,8 +349,11 @@ def prepare_environment():
         elif platform.system() == "Linux":
             run_pip(f"install -U -I --no-deps {xformers_package}", "xformers")
 
+        startup_timer.record("install xformers")
+
     if not is_installed("ngrok") and args.ngrok:
         run_pip("install ngrok", "ngrok")
+        startup_timer.record("install ngrok")
 
     os.makedirs(os.path.join(script_path, dir_repos), exist_ok=True)
 
@@ -306,20 +363,28 @@ def prepare_environment():
     git_clone(codeformer_repo, repo_dir('CodeFormer'), "CodeFormer", codeformer_commit_hash)
     git_clone(blip_repo, repo_dir('BLIP'), "BLIP", blip_commit_hash)
 
+    startup_timer.record("clone repositores")
+
     if not is_installed("lpips"):
         run_pip(f"install -r \"{os.path.join(repo_dir('CodeFormer'), 'requirements.txt')}\"", "requirements for CodeFormer")
+        startup_timer.record("install CodeFormer requirements")
 
     if not os.path.isfile(requirements_file):
         requirements_file = os.path.join(script_path, requirements_file)
-    run_pip(f"install -r \"{requirements_file}\"", "requirements")
+
+    if not requirements_met(requirements_file):
+        run_pip(f"install -r \"{requirements_file}\"", "requirements")
+        startup_timer.record("install requirements")
 
     run_extensions_installers(settings_file=args.ui_settings_file)
 
     if args.update_check:
         version_check(commit)
+        startup_timer.record("check version")
 
     if args.update_all_extensions:
         git_pull_recursive(extensions_dir)
+        startup_timer.record("update extensions")
 
     if "--exit" in sys.argv:
         print("Exiting because of --exit argument")

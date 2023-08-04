@@ -12,8 +12,8 @@ def get_learned_conditioning(self: sgm.models.diffusion.DiffusionEngine, batch: 
     for embedder in self.conditioner.embedders:
         embedder.ucg_rate = 0.0
 
-    width = getattr(self, 'target_width', 1024)
-    height = getattr(self, 'target_height', 1024)
+    width = getattr(batch, 'width', 1024)
+    height = getattr(batch, 'height', 1024)
     is_negative_prompt = getattr(batch, 'is_negative_prompt', False)
     aesthetic_score = shared.opts.sdxl_refiner_low_aesthetic_score if is_negative_prompt else shared.opts.sdxl_refiner_high_aesthetic_score
 
@@ -56,6 +56,14 @@ def encode_embedding_init_text(self: sgm.modules.GeneralConditioner, init_text, 
     return torch.cat(res, dim=1)
 
 
+def tokenize(self: sgm.modules.GeneralConditioner, texts):
+    for embedder in [embedder for embedder in self.embedders if hasattr(embedder, 'tokenize')]:
+        return embedder.tokenize(texts)
+
+    raise AssertionError('no tokenizer available')
+
+
+
 def process_texts(self, texts):
     for embedder in [embedder for embedder in self.embedders if hasattr(embedder, 'process_texts')]:
         return embedder.process_texts(texts)
@@ -68,6 +76,7 @@ def get_target_prompt_token_count(self, token_count):
 
 # those additions to GeneralConditioner make it possible to use it as model.cond_stage_model from SD1.5 in exist
 sgm.modules.GeneralConditioner.encode_embedding_init_text = encode_embedding_init_text
+sgm.modules.GeneralConditioner.tokenize = tokenize
 sgm.modules.GeneralConditioner.process_texts = process_texts
 sgm.modules.GeneralConditioner.get_target_prompt_token_count = get_target_prompt_token_count
 

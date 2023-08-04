@@ -7,7 +7,7 @@ blendmodes
 clean-fid
 einops
 gfpgan
-gradio==3.36.1
+gradio==3.39.0
 inflection
 jsonmerge
 kornia
