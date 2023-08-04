@@ -614,10 +614,8 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         os.replace(temp_file_path, filename_without_extension + extension)
 
     fullfn_without_extension, extension = os.path.splitext(params.filename)
-    if hasattr(os, 'statvfs'):
-        max_name_len = os.statvfs(path).f_namemax       
-    else:
-        max_name_len = 64
+    
+    max_name_len = 64
     fullfn_without_extension = fullfn_without_extension[:max_name_len - max(4, len(extension))]
     params.filename = fullfn_without_extension + extension
     fullfn = params.filename   
