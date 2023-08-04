@@ -585,6 +585,7 @@ def create_ui():
                 (width, "Size-1"),
                 (height, "Size-2"),
                 (batch_size, "Batch size"),
+                (seed_checkbox, lambda d: "Variation seed" in d or "Seed resize from-1" in d),
                 (subseed, "Variation seed"),
                 (subseed_strength, "Variation seed strength"),
                 (seed_resize_from_w, "Seed resize from-1"),
@@ -603,7 +604,6 @@ def create_ui():
                 (hr_prompt, "Hires prompt"),
                 (hr_negative_prompt, "Hires negative prompt"),
                 (hr_prompts_container, lambda d: gr.update(visible=True) if d.get("Hires prompt", "") != "" or d.get("Hires negative prompt", "") != "" else gr.update()),
-                (seed_checkbox, lambda d: any(x in ["Variation seed", "Variation seed strength", "Seed resize from-1", "Seed resize from-2"] for x in d)),
                 *scripts.scripts_txt2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("txt2img", None, txt2img_paste_fields, override_settings)
@@ -973,6 +973,7 @@ def create_ui():
                 (width, "Size-1"),
                 (height, "Size-2"),
                 (batch_size, "Batch size"),
+                (seed_checkbox, lambda d: "Variation seed" in d or "Seed resize from-1" in d),
                 (subseed, "Variation seed"),
                 (subseed_strength, "Variation seed strength"),
                 (seed_resize_from_w, "Seed resize from-1"),
@@ -980,7 +981,6 @@ def create_ui():
                 (toprow.ui_styles.dropdown, lambda d: d["Styles array"] if isinstance(d.get("Styles array"), list) else gr.update()),
                 (denoising_strength, "Denoising strength"),
                 (mask_blur, "Mask blur"),
-                (seed_checkbox, lambda d: any(x in ["Variation seed", "Variation seed strength", "Seed resize from-1", "Seed resize from-2"] for x in d)),
                 *scripts.scripts_img2img.infotext_fields
             ]
             parameters_copypaste.add_paste_fields("img2img", init_img, img2img_paste_fields, override_settings)
