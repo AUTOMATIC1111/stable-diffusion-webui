@@ -129,7 +129,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         mask = None
     elif mode == 2:  # inpaint
         image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
-        mask = mask.convert('RGBA').split()[3].convert('L').point(lambda x: 255 if x > 0 else 0)
+        mask = mask.convert("RGBA").split()[3].convert("L").point(lambda x: 255 if x > 0 else 0)
         image = image.convert("RGB")
     elif mode == 3:  # inpaint sketch
         image = inpaint_color_sketch
