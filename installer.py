@@ -317,15 +317,18 @@ def check_torch():
         os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow-rocm')
         torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/rocm5.4.2')
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
-    elif allow_ipex and (args.use_ipex or shutil.which('sycl-ls') is not None or os.environ.get('ONEAPI_ROOT') is not None or os.path.exists('/opt/intel/oneapi')):
+    elif allow_ipex and (args.use_ipex or shutil.which('sycl-ls') is not None or shutil.which('sycl-ls.exe') is not None or os.environ.get('ONEAPI_ROOT') is not None or os.path.exists('/opt/intel/oneapi') or os.path.exists("C:/Program Files (x86)/Intel/oneAPI") or os.path.exists("C:/oneAPI")):
         args.use_ipex = True # pylint: disable=attribute-defined-outside-init
         log.info('Intel OneAPI Toolkit detected')
-        if shutil.which('sycl-ls') is None:
-            log.error('Intel OneAPI Toolkit is not activated! Start the WebUI with --use-ipex or activate OneAPI manually')
+        if shutil.which('sycl-ls') is None and shutil.which('sycl-ls.exe') is None:
+            log.error('Intel OneAPI Toolkit is not activated! Activate OneAPI manually!')
         os.environ.setdefault('NEOReadDebugKeys', '1')
         os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
-        os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.12.0 intel-extension-for-tensorflow[gpu]')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1a0 torchvision==0.15.2a0 intel_extension_for_pytorch==2.0.110+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
+        if "linux" in sys.platform:
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1a0 torchvision==0.15.2a0 intel_extension_for_pytorch==2.0.110+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
+            os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0 intel-extension-for-tensorflow[gpu]')
+        else:
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 torchvision intel_extension_for_pytorch==2.0.110+gitba7f6c1 -f https://developer.intel.com/ipex-whl-stable-xpu')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
