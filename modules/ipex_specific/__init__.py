@@ -37,9 +37,10 @@ def ipex_init():
     torch.cuda.stream = torch.xpu.stream
     torch.cuda.synchronize = torch.xpu.synchronize
     torch.cuda.Event = torch.xpu.Event
+    torch.cuda.Stream = torch.xpu.Stream
+    torch.cuda.FloatTensor = torch.xpu.FloatTensor
     torch.Tensor.cuda = torch.Tensor.xpu
     torch.Tensor.is_cuda = torch.Tensor.is_xpu
-    torch.cuda.Stream = torch.xpu.Stream
 
     #Memory:
     torch.cuda.empty_cache = torch.xpu.empty_cache
