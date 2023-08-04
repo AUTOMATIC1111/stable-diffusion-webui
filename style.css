@@ -140,6 +140,10 @@ div.styler{
     background: var(--background-fill-primary);
 }
 
+.block.gradio-textbox{
+    overflow: visible !important;
+}
+
 
 /* general styled components */
 
