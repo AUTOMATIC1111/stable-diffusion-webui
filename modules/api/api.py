@@ -448,7 +448,7 @@ class Api:
 
     def get_samplers(self):
         return [{"name": sampler[0], "aliases":sampler[2], "options":sampler[3]} for sampler in sd_samplers.all_samplers]
-    
+
     def get_sd_vaes(self):
         return [{"model_name": x, "filename": vae_dict[x]} for x in vae_dict.keys()]
 
