@@ -171,13 +171,11 @@ class State:
             return
         import modules.sd_samplers # pylint: disable=W0621
         try:
-            if opts.show_progress_grid:
-                self.assign_current_image(modules.sd_samplers.samples_to_image_grid(self.current_latent))
-            else:
-                self.assign_current_image(modules.sd_samplers.sample_to_image(self.current_latent))
-        except Exception:
-            pass
-        self.current_image_sampling_step = self.sampling_step
+            image = modules.sd_samplers.samples_to_image_grid(self.current_latent) if opts.show_progress_grid else modules.sd_samplers.sample_to_image(self.current_latent)
+            self.assign_current_image(image)
+            self.current_image_sampling_step = self.sampling_step
+        except Exception as e:
+            log.error(f'Error setting current image: step={self.sampling_step} {e}')
 
     def assign_current_image(self, image):
         self.current_image = image
@@ -984,6 +982,22 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
     def backend(self):
         return Backend.ORIGINAL if opts.data['sd_backend'] == 'original' else Backend.DIFFUSERS
 
+    @property
+    def sd_model_type(self):
+        try:
+            if backend == Backend.ORIGINAL:
+                model_type = 'ldm'
+            elif "StableDiffusionXL" in self.sd_model.__class__.__name__:
+                model_type = 'sdxl'
+            elif "StableDiffusion" in self.sd_model.__class__.__name__:
+                model_type = 'sd'
+            elif "Kandinsky" in self.sd_model.__class__.__name__:
+                model_type = 'kandinsky'
+            else:
+                model_type = self.sd_model.__class__.__name__
+        except Exception:
+            model_type = 'unknown'
+        return model_type
 
 sd_model = None
 sd_refiner = None

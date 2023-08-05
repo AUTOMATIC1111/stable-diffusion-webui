@@ -23,9 +23,7 @@ def list_samplers(backend_name = shared.backend):
     samplers = all_samplers
     samplers_for_img2img = all_samplers
     samplers_map = {}
-    shared.log.debug(f'Samplers enumerated: {[x.name for x in all_samplers]}')
-
-list_samplers()
+    shared.log.debug(f'Available samplers: {[x.name for x in all_samplers]}')
 
 
 def find_sampler_config(name):
