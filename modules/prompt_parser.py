@@ -26,7 +26,7 @@ plain: /([^\\\[\]():|]|\\.)+/
 %import common.SIGNED_NUMBER -> NUMBER
 """)
 
-def get_learned_conditioning_prompt_schedules(prompts, steps):
+def get_learned_conditioning_prompt_schedules(prompts, steps, forcelast=False):
     """
     >>> g = lambda p: get_learned_conditioning_prompt_schedules([p], 10)[0]
     >>> g("test")
@@ -68,7 +68,8 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                 if tree.children[-2] < 1:
                     tree.children[-2] *= steps
                 tree.children[-2] = min(steps, int(tree.children[-2]))
-                res.append(tree.children[-2])
+                if not forcelast:
+                    res.append(tree.children[-2])
 
             def alternate(self, tree):
                 res.extend(range(1, steps+1))
@@ -80,7 +81,7 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
         class AtStep(lark.Transformer):
             def scheduled(self, args):
                 before, after, _, when, _ = args
-                yield before or () if step <= when else after
+                yield before or () if step <= when and not forcelast else after
             def alternate(self, args):
                 args = ["" if not arg else arg for arg in args]
                 yield args[(step - 1) % len(args)]
@@ -134,7 +135,7 @@ class SdConditioning(list):
 
 
 
-def get_learned_conditioning(model, prompts: SdConditioning | list[str], steps):
+def get_learned_conditioning(model, prompts: SdConditioning | list[str], steps, forcelast):
     """converts a list of prompts into a list of prompt schedules - each schedule is a list of ScheduledPromptConditioning, specifying the comdition (cond),
     and the sampling step at which this condition is to be replaced by the next one.
 
@@ -154,7 +155,7 @@ def get_learned_conditioning(model, prompts: SdConditioning | list[str], steps):
     """
     res = []
 
-    prompt_schedules = get_learned_conditioning_prompt_schedules(prompts, steps)
+    prompt_schedules = get_learned_conditioning_prompt_schedules(prompts, steps, forcelast)
     cache = {}
 
     for prompt, prompt_schedule in zip(prompts, prompt_schedules):
@@ -229,7 +230,7 @@ class MulticondLearnedConditioning:
         self.batch: List[List[ComposableScheduledPromptConditioning]] = batch
 
 
-def get_multicond_learned_conditioning(model, prompts, steps) -> MulticondLearnedConditioning:
+def get_multicond_learned_conditioning(model, prompts, steps, forcelast) -> MulticondLearnedConditioning:
     """same as get_learned_conditioning, but returns a list of ScheduledPromptConditioning along with the weight objects for each prompt.
     For each prompt, the list is obtained by splitting the prompt using the AND separator.
 
@@ -238,7 +239,7 @@ def get_multicond_learned_conditioning(model, prompts, steps) -> MulticondLearne
 
     res_indexes, prompt_flat_list, prompt_indexes = get_multicond_prompt_list(prompts)
 
-    learned_conditioning = get_learned_conditioning(model, prompt_flat_list, steps)
+    learned_conditioning = get_learned_conditioning(model, prompt_flat_list, steps, forcelast)
 
     res = []
     for indexes in res_indexes:
