@@ -779,9 +779,14 @@ footer {
 /* extra networks UI */
 
 .extra-network-cards{
-    height: 725px;
-    overflow: scroll;
+    height: calc(100vh - 24rem);
+    overflow: clip scroll;
     resize: vertical;
+    min-height: 52rem;
+}
+
+.extra-networks > div.tab-nav{
+    min-height: 3.4rem;
 }
 
 .extra-networks > div > [id *= '_extra_']{
@@ -797,7 +802,6 @@ footer {
 }
 .extra-networks .tab-nav .search,
 .extra-networks .tab-nav .sort{
-    display: inline-block;
     margin: 0.3em;
     align-self: center;
 }

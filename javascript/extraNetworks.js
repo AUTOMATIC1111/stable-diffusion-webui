@@ -2,16 +2,14 @@ function setupExtraNetworksForTab(tabname) {
     gradioApp().querySelector('#' + tabname + '_extra_tabs').classList.add('extra-networks');
 
     var tabs = gradioApp().querySelector('#' + tabname + '_extra_tabs > div');
-    var search = gradioApp().querySelector('#' + tabname + '_extra_search textarea');
+    var searchDiv = gradioApp().getElementById(tabname + '_extra_search');
+    var search = searchDiv.querySelector('textarea');
     var sort = gradioApp().getElementById(tabname + '_extra_sort');
     var sortOrder = gradioApp().getElementById(tabname + '_extra_sortorder');
     var refresh = gradioApp().getElementById(tabname + '_extra_refresh');
 
-    search.classList.add('search');
-    sort.classList.add('sort');
-    sortOrder.classList.add('sortorder');
     sort.dataset.sortkey = 'sortDefault';
-    tabs.appendChild(search);
+    tabs.appendChild(searchDiv);
     tabs.appendChild(sort);
     tabs.appendChild(sortOrder);
     tabs.appendChild(refresh);
@@ -179,7 +177,7 @@ function saveCardPreview(event, tabname, filename) {
 }
 
 function extraNetworksSearchButton(tabs_id, event) {
-    var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > div > textarea');
+    var searchTextarea = gradioApp().querySelector("#" + tabs_id + ' > label > textarea');
     var button = event.target;
     var text = button.classList.contains("search-all") ? "" : button.textContent.trim();
 

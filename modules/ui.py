@@ -261,7 +261,6 @@ class Toprow:
                         with gr.Row():
                             self.negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
 
-
             self.button_interrogate = None
             self.button_deepbooru = None
             if is_img2img:
@@ -290,7 +289,6 @@ class Toprow:
                 with gr.Row(elem_id=f"{id_part}_tools"):
                     self.paste = ToolButton(value=paste_symbol, elem_id="paste")
                     self.clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
-                    self.extra_networks_button = ToolButton(value=extra_networks_symbol, elem_id=f"{id_part}_extra_networks")
                     self.restore_progress_button = ToolButton(value=restore_progress_symbol, elem_id=f"{id_part}_restore_progress", visible=False)
 
                     self.token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])
@@ -404,11 +402,10 @@ def create_ui():
 
         dummy_component = gr.Label(visible=False)
 
-        with FormRow(variant='compact', elem_id="txt2img_extra_networks", visible=False) as extra_networks:
-            from modules import ui_extra_networks
-            extra_networks_ui = ui_extra_networks.create_ui(extra_networks, toprow.extra_networks_button, 'txt2img')
+        extra_tabs = gr.Tabs(elem_id="txt2img_extra_tabs")
+        extra_tabs.__enter__()
 
-        with gr.Row(equal_height=False):
+        with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, gr.Row().style(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
                 scripts.scripts_txt2img.prepare_ui()
 
@@ -631,7 +628,11 @@ def create_ui():
             toprow.token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.prompt, steps], outputs=[toprow.token_counter])
             toprow.negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.negative_prompt, steps], outputs=[toprow.negative_token_counter])
 
-            ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
+        from modules import ui_extra_networks
+        extra_networks_ui = ui_extra_networks.create_ui(txt2img_interface, [txt2img_generation_tab], 'txt2img')
+        ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
+
+        extra_tabs.__exit__()
 
     scripts.scripts_current = scripts.scripts_img2img
     scripts.scripts_img2img.initialize_scripts(is_img2img=True)
@@ -639,11 +640,10 @@ def create_ui():
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         toprow = Toprow(is_img2img=True)
 
-        with FormRow(variant='compact', elem_id="img2img_extra_networks", visible=False) as extra_networks:
-            from modules import ui_extra_networks
-            extra_networks_ui_img2img = ui_extra_networks.create_ui(extra_networks, toprow.extra_networks_button, 'img2img')
+        extra_tabs = gr.Tabs(elem_id="img2img_extra_tabs")
+        extra_tabs.__enter__()
 
-        with FormRow(equal_height=False):
+        with gr.Tab("Generation", id="img2img_generation") as img2img_generation_tab, FormRow().style(equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
                 copy_image_buttons = []
                 copy_image_destinations = {}
@@ -965,8 +965,6 @@ def create_ui():
             toprow.token_button.click(fn=update_token_counter, inputs=[toprow.prompt, steps], outputs=[toprow.token_counter])
             toprow.negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.negative_prompt, steps], outputs=[toprow.negative_token_counter])
 
-            ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
-
             img2img_paste_fields = [
                 (toprow.prompt, "Prompt"),
                 (toprow.negative_prompt, "Negative prompt"),
@@ -994,6 +992,12 @@ def create_ui():
             parameters_copypaste.register_paste_params_button(parameters_copypaste.ParamBinding(
                 paste_button=toprow.paste, tabname="img2img", source_text_component=toprow.prompt, source_image_component=None,
             ))
+
+        from modules import ui_extra_networks
+        extra_networks_ui_img2img = ui_extra_networks.create_ui(img2img_interface, [img2img_generation_tab], 'img2img')
+        ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
+
+        extra_tabs.__exit__()
 
     scripts.scripts_current = None
 
