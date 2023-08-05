@@ -34,7 +34,7 @@ def single_sample_to_image(sample, approximation=None):
     elif approximation == 3:
         # x_sample = sample * 1.5
         # x_sample = sd_vae_taesd.model()(x_sample.to(devices.device, devices.dtype).unsqueeze(0))[0].detach()
-        x_sample = sd_vae_taesd.decode(sample, 'sd')
+        x_sample = sd_vae_taesd.decode(sample)
     else:
         shared.log.warning(f"Unknown image decode type: {approximation}")
         return Image.new(mode="RGB", size=(512, 512))
