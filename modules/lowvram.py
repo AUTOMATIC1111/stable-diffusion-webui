@@ -15,6 +15,9 @@ def send_everything_to_cpu():
 
 
 def setup_for_low_vram(sd_model, use_medvram):
+    if getattr(sd_model, 'lowvram', False):
+        return
+
     sd_model.lowvram = True
 
     parents = {}
