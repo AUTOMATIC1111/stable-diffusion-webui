@@ -2,12 +2,14 @@
 
 ## Update for 2023-08-05
 
+- diffusers:
+  - vaesd live preview (sd and sd-xl)  
+  - fix inpainting (sd and sd-xl)  
 - general:
   - new torch 2.0 with ipex (intel arc)  
   - additional callbacks for extensions  
-  - update requirements
-- diffusers
-  - sd-xl: vaesd live preview decoder  
+    enables latest comfyui extension  
+  - update requirements  
 
 ## Update for 2023-07-30
 

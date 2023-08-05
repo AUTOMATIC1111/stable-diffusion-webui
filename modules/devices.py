@@ -119,9 +119,9 @@ def set_cuda_params():
     shared.log.debug('Verifying Torch settings')
     if cuda_ok:
         try:
-            torch.backends.cuda.matmul.allow_tf32 = shared.opts.cuda_allow_tf32
-            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
-            torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = shared.opts.cuda_allow_tf16_reduced
+            torch.backends.cuda.matmul.allow_tf32 = True
+            torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
+            torch.backends.cuda.matmul.allow_bf16_reduced_precision_reduction = True
         except Exception:
             pass
         if torch.backends.cudnn.is_available():
@@ -130,7 +130,7 @@ def set_cuda_params():
                 if shared.opts.cudnn_benchmark:
                     shared.log.debug('Torch enable cuDNN benchmark')
                     torch.backends.cudnn.benchmark_limit = 0
-                torch.backends.cudnn.allow_tf32 = shared.opts.cuda_allow_tf32
+                torch.backends.cudnn.allow_tf32 = True
             except Exception:
                 pass
     global dtype, dtype_vae, dtype_unet, unet_needs_upcast # pylint: disable=global-statement
