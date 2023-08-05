@@ -1,4 +1,5 @@
 import diffusers
+import diffusers.models.lora as diffusers_lora
 # from modules import shared
 import modules.shared as shared
 
@@ -67,13 +68,10 @@ def load_diffusers_lora(name, lora, strength = 1.0):
 
 # Diffusersで動くLoRA。このファイル単独で完結する。
 # LoRA module for Diffusers. This file works independently.
-
 import bisect
 import math
-# import random
 from typing import Any, Dict, List, Mapping, Optional, Union
 from diffusers import UNet2DConditionModel
-# import numpy as np
 from tqdm import tqdm
 from transformers import CLIPTextModel
 import torch
@@ -184,7 +182,7 @@ class LoRAModule(torch.nn.Module):
         super().__init__()
         self.lora_name = lora_name
 
-        if org_module.__class__.__name__ == "LoRACompatibleConv": #Modified to support Diffusers>=0.19.2
+        if isinstance(org_module, diffusers_lora.LoRACompatibleConv): #Modified to support Diffusers>=0.19.2
             in_dim = org_module.in_channels
             out_dim = org_module.out_channels
         else:
@@ -193,7 +191,7 @@ class LoRAModule(torch.nn.Module):
 
         self.lora_dim = lora_dim
 
-        if org_module.__class__.__name__ == "LoRACompatibleConv": #Modified to support Diffusers>=0.19.2
+        if isinstance(org_module, diffusers_lora.LoRACompatibleConv): #Modified to support Diffusers>=0.19.2
             kernel_size = org_module.kernel_size
             stride = org_module.stride
             padding = org_module.padding
@@ -203,7 +201,7 @@ class LoRAModule(torch.nn.Module):
             self.lora_down = torch.nn.Linear(in_dim, self.lora_dim, bias=False)
             self.lora_up = torch.nn.Linear(self.lora_dim, out_dim, bias=False)
 
-        if type(alpha) == torch.Tensor:
+        if isinstance(alpha, torch.Tensor):
             alpha = alpha.detach().float().numpy()  # without casting, bf16 causes error
         alpha = self.lora_dim if alpha is None or alpha == 0 else alpha
         self.scale = alpha / self.lora_dim
@@ -385,8 +383,8 @@ class LoRANetwork(torch.nn.Module):
             for name, module in root_module.named_modules():
                 if module.__class__.__name__ in target_replace_modules:
                     for child_name, child_module in module.named_modules():
-                        is_linear = child_module.__class__.__name__ == "Linear" or "LoRACompatibleLinear" #Modified to support Diffusers>=0.19.2
-                        is_conv2d = child_module.__class__.__name__ == "Conv2d" or "LoRACompatibleConv" #Modified to support Diffusers>=0.19.2
+                        is_linear = isinstance(child_module, (torch.nn.Linear, diffusers_lora.LoRACompatibleLinear))  #Modified to support Diffusers>=0.19.2
+                        is_conv2d = isinstance(child_module, (torch.nn.Conv2d, diffusers_lora.LoRACompatibleConv))  #Modified to support Diffusers>=0.19.2
 
                         if is_linear or is_conv2d:
                             lora_name = prefix + "." + name + "." + child_name
