@@ -4,6 +4,7 @@ import torch
 import intel_extension_for_pytorch as ipex
 from modules import shared
 from modules.sd_hijack_utils import CondFunc
+from .diffusers import ipex_diffusers
 
 #ControlNet depth_leres++
 class DummyDataParallel(torch.nn.Module):
@@ -149,3 +150,5 @@ def ipex_init():
         weight if weight is not None else torch.ones(input.size()[1], device=shared.device),
         bias if bias is not None else torch.zeros(input.size()[1], device=shared.device), *args, **kwargs),
         lambda orig_func, input, *args, **kwargs: input.device != torch.device("cpu"))
+
+    ipex_diffusers()
