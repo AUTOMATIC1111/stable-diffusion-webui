@@ -307,6 +307,12 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Schedule rho" not in res:
         res["Schedule rho"] = 0
 
+    if "VAE Encoder" not in res:
+        res["VAE Encoder"] = "Full"
+
+    if "VAE Decoder" not in res:
+        res["VAE Decoder"] = "Full"
+
     return res
 
 
@@ -332,6 +338,8 @@ infotext_to_setting_name_mapping = [
     ('RNG', 'randn_source'),
     ('NGMS', 's_min_uncond'),
     ('Pad conds', 'pad_cond_uncond'),
+    ('VAE Encoder', 'sd_vae_encode_method'),
+    ('VAE Decoder', 'sd_vae_decode_method'),
 ]
 
 
