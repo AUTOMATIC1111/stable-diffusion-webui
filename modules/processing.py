@@ -1136,7 +1136,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 batch_images.append(image)
 
             decoded_samples = torch.from_numpy(np.array(batch_images))
-            decoded_samples = decoded_samples.to(shared.device)
+            decoded_samples = decoded_samples.to(shared.device, dtype=devices.dtype_vae)
 
             self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
             samples = images_tensor_to_samples(decoded_samples, approximation_indexes.get(opts.sd_vae_encode_method))
@@ -1374,6 +1374,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
         image = torch.from_numpy(batch_images)
+        image = image.to(shared.device, dtype=devices.dtype_vae)
         self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
         self.init_latent = images_tensor_to_samples(image, approximation_indexes.get(opts.sd_vae_encode_method), self.sd_model)
         devices.torch_gc()
