@@ -152,15 +152,11 @@ function submit() {
     showSubmitButtons('txt2img', false);
 
     var id = randomId();
-    try {
-        localStorage.setItem("txt2img_task_id", id);
-    } catch (e) {
-        console.warn(`Failed to save txt2img task id to localStorage: ${e}`);
-    }
+    localSet("txt2img_task_id", id);
 
     requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function() {
         showSubmitButtons('txt2img', true);
-        localStorage.removeItem("txt2img_task_id");
+        localRemove("txt2img_task_id");
         showRestoreProgressButton('txt2img', false);
     });
 
@@ -175,15 +171,11 @@ function submit_img2img() {
     showSubmitButtons('img2img', false);
 
     var id = randomId();
-    try {
-        localStorage.setItem("img2img_task_id", id);
-    } catch (e) {
-        console.warn(`Failed to save img2img task id to localStorage: ${e}`);
-    }
+    localSet("img2img_task_id", id);
 
     requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function() {
         showSubmitButtons('img2img', true);
-        localStorage.removeItem("img2img_task_id");
+        localRemove("img2img_task_id");
         showRestoreProgressButton('img2img', false);
     });
 
@@ -197,7 +189,7 @@ function submit_img2img() {
 
 function restoreProgressTxt2img() {
     showRestoreProgressButton("txt2img", false);
-    var id = localStorage.getItem("txt2img_task_id");
+    var id = localGet("txt2img_task_id");
 
     if (id) {
         requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function() {
@@ -211,7 +203,7 @@ function restoreProgressTxt2img() {
 function restoreProgressImg2img() {
     showRestoreProgressButton("img2img", false);
 
-    var id = localStorage.getItem("img2img_task_id");
+    var id = localGet("img2img_task_id");
 
     if (id) {
         requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function() {
@@ -224,8 +216,8 @@ function restoreProgressImg2img() {
 
 
 onUiLoaded(function() {
-    showRestoreProgressButton('txt2img', localStorage.getItem("txt2img_task_id"));
-    showRestoreProgressButton('img2img', localStorage.getItem("img2img_task_id"));
+    showRestoreProgressButton('txt2img', localGet("txt2img_task_id"));
+    showRestoreProgressButton('img2img', localGet("img2img_task_id"));
 });
 
 
