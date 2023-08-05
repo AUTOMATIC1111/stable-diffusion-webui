@@ -353,7 +353,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "save_selected_only": OptionInfo(True, "When using 'Save' button, only save a single selected image"),
     "save_init_img": OptionInfo(False, "Save init images when using img2img"),
 
-    "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default").needs_restart(),
+    "temp_dir":  OptionInfo("", "Does nothing -- use the environment variable GRADIO_TEMP_DIR to change this"),
     "clean_temp_dir_at_start": OptionInfo(False, "Cleanup Gradio temporary directory when starting webui").needs_restart(),
 
 }))

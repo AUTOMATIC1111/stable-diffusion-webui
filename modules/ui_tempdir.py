@@ -2,11 +2,9 @@ import os
 
 from gradio_client.client import DEFAULT_TEMP_DIR
 
-from modules import shared
-
 
 def cleanup_tmpdr():
-    temp_dir = shared.opts.temp_dir or DEFAULT_TEMP_DIR
+    temp_dir = DEFAULT_TEMP_DIR
     if temp_dir == "" or not os.path.isdir(temp_dir):
         return
 

@@ -65,7 +65,7 @@ if not shared.cmd_opts.skip_version_check:
 
 import modules.codeformer_model as codeformer
 import modules.gfpgan_model as gfpgan
-from modules import sd_samplers, upscaler, extensions, localization, ui_tempdir, ui_extra_networks, config_states
+from modules import sd_samplers, upscaler, extensions, localization, ui_extra_networks, config_states
 import modules.face_restoration
 import modules.img2img
 
