@@ -795,7 +795,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             if getattr(samples_ddim, 'already_decoded', False):
                 x_samples_ddim = samples_ddim
             else:
-                p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
+                if opts.sd_vae_decode_method != 'Full':
+                    p.extra_generation_params['VAE Decoder'] = opts.sd_vae_decode_method
+
                 x_samples_ddim = decode_latent_batch(p.sd_model, samples_ddim, target_device=devices.cpu, check_for_nans=True)
 
             x_samples_ddim = torch.stack(x_samples_ddim).float()
@@ -1138,7 +1140,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             decoded_samples = torch.from_numpy(np.array(batch_images))
             decoded_samples = decoded_samples.to(shared.device, dtype=devices.dtype_vae)
 
-            self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
+            if opts.sd_vae_encode_method != 'Full':
+                self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
             samples = images_tensor_to_samples(decoded_samples, approximation_indexes.get(opts.sd_vae_encode_method))
 
             image_conditioning = self.img2img_image_conditioning(decoded_samples, samples)
@@ -1375,7 +1378,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
         image = torch.from_numpy(batch_images)
         image = image.to(shared.device, dtype=devices.dtype_vae)
-        self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
+
+        if opts.sd_vae_encode_method != 'Full':
+            self.extra_generation_params['VAE Encoder'] = opts.sd_vae_encode_method
+
         self.init_latent = images_tensor_to_samples(image, approximation_indexes.get(opts.sd_vae_encode_method), self.sd_model)
         devices.torch_gc()
 
