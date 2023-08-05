@@ -29,7 +29,7 @@ def modelmerger(*args):
 class UiCheckpointMerger:
     def __init__(self):
         with gr.Blocks(analytics_enabled=False) as modelmerger_interface:
-            with gr.Row().style(equal_height=False):
+            with gr.Row(equal_height=False):
                 with gr.Column(variant='compact'):
                     self.interp_description = gr.HTML(value=update_interp_description("Weighted sum"), elem_id="modelmerger_interp_description")
 

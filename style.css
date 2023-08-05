@@ -8,6 +8,7 @@
     --checkbox-label-gap: 0.25em 0.1em;
     --section-header-text-size: 12pt;
     --block-background-fill: transparent;
+
 }
 
 .block.padded:not(.gradio-accordion) {
@@ -42,7 +43,8 @@ div.form{
 .block.gradio-radio,
 .block.gradio-checkboxgroup,
 .block.gradio-number,
-.block.gradio-colorpicker
+.block.gradio-colorpicker,
+div.gradio-group
 {
     border-width: 0 !important;
     box-shadow: none !important;
@@ -133,6 +135,15 @@ a{
     cursor: pointer;
 }
 
+div.styler{
+    border: none;
+    background: var(--background-fill-primary);
+}
+
+.block.gradio-textbox{
+    overflow: visible !important;
+}
+
 
 /* general styled components */
 
@@ -164,7 +175,7 @@ a{
 .checkboxes-row > div{
     flex: 0;
     white-space: nowrap;
-    min-width: auto;
+    min-width: auto !important;
 }
 
 button.custom-button{
@@ -388,6 +399,7 @@ div#extras_scale_to_tab div.form{
 #quicksettings > div, #quicksettings > fieldset{
     max-width: 24em;
     min-width: 24em;
+    width: 24em;
     padding: 0;
     border: none;
     box-shadow: none;
@@ -971,4 +983,17 @@ div.block.gradio-box.edit-user-metadata {
 
 .edit-user-metadata-buttons{
     margin-top: 1.5em;
+}
+
+
+
+
+div.block.gradio-box.popup-dialog, .popup-dialog {
+    width: 56em;
+    background: var(--body-background-fill);
+    padding: 2em !important;
+}
+
+div.block.gradio-box.popup-dialog > div:last-child, .popup-dialog > div:last-child{
+    margin-top: 1em;
 }

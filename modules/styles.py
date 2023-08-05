@@ -106,10 +106,7 @@ class StyleDatabase:
         if os.path.exists(path):
             shutil.copy(path, f"{path}.bak")
 
-        fd = os.open(path, os.O_RDWR | os.O_CREAT)
-        with os.fdopen(fd, "w", encoding="utf-8-sig", newline='') as file:
-            # _fields is actually part of the public API: typing.NamedTuple is a replacement for collections.NamedTuple,
-            # and collections.NamedTuple has explicit documentation for accessing _fields. Same goes for _asdict()
+        with open(path, "w", encoding="utf-8-sig", newline='') as file:
             writer = csv.DictWriter(file, fieldnames=PromptStyle._fields)
             writer.writeheader()
             writer.writerows(style._asdict() for k, style in self.styles.items())

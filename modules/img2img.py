@@ -3,7 +3,7 @@ from contextlib import closing
 from pathlib import Path
 
 import numpy as np
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops, UnidentifiedImageError
+from PIL import Image, ImageOps, ImageFilter, ImageEnhance, UnidentifiedImageError
 import gradio as gr
 
 from modules import sd_samplers, images as imgutil
@@ -129,9 +129,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         mask = None
     elif mode == 2:  # inpaint
         image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
-        alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
-        mask = mask.convert('L').point(lambda x: 255 if x > 128 else 0, mode='1')
-        mask = ImageChops.lighter(alpha_mask, mask).convert('L')
+        mask = mask.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
         image = image.convert("RGB")
     elif mode == 3:  # inpaint sketch
         image = inpaint_color_sketch
