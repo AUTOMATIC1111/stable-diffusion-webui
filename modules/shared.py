@@ -51,16 +51,35 @@ restricted_opts = {
 
 # https://huggingface.co/datasets/freddyaboulton/gradio-theme-subdomains/resolve/main/subdomains.json
 gradio_hf_hub_themes = [
+    "gradio/base",
     "gradio/glass",
     "gradio/monochrome",
     "gradio/seafoam",
     "gradio/soft",
-    "freddyaboulton/dracula_revamped",
     "gradio/dracula_test",
     "abidlabs/dracula_test",
+    "abidlabs/Lime",
     "abidlabs/pakistan",
+    "Ama434/neutral-barlow",
     "dawood/microsoft_windows",
-    "ysharma/steampunk"
+    "finlaymacklon/smooth_slate",
+    "Franklisi/darkmode",
+    "freddyaboulton/dracula_revamped",
+    "freddyaboulton/test-blue",
+    "gstaff/xkcd",
+    "Insuz/Mocha",
+    "Insuz/SimpleIndigo",
+    "JohnSmith9982/small_and_pretty",
+    "nota-ai/theme",
+    "nuttea/Softblue",
+    "ParityError/Anime",
+    "reilnuud/polite",
+    "remilia/Ghostly",
+    "rottenlittlecreature/Moon_Goblin",
+    "step-3-profit/Midnight-Deep",
+    "Taithrah/Minimal",
+    "ysharma/huggingface",
+    "ysharma/steampunk"    
 ]
 
 
