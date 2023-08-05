@@ -82,8 +82,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             args['callback_steps'] = 1
         if 'callback' in possible:
             args['callback'] = diffusers_callback
-        if 'cross_attention_kwargs' in possible and lora_state['active']:
-            args['cross_attention_kwargs'] = { 'scale': lora_state['multiplier']}
+        if 'cross_attention_kwargs' in possible and lora_state['active'] and shared.opts.diffusers_lora_loader == "Diffusers":
+            args['cross_attention_kwargs'] = { 'scale': lora_state['multiplier'][0]}
         for arg in kwargs:
             if arg in possible:
                 args[arg] = kwargs[arg]
