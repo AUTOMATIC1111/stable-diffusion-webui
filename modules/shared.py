@@ -259,6 +259,7 @@ class OptionInfo:
         self.onchange = onchange
         self.section = section
         self.refresh = refresh
+        self.do_not_save = False
 
         self.comment_before = comment_before
         """HTML text that will be added after label in UI"""
@@ -289,6 +290,13 @@ class OptionInfo:
     def needs_reload_ui(self):
         self.comment_after += " <span class='info'>(requires Reload UI)</span>"
         return self
+
+
+class OptionHTML(OptionInfo):
+    def __init__(self, text):
+        super().__init__(str(text).strip(), label='', component=lambda **kwargs: gr.HTML(elem_classes="settings-info", **kwargs))
+
+        self.do_not_save = True
 
 
 def options_section(section_identifier, options_dict):
@@ -443,6 +451,12 @@ options_templates.update(options_section(('sdxl', "Stable Diffusion XL"), {
 }))
 
 options_templates.update(options_section(('vae', "VAE"), {
+    "sd_vae_explanation": OptionHTML("""
+<abbr title='Variational autoencoder'>VAE</abbr> is a neural network that transforms a standard <abbr title='red/green/blue'>RGB</abbr>
+image into latent space representation and back. Latent space representation is what stable diffusion is working on during sampling
+(i.e. when the progress bar is between empty and full). For txt2img, VAE is used to create a resulting image after the sampling is finished.
+For img2img, VAE is used to process user's input image before the sampling, and to create an image after sampling.
+"""),
     "sd_vae_checkpoint_cache": OptionInfo(0, "VAE Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
     "sd_vae": OptionInfo("Automatic", "SD VAE", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list).info("choose VAE model: Automatic = use one with same filename as checkpoint; None = use VAE from checkpoint"),
     "sd_vae_as_default": OptionInfo(True, "Ignore selected VAE for stable diffusion checkpoints that have their own .vae.pt next to them"),
@@ -619,6 +633,9 @@ class Options:
                 assert not cmd_opts.freeze_settings, "changing settings is disabled"
 
                 info = opts.data_labels.get(key, None)
+                if info.do_not_save:
+                    return
+
                 comp_args = info.component_args if info else None
                 if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
                     raise RuntimeError(f"not possible to set {key} because it is restricted")
@@ -646,6 +663,9 @@ class Options:
 
         oldval = self.data.get(key, None)
         if oldval == value:
+            return False
+
+        if self.data_labels[key].do_not_save:
             return False
 
         try:

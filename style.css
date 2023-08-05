@@ -494,6 +494,13 @@ table.popup-table .link{
     font-size: 18pt;
 }
 
+#settings .settings-info{
+    max-width: 48em;
+    border: 1px dotted #777;
+    margin: 0;
+    padding: 1em;
+}
+
 
 /* live preview */
 .progressDiv{
