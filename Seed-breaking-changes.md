@@ -11,10 +11,10 @@ New method introduced in [80b26d2a](https://github.com/AUTOMATIC1111/stable-diff
 
 Differences between produced images are tiny, but if that matters for you (or for some extension you are using), 1.2.0 adds an option to use old method.
 
-## [2023-02-18](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/a77ac2eeaad82dcf71edc6770ae82745b7d55423) - deterministic DPM++ SDE across different batch sizes
+## [2023-02-18](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/7730) - deterministic DPM++ SDE across different batch sizes
 DPM++ SDE and DPM++ SDE Karras samplers used to produce different images in batches compared to single image with same parameters. PR https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/7730 fixes this. But the nature of the fix also changes what generates for single images. an option is added to compatibility settings to revert to old behavior: Do not make DPM++ SDE deterministic across different batch sizes.
 
-## [2023-01-11](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/035f2af050da98a8b3f847624ef3b5bc3395e87e) - Alternating words syntax bugfix
+## [2023-01-11](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6628) - Alternating words syntax bugfix
 If you used alternating words syntax bugfix with emphasis before [97ff69ef](https://github.com/AUTOMATIC1111/stable-diffusion-webui/commit/97ff69eff338c6641f4abf430bf5ac112c1775e0), the program would incorrectly replace emphasized part with just `(`. So, `[a|(b:1.1)]`, rather than becoming a sequence of
 
 `a` -> `(b:1.1)` -> `a` -> `(b:1.1)` -> ...
