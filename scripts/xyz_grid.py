@@ -241,6 +241,7 @@ axis_options = [
     AxisOption("Token merging ratio", float, apply_override('token_merging_ratio')),
     AxisOption("Token merging ratio high-res", float, apply_override('token_merging_ratio_hr')),
     AxisOption("Always discard next-to-last sigma", str, apply_override('always_discard_next_to_last_sigma', boolean=True), choices=boolean_choice(reverse=True)),
+    AxisOption("Use last stored latent", str, apply_override('use_last_stored_latent', boolean=True), choices=boolean_choice(reverse=True)),
 ]
 
 

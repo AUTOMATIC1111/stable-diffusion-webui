@@ -13,7 +13,7 @@ from modules.script_callbacks import AfterCFGCallbackParams, cfg_after_cfg_callb
 samplers_k_diffusion = [
     ('Euler a', 'sample_euler_ancestral', ['k_euler_a', 'k_euler_ancestral'], {"uses_ensd": True}),
     ('Euler', 'sample_euler', ['k_euler'], {}),
-    ('LMS', 'sample_lms', ['k_lms'], {}),
+    ('LMS', 'sample_lms', ['k_lms'], {'discard_next_to_last_sigma': True, 'use_last_stored_latent': True}),
     ('Heun', 'sample_heun', ['k_heun'], {"second_order": True}),
     ('DPM2', 'sample_dpm_2', ['k_dpm_2'], {'discard_next_to_last_sigma': True}),
     ('DPM2 a', 'sample_dpm_2_ancestral', ['k_dpm_2_a'], {'discard_next_to_last_sigma': True, "uses_ensd": True}),
@@ -475,5 +475,12 @@ class KDiffusionSampler:
         if self.model_wrap_cfg.padded_cond_uncond:
             p.extra_generation_params["Pad conds"] = True
 
-        return samples
+        use_last_stored_latent = self.config is not None and self.config.options.get('use_last_stored_latent', False)
+        if opts.use_last_stored_latent and not use_last_stored_latent:
+            use_last_stored_latent = True
+            p.extra_generation_params["Use last stored latent"] = True
 
+        if use_last_stored_latent:
+            return self.last_latent
+        else:
+            return samples

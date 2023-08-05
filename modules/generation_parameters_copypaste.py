@@ -329,6 +329,7 @@ infotext_to_setting_name_mapping = [
     ('Eta', 'eta_ancestral'),
     ('Eta DDIM', 'eta_ddim'),
     ('Discard penultimate sigma', 'always_discard_next_to_last_sigma'),
+    ('Use last stored latent', 'use_last_stored_latent'),
     ('UniPC variant', 'uni_pc_variant'),
     ('UniPC skip type', 'uni_pc_skip_type'),
     ('UniPC order', 'uni_pc_order'),
