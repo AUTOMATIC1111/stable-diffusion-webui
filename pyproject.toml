@@ -48,6 +48,7 @@ ignore = [
   "C408", # Rewrite as a literal
   "E402", # Module level import not at top of file
   "F401", # Imported but unused
+  "EXE001", # Shebang present
   "ISC003", # Implicit string concatenation
   "RUF005", # Consider concatenation
   "RUF012", # Mutable class attributes

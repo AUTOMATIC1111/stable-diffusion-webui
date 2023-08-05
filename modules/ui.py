@@ -379,7 +379,6 @@ def create_ui(startup_timer = None):
                         cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG Scale', value=6.0, elem_id="txt2img_cfg_scale")
                         clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
                     with FormRow(elem_classes="checkboxes-row", variant="compact"):
-                        quality = gr.Checkbox(label='Decode quality', value=True, elem_id="txt2img_quality")
                         restore_faces = gr.Checkbox(label='Face restore', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                         tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
 
@@ -446,7 +445,6 @@ def create_ui(startup_timer = None):
                     show_second_pass, denoising_strength,
                     hr_scale, hr_upscaler, hr_second_pass_steps, hr_resize_x, hr_resize_y,
                     refiner_start, refiner_prompt, refiner_negative,
-                    quality,
                     override_settings,
                 ] + custom_inputs,
                 outputs=[

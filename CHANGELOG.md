@@ -1,5 +1,14 @@
 # Change Log for SD.Next
 
+## Update for 2023-08-05
+
+- general:
+  - new torch 2.0 with ipex (intel arc)  
+  - additional callbacks for extensions  
+  - update requirements
+- diffusers
+  - sd-xl: vaesd live preview decoder  
+
 ## Update for 2023-07-30
 
 Smaller release, but IMO worth a post...
