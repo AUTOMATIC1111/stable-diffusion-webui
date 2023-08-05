@@ -52,12 +52,13 @@ class SlicedAttnProcessor:
             (batch_size_attention, query_tokens, dim // attn.heads), device=query.device, dtype=query.dtype
         )
 
-        block_size = (batch_size_attention * query_tokens * shape_three) / 1024 * 1.2 #MB
+        block_multiply = 2.4 if query.dtype == torch.float32 else 1.2
+        block_size = (batch_size_attention * query_tokens * shape_three) / 1024 * block_multiply #MB
         split_2_slice_size = query_tokens
         if block_size >= 4000:
             do_split_2 = True
             #Find something divisible with the query_tokens
-            while ((self.slice_size * split_2_slice_size * shape_three) / 1024 * 1.2) > 4000:
+            while ((self.slice_size * split_2_slice_size * shape_three) / 1024 * block_multiply) > 4000:
                 split_2_slice_size = split_2_slice_size // 2
         else:
             do_split_2 = False

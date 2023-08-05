@@ -115,10 +115,15 @@ def ipex_init():
     CondFunc('torch.nn.modules.Linear.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
+    CondFunc('torch.nn.functional.layer_norm',
+        lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
+        orig_func(input.to(weight.data.dtype), normalized_shape, weight, *args, **kwargs),
+        lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
+        input.dtype != weight.data.dtype and weight is not None)
     #Diffusers bfloat16:
-    CondFunc('torch.nn.modules.Conv2d._conv_forward',
-        lambda orig_func, self, input, weight, bias=None: orig_func(self, input.to(weight.data.dtype), weight, bias=bias),
-        lambda orig_func, self, input, weight, bias=None: input.dtype != weight.data.dtype)
+    CondFunc('torch.nn.functional.conv2d',
+        lambda orig_func, input, weight, *args, **kwargs: orig_func(input.to(weight.data.dtype), weight, *args, **kwargs),
+        lambda orig_func, input, weight, *args, **kwargs: input.dtype != weight.data.dtype)
 
     #Functions that does not work with the XPU:
     #UniPC:
