@@ -232,6 +232,10 @@ class SamplerItem(BaseModel):
     aliases: List[str] = Field(title="Aliases")
     options: Dict[str, str] = Field(title="Options")
 
+class SDVaeItem(BaseModel):
+    model_name: str = Field(title="Model Name")
+    filename: str = Field(title="Filename")
+
 class UpscalerItem(BaseModel):
     name: str = Field(title="Name")
     model_name: Optional[str] = Field(title="Model Name")

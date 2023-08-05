@@ -7,10 +7,10 @@ import modules.dml.amp as amp
 from .utils import rDevice, get_device
 from .device import device
 from .device_properties import DeviceProperties
-from .memory_amd import AMDMemoryProvider
 from .memory import MemoryProvider
 
 def amd_mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
+    from .memory_amd import AMDMemoryProvider
     return AMDMemoryProvider.mem_get_info(get_device(device).index)
 
 def pdh_mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
