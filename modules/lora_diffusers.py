@@ -32,7 +32,7 @@ def unload_diffusers_lora():
         lora_state['loaded'] = 0
         lora_state['all_loras'] = []
         lora_state['multiplier'] = []
-      
+
     except Exception as e:
         shared.log.error(f"Diffusers LoRA unloading failed: {e}")
 
@@ -355,7 +355,7 @@ class LoRANetwork(torch.nn.Module):
         super().__init__()
         self.multiplier = multiplier
 
-        shared.log.debug(f"create LoRA network from weights")
+        shared.log.debug("create LoRA network from weights")
 
         # convert SDXL Stability AI's U-Net modules to Diffusers
         converted = self.convert_unet_modules(modules_dim, modules_alpha)
@@ -496,13 +496,13 @@ class LoRANetwork(torch.nn.Module):
         shared.log.debug("merge LoRA weights to original weights")
         for lora in tqdm(self.text_encoder_loras + self.unet_loras):
             lora.merge_to(multiplier)
-        shared.log.debug(f"weights are merged")
+        shared.log.debug("weights are merged")
 
     def restore_from(self, multiplier=1.0):
         shared.log.debug("restore LoRA weights from original weights")
         for lora in tqdm(self.text_encoder_loras + self.unet_loras):
             lora.restore_from(multiplier)
-        shared.log.debug(f"weights are restored")
+        shared.log.debug("weights are restored")
 
     def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
         # convert SDXL Stability AI's state dict to Diffusers' based state dict
