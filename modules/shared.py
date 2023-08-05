@@ -615,7 +615,7 @@ options_templates.update(options_section(('sampler-params', "Sampler parameters"
     'rho':  OptionInfo(0.0, "rho", gr.Number).info("0 = default (7 for karras, 1 for polyexponential); higher values result in a more steep noise schedule (decreases faster)"),
     'eta_noise_seed_delta': OptionInfo(0, "Eta noise seed delta", gr.Number, {"precision": 0}).info("ENSD; does not improve anything, just produces different results for ancestral samplers - only useful for reproducing images"),
     'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma").link("PR", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/6044"),
-    'use_last_stored_latent': OptionInfo(False, "Always try to use the last stored latent").info("Used by default for LMS (non-Karras) to work around an issue with k-diffusion").link("PR", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/TODO"),
+    'use_last_stored_latent': OptionInfo(False, "Always try to use the last stored latent").info("Used by default for LMS (non-Karras) to work around an issue with k-diffusion").link("PR", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12349"),
     'uni_pc_variant': OptionInfo("bh1", "UniPC variant", gr.Radio, {"choices": ["bh1", "bh2", "vary_coeff"]}),
     'uni_pc_skip_type': OptionInfo("time_uniform", "UniPC skip type", gr.Radio, {"choices": ["time_uniform", "time_quadratic", "logSNR"]}),
     'uni_pc_order': OptionInfo(3, "UniPC order", gr.Slider, {"minimum": 1, "maximum": 50, "step": 1}).info("must be < sampling steps"),
