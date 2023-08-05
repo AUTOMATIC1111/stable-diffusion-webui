@@ -8,6 +8,7 @@
     --checkbox-label-gap: 0.25em 0.1em;
     --section-header-text-size: 12pt;
     --block-background-fill: transparent;
+
 }
 
 .block.padded:not(.gradio-accordion) {
@@ -42,7 +43,8 @@ div.form{
 .block.gradio-radio,
 .block.gradio-checkboxgroup,
 .block.gradio-number,
-.block.gradio-colorpicker
+.block.gradio-colorpicker,
+div.gradio-group
 {
     border-width: 0 !important;
     box-shadow: none !important;
@@ -133,6 +135,15 @@ a{
     cursor: pointer;
 }
 
+div.styler{
+    border: none;
+    background: var(--background-fill-primary);
+}
+
+.block.gradio-textbox{
+    overflow: visible !important;
+}
+
 
 /* general styled components */
 
@@ -164,7 +175,7 @@ a{
 .checkboxes-row > div{
     flex: 0;
     white-space: nowrap;
-    min-width: auto;
+    min-width: auto !important;
 }
 
 button.custom-button{
@@ -388,6 +399,7 @@ div#extras_scale_to_tab div.form{
 #quicksettings > div, #quicksettings > fieldset{
     max-width: 24em;
     min-width: 24em;
+    width: 24em;
     padding: 0;
     border: none;
     box-shadow: none;
@@ -423,15 +435,16 @@ div#extras_scale_to_tab div.form{
 }
 
 table.popup-table{
-    background: white;
+    background: var(--body-background-fill);
+    color: var(--body-text-color);
     border-collapse: collapse;
     margin: 1em;
-    border: 4px solid white;
+    border: 4px solid var(--body-background-fill);
 }
 
 table.popup-table td{
     padding: 0.4em;
-    border: 1px solid #ccc;
+    border: 1px solid rgba(128, 128, 128, 0.5);
     max-width: 36em;
 }
 
@@ -845,7 +858,7 @@ footer {
 
 .extra-network-cards .card .card-button {
     text-shadow: 2px 2px 3px black;
-    padding: 0.25em;
+    padding: 0.25em 0.1em;
     font-size: 200%;
     width: 1.5em;
 }
@@ -961,6 +974,10 @@ div.block.gradio-box.edit-user-metadata {
     text-align: left;
 }
 
+.edit-user-metadata .file-metadata th, .edit-user-metadata .file-metadata td{
+    padding: 0.3em 1em;
+}
+
 .edit-user-metadata .wrap.translucent{
     background: var(--body-background-fill);
 }
@@ -970,4 +987,17 @@ div.block.gradio-box.edit-user-metadata {
 
 .edit-user-metadata-buttons{
     margin-top: 1.5em;
+}
+
+
+
+
+div.block.gradio-box.popup-dialog, .popup-dialog {
+    width: 56em;
+    background: var(--body-background-fill);
+    padding: 2em !important;
+}
+
+div.block.gradio-box.popup-dialog > div:last-child, .popup-dialog > div:last-child{
+    margin-top: 1em;
 }

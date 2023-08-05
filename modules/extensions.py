@@ -11,9 +11,9 @@ os.makedirs(extensions_dir, exist_ok=True)
 
 
 def active():
-    if shared.opts.disable_all_extensions == "all":
+    if shared.cmd_opts.disable_all_extensions or shared.opts.disable_all_extensions == "all":
         return []
-    elif shared.opts.disable_all_extensions == "extra":
+    elif shared.cmd_opts.disable_extra_extensions or shared.opts.disable_all_extensions == "extra":
         return [x for x in extensions if x.enabled and x.is_builtin]
     else:
         return [x for x in extensions if x.enabled]
@@ -56,10 +56,12 @@ class Extension:
                 self.do_read_info_from_repo()
 
                 return self.to_dict()
-
-        d = cache.cached_data_for_file('extensions-git', self.name, os.path.join(self.path, ".git"), read_from_repo)
-        self.from_dict(d)
-        self.status = 'unknown'
+        try:
+            d = cache.cached_data_for_file('extensions-git', self.name, os.path.join(self.path, ".git"), read_from_repo)
+            self.from_dict(d)
+        except FileNotFoundError:
+            pass
+        self.status = 'unknown' if self.status == '' else self.status
 
     def do_read_info_from_repo(self):
         repo = None
@@ -139,8 +141,12 @@ def list_extensions():
     if not os.path.isdir(extensions_dir):
         return
 
-    if shared.opts.disable_all_extensions == "all":
+    if shared.cmd_opts.disable_all_extensions:
+        print("*** \"--disable-all-extensions\" arg was used, will not load any extensions ***")
+    elif shared.opts.disable_all_extensions == "all":
         print("*** \"Disable all extensions\" option was set, will not load any extensions ***")
+    elif shared.cmd_opts.disable_extra_extensions:
+        print("*** \"--disable-extra-extensions\" arg was used, will only load built-in extensions ***")
     elif shared.opts.disable_all_extensions == "extra":
         print("*** \"Disable all extensions\" option was set, will only load built-in extensions ***")
 

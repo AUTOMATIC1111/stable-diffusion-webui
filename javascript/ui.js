@@ -152,7 +152,11 @@ function submit() {
     showSubmitButtons('txt2img', false);
 
     var id = randomId();
-    localStorage.setItem("txt2img_task_id", id);
+    try {
+        localStorage.setItem("txt2img_task_id", id);
+    } catch (e) {
+        console.warn(`Failed to save txt2img task id to localStorage: ${e}`);
+    }
 
     requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function() {
         showSubmitButtons('txt2img', true);
@@ -171,7 +175,11 @@ function submit_img2img() {
     showSubmitButtons('img2img', false);
 
     var id = randomId();
-    localStorage.setItem("img2img_task_id", id);
+    try {
+        localStorage.setItem("img2img_task_id", id);
+    } catch (e) {
+        console.warn(`Failed to save img2img task id to localStorage: ${e}`);
+    }
 
     requestProgress(id, gradioApp().getElementById('img2img_gallery_container'), gradioApp().getElementById('img2img_gallery'), function() {
         showSubmitButtons('img2img', true);
@@ -190,8 +198,6 @@ function submit_img2img() {
 function restoreProgressTxt2img() {
     showRestoreProgressButton("txt2img", false);
     var id = localStorage.getItem("txt2img_task_id");
-
-    id = localStorage.getItem("txt2img_task_id");
 
     if (id) {
         requestProgress(id, gradioApp().getElementById('txt2img_gallery_container'), gradioApp().getElementById('txt2img_gallery'), function() {

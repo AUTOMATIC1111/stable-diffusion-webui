@@ -211,7 +211,7 @@ function popup(contents) {
         globalPopupInner.classList.add('global-popup-inner');
         globalPopup.appendChild(globalPopupInner);
 
-        gradioApp().appendChild(globalPopup);
+        gradioApp().querySelector('.main').appendChild(globalPopup);
     }
 
     globalPopupInner.innerHTML = '';

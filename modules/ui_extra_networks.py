@@ -2,7 +2,7 @@ import os.path
 import urllib.parse
 from pathlib import Path
 
-from modules import shared, ui_extra_networks_user_metadata, errors
+from modules import shared, ui_extra_networks_user_metadata, errors, extra_networks
 from modules.images import read_info_from_image, save_image_with_geninfo
 from modules.ui import up_down_symbol
 import gradio as gr
@@ -62,7 +62,8 @@ def get_single_card(page: str = "", tabname: str = "", name: str = ""):
     page = next(iter([x for x in extra_pages if x.name == page]), None)
 
     try:
-        item = page.create_item(name)
+        item = page.create_item(name, enable_filter=False)
+        page.items[name] = item
     except Exception as e:
         errors.display(e, "creating item for extra network")
         item = page.items.get(name)
@@ -100,16 +101,7 @@ class ExtraNetworksPage:
 
     def read_user_metadata(self, item):
         filename = item.get("filename", None)
-        basename, ext = os.path.splitext(filename)
-        metadata_filename = basename + '.json'
-
-        metadata = {}
-        try:
-            if os.path.isfile(metadata_filename):
-                with open(metadata_filename, "r", encoding="utf8") as file:
-                    metadata = json.load(file)
-        except Exception as e:
-            errors.display(e, f"reading extra network user metadata from {metadata_filename}")
+        metadata = extra_networks.get_user_metadata(filename)
 
         desc = metadata.get("description", None)
         if desc is not None:
@@ -252,7 +244,7 @@ class ExtraNetworksPage:
             "prompt": item.get("prompt", None),
             "tabname": quote_js(tabname),
             "local_preview": quote_js(item["local_preview"]),
-            "name": item["name"],
+            "name": html.escape(item["name"]),
             "description": (item.get("description") or "" if shared.opts.extra_networks_card_show_desc else ""),
             "card_clicked": onclick,
             "save_card_preview": '"' + html.escape(f"""return saveCardPreview(event, {quote_js(tabname)}, {quote_js(item["local_preview"])})""") + '"',

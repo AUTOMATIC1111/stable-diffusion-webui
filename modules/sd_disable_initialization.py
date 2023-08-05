@@ -3,8 +3,31 @@ import open_clip
 import torch
 import transformers.utils.hub
 
+from modules import shared
 
-class DisableInitialization:
+
+class ReplaceHelper:
+    def __init__(self):
+        self.replaced = []
+
+    def replace(self, obj, field, func):
+        original = getattr(obj, field, None)
+        if original is None:
+            return None
+
+        self.replaced.append((obj, field, original))
+        setattr(obj, field, func)
+
+        return original
+
+    def restore(self):
+        for obj, field, original in self.replaced:
+            setattr(obj, field, original)
+
+        self.replaced.clear()
+
+
+class DisableInitialization(ReplaceHelper):
     """
     When an object of this class enters a `with` block, it starts:
     - preventing torch's layer initialization functions from working
@@ -21,7 +44,7 @@ class DisableInitialization:
     """
 
     def __init__(self, disable_clip=True):
-        self.replaced = []
+        super().__init__()
         self.disable_clip = disable_clip
 
     def replace(self, obj, field, func):
@@ -86,8 +109,81 @@ class DisableInitialization:
             self.transformers_utils_hub_get_from_cache = self.replace(transformers.utils.hub, 'get_from_cache', transformers_utils_hub_get_from_cache)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        for obj, field, original in self.replaced:
-            setattr(obj, field, original)
+        self.restore()
 
-        self.replaced.clear()
 
+class InitializeOnMeta(ReplaceHelper):
+    """
+    Context manager that causes all parameters for linear/conv2d/mha layers to be allocated on meta device,
+    which results in those parameters having no values and taking no memory. model.to() will be broken and
+    will need to be repaired by using LoadStateDictOnMeta below when loading params from state dict.
+
+    Usage:
+    ```
+    with sd_disable_initialization.InitializeOnMeta():
+        sd_model = instantiate_from_config(sd_config.model)
+    ```
+    """
+
+    def __enter__(self):
+        if shared.cmd_opts.disable_model_loading_ram_optimization:
+            return
+
+        def set_device(x):
+            x["device"] = "meta"
+            return x
+
+        linear_init = self.replace(torch.nn.Linear, '__init__', lambda *args, **kwargs: linear_init(*args, **set_device(kwargs)))
+        conv2d_init = self.replace(torch.nn.Conv2d, '__init__', lambda *args, **kwargs: conv2d_init(*args, **set_device(kwargs)))
+        mha_init = self.replace(torch.nn.MultiheadAttention, '__init__', lambda *args, **kwargs: mha_init(*args, **set_device(kwargs)))
+        self.replace(torch.nn.Module, 'to', lambda *args, **kwargs: None)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.restore()
+
+
+class LoadStateDictOnMeta(ReplaceHelper):
+    """
+    Context manager that allows to read parameters from state_dict into a model that has some of its parameters in the meta device.
+    As those parameters are read from state_dict, they will be deleted from it, so by the end state_dict will be mostly empty, to save memory.
+    Meant to be used together with InitializeOnMeta above.
+
+    Usage:
+    ```
+    with sd_disable_initialization.LoadStateDictOnMeta(state_dict):
+        model.load_state_dict(state_dict, strict=False)
+    ```
+    """
+
+    def __init__(self, state_dict, device):
+        super().__init__()
+        self.state_dict = state_dict
+        self.device = device
+
+    def __enter__(self):
+        if shared.cmd_opts.disable_model_loading_ram_optimization:
+            return
+
+        sd = self.state_dict
+        device = self.device
+
+        def load_from_state_dict(original, self, state_dict, prefix, *args, **kwargs):
+            params = [(name, param) for name, param in self._parameters.items() if param is not None and param.is_meta]
+
+            for name, param in params:
+                if param.is_meta:
+                    self._parameters[name] = torch.nn.parameter.Parameter(torch.zeros_like(param, device=device), requires_grad=param.requires_grad)
+
+            original(self, state_dict, prefix, *args, **kwargs)
+
+            for name, _ in params:
+                key = prefix + name
+                if key in sd:
+                    del sd[key]
+
+        linear_load_from_state_dict = self.replace(torch.nn.Linear, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(linear_load_from_state_dict, *args, **kwargs))
+        conv2d_load_from_state_dict = self.replace(torch.nn.Conv2d, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(conv2d_load_from_state_dict, *args, **kwargs))
+        mha_load_from_state_dict = self.replace(torch.nn.MultiheadAttention, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(mha_load_from_state_dict, *args, **kwargs))
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.restore()

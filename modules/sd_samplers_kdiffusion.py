@@ -2,7 +2,7 @@ from collections import deque
 import torch
 import inspect
 import k_diffusion.sampling
-from modules import prompt_parser, devices, sd_samplers_common
+from modules import prompt_parser, devices, sd_samplers_common, sd_samplers_extra
 
 from modules.shared import opts, state
 import modules.shared as shared
@@ -30,12 +30,15 @@ samplers_k_diffusion = [
     ('DPM++ 2M Karras', 'sample_dpmpp_2m', ['k_dpmpp_2m_ka'], {'scheduler': 'karras'}),
     ('DPM++ SDE Karras', 'sample_dpmpp_sde', ['k_dpmpp_sde_ka'], {'scheduler': 'karras', "second_order": True, "brownian_noise": True}),
     ('DPM++ 2M SDE Karras', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {'scheduler': 'karras', "brownian_noise": True}),
+    ('DPM++ 2M SDE Exponential', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_exp'], {'scheduler': 'exponential', "brownian_noise": True}),
+    ('Restart', sd_samplers_extra.restart_sampler, ['restart'], {'scheduler': 'karras'}),
 ]
+
 
 samplers_data_k_diffusion = [
     sd_samplers_common.SamplerData(label, lambda model, funcname=funcname: KDiffusionSampler(funcname, model), aliases, options)
     for label, funcname, aliases, options in samplers_k_diffusion
-    if hasattr(k_diffusion.sampling, funcname)
+    if callable(funcname) or hasattr(k_diffusion.sampling, funcname)
 ]
 
 sampler_extra_params = {
@@ -51,6 +54,28 @@ k_diffusion_scheduler = {
     'exponential': k_diffusion.sampling.get_sigmas_exponential,
     'polyexponential': k_diffusion.sampling.get_sigmas_polyexponential
 }
+
+
+def catenate_conds(conds):
+    if not isinstance(conds[0], dict):
+        return torch.cat(conds)
+
+    return {key: torch.cat([x[key] for x in conds]) for key in conds[0].keys()}
+
+
+def subscript_cond(cond, a, b):
+    if not isinstance(cond, dict):
+        return cond[a:b]
+
+    return {key: vec[a:b] for key, vec in cond.items()}
+
+
+def pad_cond(tensor, repeats, empty):
+    if not isinstance(tensor, dict):
+        return torch.cat([tensor, empty.repeat((tensor.shape[0], repeats, 1))], axis=1)
+
+    tensor['crossattn'] = pad_cond(tensor['crossattn'], repeats, empty)
+    return tensor
 
 
 class CFGDenoiser(torch.nn.Module):
@@ -105,10 +130,13 @@ class CFGDenoiser(torch.nn.Module):
 
         if shared.sd_model.model.conditioning_key == "crossattn-adm":
             image_uncond = torch.zeros_like(image_cond)
-            make_condition_dict = lambda c_crossattn, c_adm: {"c_crossattn": c_crossattn, "c_adm": c_adm}
+            make_condition_dict = lambda c_crossattn, c_adm: {"c_crossattn": [c_crossattn], "c_adm": c_adm}
         else:
             image_uncond = image_cond
-            make_condition_dict = lambda c_crossattn, c_concat: {"c_crossattn": c_crossattn, "c_concat": [c_concat]}
+            if isinstance(uncond, dict):
+                make_condition_dict = lambda c_crossattn, c_concat: {**c_crossattn, "c_concat": [c_concat]}
+            else:
+                make_condition_dict = lambda c_crossattn, c_concat: {"c_crossattn": [c_crossattn], "c_concat": [c_concat]}
 
         if not is_edit_model:
             x_in = torch.cat([torch.stack([x[i] for _ in range(n)]) for i, n in enumerate(repeats)] + [x])
@@ -140,28 +168,28 @@ class CFGDenoiser(torch.nn.Module):
             num_repeats = (tensor.shape[1] - uncond.shape[1]) // empty.shape[1]
 
             if num_repeats < 0:
-                tensor = torch.cat([tensor, empty.repeat((tensor.shape[0], -num_repeats, 1))], axis=1)
+                tensor = pad_cond(tensor, -num_repeats, empty)
                 self.padded_cond_uncond = True
             elif num_repeats > 0:
-                uncond = torch.cat([uncond, empty.repeat((uncond.shape[0], num_repeats, 1))], axis=1)
+                uncond = pad_cond(uncond, num_repeats, empty)
                 self.padded_cond_uncond = True
 
         if tensor.shape[1] == uncond.shape[1] or skip_uncond:
             if is_edit_model:
-                cond_in = torch.cat([tensor, uncond, uncond])
+                cond_in = catenate_conds([tensor, uncond, uncond])
             elif skip_uncond:
                 cond_in = tensor
             else:
-                cond_in = torch.cat([tensor, uncond])
+                cond_in = catenate_conds([tensor, uncond])
 
             if shared.batch_cond_uncond:
-                x_out = self.inner_model(x_in, sigma_in, cond=make_condition_dict([cond_in], image_cond_in))
+                x_out = self.inner_model(x_in, sigma_in, cond=make_condition_dict(cond_in, image_cond_in))
             else:
                 x_out = torch.zeros_like(x_in)
                 for batch_offset in range(0, x_out.shape[0], batch_size):
                     a = batch_offset
                     b = a + batch_size
-                    x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict([cond_in[a:b]], image_cond_in[a:b]))
+                    x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict(subscript_cond(cond_in, a, b), image_cond_in[a:b]))
         else:
             x_out = torch.zeros_like(x_in)
             batch_size = batch_size*2 if shared.batch_cond_uncond else batch_size
@@ -170,14 +198,14 @@ class CFGDenoiser(torch.nn.Module):
                 b = min(a + batch_size, tensor.shape[0])
 
                 if not is_edit_model:
-                    c_crossattn = [tensor[a:b]]
+                    c_crossattn = subscript_cond(tensor, a, b)
                 else:
                     c_crossattn = torch.cat([tensor[a:b]], uncond)
 
                 x_out[a:b] = self.inner_model(x_in[a:b], sigma_in[a:b], cond=make_condition_dict(c_crossattn, image_cond_in[a:b]))
 
             if not skip_uncond:
-                x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict([uncond], image_cond_in[-uncond.shape[0]:]))
+                x_out[-uncond.shape[0]:] = self.inner_model(x_in[-uncond.shape[0]:], sigma_in[-uncond.shape[0]:], cond=make_condition_dict(uncond, image_cond_in[-uncond.shape[0]:]))
 
         denoised_image_indexes = [x[0][0] for x in conds_list]
         if skip_uncond:
@@ -233,10 +261,7 @@ class TorchHijack:
             if noise.shape == x.shape:
                 return noise
 
-        if opts.randn_source == "CPU" or x.device.type == 'mps':
-            return torch.randn_like(x, device=devices.cpu).to(x.device)
-        else:
-            return torch.randn_like(x)
+        return devices.randn_like(x)
 
 
 class KDiffusionSampler:
@@ -245,7 +270,7 @@ class KDiffusionSampler:
 
         self.model_wrap = denoiser(sd_model, quantize=shared.opts.enable_quantization)
         self.funcname = funcname
-        self.func = getattr(k_diffusion.sampling, self.funcname)
+        self.func = funcname if callable(funcname) else getattr(k_diffusion.sampling, self.funcname)
         self.extra_params = sampler_extra_params.get(funcname, [])
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
         self.sampler_noises = None
@@ -351,6 +376,9 @@ class KDiffusionSampler:
             sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
 
             sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
+        elif self.config is not None and self.config.options.get('scheduler', None) == 'exponential':
+            m_sigma_min, m_sigma_max = (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
+            sigmas = k_diffusion.sampling.get_sigmas_exponential(n=steps, sigma_min=m_sigma_min, sigma_max=m_sigma_max, device=shared.device)
         else:
             sigmas = self.model_wrap.get_sigmas(steps)
 
