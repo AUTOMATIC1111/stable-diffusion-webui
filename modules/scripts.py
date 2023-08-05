@@ -18,6 +18,11 @@ class PostprocessImageArgs:
         self.image = image
 
 
+class PostprocessBatchListArgs:
+    def __init__(self, images):
+        self.images = images
+
+
 class Script:
     name = None
     filename = None
@@ -105,6 +110,22 @@ class Script:
     def postprocess_image(self, p, pp: PostprocessImageArgs, *args):
         """
         Called for every image after it has been generated.
+        """
+        pass # pylint: disable=unnecessary-pass
+
+    def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, *args, **kwargs):
+        """
+        Same as postprocess_batch(), but receives batch images as a list of 3D tensors instead of a 4D tensor.
+        This is useful when you want to update the entire batch instead of individual images.
+        You can modify the postprocessing object (pp) to update the images in the batch, remove images, add images, etc.
+        If the number of images is different from the batch size when returning,
+        then the script has the responsibility to also update the following attributes in the processing object (p):
+          - p.prompts
+          - p.negative_prompts
+          - p.seeds
+          - p.subseeds
+        **kwargs will have same items as process_batch, and also:
+          - batch_number - index of current batch, from 0 to number of batches-1
         """
         pass # pylint: disable=unnecessary-pass
 
@@ -456,6 +477,18 @@ class ScriptRunner:
             except Exception as e:
                 errors.display(e, f'Running script before postprocess batch: {script.filename}')
         log.debug(f'Script postprocess-batch: {s}')
+
+    def postprocess_batch_list(self, p, pp: PostprocessBatchListArgs, **kwargs):
+        s = []
+        for script in self.alwayson_scripts:
+            try:
+                t0 = time.time()
+                args = p.per_script_args.get(script.title(), p.script_args[script.args_from:script.args_to])
+                script.postprocess_batch_list(p, pp, *args, **kwargs)
+                s.append(f'{script.title()}:{round(time.time()-t0, 2)}s')
+            except Exception as e:
+                errors.display(e, f'Running script before postprocess batch list: {script.filename}')
+        log.debug(f'Script postprocess-batch-list: {s}')
 
     def postprocess_image(self, p, pp: PostprocessImageArgs):
         s = []
