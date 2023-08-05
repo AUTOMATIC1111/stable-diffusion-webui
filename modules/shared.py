@@ -514,6 +514,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "ui_reorder_list": OptionInfo([], "txt2img/img2img UI item order", ui_components.DropdownMulti, lambda: {"choices": list(shared_items.ui_reorder_categories())}).info("selected items appear first").needs_restart(),
     "hires_fix_show_sampler": OptionInfo(False, "Hires fix: show hires sampler selection").needs_restart(),
     "hires_fix_show_prompts": OptionInfo(False, "Hires fix: show hires prompt and negative prompt").needs_restart(),
+    "hires_fix_use_final_prompt": OptionInfo(False, "Hires fix: use final state of prompt for whole duration"),
     "disable_token_counters": OptionInfo(False, "Disable prompt token counters").needs_restart(),
 }))
 
