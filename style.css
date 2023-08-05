@@ -801,9 +801,12 @@ footer {
     margin: 0 0.15em;
 }
 .extra-networks .tab-nav .search,
-.extra-networks .tab-nav .sort{
+.extra-networks .tab-nav .sort,
+.extra-networks .tab-nav .show-dirs
+{
     margin: 0.3em;
     align-self: center;
+    width: auto;
 }
 
 .extra-networks .tab-nav .search {
