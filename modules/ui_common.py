@@ -239,7 +239,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
             for comp in refresh_components:
                 setattr(comp, k, v)
 
-        return (gr.update(**(args or {})) for _ in refresh_components) if len(refresh_components) > 1 else gr.update(**(args or {}))
+        return [gr.update(**(args or {})) for _ in refresh_components] if len(refresh_components) > 1 else gr.update(**(args or {}))
 
     refresh_button = ToolButton(value=refresh_symbol, elem_id=elem_id, tooltip=f"{label}: refresh" if label else "Refresh")
     refresh_button.click(
