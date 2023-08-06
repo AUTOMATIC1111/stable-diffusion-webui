@@ -63,7 +63,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         pooled = None
         negative_embed = None
         negative_pooled = None
-        if shared.opts.data['prompt_attention'] != 'Fixed attention':
+        if shared.opts.data['prompt_attention'] in {'Compel parser', 'Full parser'}:
             prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompt(model, prompt, negative_prompt, prompt_2, negative_prompt_2, is_refiner)
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
