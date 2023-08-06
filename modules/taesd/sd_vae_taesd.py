@@ -5,6 +5,7 @@ Tiny AutoEncoder for Stable Diffusion
 https://github.com/madebyollin/taesd
 """
 import os
+from PIL import Image
 from modules import devices, paths_internal
 from modules.taesd.taesd import TAESD
 
@@ -42,8 +43,11 @@ def model(model_class = 'sd', model_type = 'decoder'):
 def decode(latents):
     from modules import shared
     model_class = shared.sd_model_type
+    if model_class == 'ldm':
+        model_class = 'sd'
     if 'sd' not in model_class:
-        return None
+        shared.log.warning(f'TAESD unsupported model type: {model_class}')
+        return Image.new('RGB', (8, 8), color = (0, 0, 0))
     vae = taesd_models[f'{model_class}-decoder']
     if vae is None:
         model_path = os.path.join(paths_internal.models_path, "TAESD", f"tae{model_class}_decoder.pth")

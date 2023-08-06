@@ -1000,4 +1000,5 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
 
 sd_model = None
 sd_refiner = None
+sd_model_type = ''
 sys.modules[__name__].__class__ = Shared

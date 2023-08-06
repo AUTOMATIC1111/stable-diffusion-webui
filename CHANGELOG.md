@@ -2,6 +2,8 @@
 
 ## Update for 2023-08-05
 
+Another minor update, but it unlocks some cool new items...
+
 - diffusers:
   - vaesd live preview (sd and sd-xl)  
   - fix inpainting (sd and sd-xl)  
