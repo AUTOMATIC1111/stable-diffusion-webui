@@ -41,6 +41,9 @@ warnings.filterwarnings("default" if opts.show_gradio_deprecation_warnings else 
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 
+# Likewise, add explicit content-type header for certain missing image types
+mimetypes.add_type('image/webp', '.webp')
+
 if not cmd_opts.share and not cmd_opts.listen:
     # fix gradio phoning home
     gradio.utils.version_check = lambda: None
