@@ -4,6 +4,7 @@ import inspect
 import k_diffusion.sampling
 from modules import prompt_parser, devices, sd_samplers_common, sd_samplers_extra
 
+from modules.processing import StableDiffusionProcessing
 from modules.shared import opts, state
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
@@ -280,6 +281,14 @@ class KDiffusionSampler:
         self.last_latent = None
         self.s_min_uncond = None
 
+        # NOTE: These are also defined in the StableDiffusionProcessing class.
+        # They should have been here to begin with but we're going to
+        # leave that class __init__ signature alone.
+        self.s_churn = 0.0
+        self.s_tmin = 0.0
+        self.s_tmax = float('inf')
+        self.s_noise = 1.0
+
         self.conditioning_key = sd_model.model.conditioning_key
 
     def callback_state(self, d):
@@ -314,7 +323,7 @@ class KDiffusionSampler:
     def number_of_needed_noises(self, p):
         return p.steps
 
-    def initialize(self, p):
+    def initialize(self, p: StableDiffusionProcessing):
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
@@ -334,6 +343,29 @@ class KDiffusionSampler:
                 p.extra_generation_params["Eta"] = self.eta
 
             extra_params_kwargs['eta'] = self.eta
+
+        if len(self.extra_params) > 0:
+            s_churn = p.override_settings.get('s_churn', p.s_churn)
+            s_tmin = p.override_settings.get('s_tmin', p.s_tmin)
+            s_tmax = p.override_settings.get('s_tmax', p.s_tmax)
+            s_noise = p.override_settings.get('s_noise', p.s_noise)
+
+            if s_churn != self.s_churn:
+                extra_params_kwargs['s_churn'] = s_churn
+                p.s_churn = s_churn
+                p.extra_generation_params['Sigma churn'] = s_churn
+            if s_tmin != self.s_tmin:
+                extra_params_kwargs['s_tmin'] = s_churn
+                p.s_tmin = s_tmin
+                p.extra_generation_params['Sigma tmin'] = s_tmin
+            if s_tmax != self.s_tmax:
+                extra_params_kwargs['s_tmax'] = s_churn
+                p.s_tmax = s_tmax
+                p.extra_generation_params['Sigma tmax'] = s_tmax
+            if s_noise != self.s_noise:
+                extra_params_kwargs['s_noise'] = s_churn
+                p.s_noise = s_noise
+                p.extra_generation_params['Sigma noise'] = s_noise
 
         return extra_params_kwargs
 
