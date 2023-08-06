@@ -2,7 +2,7 @@ from collections import deque
 import torch
 import inspect
 import k_diffusion.sampling
-from modules import prompt_parser, devices, sd_samplers_common, sd_samplers_extra, sd_models
+from modules import prompt_parser, devices, sd_samplers_common, sd_samplers_extra
 
 from modules.processing import StableDiffusionProcessing
 from modules.shared import opts, state
