@@ -196,9 +196,10 @@ def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
     try:
         import diffusers
         if os.path.isfile(vae_file):
-            # load_config passed to from_single_file doesn't apply
-            # from_single_file by default downloads VAE1.5 config
-            shared.log.warning("Using SDXL VAE loaded from singular file will result in low contrast images.")
+            if shared.opts.diffusers_pipeline == "Stable Diffusion XL":
+                # load_config passed to from_single_file doesn't apply
+                # from_single_file by default downloads VAE1.5 config
+                shared.log.warning("Using SDXL VAE loaded from singular file will result in low contrast images.")
             vae = diffusers.AutoencoderKL.from_single_file(vae_file)
             vae = vae.to(devices.dtype_vae)
         else:

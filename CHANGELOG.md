@@ -1,5 +1,18 @@
 # Change Log for SD.Next
 
+## Update for 2023-08-05
+
+Another minor update, but it unlocks some cool new items...
+
+- diffusers:
+  - vaesd live preview (sd and sd-xl)  
+  - fix inpainting (sd and sd-xl)  
+- general:
+  - new torch 2.0 with ipex (intel arc)  
+  - additional callbacks for extensions  
+    enables latest comfyui extension  
+  - update requirements  
+
 ## Update for 2023-07-30
 
 Smaller release, but IMO worth a post...

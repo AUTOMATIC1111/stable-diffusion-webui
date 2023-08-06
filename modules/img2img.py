@@ -106,7 +106,8 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     elif mode == 2:  # inpaint
         if init_img_with_mask is None:
             return
-        image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
+        image = init_img_with_mask["image"]
+        mask = init_img_with_mask["mask"]
         alpha_mask = ImageOps.invert(image.split()[-1]).convert('L').point(lambda x: 255 if x > 0 else 0, mode='1')
         mask = ImageChops.lighter(alpha_mask, mask.convert('L')).convert('L')
         image = image.convert("RGB")

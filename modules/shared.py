@@ -171,13 +171,11 @@ class State:
             return
         import modules.sd_samplers # pylint: disable=W0621
         try:
-            if opts.show_progress_grid:
-                self.assign_current_image(modules.sd_samplers.samples_to_image_grid(self.current_latent))
-            else:
-                self.assign_current_image(modules.sd_samplers.sample_to_image(self.current_latent))
-        except Exception:
-            pass
-        self.current_image_sampling_step = self.sampling_step
+            image = modules.sd_samplers.samples_to_image_grid(self.current_latent) if opts.show_progress_grid else modules.sd_samplers.sample_to_image(self.current_latent)
+            self.assign_current_image(image)
+            self.current_image_sampling_step = self.sampling_step
+        except Exception as e:
+            log.error(f'Error setting current image: step={self.sampling_step} {e}')
 
     def assign_current_image(self, image):
         self.current_image = image
@@ -382,8 +380,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "rollback_vae": OptionInfo(False, "Attempt VAE roll back when produced NaN values (experimental)"),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
-    "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
-    "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
+    # "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
+    # "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
     "cuda_compile": OptionInfo(False, "Enable model compile (experimental)"),
     "cuda_compile_backend": OptionInfo("none", "Model compile backend (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
@@ -398,7 +396,6 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_allow_safetensors": OptionInfo(True, 'Diffusers allow loading from safetensors files'),
     "diffusers_pipeline": OptionInfo(pipelines[0], 'Diffusers pipeline', gr.Dropdown, lambda: {"choices": pipelines}),
-    "diffusers_refiner_latents": OptionInfo(True, "Use latents when using refiner"),
     "diffusers_move_base": OptionInfo(False, "Move base model to CPU when using refiner"),
     "diffusers_move_refiner": OptionInfo(True, "Move refiner model to CPU when not in use"),
     "diffusers_move_unet": OptionInfo(False, "Move UNet to CPU while VAE decoding"),
@@ -409,7 +406,7 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_vae_upcast": OptionInfo("default", "VAE upcasting", gr.Radio, lambda: {"choices": ['default', 'true', 'false']}),
     "diffusers_vae_slicing": OptionInfo(True, "Enable VAE slicing"),
     "diffusers_vae_tiling": OptionInfo(False, "Enable VAE tiling"),
-    "diffusers_attention_slicing": OptionInfo(False, "Enable attention slicing"),
+    "diffusers_attention_slicing": OptionInfo(True if devices.backend == "ipex" else False, "Enable attention slicing"),
     "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
     "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
     # "diffusers_force_zeros": OptionInfo(False, "Force zeros for prompts when empty"),
@@ -984,7 +981,24 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
     def backend(self):
         return Backend.ORIGINAL if opts.data['sd_backend'] == 'original' else Backend.DIFFUSERS
 
+    @property
+    def sd_model_type(self):
+        try:
+            if backend == Backend.ORIGINAL:
+                model_type = 'ldm'
+            elif "StableDiffusionXL" in self.sd_model.__class__.__name__:
+                model_type = 'sdxl'
+            elif "StableDiffusion" in self.sd_model.__class__.__name__:
+                model_type = 'sd'
+            elif "Kandinsky" in self.sd_model.__class__.__name__:
+                model_type = 'kandinsky'
+            else:
+                model_type = self.sd_model.__class__.__name__
+        except Exception:
+            model_type = 'unknown'
+        return model_type
 
 sd_model = None
 sd_refiner = None
+sd_model_type = ''
 sys.modules[__name__].__class__ = Shared

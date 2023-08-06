@@ -15,7 +15,6 @@ Stuff to be added, in no particular order...
   - Add Hires
   - Add Lora/Lyco mixer
   - Add ControlNet
-  - Fix SD-XL Img2img/Inpaint
   - Add SD and SD-XL Pix2Pix
   - Fix DeepFloyd IF model
   - Redo Prompt parser for diffusers

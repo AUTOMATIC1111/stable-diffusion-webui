@@ -4,6 +4,7 @@ import torch
 import intel_extension_for_pytorch as ipex
 from modules import shared
 from modules.sd_hijack_utils import CondFunc
+from .diffusers import ipex_diffusers
 
 #ControlNet depth_leres++
 class DummyDataParallel(torch.nn.Module):
@@ -111,13 +112,28 @@ def ipex_init():
     CondFunc('torch.nn.modules.GroupNorm.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
+    #FP32:
     CondFunc('torch.nn.modules.Linear.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
-    #Diffusers bfloat16:
-    CondFunc('torch.nn.modules.Conv2d._conv_forward',
-        lambda orig_func, self, input, weight, bias=None: orig_func(self, input.to(weight.data.dtype), weight, bias=bias),
-        lambda orig_func, self, input, weight, bias=None: input.dtype != weight.data.dtype)
+    #Embedding FP32:
+    CondFunc('torch.bmm',
+        lambda orig_func, input, mat2, *args, **kwargs: orig_func(input, mat2.to(input.dtype), *args, **kwargs),
+        lambda orig_func, input, mat2, *args, **kwargs: input.dtype != mat2.dtype)
+    #BF16:
+    CondFunc('torch.nn.functional.layer_norm',
+        lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
+        orig_func(input.to(weight.data.dtype), normalized_shape, weight, *args, **kwargs),
+        lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
+        input.dtype != weight.data.dtype and weight is not None)
+    #Embedding BF16
+    CondFunc('torch.cat',
+        lambda orig_func, input, *args, **kwargs: orig_func([input[0].to(input[1].dtype), input[1], input[2].to(input[1].dtype)], *args, **kwargs),
+        lambda orig_func, input, *args, **kwargs: len(input) == 3 and (input[0].dtype != input[1].dtype or input[2].dtype != input[1].dtype))
+    #Diffusers BF16:
+    CondFunc('torch.nn.functional.conv2d',
+        lambda orig_func, input, weight, *args, **kwargs: orig_func(input.to(weight.data.dtype), weight, *args, **kwargs),
+        lambda orig_func, input, weight, *args, **kwargs: input.dtype != weight.data.dtype)
 
     #Functions that does not work with the XPU:
     #UniPC:
@@ -149,3 +165,5 @@ def ipex_init():
         weight if weight is not None else torch.ones(input.size()[1], device=shared.device),
         bias if bias is not None else torch.zeros(input.size()[1], device=shared.device), *args, **kwargs),
         lambda orig_func, input, *args, **kwargs: input.device != torch.device("cpu"))
+
+    ipex_diffusers()
