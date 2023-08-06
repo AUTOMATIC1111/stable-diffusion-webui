@@ -8,6 +8,7 @@ import modules.images as images
 from modules.lora_diffusers import lora_state, unload_diffusers_lora
 from modules.processing import StableDiffusionProcessing
 import modules.prompt_parser_diffusers as prompt_parser_diffusers
+import typing
 
 try:
     import diffusers
@@ -51,7 +52,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             return latents
 
 
-    def set_pipeline_args(model, prompt, negative_prompt, prompt_2=None, negative_prompt_2=None, refiner=False, **kwargs):
+    def set_pipeline_args(model, prompt: str, negative_prompt: str, prompt_2: typing.Optional[str] =None, negative_prompt_2: typing.Optional[str] = None, is_refiner: bool = False, **kwargs):
         args = {}
         pipeline = model
         signature = inspect.signature(type(pipeline).__call__)
@@ -63,7 +64,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_embed = None
         negative_pooled = None
         if shared.opts.data['prompt_attention'] != 'Fixed attention':
-            prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompt(model, prompt, negative_prompt, prompt_2, negative_prompt_2, refiner)
+            prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompt(model, prompt, negative_prompt, prompt_2, negative_prompt_2, is_refiner)
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
                 args['prompt_embeds'] = prompt_embed
@@ -157,7 +158,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         denoising_start=0 if refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
         denoising_end=p.refiner_start if refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
-        refiner=False,
+        is_refiner=False,
         **task_specific_kwargs
     )
     output = shared.sd_model(**pipe_args) # pylint: disable=not-callable
@@ -211,7 +212,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 denoising_end=1 if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 image=output.images[i],
                 output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
-                refiner=True
+                is_refiner=True
             )
             refiner_output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
             if not shared.state.interrupted and not shared.state.skipped:

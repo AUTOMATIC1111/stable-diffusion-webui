@@ -26,7 +26,7 @@ def compel_encode_prompt(pipeline: typing.Any, *args, **kwargs):
       raise TypeError(f"Compel encoding not yet supported for {type(pipeline).__name__}.")
    return compel_encode_fn(pipeline, *args, **kwargs)
 
-def compel_encode_prompt_sdxl(pipeline: diffusers.StableDiffusionXLPipeline, prompt: str, negative_prompt: str, prompt_2: typing.Optional[str]=None, negative_prompt_2: typing.Optional[str]=None, refiner=False):
+def compel_encode_prompt_sdxl(pipeline: diffusers.StableDiffusionXLPipeline, prompt: str, negative_prompt: str, prompt_2: typing.Optional[str]=None, negative_prompt_2: typing.Optional[str]=None, is_refiner: bool = False):
     if shared.opts.data['prompt_attention'] != 'Compel parser':
         prompt = convert_to_compel(prompt)
         negative_prompt = convert_to_compel(negative_prompt)
@@ -46,20 +46,20 @@ def compel_encode_prompt_sdxl(pipeline: diffusers.StableDiffusionXLPipeline, pro
       returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
       requires_pooled=True,
       )
-    if refiner is False:
+    if not is_refiner:
       positive_te1 = compel_te1(prompt)
-      positive_te2, pooled = compel_te2(prompt_2)
+      positive_te2, positive_pooled = compel_te2(prompt_2)
       positive = torch.cat((positive_te1, positive_te2), dim=-1)
 
       negative_te1 = compel_te1(negative_prompt)
       negative_te2, negative_pooled = compel_te2(negative_prompt_2)
       negative = torch.cat((negative_te1, negative_te2), dim=-1)
     else:
-      positive, pooled = compel_te2(prompt)
+      positive, positive_pooled = compel_te2(prompt)
       negative, negative_pooled = compel_te2(negative_prompt)
 
     shared.log.debug(compel_te1.parse_prompt_string(prompt))
     [prompt_embed, negative_embed] = compel_te2.pad_conditioning_tensors_to_same_length([positive, negative])
-    return prompt_embed, pooled, negative_embed, negative_pooled
+    return prompt_embed, positive_pooled, negative_embed, negative_pooled
 
 COMPEL_ENCODE_FN_DICT = {diffusers.StableDiffusionXLPipeline: compel_encode_prompt_sdxl}
