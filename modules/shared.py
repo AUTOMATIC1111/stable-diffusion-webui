@@ -550,6 +550,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
 options_templates.update(options_section(('ui', "User interface"), {
     "localization": OptionInfo("None", "Localization", gr.Dropdown, lambda: {"choices": ["None"] + list(localization.localizations.keys())}, refresh=lambda: localization.list_localizations(cmd_opts.localizations_dir)).needs_reload_ui(),
     "gradio_theme": OptionInfo("Default", "Gradio theme", ui_components.DropdownEditable, lambda: {"choices": ["Default"] + gradio_hf_hub_themes}).info("you can also manually enter any of themes from the <a href='https://huggingface.co/spaces/gradio/theme-gallery'>gallery</a>.").needs_reload_ui(),
+    "gradio_themes_cache": OptionInfo(True, "Cache gradio themes locally").info("disable to update the selected Gradio theme"),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),
     "send_seed": OptionInfo(True, "Send seed when sending prompt or image to other interface"),
@@ -863,11 +864,15 @@ def reload_gradio_theme(theme_name=None):
         gradio_theme = gr.themes.Default(**default_theme_args)
     else:
         try:
-            gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
+            theme_cache_path = os.path.join(script_path, 'tmp', 'gradio_themes', f'{theme_name.replace("/", "_")}.json')
+            if opts.gradio_themes_cache and os.path.exists(theme_cache_path):
+                gradio_theme = gr.themes.ThemeClass.load(theme_cache_path)
+            else:
+                gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
+                gradio_theme.dump(theme_cache_path)
         except Exception as e:
             errors.display(e, "changing gradio theme")
             gradio_theme = gr.themes.Default(**default_theme_args)
-
 
 
 class TotalTQDM:
