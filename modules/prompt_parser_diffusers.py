@@ -26,17 +26,7 @@ def convert_to_compel(prompt: str):
     return converted_prompt
 
 
-def compel_encode_prompt(pipeline: typing.Any, *args, **kwargs):
-    compel_encode_fn = COMPEL_ENCODE_FN_DICT.get(type(pipeline), None)
-    if compel_encode_fn is None:
-        shared.log.warning(
-            f"Compel encoding not yet supported for {type(pipeline).__name__}."
-        )
-        return (None,) * 4
-    return compel_encode_fn(pipeline, *args, **kwargs)
-
-
-def compel_encode_prompt_sdxl(
+def compel_encode_prompt(
     pipeline: diffusers.StableDiffusionXLPipeline,
     prompt: str,
     negative_prompt: str,
@@ -44,6 +34,11 @@ def compel_encode_prompt_sdxl(
     negative_prompt_2: typing.Optional[str] = None,
     is_refiner: bool = None,
 ):
+    if shared.sd_model_type not in {"sd", "sdxl"}:
+        shared.log.warning(
+            f"Compel encoding not yet supported for {type(pipeline).__name__}."
+        )
+        return (None,) * 4
     if shared.opts.data["prompt_attention"] != "Compel parser":
         prompt = convert_to_compel(prompt)
         negative_prompt = convert_to_compel(negative_prompt)
@@ -80,9 +75,3 @@ def compel_encode_prompt_sdxl(
         [positive, negative]
     )
     return prompt_embed, positive_pooled, negative_embed, negative_pooled
-
-
-COMPEL_ENCODE_FN_DICT = {
-    diffusers.StableDiffusionXLPipeline: compel_encode_prompt_sdxl,
-    diffusers.StableDiffusionImg2ImgPipeline: compel_encode_prompt_sdxl,
-}
