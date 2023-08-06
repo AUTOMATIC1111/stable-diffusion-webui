@@ -68,15 +68,17 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
                 args['prompt_embeds'] = prompt_embed
-                args['pooled_prompt_embeds'] = pooled
-                args['prompt_2'] = None #Cannot pass prompts when passing embeds
+                if shared.sd_model_type == "sdxl":
+                    args['pooled_prompt_embeds'] = pooled
+                    args['prompt_2'] = None #Cannot pass prompts when passing embeds
             else:
                 args['prompt'] = prompt
         if 'negative_prompt' in possible:
             if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible and negative_embed is not None:
                 args['negative_prompt_embeds'] = negative_embed
-                args['negative_pooled_prompt_embeds'] = negative_pooled
-                args['negative_prompt_2'] = None
+                if shared.sd_model_type == "sdxl":
+                    args['negative_pooled_prompt_embeds'] = negative_pooled
+                    args['negative_prompt_2'] = None
             else:
                 args['negative_prompt'] = negative_prompt
         if 'num_inference_steps' in possible:

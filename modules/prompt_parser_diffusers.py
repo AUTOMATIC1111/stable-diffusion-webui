@@ -38,7 +38,7 @@ def compel_encode_prompt(
         shared.log.warning(
             f"Compel encoding not yet supported for {type(pipeline).__name__}."
         )
-        return (None,) * 4
+        return (None, None, None, None)
     if shared.opts.data["prompt_attention"] != "Compel parser":
         prompt = convert_to_compel(prompt)
         negative_prompt = convert_to_compel(negative_prompt)
@@ -52,26 +52,33 @@ def compel_encode_prompt(
         requires_pooled=False,
     )
 
-    compel_te2 = Compel(
-        tokenizer=pipeline.tokenizer_2,
-        text_encoder=pipeline.text_encoder_2,
-        returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
-        requires_pooled=True,
-    )
-    if not is_refiner:
-        positive_te1 = compel_te1(prompt)
-        positive_te2, positive_pooled = compel_te2(prompt_2)
-        positive = torch.cat((positive_te1, positive_te2), dim=-1)
+    if shared.sd_model_type == "sdxl":
+        compel_te2 = Compel(
+            tokenizer=pipeline.tokenizer_2,
+            text_encoder=pipeline.text_encoder_2,
+            returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
+            requires_pooled=True,
+        )
+        if not is_refiner:
+            positive_te1 = compel_te1(prompt)
+            positive_te2, positive_pooled = compel_te2(prompt_2)
+            positive = torch.cat((positive_te1, positive_te2), dim=-1)
 
-        negative_te1 = compel_te1(negative_prompt)
-        negative_te2, negative_pooled = compel_te2(negative_prompt_2)
-        negative = torch.cat((negative_te1, negative_te2), dim=-1)
-    else:
-        positive, positive_pooled = compel_te2(prompt)
-        negative, negative_pooled = compel_te2(negative_prompt)
+            negative_te1 = compel_te1(negative_prompt)
+            negative_te2, negative_pooled = compel_te2(negative_prompt_2)
+            negative = torch.cat((negative_te1, negative_te2), dim=-1)
+        else:
+            positive, positive_pooled = compel_te2(prompt)
+            negative, negative_pooled = compel_te2(negative_prompt)
 
-    shared.log.debug(compel_te1.parse_prompt_string(prompt))
-    [prompt_embed, negative_embed] = compel_te2.pad_conditioning_tensors_to_same_length(
+        shared.log.debug(f"Parsed Compel string: {compel_te1.parse_prompt_string(prompt)}")
+        [prompt_embed, negative_embed] = compel_te2.pad_conditioning_tensors_to_same_length(
+            [positive, negative]
+        )
+        return prompt_embed, positive_pooled, negative_embed, negative_pooled
+
+    positive, negative = compel_te1(prompt), compel_te1(negative_prompt)
+    [prompt_embed, negative_embed] = compel_te1.pad_conditioning_tensors_to_same_length(
         [positive, negative]
     )
-    return prompt_embed, positive_pooled, negative_embed, negative_pooled
+    return prompt_embed, None, negative_embed, None
