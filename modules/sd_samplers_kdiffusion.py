@@ -347,7 +347,7 @@ class KDiffusionSampler:
         if len(self.extra_params) > 0:
             s_churn = getattr(opts, 's_churn', p.s_churn)
             s_tmin = getattr(opts, 's_tmin', p.s_tmin)
-            s_tmax = getattr(opts, 's_tmax', p.s_tmax)
+            s_tmax = getattr(opts, 's_tmax', p.s_tmax) or self.s_tmax # 0 = inf
             s_noise = getattr(opts, 's_noise', p.s_noise)
 
             if s_churn != self.s_churn:
