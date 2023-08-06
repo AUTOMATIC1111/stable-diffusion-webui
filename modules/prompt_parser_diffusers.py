@@ -9,11 +9,10 @@ import modules.prompt_parser as prompt_parser
 def convert_to_compel(prompt: str):
     if prompt is None:
         return None
+    # TODO: 100 should be steps, but doesn't actually matter because we can't schedule yet
     all_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(
         prompt, 100
-    )[
-        0
-    ]  # 100 should be steps, but doesn't actually matter because we can't schedule yet
+    )[0]
     output_list = prompt_parser.parse_prompt_attention(all_schedules[0][1])
     converted_prompt = []
     for subprompt, weight in output_list:
