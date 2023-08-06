@@ -110,7 +110,7 @@ class StableDiffusionProcessing:
     cached_uc = [None, None]
     cached_c = [None, None]
 
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = 1.0, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = None, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
@@ -148,8 +148,8 @@ class StableDiffusionProcessing:
         self.s_min_uncond = s_min_uncond or opts.s_min_uncond
         self.s_churn = s_churn or opts.s_churn
         self.s_tmin = s_tmin or opts.s_tmin
-        self.s_tmax = s_tmax or float('inf')  # not representable as a standard ui option
-        self.s_noise = s_noise or opts.s_noise
+        self.s_tmax = (s_tmax if s_tmax is not None else opts.s_tmax) or float('inf')
+        self.s_noise = s_noise if s_noise is not None else opts.s_noise
         self.override_settings = {k: v for k, v in (override_settings or {}).items() if k not in shared.restricted_opts}
         self.override_settings_restore_afterwards = override_settings_restore_afterwards
         self.is_using_inpainting_conditioning = False
@@ -367,6 +367,10 @@ class StableDiffusionProcessing:
 
     def parse_extra_network_prompts(self):
         self.prompts, self.extra_network_data = extra_networks.parse_prompts(self.prompts)
+
+    def save_samples(self) -> bool:
+        """Returns whether generated images need to be written to disk"""
+        return opts.samples_save and not self.do_not_save_samples and (opts.save_incomplete_images or not state.interrupted and not state.skipped)
 
 
 class Processed:
@@ -823,6 +827,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             def infotext(index=0, use_main_prompt=False):
                 return create_infotext(p, p.prompts, p.seeds, p.subseeds, use_main_prompt=use_main_prompt, index=index, all_negative_prompts=p.negative_prompts)
 
+            save_samples = p.save_samples()
+
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
 
@@ -830,7 +836,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 x_sample = x_sample.astype(np.uint8)
 
                 if p.restore_faces:
-                    if opts.save and not p.do_not_save_samples and opts.save_images_before_face_restoration:
+                    if save_samples and opts.save_images_before_face_restoration:
                         images.save_image(Image.fromarray(x_sample), p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-before-face-restoration")
 
                     devices.torch_gc()
@@ -844,16 +850,15 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     pp = scripts.PostprocessImageArgs(image)
                     p.scripts.postprocess_image(p, pp)
                     image = pp.image
-
                 if p.color_corrections is not None and i < len(p.color_corrections):
-                    if opts.save and not p.do_not_save_samples and opts.save_images_before_color_correction:
+                    if save_samples and opts.save_images_before_color_correction:
                         image_without_cc = apply_overlay(image, p.paste_to, i, p.overlay_images)
                         images.save_image(image_without_cc, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p, suffix="-before-color-correction")
                     image = apply_color_correction(p.color_corrections[i], image)
 
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
 
-                if opts.samples_save and not p.do_not_save_samples:
+                if save_samples:
                     images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], opts.samples_format, info=infotext(i), p=p)
 
                 text = infotext(i)
@@ -861,8 +866,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 if opts.enable_pnginfo:
                     image.info["parameters"] = text
                 output_images.append(image)
-
-                if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay and any([opts.save_mask, opts.save_mask_composite, opts.return_mask, opts.return_mask_composite]):
+                if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay and any([opts.save_mask, opts.save_mask_composite, opts.return_mask, opts.return_mask_composite]) and save_images_if_interrupt:
                     image_mask = p.mask_for_overlay.convert('RGB')
                     image_mask_composite = Image.composite(image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(2, p.mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
 
@@ -898,7 +902,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     grid.info["parameters"] = text
                 output_images.insert(0, grid)
                 index_of_first_image = 1
-
             if opts.grid_save:
                 images.save_image(grid, p.outpath_grids, "grid", p.all_seeds[0], p.all_prompts[0], opts.grid_format, info=infotext(use_main_prompt=True), short_filename=not opts.grid_extended_filename, p=p, grid=True)
 
@@ -1093,7 +1096,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         def save_intermediate(image, index):
             """saves image before applying hires fix, if enabled in options; takes as an argument either an image or batch with latent space images"""
 
-            if not opts.save or self.do_not_save_samples or not opts.save_images_before_highres_fix:
+            if not self.save_samples() or not opts.save_images_before_highres_fix:
                 return
 
             if not isinstance(image, Image.Image):
