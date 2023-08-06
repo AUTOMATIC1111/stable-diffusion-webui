@@ -71,8 +71,6 @@ class VanillaStableDiffusionSampler:
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException
 
-        sd_samplers_common.apply_refiner(self)
-
         if self.stop_at is not None and self.step > self.stop_at:
             raise sd_samplers_common.InterruptedException
 

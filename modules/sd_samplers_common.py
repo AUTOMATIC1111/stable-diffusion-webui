@@ -131,16 +131,27 @@ replace_torchsde_browinan()
 
 def apply_refiner(sampler):
     completed_ratio = sampler.step / sampler.steps
-    if completed_ratio > shared.opts.sd_refiner_switch_at and shared.sd_model.sd_checkpoint_info.title != shared.opts.sd_refiner_checkpoint:
-        refiner_checkpoint_info = sd_models.get_closet_checkpoint_match(shared.opts.sd_refiner_checkpoint)
-        if refiner_checkpoint_info is None:
-            raise Exception(f'Could not find checkpoint with name {shared.opts.sd_refiner_checkpoint}')
 
-        with sd_models.SkipWritingToConfig():
-            sd_models.reload_model_weights(info=refiner_checkpoint_info)
+    if completed_ratio <= shared.opts.sd_refiner_switch_at:
+        return False
 
-        devices.torch_gc()
+    if shared.sd_model.sd_checkpoint_info.title == shared.opts.sd_refiner_checkpoint:
+        return False
 
-        sampler.update_inner_model()
+    refiner_checkpoint_info = sd_models.get_closet_checkpoint_match(shared.opts.sd_refiner_checkpoint)
+    if refiner_checkpoint_info is None:
+        raise Exception(f'Could not find checkpoint with name {shared.opts.sd_refiner_checkpoint}')
 
-        sampler.p.setup_conds()
+    sampler.p.extra_generation_params['Refiner'] = refiner_checkpoint_info.short_title
+    sampler.p.extra_generation_params['Refiner switch at'] = shared.opts.sd_refiner_switch_at
+
+    with sd_models.SkipWritingToConfig():
+        sd_models.reload_model_weights(info=refiner_checkpoint_info)
+
+    devices.torch_gc()
+    sampler.p.setup_conds()
+    sampler.update_inner_model()
+
+    return True
+
+
