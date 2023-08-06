@@ -866,10 +866,12 @@ def reload_gradio_theme(theme_name=None):
         gradio_theme = gr.themes.Default(**default_theme_args)
     else:
         try:
-            theme_cache_path = os.path.join(script_path, 'tmp', 'gradio_themes', f'{theme_name.replace("/", "_")}.json')
+            theme_cache_dir = os.path.join(script_path, 'tmp', 'gradio_themes')
+            theme_cache_path = os.path.join(theme_cache_dir, f'{theme_name.replace("/", "_")}.json')
             if opts.gradio_themes_cache and os.path.exists(theme_cache_path):
                 gradio_theme = gr.themes.ThemeClass.load(theme_cache_path)
             else:
+                os.makedirs(theme_cache_dir, exist_ok=True)
                 gradio_theme = gr.themes.ThemeClass.from_hub(theme_name)
                 gradio_theme.dump(theme_cache_path)
         except Exception as e:
