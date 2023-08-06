@@ -2,7 +2,7 @@ from collections import deque
 import torch
 import inspect
 import k_diffusion.sampling
-from modules import prompt_parser, devices, sd_samplers_common, sd_samplers_extra
+from modules import prompt_parser, devices, sd_samplers_common, sd_samplers_extra, sd_models
 
 from modules.processing import StableDiffusionProcessing
 from modules.shared import opts, state
@@ -87,15 +87,25 @@ class CFGDenoiser(torch.nn.Module):
     negative prompt.
     """
 
-    def __init__(self, model):
+    def __init__(self):
         super().__init__()
-        self.inner_model = model
+        self.model_wrap = None
         self.mask = None
         self.nmask = None
         self.init_latent = None
+        self.steps = None
         self.step = 0
         self.image_cfg_scale = None
         self.padded_cond_uncond = False
+        self.p = None
+
+    @property
+    def inner_model(self):
+        if self.model_wrap is None:
+            denoiser = k_diffusion.external.CompVisVDenoiser if shared.sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
+            self.model_wrap = denoiser(shared.sd_model, quantize=shared.opts.enable_quantization)
+
+        return self.model_wrap
 
     def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
         denoised_uncond = x_out[-uncond.shape[0]:]
@@ -113,9 +123,14 @@ class CFGDenoiser(torch.nn.Module):
 
         return denoised
 
+    def update_inner_model(self):
+        self.model_wrap = None
+
     def forward(self, x, sigma, uncond, cond, cond_scale, s_min_uncond, image_cond):
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException
+
+        sd_samplers_common.apply_refiner(self)
 
         # at self.image_cfg_scale == 1.0 produced results for edit model are the same as with normal sampling,
         # so is_edit_model is set to False to support AND composition.
@@ -267,13 +282,13 @@ class TorchHijack:
 
 class KDiffusionSampler:
     def __init__(self, funcname, sd_model):
-        denoiser = k_diffusion.external.CompVisVDenoiser if sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
 
-        self.model_wrap = denoiser(sd_model, quantize=shared.opts.enable_quantization)
+        self.p = None
         self.funcname = funcname
         self.func = funcname if callable(funcname) else getattr(k_diffusion.sampling, self.funcname)
         self.extra_params = sampler_extra_params.get(funcname, [])
-        self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
+        self.model_wrap_cfg = CFGDenoiser()
+        self.model_wrap = self.model_wrap_cfg.inner_model
         self.sampler_noises = None
         self.stop_at = None
         self.eta = None
@@ -305,6 +320,7 @@ class KDiffusionSampler:
         shared.total_tqdm.update()
 
     def launch_sampling(self, steps, func):
+        self.model_wrap_cfg.steps = steps
         state.sampling_steps = steps
         state.sampling_step = 0
 
@@ -324,6 +340,8 @@ class KDiffusionSampler:
         return p.steps
 
     def initialize(self, p: StableDiffusionProcessing):
+        self.p = p
+        self.model_wrap_cfg.p = p
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
