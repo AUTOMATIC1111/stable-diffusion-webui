@@ -345,25 +345,25 @@ class KDiffusionSampler:
             extra_params_kwargs['eta'] = self.eta
 
         if len(self.extra_params) > 0:
-            s_churn = p.override_settings.get('s_churn', p.s_churn)
-            s_tmin = p.override_settings.get('s_tmin', p.s_tmin)
-            s_tmax = p.override_settings.get('s_tmax', p.s_tmax)
-            s_noise = p.override_settings.get('s_noise', p.s_noise)
+            s_churn = getattr(opts, 's_churn', p.s_churn)
+            s_tmin = getattr(opts, 's_tmin', p.s_tmin)
+            s_tmax = getattr(opts, 's_tmax', p.s_tmax)
+            s_noise = getattr(opts, 's_noise', p.s_noise)
 
             if s_churn != self.s_churn:
                 extra_params_kwargs['s_churn'] = s_churn
                 p.s_churn = s_churn
                 p.extra_generation_params['Sigma churn'] = s_churn
             if s_tmin != self.s_tmin:
-                extra_params_kwargs['s_tmin'] = s_churn
+                extra_params_kwargs['s_tmin'] = s_tmin
                 p.s_tmin = s_tmin
                 p.extra_generation_params['Sigma tmin'] = s_tmin
             if s_tmax != self.s_tmax:
-                extra_params_kwargs['s_tmax'] = s_churn
+                extra_params_kwargs['s_tmax'] = s_tmax
                 p.s_tmax = s_tmax
                 p.extra_generation_params['Sigma tmax'] = s_tmax
             if s_noise != self.s_noise:
-                extra_params_kwargs['s_noise'] = s_churn
+                extra_params_kwargs['s_noise'] = s_noise
                 p.s_noise = s_noise
                 p.extra_generation_params['Sigma noise'] = s_noise
 
