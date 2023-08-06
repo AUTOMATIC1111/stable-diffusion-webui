@@ -385,7 +385,7 @@ options_templates.update(options_section(('saving-images', "Saving images/grids"
     "temp_dir":  OptionInfo("", "Directory for temporary images; leave empty for default"),
     "clean_temp_dir_at_start": OptionInfo(False, "Cleanup non-default temporary directory when starting webui"),
 
-    "dont_save_interrupted_images": OptionInfo(False, "Don't save incomplete images").info("Don't save images that has been interrupted in mid-generation, they will still show up in webui output."),
+    "save_incomplete_images": OptionInfo(False, "Save incomplete images").info("save images that has been interrupted in mid-generation; even if not saved, they will still show up in webui output."),
 }))
 
 options_templates.update(options_section(('saving-paths', "Paths for saving"), {
