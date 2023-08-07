@@ -153,6 +153,7 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --reinstall-torch | None | False | Force-reinstall torch. Useful for upgrading - but remove it after upgrading or you'll reinstall torch perpetually. |
 --tests | TESTS | False | Run test to validate web UI functionality, see wiki topic for more details.
 --no-tests | None | False | Do not run tests even if `--tests` option is specified.
+--gradio-allowed-path | None | None | Add path to Gradio's `allowed_paths`; make it possible to serve files from it.
 | **DEFUNCT OPTIONS** |
 --show-negative-prompt | None | False 					| No longer has an effect. |
 --deepdanbooru | None | False 					| No longer has an effect. |
