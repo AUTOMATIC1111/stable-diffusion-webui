@@ -38,6 +38,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         yield p
 
         def train_progress_callback(progress):
+            progress = progress if progress > 1 else progress * 100
             if progress - p.task_progress > 5:
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
