@@ -1,5 +1,7 @@
 import os
 import collections
+from dataclasses import dataclass
+
 from modules import paths, shared, devices, script_callbacks, sd_models, extra_networks
 import glob
 from copy import deepcopy
@@ -97,37 +99,74 @@ def find_vae_near_checkpoint(checkpoint_file):
     return None
 
 
-def resolve_vae(checkpoint_file):
-    if shared.cmd_opts.vae_path is not None:
-        return shared.cmd_opts.vae_path, 'from commandline argument'
+@dataclass
+class VaeResolution:
+    vae: str = None
+    source: str = None
+    resolved: bool = True
 
+    def tuple(self):
+        return self.vae, self.source
+
+
+def is_automatic():
+    return shared.opts.sd_vae in {"Automatic", "auto"}  # "auto" for people with old config
+
+
+def resolve_vae_from_setting() -> VaeResolution:
+    if shared.opts.sd_vae == "None":
+        return VaeResolution()
+
+    vae_from_options = vae_dict.get(shared.opts.sd_vae, None)
+    if vae_from_options is not None:
+        return VaeResolution(vae_from_options, 'specified in settings')
+
+    if not is_automatic():
+        print(f"Couldn't find VAE named {shared.opts.sd_vae}; using None instead")
+
+    return VaeResolution(resolved=False)
+
+
+def resolve_vae_from_user_metadata(checkpoint_file) -> VaeResolution:
     metadata = extra_networks.get_user_metadata(checkpoint_file)
     vae_metadata = metadata.get("vae", None)
     if vae_metadata is not None and vae_metadata != "Automatic":
         if vae_metadata == "None":
-            return None, None
+            return VaeResolution()
 
         vae_from_metadata = vae_dict.get(vae_metadata, None)
         if vae_from_metadata is not None:
-            return vae_from_metadata, "from user metadata"
+            return VaeResolution(vae_from_metadata, "from user metadata")
 
-    is_automatic = shared.opts.sd_vae in {"Automatic", "auto"}  # "auto" for people with old config
+    return VaeResolution(resolved=False)
 
+
+def resolve_vae_near_checkpoint(checkpoint_file) -> VaeResolution:
     vae_near_checkpoint = find_vae_near_checkpoint(checkpoint_file)
     if vae_near_checkpoint is not None and (shared.opts.sd_vae_as_default or is_automatic):
-        return vae_near_checkpoint, 'found near the checkpoint'
+        return VaeResolution(vae_near_checkpoint, 'found near the checkpoint')
 
-    if shared.opts.sd_vae == "None":
-        return None, None
+    return VaeResolution(resolved=False)
 
-    vae_from_options = vae_dict.get(shared.opts.sd_vae, None)
-    if vae_from_options is not None:
-        return vae_from_options, 'specified in settings'
 
-    if not is_automatic:
-        print(f"Couldn't find VAE named {shared.opts.sd_vae}; using None instead")
+def resolve_vae(checkpoint_file) -> VaeResolution:
+    if shared.cmd_opts.vae_path is not None:
+        return VaeResolution(shared.cmd_opts.vae_path, 'from commandline argument')
 
-    return None, None
+    if shared.opts.sd_vae_overrides_per_model_preferences and not is_automatic():
+        return resolve_vae_from_setting()
+
+    res = resolve_vae_from_user_metadata(checkpoint_file)
+    if res.resolved:
+        return res
+
+    res = resolve_vae_near_checkpoint(checkpoint_file)
+    if res.resolved:
+        return res
+
+    res = resolve_vae_from_setting()
+
+    return res
 
 
 def load_vae_dict(filename, map_location):
@@ -201,7 +240,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     checkpoint_file = checkpoint_info.filename
 
     if vae_file == unspecified:
-        vae_file, vae_source = resolve_vae(checkpoint_file)
+        vae_file, vae_source = resolve_vae(checkpoint_file).tuple()
     else:
         vae_source = "from function argument"
 
