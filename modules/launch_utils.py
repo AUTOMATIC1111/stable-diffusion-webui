@@ -139,6 +139,12 @@ def check_run_python(code: str) -> bool:
     return result.returncode == 0
 
 
+def git_fix_workspace(dir, name):
+    run(f'"{git}" -C "{dir}" fetch --refetch --no-auto-gc', f"Fetching all contents for {name}", f"Couldn't fetch {name}", live=True)
+    run(f'"{git}" -C "{dir}" gc --aggressive --prune=now', f"Pruning {name}", f"Couldn't prune {name}", live=True)
+    return
+
+
 def git_clone(url, dir, name, commithash=None):
     # TODO clone into temporary dir and move if successful
 
@@ -146,12 +152,26 @@ def git_clone(url, dir, name, commithash=None):
         if commithash is None:
             return
 
-        current_hash = run(f'"{git}" -C "{dir}" rev-parse HEAD', None, f"Couldn't determine {name}'s hash: {commithash}", live=False).strip()
-        if current_hash == commithash:
-            return
+        try:
+            current_hash = subprocess.check_output([git, "-C", dir, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
+            if current_hash == commithash:
+                return
+        except Exception:
+            print(f"Unable to determine {name}'s hash, attempting autofix...")
+            git_fix_workspace(dir, name)
+            current_hash = subprocess.check_output([git, "-C", dir, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
+            if current_hash == commithash:
+                return
 
         run(f'"{git}" -C "{dir}" fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
-        run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
+
+        try:
+            run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
+        except RuntimeError:
+            print(f"Unable to checkout {name} with hash {commithash}, attempting autofix...")
+            git_fix_workspace(dir, name)
+            run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
+
         return
 
     run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}", live=True)
