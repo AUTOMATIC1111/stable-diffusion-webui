@@ -74,7 +74,7 @@ class TaskDumper(Thread):
     def _set_cache(self, info: DumpInfo):
         try:
             rds = self.redis_pool.get_connection()
-            rds.set(info.id.replace("task_id=", ""), json.dumps(info.set['$set']), 600)
+            rds.set(info.id.replace("task_id=", ""), json.dumps(info.set['$set']), 1200)
         except Exception as err:
             logger.exception('cannot write to redis')
 
