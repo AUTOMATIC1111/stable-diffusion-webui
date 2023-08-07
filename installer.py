@@ -428,8 +428,10 @@ def install_packages():
     install(invisiblewatermark_package, 'invisible-watermark')
     install('onnxruntime==1.15.1', 'onnxruntime', ignore=True)
     install('pi-heif', 'pi_heif', ignore=True)
-    tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.12.0')
+    tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
+    # bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', 'bitsandbytes==0.39.1')
+    # install(bitsandbytes_package, 'bitsandbytes', ignore=True)
     if args.profile:
         print_profile(pr, 'Packages')
 

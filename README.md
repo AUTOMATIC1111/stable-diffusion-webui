@@ -71,21 +71,25 @@ Additional models will be added as they become available and there is public int
 - *Intel Arc* GPUs using *Intel OneAPI* **Ipex/XPU** libraries  
 - *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
 
-## [Installation Instructions](https://github.com/vladmandic/automatic/wiki/Installation)
+## Install & Run
 
-### Common Problems
-
-- [Common Installation Errors ](https://github.com/vladmandic/automatic/discussions/1627)  
-- [Q&A Discussions](https://github.com/vladmandic/automatic/discussions/1011)
+- [Step-by-step install guide](https://github.com/vladmandic/automatic/wiki/Installation)
+- [Advanced install notes](https://github.com/vladmandic/automatic/wiki/Advanced-Install)
 
 ### Installation Notes
 
+- [Common installation errors](https://github.com/vladmandic/automatic/discussions/1627)  
+- [FAQ](https://github.com/vladmandic/automatic/discussions/1011)
 - Server can run without virtual environment,  
   but it is recommended to use it to avoid library version conflicts with other applications  
 - **nVidia/CUDA** and **AMD/ROCm** are auto-detected if present and available,  
    but for any other use case specify required parameter explicitly or wrong packages may be installed  
   as installer will assume CPU-only environment  
 - Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  
+
+### Run
+
+Once SD.Next is installed, simply run `webui.bat` (*Windows*) or `webui.sh` (*Linux or MacOS*)
 
 Below is partial list of all available parameters, run `webui --help` for the full list:
 

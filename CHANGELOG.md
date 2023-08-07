@@ -1,5 +1,21 @@
 # Change Log for SD.Next
 
+## Update for 2023-08-07
+
+- diffusers:
+  - **prompt attention** for sd and sd-xl  
+    native `compel` implementation and standrd -> compel translation  
+    thanks @ai-casanova  
+  - advanced **lora load/apply** methods  
+    in addition to standard lora loading that was recently added to sd-xl using diffusers, now we have  
+    - **sequential apply** (load & apply multiple loras in sequential manner) and
+    - **merge and apply** (load multiple loras and merge before applying to model)  
+    see *settings -> diffusers -> lora methods*
+    thanks @hameerabbasi and @ai-casanova
+- general:
+  - updated requirements  
+    this time its a bigger change so upgrade may take longer to install new requirements
+
 ## Update for 2023-08-05
 
 Another minor update, but it unlocks some cool new items...
@@ -11,7 +27,6 @@ Another minor update, but it unlocks some cool new items...
   - new torch 2.0 with ipex (intel arc)  
   - additional callbacks for extensions  
     enables latest comfyui extension  
-  - update requirements  
 
 ## Update for 2023-07-30
 
