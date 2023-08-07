@@ -635,7 +635,7 @@ def train_auto(
         trigger_words = [task_id],#[f"{task_id}",f"{task_id}"],
         list_train_data_dir=[train_data_dir],
         num_repeats=[f"{num_repeats}"],
-        batch_size=4,
+        batch_size=6,
         resolution=f"{width},{height}",
         epoch=10,  # 整数，随便填
         network_module="networks.lora",
