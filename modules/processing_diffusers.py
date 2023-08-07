@@ -161,6 +161,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         denoising_end=p.refiner_start if refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
         is_refiner=False,
+        clip_skip=p.clip_skip,
         **task_specific_kwargs
     )
     output = shared.sd_model(**pipe_args) # pylint: disable=not-callable
@@ -214,7 +215,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 denoising_end=1 if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 image=output.images[i],
                 output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
-                is_refiner=True
+                is_refiner=True,
+                clip_skip=p.clip_skip,
             )
             refiner_output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
             if not shared.state.interrupted and not shared.state.skipped:
