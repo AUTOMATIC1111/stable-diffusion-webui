@@ -56,7 +56,8 @@ def compel_encode_prompt(
         )
         if clip_skip not in CLIP_SKIP_MAPPING:
             shared.log.warning(
-                f"Recieved a CLIP skip of {clip_skip}, but only {set(CLIP_SKIP_MAPPING.keys())} is supported."
+                f"Recieved a CLIP skip of {clip_skip}, but only {set(CLIP_SKIP_MAPPING.keys())} is supported. "
+                "Falling back to 2."
             )
 
     if shared.opts.data["prompt_attention"] != "Compel parser":
