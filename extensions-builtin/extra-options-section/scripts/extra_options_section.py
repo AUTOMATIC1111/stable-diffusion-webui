@@ -50,7 +50,8 @@ class ExtraOptionsSection(scripts.Script):
                                 self.infotext_fields.append((comp, setting_infotext_name))
 
         def get_settings_values():
-            return [ui_settings.get_value_for_setting(key) for key in self.setting_names]
+            res = [ui_settings.get_value_for_setting(key) for key in self.setting_names]
+            return res[0] if len(res) == 1 else res
 
         interface.load(fn=get_settings_values, inputs=[], outputs=self.comps, queue=False, show_progress=False)
 
