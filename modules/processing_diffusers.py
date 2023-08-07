@@ -1,29 +1,21 @@
 import inspect
+import typing
 import torch
 import modules.devices as devices
 import modules.shared as shared
 import modules.sd_samplers as sd_samplers
 import modules.sd_models as sd_models
+import modules.sd_vae as sd_vae
 import modules.images as images
 from modules.lora_diffusers import lora_state, unload_diffusers_lora
 from modules.processing import StableDiffusionProcessing
 import modules.prompt_parser_diffusers as prompt_parser_diffusers
-import typing
+
 
 try:
     import diffusers
 except Exception as ex:
     shared.log.error(f'Failed to import diffusers: {ex}')
-
-
-def encode_prompt(encoder, prompt):
-    cfg = encoder.config
-    # TODO implement similar hijack for diffusers text encoder but following diffusers pipeline.encode_prompt concepts
-    # from modules import sd_hijack_clip
-    # model.text_encoder = sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords(model.text_encoder, None)
-    shared.log.debug(f'Diffuser encoder: {encoder.__class__.__name__} dict={getattr(cfg, "vocab_size", None)} layers={getattr(cfg, "num_hidden_layers", None)} tokens={getattr(cfg, "max_position_embeddings", None)}')
-    embeds = prompt
-    return embeds
 
 
 def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_prompts):
@@ -36,7 +28,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def vae_decode(latents, model, output_type='np'):
         if hasattr(model, 'vae') and torch.is_tensor(latents):
-            shared.log.debug(f'Diffusers VAE decode: name={model.vae.config.get("_name_or_path", "default")} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
+            shared.log.debug(f'Diffusers VAE decode: name={sd_vae.loaded_vae_file} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
             if shared.opts.diffusers_move_unet and not model.has_accelerate:
                 shared.log.debug('Diffusers: Moving UNet to CPU')
                 unet_device = model.unet.device
@@ -113,6 +105,14 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             clean['prompt'] = len(clean['prompt'])
         if 'negative_prompt' in clean:
             clean['negative_prompt'] = len(clean['negative_prompt'])
+        if 'prompt_embeds' in clean:
+            clean['prompt_embeds'] = clean['prompt_embeds'].shape
+        if 'pooled_prompt_embeds' in clean:
+            clean['pooled_prompt_embeds'] = clean['pooled_prompt_embeds'].shape
+        if 'negative_prompt_embeds' in clean:
+            clean['negative_prompt_embeds'] = clean['negative_prompt_embeds'].shape
+        if 'negative_pooled_prompt_embeds' in clean:
+            clean['negative_pooled_prompt_embeds'] = clean['negative_pooled_prompt_embeds'].shape
         clean['generator'] = generator_device
         shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
         return args
@@ -137,10 +137,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     elif sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING:
         p.ops.append('inpaint')
         task_specific_kwargs = {"image": p.init_images, "mask_image": p.mask, "strength": p.denoising_strength, "height": p.height, "width": p.width}
-
-    # TODO diffusers use transformers for prompt parsing
-    # from modules.prompt_parser import parse_prompt_attention
-    # parsed_prompt = [parse_prompt_attention(prompt) for prompt in prompts]
 
     if shared.state.interrupted or shared.state.skipped:
         unload_diffusers_lora()

@@ -533,6 +533,62 @@ def change_backend():
     refresh_vae_list()
 
 
+def detect_pipeline(f: str, op: str = 'model'):
+    guess = shared.opts.diffusers_pipeline
+    if guess == 'Autodetect':
+        try:
+            size = round(os.path.getsize(f) / 1024 / 1024 / 1024, 2)
+            if size < 1:
+                shared.log.warning(f'Model size smaller than expected: {f} size={size} GB')
+            elif size < 5:
+                guess = 'Stable Diffusion'
+            elif size < 6:
+                if op == 'model':
+                    shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load a base model: {f} size={size} GB')
+                else:
+                    guess = 'Stable Diffusion XL'
+            elif size < 7:
+                if op == 'refiner':
+                    shared.log.warning(f'Model size matches SD-XL base model, but attempting to load a refiner model: {f} size={size} GB')
+                else:
+                    guess = 'Stable Diffusion XL'
+            else:
+                shared.log.error(f'Diffusers autodetect failed, set diffuser pipeline manually: {f}')
+                return None, None
+            shared.log.debug(f'Diffusers autodetect {op}: {f} pipeline={guess} size={size} GB')
+        except Exception as e:
+            shared.log.error(f'Error detecting diffusers pipeline: model={f} {e}')
+            return None, None
+    if guess == shared.pipelines[1]:
+        pipeline = diffusers.StableDiffusionPipeline
+    elif guess == shared.pipelines[2]:
+        pipeline = diffusers.StableDiffusionXLPipeline
+    elif guess == shared.pipelines[3]:
+        pipeline = diffusers.KandinskyPipeline
+    elif guess == shared.pipelines[4]:
+        pipeline = diffusers.KandinskyV22Pipeline
+    elif guess == shared.pipelines[5]:
+        pipeline = diffusers.IFPipeline
+    elif guess == shared.pipelines[6]:
+        pipeline = diffusers.ShapEPipeline
+    elif guess == shared.pipelines[7]:
+        pipeline = diffusers.StableDiffusionImg2ImgPipeline
+    elif guess == shared.pipelines[8]:
+        pipeline = diffusers.StableDiffusionXLImg2ImgPipeline
+    elif guess == shared.pipelines[9]:
+        pipeline = diffusers.KandinskyImg2ImgPipeline
+    elif guess == shared.pipelines[10]:
+        pipeline = diffusers.KandinskyV22Img2ImgPipeline
+    elif guess == shared.pipelines[11]:
+        pipeline = diffusers.IFImg2ImgPipeline
+    elif guess == shared.pipelines[12]:
+        pipeline = diffusers.ShapEImg2ImgPipeline
+    else:
+        shared.log.error(f'Diffusers unknown pipeline: {guess}')
+        pipeline = None
+    return pipeline, guess
+
+
 def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=None, op='model'): # pylint: disable=unused-argument
     import torch # pylint: disable=reimported,redefined-outer-name
     if timer is None:
@@ -593,9 +649,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
             devices.set_cuda_params()
             vae = None
+            sd_vae.loaded_vae_file = None
             if op == 'model' or op == 'refiner':
                 vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
-                vae = sd_vae.load_vae_diffusers(None, vae_file, vae_source)
+                vae = sd_vae.load_vae_diffusers(checkpoint_info.path, vae_file, vae_source)
                 if vae is not None:
                     diffusers_load_config["vae"] = vae
 
@@ -609,35 +666,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             else:
                 diffusers_load_config["local_files_only "] = True
                 diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
-                try:
-                    if shared.opts.diffusers_pipeline == shared.pipelines[0]:
-                        pipeline = diffusers.StableDiffusionPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[1]:
-                        pipeline = diffusers.StableDiffusionXLPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[2]:
-                        pipeline = diffusers.KandinskyPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[3]:
-                        pipeline = diffusers.KandinskyV22Pipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[4]:
-                        pipeline = diffusers.IFPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[5]:
-                        pipeline = diffusers.ShapEPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[6]:
-                        pipeline = diffusers.StableDiffusionImg2ImgPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[7]:
-                        pipeline = diffusers.StableDiffusionXLImg2ImgPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[8]:
-                        pipeline = diffusers.KandinskyImg2ImgPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[9]:
-                        pipeline = diffusers.KandinskyV22Img2ImgPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[10]:
-                        pipeline = diffusers.IFImg2ImgPipeline
-                    elif shared.opts.diffusers_pipeline == shared.pipelines[11]:
-                        pipeline = diffusers.ShapEImg2ImgPipeline
-                    else:
-                        shared.log.error(f'Diffusers {op} unknown pipeline: {shared.opts.diffusers_pipeline}')
-                except Exception as e:
-                    shared.log.error(f'Diffusers {op} failed initializing pipeline: {shared.opts.diffusers_pipeline} {e}')
+                pipeline, _model_type = detect_pipeline(checkpoint_info.path, op)
+                if pipeline is None:
+                    shared.log.error(f'Diffusers {op} pipeline not initialized: {shared.opts.diffusers_pipeline}')
                     return
                 try:
                     if hasattr(pipeline, 'from_single_file'):
@@ -697,6 +728,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             else:
                 sd_model.disable_attention_slicing()
         if hasattr(sd_model, "vae"):
+            if vae is not None:
+                sd_model.vae = vae
             if shared.opts.diffusers_vae_upcast != 'default':
                 if shared.opts.diffusers_vae_upcast == 'true':
                     sd_model.vae.config["force_upcast"] = True
@@ -704,7 +737,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 else:
                     sd_model.vae.config["force_upcast"] = False
                     sd_model.vae.config.force_upcast = False
-            shared.log.debug(f'Diffusers {op} VAE: name={sd_model.vae.config.get("_name_or_path", "default")} upcast={sd_model.vae.config.get("force_upcast", None)}')
+            shared.log.debug(f'Diffusers {op} VAE: name={sd_vae.loaded_vae_file} upcast={sd_model.vae.config.get("force_upcast", None)}')
         if shared.opts.cross_attention_optimization == "xFormers" and hasattr(sd_model, 'enable_xformers_memory_efficient_attention'):
             sd_model.enable_xformers_memory_efficient_attention()
         if shared.opts.opt_channelslast:

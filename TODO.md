@@ -26,6 +26,7 @@ Stuff to be added, in no particular order...
   - Port `p.all_hr_prompts`
   - Import core repos to reduce dependencies
   - Update `gradio`
+  - Parse StabilityAI `modelspec` metadata
 - Non-technical:
   - Create additional themes
   - Update Wiki

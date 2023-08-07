@@ -430,8 +430,14 @@ def install_packages():
     install('pi-heif', 'pi_heif', ignore=True)
     tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
-    # bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', 'bitsandbytes==0.39.1')
-    # install(bitsandbytes_package, 'bitsandbytes', ignore=True)
+    bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', None)
+    if bitsandbytes_package is not None:
+        install(bitsandbytes_package, 'bitsandbytes', ignore=True)
+    else:
+        bitsandbytes_package = pkg_resources.working_set.by_key.get('bitsandbytes', None)
+        if bitsandbytes_package is not None:
+            log.warning(f'Not used, uninstalling: {bitsandbytes_package}')
+            pip('uninstall bitsandbytes --yes --quiet', ignore=True, quiet=True)
     if args.profile:
         print_profile(pr, 'Packages')
 

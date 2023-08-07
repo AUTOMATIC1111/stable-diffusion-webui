@@ -3,15 +3,20 @@
 ## Update for 2023-08-07
 
 - diffusers:
+  - **pipeline autodetect**
+    if pipeline is set to autodetect (default for new installs), app will try to autodetect pipeline based on selected model  
+    this should reduce user errors such as loading sd-xl model when sd pipeline is selected  
   - **prompt attention** for sd and sd-xl  
     native `compel` implementation and standrd -> compel translation  
     thanks @ai-casanova  
   - advanced **lora load/apply** methods  
     in addition to standard lora loading that was recently added to sd-xl using diffusers, now we have  
-    - **sequential apply** (load & apply multiple loras in sequential manner) and
+    - **sequential apply** (load & apply multiple loras in sequential manner) and  
     - **merge and apply** (load multiple loras and merge before applying to model)  
-    see *settings -> diffusers -> lora methods*
-    thanks @hameerabbasi and @ai-casanova
+    see *settings -> diffusers -> lora methods*  
+    thanks @hameerabbasi and @ai-casanova  
+  - **sd-xl vae** from safetensors now applies correct config  
+    result is that 3rd party vaes can be used without washed out colors  
 - general:
   - updated requirements  
     this time its a bigger change so upgrade may take longer to install new requirements

@@ -3,7 +3,7 @@ import collections
 import glob
 from copy import deepcopy
 import torch
-from modules import shared, paths, devices, script_callbacks, sd_models
+from modules import shared, paths, paths_internal, devices, script_callbacks, sd_models
 
 
 vae_ignore_keys = {"model_ema.decay", "model_ema.num_updates"}
@@ -169,7 +169,7 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
     loaded_vae_file = vae_file
 
 
-def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
+def load_vae_diffusers(model_file, vae_file=None, vae_source="from unknown source"):
     if vae_file is None:
         return None
     if not os.path.exists(vae_file):
@@ -196,14 +196,14 @@ def load_vae_diffusers(_model, vae_file=None, vae_source="from unknown source"):
     try:
         import diffusers
         if os.path.isfile(vae_file):
-            if shared.opts.diffusers_pipeline == "Stable Diffusion XL":
-                # load_config passed to from_single_file doesn't apply
-                # from_single_file by default downloads VAE1.5 config
-                shared.log.warning("Using SDXL VAE loaded from singular file will result in low contrast images.")
-            vae = diffusers.AutoencoderKL.from_single_file(vae_file)
+            _pipeline, model_type = sd_models.detect_pipeline(model_file, 'vae')
+            diffusers_load_config = { "config_file":  paths_internal.sd_default_config if model_type != 'Stable Diffusion XL' else os.path.join(paths_internal.sd_configs_path, 'sd_xl_base.yaml')}
+            vae = diffusers.AutoencoderKL.from_single_file(vae_file, **diffusers_load_config)
             vae = vae.to(devices.dtype_vae)
         else:
             vae = diffusers.AutoencoderKL.from_pretrained(vae_file, **diffusers_load_config)
+        global loaded_vae_file # pylint: disable=global-statement
+        loaded_vae_file = os.path.basename(vae_file)
         # shared.log.debug(f'Diffusers VAE config: {vae.config}')
         return vae
     except Exception as e:
