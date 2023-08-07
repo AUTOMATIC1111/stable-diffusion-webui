@@ -110,6 +110,7 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --disable-tls-verify | None | False | When passed, enables the use of self-signed certificates.
 --server-name | SERVER_NAME | None | Sets hostname of server. |
 --no-gradio-queue | None| False | Disables gradio queue; causes the webpage to use http requests instead of websockets; was the default in earlier versions.
+--gradio-allowed-path | None | None | Add path to Gradio's `allowed_paths`; make it possible to serve files from it.
 --no-hashing | None | False | Disable SHA-256 hashing of checkpoints to help loading performance. |
 --skip-version-check | None | False | Do not check versions of torch and xformers. |
 --skip-python-version-check | None | False | Do not check versions of Python. |
@@ -153,7 +154,6 @@ https://github.com/AUTOMATIC1111/stable-diffusion-webui/issues/10516
 --reinstall-torch | None | False | Force-reinstall torch. Useful for upgrading - but remove it after upgrading or you'll reinstall torch perpetually. |
 --tests | TESTS | False | Run test to validate web UI functionality, see wiki topic for more details.
 --no-tests | None | False | Do not run tests even if `--tests` option is specified.
---gradio-allowed-path | None | None | Add path to Gradio's `allowed_paths`; make it possible to serve files from it.
 | **DEFUNCT OPTIONS** |
 --show-negative-prompt | None | False 					| No longer has an effect. |
 --deepdanbooru | None | False 					| No longer has an effect. |
