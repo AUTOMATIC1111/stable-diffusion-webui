@@ -7,7 +7,8 @@ import modules.sd_models as sd_models
 import modules.images as images
 from modules.lora_diffusers import lora_state, unload_diffusers_lora
 from modules.processing import StableDiffusionProcessing
-
+import modules.prompt_parser_diffusers as prompt_parser_diffusers
+import typing
 
 try:
     import diffusers
@@ -51,23 +52,33 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             return latents
 
 
-    def set_pipeline_args(model, prompt, negative_prompt, **kwargs):
+    def set_pipeline_args(model, prompt: str, negative_prompt: str, prompt_2: typing.Optional[str] =None, negative_prompt_2: typing.Optional[str] = None, is_refiner: bool = False, **kwargs):
         args = {}
         pipeline = model
         signature = inspect.signature(type(pipeline).__call__)
         possible = signature.parameters.keys()
         generator_device = devices.cpu if shared.opts.diffusers_generator_device == "cpu" else shared.device
         generator = [torch.Generator(generator_device).manual_seed(s) for s in seeds]
+        prompt_embed = None
+        pooled = None
+        negative_embed = None
+        negative_pooled = None
+        if shared.opts.data['prompt_attention'] in {'Compel parser', 'Full parser'}:
+            prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompt(model, prompt, negative_prompt, prompt_2, negative_prompt_2, is_refiner, kwargs.pop("clip_skip", None))
         if 'prompt' in possible:
-            if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible:
-                # args['prompt_embeds'] = encode_prompt(model, prompt)
-                args['prompt'] = prompt
+            if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
+                args['prompt_embeds'] = prompt_embed
+                if shared.sd_model_type == "sdxl":
+                    args['pooled_prompt_embeds'] = pooled
+                    args['prompt_2'] = None #Cannot pass prompts when passing embeds
             else:
                 args['prompt'] = prompt
         if 'negative_prompt' in possible:
-            if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible:
-                # args['negative_prompt_embeds'] = encode_prompt(model, negative_prompt)
-                args['negative_prompt'] = negative_prompt
+            if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible and negative_embed is not None:
+                args['negative_prompt_embeds'] = negative_embed
+                if shared.sd_model_type == "sdxl":
+                    args['negative_pooled_prompt_embeds'] = negative_pooled
+                    args['negative_prompt_2'] = None
             else:
                 args['negative_prompt'] = negative_prompt
         if 'num_inference_steps' in possible:
@@ -149,6 +160,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         denoising_start=0 if refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
         denoising_end=p.refiner_start if refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
+        is_refiner=False,
+        clip_skip=p.clip_skip,
         **task_specific_kwargs
     )
     output = shared.sd_model(**pipe_args) # pylint: disable=not-callable
@@ -202,6 +215,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 denoising_end=1 if p.refiner_start > 0 and p.refiner_start < 1 else None,
                 image=output.images[i],
                 output_type='latent' if hasattr(shared.sd_refiner, 'vae') else 'np',
+                is_refiner=True,
+                clip_skip=p.clip_skip,
             )
             refiner_output = shared.sd_refiner(**pipe_args) # pylint: disable=not-callable
             if not shared.state.interrupted and not shared.state.skipped:
