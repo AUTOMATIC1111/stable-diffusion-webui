@@ -132,6 +132,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     # parsed_prompt = [parse_prompt_attention(prompt) for prompt in prompts]
 
     if shared.state.interrupted or shared.state.skipped:
+        unload_diffusers_lora()
         return results
 
     if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
@@ -154,6 +155,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     output = shared.sd_model(**pipe_args) # pylint: disable=not-callable
 
     if shared.state.interrupted or shared.state.skipped:
+        unload_diffusers_lora()
         return results
 
     if shared.sd_refiner is None or not p.enable_hr:
