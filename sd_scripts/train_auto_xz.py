@@ -622,6 +622,8 @@ def train_auto(
     train_callback(5)
 
     lora_name = f"{task_id}"
+    num_repeats = int(os.getenv("AUTO_TRAIN_REPEATS", "50"))
+
     # 3.自动训练出图
     train_with_params(
         pretrained_model_name_or_path=sd_model_path,
@@ -632,7 +634,7 @@ def train_auto(
         save_last_n_epochs = 1,
         trigger_words = [task_id],#[f"{task_id}",f"{task_id}"],
         list_train_data_dir=[train_data_dir],
-        num_repeats=[f"{50}"],
+        num_repeats=[f"{num_repeats}"],
         batch_size=4,
         resolution=f"{width},{height}",
         epoch=10,  # 整数，随便填
@@ -745,7 +747,7 @@ def train_auto(
         # unwrap_model=unwrap_model,
         callback=train_callback,
         )
-    return os.path.join(lora_path,lora_name)
+    return os.path.join(lora_path, lora_name+".safetensors")
 
 
 # model_p = "/data/qll/stable-diffusion-webui/models"
