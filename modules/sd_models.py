@@ -715,6 +715,7 @@ def reload_model_weights(sd_model=None, info=None):
     print(f"Weights loaded in {timer.summary()}.")
 
     model_data.set_sd_model(sd_model)
+    sd_unet.apply_unet()
 
     return sd_model
 
