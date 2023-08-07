@@ -502,10 +502,11 @@ def run_worker():
         from worker.task_send import RedisSender, VipLevel
 
         if cmd_opts.train_only:
-            from trainx.typex import PreprocessTask, TrainLoraTask
+            from trainx.typex import PreprocessTask, TrainLoraTask, DigitalDoppelgangerTask
             tasks = [
                 # PreprocessTask.debug_task(),
-                TrainLoraTask.debug_task()
+                # TrainLoraTask.debug_task()
+                DigitalDoppelgangerTask.debug_task()
             ]
         else:
             from handlers.img2img import Img2ImgTask

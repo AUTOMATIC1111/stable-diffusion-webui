@@ -7,6 +7,7 @@
 # @Software: Hifive
 import json
 import os.path
+import shutil
 import time
 import typing
 from enum import IntEnum
@@ -30,7 +31,7 @@ class PreprocessTask(UserDict):
 
     @property
     def image_keys(self):
-        return self.get('image_keys')
+        return self.get('image_keys') or []
 
     @property
     def ignore(self):
@@ -103,6 +104,22 @@ class PreprocessTask(UserDict):
             'process_keep_original_size': False,
         }
         return Task(**t)
+
+    def download_images_with_keys(self):
+        local_files = []
+        for i, image in enumerate(self.image_keys):
+            if len(local_files) > 60:
+                continue
+            if isinstance(image, dict):
+                image_key = image['key']
+                target_dir = os.path.join(Tmp, self.id, image['relative_path'])
+            else:
+                image_key = image
+                target_dir = os.path.join(Tmp, self.id)
+            file = get_tmp_local_path(image_key, dir=target_dir)
+            if os.path.isfile(file):
+                local_files.append(file)
+        return local_files
 
 
 class TrainMinorTaskType(IntEnum):
@@ -286,8 +303,11 @@ class TrainLoraTask(UserDict):
 
     def __init__(self, task: Task):
         super(TrainLoraTask, self).__init__(task)
-        self.id = task.id
         self.orig_task = task
+
+    @property
+    def id(self):
+        return self.orig_task.id
 
     @property
     def hash_id(self):
@@ -331,6 +351,10 @@ class TrainLoraTask(UserDict):
         return os.path.join(Tmp, self.id + '.toml')
 
     def image_dir(self):
+        # 兼容数字人训练，processed_key已经是本地路径
+        if os.path.isdir(self['processed_key']):
+            return self['processed_key']
+
         zip_file = get_tmp_local_path(self['processed_key'])
         image_dir = os.path.join(Tmp, self.id)
         if not os.path.isdir(image_dir) and getdirsize(image_dir) == 0:
@@ -390,7 +414,7 @@ class TrainLoraTask(UserDict):
     def build_command_args(self):
         image_dir = self.image_dir()
         self.rewrite_caption(image_dir)
-        toml = self.create_toml(image_dir)
+        # toml = self.create_toml(image_dir)
         params = self.train_param()
         base_model = get_model_local_path(params.base.base_model, ModelType.CheckPoint)
         base_lora = get_model_local_path(params.base.base_lora, ModelType.Lora) if params.base.base_lora else ''
@@ -526,6 +550,57 @@ class TrainLoraTask(UserDict):
         return Task(**t)
 
 
-class DigitalDoppelgangerTask(TrainLoraTask, PreprocessTask):
+class DigitalDoppelgangerTask(PreprocessTask):
 
-    pass
+    def __init__(self, task: Task):
+        super(DigitalDoppelgangerTask, self).__init__(task)
+        self.train_type = task.value('train_type', 0)  # 自动训练类型
+        self.output_dir = os.path.join(Tmp, self.id+"-out")
+        os.makedirs(self.output_dir, exist_ok=True)
+        self.general_model_path = os.path.join("models", "tag_models")
+        if not os.path.isdir(self.general_model_path):
+            raise OSError(f'cannot found tag model fodler:{self.general_model_path}')
+
+        base_model = task.value('base_model', requires=True)
+        self.base_model = get_model_local_path(base_model, ModelType.CheckPoint)
+        self.input_dir = os.path.join(Tmp, self.id+"-in")
+        os.makedirs(self.input_dir, exist_ok=True)
+
+    def download_move_input_images(self):
+        images = self.download_images_with_keys()
+        if images:
+            for img in images:
+                shutil.move(img, os.path.join(self.input_dir, os.path.basename(img)))
+
+            return self.input_dir
+
+    def get_model_cover_key(self):
+        image_dir = self.input_dir
+        if not hasattr(self, 'model_cover'):
+            for file in find_files_from_dir(image_dir, 'png', 'jpg', 'jpeg'):
+                key = upload_files(True, file)
+                setattr(self, 'model_cover', key)
+                if key:
+                    return key[0]
+        return getattr(self, 'model_cover')
+
+    @classmethod
+    def debug_task(cls):
+        t = {
+            'model_name': 'test_train(Digital)',
+            'group_id': 'group-x87qrm7mzm4wwp',
+            'model_desc': 'test digital',
+            'base_model': 'xingzheaidraw/models/system/Stable-diffusion/2023/05/06/0389907e714c9239261269f21eb511a9585e4884c75d17ecafabc74b7c9baad8.ckpt',
+            'task_id': 'test_train_digital',
+            'user_id': 'test_user',
+            'task_type': TaskType.Train,
+            'minor_type': TrainMinorTaskType.DigitalDoppelganger,
+            'model_hash': 'train',
+            'create_at': int(time.time()),
+            'image_keys': [
+                'xingzheaidraw/sd-web/output/admin/txt2img/samples/2023/08/07/low-t2i-e5ovy8elmre4wp_5-0.png'
+            ]
+        }
+
+        return Task(**t)
+

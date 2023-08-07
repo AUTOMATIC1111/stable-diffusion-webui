@@ -229,6 +229,7 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
 
 
 def load_sd_model_weights(filename, sha256=None):
+    # todo: touch 模型文件
     checkpoint = CheckpointInfo(filename, sha256)
     return reload_model_weights(info=checkpoint)
 
