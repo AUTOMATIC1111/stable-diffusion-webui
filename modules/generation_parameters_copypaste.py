@@ -414,10 +414,15 @@ def connect_paste(button, paste_fields, input_comp, override_settings_component,
         return res
 
     if override_settings_component is not None:
+        already_handled_fields = {key: 1 for _, key in paste_fields}
+
         def paste_settings(params):
             vals = {}
 
             for param_name, setting_name in infotext_to_setting_name_mapping:
+                if param_name in already_handled_fields:
+                    continue
+
                 v = params.get(param_name, None)
                 if v is None:
                     continue
