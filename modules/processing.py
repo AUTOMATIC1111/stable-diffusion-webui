@@ -279,10 +279,10 @@ class StableDiffusionProcessing:
         if self.sd_model.cond_stage_key == "edit":
             return self.edit_image_conditioning(source_image)
 
-        if self.sampler.conditioning_key in {'hybrid', 'concat'}:
+        if self.sd_model.model.conditioning_key in {'hybrid', 'concat'}:
             return self.inpainting_image_conditioning(source_image, latent_image, image_mask=image_mask)
 
-        if self.sampler.conditioning_key == "crossattn-adm":
+        if self.sd_model.model.conditioning_key == "crossattn-adm":
             return self.unclip_image_conditioning(source_image)
 
         # Dummy zero conditioning if we're not using inpainting or depth model.
