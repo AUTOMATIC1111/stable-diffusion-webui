@@ -43,7 +43,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
 
-                p.task_progress = progress
+                p.task_progress = min(progress, 99)
                 if callable(dump_func):
                     dump_func(p)
 
