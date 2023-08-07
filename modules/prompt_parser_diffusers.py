@@ -105,8 +105,3 @@ def compel_encode_prompt(
         [positive, negative]
     )
     return prompt_embed, None, negative_embed, None
-
-
-# LAST_HIDDEN_STATES_NORMALIZED = 0             # SD1/2 regular
-# PENULTIMATE_HIDDEN_STATES_NORMALIZED = 1      # SD1.5 with "clip skip"
-# PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED = 2  # SDXL
