@@ -145,6 +145,21 @@ def git_fix_workspace(dir, name):
     return
 
 
+def run_git(dir, name, command, desc=None, errdesc=None, custom_env=None, live: bool = default_command_live, autofix=True):
+    try:
+        return run(f'"{git}" -C "{dir}" {command}', desc=desc, errdesc=errdesc, custom_env=custom_env, live=live)
+    except RuntimeError:
+        pass
+
+    if not autofix:
+        return None
+
+    print(f"{errdesc}, attempting autofix...")
+    git_fix_workspace(dir, name)
+
+    return run(f'"{git}" -C "{dir}" {command}', desc=desc, errdesc=errdesc, custom_env=custom_env, live=live)
+
+
 def git_clone(url, dir, name, commithash=None):
     # TODO clone into temporary dir and move if successful
 
@@ -152,25 +167,13 @@ def git_clone(url, dir, name, commithash=None):
         if commithash is None:
             return
 
-        try:
-            current_hash = subprocess.check_output([git, "-C", dir, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
-            if current_hash == commithash:
-                return
-        except Exception:
-            print(f"Unable to determine {name}'s hash, attempting autofix...")
-            git_fix_workspace(dir, name)
-            current_hash = subprocess.check_output([git, "-C", dir, "rev-parse", "HEAD"], shell=False, encoding='utf8').strip()
-            if current_hash == commithash:
-                return
+        current_hash = run_git(dir, name, 'rev-parse HEAD', None, f"Couldn't determine {name}'s hash: {commithash}", live=False).strip()
+        if current_hash == commithash:
+            return
 
-        run(f'"{git}" -C "{dir}" fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
+        run_git('fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
 
-        try:
-            run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
-        except RuntimeError:
-            print(f"Unable to checkout {name} with hash {commithash}, attempting autofix...")
-            git_fix_workspace(dir, name)
-            run(f'"{git}" -C "{dir}" checkout {commithash}', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
+        run_git('checkout', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
 
         return
 
