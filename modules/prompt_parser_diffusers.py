@@ -39,6 +39,15 @@ def compel_encode_prompt(
             f"Compel encoding not yet supported for {type(pipeline).__name__}."
         )
         return (None, None, None, None)
+
+    if shared.sd_model_type == "sdxl":
+      embedding_type = ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED
+    # if clip_skip > 1: How to pass this from processing.py?
+      # embedding_type = ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NORMALIZED
+    else:
+      embedding_type = ReturnedEmbeddingsType.LAST_HIDDEN_STATES_NORMALIZED
+
+
     if shared.opts.data["prompt_attention"] != "Compel parser":
         prompt = convert_to_compel(prompt)
         negative_prompt = convert_to_compel(negative_prompt)
@@ -48,7 +57,7 @@ def compel_encode_prompt(
     compel_te1 = Compel(
         tokenizer=pipeline.tokenizer,
         text_encoder=pipeline.text_encoder,
-        returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
+        returned_embeddings_type=embedding_type,
         requires_pooled=False,
     )
 
@@ -56,7 +65,7 @@ def compel_encode_prompt(
         compel_te2 = Compel(
             tokenizer=pipeline.tokenizer_2,
             text_encoder=pipeline.text_encoder_2,
-            returned_embeddings_type=ReturnedEmbeddingsType.PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED,
+            returned_embeddings_type=embedding_type,
             requires_pooled=True,
         )
         if not is_refiner:
@@ -82,3 +91,7 @@ def compel_encode_prompt(
         [positive, negative]
     )
     return prompt_embed, None, negative_embed, None
+
+# LAST_HIDDEN_STATES_NORMALIZED = 0             # SD1/2 regular
+# PENULTIMATE_HIDDEN_STATES_NORMALIZED = 1      # SD1.5 with "clip skip"
+# PENULTIMATE_HIDDEN_STATES_NON_NORMALIZED = 2  # SDXL    
