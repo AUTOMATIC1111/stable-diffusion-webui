@@ -13,7 +13,7 @@ lora_state = { # TODO Lora state for Diffusers
 def unload_diffusers_lora():
     try:
         pipe = shared.sd_model
-        if shared.opts.diffusers_lora_loader == "Diffusers":
+        if shared.opts.diffusers_lora_loader == "diffusers default":
             pipe.unload_lora_weights()
             pipe._remove_text_encoder_monkey_patch() # pylint: disable=W0212
             proc_cls_name = next(iter(pipe.unet.attn_processors.values())).__class__.__name__
@@ -24,9 +24,9 @@ def unload_diffusers_lora():
             lora_state['all_loras'].reverse()
             lora_state['multiplier'].reverse()
             for i, lora_network in enumerate(lora_state['all_loras']):
-              if shared.opts.diffusers_lora_loader == "kohya-merge":
+              if shared.opts.diffusers_lora_loader == "merge and apply":
                 lora_network.restore_from(multiplier=lora_state['multiplier'][i])
-              if shared.opts.diffusers_lora_loader == "kohya-apply":
+              if shared.opts.diffusers_lora_loader == "sequential apply":
                 lora_network.unapply_to()
         lora_state['active'] = False
         lora_state['loaded'] = 0
@@ -43,7 +43,7 @@ def load_diffusers_lora(name, lora, strength = 1.0):
         lora_state['active'] = True
         lora_state['loaded'] += 1
         lora_state['multiplier'].append(strength)
-        if shared.opts.diffusers_lora_loader == "Diffusers":
+        if shared.opts.diffusers_lora_loader == "diffusers default":
             pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True, lora_scale=strength)
             shared.log.info(f"Diffusers LoRA loaded: {name} {lora_state['multiplier']}")
         else:
@@ -55,9 +55,9 @@ def load_diffusers_lora(name, lora, strength = 1.0):
                 text_encoders = pipe.text_encoder
             lora_network: LoRANetwork = create_network_from_weights(text_encoders, pipe.unet, lora_sd, multiplier=strength)
             lora_network.load_state_dict(lora_sd)
-            if shared.opts.diffusers_lora_loader == "kohya-merge":
+            if shared.opts.diffusers_lora_loader == "merge and apply":
                 lora_network.merge_to(multiplier=strength)
-            if shared.opts.diffusers_lora_loader == "kohya-apply":
+            if shared.opts.diffusers_lora_loader == "sequential apply":
                 lora_network.to(pipe.device, dtype=pipe.unet.dtype)
                 lora_network.apply_to(multiplier=strength)
             lora_state['all_loras'].append(lora_network)
