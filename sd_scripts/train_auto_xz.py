@@ -636,11 +636,11 @@ def train_auto(
                      model_path=general_model_path)
     train_callback(2)
     # 2.tagger反推
-    # tagger_path = os.path.join(general_model_path, "tag_models")
-    # cp = Process(target=train_tagger,
-    #              args=(process_dir, tagger_path, trigger_word, undesired_tags, 0.35, 0.35))
-    # cp.start()
-    # cp.join()
+    tagger_path = os.path.join(general_model_path, "tag_models")
+    cp = Process(target=train_tagger,
+                 args=(process_dir, tagger_path, trigger_word, undesired_tags, 0.35, 0.35))
+    cp.start()
+    cp.join()
     train_callback(5)
 
     lora_name = f"{task_id}"
