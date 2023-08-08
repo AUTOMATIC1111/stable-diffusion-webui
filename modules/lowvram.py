@@ -40,9 +40,6 @@ def setup_for_low_vram(sd_model, use_medvram):
 
         module = parents.get(module, module)
 
-        if module_in_gpu == module:
-            return
-
         safe_send_to_cpu(module_in_gpu)
 
         module.to(devices.device)
