@@ -75,7 +75,15 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     def at_step(step, tree):
         class AtStep(lark.Transformer):
             def scheduled(self, args):
-                before, after, _, when = args
+                if len(args) == 2:
+                    before, after, when = (), *args
+                elif len(args) == 3:
+                    if type(args[0]) == type(args[1]):
+                        before, after, when = args
+                    else:
+                        before, after, _, when = (), *args
+                else:
+                    before, after, _, when = args
                 yield before or () if step <= when else after
             def alternate(self, args):
                 yield next(args[(step - 1)%len(args)])
