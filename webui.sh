@@ -96,10 +96,10 @@ if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v 
 then
     echo "Launching accelerate launch.py..."
     exec accelerate launch --num_cpu_threads_per_process=6 launch.py "$@"
-elif [[ "$@" == *"--use-ipex"* ]] && [[ -z "${first_launch}" ]] && [[ $(uname -a) != *WSL2* ]] && [ -x "$(command -v ipexrun)" ] && [ -x "$(command -v numactl)" ] && [ -x "$(command -v sycl-ls)" ]
+elif [[ "$@" == *"--use-ipex"* ]] && [[ -z "${first_launch}" ]] && [ -x "$(command -v ipexrun)" ] && [ -x "$(command -v sycl-ls)" ]
 then
     echo "Launching ipexrun launch.py..."
-    exec ipexrun launch.py "$@"
+    exec ipexrun --multi-task-manager 'taskset' launch.py "$@"
 else
     echo "Launching launch.py..."
     exec "${python_cmd}" launch.py "$@"
