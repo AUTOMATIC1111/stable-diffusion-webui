@@ -150,10 +150,8 @@ def automatic_judge_model_vram(sd_model):
             high_bar = 10
         if vram < low_bar or shared.cmd_opts.lowvram:
             setup_for_low_vram(sd_model, False)
-            shared.cmd_opts.lowvram = True
         elif vram < high_bar or shared.cmd_opts.medvram:
             setup_for_low_vram(sd_model, True)
-            shared.cmd_opts.medvram = True
         else:
             sd_model.to(shared.device)
     else:

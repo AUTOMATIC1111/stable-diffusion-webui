@@ -830,6 +830,8 @@ class Shared(sys.modules[__name__].__class__):
 
 
 sd_model: LatentDiffusion = None  # this var is here just for IDE's type checking; it cannot be accessed because the class field above will be accessed instead
+sd_model_refiner: LatentDiffusion = None  # this var and sd_model will be swapped in the refining processing
+sd_model_refiner_file_name = None
 sys.modules[__name__].__class__ = Shared
 
 settings_components = None

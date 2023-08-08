@@ -401,7 +401,7 @@ class StableDiffusionProcessing:
         self.extra_generation_params['Refiner switch at'] = shared.opts.sd_refiner_switch_at
 
         with sd_models.SkipWritingToConfig():
-            sd_models.reload_model_weights(info=refiner_checkpoint_info)
+            sd_models.swap_to_refiner(refiner_checkpoint_info=refiner_checkpoint_info)
 
         devices.torch_gc()
         self.setup_conds()
@@ -426,6 +426,9 @@ class StableDiffusionProcessing:
             samples = self.sampler.sample_img2img(self, noisy_latent, x, self.c, self.uc, image_conditioning=self.image_conditioning, steps=max(1, self.steps - stopped_at - 1))
 
             self.denoising_strength = denoising_strength
+
+        with sd_models.SkipWritingToConfig():
+            sd_models.swap_back_after_refiner()
 
         return samples
 
