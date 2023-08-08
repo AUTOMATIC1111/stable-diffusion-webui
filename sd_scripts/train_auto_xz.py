@@ -1,4 +1,4 @@
-import os  # ,sys,re,torch
+import os #,sys,re,torch
 from PIL import Image, ImageOps
 # import random
 import time
@@ -23,12 +23,14 @@ import math
 # )
 from accelerate import Accelerator
 # from library.lpw_stable_diffusion import StableDiffusionLongPromptWeightingPipeline
-from .train_network_all_auto import train_with_params, train_callback
+from train_network_all_auto import train_with_params, train_callback
 
 # from prompts_generate import txt2img_prompts
-from sd_scripts.finetune.tag_images_by_wd14_tagger import tagger
-from sd_scripts.library import autocrop
-from sd_scripts.super_upscaler.super_upscaler import upscaler
+from finetune.tag_images_by_wd14_tagger import tagger
+# from finetune.make_captions import make_caption_with_blip
+from finetune.deepbooru import deepbooru
+from library import autocrop
+
 
 # from 
 
@@ -39,90 +41,50 @@ SCHEDULER_TIMESTEPS = 1000
 SCHEDLER_SCHEDULE = "scaled_linear"
 # MODEL_PATH = "/data/qll/stable-diffusion-webui/models"
 
-LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
-def resize_image(resize_mode, im, width, height, upscaler_name=None, models_path=""):
-    """
-    Resizes an image with the specified resize_mode, width, and height.
 
-    Args:
-        resize_mode: The mode to use when resizing the image.
-            0: Resize the image to the specified width and height.
-            1: Resize the image to fill the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, cropping the excess.
-            2: Resize the image to fit within the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, filling empty with data from image.
-        im: The image to resize.
-        width: The width to resize the image to.
-        height: The height to resize the image to.
-        upscaler_name: The name of the upscaler to use. If not provided, defaults to opts.upscaler_for_img2img.
-    """
+class PreprocessTxtAction(Enum):
+    Prepend = 'prepend'
+    Append = 'append'
+    Copy = 'copy'
+    Ignore = 'ignore'
 
-    upscaler_name = upscaler_name
+class PreprocessParams:
+    src = None
+    dstdir = None
+    subindex = 0
+    flip = False
+    process_caption = False
+    process_caption_deepbooru = False
+    preprocess_txt_action = None
+    filter_tags = ""
+    additional_tags = ""
 
-    def resize(im, w, h):
-        if upscaler_name is None or upscaler_name == "None" or im.mode == 'L':
-            return im.resize((w, h), resample=LANCZOS)
+    def do_caption(self, existing_caption=None):
+        '''
+        忽略已存在TAG
+        '''
+        if not existing_caption:
+            return True
+        return self.preprocess_txt_action in [
+            PreprocessTxtAction.Prepend, PreprocessTxtAction.Copy, PreprocessTxtAction.Append
+        ]
 
-        scale = max(w / im.width, h / im.height)
+def save_pic_with_caption(image, index, params: PreprocessParams, existing_caption=None):
+    caption = ""
 
-        if scale > 1.0:
-            # upscalers = [x for x in shared.sd_upscalers if x.name == upscaler_name]
-            # if len(upscalers) == 0:
-            #     upscaler = shared.sd_upscalers[0]
-            #     print(f"could not find upscaler named {upscaler_name or '<empty string>'}, using {upscaler.name} as a fallback")
-            # else:
-            #     upscaler = upscalers[0]
+    # if params.process_caption and params.do_caption(existing_caption):
+    #     caption += shared.interrogator.generate_caption(image)
 
-            # im = upscaler.scaler.upscale(im, scale, upscaler.data_path)
-            im = upscaler(im, upscale_by=scale, style_type=1, upscaler_2_visibility=0.3, swap=True,
-                          models_path=models_path)
-
-        if im.width != w or im.height != h:
-            im = im.resize((w, h), resample=LANCZOS)
-
-        return im
-
-    if resize_mode == 0:
-        res = resize(im, width, height)
-
-    elif resize_mode == 1:
-        ratio = width / height
-        src_ratio = im.width / im.height
-
-        src_w = width if ratio > src_ratio else im.width * height // im.height
-        src_h = height if ratio <= src_ratio else im.height * width // im.width
-
-        resized = resize(im, src_w, src_h)
-        res = Image.new("RGB", (width, height))
-        res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
-
-    else:
-        ratio = width / height
-        src_ratio = im.width / im.height
-
-        src_w = width if ratio < src_ratio else im.width * height // im.height
-        src_h = height if ratio >= src_ratio else im.height * width // im.width
-
-        resized = resize(im, src_w, src_h)
-        res = Image.new("RGB", (width, height))
-        res.paste(resized, box=(width // 2 - src_w // 2, height // 2 - src_h // 2))
-
-        if ratio < src_ratio:
-            fill_height = height // 2 - src_h // 2
-            res.paste(resized.resize((width, fill_height), box=(0, 0, width, 0)), box=(0, 0))
-            res.paste(resized.resize((width, fill_height), box=(0, resized.height, width, resized.height)),
-                      box=(0, fill_height + src_h))
-        elif ratio > src_ratio:
-            fill_width = width // 2 - src_w // 2
-            res.paste(resized.resize((fill_width, height), box=(0, 0, 0, height)), box=(0, 0))
-            res.paste(resized.resize((fill_width, height), box=(resized.width, 0, resized.width, height)),
-                      box=(fill_width + src_w, 0))
-
-    return res
+    if params.process_caption_deepbooru and params.do_caption(existing_caption):
+        if len(caption) > 0:
+            caption += ", "
+        caption += deepbooru.model.tag_multi(image,force_disable_ranks=False,interrogate_deepbooru_score_threshold=0.45,deepbooru_use_spaces=False,
+            deepbooru_escape=False,deepbooru_sort_alpha=False,interrogate_return_ranks=False,
+            deepbooru_filter_tags=params.filter_tags, addtional_tags=params.additional_tags)
 
 
-def save_pic(image, index, params, existing_caption):
-    # save_pic_with_caption(image, index, params, existing_caption=existing_caption)
     filename_part = params.src
     filename_part = os.path.splitext(filename_part)[0]
     filename_part = os.path.basename(filename_part)
@@ -130,10 +92,34 @@ def save_pic(image, index, params, existing_caption):
     basename = f"{index:05}-{params.subindex}-{filename_part}"
     image.save(os.path.join(params.dstdir, f"{basename}.png"))
 
+    if params.preprocess_txt_action == 'prepend' and existing_caption:
+        caption = existing_caption + ' ' + caption
+    elif params.preprocess_txt_action == 'append' and existing_caption:
+        caption = caption + ' ' + existing_caption
+    elif params.preprocess_txt_action == 'copy' and existing_caption:
+        caption = existing_caption
+
+    caption = caption.strip()
+
+    if len(caption) > 0:
+        with open(os.path.join(params.dstdir, f"{basename}.txt"), "w", encoding="utf8") as file:
+            file.write(caption)
+
+    params.subindex += 1
+
+def save_pic(image, index, params, existing_caption):
+    save_pic_with_caption(image, index, params, existing_caption=existing_caption)
+    # filename_part = params.src
+    # filename_part = os.path.splitext(filename_part)[0]
+    # filename_part = os.path.basename(filename_part)
+
+    # basename = f"{index:05}-{params.subindex}-{filename_part}"
+    # image.save(os.path.join(params.dstdir, f"{basename}.png"))
+
     if params.flip:
-        # save_pic_with_caption(ImageOps.mirror(image), index, params, existing_caption=existing_caption)
-        image = ImageOps.mirror(image)
-        image.save(os.path.join(params.dstdir, f"{basename}.png"))
+        save_pic_with_caption(ImageOps.mirror(image), index, params, existing_caption=existing_caption)
+        # image = ImageOps.mirror(image)
+        # image.save(os.path.join(params.dstdir, f"{basename}.png"))
 
 
 def split_pic(image, inverse_xy, width, height, overlap_ratio):
@@ -183,43 +169,16 @@ def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, thr
     return wh and center_crop(image, *wh)
 
 
-class PreprocessTxtAction(Enum):
-    Prepend = 'prepend'
-    Append = 'append'
-    Copy = 'copy'
-    Ignore = 'ignore'
-
-
-class PreprocessParams:
-    src = None
-    dstdir = None
-    subindex = 0
-    flip = False
-    process_caption = False
-    process_caption_deepbooru = False
-    preprocess_txt_action = None
-
-    def do_caption(self, existing_caption=None):
-        '''
-        忽略已存在TAG
-        '''
-        if not existing_caption:
-            return True
-        return self.preprocess_txt_action in [
-            PreprocessTxtAction.Prepend, PreprocessTxtAction.Copy, PreprocessTxtAction.Append
-        ]
-
 
 # 一键图片预处理函数
-def train_preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action,
-                     process_keep_original_size,
-                     process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
-                     overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
-                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
-                     model_path=""):
+def train_preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size,
+                    process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
+                    overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
+                    process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
+                    process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
+                    process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
+                    process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None, model_path="",
+                    filter_tags = "",additional_tags = ""):
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
@@ -228,14 +187,10 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
     overlap_ratio = max(0.0, min(0.9, overlap_ratio))
 
     # assert src != dst, 'same directory specified as source and destination'
-
+    deepbooru.model.start(models_path=model_path)
     os.makedirs(dst, exist_ok=True)
 
     files = os.listdir(src)  # listfiles(src)
-
-    # shared.state.job = "preprocess"
-    # shared.state.textinfo = "Preprocessing..."
-    # shared.state.job_count = len(files)
 
     params = PreprocessParams()
     params.dstdir = dst
@@ -243,6 +198,8 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
     params.process_caption = process_caption
     params.process_caption_deepbooru = process_caption_deepbooru
     params.preprocess_txt_action = preprocess_txt_action
+    params.filter_tags = filter_tags
+    params.additional_tags = additional_tags
 
     pbar = tqdm.tqdm(files)
     for index, imagefile in enumerate(pbar):
@@ -322,34 +279,32 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
                 if img.width>img.height:
                     ratio = 2048.0/img.width
                 else:
-                    ratio = 2048.0 / img.height
-                img = resize_image(1, img, int(img.width * ratio), int(img.height * ratio))
+                    ratio = 2048.0/img.height
+                img = deepbooru.resize_image(1, img, int(img.width*ratio), int(img.height*ratio))
             save_pic(img, index, params, existing_caption=existing_caption)
             process_default_resize = False
 
         if process_default_resize:
-            img = resize_image(1, img, width, height)
+            img = deepbooru.resize_image(1, img, width, height)
             save_pic(img, index, params, existing_caption=existing_caption)
         
-        os.remove(filename)
+        # os.remove(filename)
 
         # shared.state.nextjob()
         if callable(progress_cb):
             current_progress = (index + 1) * 100 / len(files)
             if current_progress % 5 == 0:
                 progress_cb(current_progress)
-    return
-
+    return 
 
 # 一键打标函数
-def train_tagger(train_data_dir, model_dir, trigger_word=None, undesired_tags=None, general_threshold=0.35,
-                 character_threshold=0.35):
+def train_tagger(train_data_dir,model_dir,trigger_word=None,undesired_tags=None,general_threshold=0.35,character_threshold=0.35):
     tagger(
         train_data_dir=train_data_dir,
-        model_dir=model_dir,  # r"/data/qll/stable-diffusion-webui/models/tag_models",
+        model_dir= model_dir, #r"/data/qll/stable-diffusion-webui/models/tag_models",
         force_download=False,
-        batch_size=8,
-        max_data_loader_n_workers=4,
+        batch_size=1,
+        max_data_loader_n_workers=None,
         caption_extension=".txt",
         general_threshold=general_threshold,
         character_threshold=character_threshold,
@@ -358,7 +313,7 @@ def train_tagger(train_data_dir, model_dir, trigger_word=None, undesired_tags=No
         undesired_tags=undesired_tags,
         frequency_tags=False,
         addtional_tags=trigger_word
-    )
+    )   
     return
 
 
@@ -366,8 +321,7 @@ MODEL_PATH = "/data/qll/stable-diffusion-webui/models/Stable-diffusion/chilloutm
 PIC_SAVE_PATH = "/data/qll/pics/yijian_sanciyuan_train"
 LORA_PATH = "/data/qll/stable-diffusion-webui/models/Lora"
 
-
-def prepare_accelerator(logging_dir="./logs", log_prefix=None, gradient_accumulation_steps=1, mixed_precision="no"):
+def prepare_accelerator(logging_dir="./logs",log_prefix=None,gradient_accumulation_steps=1,mixed_precision="no"):
     if logging_dir is None:
         logging_dir = None
     else:
@@ -396,273 +350,283 @@ def prepare_accelerator(logging_dir="./logs", log_prefix=None, gradient_accumula
 
     return accelerator, unwrap_model
 
-
 from multiprocessing import Process
 
 
 class Train_Params:
     def __init__(self,
-                 pretrained_model_name_or_path=None,
-                 network_weights=None,
-                 output_name="",
-                 output_dir="",
-                 save_every_n_epochs=None,
-                 save_last_n_epochs=1,
-                 trigger_words=[""],
-                 list_train_data_dir=[],
-                 num_repeats=["50"],
-                 batch_size=8,
-                 resolution="512,768",
-                 epoch=10,
-                 network_module="networks.lora",
-                 network_train_unet_only=False,
-                 network_train_text_encoder_only=False,
-                 network_dim=32,
-                 network_alpha=32,
-                 clip_skip=2,
-                 enable_preview=False,
-                 sample_prompts="",
-                 sample_sampler="euler_a",
-                 optimizer_type="AdamW8bit",
-                 learning_rate=0.0001,
-                 unet_lr=0.0001,
-                 text_encoder_lr=0.00001,
-                 lr_scheduler="cosine_with_restarts",
-                 auto_lr=False,
-                 auto_lr_param=1,
-                 cache_latents=True,
-                 cache_latents_to_disk=False,
-                 enable_bucket=True,
-                 min_bucket_reso=256,
-                 max_bucket_reso=2048,
-                 bucket_reso_steps=64,
-                 bucket_no_upscale=True,
-                 token_warmup_min=1,
-                 token_warmup_step=0,
+        pretrained_model_name_or_path=None,
+        network_weights=None,
+        output_name = "",
+        output_dir = "",
+        save_every_n_epochs=None,
+        save_last_n_epochs = 1,
+        trigger_words = [""],
+        list_train_data_dir=[],
+        num_repeats=["50"],
+        batch_size=8,
+        resolution="512,768",
+        epoch=10, 
+        network_module="networks.lora",
+        network_train_unet_only=False,
+        network_train_text_encoder_only=False,
+        network_dim=32,
+        network_alpha=32,
+        clip_skip=2,
+        enable_preview=False,
+        sample_prompts="",
+        sample_sampler="euler_a",
+        optimizer_type="AdamW8bit",
+        learning_rate=0.0001,
+        unet_lr=0.0001,
+        text_encoder_lr=0.00001,
+        lr_scheduler="cosine_with_restarts",
+        auto_lr=False,
+        auto_lr_param=1,
+        cache_latents=True,
+        cache_latents_to_disk=False,
+        enable_bucket=True,
+        min_bucket_reso=256,
+        max_bucket_reso=2048,
+        bucket_reso_steps=64,
+        bucket_no_upscale=True,
+        token_warmup_min=1,
+        token_warmup_step=0,
 
-                 caption_extension=".txt",
-                 caption_dropout_rate=0.0,
-                 caption_dropout_every_n_epochs=0,
-                 caption_tag_dropout_rate=0.0,
-                 shuffle_caption=False,
-                 weighted_captions=False,
-                 keep_tokens=0,
-                 color_aug=False,
-                 flip_aug=False,
-                 face_crop_aug_range=None,
-                 random_crop=False,
+        caption_extension=".txt",
+        caption_dropout_rate=0.0,
+        caption_dropout_every_n_epochs=0, 
+        caption_tag_dropout_rate=0.0, 
+        shuffle_caption=False, 
+        weighted_captions=False, 
+        keep_tokens=0,
+        color_aug=False, 
+        flip_aug=False, 
+        face_crop_aug_range=None,
+        random_crop=False,
 
-                 lowram=False,
-                 mem_eff_attn=False,
-                 xformers=True,
-                 vae=None,
-                 max_data_loader_n_workers=8,
-                 persistent_data_loader_workers=True,
+        lowram=False,
+        mem_eff_attn=False,
+        xformers=True,
+        vae=None, 
+        max_data_loader_n_workers=8,
+        persistent_data_loader_workers=True,
 
-                 max_train_steps=1600,
-                 gradient_checkpointing=True,
-                 gradient_accumulation_steps=1,
-                 mixed_precision="no",
-                 full_fp16=True,
+        max_train_steps=1600, 
+        gradient_checkpointing=True,
+        gradient_accumulation_steps=1,
+        mixed_precision="no",
+        full_fp16=True, 
 
-                 sample_every_n_epochs=None,
+        sample_every_n_epochs=None,
 
-                 conv_dim=None,
-                 conv_alpha=None,
-                 unit=8,
-                 dropout=0,
-                 algo='lora',
+        conv_dim=None, 
+        conv_alpha=None,
+        unit=8,
+        dropout=0,
+        algo='lora', 
 
-                 enable_block_weights=False,
-                 block_dims=None,
-                 block_alphas=None,
-                 conv_block_dims=None,
-                 conv_block_alphas=None,
-                 down_lr_weight=None,
-                 mid_lr_weight=None,
-                 up_lr_weight=None,
-                 block_lr_zero_threshold=0.0,
-                 weight_decay=0.01,
-                 betas=0.9,
+        enable_block_weights=False,
+        block_dims=None,
+        block_alphas=None, 
+        conv_block_dims=None,
+        conv_block_alphas=None, 
+        down_lr_weight=None,
+        mid_lr_weight=None,
+        up_lr_weight=None,
+        block_lr_zero_threshold=0.0,
+        weight_decay=0.01,
+        betas=0.9,
 
-                 max_grad_norm=1.0,
+        max_grad_norm=1.0, 
 
-                 lr_scheduler_num_cycles=1,
-                 lr_warmup_steps=0,
-                 lr_scheduler_power=1,
-                 seed=918699631,
-                 prior_loss_weight=1.0,
-                 min_snr_gamma=None,
-                 noise_offset=None,
-                 adaptive_noise_scale=None,
-                 multires_noise_iterations=6,
-                 multires_noise_discount=0.3,
+        lr_scheduler_num_cycles=1, 
+        lr_warmup_steps=0,
+        lr_scheduler_power=1,
+        seed=918699631,
+        prior_loss_weight=1.0, 
+        min_snr_gamma=None, 
+        noise_offset=None, 
+        adaptive_noise_scale=None,  
+        multires_noise_iterations=6, 
+        multires_noise_discount=0.3, 
 
-                 config_file=None,
-                 output_config=False,
-                 ) -> None:
-        self.pretrained_model_name_or_path = pretrained_model_name_or_path
-        self.network_weights = network_weights
+        config_file=None,
+        output_config=False,
+        ) -> None:
+        self.pretrained_model_name_or_path=pretrained_model_name_or_path
+        self.network_weights=network_weights
         self.output_name = output_name
         self.output_dir = output_dir
-        self.save_every_n_epochs = save_every_n_epochs
+        self.save_every_n_epochs=save_every_n_epochs
         self.save_last_n_epochs = save_last_n_epochs
         self.trigger_words = trigger_words
-        self.list_train_data_dir = list_train_data_dir
-        self.num_repeats = num_repeats
-        self.batch_size = batch_size
-        self.resolution = resolution
-        self.epoch = epoch
-        self.network_module = network_module
-        self.network_train_unet_only = network_train_unet_only
-        self.network_train_text_encoder_only = network_train_text_encoder_only
-        self.network_dim = network_dim
-        self.network_alpha = network_alpha
-        self.clip_skip = clip_skip
-        self.enable_preview = enable_preview
-        self.sample_prompts = sample_prompts
-        self.sample_sampler = sample_sampler
-        self.optimizer_type = optimizer_type
-        self.learning_rate = learning_rate
-        self.unet_lr = unet_lr
-        self.text_encoder_lr = text_encoder_lr
-        self.lr_scheduler = lr_scheduler
-        self.auto_lr = auto_lr
-        self.auto_lr_param = auto_lr_param
-        self.cache_latents = cache_latents
-        self.cache_latents_to_disk = cache_latents_to_disk
-        self.enable_bucket = enable_bucket
-        self.min_bucket_reso = min_bucket_reso
-        self.max_bucket_reso = max_bucket_reso
-        self.bucket_reso_steps = bucket_reso_steps
-        self.bucket_no_upscale = bucket_no_upscale
-        self.token_warmup_min = token_warmup_min
-        self.token_warmup_step = token_warmup_step
+        self.list_train_data_dir=list_train_data_dir
+        self.num_repeats=num_repeats
+        self.batch_size=batch_size
+        self.resolution=resolution
+        self.epoch=epoch
+        self.network_module=network_module
+        self.network_train_unet_only=network_train_unet_only
+        self.network_train_text_encoder_only=network_train_text_encoder_only
+        self.network_dim=network_dim
+        self.network_alpha=network_alpha
+        self.clip_skip=clip_skip
+        self.enable_preview=enable_preview
+        self.sample_prompts=sample_prompts
+        self.sample_sampler=sample_sampler
+        self.optimizer_type=optimizer_type
+        self.learning_rate=learning_rate
+        self.unet_lr=unet_lr
+        self.text_encoder_lr=text_encoder_lr
+        self.lr_scheduler=lr_scheduler
+        self.auto_lr=auto_lr
+        self.auto_lr_param=auto_lr_param
+        self.cache_latents=cache_latents
+        self.cache_latents_to_disk=cache_latents_to_disk
+        self.enable_bucket=enable_bucket
+        self.min_bucket_reso=min_bucket_reso
+        self.max_bucket_reso=max_bucket_reso
+        self.bucket_reso_steps=bucket_reso_steps
+        self.bucket_no_upscale=bucket_no_upscale
+        self.token_warmup_min=token_warmup_min
+        self.token_warmup_step=token_warmup_step
 
-        self.caption_extension = caption_extension
-        self.caption_dropout_rate = caption_dropout_rate
-        self.caption_dropout_every_n_epochs = caption_dropout_every_n_epochs
-        self.caption_tag_dropout_rate = caption_tag_dropout_rate
-        self.shuffle_caption = shuffle_caption
-        self.weighted_captions = weighted_captions
-        self.keep_tokens = keep_tokens
-        self.color_aug = color_aug
-        self.flip_aug = flip_aug
-        self.face_crop_aug_range = face_crop_aug_range
-        self.random_crop = random_crop
+        self.caption_extension=caption_extension
+        self.caption_dropout_rate=caption_dropout_rate
+        self.caption_dropout_every_n_epochs=caption_dropout_every_n_epochs
+        self.caption_tag_dropout_rate=caption_tag_dropout_rate 
+        self.shuffle_caption=shuffle_caption
+        self.weighted_captions=weighted_captions
+        self.keep_tokens=keep_tokens
+        self.color_aug=color_aug
+        self.flip_aug=flip_aug
+        self.face_crop_aug_range=face_crop_aug_range
+        self.random_crop=random_crop
 
-        self.lowram = lowram
-        self.mem_eff_attn = mem_eff_attn
-        self.xformers = xformers
-        self.vae = vae
-        self.max_data_loader_n_workers = max_data_loader_n_workers
-        self.persistent_data_loader_workers = persistent_data_loader_workers
+        self.lowram=lowram
+        self.mem_eff_attn=mem_eff_attn
+        self.xformers=xformers
+        self.vae=vae
+        self.max_data_loader_n_workers=max_data_loader_n_workers
+        self.persistent_data_loader_workers=persistent_data_loader_workers
 
-        self.max_train_steps = max_train_steps
-        self.gradient_checkpointing = gradient_checkpointing
-        self.gradient_accumulation_steps = gradient_accumulation_steps
-        self.mixed_precision = mixed_precision
-        self.full_fp16 = full_fp16
+        self.max_train_steps=max_train_steps
+        self.gradient_checkpointing=gradient_checkpointing
+        self.gradient_accumulation_steps=gradient_accumulation_steps
+        self.mixed_precision=mixed_precision
+        self.full_fp16=full_fp16
 
-        self.sample_every_n_epochs = sample_every_n_epochs
+        self.sample_every_n_epochs=sample_every_n_epochs
 
-        self.conv_dim = conv_dim
-        self.conv_alpha = conv_alpha
-        self.unit = unit
-        self.dropout = dropout
-        self.algo = algo
+        self.conv_dim=conv_dim 
+        self.conv_alpha=conv_alpha
+        self.unit=unit
+        self.dropout=dropout
+        self.algo=algo
 
-        self.enable_block_weights = enable_block_weights
-        self.block_dims = block_dims
-        self.block_alphas = block_alphas
-        self.conv_block_dims = conv_block_dims
-        self.conv_block_alphas = conv_block_alphas
-        self.down_lr_weight = down_lr_weight
-        self.mid_lr_weight = mid_lr_weight
-        self.up_lr_weight = up_lr_weight
-        self.block_lr_zero_threshold = block_lr_zero_threshold
-        self.weight_decay = weight_decay
-        self.betas = betas
+        self.enable_block_weights=enable_block_weights
+        self.block_dims=block_dims
+        self.block_alphas=block_alphas
+        self.conv_block_dims=conv_block_dims
+        self.conv_block_alphas=conv_block_alphas
+        self.down_lr_weight=down_lr_weight
+        self.mid_lr_weight=mid_lr_weight
+        self.up_lr_weight=up_lr_weight
+        self.block_lr_zero_threshold=block_lr_zero_threshold
+        self.weight_decay=weight_decay
+        self.betas=betas
 
-        self.max_grad_norm = max_grad_norm
+        self.max_grad_norm=max_grad_norm
 
-        self.lr_scheduler_num_cycles = lr_scheduler_num_cycles
-        self.lr_warmup_steps = lr_warmup_steps
-        self.lr_scheduler_power = lr_scheduler_power
-        self.seed = seed
-        self.prior_loss_weight = prior_loss_weight
-        self.min_snr_gamma = min_snr_gamma
-        self.noise_offset = noise_offset
-        self.adaptive_noise_scale = adaptive_noise_scale
-        self.multires_noise_iterations = multires_noise_iterations
-        self.multires_noise_discount = multires_noise_discount
+        self.lr_scheduler_num_cycles=lr_scheduler_num_cycles
+        self.lr_warmup_steps=lr_warmup_steps
+        self.lr_scheduler_power=lr_scheduler_power
+        self.seed=seed
+        self.prior_loss_weight=prior_loss_weight
+        self.min_snr_gamma=min_snr_gamma
+        self.noise_offset=noise_offset
+        self.adaptive_noise_scale=adaptive_noise_scale  
+        self.multires_noise_iterations=multires_noise_iterations
+        self.multires_noise_discount=multires_noise_discount
 
-        self.config_file = config_file
-        self.output_config = output_config
+        self.config_file=config_file
+        self.output_config=output_config
 
 
 def train_callback(percentage):
     print(percentage)
 
-
 # 一键训练入口函数
 def train_auto(
-        train_data_dir="",  # 训练的图片路径
-        train_type=0,  # 训练的类别
-        task_id=0,  # 任务id,作为Lora名称
-        sd_model_path="",  # 底模路径
-        lora_path="",  # 文件夹名字
-        general_model_path="",  # 通用路径,
-        train_callback=None,  # callback函数
-        other_args=None  # 预留一个，以备用
+    train_data_dir="",  # 训练的图片路径
+    train_type=0,  # 训练的类别
+    task_id=0,   # 任务id,作为Lora名称
+    sd_model_path="", # 底模路径
+    lora_path="", # 文件夹名字
+    general_model_path="", # 通用路径,
+    callback=None, # callback函数
+    other_args=None # 预留一个，以备用
 ):
     # 预设参数
     width = 512
     height = 768
     trigger_word = ""
-    undesired_tags = ""  # 待测试五官
-    use_wd=True
+    undesired_tags = "blur"  # 待测试五官
+    use_wd=False
     
     dirname = os.path.dirname(train_data_dir)
     process_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(process_dir, exist_ok=True)
 
     # 1.图片预处理
-    train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
-                     preprocess_txt_action='ignore', process_keep_original_size=False,
-                     process_flip=False, process_split=False, process_caption=False, process_caption_deepbooru=False,
-                     split_threshold=0.5,
-                     overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
-                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
-                     model_path=general_model_path)
-    train_callback(2)
+    train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height, preprocess_txt_action='ignore', process_keep_original_size=False,
+                    process_flip=False, process_split=False, process_caption=False, process_caption_deepbooru=not use_wd, split_threshold=0.5,
+                    overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
+                    process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
+                    process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
+                    process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
+                    process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None, model_path=general_model_path,
+                    filter_tags=undesired_tags,additional_tags=trigger_word)
+    callback(2)
+
     # 优化图片数量
-    contents = os.listdir(train_data_dir)
+    contents = os.listdir(process_dir)
     pic_nums = len(contents)
     repeats_n = int(20*50/pic_nums)
-    # 2.tagger反推
-    tagger_path = os.path.join(general_model_path, "tag_models")
-    cp = Process(target=train_tagger,
-                 args=(process_dir, tagger_path, trigger_word, undesired_tags, 0.35, 0.35))
-    cp.start()
-    cp.join()
-    train_callback(5)
+
+    #2.tagger反推
+    if use_wd:
+        tagger_path=os.path.join(general_model_path,"tag_models")
+        cp = Process(target=train_tagger,args=(train_data_dir,tagger_path,trigger_word,undesired_tags,0.35,0.35)) 
+        cp.start()
+        cp.join()
+        callback(5)
+    
+    # train_tagger(
+    #     train_data_dir=process_dir,
+    #     model_dir= os.path.join(model_p,"tag_models"),  # r"/data/qll/stable-diffusion-webui/models/tag_models",
+    #     general_threshold=0.35,
+    #     character_threshold=0.35,
+    #     undesired_tags=undesired_tags,
+    #     trigger_word=trigger_word
+    # )
+    # caption_weights = os.path.join(model_p,"blip2/model_large_caption.pth")
+    # caption_extension=".txt"
+    # make_caption_with_blip(process_dir,caption_weights=caption_weights,caption_extension=caption_extension)
+
+
 
     lora_name = f"{task_id}"
-    num_repeats = int(os.getenv("AUTO_TRAIN_REPEATS", "50"))
-
     # 3.自动训练出图
     train_with_params(
         pretrained_model_name_or_path=sd_model_path,
         network_weights=None,
-        output_name=lora_name,  # f"num_r{num_r}_epo{epo}_net{net}_lr{al}",
-        output_dir=lora_path,
+        output_name = lora_name,#f"num_r{num_r}_epo{epo}_net{net}_lr{al}",
+        output_dir = lora_path,
         save_every_n_epochs=None,
-        save_last_n_epochs=1,
-        trigger_words=[""],  # [f"{task_id}",f"{task_id}"],
+        save_last_n_epochs = 1,
+        trigger_words = [""],#[f"{task_id}",f"{task_id}"],
         list_train_data_dir=[process_dir],
         save_model_as="safetensors",
         num_repeats=[f"{repeats_n}"],
@@ -696,7 +660,7 @@ def train_auto(
         bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended
         bucket_no_upscale=True,  # 秋叶版没有这个,make bucket for each image without upscaling
         token_warmup_min=1,  # 秋叶版没有这个,start learning at N tags (token means comma separated strinfloatgs)
-        token_warmup_step=0,  # 秋叶版没有这个,tag length reaches maximum on N steps (or N*max_train_steps if N<1)
+        token_warmup_step=0, # 秋叶版没有这个,tag length reaches maximum on N steps (or N*max_train_steps if N<1)
 
         caption_extension=".txt",
         caption_dropout_rate=0.0,  # Rate out dropout caption(0.0~1.0)
@@ -708,7 +672,7 @@ def train_auto(
         # keep heading N tokens when shuffling caption tokens (token means comma separated strings)
         color_aug=False,  # 秋叶版没有这个,enable weak color augmentation
         flip_aug=False,  # 秋叶版没有这个,enable horizontal flip augmentation
-        face_crop_aug_range=None,  # 1.0,2.0,4.0
+        face_crop_aug_range=None, # 1.0,2.0,4.0
         # 秋叶版没有这个,enable face-centered crop augmentation and its range (e.g. 2.0,4.0)
         random_crop=False,
         # 秋叶版没有这个,enable random crop (for style training in face-centered crop augmentation)
@@ -750,6 +714,8 @@ def train_auto(
         mid_lr_weight=None,  # lora, 1位float,例如 1.0；
         up_lr_weight=None,  # lora, 12位的float List，例如[1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0,1.0]
         block_lr_zero_threshold=0.0,  # float型，分层学习率置 0 阈值
+
+        
         # AdamW (default), AdamW8bit, Lion8bit, Lion, SGDNesterov, SGDNesterov8bit, DAdaptation(DAdaptAdam), DAdaptAdaGrad, DAdaptAdan, DAdaptSGD, AdaFactor
         weight_decay=0.01,  # optimizer_args,优化器内部的参数，权重衰减系数，不建议随便改
         betas=0.9,  # optimizer_args,优化器内部的参数，不建议随便改
@@ -765,30 +731,32 @@ def train_auto(
         prior_loss_weight=1.0,  # loss weight for regularization images
         min_snr_gamma=None,  # float型，比如5.0，最小信噪比伽马值，如果启用推荐为 5
         noise_offset=None,  # float型，0.1左右,enable noise offset with this value (if enabled, around 0.1 is recommended)
-        adaptive_noise_scale=None,  # float型， 1.0
+        adaptive_noise_scale=None,  #  float型， 1.0
         # 与noise_offset配套使用；add `latent mean absolute value * this value` to noise_offset (disabled if None, default)
         multires_noise_iterations=6,  # 整数，多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
         multires_noise_discount=0.3,  # 多分辨率（金字塔）噪声衰减率 推荐 6-10。无法与 noise_offset 一同启用。
 
-        config_file=None,  # "test_config.toml",  # using .toml instead of args to pass hyperparameter
+        config_file=None,#"test_config.toml",  # using .toml instead of args to pass hyperparameter
         output_config=False,  # output command line args to given .toml file
         # accelerator=accelerator,
         # unwrap_model=unwrap_model,
-        callback=train_callback,
-    )
-    return os.path.join(lora_path, lora_name + ".safetensors")
+        callback=callback,
+        )
+    return os.path.join(lora_path,lora_name+".safetensors")
 
-# model_p = "/data/qll/stable-diffusion-webui/models"
-# trigger_word = f"xzxzai"
-# undesired_tags = ""  # 待测试五官
-# train_data_dir = "/data/qll/pics/yijian_sanciyuan_train/test"
-# train_auto(
-#     train_data_dir=train_data_dir,  # 训练的图片路径
-#     train_type=0,  # 训练的类别
-#     task_id="zzlll",   # 任务id,作为Lora名称
-#     sd_model_path=MODEL_PATH, # 底模路径
-#     lora_path=LORA_PATH, # 文件夹名字
-#     general_model_path=model_p, # 通用路径,
-#     train_callback=train_callback, # callback函数
-#     other_args=None # 预留一个，以备用
-# )
+
+model_p = "/data/qll/stable-diffusion-webui/models"
+trigger_word = f"liuxiangxzai"
+undesired_tags = ""  # 待测试五官
+train_data_dir = "/moba_expert_data/qll/pics/liuxiang"
+for i in range(3):
+    train_auto(
+        train_data_dir=train_data_dir,  # 训练的图片路径
+        train_type=0,  # 训练的类别
+        task_id="test",   # 任务id,作为Lora名称
+        sd_model_path=MODEL_PATH, # 底模路径
+        lora_path=LORA_PATH, # 文件夹名字
+        general_model_path=model_p, # 通用路径,
+        callback=train_callback, # callback函数
+        other_args=None # 预留一个，以备用
+    )
