@@ -344,6 +344,8 @@ infotext_to_setting_name_mapping = [
     ('Pad conds', 'pad_cond_uncond'),
     ('VAE Encoder', 'sd_vae_encode_method'),
     ('VAE Decoder', 'sd_vae_decode_method'),
+    ('Refiner', 'sd_refiner_checkpoint'),
+    ('Refiner switch at', 'sd_refiner_switch_at'),
 ]
 
 

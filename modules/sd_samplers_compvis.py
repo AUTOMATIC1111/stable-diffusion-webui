@@ -44,7 +44,7 @@ class VanillaStableDiffusionSampler:
         return 0
 
     def launch_sampling(self, steps, func):
-        state.sampling_steps = steps
+        state.sampling_steps = self.stop_at if self.stop_at is not None else steps
         state.sampling_step = 0
 
         try:

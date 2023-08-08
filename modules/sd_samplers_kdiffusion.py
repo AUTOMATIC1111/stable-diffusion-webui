@@ -276,6 +276,7 @@ class KDiffusionSampler:
         self.model_wrap_cfg = CFGDenoiser(self.model_wrap)
         self.sampler_noises = None
         self.stop_at = None
+        self.noisy_output = None
         self.eta = None
         self.config = None  # set by the function calling the constructor
         self.last_latent = None
@@ -297,6 +298,7 @@ class KDiffusionSampler:
         if opts.live_preview_content == "Combined":
             sd_samplers_common.store_latent(latent)
         self.last_latent = latent
+        self.noisy_output = d['x']
 
         if self.stop_at is not None and step > self.stop_at:
             raise sd_samplers_common.InterruptedException
@@ -305,7 +307,7 @@ class KDiffusionSampler:
         shared.total_tqdm.update()
 
     def launch_sampling(self, steps, func):
-        state.sampling_steps = steps
+        state.sampling_steps = self.stop_at if self.stop_at is not None else steps
         state.sampling_step = 0
 
         try:

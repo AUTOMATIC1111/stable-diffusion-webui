@@ -289,11 +289,27 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
     return res
 
 
+class SkipWritingToConfig:
+    """This context manager prevents load_model_weights from writing checkpoint name to the config when it loads weight."""
+
+    skip = False
+    previous = None
+
+    def __enter__(self):
+        self.previous = SkipWritingToConfig.skip
+        SkipWritingToConfig.skip = True
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        SkipWritingToConfig.skip = self.previous
+
+
 def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer):
     sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("calculate hash")
 
-    shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
+    if not SkipWritingToConfig.skip:
+        shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
 
     if state_dict is None:
         state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
@@ -491,18 +507,14 @@ def send_model_to_cpu(m):
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.send_everything_to_cpu()
     else:
-        m.to(devices.cpu)
+        lowvram.safe_send_to_cpu(m)
 
     devices.torch_gc()
 
 
 def send_model_to_device(m):
     from modules import lowvram
-
-    if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
-        lowvram.setup_for_low_vram(m, shared.cmd_opts.medvram)
-    else:
-        m.to(shared.device)
+    lowvram.automatic_judge_model_vram(m)
 
 
 def send_model_to_trash(m):
@@ -510,18 +522,19 @@ def send_model_to_trash(m):
     devices.torch_gc()
 
 
-def load_model(checkpoint_info=None, already_loaded_state_dict=None):
+def load_model(checkpoint_info=None, already_loaded_state_dict=None, brand_new=False):
     from modules import sd_hijack
     checkpoint_info = checkpoint_info or select_checkpoint()
 
     timer = Timer()
 
-    if model_data.sd_model:
-        send_model_to_trash(model_data.sd_model)
-        model_data.sd_model = None
-        devices.torch_gc()
+    if not brand_new:
+        if model_data.sd_model:
+            send_model_to_trash(model_data.sd_model)
+            model_data.sd_model = None
+            devices.torch_gc()
 
-    timer.record("unload existing model")
+        timer.record("unload existing model")
 
     if already_loaded_state_dict is not None:
         state_dict = already_loaded_state_dict
@@ -561,6 +574,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     with sd_disable_initialization.LoadStateDictOnMeta(state_dict, devices.cpu):
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
+
     timer.record("load weights from state dict")
 
     send_model_to_device(sd_model)
@@ -571,12 +585,14 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     timer.record("hijack")
 
     sd_model.eval()
-    model_data.set_sd_model(sd_model)
-    model_data.was_loaded_at_least_once = True
 
-    sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
+    if not brand_new:
+        model_data.set_sd_model(sd_model)
+        model_data.was_loaded_at_least_once = True
 
-    timer.record("load textual inversion embeddings")
+        sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
+
+        timer.record("load textual inversion embeddings")
 
     script_callbacks.model_loaded_callback(sd_model)
 
@@ -587,7 +603,10 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     timer.record("calculate empty prompt")
 
-    print(f"Model loaded in {timer.summary()}.")
+    if brand_new:
+        print(f"New model loaded in {timer.summary()}.")
+    else:
+        print(f"Model loaded in {timer.summary()}.")
 
     return sd_model
 
@@ -639,6 +658,59 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
         return sd_model
     else:
         return None
+
+
+def swap_to_refiner(refiner_checkpoint_info=None):
+    from modules import devices
+    timer = Timer()
+
+    shared.sd_model.to('cpu')
+
+    if shared.sd_model_refiner_file_name == refiner_checkpoint_info.filename:
+        print('Using cached refiner.')
+        shared.sd_model_refiner.to(devices.device)
+    else:
+        if shared.sd_model_refiner is not None:
+            send_model_to_trash(shared.sd_model_refiner)
+            timer.record("Send previous refiner to trash")
+        refiner_state_dict = get_checkpoint_state_dict(refiner_checkpoint_info, timer)
+        timer.record("Load refiner checkpoint")
+        shared.sd_model_refiner = load_model(refiner_checkpoint_info, refiner_state_dict, brand_new=True)
+        timer.record("Create refiner")
+        shared.sd_model_refiner_file_name = refiner_checkpoint_info.filename
+
+    shared.sd_model_refiner, shared.sd_model = shared.sd_model, shared.sd_model_refiner
+    send_model_to_device(shared.sd_model)
+
+    print(f"Refiner swapped in {timer.summary()}.")
+
+    model_data.set_sd_model(shared.sd_model)
+    sd_unet.apply_unet()
+
+    try:
+        # avoid refiner to be deleted by webui
+        model_data.loaded_sd_models.remove(shared.sd_model)
+    except:
+        pass
+    return
+
+
+def swap_back_after_refiner():
+    shared.sd_model.to('cpu')
+    shared.sd_model_refiner, shared.sd_model = shared.sd_model, shared.sd_model_refiner
+    send_model_to_device(shared.sd_model)
+
+    print(f"Refiner swapped back.")
+
+    model_data.set_sd_model(shared.sd_model)
+    sd_unet.apply_unet()
+
+    try:
+        # avoid refiner to be deleted by webui
+        model_data.loaded_sd_models.remove(shared.sd_model)
+    except:
+        pass
+    return
 
 
 def reload_model_weights(sd_model=None, info=None):

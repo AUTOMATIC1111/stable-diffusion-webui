@@ -1,5 +1,6 @@
 import torch
-from modules import devices
+from modules import devices, shared
+
 
 module_in_gpu = None
 cpu = torch.device("cpu")
@@ -12,6 +13,14 @@ def send_everything_to_cpu():
         module_in_gpu.to(cpu)
 
     module_in_gpu = None
+
+
+def safe_send_to_cpu(m):
+    if m is not None:
+        try:
+            m.to(cpu)
+        except:
+            print('Low VRAM Garbage Collection invoked.')
 
 
 def setup_for_low_vram(sd_model, use_medvram):
@@ -31,11 +40,7 @@ def setup_for_low_vram(sd_model, use_medvram):
 
         module = parents.get(module, module)
 
-        if module_in_gpu == module:
-            return
-
-        if module_in_gpu is not None:
-            module_in_gpu.to(cpu)
+        safe_send_to_cpu(module_in_gpu)
 
         module.to(devices.device)
         module_in_gpu = module
@@ -110,6 +115,7 @@ def setup_for_low_vram(sd_model, use_medvram):
 
     if use_medvram:
         sd_model.model.register_forward_pre_hook(send_me_to_gpu)
+        print('Medium VRAM mode is activated.')
     else:
         diff_model = sd_model.model.diffusion_model
 
@@ -127,7 +133,33 @@ def setup_for_low_vram(sd_model, use_medvram):
         diff_model.middle_block.register_forward_pre_hook(send_me_to_gpu)
         for block in diff_model.output_blocks:
             block.register_forward_pre_hook(send_me_to_gpu)
+        print('Low VRAM mode is activated.')
 
 
 def is_enabled(sd_model):
     return getattr(sd_model, 'lowvram', False)
+
+
+def automatic_judge_model_vram(sd_model):
+    if torch.cuda.is_available():
+        vram = float(torch.cuda.get_device_properties(shared.device).total_memory) / float(1024 * 1024 * 1024)
+        print(f'Detected VRAM {vram}.')
+        low_bar = 2
+        high_bar = 4
+        if sd_model.is_sd2:
+            low_bar = 2.5
+            high_bar = 4.5
+        if sd_model.is_sdxl:
+            low_bar = 4
+            high_bar = 10
+        if vram < low_bar or shared.cmd_opts.lowvram:
+            setup_for_low_vram(sd_model, False)
+        elif vram < high_bar or shared.cmd_opts.medvram:
+            setup_for_low_vram(sd_model, True)
+        else:
+            sd_model.to(shared.device)
+    else:
+        if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+            setup_for_low_vram(sd_model, shared.cmd_opts.medvram)
+        else:
+            sd_model.to(shared.device)
