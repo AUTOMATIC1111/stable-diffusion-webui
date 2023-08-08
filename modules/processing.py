@@ -294,7 +294,7 @@ class StableDiffusionProcessing:
         self.sampler = None
         self.c = None
         self.uc = None
-        if not opts.experimental_persistent_cond_cache:
+        if not opts.persistent_cond_cache:
             StableDiffusionProcessing.cached_c = [None, None]
             StableDiffusionProcessing.cached_uc = [None, None]
 
@@ -318,6 +318,21 @@ class StableDiffusionProcessing:
         self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
         self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
 
+    def cached_params(self, required_prompts, steps, extra_network_data):
+        """Returns parameters that invalidate the cond cache if changed"""
+
+        return (
+            required_prompts,
+            steps,
+            opts.CLIP_stop_at_last_layers,
+            shared.sd_model.sd_checkpoint_info,
+            extra_network_data,
+            opts.sdxl_crop_left,
+            opts.sdxl_crop_top,
+            self.width,
+            self.height,
+        )
+
     def get_conds_with_caching(self, function, required_prompts, steps, caches, extra_network_data):
         """
         Returns the result of calling function(shared.sd_model, required_prompts, steps)
@@ -331,20 +346,11 @@ class StableDiffusionProcessing:
         caches is a list with items described above.
         """
 
-        cached_params = (
-            required_prompts,
-            steps,
-            opts.CLIP_stop_at_last_layers,
-            shared.sd_model.sd_checkpoint_info,
-            extra_network_data,
-            opts.sdxl_crop_left,
-            opts.sdxl_crop_top,
-            self.width,
-            self.height,
-        )
+        cached_params = self.cached_params(required_prompts, steps, extra_network_data)
 
         for cache in caches:
             if cache[0] is not None and cached_params == cache[0]:
+                print('Prompt does not change. Prompt computation is skipped.')
                 return cache[1]
 
         cache = caches[0]
@@ -1151,7 +1157,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         super().close()
         self.hr_c = None
         self.hr_uc = None
-        if not opts.experimental_persistent_cond_cache:
+        if not opts.persistent_cond_cache:
             StableDiffusionProcessingTxt2Img.cached_hr_uc = [None, None]
             StableDiffusionProcessingTxt2Img.cached_hr_c = [None, None]
 
