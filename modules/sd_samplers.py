@@ -12,6 +12,7 @@ all_samplers_map = {x.name: x for x in all_samplers}
 samplers = []
 samplers_for_img2img = []
 samplers_map = {}
+samplers_hidden = {}
 
 
 def find_sampler_config(name):
@@ -38,17 +39,21 @@ def create_sampler(name, model):
 
 
 def set_samplers():
-    global samplers, samplers_for_img2img
+    global samplers, samplers_for_img2img, samplers_hidden
 
-    hidden = set(shared.opts.hide_samplers)
-    samplers = [x for x in all_samplers if x.name not in hidden]
-    samplers_for_img2img = [x for x in all_samplers if x.name not in hidden]
+    samplers_hidden = set(shared.opts.hide_samplers)
+    samplers = all_samplers
+    samplers_for_img2img = all_samplers
 
     samplers_map.clear()
     for sampler in all_samplers:
         samplers_map[sampler.name.lower()] = sampler.name
         for alias in sampler.aliases:
             samplers_map[alias.lower()] = sampler.name
+
+
+def visible_sampler_names():
+    return [x.name for x in samplers if x.name not in samplers_hidden]
 
 
 set_samplers()
