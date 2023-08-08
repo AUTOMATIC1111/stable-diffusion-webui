@@ -385,11 +385,11 @@ class StableDiffusionProcessing:
         shared.state.nextjob()
 
         stopped_at = self.sampler.stop_at
-        noisy_output = self.sampler.noisy_output
         self.sampler = None
 
         a_is_sdxl = shared.sd_model.is_sdxl
-        decoded_noisy = decode_latent_batch(shared.sd_model, noisy_output, target_device=devices.cpu, check_for_nans=True)
+
+        decoded_samples = decode_latent_batch(shared.sd_model, samples, target_device=devices.cpu, check_for_nans=True)
 
         refiner_checkpoint_info = sd_models.get_closet_checkpoint_match(shared.opts.sd_refiner_checkpoint)
         if refiner_checkpoint_info is None:
@@ -401,37 +401,31 @@ class StableDiffusionProcessing:
         self.extra_generation_params['Refiner switch at'] = shared.opts.sd_refiner_switch_at
 
         with sd_models.SkipWritingToConfig():
-            sd_models.swap_to_refiner(refiner_checkpoint_info=refiner_checkpoint_info)
+            sd_models.reload_model_weights(info=refiner_checkpoint_info)
 
-        try:
-            devices.torch_gc()
-            self.setup_conds()
+        devices.torch_gc()
+        self.setup_conds()
 
-            b_is_sdxl = shared.sd_model.is_sdxl
+        b_is_sdxl = shared.sd_model.is_sdxl
 
-            if a_is_sdxl != b_is_sdxl:
-                decoded_noisy = torch.stack(decoded_noisy).float()
-                decoded_noisy = torch.clamp((decoded_noisy + 1.0) / 2.0, min=0.0, max=1.0)
-                noisy_latent = images_tensor_to_samples(decoded_noisy, approximation_indexes.get(opts.sd_vae_encode_method), shared.sd_model)
-                print(f'VAE converted, shape = {noisy_latent.shape}')
-            else:
-                noisy_latent = noisy_output
-                print(f'VAE transferred, shape = {noisy_latent.shape}')
+        if a_is_sdxl != b_is_sdxl:
+            decoded_samples = torch.stack(decoded_samples).float()
+            decoded_samples = torch.clamp((decoded_samples + 1.0) / 2.0, min=0.0, max=1.0)
+            latent = images_tensor_to_samples(decoded_samples, approximation_indexes.get(opts.sd_vae_encode_method), shared.sd_model)
+        else:
+            latent = samples
 
-            x = torch.zeros_like(noisy_latent)
+        x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=self.seeds, subseeds=self.subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
 
-            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
-                denoising_strength = self.denoising_strength
+        with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
+            denoising_strength = self.denoising_strength
 
-                self.denoising_strength = 1.0 - (stopped_at + 1) / self.steps
-                self.image_conditioning = txt2img_image_conditioning(shared.sd_model, noisy_latent, self.width, self.height)
-                self.sampler = sd_samplers.create_sampler(self.sampler_name, shared.sd_model)
-                samples = self.sampler.sample_img2img(self, noisy_latent, x, self.c, self.uc, image_conditioning=self.image_conditioning, steps=max(1, self.steps - stopped_at - 1))
+            self.denoising_strength = 1.0 - (stopped_at - 1) / self.steps
+            self.image_conditioning = txt2img_image_conditioning(shared.sd_model, latent, self.width, self.height)
+            self.sampler = sd_samplers.create_sampler(self.sampler_name, shared.sd_model)
+            samples = self.sampler.sample_img2img(self, latent, x, self.c, self.uc, image_conditioning=self.image_conditioning, steps=max(1, self.steps - stopped_at - 1))
 
-                self.denoising_strength = denoising_strength
-        finally:
-            with sd_models.SkipWritingToConfig():
-                sd_models.swap_back_after_refiner()
+            self.denoising_strength = denoising_strength
 
         return samples
 

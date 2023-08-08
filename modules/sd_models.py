@@ -687,6 +687,11 @@ def swap_to_refiner(refiner_checkpoint_info=None):
     model_data.set_sd_model(shared.sd_model)
     sd_unet.apply_unet()
 
+    try:
+        # avoid refiner to be deleted by webui
+        model_data.loaded_sd_models.remove(shared.sd_model)
+    except:
+        pass
     return
 
 
@@ -699,6 +704,12 @@ def swap_back_after_refiner():
 
     model_data.set_sd_model(shared.sd_model)
     sd_unet.apply_unet()
+
+    try:
+        # avoid refiner to be deleted by webui
+        model_data.loaded_sd_models.remove(shared.sd_model)
+    except:
+        pass
     return
 
 
