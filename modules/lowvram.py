@@ -36,7 +36,10 @@ def setup_for_low_vram(sd_model, use_medvram):
             return
 
         if module_in_gpu is not None:
-            module_in_gpu.to(cpu)
+            try:
+                module_in_gpu.to(cpu)
+            except:
+                print('Low VRAM Garbage Collection invoked.')
 
         module.to(devices.device)
         module_in_gpu = module
