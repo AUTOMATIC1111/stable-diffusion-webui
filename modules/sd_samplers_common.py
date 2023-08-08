@@ -137,6 +137,9 @@ def apply_refiner(sampler):
     if completed_ratio <= shared.opts.sd_refiner_switch_at:
         return False
 
+    if shared.opts.sd_refiner_checkpoint == "None":
+        return False
+
     if shared.sd_model.sd_checkpoint_info.title == shared.opts.sd_refiner_checkpoint:
         return False
 
