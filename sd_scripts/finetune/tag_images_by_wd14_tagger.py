@@ -97,22 +97,35 @@ def collate_fn_remove_corrupted(batch):
 #         self.model=None
 
 
-def main(args):
+def main(train_data_dir="", # 训练数据路径
+    repo_id=DEFAULT_WD14_TAGGER_REPO, # wd模型在huggingface上面的repo id
+    model_dir="", # wd模型的地址
+    force_download=False, # 没有wd的模型时是否强制下载
+    batch_size=8, # 一次处理多少张图片
+    max_data_loader_n_workers=1, # 使用多少个worker来同时读取数据
+    caption_extension=".txt", # 存tag的文件类型
+    general_threshold=0.35, # 为一般类别添加标签的置信阈值
+    character_threshold=0.35, # 为字符类别添加标签的置信阈值
+    recursive=True, # 搜索子文件夹中的图像
+    remove_underscore=True, # 将输出标记的下划线替换为空格
+    undesired_tags="", # 不想要（想要去除）的Tag，以英文逗号隔开
+    frequency_tags=False, # 显示tag的频率
+    addtional_tags="",):
     # hf_hub_downloadをそのまま使うとsymlink関係で問題があるらしいので、キャッシュディレクトリとforce_filenameを指定してなんとかする
     # depreacatedの警告が出るけどなくなったらその時
     # https://github.com/toriato/stable-diffusion-webui-wd14-tagger/issues/22
 
     # tagger_model = TaggerModel()
-    if not os.path.exists(args.model_dir) or args.force_download:
-        print(f"downloading wd14 tagger model from hf_hub. id: {args.repo_id}")
+    if not os.path.exists(model_dir) or force_download:
+        print(f"downloading wd14 tagger model from hf_hub. id: {repo_id}")
         for file in FILES:
-            hf_hub_download(args.repo_id, file, cache_dir=args.model_dir, force_download=True, force_filename=file)
+            hf_hub_download(repo_id, file, cache_dir=model_dir, force_download=True, force_filename=file)
         for file in SUB_DIR_FILES:
             hf_hub_download(
-                args.repo_id,
+                repo_id,
                 file,
                 subfolder=SUB_DIR,
-                cache_dir=os.path.join(args.model_dir, SUB_DIR),
+                cache_dir=os.path.join(model_dir, SUB_DIR),
                 force_download=True,
                 force_filename=file,
             )
@@ -120,13 +133,13 @@ def main(args):
         print("using existing wd14 tagger model")
 
     # 画像を読み込む
-    model = load_model(args.model_dir)
+    model = load_model(model_dir)
     # model = tagger_model.get_model(args.model_dir)
 
     # label_names = pd.read_csv("2022_0000_0899_6549/selected_tags.csv")
     # 依存ライブラリを増やしたくないので自力で読むよ
 
-    with open(os.path.join(args.model_dir, CSV_FILE), "r", encoding="utf-8") as f:
+    with open(os.path.join(model_dir, CSV_FILE), "r", encoding="utf-8") as f:
         reader = csv.reader(f)
         l = [row for row in reader]
         header = l[0]  # tag_id,name,category,count
@@ -138,15 +151,14 @@ def main(args):
 
     # 画像を読み込む
 
-    train_data_dir_path = Path(args.train_data_dir)
-    image_paths = train_util.glob_images_pathlib(train_data_dir_path, args.recursive)
+    train_data_dir_path = Path(train_data_dir)
+    image_paths = train_util.glob_images_pathlib(train_data_dir_path, recursive)
     print(f"found {len(image_paths)} images.")
 
     tag_freq = {}
 
-    undesired_tags = set(args.undesired_tags.split(","))
-    general_tags = args.addtional_tags.split(",") + general_tags
-
+    undesired_tags = set(undesired_tags.split(","))
+    general_tags = addtional_tags.split(",") + general_tags
     def run_batch(path_imgs):
         imgs = np.array([im for _, im in path_imgs])
 
@@ -166,18 +178,18 @@ def main(args):
             general_tag_text = ""
             character_tag_text = ""
             for i, p in enumerate(prob[4:]):
-                if i < len(general_tags) and p >= args.general_threshold:
+                if i < len(general_tags) and p >= general_threshold:
                     tag_name = general_tags[i]
-                    if args.remove_underscore and len(tag_name) > 3:  # ignore emoji tags like >_< and ^_^
+                    if remove_underscore and len(tag_name) > 3:  # ignore emoji tags like >_< and ^_^
                         tag_name = tag_name.replace("_", " ")
 
                     if tag_name not in undesired_tags:
                         tag_freq[tag_name] = tag_freq.get(tag_name, 0) + 1
                         general_tag_text += ", " + tag_name
                         combined_tags.append(tag_name)
-                elif i >= len(general_tags) and p >= args.character_threshold:
+                elif i >= len(general_tags) and p >= character_threshold:
                     tag_name = character_tags[i - len(general_tags)]
-                    if args.remove_underscore and len(tag_name) > 3:
+                    if remove_underscore and len(tag_name) > 3:
                         tag_name = tag_name.replace("_", " ")
 
                     if tag_name not in undesired_tags:
@@ -194,20 +206,19 @@ def main(args):
             tag_text = ", ".join(combined_tags)
             # tag_text = args.addtional_tags +","+ tag_text
 
-            with open(os.path.splitext(image_path)[0] + args.caption_extension, "wt", encoding="utf-8") as f:
+            with open(os.path.splitext(image_path)[0] + caption_extension, "wt", encoding="utf-8") as f:
                 f.write(tag_text + "\n")
-                if args.debug:
-                    print(
-                        f"\n{image_path}:\n  Character tags: {character_tag_text}\n  General tags: {general_tag_text}")
+                # if debug:
+                #     print(f"\n{image_path}:\n  Character tags: {character_tag_text}\n  General tags: {general_tag_text}")
 
     # 読み込みの高速化のためにDataLoaderを使うオプション
-    if args.max_data_loader_n_workers is not None:
+    if max_data_loader_n_workers is not None:
         dataset = ImageLoadingPrepDataset(image_paths)
         data = torch.utils.data.DataLoader(
             dataset,
-            batch_size=args.batch_size,
+            batch_size=batch_size,
             shuffle=False,
-            num_workers=args.max_data_loader_n_workers,
+            num_workers=max_data_loader_n_workers,
             collate_fn=collate_fn_remove_corrupted,
             drop_last=False,
         )
@@ -234,7 +245,7 @@ def main(args):
                     continue
             b_imgs.append((image_path, image))
 
-            if len(b_imgs) >= args.batch_size:
+            if len(b_imgs) >= batch_size:
                 b_imgs = [(str(image_path), image) for image_path, image in b_imgs]  # Convert image_path to string
                 run_batch(b_imgs)
                 b_imgs.clear()
@@ -243,7 +254,7 @@ def main(args):
         b_imgs = [(str(image_path), image) for image_path, image in b_imgs]  # Convert image_path to string
         run_batch(b_imgs)
 
-    if args.frequency_tags:
+    if frequency_tags:
         sorted_tags = sorted(tag_freq.items(), key=lambda x: x[1], reverse=True)
         print("\nTag frequencies:")
         for tag, freq in sorted_tags:
@@ -255,77 +266,71 @@ def main(args):
     print("done!")
 
 
-def setup_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("train_data_dir", type=str, default=None,
-                        help="directory for train images / 学習画像データのディレクトリ")
-    parser.add_argument(
-        "--repo_id",
-        type=str,
-        default=DEFAULT_WD14_TAGGER_REPO,
-        help="repo id for wd14 tagger on Hugging Face / Hugging Faceのwd14 taggerのリポジトリID",
-    )
-    parser.add_argument(
-        "--model_dir",
-        type=str,
-        default="wd14_tagger_model",
-        help="directory to store wd14 tagger model / wd14 taggerのモデルを格納するディレクトリ",
-    )
-    parser.add_argument(
-        "--force_download", action="store_true",
-        help="force downloading wd14 tagger models / wd14 taggerのモデルを再ダウンロードします"
-    )
-    parser.add_argument("--batch_size", type=int, default=1, help="batch size in inference / 推論時のバッチサイズ")
-    parser.add_argument(
-        "--max_data_loader_n_workers",
-        type=int,
-        default=None,
-        help="enable image reading by DataLoader with this number of workers (faster) / DataLoaderによる画像読み込みを有効にしてこのワーカー数を適用する（読み込みを高速化）",
-    )
-    parser.add_argument(
-        "--caption_extention",
-        type=str,
-        default=None,
-        help="extension of caption file (for backward compatibility) / 出力されるキャプションファイルの拡張子（スペルミスしていたのを残してあります）",
-    )
-    parser.add_argument("--caption_extension", type=str, default=".txt",
-                        help="extension of caption file / 出力されるキャプションファイルの拡張子")
-    parser.add_argument("--thresh", type=float, default=0.35,
-                        help="threshold of confidence to add a tag / タグを追加するか判定する閾値")
-    parser.add_argument(
-        "--general_threshold",
-        type=float,
-        default=None,
-        help="threshold of confidence to add a tag for general category, same as --thresh if omitted / generalカテゴリのタグを追加するための確信度の閾値、省略時は --thresh と同じ",
-    )
-    parser.add_argument(
-        "--character_threshold",
-        type=float,
-        default=None,
-        help="threshold of confidence to add a tag for character category, same as --thres if omitted / characterカテゴリのタグを追加するための確信度の閾値、省略時は --thresh と同じ",
-    )
-    parser.add_argument("--recursive", action="store_true",
-                        help="search for images in subfolders recursively / サブフォルダを再帰的に検索する")
-    parser.add_argument(
-        "--remove_underscore",
-        action="store_true",
-        help="replace underscores with spaces in the output tags / 出力されるタグのアンダースコアをスペースに置き換える",
-    )
-    parser.add_argument("--debug", action="store_true", help="debug mode")
-    parser.add_argument(
-        "--undesired_tags",
-        type=str,
-        default="",
-        help="comma-separated list of undesired tags to remove from the output / 出力から除外したいタグのカンマ区切りのリスト",
-    )
-    parser.add_argument("--frequency_tags", action="store_true",
-                        help="Show frequency of tags for images / 画像ごとのタグの出現頻度を表示する")
+# def setup_parser() -> argparse.ArgumentParser:
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument("train_data_dir", type=str, default=None,help="directory for train images / 学習画像データのディレクトリ")
+#     parser.add_argument(
+#         "--repo_id",
+#         type=str,
+#         default=DEFAULT_WD14_TAGGER_REPO,
+#         help="repo id for wd14 tagger on Hugging Face / Hugging Faceのwd14 taggerのリポジトリID",
+#     )
+#     parser.add_argument(
+#         "--model_dir",
+#         type=str,
+#         default="wd14_tagger_model",
+#         help="directory to store wd14 tagger model / wd14 taggerのモデルを格納するディレクトリ",
+#     )
+#     parser.add_argument(
+#         "--force_download", action="store_true", help="force downloading wd14 tagger models / wd14 taggerのモデルを再ダウンロードします"
+#     )
+#     parser.add_argument("--batch_size", type=int, default=1, help="batch size in inference / 推論時のバッチサイズ")
+#     parser.add_argument(
+#         "--max_data_loader_n_workers",
+#         type=int,
+#         default=None,
+#         help="enable image reading by DataLoader with this number of workers (faster) / DataLoaderによる画像読み込みを有効にしてこのワーカー数を適用する（読み込みを高速化）",
+#     )
+#     parser.add_argument(
+#         "--caption_extention",
+#         type=str,
+#         default=None,
+#         help="extension of caption file (for backward compatibility) / 出力されるキャプションファイルの拡張子（スペルミスしていたのを残してあります）",
+#     )
+#     parser.add_argument("--caption_extension", type=str, default=".txt", help="extension of caption file / 出力されるキャプションファイルの拡張子")
+#     parser.add_argument("--thresh", type=float, default=0.35, help="threshold of confidence to add a tag / タグを追加するか判定する閾値")
+#     parser.add_argument(
+#         "--general_threshold",
+#         type=float,
+#         default=None,
+#         help="threshold of confidence to add a tag for general category, same as --thresh if omitted / generalカテゴリのタグを追加するための確信度の閾値、省略時は --thresh と同じ",
+#     )
+#     parser.add_argument(
+#         "--character_threshold",
+#         type=float,
+#         default=None,
+#         help="threshold of confidence to add a tag for character category, same as --thres if omitted / characterカテゴリのタグを追加するための確信度の閾値、省略時は --thresh と同じ",
+#     )
+#     parser.add_argument("--recursive", action="store_true", help="search for images in subfolders recursively / サブフォルダを再帰的に検索する")
+#     parser.add_argument(
+#         "--remove_underscore",
+#         action="store_true",
+#         help="replace underscores with spaces in the output tags / 出力されるタグのアンダースコアをスペースに置き換える",
+#     )
+#     parser.add_argument("--debug", action="store_true", help="debug mode")
+#     parser.add_argument(
+#         "--undesired_tags",
+#         type=str,
+#         default="",
+#         help="comma-separated list of undesired tags to remove from the output / 出力から除外したいタグのカンマ区切りのリスト",
+#     )
+#     parser.add_argument("--frequency_tags", action="store_true", help="Show frequency of tags for images / 画像ごとのタグの出現頻度を表示する")
 
-    parser.add_argument("--addtional_tags", type=str,
-                        default="",
-                        help="需要添加的额外提示词")
+#     parser.add_argument("--addtional_tags", type=str,
+#         default="",
+#         help="需要添加的额外提示词")
 
-    return parser
+#     return parser
 
 
 # if __name__ == "__main__":
@@ -346,38 +351,51 @@ def setup_parser() -> argparse.ArgumentParser:
 
 
 def tagger(
-        train_data_dir="",  # 训练数据路径
-        repo_id=DEFAULT_WD14_TAGGER_REPO,  # wd模型在huggingface上面的repo id
-        model_dir="",  # wd模型的地址
-        force_download=False,  # 没有wd的模型时是否强制下载
-        batch_size=8,  # 一次处理多少张图片
-        max_data_loader_n_workers=1,  # 使用多少个worker来同时读取数据
-        caption_extension=".txt",  # 存tag的文件类型
-        general_threshold=0.35,  # 为一般类别添加标签的置信阈值
-        character_threshold=0.35,  # 为字符类别添加标签的置信阈值
-        recursive=True,  # 搜索子文件夹中的图像
-        remove_underscore=True,  # 将输出标记的下划线替换为空格
-        undesired_tags="",  # 不想要（想要去除）的Tag，以英文逗号隔开
-        frequency_tags=False,  # 显示tag的频率
-        addtional_tags="",
+    train_data_dir="", # 训练数据路径
+    repo_id=DEFAULT_WD14_TAGGER_REPO, # wd模型在huggingface上面的repo id
+    model_dir="", # wd模型的地址
+    force_download=False, # 没有wd的模型时是否强制下载
+    batch_size=8, # 一次处理多少张图片
+    max_data_loader_n_workers=1, # 使用多少个worker来同时读取数据
+    caption_extension=".txt", # 存tag的文件类型
+    general_threshold=0.35, # 为一般类别添加标签的置信阈值
+    character_threshold=0.35, # 为字符类别添加标签的置信阈值
+    recursive=True, # 搜索子文件夹中的图像
+    remove_underscore=True, # 将输出标记的下划线替换为空格
+    undesired_tags="", # 不想要（想要去除）的Tag，以英文逗号隔开
+    frequency_tags=False, # 显示tag的频率
+    addtional_tags="",
 ):
-    parser = setup_parser()
-    args = parser.parse_args()
-    args.train_data_dir = train_data_dir
-    args.repo_id = repo_id
-    args.model_dir = model_dir
-    args.force_download = force_download
-    args.batch_size = batch_size
-    args.max_data_loader_n_workers = max_data_loader_n_workers
-    args.caption_extension = caption_extension
-    args.general_threshold = general_threshold
-    args.character_threshold = character_threshold
-    args.recursive = recursive
-    args.remove_underscore = remove_underscore
-    args.undesired_tags = undesired_tags
-    args.frequency_tags = frequency_tags
-    args.addtional_tags = addtional_tags
-    main(args)
+    # parser = setup_parser()
+    # args = parser.parse_args(["--train_data_dir /data/qll/pics/"])
+    # args.train_data_dir = train_data_dir
+    # args.repo_id = repo_id
+    # args.model_dir = model_dir
+    # args.force_download = force_download
+    # args.batch_size = batch_size
+    # args.max_data_loader_n_workers = max_data_loader_n_workers
+    # args.caption_extension = caption_extension
+    # args.general_threshold = general_threshold
+    # args.character_threshold = character_threshold
+    # args.recursive = recursive
+    # args.remove_underscore = remove_underscore
+    # args.undesired_tags = undesired_tags
+    # args.frequency_tags = frequency_tags
+    # args.addtional_tags = addtional_tags
+    main(train_data_dir = train_data_dir,
+    repo_id = repo_id,
+    model_dir = model_dir,
+    force_download = force_download,
+    batch_size = batch_size,
+    max_data_loader_n_workers = max_data_loader_n_workers,
+    caption_extension = caption_extension,
+    general_threshold = general_threshold,
+    character_threshold = character_threshold,
+    recursive = recursive,
+    remove_underscore = remove_underscore,
+    undesired_tags = undesired_tags,
+    frequency_tags = frequency_tags,
+    addtional_tags = addtional_tags)
 
 
 if __name__ == "__main__":

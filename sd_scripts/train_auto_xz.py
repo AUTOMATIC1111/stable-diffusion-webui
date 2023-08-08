@@ -619,9 +619,10 @@ def train_auto(
     # 预设参数
     width = 512
     height = 768
-    trigger_word = task_id
+    trigger_word = ""
     undesired_tags = ""  # 待测试五官
-
+    use_wd=True
+    
     dirname = os.path.dirname(train_data_dir)
     process_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(process_dir, exist_ok=True)
@@ -663,6 +664,7 @@ def train_auto(
         save_last_n_epochs=1,
         trigger_words=[""],  # [f"{task_id}",f"{task_id}"],
         list_train_data_dir=[process_dir],
+        save_model_as="safetensors",
         num_repeats=[f"{repeats_n}"],
         batch_size=8,
         resolution=f"{width},{height}",
