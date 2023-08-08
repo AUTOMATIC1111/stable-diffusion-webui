@@ -36,10 +36,7 @@ def setup_for_low_vram(sd_model, use_medvram):
             return
 
         if module_in_gpu is not None:
-            try:
-                module_in_gpu.to(cpu)
-            except:
-                print('Medium/Low VRAM model shift succeeded.')
+            module_in_gpu.to(cpu)
 
         module.to(devices.device)
         module_in_gpu = module
