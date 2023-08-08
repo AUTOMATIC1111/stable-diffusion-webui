@@ -638,7 +638,7 @@ def train_auto(
     height = 768
     trigger_word = ""
     undesired_tags = ""  # 待测试五官
-    use_wd = True
+    use_wd = False
 
     dirname = os.path.dirname(train_data_dir)
     process_dir = os.path.join(dirname, f"{task_id}-preprocess")
@@ -665,14 +665,15 @@ def train_auto(
     print(f"pictures:{pic_nums}")
 
     # 2.tagger反推
-    tagger_path = os.path.join(general_model_path, "tag_models")
-    if not os.path.isdir(tagger_path):
-        raise OSError(f'cannot found tagger models,path:{tagger_path}')
+    if use_wd:
+        tagger_path = os.path.join(general_model_path, "tag_models")
+        if not os.path.isdir(tagger_path):
+            raise OSError(f'cannot found tagger models,path:{tagger_path}')
 
-    cp = Process(target=train_tagger,
-                 args=(process_dir, tagger_path, trigger_word, undesired_tags, 0.35, 0.35))
-    cp.start()
-    cp.join()
+        cp = Process(target=train_tagger,
+                     args=(process_dir, tagger_path, trigger_word, undesired_tags, 0.35, 0.35))
+        cp.start()
+        cp.join()
 
     if callable(train_callback):
         train_callback(4)
