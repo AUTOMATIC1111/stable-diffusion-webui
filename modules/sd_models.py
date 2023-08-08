@@ -507,7 +507,7 @@ def send_model_to_cpu(m):
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.send_everything_to_cpu()
     else:
-        m.to(devices.cpu)
+        lowvram.safe_send_to_cpu(m)
 
     devices.torch_gc()
 

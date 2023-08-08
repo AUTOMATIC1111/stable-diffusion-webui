@@ -15,6 +15,14 @@ def send_everything_to_cpu():
     module_in_gpu = None
 
 
+def safe_send_to_cpu(m):
+    if m is not None:
+        try:
+            m.to(cpu)
+        except:
+            print('Low VRAM Garbage Collection invoked.')
+
+
 def setup_for_low_vram(sd_model, use_medvram):
     if getattr(sd_model, 'lowvram', False):
         return
@@ -35,11 +43,7 @@ def setup_for_low_vram(sd_model, use_medvram):
         if module_in_gpu == module:
             return
 
-        if module_in_gpu is not None:
-            try:
-                module_in_gpu.to(cpu)
-            except:
-                print('Low VRAM Garbage Collection invoked.')
+        safe_send_to_cpu(module_in_gpu)
 
         module.to(devices.device)
         module_in_gpu = module
