@@ -280,6 +280,9 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Hires sampler" not in res:
         res["Hires sampler"] = "Use same sampler"
 
+    if "Hires checkpoint" not in res:
+        res["Hires checkpoint"] = "Use same checkpoint"
+
     if "Hires prompt" not in res:
         res["Hires prompt"] = ""
 
@@ -304,6 +307,12 @@ Steps: 20, Sampler: Euler a, CFG scale: 7, Seed: 965400086, Size: 512x512, Model
     if "Schedule rho" not in res:
         res["Schedule rho"] = 0
 
+    if "VAE Encoder" not in res:
+        res["VAE Encoder"] = "Full"
+
+    if "VAE Decoder" not in res:
+        res["VAE Decoder"] = "Full"
+
     return res
 
 
@@ -319,6 +328,10 @@ infotext_to_setting_name_mapping = [
     ('Noise multiplier', 'initial_noise_multiplier'),
     ('Eta', 'eta_ancestral'),
     ('Eta DDIM', 'eta_ddim'),
+    ('Sigma churn', 's_churn'),
+    ('Sigma tmin', 's_tmin'),
+    ('Sigma tmax', 's_tmax'),
+    ('Sigma noise', 's_noise'),
     ('Discard penultimate sigma', 'always_discard_next_to_last_sigma'),
     ('UniPC variant', 'uni_pc_variant'),
     ('UniPC skip type', 'uni_pc_skip_type'),
@@ -329,6 +342,10 @@ infotext_to_setting_name_mapping = [
     ('RNG', 'randn_source'),
     ('NGMS', 's_min_uncond'),
     ('Pad conds', 'pad_cond_uncond'),
+    ('VAE Encoder', 'sd_vae_encode_method'),
+    ('VAE Decoder', 'sd_vae_decode_method'),
+    ('Refiner', 'sd_refiner_checkpoint'),
+    ('Refiner switch at', 'sd_refiner_switch_at'),
 ]
 
 

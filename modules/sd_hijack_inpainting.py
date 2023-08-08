@@ -92,6 +92,4 @@ def p_sample_plms(self, x, c, t, index, repeat_noise=False, use_original_steps=F
 
 
 def do_inpainting_hijack():
-    # p_sample_plms is needed because PLMS can't work with dicts as conditionings
-
     ldm.models.diffusion.plms.PLMSSampler.p_sample_plms = p_sample_plms
