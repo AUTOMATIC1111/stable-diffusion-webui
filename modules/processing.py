@@ -403,34 +403,35 @@ class StableDiffusionProcessing:
         with sd_models.SkipWritingToConfig():
             sd_models.swap_to_refiner(refiner_checkpoint_info=refiner_checkpoint_info)
 
-        devices.torch_gc()
-        self.setup_conds()
+        try:
+            devices.torch_gc()
+            self.setup_conds()
 
-        b_is_sdxl = shared.sd_model.is_sdxl
+            b_is_sdxl = shared.sd_model.is_sdxl
 
-        if a_is_sdxl != b_is_sdxl:
-            decoded_noisy = torch.stack(decoded_noisy).float()
-            decoded_noisy = torch.clamp((decoded_noisy + 1.0) / 2.0, min=0.0, max=1.0)
-            noisy_latent = images_tensor_to_samples(decoded_noisy, approximation_indexes.get(opts.sd_vae_encode_method), shared.sd_model)
-            print(f'VAE converted, shape = {noisy_latent.shape}')
-        else:
-            noisy_latent = noisy_output
-            print(f'VAE transferred, shape = {noisy_latent.shape}')
+            if a_is_sdxl != b_is_sdxl:
+                decoded_noisy = torch.stack(decoded_noisy).float()
+                decoded_noisy = torch.clamp((decoded_noisy + 1.0) / 2.0, min=0.0, max=1.0)
+                noisy_latent = images_tensor_to_samples(decoded_noisy, approximation_indexes.get(opts.sd_vae_encode_method), shared.sd_model)
+                print(f'VAE converted, shape = {noisy_latent.shape}')
+            else:
+                noisy_latent = noisy_output
+                print(f'VAE transferred, shape = {noisy_latent.shape}')
 
-        x = torch.zeros_like(noisy_latent)
+            x = torch.zeros_like(noisy_latent)
 
-        with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
-            denoising_strength = self.denoising_strength
+            with devices.without_autocast() if devices.unet_needs_upcast else devices.autocast():
+                denoising_strength = self.denoising_strength
 
-            self.denoising_strength = 1.0 - (stopped_at + 1) / self.steps
-            self.image_conditioning = txt2img_image_conditioning(shared.sd_model, noisy_latent, self.width, self.height)
-            self.sampler = sd_samplers.create_sampler(self.sampler_name, shared.sd_model)
-            samples = self.sampler.sample_img2img(self, noisy_latent, x, self.c, self.uc, image_conditioning=self.image_conditioning, steps=max(1, self.steps - stopped_at - 1))
+                self.denoising_strength = 1.0 - (stopped_at + 1) / self.steps
+                self.image_conditioning = txt2img_image_conditioning(shared.sd_model, noisy_latent, self.width, self.height)
+                self.sampler = sd_samplers.create_sampler(self.sampler_name, shared.sd_model)
+                samples = self.sampler.sample_img2img(self, noisy_latent, x, self.c, self.uc, image_conditioning=self.image_conditioning, steps=max(1, self.steps - stopped_at - 1))
 
-            self.denoising_strength = denoising_strength
-
-        with sd_models.SkipWritingToConfig():
-            sd_models.swap_back_after_refiner()
+                self.denoising_strength = denoising_strength
+        finally:
+            with sd_models.SkipWritingToConfig():
+                sd_models.swap_back_after_refiner()
 
         return samples
 
