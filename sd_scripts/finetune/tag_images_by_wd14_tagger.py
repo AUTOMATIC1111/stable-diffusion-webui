@@ -362,7 +362,7 @@ def tagger(
         addtional_tags="",
 ):
     parser = setup_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(args=[f'--train_data_dir "{train_data_dir}"'])
     args.train_data_dir = train_data_dir
     args.repo_id = repo_id
     args.model_dir = model_dir
