@@ -318,9 +318,9 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
             process_default_resize = False
 
         if process_keep_original_size:
-            if img.width > 3096 or img.height > 3096:  # 对于超大图片限制在2048的范围内
-                if img.width > img.height:
-                    ratio = 2048.0 / img.width
+            if img.width>2048 or img.height>2048:  # 对于超大图片限制在2048的范围内
+                if img.width>img.height:
+                    ratio = 2048.0/img.width
                 else:
                     ratio = 2048.0 / img.height
                 img = resize_image(1, img, int(img.width * ratio), int(img.height * ratio))
@@ -330,6 +330,8 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
         if process_default_resize:
             img = resize_image(1, img, width, height)
             save_pic(img, index, params, existing_caption=existing_caption)
+        
+        os.remove(filename)
 
         # shared.state.nextjob()
         if callable(progress_cb):
@@ -617,25 +619,32 @@ def train_auto(
     # 预设参数
     width = 512
     height = 768
-    trigger_word = task_id
+    trigger_word = ""
     undesired_tags = ""  # 待测试五官
-
+    use_wd=True
+    
     dirname = os.path.dirname(train_data_dir)
     process_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(process_dir, exist_ok=True)
 
     # 1.图片预处理
     train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
-                     preprocess_txt_action='ignore', process_keep_original_size=False, process_flip=False,
-                     process_split=False, process_caption=False, process_caption_deepbooru=True, split_threshold=0.5,
+                     preprocess_txt_action='ignore', process_keep_original_size=False,
+                     process_flip=False, process_split=False, process_caption=False, process_caption_deepbooru=False,
+                     split_threshold=0.5,
                      overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
                      process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
                      process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
                      process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
                      process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
                      model_path=general_model_path)
+
     if callable(train_callback):
         train_callback(2)
+    # 优化图片数量
+    contents = os.listdir(train_data_dir)
+    pic_nums = len(contents)
+    repeats_n = int(20*50/pic_nums)
     # 2.tagger反推
     tagger_path = os.path.join(general_model_path, "tag_models")
     if not os.path.isdir(tagger_path):
@@ -645,6 +654,7 @@ def train_auto(
                  args=(process_dir, tagger_path, trigger_word, undesired_tags, 0.35, 0.35))
     cp.start()
     cp.join()
+
     if callable(train_callback):
         train_callback(4)
 
@@ -661,8 +671,9 @@ def train_auto(
         save_last_n_epochs=1,
         trigger_words=[""],  # [f"{task_id}",f"{task_id}"],
         list_train_data_dir=[process_dir],
-        num_repeats=[f"{num_repeats}"],
-        batch_size=6,
+        save_model_as="safetensors",
+        num_repeats=[f"{repeats_n}"],
+        batch_size=8,
         resolution=f"{width},{height}",
         epoch=10,  # 整数，随便填
         network_module="networks.lora",
@@ -675,9 +686,9 @@ def train_auto(
         sample_prompts="",  # 文件路径，比如c:\promts.txt,file for prompts to generate sample images
         sample_sampler="euler_a",
         optimizer_type="AdamW8bit",
-        learning_rate=0.0001 / 2.0,
-        unet_lr=0.0001 / 2.0,
-        text_encoder_lr=0.00001 / 2.0,
+        learning_rate=0.0001,
+        unet_lr=0.0001,
+        text_encoder_lr=0.00001,
         lr_scheduler="cosine_with_restarts",
         auto_lr=False,
         auto_lr_param=1,
@@ -686,7 +697,7 @@ def train_auto(
         # cache latents to main memory to reduce VRAM usage (augmentations must be disabled)
         cache_latents_to_disk=False,
         # cache latents to disk to reduce VRAM usage (augmentations must be disabled)
-        enable_bucket=False,  # enable buckets for multi aspect ratio training
+        enable_bucket=True,  # enable buckets for multi aspect ratio training
         min_bucket_reso=256,  # 范围自己定，minimum resolution for buckets
         max_bucket_reso=2048,  # 范围自己定，maximum resolution for buckets
         bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended

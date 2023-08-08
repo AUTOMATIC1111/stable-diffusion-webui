@@ -747,7 +747,7 @@ def train(args, train_epoch_callback=None,accelerator=None,unwrap_model=None):
         #                          text_encoder, unet)
         if callable(train_epoch_callback):
             # train_epoch_callback(epoch, loss_total / len(loss_list))
-            train_epoch_callback((epoch*1.0+1.0)/num_train_epochs)
+            train_epoch_callback((epoch*1.0+1.0)*100.0/num_train_epochs)
         # end of epoch
     metadata["ss_training_finished_at"] = str(time.time())
 
