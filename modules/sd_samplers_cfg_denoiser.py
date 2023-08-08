@@ -38,16 +38,24 @@ class CFGDenoiser(torch.nn.Module):
     negative prompt.
     """
 
-    def __init__(self, model, sampler):
+    def __init__(self, sampler):
         super().__init__()
-        self.inner_model = model
+        self.model_wrap = None
         self.mask = None
         self.nmask = None
         self.init_latent = None
+        self.steps = None
         self.step = 0
         self.image_cfg_scale = None
         self.padded_cond_uncond = False
         self.sampler = sampler
+        self.model_wrap = None
+        self.p = None
+
+    @property
+    def inner_model(self):
+        raise NotImplementedError()
+
 
     def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
         denoised_uncond = x_out[-uncond.shape[0]:]
@@ -68,9 +76,20 @@ class CFGDenoiser(torch.nn.Module):
     def get_pred_x0(self, x_in, x_out, sigma):
         return x_out
 
+    def update_inner_model(self):
+        self.model_wrap = None
+
+        c, uc = self.p.get_conds()
+        self.sampler.sampler_extra_args['cond'] = c
+        self.sampler.sampler_extra_args['uncond'] = uc
+
     def forward(self, x, sigma, uncond, cond, cond_scale, s_min_uncond, image_cond):
         if state.interrupted or state.skipped:
             raise sd_samplers_common.InterruptedException
+
+        if sd_samplers_common.apply_refiner(self):
+            cond = self.sampler.sampler_extra_args['cond']
+            uncond = self.sampler.sampler_extra_args['uncond']
 
         # at self.image_cfg_scale == 1.0 produced results for edit model are the same as with normal sampling,
         # so is_edit_model is set to False to support AND composition.

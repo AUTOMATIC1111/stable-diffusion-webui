@@ -52,17 +52,24 @@ k_diffusion_scheduler = {
 }
 
 
+class CFGDenoiserKDiffusion(sd_samplers_cfg_denoiser.CFGDenoiser):
+    @property
+    def inner_model(self):
+        if self.model_wrap is None:
+            denoiser = k_diffusion.external.CompVisVDenoiser if shared.sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
+            self.model_wrap = denoiser(shared.sd_model, quantize=shared.opts.enable_quantization)
+
+        return self.model_wrap
+
+
 class KDiffusionSampler(sd_samplers_common.Sampler):
     def __init__(self, funcname, sd_model):
-
         super().__init__(funcname)
 
-        self.extra_params = sampler_extra_params.get(funcname, [])
         self.func = funcname if callable(funcname) else getattr(k_diffusion.sampling, self.funcname)
 
-        denoiser = k_diffusion.external.CompVisVDenoiser if sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
-        self.model_wrap = denoiser(sd_model, quantize=shared.opts.enable_quantization)
-        self.model_wrap_cfg = sd_samplers_cfg_denoiser.CFGDenoiser(self.model_wrap, self)
+        self.model_wrap_cfg = CFGDenoiserKDiffusion(self)
+        self.model_wrap = self.model_wrap_cfg.inner_model
 
     def get_sigmas(self, p, steps):
         discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
