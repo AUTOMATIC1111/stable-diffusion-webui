@@ -220,6 +220,23 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
                      process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
                      process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
                      model_path=""):
+    try:
+        from modules.textual_inversion.preprocess import preprocess
+        if process_caption_deepbooru or process_caption:
+            print("-->>> preprocess with clip&deepbooru tagger")
+            preprocess(
+                "", process_src, process_dst, process_width, process_height, preprocess_txt_action,
+                process_keep_original_size,
+                process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold,
+                overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight,
+                process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop,
+                process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea,
+                process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold
+            )
+            return
+    except:
+        pass
+
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
@@ -318,9 +335,9 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
             process_default_resize = False
 
         if process_keep_original_size:
-            if img.width>2048 or img.height>2048:  # 对于超大图片限制在2048的范围内
-                if img.width>img.height:
-                    ratio = 2048.0/img.width
+            if img.width > 2048 or img.height > 2048:  # 对于超大图片限制在2048的范围内
+                if img.width > img.height:
+                    ratio = 2048.0 / img.width
                 else:
                     ratio = 2048.0 / img.height
                 img = resize_image(1, img, int(img.width * ratio), int(img.height * ratio))
@@ -330,7 +347,7 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
         if process_default_resize:
             img = resize_image(1, img, width, height)
             save_pic(img, index, params, existing_caption=existing_caption)
-        
+
         os.remove(filename)
 
         # shared.state.nextjob()
@@ -621,8 +638,8 @@ def train_auto(
     height = 768
     trigger_word = ""
     undesired_tags = ""  # 待测试五官
-    use_wd=True
-    
+    use_wd = True
+
     dirname = os.path.dirname(train_data_dir)
     process_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(process_dir, exist_ok=True)
@@ -630,8 +647,8 @@ def train_auto(
     # 1.图片预处理
     train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
                      preprocess_txt_action='ignore', process_keep_original_size=False,
-                     process_flip=False, process_split=False, process_caption=False, process_caption_deepbooru=False,
-                     split_threshold=0.5,
+                     process_flip=False, process_split=False, process_caption=False,
+                     process_caption_deepbooru=not use_wd, split_threshold=0.5,
                      overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
                      process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
                      process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
@@ -642,9 +659,11 @@ def train_auto(
     if callable(train_callback):
         train_callback(2)
     # 优化图片数量
-    contents = os.listdir(train_data_dir)
+    contents = os.listdir(process_dir)
     pic_nums = len(contents)
-    repeats_n = int(20*50/pic_nums)
+    repeats_n = int(20 * 50 / pic_nums)
+    print(f"pictures:{pic_nums}")
+
     # 2.tagger反推
     tagger_path = os.path.join(general_model_path, "tag_models")
     if not os.path.isdir(tagger_path):
