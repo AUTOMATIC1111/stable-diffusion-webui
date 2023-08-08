@@ -73,3 +73,5 @@ https://miro.com/app/board/uXjVMdgY-TY=/?share_link_id=547908852229
 
 ![image](https://user-images.githubusercontent.com/98228077/229259967-15556a72-774c-44ba-bab5-687f854a0fc7.png)
 
+## Licensing
+I have no objections if you want to make and share an extension under a different open source license from what this project uses.
