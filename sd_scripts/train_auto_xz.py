@@ -626,9 +626,8 @@ def train_auto(
 
     # 1.图片预处理
     train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
-                     preprocess_txt_action='ignore', process_keep_original_size=False,
-                     process_flip=False, process_split=False, process_caption=False, process_caption_deepbooru=True,
-                     split_threshold=0.5,
+                     preprocess_txt_action='ignore', process_keep_original_size=False, process_flip=False,
+                     process_split=False, process_caption=False, process_caption_deepbooru=True, split_threshold=0.5,
                      overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
                      process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
                      process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,

@@ -86,6 +86,7 @@ class TaskExecutor(Thread):
                     now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
                     create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(task.create_at))
                     handler.set_failed(task, f'task time out(task create time:{create_time}, now:{now})')
+                    self.nofity()
                     continue
                 handler(task, progress_callback=self.task_progress)
                 if random.randint(1, 10) < 3:
