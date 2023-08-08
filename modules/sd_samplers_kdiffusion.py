@@ -1,8 +1,7 @@
-from collections import deque
 import torch
 import inspect
 import k_diffusion.sampling
-from modules import devices, sd_samplers_common, sd_samplers_extra, sd_samplers_cfg_denoiser
+from modules import sd_samplers_common, sd_samplers_extra, sd_samplers_cfg_denoiser
 
 from modules.shared import opts
 import modules.shared as shared

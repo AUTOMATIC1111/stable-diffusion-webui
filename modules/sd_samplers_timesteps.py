@@ -7,9 +7,9 @@ from modules.shared import opts
 import modules.shared as shared
 
 samplers_timesteps = [
-    ('k_DDIM', sd_samplers_timesteps_impl.ddim, ['k_ddim'], {}),
-    ('k_PLMS', sd_samplers_timesteps_impl.plms, ['k_plms'], {}),
-    ('k_UniPC', sd_samplers_timesteps_impl.unipc, ['k_unipc'], {}),
+    ('DDIM', sd_samplers_timesteps_impl.ddim, ['ddim'], {}),
+    ('PLMS', sd_samplers_timesteps_impl.plms, ['plms'], {}),
+    ('UniPC', sd_samplers_timesteps_impl.unipc, ['unipc'], {}),
 ]
 
 
