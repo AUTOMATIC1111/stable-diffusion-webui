@@ -568,7 +568,7 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
                 errors.print_error_explanation(
                     "A tensor with all NaNs was produced in VAE.\n"
                     "Web UI will now convert VAE into 32-bit float and retry.\n"
-                    "To disable this behavior, disable the 'Automaticlly revert VAE to 32-bit floats' setting.\n"
+                    "To disable this behavior, disable the 'Automatically revert VAE to 32-bit floats' setting.\n"
                     "To always start with 32-bit VAE, use --no-half-vae commandline flag."
                 )
 
