@@ -296,7 +296,7 @@ def check_python():
 # 2.0.0a0 to avoid the underlying dll version error.
 # TODO remove this W/A when Intel releases torchvision wheel for windows.
 def fix_ipex_win_torch():
-    if not args.use_ipex or not 'win' in sys.platform:
+    if not args.use_ipex or 'win' not in sys.platform:
         return
     try:
         ipex_torch_ver = '2.0.0a0'
