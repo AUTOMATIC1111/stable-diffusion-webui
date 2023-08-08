@@ -184,6 +184,7 @@ if __name__ == "__main__":
             installer.log.warning(f'Setup complete with errors: {installer.errors}')
             installer.log.warning(f'See log file for more details: {installer.log_file}')
     installer.extensions_preload(parser) # adds additional args from extensions
+    installer.fix_ipex_win_torch() # redo ipex win torch fix since extensions may scan the deps of torchvision
     args = installer.parse_args(parser)
     # installer.run_setup()
     # installer.log.debug(f"Args: {vars(args)}")
