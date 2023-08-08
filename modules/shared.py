@@ -385,6 +385,7 @@ options_templates.update(options_section(('face-restoration', "Face restoration"
 }))
 
 options_templates.update(options_section(('system', "System"), {
+    "auto_launch_browser": OptionInfo("Local", "Automatically open webui in browser on startup", gr.Radio, lambda: {"choices": ["Disable", "Local", "Remote"]}),
     "show_warnings": OptionInfo(False, "Show warnings in console."),
     "memmon_poll_rate": OptionInfo(8, "VRAM usage polls per second during generation.", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}).info("0 = disable"),
     "samples_log_stdout": OptionInfo(False, "Always print all generation info to standard output"),
