@@ -98,10 +98,10 @@ def extend_sdxl(model):
     model.conditioner.wrapped = torch.nn.Module()
 
 
-sgm.modules.attention.print = lambda *args: None
-sgm.modules.diffusionmodules.model.print = lambda *args: None
-sgm.modules.diffusionmodules.openaimodel.print = lambda *args: None
-sgm.modules.encoders.modules.print = lambda *args: None
+sgm.modules.attention.print = shared.ldm_print
+sgm.modules.diffusionmodules.model.print = shared.ldm_print
+sgm.modules.diffusionmodules.openaimodel.print = shared.ldm_print
+sgm.modules.encoders.modules.print = shared.ldm_print
 
 # this gets the code to load the vanilla attention that we override
 sgm.modules.attention.SDP_IS_AVAILABLE = True

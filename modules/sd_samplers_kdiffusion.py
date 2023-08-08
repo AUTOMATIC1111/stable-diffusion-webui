@@ -4,6 +4,7 @@ import inspect
 import k_diffusion.sampling
 from modules import prompt_parser, devices, sd_samplers_common, sd_samplers_extra
 
+from modules.processing import StableDiffusionProcessing
 from modules.shared import opts, state
 import modules.shared as shared
 from modules.script_callbacks import CFGDenoiserParams, cfg_denoiser_callback
@@ -30,6 +31,7 @@ samplers_k_diffusion = [
     ('DPM++ 2M Karras', 'sample_dpmpp_2m', ['k_dpmpp_2m_ka'], {'scheduler': 'karras'}),
     ('DPM++ SDE Karras', 'sample_dpmpp_sde', ['k_dpmpp_sde_ka'], {'scheduler': 'karras', "second_order": True, "brownian_noise": True}),
     ('DPM++ 2M SDE Karras', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {'scheduler': 'karras', "brownian_noise": True}),
+    ('DPM++ 2M SDE Exponential', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_exp'], {'scheduler': 'exponential', "brownian_noise": True}),
     ('Restart', sd_samplers_extra.restart_sampler, ['restart'], {'scheduler': 'karras'}),
 ]
 
@@ -260,10 +262,7 @@ class TorchHijack:
             if noise.shape == x.shape:
                 return noise
 
-        if opts.randn_source == "CPU" or x.device.type == 'mps':
-            return torch.randn_like(x, device=devices.cpu).to(x.device)
-        else:
-            return torch.randn_like(x)
+        return devices.randn_like(x)
 
 
 class KDiffusionSampler:
@@ -281,6 +280,14 @@ class KDiffusionSampler:
         self.config = None  # set by the function calling the constructor
         self.last_latent = None
         self.s_min_uncond = None
+
+        # NOTE: These are also defined in the StableDiffusionProcessing class.
+        # They should have been here to begin with but we're going to
+        # leave that class __init__ signature alone.
+        self.s_churn = 0.0
+        self.s_tmin = 0.0
+        self.s_tmax = float('inf')
+        self.s_noise = 1.0
 
         self.conditioning_key = sd_model.model.conditioning_key
 
@@ -316,7 +323,7 @@ class KDiffusionSampler:
     def number_of_needed_noises(self, p):
         return p.steps
 
-    def initialize(self, p):
+    def initialize(self, p: StableDiffusionProcessing):
         self.model_wrap_cfg.mask = p.mask if hasattr(p, 'mask') else None
         self.model_wrap_cfg.nmask = p.nmask if hasattr(p, 'nmask') else None
         self.model_wrap_cfg.step = 0
@@ -336,6 +343,29 @@ class KDiffusionSampler:
                 p.extra_generation_params["Eta"] = self.eta
 
             extra_params_kwargs['eta'] = self.eta
+
+        if len(self.extra_params) > 0:
+            s_churn = getattr(opts, 's_churn', p.s_churn)
+            s_tmin = getattr(opts, 's_tmin', p.s_tmin)
+            s_tmax = getattr(opts, 's_tmax', p.s_tmax) or self.s_tmax # 0 = inf
+            s_noise = getattr(opts, 's_noise', p.s_noise)
+
+            if s_churn != self.s_churn:
+                extra_params_kwargs['s_churn'] = s_churn
+                p.s_churn = s_churn
+                p.extra_generation_params['Sigma churn'] = s_churn
+            if s_tmin != self.s_tmin:
+                extra_params_kwargs['s_tmin'] = s_tmin
+                p.s_tmin = s_tmin
+                p.extra_generation_params['Sigma tmin'] = s_tmin
+            if s_tmax != self.s_tmax:
+                extra_params_kwargs['s_tmax'] = s_tmax
+                p.s_tmax = s_tmax
+                p.extra_generation_params['Sigma tmax'] = s_tmax
+            if s_noise != self.s_noise:
+                extra_params_kwargs['s_noise'] = s_noise
+                p.s_noise = s_noise
+                p.extra_generation_params['Sigma noise'] = s_noise
 
         return extra_params_kwargs
 
@@ -378,6 +408,9 @@ class KDiffusionSampler:
             sigma_min, sigma_max = (0.1, 10) if opts.use_old_karras_scheduler_sigmas else (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
 
             sigmas = k_diffusion.sampling.get_sigmas_karras(n=steps, sigma_min=sigma_min, sigma_max=sigma_max, device=shared.device)
+        elif self.config is not None and self.config.options.get('scheduler', None) == 'exponential':
+            m_sigma_min, m_sigma_max = (self.model_wrap.sigmas[0].item(), self.model_wrap.sigmas[-1].item())
+            sigmas = k_diffusion.sampling.get_sigmas_exponential(n=steps, sigma_min=m_sigma_min, sigma_max=m_sigma_max, device=shared.device)
         else:
             sigmas = self.model_wrap.get_sigmas(steps)
 
