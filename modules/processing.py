@@ -1119,9 +1119,6 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         img2img_sampler_name = self.hr_sampler_name or self.sampler_name
 
-        if self.sampler_name in ['PLMS', 'UniPC']:  # PLMS/UniPC do not support img2img so we just silently switch to DDIM
-            img2img_sampler_name = 'DDIM'
-
         self.sampler = sd_samplers.create_sampler(img2img_sampler_name, self.sd_model)
 
         if self.latent_scale_mode is not None:

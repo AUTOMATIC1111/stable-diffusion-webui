@@ -13,7 +13,7 @@ from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
 from modules import gradio_extensons  # noqa: F401
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles, scripts
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles, scripts, sd_samplers
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path
 from modules.ui_common import create_refresh_button
@@ -29,7 +29,6 @@ import modules.shared as shared
 import modules.images
 from modules import prompt_parser
 from modules.sd_hijack import model_hijack
-from modules.sd_samplers import samplers, samplers_for_img2img
 from modules.generation_parameters_copypaste import image_from_url_text
 
 create_setting_component = ui_settings.create_setting_component
@@ -40,6 +39,9 @@ warnings.filterwarnings("default" if opts.show_gradio_deprecation_warnings else 
 # this is a fix for Windows users. Without it, javascript files will be served with text/html content-type and the browser will not show any UI
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
+
+# Likewise, add explicit content-type header for certain missing image types
+mimetypes.add_type('image/webp', '.webp')
 
 if not cmd_opts.share and not cmd_opts.listen:
     # fix gradio phoning home
@@ -357,14 +359,14 @@ def create_output_panel(tabname, outdir):
 def create_sampler_and_steps_selection(choices, tabname):
     if opts.samplers_in_dropdown:
         with FormRow(elem_id=f"sampler_selection_{tabname}"):
-            sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=choices[0].name, type="index")
+            sampler_name = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=choices, value=choices[0])
             steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
     else:
         with FormGroup(elem_id=f"sampler_selection_{tabname}"):
             steps = gr.Slider(minimum=1, maximum=150, step=1, elem_id=f"{tabname}_steps", label="Sampling steps", value=20)
-            sampler_index = gr.Radio(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value=choices[0].name, type="index")
+            sampler_name = gr.Radio(label='Sampling method', elem_id=f"{tabname}_sampling", choices=choices, value=choices[0])
 
-    return steps, sampler_index
+    return steps, sampler_name
 
 
 def ordered_ui_categories():
@@ -405,13 +407,13 @@ def create_ui():
         extra_tabs = gr.Tabs(elem_id="txt2img_extra_tabs")
         extra_tabs.__enter__()
 
-        with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, gr.Row().style(equal_height=False):
+        with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, gr.Row(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
                 scripts.scripts_txt2img.prepare_ui()
 
                 for category in ordered_ui_categories():
                     if category == "sampler":
-                        steps, sampler_index = create_sampler_and_steps_selection(samplers, "txt2img")
+                        steps, sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "txt2img")
 
                     elif category == "dimensions":
                         with FormRow():
@@ -457,7 +459,7 @@ def create_ui():
                                 hr_checkpoint_name = gr.Dropdown(label='Hires checkpoint', elem_id="hr_checkpoint", choices=["Use same checkpoint"] + modules.sd_models.checkpoint_tiles(use_short=True), value="Use same checkpoint")
                                 create_refresh_button(hr_checkpoint_name, modules.sd_models.list_models, lambda: {"choices": ["Use same checkpoint"] + modules.sd_models.checkpoint_tiles(use_short=True)}, "hr_checkpoint_refresh")
 
-                                hr_sampler_index = gr.Dropdown(label='Hires sampling method', elem_id="hr_sampler", choices=["Use same sampler"] + [x.name for x in samplers_for_img2img], value="Use same sampler", type="index")
+                                hr_sampler_name = gr.Dropdown(label='Hires sampling method', elem_id="hr_sampler", choices=["Use same sampler"] + sd_samplers.visible_sampler_names(), value="Use same sampler")
 
                             with FormRow(elem_id="txt2img_hires_fix_row4", variant="compact", visible=opts.hires_fix_show_prompts) as hr_prompts_container:
                                 with gr.Column(scale=80):
@@ -517,7 +519,7 @@ def create_ui():
                     toprow.negative_prompt,
                     toprow.ui_styles.dropdown,
                     steps,
-                    sampler_index,
+                    sampler_name,
                     restore_faces,
                     tiling,
                     batch_count,
@@ -535,7 +537,7 @@ def create_ui():
                     hr_resize_x,
                     hr_resize_y,
                     hr_checkpoint_name,
-                    hr_sampler_index,
+                    hr_sampler_name,
                     hr_prompt,
                     hr_negative_prompt,
                     override_settings,
@@ -580,7 +582,7 @@ def create_ui():
                 (toprow.prompt, "Prompt"),
                 (toprow.negative_prompt, "Negative prompt"),
                 (steps, "Steps"),
-                (sampler_index, "Sampler"),
+                (sampler_name, "Sampler"),
                 (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
                 (seed, "Seed"),
@@ -602,7 +604,7 @@ def create_ui():
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
                 (hr_checkpoint_name, "Hires checkpoint"),
-                (hr_sampler_index, "Hires sampler"),
+                (hr_sampler_name, "Hires sampler"),
                 (hr_sampler_container, lambda d: gr.update(visible=True) if d.get("Hires sampler", "Use same sampler") != "Use same sampler" or d.get("Hires checkpoint", "Use same checkpoint") != "Use same checkpoint" else gr.update()),
                 (hr_prompt, "Hires prompt"),
                 (hr_negative_prompt, "Hires negative prompt"),
@@ -618,7 +620,7 @@ def create_ui():
                 toprow.prompt,
                 toprow.negative_prompt,
                 steps,
-                sampler_index,
+                sampler_name,
                 cfg_scale,
                 seed,
                 width,
@@ -741,7 +743,7 @@ def create_ui():
 
                 for category in ordered_ui_categories():
                     if category == "sampler":
-                        steps, sampler_index = create_sampler_and_steps_selection(samplers_for_img2img, "img2img")
+                        steps, sampler_name = create_sampler_and_steps_selection(sd_samplers.visible_sampler_names(), "img2img")
 
                     elif category == "dimensions":
                         with FormRow():
@@ -873,7 +875,7 @@ def create_ui():
                     init_img_inpaint,
                     init_mask_inpaint,
                     steps,
-                    sampler_index,
+                    sampler_name,
                     mask_blur,
                     mask_alpha,
                     inpainting_fill,
@@ -969,7 +971,7 @@ def create_ui():
                 (toprow.prompt, "Prompt"),
                 (toprow.negative_prompt, "Negative prompt"),
                 (steps, "Steps"),
-                (sampler_index, "Sampler"),
+                (sampler_name, "Sampler"),
                 (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
                 (image_cfg_scale, "Image CFG scale"),

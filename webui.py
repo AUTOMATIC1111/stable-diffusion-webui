@@ -211,7 +211,7 @@ def configure_sigint_handler():
 def configure_opts_onchange():
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: modules.sd_models.reload_model_weights()), call=False)
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
-    shared.opts.onchange("sd_vae_as_default", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
+    shared.opts.onchange("sd_vae_overrides_per_model_preferences", wrap_queued_call(lambda: modules.sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
     shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
     shared.opts.onchange("cross_attention_optimization", wrap_queued_call(lambda: modules.sd_hijack.model_hijack.redo_hijack(shared.sd_model)), call=False)
@@ -341,6 +341,7 @@ def api_only():
     setup_middleware(app)
     api = create_api(app)
 
+    modules.script_callbacks.before_ui_callback()
     modules.script_callbacks.app_started_callback(None, app)
 
     print(f"Startup time: {startup_timer.summary()}.")
@@ -371,6 +372,13 @@ def webui():
 
         gradio_auth_creds = list(get_gradio_auth_creds()) or None
 
+        auto_launch_browser = False
+        if os.getenv('SD_WEBUI_RESTARTING') != '1':
+            if shared.opts.auto_launch_browser == "Remote" or cmd_opts.autolaunch:
+                auto_launch_browser = True
+            elif shared.opts.auto_launch_browser == "Local":
+                auto_launch_browser = not any([cmd_opts.listen, cmd_opts.share, cmd_opts.ngrok])
+
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=server_name,
@@ -380,7 +388,7 @@ def webui():
             ssl_verify=cmd_opts.disable_tls_verify,
             debug=cmd_opts.gradio_debug,
             auth=gradio_auth_creds,
-            inbrowser=cmd_opts.autolaunch and os.getenv('SD_WEBUI_RESTARTING') != '1',
+            inbrowser=auto_launch_browser,
             prevent_thread_lock=True,
             allowed_paths=cmd_opts.gradio_allowed_path,
             app_kwargs={
@@ -389,9 +397,6 @@ def webui():
             },
             root_path=f"/{cmd_opts.subpath}" if cmd_opts.subpath else "",
         )
-
-        # after initial launch, disable --autolaunch for subsequent restarts
-        cmd_opts.autolaunch = False
 
         startup_timer.record("gradio launch")
 
@@ -436,6 +441,9 @@ def webui():
             # If we catch a keyboard interrupt, we want to stop the server and exit.
             shared.demo.close()
             break
+
+        # disable auto launch webui in browser for subsequent UI Reload
+        os.environ.setdefault('SD_WEBUI_RESTARTING', '1')
 
         print('Restarting UI...')
         shared.demo.close()
