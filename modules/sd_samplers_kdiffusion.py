@@ -1,7 +1,8 @@
 import torch
 import inspect
 import k_diffusion.sampling
-from modules import sd_samplers_common, sd_samplers_extra, sd_samplers_cfg_denoiser
+from modules import sd_samplers_common, sd_samplers_extra
+from modules.sd_samplers_cfg_denoiser import CFGDenoiser
 
 from modules.shared import opts
 import modules.shared as shared
@@ -62,7 +63,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
 
         denoiser = k_diffusion.external.CompVisVDenoiser if sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
         self.model_wrap = denoiser(sd_model, quantize=shared.opts.enable_quantization)
-        self.model_wrap_cfg = sd_samplers_cfg_denoiser.CFGDenoiser(self.model_wrap, self)
+        self.model_wrap_cfg = CFGDenoiser(self.model_wrap, self)
 
     def get_sigmas(self, p, steps):
         discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
