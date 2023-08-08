@@ -201,7 +201,8 @@ onUiLoaded(async() => {
         canvas_hotkey_overlap: "KeyO",
         canvas_disabled_functions: [],
         canvas_show_tooltip: true,
-        canvas_blur_prompt: false
+        canvas_blur_prompt: false,
+        canvas_auto_expand: false
     };
 
     const functionMap = {
@@ -648,7 +649,33 @@ onUiLoaded(async() => {
             mouseY = e.offsetY;
         }
 
+        // Simulation of the function to put a long image into the screen.
+        // We define the size of the canvas, make a fullscreen to reveal the image, then reduce it to fit into the element.
+        // We hide the image and show it to the user when it is ready.
+        function autoExpand(e) {
+            const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
+            const isMainTab = activeElement === elementIDs.inpaint || activeElement === elementIDs.inpaintSketch || activeElement === elementIDs.sketch;
+            if (canvas && isMainTab) {
+                if (canvas && parseInt(targetElement.style.width) > 862 || parseInt(canvas.width) < 862) {
+                    return;
+                }
+                if (canvas) {
+                    targetElement.style.visibility = "hidden";
+                    setTimeout(() => {
+                        fitToScreen();
+                        resetZoom();
+                        targetElement.style.visibility = "visible";
+                    }, 10);
+                }
+            }
+        }
+
         targetElement.addEventListener("mousemove", getMousePosition);
+
+        // Apply auto expand if enabled
+        if (hotkeysConfig.canvas_auto_expand) {
+            targetElement.addEventListener("mousemove", autoExpand);
+        }
 
         // Handle events only inside the targetElement
         let isKeyDownHandlerAttached = false;
