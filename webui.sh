@@ -248,7 +248,11 @@ while [[ "$KEEP_GOING" -eq "1" ]]; do
         "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
     fi
 
-    if [[ ! -f tmp/restart ]]; then
+    if [ $? -ne 1111 ]; then
         KEEP_GOING=0
+    fi
+
+    if [[ -z "$SD_WEBUI_RESTARTING" ]]; then
+        export SD_WEBUI_RESTARTING="1"
     fi
 done

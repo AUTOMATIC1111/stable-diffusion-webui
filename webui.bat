@@ -51,14 +51,21 @@ if EXIST %ACCELERATE% goto :accelerate_launch
 
 :launch
 %PYTHON% launch.py %*
-if EXIST tmp/restart goto :skip_venv
+if %errorlevel% == 1111 (
+    if [%SD_WEBUI_RESTARTING%] == [] set SD_WEBUI_RESTARTING=1
+    goto :skip_venv
+)
 pause
 exit /b
 
 :accelerate_launch
 echo Accelerating
 %ACCELERATE% launch --num_cpu_threads_per_process=6 launch.py
-if EXIST tmp/restart goto :skip_venv
+if %errorlevel% == 1111 (
+    if [%1] == [] set SD_WEBUI_RESTARTING=1
+    goto :skip_venv
+)
+
 pause
 exit /b
 
