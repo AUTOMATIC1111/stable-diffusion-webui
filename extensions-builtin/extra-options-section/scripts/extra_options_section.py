@@ -43,6 +43,6 @@ class ExtraOptionsSection(scripts.Script):
 
 
 shared.options_templates.update(shared.options_section(('ui', "User interface"), {
-    "extra_options": shared.OptionInfo([], "Options in main UI", ui_components.DropdownMulti, lambda: {"choices": list(shared.opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that also appear in txt2img/img2img interfaces").needs_restart(),
-    "extra_options_accordion": shared.OptionInfo(False, "Place options in main UI into an accordion")
+    "extra_options": shared.OptionInfo([], "Options in main UI", ui_components.DropdownMulti, lambda: {"choices": list(shared.opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that also appear in txt2img/img2img interfaces").needs_reload_ui(),
+    "extra_options_accordion": shared.OptionInfo(False, "Place options in main UI into an accordion").needs_restart()
 }))

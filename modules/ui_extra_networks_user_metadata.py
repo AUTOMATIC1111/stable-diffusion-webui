@@ -96,6 +96,7 @@ class UserMetadataEditor:
 
             stats = os.stat(filename)
             params = [
+                ('Filename: ', os.path.basename(filename)),
                 ('File size: ', sysinfo.pretty_bytes(stats.st_size)),
                 ('Modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
             ]

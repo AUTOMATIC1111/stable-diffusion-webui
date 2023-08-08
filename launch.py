@@ -1,6 +1,5 @@
 from modules import launch_utils
 
-
 args = launch_utils.args
 python = launch_utils.python
 git = launch_utils.git
@@ -26,8 +25,11 @@ start = launch_utils.start
 
 
 def main():
-    if not args.skip_prepare_environment:
-        prepare_environment()
+    launch_utils.startup_timer.record("initial startup")
+
+    with launch_utils.startup_timer.subcategory("prepare environment"):
+        if not args.skip_prepare_environment:
+            prepare_environment()
 
     if args.test_server:
         configure_for_tests()

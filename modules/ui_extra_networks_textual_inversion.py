@@ -12,7 +12,7 @@ class ExtraNetworksPageTextualInversion(ui_extra_networks.ExtraNetworksPage):
     def refresh(self):
         sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)
 
-    def create_item(self, name, index=None):
+    def create_item(self, name, index=None, enable_filter=True):
         embedding = sd_hijack.model_hijack.embedding_db.word_embeddings.get(name)
 
         path, ext = os.path.splitext(embedding.filename)
