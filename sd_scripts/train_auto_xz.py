@@ -659,7 +659,7 @@ def train_auto(
         train_callback(4)
 
     lora_name = f"{task_id}"
-    num_repeats = int(os.getenv("AUTO_TRAIN_REPEATS", "50"))
+    # num_repeats = int(os.getenv("AUTO_TRAIN_REPEATS", "50"))
 
     # 3.自动训练出图
     train_with_params(
