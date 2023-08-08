@@ -580,6 +580,7 @@ def train_auto(
     os.makedirs(process_dir, exist_ok=True)
 
     # 1.图片预处理
+
     train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height, preprocess_txt_action='ignore', process_keep_original_size=False,
                     process_flip=False, process_split=False, process_caption=False, process_caption_deepbooru=not use_wd, split_threshold=0.5,
                     overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
@@ -588,7 +589,9 @@ def train_auto(
                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None, model_path=general_model_path,
                     filter_tags=undesired_tags,additional_tags=trigger_word)
-    callback(2)
+
+    if callable(train_callback):
+        train_callback(2)
 
     # 优化图片数量
     contents = os.listdir(process_dir)
@@ -601,7 +604,7 @@ def train_auto(
         cp = Process(target=train_tagger,args=(train_data_dir,tagger_path,trigger_word,undesired_tags,0.35,0.35)) 
         cp.start()
         cp.join()
-        callback(5)
+        train_callback(4)
     
     # train_tagger(
     #     train_data_dir=process_dir,
@@ -745,18 +748,18 @@ def train_auto(
     return os.path.join(lora_path,lora_name+".safetensors")
 
 
-model_p = "/data/qll/stable-diffusion-webui/models"
-trigger_word = f"liuxiangxzai"
-undesired_tags = ""  # 待测试五官
-train_data_dir = "/moba_expert_data/qll/pics/liuxiang"
-for i in range(3):
-    train_auto(
-        train_data_dir=train_data_dir,  # 训练的图片路径
-        train_type=0,  # 训练的类别
-        task_id="test",   # 任务id,作为Lora名称
-        sd_model_path=MODEL_PATH, # 底模路径
-        lora_path=LORA_PATH, # 文件夹名字
-        general_model_path=model_p, # 通用路径,
-        callback=train_callback, # callback函数
-        other_args=None # 预留一个，以备用
-    )
+#model_p = "/data/qll/stable-diffusion-webui/models"
+#trigger_word = f"liuxiangxzai"
+#undesired_tags = ""  # 待测试五官
+#train_data_dir = "/moba_expert_data/qll/pics/liuxiang"
+#for i in range(3):
+#    train_auto(
+#        train_data_dir=train_data_dir,  # 训练的图片路径
+#        train_type=0,  # 训练的类别
+#        task_id="test",   # 任务id,作为Lora名称
+#        sd_model_path=MODEL_PATH, # 底模路径
+#        lora_path=LORA_PATH, # 文件夹名字
+#        general_model_path=model_p, # 通用路径,
+#        callback=train_callback, # callback函数
+#        other_args=None # 预留一个，以备用
+#    )

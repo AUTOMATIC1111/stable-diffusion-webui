@@ -366,6 +366,7 @@ def tagger(
     frequency_tags=False, # 显示tag的频率
     addtional_tags="",
 ):
+
     # parser = setup_parser()
     # args = parser.parse_args(["--train_data_dir /data/qll/pics/"])
     # args.train_data_dir = train_data_dir
@@ -396,6 +397,7 @@ def tagger(
     undesired_tags = undesired_tags,
     frequency_tags = frequency_tags,
     addtional_tags = addtional_tags)
+
 
 
 if __name__ == "__main__":
