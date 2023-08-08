@@ -659,7 +659,7 @@ def train_auto(
         output_dir=lora_path,
         save_every_n_epochs=None,
         save_last_n_epochs=1,
-        trigger_words=[task_id],  # [f"{task_id}",f"{task_id}"],
+        trigger_words=[],  # [f"{task_id}",f"{task_id}"],
         list_train_data_dir=[process_dir],
         num_repeats=[f"{num_repeats}"],
         batch_size=6,
