@@ -412,8 +412,10 @@ class StableDiffusionProcessing:
             decoded_noisy = torch.stack(decoded_noisy).float()
             decoded_noisy = torch.clamp((decoded_noisy + 1.0) / 2.0, min=0.0, max=1.0)
             noisy_latent = images_tensor_to_samples(decoded_noisy, approximation_indexes.get(opts.sd_vae_encode_method), shared.sd_model)
+            print(f'VAE converted, shape = {noisy_latent.shape}')
         else:
             noisy_latent = noisy_output
+            print(f'VAE transferred, shape = {noisy_latent.shape}')
 
         x = torch.zeros_like(noisy_latent)
 
