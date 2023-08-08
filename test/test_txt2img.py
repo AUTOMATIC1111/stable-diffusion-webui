@@ -50,7 +50,7 @@ def test_txt2img_with_negative_prompt_performed(url_txt2img, simple_txt2img_requ
 
 
 def test_txt2img_with_complex_prompt_performed(url_txt2img, simple_txt2img_request):
-    simple_txt2img_request["prompt"] = "((emphasis)), (emphasis1:1.1), [to:1], [from::2], [from:to:0.3], [alt|alt1]"
+    simple_txt2img_request["prompt"] = "((emphasis)), (emphasis1:1.1), [to:1], [to: 1.3], [from::2], [from:to:0.3], [from:: 0.4], [from : to : 0.4], [alt|alt1]"
     assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
 
 

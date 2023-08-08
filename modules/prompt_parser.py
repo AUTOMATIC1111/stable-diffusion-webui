@@ -78,7 +78,7 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
                 if len(args) == 2:
                     before, after, when = (), *args
                 elif len(args) == 3:
-                    if type(args[0]) == type(args[1]):
+                    if isinstance(args[1], type(args[0])):
                         before, after, when = args
                     else:
                         before, after, _, when = (), *args
