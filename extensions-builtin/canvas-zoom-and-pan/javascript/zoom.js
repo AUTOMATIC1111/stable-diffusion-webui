@@ -201,8 +201,8 @@ onUiLoaded(async() => {
         canvas_hotkey_overlap: "KeyO",
         canvas_disabled_functions: [],
         canvas_show_tooltip: true,
+        canvas_auto_expand: true,
         canvas_blur_prompt: false,
-        canvas_auto_expand: false
     };
 
     const functionMap = {
