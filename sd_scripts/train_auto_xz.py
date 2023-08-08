@@ -638,18 +638,25 @@ def train_auto(
                      process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
                      process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
                      model_path=general_model_path)
-    train_callback(2)
+
+    if callable(train_callback):
+        train_callback(2)
     # 优化图片数量
     contents = os.listdir(train_data_dir)
     pic_nums = len(contents)
     repeats_n = int(20*50/pic_nums)
     # 2.tagger反推
     tagger_path = os.path.join(general_model_path, "tag_models")
+    if not os.path.isdir(tagger_path):
+        raise OSError(f'cannot found tagger models,path:{tagger_path}')
+
     cp = Process(target=train_tagger,
                  args=(process_dir, tagger_path, trigger_word, undesired_tags, 0.35, 0.35))
     cp.start()
     cp.join()
-    train_callback(5)
+
+    if callable(train_callback):
+        train_callback(4)
 
     lora_name = f"{task_id}"
     num_repeats = int(os.getenv("AUTO_TRAIN_REPEATS", "50"))
