@@ -49,8 +49,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         decoded = torch.zeros((len(latents), 3, p.height, p.width), dtype=devices.dtype_vae, device=devices.device)
         for i in range(len(output.images)):
             decoded[i] = (sd_vae_taesd.decode(latents[i]) * 2.0) - 1.0
-        images = model.image_processor.postprocess(decoded, output_type=output_type)
-        return images
+        imgs = model.image_processor.postprocess(decoded, output_type=output_type)
+        return imgs
 
 
     def set_pipeline_args(model, prompt: str, negative_prompt: str, prompt_2: typing.Optional[str] =None, negative_prompt_2: typing.Optional[str] = None, is_refiner: bool = False, **kwargs):
@@ -177,10 +177,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return results
 
     if shared.sd_refiner is None or not p.enable_hr:
-        if shared.opts.diffusers_taesd_vae_output:
-            output.images = taesd_vae_decode(output.images, shared.sd_model)
-        else:
-            output.images = vae_decode(output.images, shared.sd_model)
+        output.images = vae_decode(output.images, shared.sd_model) if p.full_quality else taesd_vae_decode(output.images, shared.sd_model)
 
     if lora_state['active']:
         unload_diffusers_lora()

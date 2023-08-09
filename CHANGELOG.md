@@ -6,6 +6,9 @@
   - **pipeline autodetect**
     if pipeline is set to autodetect (default for new installs), app will try to autodetect pipeline based on selected model  
     this should reduce user errors such as loading sd-xl model when sd pipeline is selected  
+  - **quick vae decode** as alternative to full vae decode which is very resource intensive  
+    quick decode is based on `taesd` and produces lower quality, but its great for tests or grids as it runs much faster and uses far less vram  
+    disabled by default, selectable in *txt2img/img2img -> advanced -> full quality*  
   - **prompt attention** for sd and sd-xl  
     native `compel` implementation and standrd -> compel translation  
     thanks @ai-casanova  

@@ -5,9 +5,9 @@ from modules.ui import plaintext_to_html
 from modules.memstats import memory_stats
 
 
-def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, steps: int, sampler_index: int, latent_index: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, diffusers_guidance_rescale: float, clip_skip: int, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, refiner_start: int, refiner_prompt: str, refiner_negative: str, override_settings_texts, *args): # pylint: disable=unused-argument
+def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, steps: int, sampler_index: int, latent_index: int, full_quality: bool, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, diffusers_guidance_rescale: float, clip_skip: int, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, height: int, width: int, enable_hr: bool, denoising_strength: float, hr_scale: float, hr_upscaler: str, hr_second_pass_steps: int, hr_resize_x: int, hr_resize_y: int, refiner_start: int, refiner_prompt: str, refiner_negative: str, override_settings_texts, *args): # pylint: disable=unused-argument
 
-    shared.log.debug(f'txt2img: id_task={id_task}|prompt={prompt}|negative_prompt={negative_prompt}|prompt_styles={prompt_styles}|steps={steps}|sampler_index={sampler_index}|latent_index={latent_index}|restore_faces={restore_faces}|tiling={tiling}|n_iter={n_iter}|batch_size={batch_size}|cfg_scale={cfg_scale}|clip_skip={clip_skip}|seed={seed}|subseed={subseed}|subseed_strength={subseed_strength}|seed_resize_from_h={seed_resize_from_h}|seed_resize_from_w={seed_resize_from_w}||height={height}|width={width}|enable_hr={enable_hr}|denoising_strength={denoising_strength}|hr_scale={hr_scale}|hr_upscaler={hr_upscaler}|hr_second_pass_steps={hr_second_pass_steps}|hr_resize_x={hr_resize_x}|hr_resize_y={hr_resize_y}|image_cfg_scale={image_cfg_scale}|diffusers_guidance_rescale={diffusers_guidance_rescale}|refiner_start={refiner_start}||refiner_prompt={refiner_prompt}|refiner_negative={refiner_negative}|override_settings_texts={override_settings_texts}|args={args}')
+    shared.log.debug(f'txt2img: id_task={id_task}|prompt={prompt}|negative_prompt={negative_prompt}|prompt_styles={prompt_styles}|steps={steps}|sampler_index={sampler_index}|latent_index={latent_index}|full_quality={full_quality}|restore_faces={restore_faces}|tiling={tiling}|n_iter={n_iter}|batch_size={batch_size}|cfg_scale={cfg_scale}|clip_skip={clip_skip}|seed={seed}|subseed={subseed}|subseed_strength={subseed_strength}|seed_resize_from_h={seed_resize_from_h}|seed_resize_from_w={seed_resize_from_w}||height={height}|width={width}|enable_hr={enable_hr}|denoising_strength={denoising_strength}|hr_scale={hr_scale}|hr_upscaler={hr_upscaler}|hr_second_pass_steps={hr_second_pass_steps}|hr_resize_x={hr_resize_x}|hr_resize_y={hr_resize_y}|image_cfg_scale={image_cfg_scale}|diffusers_guidance_rescale={diffusers_guidance_rescale}|refiner_start={refiner_start}||refiner_prompt={refiner_prompt}|refiner_negative={refiner_negative}|override_settings_texts={override_settings_texts}|args={args}')
 
     if shared.sd_model is None:
         shared.log.warning('Model not loaded')
@@ -43,6 +43,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         clip_skip=clip_skip,
         width=width,
         height=height,
+        full_quality=full_quality,
         restore_faces=restore_faces,
         tiling=tiling,
         enable_hr=enable_hr,
