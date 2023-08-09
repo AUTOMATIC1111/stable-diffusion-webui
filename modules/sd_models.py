@@ -1034,16 +1034,14 @@ def unload_model_weights(op='model'):
     from modules import sd_hijack
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
-            if not model_data.sd_model.has_accelerate:
-                model_data.sd_model.to(devices.cpu)
+            model_data.sd_model.to('meta')
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
             model_data.sd_model = None
             shared.log.debug(f'Weights unloaded {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
-            if not model_data.sd_refiner.has_accelerate:
-                model_data.sd_refiner.to(devices.cpu)
+            model_data.sd_refiner.to('meta')
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
             model_data.sd_refiner = None
