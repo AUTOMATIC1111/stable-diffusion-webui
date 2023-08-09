@@ -4,7 +4,6 @@ from pathlib import Path
 
 from modules import shared, ui_extra_networks_user_metadata, errors, extra_networks
 from modules.images import read_info_from_image, save_image_with_geninfo
-from modules.ui import up_down_symbol
 import gradio as gr
 import json
 import html
@@ -348,6 +347,8 @@ def pages_in_preferred_order(pages):
 
 
 def create_ui(interface: gr.Blocks, unrelated_tabs, tabname):
+    from modules.ui import up_down_symbol
+
     ui = ExtraNetworksUi()
     ui.pages = []
     ui.pages_contents = []

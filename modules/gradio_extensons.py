@@ -1,6 +1,6 @@
 import gradio as gr
 
-from modules import scripts
+from modules import scripts, ui_tempdir
 
 def add_classes_to_gradio_component(comp):
     """
@@ -58,3 +58,5 @@ original_BlockContext_init = gr.blocks.BlockContext.__init__
 gr.components.IOComponent.__init__ = IOComponent_init
 gr.blocks.Block.get_config = Block_get_config
 gr.blocks.BlockContext.__init__ = BlockContext_init
+
+ui_tempdir.install_ui_tempdir_override()

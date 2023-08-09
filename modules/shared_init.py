@@ -5,9 +5,6 @@ import torch
 from modules import shared
 from modules.shared import cmd_opts
 
-import sys
-sys.setrecursionlimit(1000)
-
 
 def initialize():
     """Initializes fields inside the shared module in a controlled manner.
