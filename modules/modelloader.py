@@ -24,6 +24,8 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, previ
     total_size = int(req.headers.get('content-length', 0))
     block_size = 16384 # 16KB blocks
     written = 0
+    shared.state.begin()
+    shared.state.job = 'downloload model'
     try:
         with open(model_file, 'wb') as f:
             with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn()) as progress:
@@ -43,6 +45,7 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, previ
         shared.log.info(f'{res} size={total_size}')
     else:
         shared.log.error(f'{res} size={total_size} written={written}')
+    shared.state.end()
     return res
 
 
@@ -50,6 +53,8 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
 
+    shared.state.begin()
+    shared.state.job = 'downloload model'
     if download_config is None:
         download_config = {
             "force_download": False,
@@ -82,6 +87,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f:
             f.write("True")
     shared.writefile(model_info_dict, os.path.join(pipeline_dir, "model_info.json"))
+    shared.state.end()
     return pipeline_dir
 
 
