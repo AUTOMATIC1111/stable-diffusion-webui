@@ -370,6 +370,10 @@ class TaskReceiver:
             else:
                 task = self._search_task()
             if task:
+                if isinstance(task, Task):
+                    task.setdefault("worker", self.worker_id)
+
+                self.recorder.set_state(TaskReceiverState.Running)
                 return task
             if not block:
                 return None
@@ -395,6 +399,9 @@ class TaskReceiver:
                         task = self._search_task()
 
                 if task:
+                    if isinstance(task, Task):
+                        task.setdefault("worker", self.worker_id)
+
                     self.recorder.set_state(TaskReceiverState.Running)
                     yield task
                 else:

@@ -12,7 +12,7 @@ import typing
 import torch
 import psutil
 
-from Crypto.Hash import SHA256
+from modules.shared import mem_mon as vram_mon
 from loguru import logger
 from worker.task import Task, TaskStatus, TaskProgress, TrainEpoch
 from sd_scripts.train_network_all import train_with_params
@@ -64,6 +64,8 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
 
     def progress_callback(epoch, loss, num_train_epochs):
         print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
+        free, total = vram_mon.cuda_mem_get_info()
+        logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
         progress = epoch / num_train_epochs * 100 * 0.9
         p.train.add_epoch_log(TrainEpoch(epoch, loss))
         p.task_progress = progress

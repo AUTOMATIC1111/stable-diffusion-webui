@@ -153,6 +153,9 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         if 'select_script_name' in kwargs:
             kwargs.pop('select_script_name')
 
+        if "nsfw" in prompt.lower():
+            prompt = prompt.lower().replace('nsfw', '')
+
         return cls(base_model_path,
                    user_id,
                    default_script_args,
@@ -207,7 +210,8 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
                                        process_args.outpath_samples,
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
-                                       task.id)
+                                       task.id,
+                                       inspect=process_args.kwargs.get("inspect", False))
 
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)

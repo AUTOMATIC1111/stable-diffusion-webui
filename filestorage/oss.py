@@ -88,3 +88,8 @@ class OssFileStorage(FileStorage):
         else:
             raise OSError(f'cannot download file from oss, resp:{resp.errorMessage}, key: {remoting_path}')
 
+    def preview_url(self, remoting_path: str) -> str:
+        bucket, key = self.extract_buack_key_from_path(remoting_path)
+        bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
+        return bucket.sign_url('GET', key, 10 * 60)
+

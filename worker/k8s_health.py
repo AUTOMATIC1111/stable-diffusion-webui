@@ -11,9 +11,12 @@ from loguru import logger
 
 def write_healthy(status: bool):
     if status:
-        with open("/var/healthy.txt", "w+") as f:
-            v = "0" if status else '1'
-            f.write(v)
+        try:
+            with open("/var/healthy.txt", "w+") as f:
+                v = "0" if status else '1'
+                f.write(v)
+        except Exception as e:
+            print(f"cannot write file /var/healthy.txt:{e}")
     elif os.path.isfile("/var/healthy.txt"):
         os.remove("/var/healthy.txt")
 

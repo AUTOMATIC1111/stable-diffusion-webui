@@ -9,11 +9,14 @@ import os.path
 import shutil
 import typing
 from enum import IntEnum
-from collections import UserDict
-from tools.encryptor import des_encrypt
+from collections import UserDict, defaultdict
+
+import requests
+
+from loguru import logger
 from tools.image import compress_image
 from PIL.PngImagePlugin import PngInfo
-from filestorage import find_storage_classes_with_env
+from filestorage import find_storage_classes_with_env, signature_url
 from tools.environment import get_file_storage_system_env, Env_BucketKey, S3SDWEB, S3ImageBucket
 from tools.processor import MultiThreadWorker
 
@@ -41,6 +44,8 @@ UserModelLocation = {
     ModelType.CheckPoint: 'user-models/Stable-diffusion',
     ModelType.Lora: 'user-models/Lora'
 }
+
+ForbiddenCoverKey = 'sd-web/resources/403_blur.png'
 
 
 class ImageKeys(UserDict):
@@ -197,3 +202,71 @@ class ImageOutput:
 
             # local
         return ImageKeys(self.local_files, low_files)
+
+    def inspect(self, images: ImageKeys):
+        api = 'https://diting.xingzheai.cn/api/v1.0/image/inspect'
+        urls = {}
+        url_inspect_map = {}
+
+        for image in images['low']:
+            try:
+                url = signature_url(image)
+                urls[image] = {
+                    'url': url,
+                    'data_id': 'tushuashua',
+                    'text_inspect': 0,
+                }
+                url_inspect_map[url] = {
+                    'key': image
+                }
+            except Exception as e:
+                logger.exception('signature_url failed')
+                continue
+
+        forbidden_keys = defaultdict(int)
+        try:
+            if urls:
+                resp = requests.post(api, json={
+                    'token': 'QX9HNRAYMFLBIG7T',
+                    'scenes': ["politics", "porn"],
+                    'tasks': list(urls.values())
+                }, timeout=5)
+
+                if resp:
+                    data = resp.json()
+                    if data.get('code', 0) == 200:
+                        results = data['results']
+                        for image_item in results:
+                            img_res = image_item['result']
+                            url = image_item['url']
+                            for scene in img_res:
+                                if scene.get('suggestion', 'pass') != 'pass':
+                                    if url in url_inspect_map:
+                                        low_key = url_inspect_map[url]['key']
+                                        dirname = os.path.dirname(low_key)
+                                        basename = os.path.basename(low_key)
+                                        high_key = os.path.join(dirname, basename.replace('low-', ''))
+                                        forbidden_keys[low_key] = 1
+                                        forbidden_keys[high_key] = 1
+
+        except Exception as e:
+            logger.exception(f'request {api} failed')
+            pass
+        storage_env = get_file_storage_system_env()
+        bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
+        default_cover = os.path.join(bucket, ForbiddenCoverKey)
+
+        for i, low_key in enumerate(images['low']):
+            if low_key in forbidden_keys:
+                images['low'][i] = default_cover
+
+        for i, high_key in enumerate(images['high']):
+            dirname = os.path.dirname(high_key)
+            basename = os.path.basename(high_key)
+            low_key = os.path.join(dirname, f'low-{basename}')
+            if low_key in forbidden_keys:
+                images['high'][i] = default_cover
+
+
+
+
