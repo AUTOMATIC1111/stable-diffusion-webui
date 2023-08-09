@@ -11,11 +11,11 @@ var ignore_ids_for_localization = {
     train_hypernetwork: 'OPTION',
     txt2img_styles: 'OPTION',
     img2img_styles: 'OPTION',
-    setting_random_artist_categories: 'SPAN',
-    setting_face_restoration_model: 'SPAN',
-    setting_realesrgan_enabled_models: 'SPAN',
-    extras_upscaler_1: 'SPAN',
-    extras_upscaler_2: 'SPAN',
+    setting_random_artist_categories: 'OPTION',
+    setting_face_restoration_model: 'OPTION',
+    setting_realesrgan_enabled_models: 'OPTION',
+    extras_upscaler_1: 'OPTION',
+    extras_upscaler_2: 'OPTION',
 };
 
 var re_num = /^[.\d]+$/;

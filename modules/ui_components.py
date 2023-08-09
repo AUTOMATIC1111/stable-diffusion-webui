@@ -35,7 +35,7 @@ class FormColumn(FormComponent, gr.Column):
 
 
 class FormGroup(FormComponent, gr.Group):
-    """Same as gr.Row but fits inside gradio forms"""
+    """Same as gr.Group but fits inside gradio forms"""
 
     def get_block_name(self):
         return "group"

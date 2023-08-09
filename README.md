@@ -88,7 +88,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - [Alt-Diffusion](https://arxiv.org/abs/2211.06679) support - see [wiki](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#alt-diffusion) for instructions
 - Now without any bad letters!
 - Load checkpoints in safetensors format
-- Eased resolution restriction: generated image's domension must be a multiple of 8 rather than 64
+- Eased resolution restriction: generated image's dimension must be a multiple of 8 rather than 64
 - Now with a license!
 - Reorder elements in the UI from settings screen
 
@@ -115,7 +115,7 @@ Alternatively, use online services (like Google Colab):
 1. Install the dependencies:
 ```bash
 # Debian-based:
-sudo apt install wget git python3 python3-venv
+sudo apt install wget git python3 python3-venv libgl1 libglib2.0-0
 # Red Hat-based:
 sudo dnf install wget git python3
 # Arch-based:
@@ -123,7 +123,7 @@ sudo pacman -S wget git python3
 ```
 2. Navigate to the directory you would like the webui to be installed and execute the following command:
 ```bash
-bash <(wget -qO- https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh)
+wget -q https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui/master/webui.sh
 ```
 3. Run `webui.sh`.
 4. Check `webui-user.sh` for options.
@@ -169,5 +169,6 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - UniPC sampler - Wenliang Zhao - https://github.com/wl-zhao/UniPC
 - TAESD - Ollin Boer Bohan - https://github.com/madebyollin/taesd
 - LyCORIS - KohakuBlueleaf
+- Restart sampling - lambertae - https://github.com/Newbeeer/diffusion_restart_sampling
 - Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
