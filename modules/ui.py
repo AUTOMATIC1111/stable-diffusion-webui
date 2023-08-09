@@ -13,7 +13,7 @@ from PIL import Image, PngImagePlugin  # noqa: F401
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_gradio_call
 
 from modules import gradio_extensons  # noqa: F401
-from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles, scripts, sd_samplers
+from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, errors, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles, scripts, sd_samplers, processing, devices, ui_extra_networks
 from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML
 from modules.paths import script_path
 from modules.ui_common import create_refresh_button
@@ -91,8 +91,6 @@ def send_gradio_gallery_to_image(x):
 
 
 def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y):
-    from modules import processing, devices
-
     if not enable:
         return ""
 
@@ -630,7 +628,6 @@ def create_ui():
             toprow.token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.prompt, steps], outputs=[toprow.token_counter])
             toprow.negative_token_button.click(fn=wrap_queued_call(update_token_counter), inputs=[toprow.negative_prompt, steps], outputs=[toprow.negative_token_counter])
 
-        from modules import ui_extra_networks
         extra_networks_ui = ui_extra_networks.create_ui(txt2img_interface, [txt2img_generation_tab], 'txt2img')
         ui_extra_networks.setup_ui(extra_networks_ui, txt2img_gallery)
 
@@ -995,7 +992,6 @@ def create_ui():
                 paste_button=toprow.paste, tabname="img2img", source_text_component=toprow.prompt, source_image_component=None,
             ))
 
-        from modules import ui_extra_networks
         extra_networks_ui_img2img = ui_extra_networks.create_ui(img2img_interface, [img2img_generation_tab], 'img2img')
         ui_extra_networks.setup_ui(extra_networks_ui_img2img, img2img_gallery)
 

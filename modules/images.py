@@ -21,8 +21,6 @@ from modules import sd_samplers, shared, script_callbacks, errors
 from modules.paths_internal import roboto_ttf_file
 from modules.shared import opts
 
-import modules.sd_vae as sd_vae
-
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
 
 
@@ -342,16 +340,6 @@ def sanitize_filename_part(text, replace_spaces=True):
 
 
 class FilenameGenerator:
-    def get_vae_filename(self): #get the name of the VAE file.
-        if sd_vae.loaded_vae_file is None:
-            return "NoneType"
-        file_name = os.path.basename(sd_vae.loaded_vae_file)
-        split_file_name = file_name.split('.')
-        if len(split_file_name) > 1 and split_file_name[0] == '':
-            return split_file_name[1] # if the first character of the filename is "." then [1] is obtained.
-        else:
-            return split_file_name[0]
-
     replacements = {
         'seed': lambda self: self.seed if self.seed is not None else '',
         'seed_first': lambda self: self.seed if self.p.batch_size == 1 else self.p.all_seeds[0],
@@ -390,6 +378,22 @@ class FilenameGenerator:
         self.prompt = prompt
         self.image = image
         self.zip = zip
+
+    def get_vae_filename(self):
+        """Get the name of the VAE file."""
+
+        import modules.sd_vae as sd_vae
+
+        if sd_vae.loaded_vae_file is None:
+            return "NoneType"
+
+        file_name = os.path.basename(sd_vae.loaded_vae_file)
+        split_file_name = file_name.split('.')
+        if len(split_file_name) > 1 and split_file_name[0] == '':
+            return split_file_name[1]  # if the first character of the filename is "." then [1] is obtained.
+        else:
+            return split_file_name[0]
+
 
     def hasprompt(self, *args):
         lower = self.prompt.lower()

@@ -14,7 +14,7 @@ import ldm.modules.midas as midas
 
 from ldm.util import instantiate_from_config
 
-from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet, sd_models_xl, cache
+from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet, sd_models_xl, cache, extra_networks, processing, lowvram, sd_hijack
 from modules.timer import Timer
 import tomesd
 
@@ -473,7 +473,6 @@ model_data = SdModelData()
 
 
 def get_empty_cond(sd_model):
-    from modules import extra_networks, processing
 
     p = processing.StableDiffusionProcessingTxt2Img()
     extra_networks.activate(p, {})
@@ -486,8 +485,6 @@ def get_empty_cond(sd_model):
 
 
 def send_model_to_cpu(m):
-    from modules import lowvram
-
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.send_everything_to_cpu()
     else:
@@ -497,8 +494,6 @@ def send_model_to_cpu(m):
 
 
 def send_model_to_device(m):
-    from modules import lowvram
-
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.setup_for_low_vram(m, shared.cmd_opts.medvram)
     else:
@@ -644,7 +639,6 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
 
 
 def reload_model_weights(sd_model=None, info=None):
-    from modules import devices, sd_hijack
     checkpoint_info = info or select_checkpoint()
 
     timer = Timer()
@@ -707,7 +701,6 @@ def reload_model_weights(sd_model=None, info=None):
 
 
 def unload_model_weights(sd_model=None, info=None):
-    from modules import devices, sd_hijack
     timer = Timer()
 
     if model_data.sd_model:
