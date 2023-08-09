@@ -10,7 +10,7 @@
     quick decode is based on `taesd` and produces lower quality, but its great for tests or grids as it runs much faster and uses far less vram  
     disabled by default, selectable in *txt2img/img2img -> advanced -> full quality*  
   - **prompt attention** for sd and sd-xl  
-    native `compel` implementation and standrd -> compel translation  
+    supports both `full parser` and native `compel`  
     thanks @ai-casanova  
   - advanced **lora load/apply** methods  
     in addition to standard lora loading that was recently added to sd-xl using diffusers, now we have  
@@ -22,7 +22,7 @@
     result is that 3rd party vaes can be used without washed out colors  
 - general:
   - new **civitai model search and download**  
-    native support for civitai, integrated into models -> civitai  
+    native support for civitai, integrated into ui as *models -> civitai*  
   - updated requirements  
     this time its a bigger change so upgrade may take longer to install new requirements
   - improved **extra networks** performance with large number of networks
