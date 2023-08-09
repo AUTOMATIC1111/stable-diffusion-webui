@@ -20,6 +20,7 @@ def initialize():
     from modules import options, shared_options
     shared.options_templates = shared_options.options_templates
     shared.opts = options.Options(shared_options.options_templates, shared_options.restricted_opts)
+    shared.restricted_opts = shared_options.restricted_opts
     if os.path.exists(shared.config_filename):
         shared.opts.load(shared.config_filename)
 

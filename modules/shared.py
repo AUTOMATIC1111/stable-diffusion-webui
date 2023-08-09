@@ -38,6 +38,7 @@ face_restorers = []
 
 options_templates = None
 opts = None
+restricted_opts = None
 
 sd_model: LatentDiffusion = None
 
