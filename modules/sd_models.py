@@ -68,7 +68,9 @@ class CheckpointInfo:
         self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
         self.short_title = self.name_for_extra if self.shorthash is None else f'{self.name_for_extra} [{self.shorthash}]'
 
-        self.ids = [self.hash, self.model_name, self.title, name, self.name_for_extra, f'{name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
+        self.ids = [self.hash, self.model_name, self.title, name, self.name_for_extra, f'{name} [{self.hash}]']
+        if self.shorthash:
+            self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
 
     def register(self):
         checkpoints_list[self.title] = self
@@ -80,10 +82,14 @@ class CheckpointInfo:
         if self.sha256 is None:
             return
 
-        self.shorthash = self.sha256[0:10]
+        shorthash = self.sha256[0:10]
+        if self.shorthash == self.sha256[0:10]:
+            return self.shorthash
+
+        self.shorthash = shorthash
 
         if self.shorthash not in self.ids:
-            self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]']
+            self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
 
         checkpoints_list.pop(self.title, None)
         self.title = f'{self.name} [{self.shorthash}]'
