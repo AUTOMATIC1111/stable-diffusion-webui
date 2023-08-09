@@ -40,6 +40,8 @@ class UserMetadataEditor:
             user_metadata = {}
             item['user_metadata'] = user_metadata
 
+        if len(user_metadata) == 0:
+            user_metadata = {'description': item.get('description', '')}
         return user_metadata
 
     def create_extra_default_items_in_left_column(self):
