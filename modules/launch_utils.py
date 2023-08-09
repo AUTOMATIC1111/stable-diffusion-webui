@@ -248,7 +248,11 @@ def run_extensions_installers(settings_file):
         return
 
     with startup_timer.subcategory("run extensions installers"):
-        for dirname_extension in list_extensions(settings_file):
+        from tqdm.auto import tqdm
+        pbar_extensions = tqdm(list_extensions(settings_file),
+                    bar_format="{desc}: |{bar}|{percentage:3.0f}% [{n_fmt}/{total_fmt} {elapsed}<{remaining}]")
+        for dirname_extension in pbar_extensions:
+            pbar_extensions.set_description("Installing %s" % dirname_extension)
             path = os.path.join(extensions_dir, dirname_extension)
 
             if os.path.isdir(path):
