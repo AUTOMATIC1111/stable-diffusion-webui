@@ -36,12 +36,10 @@ class UserMetadataEditor:
         item = self.page.items.get(name, {})
 
         user_metadata = item.get('user_metadata', None)
-        if user_metadata is None:
-            user_metadata = {}
+        if not user_metadata:
+            user_metadata = {'description': item.get('description', '')}
             item['user_metadata'] = user_metadata
 
-        if len(user_metadata) == 0:
-            user_metadata = {'description': item.get('description', '')}
         return user_metadata
 
     def create_extra_default_items_in_left_column(self):
