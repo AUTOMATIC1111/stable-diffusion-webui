@@ -10,8 +10,6 @@ from modules import initialize
 startup_timer = timer.startup_timer
 startup_timer.record("launcher")
 
-initialize_util.setup_logging()
-
 initialize.imports()
 
 initialize.check_versions()
