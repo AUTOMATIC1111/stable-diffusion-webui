@@ -42,7 +42,7 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
         hr_resize_x=hr_resize_x,
         hr_resize_y=hr_resize_y,
         hr_checkpoint_name=None if hr_checkpoint_name == 'Use same checkpoint' else hr_checkpoint_name,
-        hr_sampler_name=hr_sampler_name,
+        hr_sampler_name=None if hr_sampler_name == 'Use same sampler' else hr_sampler_name,
         hr_prompt=hr_prompt,
         hr_negative_prompt=hr_negative_prompt,
         override_settings=override_settings,
