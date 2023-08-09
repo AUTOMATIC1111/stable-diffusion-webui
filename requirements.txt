@@ -31,4 +31,5 @@ torch
 torchdiffeq
 torchsde
 transformers==4.30.0
-diffusers
+diffusers==0.18.2
+openvino==2023.1.0.dev20230728

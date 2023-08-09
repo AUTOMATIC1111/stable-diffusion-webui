@@ -723,11 +723,12 @@ class Script(scripts.Script):
         """
         ###
         ### Note:
-        First inference involves compilation of the model for best performance.
-        Excluding the first inference (or warm up inference) is recommended for
-        performance measurements. When resolution, batchsize, or device is changed,
-        or samplers like DPM++ or Karras are selected, model is recompiled. Subsequent
-        iterations use the cached compiled model for faster inference.
+        - First inference involves compilation of the model for best performance. 
+        Since compilation happens only on the first run, the first inference (or warm up inference) will be slower than subsequent inferences.
+        - For accurate performance measurements, it is recommended to exclude this slower first inference, as it doesn't reflect normal running time.
+        - Model is recompiled when resolution, batchsize, device, or samplers like DPM++ or Karras are changed. 
+        After recompiling, later inferences will reuse the newly compiled model and achieve faster running times. 
+        So it's normal for the first inference after a settings change to be slower, while subsequent inferences use the optimized compiled model and run faster.
         """)
 
         def local_config_change(choice):
