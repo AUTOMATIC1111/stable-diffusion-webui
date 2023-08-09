@@ -19,7 +19,7 @@ prompt: (emphasized | scheduled | alternate | plain | WHITESPACE)*
 !emphasized: "(" prompt ")"
         | "(" prompt ":" prompt ")"
         | "[" prompt "]"
-scheduled: "[" [prompt ":"] prompt ":" [WHITESPACE] NUMBER "]"
+scheduled: "[" [prompt ":"] prompt ":" [WHITESPACE] NUMBER /\s*]/
 alternate: "[" prompt ("|" prompt)+ "]"
 WHITESPACE: /\s+/
 plain: /([^\\\[\]():|]|\\.)+/
@@ -34,6 +34,8 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     >>> g("a [b:3]")
     [[3, 'a '], [10, 'a b']]
     >>> g("a [b: 3]")
+    [[3, 'a '], [10, 'a b']]
+    >>> g("a [b: 3.5 ]")
     [[3, 'a '], [10, 'a b']]
     >>> g("a [[[b]]:2]")
     [[2, 'a '], [10, 'a [[b]]']]
@@ -60,11 +62,11 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
 
         class CollectSteps(lark.Visitor):
             def scheduled(self, tree):
-                tree.children[-1] = float(tree.children[-1])
-                if tree.children[-1] < 1:
-                    tree.children[-1] *= steps
-                tree.children[-1] = min(steps, int(tree.children[-1]))
-                res.append(tree.children[-1])
+                tree.children[-2] = float(tree.children[-2])
+                if tree.children[-2] < 1:
+                    tree.children[-2] *= steps
+                tree.children[-2] = min(steps, int(tree.children[-2]))
+                res.append(tree.children[-2])
 
             def alternate(self, tree):
                 res.extend(range(1, steps+1))
@@ -75,15 +77,15 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     def at_step(step, tree):
         class AtStep(lark.Transformer):
             def scheduled(self, args):
-                if len(args) == 2:
-                    before, after, when = (), *args
-                elif len(args) == 3:
+                if len(args) == 3:
+                    before, after, when, _ = (), *args
+                elif len(args) == 4:
                     if isinstance(args[1], type(args[0])):
-                        before, after, when = args
+                        before, after, when, _ = args
                     else:
-                        before, after, _, when = (), *args
+                        before, after, _, when, _ = (), *args
                 else:
-                    before, after, _, when = args
+                    before, after, _, when, _ = args
                 yield before or () if step <= when else after
             def alternate(self, args):
                 yield next(args[(step - 1)%len(args)])
