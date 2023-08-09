@@ -7,6 +7,7 @@ import importlib.util
 import platform
 import json
 from functools import lru_cache
+import tqdm
 
 from modules import cmd_args, errors
 from modules.paths_internal import script_path, extensions_dir
@@ -248,11 +249,10 @@ def run_extensions_installers(settings_file):
         return
 
     with startup_timer.subcategory("run extensions installers"):
-        from tqdm.auto import tqdm
-        pbar_extensions = tqdm(list_extensions(settings_file),
-                    bar_format="{desc}: |{bar}|{percentage:3.0f}% [{n_fmt}/{total_fmt} {elapsed}<{remaining}]")
-        for dirname_extension in pbar_extensions:
-            pbar_extensions.set_description("Installing %s" % dirname_extension)
+        progress_bar = tqdm.tqdm(list_extensions(settings_file))
+        for dirname_extension in progress_bar:
+            progress_bar.set_description(f"Installing {dirname_extension}")
+
             path = os.path.join(extensions_dir, dirname_extension)
 
             if os.path.isdir(path):
