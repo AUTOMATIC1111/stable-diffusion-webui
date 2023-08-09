@@ -53,7 +53,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return imgs
 
 
-    def set_pipeline_args(model, prompt: str, negative_prompt: str, prompt_2: typing.Optional[str] =None, negative_prompt_2: typing.Optional[str] = None, is_refiner: bool = False, **kwargs):
+    def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, is_refiner: bool=False, **kwargs):
         args = {}
         pipeline = model
         signature = inspect.signature(type(pipeline).__call__)
@@ -65,7 +65,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_embed = None
         negative_pooled = None
         if shared.opts.data['prompt_attention'] in {'Compel parser', 'Full parser'}:
-            prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompt(model, prompt, negative_prompt, prompt_2, negative_prompt_2, is_refiner, kwargs.pop("clip_skip", None))
+            prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model,
+                                                                                                                  prompts,
+                                                                                                                  negative_prompts,
+                                                                                                                  prompts_2,
+                                                                                                                  negative_prompts_2,
+                                                                                                                  is_refiner,
+                                                                                                                  kwargs.pop("clip_skip", None))
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
                 args['prompt_embeds'] = prompt_embed
@@ -73,7 +79,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     args['pooled_prompt_embeds'] = pooled
                     args['prompt_2'] = None #Cannot pass prompts when passing embeds
             else:
-                args['prompt'] = prompt
+                args['prompt'] = prompts
         if 'negative_prompt' in possible:
             if hasattr(model, 'text_encoder') and 'negative_prompt_embeds' in possible and negative_embed is not None:
                 args['negative_prompt_embeds'] = negative_embed
@@ -81,7 +87,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     args['negative_pooled_prompt_embeds'] = negative_pooled
                     args['negative_prompt_2'] = None
             else:
-                args['negative_prompt'] = negative_prompt
+                args['negative_prompt'] = negative_prompts
         if 'num_inference_steps' in possible:
             args['num_inference_steps'] = p.steps
         if 'guidance_scale' in possible:
@@ -157,10 +163,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     refiner_enabled = shared.sd_refiner is not None and p.enable_hr
     pipe_args = set_pipeline_args(
         model=shared.sd_model,
-        prompt=prompts,
-        negative_prompt=negative_prompts,
-        prompt_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
-        negative_prompt_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
+        prompts=prompts,
+        negative_prompts=negative_prompts,
+        prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
+        negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
         eta=shared.opts.eta_ddim,
         guidance_rescale=p.diffusers_guidance_rescale,
         denoising_start=0 if refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
@@ -211,8 +217,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         for i in range(len(output.images)):
             pipe_args = set_pipeline_args(
                 model=shared.sd_refiner,
-                prompt=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
-                negative_prompt=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts[i],
+                prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
+                negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts[i],
                 num_inference_steps=p.hr_second_pass_steps,
                 eta=shared.opts.eta_ddim,
                 strength=p.denoising_strength,
