@@ -208,11 +208,9 @@ class PreprocessResponse(BaseModel):
 fields = {}
 for key, metadata in opts.data_labels.items():
     value = opts.data.get(key)
-    optType = opts.typemap.get(type(metadata.default), type(metadata.default))
+    optType = opts.typemap.get(type(metadata.default), type(metadata.default)) if metadata.default else Any
 
-    if metadata.default is None:
-        pass
-    elif metadata is not None:
+    if metadata is not None:
         fields.update({key: (Optional[optType], Field(default=metadata.default, description=metadata.label))})
     else:
         fields.update({key: (Optional[optType], Field())})

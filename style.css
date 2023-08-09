@@ -423,15 +423,16 @@ div#extras_scale_to_tab div.form{
 }
 
 table.popup-table{
-    background: white;
+    background: var(--body-background-fill);
+    color: var(--body-text-color);
     border-collapse: collapse;
     margin: 1em;
-    border: 4px solid white;
+    border: 4px solid var(--body-background-fill);
 }
 
 table.popup-table td{
     padding: 0.4em;
-    border: 1px solid #ccc;
+    border: 1px solid rgba(128, 128, 128, 0.5);
     max-width: 36em;
 }
 

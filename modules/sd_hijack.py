@@ -243,7 +243,7 @@ class StableDiffusionModelHijack:
         ldm.modules.diffusionmodules.openaimodel.UNetModel.forward = sd_unet.UNetModel_forward
 
     def undo_hijack(self, m):
-        if type(m.cond_stage_model) == xlmr.BertSeriesModelWithTransformation:
+        if type(m.cond_stage_model) == sd_hijack_xlmr.FrozenXLMREmbedderWithCustomWords:
             m.cond_stage_model = m.cond_stage_model.wrapped
 
         elif type(m.cond_stage_model) == sd_hijack_clip.FrozenCLIPEmbedderWithCustomWords:
