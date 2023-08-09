@@ -4,4 +4,4 @@ Post [PR #10291](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/10
 
 Most of the tests run against a live instance of the WebUI. You can start the WebUI server with a suitable baseline configuration with the `--test-server` argument, but you may want to add e.g. `--use-cpu all --no-half` depending on your system.
 
-Once the server is running, you can run tests with just `py.test`.
+The command to run webui tests is: `python -m pytest -vv --verify-base-url test`
