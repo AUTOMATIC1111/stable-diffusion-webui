@@ -172,6 +172,8 @@ class StableDiffusionProcessing:
         self.iteration = 0
         self.is_hr_pass = False
         self.sampler = None
+        self.main_prompt = None
+        self.main_negative_prompt = None
 
         self.prompts = None
         self.negative_prompts = None
@@ -318,6 +320,9 @@ class StableDiffusionProcessing:
 
         self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
         self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
+
+        self.main_prompt = self.all_prompts[0]
+        self.main_negative_prompt = self.all_negative_prompts[0]
 
     def cached_params(self, required_prompts, steps, extra_network_data):
         """Returns parameters that invalidate the cond cache if changed"""
@@ -653,8 +658,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
 
-    prompt_text = p.prompt if use_main_prompt else all_prompts[index]
-    negative_prompt_text = f"\nNegative prompt: {all_negative_prompts[index]}" if all_negative_prompts[index] else ""
+    prompt_text = p.main_prompt if use_main_prompt else all_prompts[index]
+    negative_prompt_text = f"\nNegative prompt: {p.main_negative_prompt if use_main_prompt else all_negative_prompts[index]}" if all_negative_prompts[index] else ""
 
     return f"{prompt_text}{negative_prompt_text}\n{generation_params_text}".strip()
 
