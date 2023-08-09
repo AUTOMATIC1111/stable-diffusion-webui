@@ -16,7 +16,7 @@ import modules.interrogate
 import modules.memmon
 import modules.styles
 import modules.devices as devices
-from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args
+from modules import localization, script_loading, errors, ui_components, shared_items, cmd_args, rng  # noqa: F401
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir  # noqa: F401
 from ldm.models.diffusion.ddpm import LatentDiffusion
 from typing import Optional
