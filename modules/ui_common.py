@@ -11,7 +11,7 @@ from modules import call_queue, shared
 from modules.generation_parameters_copypaste import image_from_url_text
 import modules.images
 from modules.ui_components import ToolButton
-
+import modules.generation_parameters_copypaste as parameters_copypaste
 
 folder_symbol = '\U0001f4c2'  # 📂
 refresh_symbol = '\U0001f504'  # 🔄
@@ -105,8 +105,6 @@ def save_files(js_data, images, do_make_zip, index):
 
 
 def create_output_panel(tabname, outdir):
-    from modules import shared
-    import modules.generation_parameters_copypaste as parameters_copypaste
 
     def open_folder(f):
         if not os.path.exists(f):

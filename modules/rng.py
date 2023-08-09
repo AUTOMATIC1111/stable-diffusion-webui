@@ -63,9 +63,8 @@ def randn_without_seed(shape, generator=None):
 
 def manual_seed(seed):
     """Set up a global random number generator using the specified seed."""
-    from modules.shared import opts
 
-    if opts.randn_source == "NV":
+    if shared.opts.randn_source == "NV":
         global nv_rng
         nv_rng = rng_philox.Generator(seed)
         return

@@ -6,7 +6,7 @@ import re
 
 import gradio as gr
 from modules.paths import data_path
-from modules import shared, ui_tempdir, script_callbacks
+from modules import shared, ui_tempdir, script_callbacks, processing
 from PIL import Image
 
 re_param_code = r'\s*([\w ]+):\s*("(?:\\"[^,]|\\"|\\|[^\"])+"|[^,]*)(?:,|$)'
@@ -198,7 +198,6 @@ def restore_old_hires_fix_params(res):
     height = int(res.get("Size-2", 512))
 
     if firstpass_width == 0 or firstpass_height == 0:
-        from modules import processing
         firstpass_width, firstpass_height = processing.old_hires_fix_first_pass_dimensions(width, height)
 
     res['Size-1'] = firstpass_width

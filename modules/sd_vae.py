@@ -2,7 +2,8 @@ import os
 import collections
 from dataclasses import dataclass
 
-from modules import paths, shared, devices, script_callbacks, sd_models, extra_networks
+from modules import paths, shared, devices, script_callbacks, sd_models, extra_networks, lowvram, sd_hijack
+
 import glob
 from copy import deepcopy
 
@@ -231,8 +232,6 @@ unspecified = object()
 
 
 def reload_vae_weights(sd_model=None, vae_file=unspecified):
-    from modules import lowvram, devices, sd_hijack
-
     if not sd_model:
         sd_model = shared.sd_model
 

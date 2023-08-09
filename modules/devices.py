@@ -3,7 +3,7 @@ import contextlib
 from functools import lru_cache
 
 import torch
-from modules import errors
+from modules import errors, shared
 
 if sys.platform == "darwin":
     from modules import mac_specific
@@ -17,8 +17,6 @@ def has_mps() -> bool:
 
 
 def get_cuda_device_string():
-    from modules import shared
-
     if shared.cmd_opts.device_id is not None:
         return f"cuda:{shared.cmd_opts.device_id}"
 
@@ -40,8 +38,6 @@ def get_optimal_device():
 
 
 def get_device_for(task):
-    from modules import shared
-
     if task in shared.cmd_opts.use_cpu:
         return cpu
 
@@ -97,8 +93,6 @@ nv_rng = None
 
 
 def autocast(disable=False):
-    from modules import shared
-
     if disable:
         return contextlib.nullcontext()
 
@@ -117,8 +111,6 @@ class NansException(Exception):
 
 
 def test_for_nans(x, where):
-    from modules import shared
-
     if shared.cmd_opts.disable_nan_check:
         return
 

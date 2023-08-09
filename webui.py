@@ -43,12 +43,15 @@ startup_timer.record("import torch")
 import gradio  # noqa: F401
 startup_timer.record("import gradio")
 
-from modules import paths, timer, import_hook, errors, devices  # noqa: F401
+from modules import paths, timer, import_hook, errors  # noqa: F401
 startup_timer.record("setup paths")
 
 import ldm.modules.encoders.modules  # noqa: F401
 startup_timer.record("import ldm")
 
+from modules import shared_init, shared, shared_items
+shared_init.initialize()
+startup_timer.record("initialize shared")
 
 from modules import extra_networks
 from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, queue_lock  # noqa: F401
@@ -57,8 +60,6 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, queue_loc
 if ".dev" in torch.__version__ or "+git" in torch.__version__:
     torch.__long_version__ = torch.__version__
     torch.__version__ = re.search(r'[\d.]+[\d]', torch.__version__).group(0)
-
-from modules import shared
 
 if not shared.cmd_opts.skip_version_check:
     errors.check_versions()
@@ -82,7 +83,7 @@ import modules.textual_inversion.textual_inversion
 import modules.progress
 
 import modules.ui
-from modules import modelloader
+from modules import modelloader, devices
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
 
@@ -297,7 +298,7 @@ def initialize_rest(*, reload_script_modules=False):
 
     Thread(target=load_model).start()
 
-    shared.reload_hypernetworks()
+    shared_items.reload_hypernetworks()
     startup_timer.record("reload hypernetworks")
 
     ui_extra_networks.initialize()
