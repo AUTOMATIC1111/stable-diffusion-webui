@@ -17,6 +17,7 @@ def create_ui():
         with gr.Column(elem_id='models_output_container', scale=1):
             # models_output = gr.Text(elem_id="models_output", value="", show_label=False)
             gr.HTML(elem_id="models_progress", value="")
+            models_image = gr.Image(elem_id="models_image", show_label=False, interactive=False, type='pil')
             models_outcome = gr.HTML(elem_id="models_error", value="")
 
         with gr.Column(elem_id='models_input_container', scale=3):
@@ -238,5 +239,134 @@ def create_ui():
                 hf_results.select(fn=hf_select, inputs=[hf_results], outputs=[hf_selected])
                 hf_download_model_btn.click(fn=hf_download_model, inputs=[hf_selected, hf_token, hf_variant, hf_revision, hf_mirror], outputs=[models_outcome])
 
-            # with gr.Tab(label="CivitAI"):
-            #    pass
+            with gr.Tab(label="CivitAI"):
+                data = []
+
+                def civit_search(name, tag, model_type):
+                    import requests
+                    headers = { 'Content-type': 'application/json' }
+                    url = 'https://civitai.com/api/v1/models?limit=25&types=Checkpoint&Sort=Newest'
+                    if name is not None and len(name) > 0:
+                        url += f'&query={name}'
+                    if tag is not None and len(tag) > 0:
+                        url += f'&tag={tag}'
+                    r = requests.get(url, timeout=60, headers=headers)
+                    log.debug(f'CivitAI search: name={name} tag={tag} status={r.status_code}')
+                    if r.status_code != 200:
+                        return [], [], []
+                    body = r.json()
+                    nonlocal data
+                    data = body.get('items', [])
+                    data1 = []
+                    for model in data:
+                        found = 0
+                        for variant in model['modelVersions']:
+                            if model_type == 'SD 1.5':
+                                if 'SD 1.' in variant['baseModel']:
+                                    found += 1
+                            if model_type == 'SD XL':
+                                if 'SDXL' in variant['baseModel']:
+                                    found += 1
+                            else:
+                                if 'SD 1.' not in variant['baseModel'] and 'SDXL' not in variant['baseModel']:
+                                    found += 1
+                        if found > 0:
+                            data1.append([
+                                model['id'],
+                                model['name'],
+                                ', '.join(model['tags']),
+                                model['stats']['downloadCount'],
+                                model['stats']['rating']
+                            ])
+                    return data1, [], []
+
+                def civit_select1(evt: gr.SelectData, in_data):
+                    model_id = in_data[evt.index[0]][0]
+                    data2 = []
+                    preview_img = None
+                    for model in data:
+                        if model['id'] == model_id:
+                            for d in model['modelVersions']:
+                                if d.get('images') is not None and len(d['images']) > 0 and len(d['images'][0]['url']) > 0:
+                                    preview_img = d['images'][0]['url']
+                                data2.append([
+                                    d['id'],
+                                    d['modelId'],
+                                    d['name'],
+                                    d['baseModel'],
+                                    d['createdAt'],
+                                ])
+                    log.debug(f'CivitAI select: model={in_data[evt.index[0]]} versions={len(data2)}')
+                    return data2, preview_img
+
+                def civit_select2(evt: gr.SelectData, in_data):
+                    variant_id = in_data[evt.index[0]][0]
+                    model_id = in_data[evt.index[0]][1]
+                    data3 = []
+                    for model in data:
+                        if model['id'] == model_id:
+                            for variant in model['modelVersions']:
+                                if variant['id'] == variant_id:
+                                    for f in variant['files']:
+                                        data3.append([
+                                            f['name'],
+                                            round(f['sizeKB']),
+                                            json.dumps(f['metadata']),
+                                            f['downloadUrl'],
+                                        ])
+                    log.debug(f'CivitAI select: model={in_data[evt.index[0]]} files={len(data3)}')
+                    return data3
+
+                def civit_select3(evt: gr.SelectData, in_data):
+                    log.debug(f'CivitAI select: variant={in_data[evt.index[0]]}')
+                    return in_data[evt.index[0]][3], in_data[evt.index[0]][0], gr.update(interactive=True)
+
+                def civit_download_model(model_url: str, model_name: str, model_path: str, image_url: str):
+                    if model_url is None or len(model_url) == 0:
+                        return 'No model selected'
+                    try:
+                        from modules.modelloader import download_civit_model
+                        res = download_civit_model(model_url, model_name, model_path, image_url)
+                    except Exception as e:
+                        res = f"CivitAI model downloaded error: model={model_url} {e}"
+                        log.error(res)
+                        return res
+                    from modules.sd_models import list_models # pylint: disable=W0621
+                    list_models()
+                    return res
+
+                with gr.Row():
+                    with gr.Column(scale=1):
+                        civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'Other'], value='SD 1.5')
+                    with gr.Column(scale=15):
+                        with gr.Row():
+                            civit_search_text = gr.Textbox('', label = 'Seach models', placeholder='keyword')
+                            civit_search_tag = gr.Textbox('', label = '', placeholder='tags')
+                            civit_search_btn = ToolButton(value="🔍", label="Search", interactive=False)
+                with gr.Row():
+                    civit_download_model_btn = gr.Button(value="Download model", variant='primary')
+                with gr.Row():
+                    civit_name = gr.Textbox('', label = 'Model name', placeholder='select model from search results', visible=True)
+                    civit_selected = gr.Textbox('', label = 'Model URL', placeholder='select model from search results', visible=True)
+                    civit_path = gr.Textbox('', label = 'Download path', placeholder='optional subfolder path where to save model', visible=True)
+                with gr.Row():
+                    with gr.Column():
+                        civit_headers2 = ['ID', 'ModelID', 'Name', 'Base', 'Created', 'Preview']
+                        civit_types2 = ['number', 'number', 'str', 'str', 'date', 'str']
+                        civit_results2 = gr.DataFrame([], label = 'Model versions', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = civit_headers2, datatype = civit_types2, type='array')
+                    with gr.Column():
+                        civit_headers3 = ['Name', 'Size', 'Metadata', 'URL']
+                        civit_types3 = ['str', 'number', 'str', 'str']
+                        civit_results3 = gr.DataFrame([], label = 'Model variants', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = civit_headers3, datatype = civit_types3, type='array')
+                with gr.Row():
+                    civit_headers1 = ['ID', 'Name', 'Tags', 'Downloads', 'Rating']
+                    civit_types1 = ['number', 'str', 'str', 'number', 'number']
+                    civit_results1 = gr.DataFrame([], label = 'Search results', show_label = True, interactive = False, wrap = True, overflow_row_behaviour = 'paginate', max_rows = 10, headers = civit_headers1, datatype = civit_types1, type='array')
+
+                civit_search_text.submit(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
+                civit_search_tag.submit(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
+                civit_search_btn.click(fn=civit_search, inputs=[civit_search_text, civit_search_tag, civit_model_type], outputs=[civit_results1, civit_results2, civit_results3])
+                civit_results1.select(fn=civit_select1, inputs=[civit_results1], outputs=[civit_results2, models_image])
+                civit_results2.select(fn=civit_select2, inputs=[civit_results2], outputs=[civit_results3])
+                civit_results3.select(fn=civit_select3, inputs=[civit_results3], outputs=[civit_selected, civit_name, civit_search_btn])
+                civit_download_model_btn.click(fn=civit_download_model, inputs=[civit_selected, civit_name, civit_path, models_image], outputs=[models_outcome])

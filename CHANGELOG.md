@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-07
+## Update for 2023-08-09
 
 - diffusers:
   - **pipeline autodetect**
@@ -18,8 +18,11 @@
   - **sd-xl vae** from safetensors now applies correct config  
     result is that 3rd party vaes can be used without washed out colors  
 - general:
+  - new **civitai model search and download**  
+    native support for civitai, integrated into models -> civitai  
   - updated requirements  
     this time its a bigger change so upgrade may take longer to install new requirements
+  - improved **extra networks** performance with large number of networks
 
 ## Update for 2023-08-05
 
