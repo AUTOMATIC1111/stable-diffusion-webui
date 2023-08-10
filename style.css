@@ -194,6 +194,13 @@ button.custom-button{
     text-align: center;
 }
 
+.gradio-group[id$="_script_container"] > div .gradio-group > div > div:is(.gradio-accordion, .form) {
+    border: 1px solid var(--block-border-color) !important;
+    border-radius: 8px !important;
+    margin: 2px 0;
+    padding: 8px 8px;
+}
+
 
 /* txt2img/img2img specific */
 
