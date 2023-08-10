@@ -84,8 +84,8 @@ class InputAccordion(gr.Checkbox):
     def __init__(self, value, **kwargs):
         self.accordion_id = kwargs.get('elem_id')
         if self.accordion_id is None:
-            self.accordion_id = f"input-accordion-{self.global_index}"
-            self.global_index += 1
+            self.accordion_id = f"input-accordion-{InputAccordion.global_index}"
+            InputAccordion.global_index += 1
 
         kwargs['elem_id'] = self.accordion_id + "-checkbox"
         kwargs['visible'] = False
