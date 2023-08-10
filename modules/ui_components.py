@@ -74,6 +74,11 @@ class DropdownEditable(FormComponent, gr.Dropdown):
 
 
 class InputAccordion(gr.Checkbox):
+    """A gr.Accordion that can be used as an input - returns True if open, False if closed.
+
+    Actaully just a hidden checkbox, but creates an accordion that follows and is followed by the state of the checkbox.
+    """
+
     global_index = 0
 
     def __init__(self, value, **kwargs):
@@ -91,6 +96,19 @@ class InputAccordion(gr.Checkbox):
         self.accordion = gr.Accordion(kwargs.get('label', 'Accordion'), open=value, elem_id=self.accordion_id, elem_classes=['input-accordion'])
 
     def extra(self):
+        """Allows you to put something into the label of the accordion.
+
+        Use it like this:
+
+        ```
+        with InputAccordion(False, label="Accordion") as acc:
+            with acc.extra():
+                FormHTML(value="hello", min_width=0)
+
+            ...
+        ```
+        """
+
         return gr.Column(elem_id=self.accordion_id + '-extra', elem_classes='input-accordion-extra', min_width=0)
 
     def __enter__(self):
