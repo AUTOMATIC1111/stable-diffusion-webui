@@ -43,13 +43,15 @@ div.form{
 .block.gradio-radio,
 .block.gradio-checkboxgroup,
 .block.gradio-number,
-.block.gradio-colorpicker,
-div.gradio-group
-{
+.block.gradio-colorpicker {
     border-width: 0 !important;
     box-shadow: none !important;
 }
 
+div.gradio-group, div.styler{
+    border-width: 0 !important;
+    background: none;
+}
 .gap.compact{
     padding: 0;
     gap: 0.2em 0;
@@ -135,12 +137,8 @@ a{
     cursor: pointer;
 }
 
-div.styler{
-    border: none;
-    background: var(--background-fill-primary);
-}
-
-.block.gradio-textbox{
+/* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reqasaon. */
+.block.gradio-textbox, div.gradio-group, div.gradio-group div, div.gradio-dropdown{
     overflow: visible !important;
 }
 
@@ -194,7 +192,7 @@ button.custom-button{
     text-align: center;
 }
 
-.gradio-group[id$="_script_container"] > div .gradio-group > div > div:is(.gradio-accordion, .form) {
+div.gradio-accordion {
     border: 1px solid var(--block-border-color) !important;
     border-radius: 8px !important;
     margin: 2px 0;
