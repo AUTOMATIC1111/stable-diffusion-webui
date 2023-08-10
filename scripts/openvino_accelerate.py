@@ -29,7 +29,7 @@ from pathlib import Path
 from openvino.frontend.pytorch.torchdynamo import backend, compile # noqa: F401
 from openvino.frontend.pytorch.torchdynamo.execute import execute, partitioned_modules, compiled_cache # noqa: F401
 from openvino.frontend.pytorch.torchdynamo.partition import Partitioner
-from openvino.runtime import Core, Type, PartialShape 
+from openvino.runtime import Core, Type, PartialShape
 
 from torch._dynamo.backends.common import fake_tensor_unsupported
 from torch._dynamo.backends.registry import register_backend
@@ -723,11 +723,11 @@ class Script(scripts.Script):
         """
         ###
         ### Note:
-        - First inference involves compilation of the model for best performance. 
+        - First inference involves compilation of the model for best performance.
         Since compilation happens only on the first run, the first inference (or warm up inference) will be slower than subsequent inferences.
         - For accurate performance measurements, it is recommended to exclude this slower first inference, as it doesn't reflect normal running time.
-        - Model is recompiled when resolution, batchsize, device, or samplers like DPM++ or Karras are changed. 
-        After recompiling, later inferences will reuse the newly compiled model and achieve faster running times. 
+        - Model is recompiled when resolution, batchsize, device, or samplers like DPM++ or Karras are changed.
+        After recompiling, later inferences will reuse the newly compiled model and achieve faster running times.
         So it's normal for the first inference after a settings change to be slower, while subsequent inferences use the optimized compiled model and run faster.
         """)
 
