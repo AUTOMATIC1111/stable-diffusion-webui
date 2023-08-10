@@ -23,12 +23,11 @@ import math
 # )
 from accelerate import Accelerator
 # from library.lpw_stable_diffusion import StableDiffusionLongPromptWeightingPipeline
-from train_network_all_auto import train_with_params, train_callback
+from sd_scripts.train_network_all_auto import train_with_params, train_callback
 
 # from prompts_generate import txt2img_prompts
-from finetune.tag_images_by_wd14_tagger import get_wd_tagger
-from finetune.deepbooru import deepbooru
-from library import autocrop
+from sd_scripts.finetune.tag_images_by_wd14_tagger import get_wd_tagger
+from sd_scripts.library import autocrop
 
 
 # from 
@@ -183,16 +182,16 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
         from modules.textual_inversion.preprocess import preprocess
         if process_caption_deepbooru or process_caption:
             print("-->>> preprocess with clip&deepbooru tagger")
-            preprocess(
-                "", process_src, process_dst, process_width, process_height, preprocess_txt_action,
-                process_keep_original_size,
-                process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold,
-                overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight,
-                process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop,
-                process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea,
-                process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold
-            )
-            return
+        preprocess(
+            "", process_src, process_dst, process_width, process_height, preprocess_txt_action,
+            process_keep_original_size,
+            process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold,
+            overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight,
+            process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop,
+            process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea,
+            process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold
+        )
+        return
     except:
         pass
 
@@ -611,7 +610,7 @@ def train_auto(
     # 优化图片数量
     contents = os.listdir(process_dir)
     pic_nums = len(contents) / 2
-    repeats_n = int(20*50/pic_nums)
+    repeats_n = min(int(20*50/pic_nums), 50)
 
     # 2.tagger反推
     if use_wd:
