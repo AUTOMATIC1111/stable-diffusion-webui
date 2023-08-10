@@ -329,12 +329,6 @@ div.gradio-accordion {
     border-radius: 0 0.5rem 0.5rem 0;
 }
 
-#txtimg_hr_finalres{
-    min-height: 0 !important;
-    padding: .625rem .75rem;
-    margin-left: -0.75em
-}
-
 #img2img_scale_resolution_preview.block{
     display: flex;
     align-items: end;
@@ -1015,4 +1009,13 @@ div.block.gradio-box.popup-dialog, .popup-dialog {
 
 div.block.gradio-box.popup-dialog > div:last-child, .popup-dialog > div:last-child{
     margin-top: 1em;
+}
+
+div.block.input-accordion{
+    margin-bottom: 0.4em;
+}
+
+.input-accordion-extra{
+    flex: 0 0 auto !important;
+    margin: 0 0.5em 0 auto;
 }

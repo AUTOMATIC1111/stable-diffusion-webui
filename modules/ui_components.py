@@ -72,3 +72,34 @@ class DropdownEditable(FormComponent, gr.Dropdown):
     def get_block_name(self):
         return "dropdown"
 
+
+class InputAccordion(gr.Checkbox):
+    global_index = 0
+
+    def __init__(self, value, **kwargs):
+        self.accordion_id = kwargs.get('elem_id')
+        if self.accordion_id is None:
+            self.accordion_id = f"input-accordion-{self.global_index}"
+            self.global_index += 1
+
+        kwargs['elem_id'] = self.accordion_id + "-checkbox"
+        kwargs['visible'] = False
+        super().__init__(value, **kwargs)
+
+        self.change(fn=None, _js='function(checked){ inputAccordionChecked("' + self.accordion_id + '", checked); }', inputs=[self])
+
+        self.accordion = gr.Accordion(kwargs.get('label', 'Accordion'), open=value, elem_id=self.accordion_id, elem_classes=['input-accordion'])
+
+    def extra(self):
+        return gr.Column(elem_id=self.accordion_id + '-extra', elem_classes='input-accordion-extra', min_width=0)
+
+    def __enter__(self):
+        self.accordion.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.accordion.__exit__(exc_type, exc_val, exc_tb)
+
+    def get_block_name(self):
+        return "checkbox"
+
