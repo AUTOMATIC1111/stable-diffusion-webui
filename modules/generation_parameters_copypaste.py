@@ -341,6 +341,7 @@ infotext_to_setting_name_mapping = [
     ('RNG', 'randn_source'),
     ('NGMS', 's_min_uncond'),
     ('Pad conds', 'pad_cond_uncond'),
+    ('VAE', 'sd_vae'),
     ('VAE Encoder', 'sd_vae_encode_method'),
     ('VAE Decoder', 'sd_vae_decode_method'),
     ('Tiling', 'tiling'),
