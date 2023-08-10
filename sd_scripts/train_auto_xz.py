@@ -581,10 +581,10 @@ def train_auto(
 ):
     # 预设参数
     width = 512
-    height = 512
+    height = 768
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
-    use_wd = os.getenv('WD', '1') == '1'
+    use_wd = os.getenv('WD', '0') == '1'
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
