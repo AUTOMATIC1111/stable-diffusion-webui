@@ -125,7 +125,7 @@ class UserMetadataEditor:
         basename, ext = os.path.splitext(filename)
 
         with open(basename + '.json', "w", encoding="utf8") as file:
-            json.dump(metadata, file)
+            json.dump(metadata, file, indent=4)
 
     def save_user_metadata(self, name, desc, notes):
         user_metadata = self.get_user_metadata(name)
