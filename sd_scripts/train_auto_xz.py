@@ -178,7 +178,7 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
                      process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
                      process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
                      process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
-                     model_path=""):
+                     model_path="", filter_tags='', additional_tags=''):
     try:
         from modules.textual_inversion.preprocess import preprocess
         if process_caption_deepbooru or process_caption:
@@ -195,7 +195,6 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
             return
     except:
         pass
-
 
     width = process_width
     height = process_height
@@ -319,7 +318,7 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
 def train_tagger(train_data_dir,model_dir,trigger_word=None,undesired_tags=None,general_threshold=0.35):
     get_wd_tagger(
         train_data_dir=train_data_dir,
-        model_dir= model_dir, #r"/data/qll/stable-diffusion-webui/models/tag_models",
+        model_dir=model_dir, #r"/data/qll/stable-diffusion-webui/models/tag_models",
         caption_extension=".txt",
         general_threshold=general_threshold,
         recursive=True,
@@ -586,7 +585,7 @@ def train_auto(
     height = 768
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
-    use_wd=True
+    use_wd = True
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
@@ -595,7 +594,7 @@ def train_auto(
     os.makedirs(process_dir, exist_ok=True)
 
     # 1.图片预处理
-   train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
+    train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
                      preprocess_txt_action='ignore', process_keep_original_size=False,
                      process_flip=False, process_split=False, process_caption=False,
                      process_caption_deepbooru=not use_wd, split_threshold=0.5,
@@ -616,13 +615,18 @@ def train_auto(
 
     #2.tagger反推
     if use_wd:
+        onnx = os.path.join(general_model_path, "tag_models/wd_onnx")
+        if not os.path.isdir(onnx):
+            raise OSError(f'cannot found onnx directory:{onnx}')
+
         train_tagger(
             train_data_dir=process_dir,
-            model_dir= os.path.join(model_p,"tag_models/wd_onnx"),  # r"/data/qll/stable-diffusion-webui/models/tag_models",
+            model_dir=onnx,
             general_threshold=0.35,
             undesired_tags=undesired_tags,
             trigger_word=trigger_word
         )
+
     	if callable(train_callback):
         	train_callback(2)
 

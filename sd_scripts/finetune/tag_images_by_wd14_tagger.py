@@ -244,7 +244,7 @@ def get_wd_tagger(train_data_dir="", # 训练数据路径
             print(f'${path} is not supported image type')
             continue
         
-        _,tags = wdInterrogator.interrogate(image)
+        _, tags = wdInterrogator.interrogate(image)
         # print(f"{path}")
         post_tags = wdInterrogator.postprocess_tags(tags=tags, threshold=general_threshold, additional_tags=additional_tags.split(","),
                                                     exclude_tags=undesired_tags.split(","),sort_by_alphabetical_order=False,

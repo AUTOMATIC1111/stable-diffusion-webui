@@ -139,6 +139,8 @@ class TaskReceiver:
         # self.worker_id = self._worker_id()
         self.is_elastic = is_flexible_worker()
         self.recorder = TaskReceiverRecorder()
+        self.task_score_limit = 5 if cmd_opts.lowvram else (10 if cmd_opts.medvram else -1)
+
         self.worker_id = self._worker_id()
 
         run_train_time_cfg = get_run_train_time_cfg()
@@ -200,7 +202,7 @@ class TaskReceiver:
             if is_flexible_worker():
                 raise OSError('elastic resource cannot run with train only mode')
 
-        return f"{group_id}:{nvidia_video_card_id}"
+        return f"{group_id}:{self.task_score_limit}.{nvidia_video_card_id}"
 
     def _clean_tmp_files(self):
         now = time.time()
@@ -264,8 +266,24 @@ class TaskReceiver:
             group_id = get_worker_group()
             workers = group_workers.get(group_id) or []
             if workers:
+                def can_exec_train(worker_id: str):
+                    if TrainOnlyWorkerFlag in worker_id:
+                        return False
+
+                    start = worker_id.index(':')
+                    end = worker_id.index(".")
+                    if end > start > 0:
+                        try:
+                            limit = int(worker_id[start: end])
+                            return limit == -1
+                        except:
+                            return True
+
+                    return True
+
                 # 1/5的WOEKER 生图，剩下的执行训练。
-                workers = [w for w in workers if TrainOnlyWorkerFlag not in w]
+                workers = [w for w in workers if can_exec_train(w)]
+
                 run_train_worker_num = int(len(workers) * run_train_ratio())
 
                 if run_train_worker_num >= 1:
@@ -289,6 +307,17 @@ class TaskReceiver:
     def search_task_with_id(self, rds, task_id) -> typing.Any:
         # redis > 6.2.0
         # meta = rds.getdel(task_id)
+        if self.task_score_limit > 0:
+            arr = task_id.split('_')
+            if len(arr) == 2:
+                try:
+                    score = int(arr[-1])
+                    if self.task_score_limit < score:
+                        print(f"====> task:{task_id} out of limit({self.task_score_limit}).")
+                        return
+                except:
+                    pass
+
         meta = rds.get(task_id)
         if meta:
             task_id = task_id.decode('utf8') if isinstance(task_id, bytes) else task_id

@@ -385,7 +385,7 @@ class TrainLoraTask(UserDict):
                 caption_path = os.path.join(image_dir, dirname, name + '.txt')
                 caption = item['tag']
                 caption = str(caption) if not isinstance(caption, bytes) else caption.decode('utf8')
-                caption = set((x for x in caption.strip().replace('\n', ' ').split(',')))
+                caption = list((x for x in caption.strip().replace('\n', ' ').split(',') if x))
                 if caption:
                     with open(caption_path, 'w+') as f:
                         f.write(','.join(caption))
