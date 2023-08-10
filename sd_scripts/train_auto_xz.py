@@ -581,10 +581,10 @@ def train_auto(
 ):
     # 预设参数
     width = 512
-    height = 512
+    height = 768
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
-    use_wd = os.getenv('WD', '0') == '1'
+    use_wd = os.getenv('WD', '1') == '1'
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
@@ -665,7 +665,7 @@ def train_auto(
         # cache latents to main memory to reduce VRAM usage (augmentations must be disabled)
         cache_latents_to_disk=False,
         # cache latents to disk to reduce VRAM usage (augmentations must be disabled)
-        enable_bucket=False,  # enable buckets for multi aspect ratio training
+        enable_bucket=True,  # enable buckets for multi aspect ratio training
         min_bucket_reso=256,  # 范围自己定，minimum resolution for buckets
         max_bucket_reso=2048,  # 范围自己定，maximum resolution for buckets
         bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended
