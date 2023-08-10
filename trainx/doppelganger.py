@@ -34,7 +34,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
 
     if image_dir:
 
-        p = TaskProgress.new_running(job, 'train ready')
+        p = TaskProgress.new_running(job, 'train running.')
         yield p
 
         def train_progress_callback(progress):

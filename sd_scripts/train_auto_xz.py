@@ -581,10 +581,10 @@ def train_auto(
 ):
     # 预设参数
     width = 512
-    height = 768
+    height = 512
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
-    use_wd = True
+    use_wd = os.getenv('WD', '1') == '1'
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
@@ -642,7 +642,7 @@ def train_auto(
         list_train_data_dir=[process_dir],
         save_model_as="safetensors",
         num_repeats=[f"{repeats_n}"],
-        batch_size=8,
+        batch_size=16,
         resolution=f"{width},{height}",
         epoch=10,  # 整数，随便填
         network_module="networks.lora",
