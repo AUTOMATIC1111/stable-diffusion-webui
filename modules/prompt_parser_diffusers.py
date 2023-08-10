@@ -47,7 +47,12 @@ def compel_encode_prompts(
     negative_embeds = []
     negative_pooleds = []
     for i in range(len(prompts)):
-        prompt_embed, positive_pooled, negative_embed, negative_pooled = compel_encode_prompt(pipeline, prompts[i], negative_prompts[i], prompts_2[i], negative_prompts_2[i], is_refiner, clip_skip)
+        prompt_embed, positive_pooled, negative_embed, negative_pooled = compel_encode_prompt(pipeline,
+                                                                                              prompts[i],
+                                                                                              negative_prompts[i],
+                                                                                              prompts_2[i] if prompts_2 is not None else None,
+                                                                                              negative_prompts_2[i] if negative_prompts_2 is not None else None,
+                                                                                              is_refiner, clip_skip)
         prompt_embeds.append(prompt_embed)
         positive_pooleds.append(positive_pooled)
         negative_embeds.append(negative_embed)

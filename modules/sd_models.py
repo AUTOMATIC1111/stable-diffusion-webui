@@ -136,12 +136,9 @@ def list_models():
     checkpoints_list.clear()
     checkpoint_aliases.clear()
     ext_filter=[".safetensors"] if shared.opts.sd_disable_ckpt else [".ckpt", ".safetensors"]
-    model_list = []
-    if shared.backend == shared.Backend.ORIGINAL or shared.opts.diffusers_allow_safetensors:
-        model_list += modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    model_list = modelloader.load_models(model_path=model_path, model_url=None, command_path=shared.opts.ckpt_dir, ext_filter=ext_filter, download_name=None, ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
     if shared.backend == shared.Backend.DIFFUSERS:
         model_list += modelloader.load_diffusers_models(model_path=os.path.join(models_path, 'Diffusers'), command_path=shared.opts.diffusers_dir)
-
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
         if checkpoint_info.name is not None:
@@ -844,7 +841,6 @@ def set_diffuser_pipe(pipe, new_pipe_type):
         new_pipe = diffusers.AutoPipelineForImage2Image.from_pipe(pipe)
     elif new_pipe_type == DiffusersTaskType.INPAINTING:
         new_pipe = diffusers.AutoPipelineForInpainting.from_pipe(pipe)
-
     if pipe.__class__ == new_pipe.__class__:
         return
 
@@ -1030,20 +1026,35 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
     shared.log.info(f"Weights loaded in {timer.summary()}")
 
 
+def disable_offload(sd_model):
+    from accelerate.hooks import remove_hook_from_module
+    if not sd_model.has_accelerate:
+        return
+    for _name, model in sd_model.components.items():
+        if not isinstance(model, torch.nn.Module):
+            continue
+        remove_hook_from_module(model, recurse=True)
+
+
 def unload_model_weights(op='model'):
     from modules import sd_hijack
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
-            model_data.sd_model.to(devices.cpu)
             if shared.backend == shared.Backend.ORIGINAL:
+                model_data.sd_model.to(devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
+            else:
+                disable_offload(model_data.sd_model)
+                model_data.sd_model.to('meta')
             model_data.sd_model = None
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
-            model_data.sd_refiner.to(devices.cpu)
+            model_data.sd_refiner.to('meta')
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
+            else:
+                disable_offload(model_data.sd_model)
             model_data.sd_refiner = None
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')
     devices.torch_gc(force=True)

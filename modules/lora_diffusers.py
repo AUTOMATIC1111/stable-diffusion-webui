@@ -24,10 +24,10 @@ def unload_diffusers_lora():
             lora_state['all_loras'].reverse()
             lora_state['multiplier'].reverse()
             for i, lora_network in enumerate(lora_state['all_loras']):
-              if shared.opts.diffusers_lora_loader == "merge and apply":
-                lora_network.restore_from(multiplier=lora_state['multiplier'][i])
-              if shared.opts.diffusers_lora_loader == "sequential apply":
-                lora_network.unapply_to()
+                if shared.opts.diffusers_lora_loader == "merge and apply":
+                    lora_network.restore_from(multiplier=lora_state['multiplier'][i])
+                if shared.opts.diffusers_lora_loader == "sequential apply":
+                    lora_network.unapply_to()
         lora_state['active'] = False
         lora_state['loaded'] = 0
         lora_state['all_loras'] = []
@@ -45,7 +45,7 @@ def load_diffusers_lora(name, lora, strength = 1.0):
         lora_state['multiplier'].append(strength)
         if shared.opts.diffusers_lora_loader == "diffusers default":
             pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True, lora_scale=strength)
-            shared.log.info(f"Diffusers LoRA loaded: {name} {lora_state['multiplier']}")
+            shared.log.info(f"LoRA loaded: {name} {lora_state['multiplier']}")
         else:
             from safetensors.torch import load_file
             lora_sd = load_file(lora.filename)
@@ -61,7 +61,7 @@ def load_diffusers_lora(name, lora, strength = 1.0):
                 lora_network.to(shared.device, dtype=pipe.unet.dtype)
                 lora_network.apply_to(multiplier=strength)
             lora_state['all_loras'].append(lora_network)
-            shared.log.info(f"Diffusers LoRA loaded: {name} {strength}")
+            shared.log.info(f"LoRA loaded: {name}:{strength} loader={shared.opts.diffusers_lora_loader}")
     except Exception as e:
         shared.log.error(f"Diffusers LoRA loading failed: {name} {e}")
 
@@ -332,7 +332,7 @@ def merge_lora_weights(pipe, weights_sd: Dict, multiplier: float = 1.0):
 
 
 # block weightや学習に対応しない簡易版 / simple version without block weight and training
-class LoRANetwork(torch.nn.Module):
+class LoRANetwork(torch.nn.Module): # pylint: disable=abstract-method
     UNET_TARGET_REPLACE_MODULE = ["Transformer2DModel"]
     UNET_TARGET_REPLACE_MODULE_CONV2D_3X3 = ["ResnetBlock2D", "Downsample2D", "Upsample2D"]
     TEXT_ENCODER_TARGET_REPLACE_MODULE = ["CLIPAttention", "CLIPMLP"]
@@ -350,17 +350,17 @@ class LoRANetwork(torch.nn.Module):
         multiplier: float = 1.0,
         modules_dim: Optional[Dict[str, int]] = None,
         modules_alpha: Optional[Dict[str, int]] = None,
-        varbose: Optional[bool] = False,
+        varbose: Optional[bool] = False, # pylint: disable=unused-argument
     ) -> None:
         super().__init__()
         self.multiplier = multiplier
 
-        shared.log.debug("create LoRA network from weights")
+        # shared.log.debug("create LoRA network from weights")
 
         # convert SDXL Stability AI's U-Net modules to Diffusers
         converted = self.convert_unet_modules(modules_dim, modules_alpha)
         if converted:
-            shared.log.debug(f"converted {converted} Stability AI's U-Net LoRA modules to Diffusers (SDXL)")
+            shared.log.debug(f"LoRA convert: modules={converted} SDXL SAI/SGM to Diffusers")
 
         # create module instances
         def create_modules(
@@ -422,18 +422,13 @@ class LoRANetwork(torch.nn.Module):
             text_encoder_loras, skipped = create_modules(False, index, text_encoder, LoRANetwork.TEXT_ENCODER_TARGET_REPLACE_MODULE)
             self.text_encoder_loras.extend(text_encoder_loras)
             skipped_te += skipped
-        shared.log.debug(f"create LoRA for Text Encoder: {len(self.text_encoder_loras)} modules.")
-        if len(skipped_te) > 0:
-            shared.log.debug(f"skipped {len(skipped_te)} modules because of missing weight.")
 
         # extend U-Net target modules to include Conv2d 3x3
         target_modules = LoRANetwork.UNET_TARGET_REPLACE_MODULE + LoRANetwork.UNET_TARGET_REPLACE_MODULE_CONV2D_3X3
 
         self.unet_loras: List[LoRAModule]
         self.unet_loras, skipped_un = create_modules(True, None, unet, target_modules)
-        shared.log.debug(f"create LoRA for U-Net: {len(self.unet_loras)} modules.")
-        if len(skipped_un) > 0:
-            shared.log.debug(f"skipped {len(skipped_un)} modules because of missing weight.")
+        shared.log.debug(f"LoRA modules loaded/skipped: te={len(self.text_encoder_loras)}/{len(skipped_te)} unet={len(self.unet_loras)}/skip={len(skipped_un)}")
 
         # assertion
         names = set()
@@ -480,11 +475,11 @@ class LoRANetwork(torch.nn.Module):
 
     def apply_to(self, multiplier=1.0, apply_text_encoder=True, apply_unet=True):
         if apply_text_encoder:
-            shared.log.debug("enable LoRA for text encoder")
+            # shared.log.debug("LoRA apply for text encoder")
             for lora in self.text_encoder_loras:
                 lora.apply_to(multiplier)
         if apply_unet:
-            shared.log.debug("enable LoRA for U-Net")
+            # shared.log.debug("LoRA apply for U-Net")
             for lora in self.unet_loras:
                 lora.apply_to(multiplier)
 
@@ -493,16 +488,14 @@ class LoRANetwork(torch.nn.Module):
             lora.unapply_to()
 
     def merge_to(self, multiplier=1.0):
-        shared.log.debug("merge LoRA weights to original weights")
+        # shared.log.debug("LoRA merge weights for text encoder")
         for lora in tqdm(self.text_encoder_loras + self.unet_loras):
             lora.merge_to(multiplier)
-        shared.log.debug("weights are merged")
 
     def restore_from(self, multiplier=1.0):
-        shared.log.debug("restore LoRA weights from original weights")
+        # shared.log.debug("LoRA restore weights")
         for lora in tqdm(self.text_encoder_loras + self.unet_loras):
             lora.restore_from(multiplier)
-        shared.log.debug("weights are restored")
 
     def load_state_dict(self, state_dict: Mapping[str, Any], strict: bool = True):
         # convert SDXL Stability AI's state dict to Diffusers' based state dict
@@ -527,4 +520,3 @@ class LoRANetwork(torch.nn.Module):
                 state_dict[key] = state_dict[key].view(my_state_dict[key].size())
 
         return super().load_state_dict(state_dict, strict)
-

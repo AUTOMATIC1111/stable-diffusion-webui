@@ -52,6 +52,24 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         imgs = model.image_processor.postprocess(decoded, output_type=output_type)
         return imgs
 
+    def fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2):
+        if type(prompts) is str:
+            prompts = [prompts]
+        if type(negative_prompts) is str:
+            negative_prompts = [negative_prompts]
+        while len(negative_prompts) < len(prompts):
+            negative_prompts.append(negative_prompts[-1])
+        if type(prompts_2) is str:
+            prompts_2 = [prompts_2]
+        if type(prompts_2) is list:
+            while len(prompts_2) < len(prompts):
+                prompts_2.append(prompts_2[-1])
+        if type(negative_prompts_2) is str:
+            negative_prompts_2 = [negative_prompts_2]
+        if type(negative_prompts_2) is list:
+            while len(negative_prompts_2) < len(prompts_2):
+                negative_prompts_2.append(negative_prompts_2[-1])
+        return prompts, negative_prompts, prompts_2, negative_prompts_2
 
     def set_pipeline_args(model, prompts: list, negative_prompts: list, prompts_2: typing.Optional[list]=None, negative_prompts_2: typing.Optional[list]=None, is_refiner: bool=False, **kwargs):
         args = {}
@@ -64,6 +82,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         pooled = None
         negative_embed = None
         negative_pooled = None
+        prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
         if shared.opts.data['prompt_attention'] in {'Compel parser', 'Full parser'}:
             prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model,
                                                                                                                   prompts,
