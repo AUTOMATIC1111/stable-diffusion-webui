@@ -3,6 +3,7 @@ import logging
 import re
 import subprocess
 import os
+import shutil
 import sys
 import importlib.util
 import platform
@@ -152,10 +153,8 @@ def run_git(dir, name, command, desc=None, errdesc=None, custom_env=None, live: 
     try:
         return run(f'"{git}" -C "{dir}" {command}', desc=desc, errdesc=errdesc, custom_env=custom_env, live=live)
     except RuntimeError:
-        pass
-
-    if not autofix:
-        return None
+        if not autofix:
+            raise
 
     print(f"{errdesc}, attempting autofix...")
     git_fix_workspace(dir, name)
@@ -174,13 +173,17 @@ def git_clone(url, dir, name, commithash=None):
         if current_hash == commithash:
             return
 
-        run_git('fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}")
+        run_git('fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}", autofix=False)
 
         run_git('checkout', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
 
         return
 
-    run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}", live=True)
+    try:
+        run(f'"{git}" clone "{url}" "{dir}"', f"Cloning {name} into {dir}...", f"Couldn't clone {name}", live=True)
+    except RuntimeError:
+        shutil.rmtree(dir, ignore_errors=True)
+        raise
 
     if commithash is not None:
         run(f'"{git}" -C "{dir}" checkout {commithash}', None, "Couldn't checkout {name}'s hash: {commithash}")
