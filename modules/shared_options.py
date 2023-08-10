@@ -266,7 +266,7 @@ options_templates.update(options_section(('infotext', "Infotext"), {
 <li>Discard: remove style text from prompt, keep styles dropdown as it is.</li>
 <li>Apply if any: remove style text from prompt; if any styles are found in prompt, put them into styles dropdown, otherwise keep it as it is.</li>
 </ul>"""),
-
+    "extra_infotext": shared.OptionInfo([], "Additional infotext", ui_components.DropdownMulti, lambda: {"choices": list(shared.opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("extra settings to appear in infotext; not added to override settings, only for informational purposes").needs_reload_ui(),
 }))
 
 options_templates.update(options_section(('ui', "Live previews"), {

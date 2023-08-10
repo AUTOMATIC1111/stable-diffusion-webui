@@ -581,6 +581,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "RNG": opts.randn_source if opts.randn_source != "GPU" and opts.randn_source != "NV" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
         **p.extra_generation_params,
+        **{opt: getattr(opts, opt) for opt in opts.extra_infotext},
         "Version": program_version() if opts.add_version_to_infotext else None,
         "User": p.user if opts.add_user_name_to_info else None,
     }
