@@ -377,6 +377,9 @@ class StableDiffusionProcessing:
         self.uc = self.get_conds_with_caching(prompt_parser.get_learned_conditioning, negative_prompts, self.steps * self.step_multiplier, [self.cached_uc], self.extra_network_data)
         self.c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, prompts, self.steps * self.step_multiplier, [self.cached_c], self.extra_network_data)
 
+    def get_conds(self):
+        return self.c, self.uc
+
     def parse_extra_network_prompts(self):
         self.prompts, self.extra_network_data = extra_networks.parse_prompts(self.prompts)
 
@@ -611,6 +614,10 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     stored_opts = {k: opts.data[k] for k in p.override_settings.keys()}
 
     try:
+        # after running refiner, the refiner model is not unloaded - webui swaps back to main model here
+        if shared.sd_model.sd_checkpoint_info.title != opts.sd_model_checkpoint:
+            sd_models.reload_model_weights()
+
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
         if sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
             p.override_settings.pop('sd_model_checkpoint', None)
@@ -709,6 +716,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             if state.interrupted:
                 break
+
+            sd_models.reload_model_weights()  # model can be changed for example by refiner
 
             p.prompts = p.all_prompts[n * p.batch_size:(n + 1) * p.batch_size]
             p.negative_prompts = p.all_negative_prompts[n * p.batch_size:(n + 1) * p.batch_size]
@@ -1200,6 +1209,13 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
                 with devices.autocast():
                     extra_networks.activate(self, self.extra_network_data)
+
+    def get_conds(self):
+        if self.is_hr_pass:
+            return self.hr_c, self.hr_uc
+
+        return super().get_conds()
+
 
     def parse_extra_network_prompts(self):
         res = super().parse_extra_network_prompts()

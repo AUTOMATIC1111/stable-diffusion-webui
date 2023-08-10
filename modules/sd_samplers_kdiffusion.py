@@ -1,8 +1,7 @@
 import torch
 import inspect
 import k_diffusion.sampling
-from modules import sd_samplers_common, sd_samplers_extra
-from modules.sd_samplers_cfg_denoiser import CFGDenoiser
+from modules import sd_samplers_common, sd_samplers_extra, sd_samplers_cfg_denoiser
 
 from modules.shared import opts
 import modules.shared as shared
@@ -53,17 +52,24 @@ k_diffusion_scheduler = {
 }
 
 
+class CFGDenoiserKDiffusion(sd_samplers_cfg_denoiser.CFGDenoiser):
+    @property
+    def inner_model(self):
+        if self.model_wrap is None:
+            denoiser = k_diffusion.external.CompVisVDenoiser if shared.sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
+            self.model_wrap = denoiser(shared.sd_model, quantize=shared.opts.enable_quantization)
+
+        return self.model_wrap
+
+
 class KDiffusionSampler(sd_samplers_common.Sampler):
     def __init__(self, funcname, sd_model):
-
         super().__init__(funcname)
 
-        self.extra_params = sampler_extra_params.get(funcname, [])
         self.func = funcname if callable(funcname) else getattr(k_diffusion.sampling, self.funcname)
 
-        denoiser = k_diffusion.external.CompVisVDenoiser if sd_model.parameterization == "v" else k_diffusion.external.CompVisDenoiser
-        self.model_wrap = denoiser(sd_model, quantize=shared.opts.enable_quantization)
-        self.model_wrap_cfg = CFGDenoiser(self.model_wrap, self)
+        self.model_wrap_cfg = CFGDenoiserKDiffusion(self)
+        self.model_wrap = self.model_wrap_cfg.inner_model
 
     def get_sigmas(self, p, steps):
         discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
@@ -144,7 +150,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
 
         self.model_wrap_cfg.init_latent = x
         self.last_latent = x
-        extra_args = {
+        self.sampler_extra_args = {
             'cond': conditioning,
             'image_cond': image_conditioning,
             'uncond': unconditional_conditioning,
@@ -152,7 +158,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             's_min_uncond': self.s_min_uncond
         }
 
-        samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
+        samples = self.launch_sampling(t_enc + 1, lambda: self.func(self.model_wrap_cfg, xi, extra_args=self.sampler_extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
         if self.model_wrap_cfg.padded_cond_uncond:
             p.extra_generation_params["Pad conds"] = True
@@ -184,13 +190,14 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             extra_params_kwargs['noise_sampler'] = noise_sampler
 
         self.last_latent = x
-        samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args={
+        self.sampler_extra_args = {
             'cond': conditioning,
             'image_cond': image_conditioning,
             'uncond': unconditional_conditioning,
             'cond_scale': p.cfg_scale,
             's_min_uncond': self.s_min_uncond
-        }, disable=False, callback=self.callback_state, **extra_params_kwargs))
+        }
+        samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args=self.sampler_extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
         if self.model_wrap_cfg.padded_cond_uncond:
             p.extra_generation_params["Pad conds"] = True
