@@ -92,6 +92,7 @@ options_templates.update(options_section(('upscaling', "Upscaling"), {
 }))
 
 options_templates.update(options_section(('face-restoration', "Face restoration"), {
+    "face_restoration": OptionInfo(False, "Restore faces").info("will use a third-party model on generation result to reconstruct faces"),
     "face_restoration_model": OptionInfo("CodeFormer", "Face restoration model", gr.Radio, lambda: {"choices": [x.name() for x in shared.face_restorers]}),
     "code_former_weight": OptionInfo(0.5, "CodeFormer weight", gr.Slider, {"minimum": 0, "maximum": 1, "step": 0.01}).info("0 = maximum effect; 1 = minimum effect"),
     "face_restoration_unload": OptionInfo(False, "Move face restoration model from VRAM into RAM after processing"),
@@ -138,6 +139,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}).link("wiki", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#clip-skip").info("ignore last layers of CLIP network; 1 ignores none, 2 ignores one layer"),
     "upcast_attn": OptionInfo(False, "Upcast cross attention layer to float32"),
     "randn_source": OptionInfo("GPU", "Random number generator source.", gr.Radio, {"choices": ["GPU", "CPU", "NV"]}).info("changes seeds drastically; use CPU to produce the same picture across different videocard vendors; use NV to produce same picture as on NVidia videocards"),
+    "tiling": OptionInfo(False, "Tiling").info("produce a tileable picture"),
 }))
 
 options_templates.update(options_section(('sdxl', "Stable Diffusion XL"), {
