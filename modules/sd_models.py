@@ -640,8 +640,11 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
         timer.record("send model to device")
 
         model_data.set_sd_model(already_loaded)
-        shared.opts.data["sd_model_checkpoint"] = already_loaded.sd_checkpoint_info.title
-        shared.opts.data["sd_checkpoint_hash"] = already_loaded.sd_checkpoint_info.sha256
+
+        if not SkipWritingToConfig.skip:
+            shared.opts.data["sd_model_checkpoint"] = already_loaded.sd_checkpoint_info.title
+            shared.opts.data["sd_checkpoint_hash"] = already_loaded.sd_checkpoint_info.sha256
+
         print(f"Using already loaded model {already_loaded.sd_checkpoint_info.title}: done in {timer.summary()}")
         return model_data.sd_model
     elif shared.opts.sd_checkpoints_limit > 1 and len(model_data.loaded_sd_models) < shared.opts.sd_checkpoints_limit:
