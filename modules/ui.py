@@ -144,7 +144,11 @@ def interrogate_deepbooru(image):
 
 def create_seed_inputs(target_interface):
     with FormRow(elem_id=f"{target_interface}_seed_row", variant="compact"):
-        seed = (gr.Textbox if cmd_opts.use_textbox_seed else gr.Number)(label='Seed', value=-1, elem_id=f"{target_interface}_seed")
+        if cmd_opts.use_textbox_seed:
+            seed = gr.Textbox(label='Seed', value="", elem_id=f"{target_interface}_seed")
+        else:
+            seed = gr.Number(label='Seed', value=-1, elem_id=f"{target_interface}_seed")
+
         random_seed = ToolButton(random_symbol, elem_id=f"{target_interface}_random_seed", label='Random seed')
         reuse_seed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_seed", label='Reuse seed')
 

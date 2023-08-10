@@ -521,7 +521,15 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
 
 
 def get_fixed_seed(seed):
-    if seed is None or seed == '' or seed == -1:
+    if seed == '' or seed is None:
+        seed = -1
+    elif isinstance(seed, str):
+        try:
+            seed = int(seed)
+        except Exception:
+            seed = -1
+
+    if seed == -1:
         return int(random.randrange(4294967294))
 
     return seed
@@ -728,7 +736,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             # strength, which is saved as "Model Strength: 1.0" in the infotext
             if n == 0:
                 with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-                    processed = Processed(p, [], p.seed, "")
+                    processed = Processed(p, [])
                     file.write(processed.infotext(p, 0))
 
             p.setup_conds()
