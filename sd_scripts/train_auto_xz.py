@@ -26,8 +26,7 @@ from accelerate import Accelerator
 from train_network_all_auto import train_with_params, train_callback
 
 # from prompts_generate import txt2img_prompts
-from finetune.tag_images_by_wd14_tagger import tagger
-# from finetune.make_captions import make_caption_with_blip
+from finetune.tag_images_by_wd14_tagger import get_wd_tagger
 from finetune.deepbooru import deepbooru
 from library import autocrop
 
@@ -298,21 +297,16 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
     return 
 
 # 一键打标函数
-def train_tagger(train_data_dir,model_dir,trigger_word=None,undesired_tags=None,general_threshold=0.35,character_threshold=0.35):
-    tagger(
+def train_tagger(train_data_dir,model_dir,trigger_word=None,undesired_tags=None,general_threshold=0.35):
+    get_wd_tagger(
         train_data_dir=train_data_dir,
         model_dir= model_dir, #r"/data/qll/stable-diffusion-webui/models/tag_models",
-        force_download=False,
-        batch_size=1,
-        max_data_loader_n_workers=None,
         caption_extension=".txt",
         general_threshold=general_threshold,
-        character_threshold=character_threshold,
         recursive=True,
         remove_underscore=True,
         undesired_tags=undesired_tags,
-        frequency_tags=False,
-        addtional_tags=trigger_word
+        additional_tags=trigger_word
     )   
     return
 
@@ -565,22 +559,26 @@ def train_auto(
     sd_model_path="", # 底模路径
     lora_path="", # 文件夹名字
     general_model_path="", # 通用路径,
-    callback=None, # callback函数
+    train_callback=None, # callback函数
     other_args=None # 预留一个，以备用
 ):
     # 预设参数
     width = 512
     height = 768
     trigger_word = ""
-    undesired_tags = "blur"  # 待测试五官
-    use_wd=False
+
+    # 是否采用wd14作为反推tag，否则采用deepbooru
+    use_wd=True
+
+    # 反推tag默认排除的提示词
+    undesired_tags = "blur,blurry,motion blur"  # 待测试五官
     
+    # 图片处理后的路径
     dirname = os.path.dirname(train_data_dir)
     process_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(process_dir, exist_ok=True)
 
     # 1.图片预处理
-
     train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height, preprocess_txt_action='ignore', process_keep_original_size=False,
                     process_flip=False, process_split=False, process_caption=False, process_caption_deepbooru=not use_wd, split_threshold=0.5,
                     overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
@@ -600,25 +598,15 @@ def train_auto(
 
     #2.tagger反推
     if use_wd:
-        tagger_path=os.path.join(general_model_path,"tag_models")
-        cp = Process(target=train_tagger,args=(train_data_dir,tagger_path,trigger_word,undesired_tags,0.35,0.35)) 
-        cp.start()
-        cp.join()
-        train_callback(4)
-    
-    # train_tagger(
-    #     train_data_dir=process_dir,
-    #     model_dir= os.path.join(model_p,"tag_models"),  # r"/data/qll/stable-diffusion-webui/models/tag_models",
-    #     general_threshold=0.35,
-    #     character_threshold=0.35,
-    #     undesired_tags=undesired_tags,
-    #     trigger_word=trigger_word
-    # )
-    # caption_weights = os.path.join(model_p,"blip2/model_large_caption.pth")
-    # caption_extension=".txt"
-    # make_caption_with_blip(process_dir,caption_weights=caption_weights,caption_extension=caption_extension)
-
-
+        train_tagger(
+            train_data_dir=process_dir,
+            model_dir= os.path.join(model_p,"tag_models/wd_onnx"),  # r"/data/qll/stable-diffusion-webui/models/tag_models",
+            general_threshold=0.35,
+            undesired_tags=undesired_tags,
+            trigger_word=trigger_word
+        )
+    	if callable(train_callback):
+        	train_callback(2)
 
     lora_name = f"{task_id}"
     # 3.自动训练出图
@@ -743,7 +731,7 @@ def train_auto(
         output_config=False,  # output command line args to given .toml file
         # accelerator=accelerator,
         # unwrap_model=unwrap_model,
-        callback=callback,
+        callback=train_callback,
         )
     return os.path.join(lora_path,lora_name+".safetensors")
 
