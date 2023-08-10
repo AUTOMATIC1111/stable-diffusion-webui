@@ -522,6 +522,7 @@ class ModelData:
 
 model_data = ModelData()
 
+
 def change_backend():
     shared.log.info(f'Pipeline changed: {shared.backend}')
     unload_model_weights()
@@ -626,7 +627,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     sd_model = None
 
     try:
-        if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load\
+        if shared.cmd_opts.ckpt is not None and model_data.initial: # initial load
             ckpt_basename = os.path.basename(shared.cmd_opts.ckpt)
             model_name = modelloader.find_diffuser(ckpt_basename)
             if model_name is not None:
@@ -800,8 +801,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if op == 'refiner' and shared.opts.diffusers_move_refiner and not sd_model.has_accelerate:
             shared.log.debug('Moving refiner model to CPU')
             sd_model.to(devices.cpu)
-        elif not sd_model.has_accelerate:
-            # In offload modes, accelerate will move models around.
+        elif not sd_model.has_accelerate: # In offload modes, accelerate will move models around
             sd_model.to(devices.device)
         if op == 'refiner' and base_sent_to_cpu:
             shared.log.debug('Moving base model back to GPU')
@@ -1034,18 +1034,18 @@ def unload_model_weights(op='model'):
     from modules import sd_hijack
     if op == 'model' or op == 'dict':
         if model_data.sd_model:
-            model_data.sd_model.to('meta')
+            model_data.sd_model.to(devices.cpu)
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_model)
             model_data.sd_model = None
-            shared.log.debug(f'Weights unloaded {op}: {memory_stats()}')
+            shared.log.debug(f'Unload weights {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
-            model_data.sd_refiner.to('meta')
+            model_data.sd_refiner.to(devices.cpu)
             if shared.backend == shared.Backend.ORIGINAL:
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
             model_data.sd_refiner = None
-            shared.log.debug(f'Weights unloaded {op}: {memory_stats()}')
+            shared.log.debug(f'Unload weights {op}: {memory_stats()}')
     devices.torch_gc(force=True)
 
 

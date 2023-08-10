@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-09
+## Update for 2023-08-10
 
 - diffusers:
   - **pipeline autodetect**
