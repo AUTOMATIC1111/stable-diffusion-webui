@@ -23,7 +23,6 @@ environment_whitelist = {
     "TORCH_COMMAND",
     "REQS_FILE",
     "XFORMERS_PACKAGE",
-    "GFPGAN_PACKAGE",
     "CLIP_PACKAGE",
     "OPENCLIP_PACKAGE",
     "STABLE_DIFFUSION_REPO",

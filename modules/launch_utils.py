@@ -305,7 +305,6 @@ def prepare_environment():
     requirements_file = os.environ.get('REQS_FILE', "requirements_versions.txt")
 
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.20')
-    gfpgan_package = os.environ.get('GFPGAN_PACKAGE', "https://github.com/TencentARC/GFPGAN/archive/8d2447a2d918f8eba5a4a01463fd48e45126a379.zip")
     clip_package = os.environ.get('CLIP_PACKAGE', "https://github.com/openai/CLIP/archive/d50d76daa670286dd6cacf3bcd80b5e4823fc8e1.zip")
     openclip_package = os.environ.get('OPENCLIP_PACKAGE', "https://github.com/mlfoundations/open_clip/archive/bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b.zip")
 
@@ -351,11 +350,6 @@ def prepare_environment():
             'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
         )
     startup_timer.record("torch GPU test")
-
-
-    if not is_installed("gfpgan"):
-        run_pip(f"install {gfpgan_package}", "gfpgan")
-        startup_timer.record("install gfpgan")
 
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
