@@ -1,7 +1,7 @@
 import os
 import threading
 
-from modules import shared, errors, cache
+from modules import shared, errors, cache, scripts
 from modules.gitpython_hack import Repo
 from modules.paths_internal import extensions_dir, extensions_builtin_dir, script_path  # noqa: F401
 
@@ -90,8 +90,6 @@ class Extension:
         self.have_info_from_repo = True
 
     def list_files(self, subdir, extension):
-        from modules import scripts
-
         dirpath = os.path.join(self.path, subdir)
         if not os.path.isdir(dirpath):
             return []

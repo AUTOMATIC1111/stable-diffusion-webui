@@ -14,7 +14,8 @@ from skimage import exposure
 from typing import Any, Dict, List
 
 import modules.sd_hijack
-from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors
+from modules import devices, prompt_parser, masking, sd_samplers, lowvram, generation_parameters_copypaste, extra_networks, sd_vae_approx, scripts, sd_samplers_common, sd_unet, errors, rng
+from modules.rng import slerp # noqa: F401
 from modules.sd_hijack import model_hijack
 from modules.sd_samplers_common import images_tensor_to_samples, decode_first_stage, approximation_indexes
 from modules.shared import opts, cmd_opts, state
@@ -110,7 +111,7 @@ class StableDiffusionProcessing:
     cached_uc = [None, None]
     cached_c = [None, None]
 
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = None, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = None, tiling: bool = None, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = None, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
@@ -172,6 +173,8 @@ class StableDiffusionProcessing:
         self.iteration = 0
         self.is_hr_pass = False
         self.sampler = None
+        self.main_prompt = None
+        self.main_negative_prompt = None
 
         self.prompts = None
         self.negative_prompts = None
@@ -184,6 +187,7 @@ class StableDiffusionProcessing:
         self.cached_c = StableDiffusionProcessing.cached_c
         self.uc = None
         self.c = None
+        self.rng: rng.ImageRNG = None
 
         self.user = None
 
@@ -318,6 +322,9 @@ class StableDiffusionProcessing:
 
         self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
         self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
+
+        self.main_prompt = self.all_prompts[0]
+        self.main_negative_prompt = self.all_negative_prompts[0]
 
     def cached_params(self, required_prompts, steps, extra_network_data):
         """Returns parameters that invalidate the cond cache if changed"""
@@ -473,82 +480,9 @@ class Processed:
         return self.token_merging_ratio_hr if for_hr else self.token_merging_ratio
 
 
-# from https://discuss.pytorch.org/t/help-regarding-slerp-function-for-generative-model-sampling/32475/3
-def slerp(val, low, high):
-    low_norm = low/torch.norm(low, dim=1, keepdim=True)
-    high_norm = high/torch.norm(high, dim=1, keepdim=True)
-    dot = (low_norm*high_norm).sum(1)
-
-    if dot.mean() > 0.9995:
-        return low * val + high * (1 - val)
-
-    omega = torch.acos(dot)
-    so = torch.sin(omega)
-    res = (torch.sin((1.0-val)*omega)/so).unsqueeze(1)*low + (torch.sin(val*omega)/so).unsqueeze(1) * high
-    return res
-
-
 def create_random_tensors(shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0, p=None):
-    eta_noise_seed_delta = opts.eta_noise_seed_delta or 0
-    xs = []
-
-    # if we have multiple seeds, this means we are working with batch size>1; this then
-    # enables the generation of additional tensors with noise that the sampler will use during its processing.
-    # Using those pre-generated tensors instead of simple torch.randn allows a batch with seeds [100, 101] to
-    # produce the same images as with two batches [100], [101].
-    if p is not None and p.sampler is not None and (len(seeds) > 1 and opts.enable_batch_seeds or eta_noise_seed_delta > 0):
-        sampler_noises = [[] for _ in range(p.sampler.number_of_needed_noises(p))]
-    else:
-        sampler_noises = None
-
-    for i, seed in enumerate(seeds):
-        noise_shape = shape if seed_resize_from_h <= 0 or seed_resize_from_w <= 0 else (shape[0], seed_resize_from_h//8, seed_resize_from_w//8)
-
-        subnoise = None
-        if subseeds is not None and subseed_strength != 0:
-            subseed = 0 if i >= len(subseeds) else subseeds[i]
-
-            subnoise = devices.randn(subseed, noise_shape)
-
-        # randn results depend on device; gpu and cpu get different results for same seed;
-        # the way I see it, it's better to do this on CPU, so that everyone gets same result;
-        # but the original script had it like this, so I do not dare change it for now because
-        # it will break everyone's seeds.
-        noise = devices.randn(seed, noise_shape)
-
-        if subnoise is not None:
-            noise = slerp(subseed_strength, noise, subnoise)
-
-        if noise_shape != shape:
-            x = devices.randn(seed, shape)
-            dx = (shape[2] - noise_shape[2]) // 2
-            dy = (shape[1] - noise_shape[1]) // 2
-            w = noise_shape[2] if dx >= 0 else noise_shape[2] + 2 * dx
-            h = noise_shape[1] if dy >= 0 else noise_shape[1] + 2 * dy
-            tx = 0 if dx < 0 else dx
-            ty = 0 if dy < 0 else dy
-            dx = max(-dx, 0)
-            dy = max(-dy, 0)
-
-            x[:, ty:ty+h, tx:tx+w] = noise[:, dy:dy+h, dx:dx+w]
-            noise = x
-
-        if sampler_noises is not None:
-            cnt = p.sampler.number_of_needed_noises(p)
-
-            if eta_noise_seed_delta > 0:
-                devices.manual_seed(seed + eta_noise_seed_delta)
-
-            for j in range(cnt):
-                sampler_noises[j].append(devices.randn_without_seed(tuple(noise_shape)))
-
-        xs.append(noise)
-
-    if sampler_noises is not None:
-        p.sampler.sampler_noises = [torch.stack(n).to(shared.device) for n in sampler_noises]
-
-    x = torch.stack(xs).to(shared.device)
-    return x
+    g = rng.ImageRNG(shape, seeds, subseeds=subseeds, subseed_strength=subseed_strength, seed_resize_from_h=seed_resize_from_h, seed_resize_from_w=seed_resize_from_w)
+    return g.next()
 
 
 class DecodedSamples(list):
@@ -571,7 +505,7 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
                 errors.print_error_explanation(
                     "A tensor with all NaNs was produced in VAE.\n"
                     "Web UI will now convert VAE into 32-bit float and retry.\n"
-                    "To disable this behavior, disable the 'Automaticlly revert VAE to 32-bit floats' setting.\n"
+                    "To disable this behavior, disable the 'Automatically revert VAE to 32-bit floats' setting.\n"
                     "To always start with 32-bit VAE, use --no-half-vae commandline flag."
                 )
 
@@ -590,7 +524,15 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
 
 
 def get_fixed_seed(seed):
-    if seed is None or seed == '' or seed == -1:
+    if seed == '' or seed is None:
+        seed = -1
+    elif isinstance(seed, str):
+        try:
+            seed = int(seed)
+        except Exception:
+            seed = -1
+
+    if seed == -1:
         return int(random.randrange(4294967294))
 
     return seed
@@ -633,10 +575,12 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "CFG scale": p.cfg_scale,
         "Image CFG scale": getattr(p, 'image_cfg_scale', None),
         "Seed": p.all_seeds[0] if use_main_prompt else all_seeds[index],
-        "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
+        "Face restoration": opts.face_restoration_model if p.restore_faces else None,
         "Size": f"{p.width}x{p.height}",
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Model": (None if not opts.add_model_name_to_info else shared.sd_model.sd_checkpoint_info.name_for_extra),
+        "VAE hash": sd_vae.get_loaded_vae_hash() if opts.add_model_hash_to_info else None,
+        "VAE": sd_vae.get_loaded_vae_name() if opts.add_model_name_to_info else None,
         "Variation seed": (None if p.subseed_strength == 0 else (p.all_subseeds[0] if use_main_prompt else all_subseeds[index])),
         "Variation seed strength": (None if p.subseed_strength == 0 else p.subseed_strength),
         "Seed resize from": (None if p.seed_resize_from_w <= 0 or p.seed_resize_from_h <= 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}"),
@@ -649,6 +593,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" and opts.randn_source != "NV" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
+        "Tiling": "True" if p.tiling else None,
         **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
         "User": p.user if opts.add_user_name_to_info else None,
@@ -656,8 +601,8 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
 
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
 
-    prompt_text = p.prompt if use_main_prompt else all_prompts[index]
-    negative_prompt_text = f"\nNegative prompt: {all_negative_prompts[index]}" if all_negative_prompts[index] else ""
+    prompt_text = p.main_prompt if use_main_prompt else all_prompts[index]
+    negative_prompt_text = f"\nNegative prompt: {p.main_negative_prompt if use_main_prompt else all_negative_prompts[index]}" if all_negative_prompts[index] else ""
 
     return f"{prompt_text}{negative_prompt_text}\n{generation_params_text}".strip()
 
@@ -718,6 +663,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
 
+    if p.restore_faces is None:
+        p.restore_faces = opts.face_restoration
+
+    if p.tiling is None:
+        p.tiling = opts.tiling
+
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()
 
@@ -773,6 +724,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             p.seeds = p.all_seeds[n * p.batch_size:(n + 1) * p.batch_size]
             p.subseeds = p.all_subseeds[n * p.batch_size:(n + 1) * p.batch_size]
 
+            p.rng = rng.ImageRNG((opt_C, p.height // opt_f, p.width // opt_f), p.seeds, subseeds=p.subseeds, subseed_strength=p.subseed_strength, seed_resize_from_h=p.seed_resize_from_h, seed_resize_from_w=p.seed_resize_from_w)
+
             if p.scripts is not None:
                 p.scripts.before_process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
 
@@ -794,7 +747,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             # strength, which is saved as "Model Strength: 1.0" in the infotext
             if n == 0:
                 with open(os.path.join(paths.data_path, "params.txt"), "w", encoding="utf8") as file:
-                    processed = Processed(p, [], p.seed, "")
+                    processed = Processed(p, [])
                     file.write(processed.infotext(p, 0))
 
             p.setup_conds()
@@ -997,6 +950,45 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_c = None
         self.hr_uc = None
 
+    def calculate_target_resolution(self):
+        if opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):
+            self.hr_resize_x = self.width
+            self.hr_resize_y = self.height
+            self.hr_upscale_to_x = self.width
+            self.hr_upscale_to_y = self.height
+
+            self.width, self.height = old_hires_fix_first_pass_dimensions(self.width, self.height)
+            self.applied_old_hires_behavior_to = (self.width, self.height)
+
+        if self.hr_resize_x == 0 and self.hr_resize_y == 0:
+            self.extra_generation_params["Hires upscale"] = self.hr_scale
+            self.hr_upscale_to_x = int(self.width * self.hr_scale)
+            self.hr_upscale_to_y = int(self.height * self.hr_scale)
+        else:
+            self.extra_generation_params["Hires resize"] = f"{self.hr_resize_x}x{self.hr_resize_y}"
+
+            if self.hr_resize_y == 0:
+                self.hr_upscale_to_x = self.hr_resize_x
+                self.hr_upscale_to_y = self.hr_resize_x * self.height // self.width
+            elif self.hr_resize_x == 0:
+                self.hr_upscale_to_x = self.hr_resize_y * self.width // self.height
+                self.hr_upscale_to_y = self.hr_resize_y
+            else:
+                target_w = self.hr_resize_x
+                target_h = self.hr_resize_y
+                src_ratio = self.width / self.height
+                dst_ratio = self.hr_resize_x / self.hr_resize_y
+
+                if src_ratio < dst_ratio:
+                    self.hr_upscale_to_x = self.hr_resize_x
+                    self.hr_upscale_to_y = self.hr_resize_x * self.height // self.width
+                else:
+                    self.hr_upscale_to_x = self.hr_resize_y * self.width // self.height
+                    self.hr_upscale_to_y = self.hr_resize_y
+
+                self.truncate_x = (self.hr_upscale_to_x - target_w) // opt_f
+                self.truncate_y = (self.hr_upscale_to_y - target_h) // opt_f
+
     def init(self, all_prompts, all_seeds, all_subseeds):
         if self.enable_hr:
             if self.hr_checkpoint_name:
@@ -1021,43 +1013,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 if not any(x.name == self.hr_upscaler for x in shared.sd_upscalers):
                     raise Exception(f"could not find upscaler named {self.hr_upscaler}")
 
-            if opts.use_old_hires_fix_width_height and self.applied_old_hires_behavior_to != (self.width, self.height):
-                self.hr_resize_x = self.width
-                self.hr_resize_y = self.height
-                self.hr_upscale_to_x = self.width
-                self.hr_upscale_to_y = self.height
-
-                self.width, self.height = old_hires_fix_first_pass_dimensions(self.width, self.height)
-                self.applied_old_hires_behavior_to = (self.width, self.height)
-
-            if self.hr_resize_x == 0 and self.hr_resize_y == 0:
-                self.extra_generation_params["Hires upscale"] = self.hr_scale
-                self.hr_upscale_to_x = int(self.width * self.hr_scale)
-                self.hr_upscale_to_y = int(self.height * self.hr_scale)
-            else:
-                self.extra_generation_params["Hires resize"] = f"{self.hr_resize_x}x{self.hr_resize_y}"
-
-                if self.hr_resize_y == 0:
-                    self.hr_upscale_to_x = self.hr_resize_x
-                    self.hr_upscale_to_y = self.hr_resize_x * self.height // self.width
-                elif self.hr_resize_x == 0:
-                    self.hr_upscale_to_x = self.hr_resize_y * self.width // self.height
-                    self.hr_upscale_to_y = self.hr_resize_y
-                else:
-                    target_w = self.hr_resize_x
-                    target_h = self.hr_resize_y
-                    src_ratio = self.width / self.height
-                    dst_ratio = self.hr_resize_x / self.hr_resize_y
-
-                    if src_ratio < dst_ratio:
-                        self.hr_upscale_to_x = self.hr_resize_x
-                        self.hr_upscale_to_y = self.hr_resize_x * self.height // self.width
-                    else:
-                        self.hr_upscale_to_x = self.hr_resize_y * self.width // self.height
-                        self.hr_upscale_to_y = self.hr_resize_y
-
-                    self.truncate_x = (self.hr_upscale_to_x - target_w) // opt_f
-                    self.truncate_y = (self.hr_upscale_to_y - target_h) // opt_f
+            self.calculate_target_resolution()
 
             if not state.processing_has_refined_job_count:
                 if state.job_count == -1:
@@ -1076,7 +1032,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
 
-        x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        x = self.rng.next()
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
         del x
 
@@ -1164,7 +1120,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         samples = samples[:, :, self.truncate_y//2:samples.shape[2]-(self.truncate_y+1)//2, self.truncate_x//2:samples.shape[3]-(self.truncate_x+1)//2]
 
-        noise = create_random_tensors(samples.shape[1:], seeds=seeds, subseeds=subseeds, subseed_strength=subseed_strength, p=self)
+        self.rng = rng.ImageRNG(samples.shape[1:], self.seeds, subseeds=self.subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w)
+        noise = self.rng.next()
 
         # GC now before running the next img2img to prevent running out of memory
         devices.torch_gc()
@@ -1429,7 +1386,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_conditioning = self.img2img_image_conditioning(image, self.init_latent, image_mask)
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
-        x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        x = self.rng.next()
 
         if self.initial_noise_multiplier != 1.0:
             self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier

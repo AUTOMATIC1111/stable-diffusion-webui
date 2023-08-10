@@ -36,8 +36,8 @@ class UserMetadataEditor:
         item = self.page.items.get(name, {})
 
         user_metadata = item.get('user_metadata', None)
-        if user_metadata is None:
-            user_metadata = {}
+        if not user_metadata:
+            user_metadata = {'description': item.get('description', '')}
             item['user_metadata'] = user_metadata
 
         return user_metadata

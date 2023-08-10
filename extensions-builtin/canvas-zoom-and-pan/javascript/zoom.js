@@ -42,6 +42,11 @@ onUiLoaded(async() => {
         }
     }
 
+    // Detect whether the element has a horizontal scroll bar
+    function hasHorizontalScrollbar(element) {
+        return element.scrollWidth > element.clientWidth;
+    }
+
     // Function for defining the "Ctrl", "Shift" and "Alt" keys
     function isModifierKey(event, key) {
         switch (key) {
@@ -201,7 +206,8 @@ onUiLoaded(async() => {
         canvas_hotkey_overlap: "KeyO",
         canvas_disabled_functions: [],
         canvas_show_tooltip: true,
-        canvas_blur_prompt: false
+        canvas_auto_expand: true,
+        canvas_blur_prompt: false,
     };
 
     const functionMap = {
@@ -648,7 +654,31 @@ onUiLoaded(async() => {
             mouseY = e.offsetY;
         }
 
+        // Simulation of the function to put a long image into the screen.
+        // We detect if an image has a scroll bar or not, make a fullscreen to reveal the image, then reduce it to fit into the element.
+        // We hide the image and show it to the user when it is ready.
+        function autoExpand(e) {
+            const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
+            const isMainTab = activeElement === elementIDs.inpaint || activeElement === elementIDs.inpaintSketch || activeElement === elementIDs.sketch;
+
+            if (canvas && isMainTab) {
+                if (hasHorizontalScrollbar(targetElement)) {
+                    targetElement.style.visibility = "hidden";
+                    setTimeout(() => {
+                        fitToScreen();
+                        resetZoom();
+                        targetElement.style.visibility = "visible";
+                    }, 10);
+                }
+            }
+        }
+
         targetElement.addEventListener("mousemove", getMousePosition);
+
+        // Apply auto expand if enabled
+        if (hotkeysConfig.canvas_auto_expand) {
+            targetElement.addEventListener("mousemove", autoExpand);
+        }
 
         // Handle events only inside the targetElement
         let isKeyDownHandlerAttached = false;

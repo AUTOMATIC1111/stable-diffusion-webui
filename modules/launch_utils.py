@@ -1,4 +1,5 @@
 # this scripts installs necessary requirements and launches main program in webui.py
+import logging
 import re
 import subprocess
 import os
@@ -11,8 +12,10 @@ from functools import lru_cache
 from modules import cmd_args, errors
 from modules.paths_internal import script_path, extensions_dir
 from modules.timer import startup_timer
+from modules import logging_config
 
 args, _ = cmd_args.parser.parse_known_args()
+logging_config.setup_logging(args.loglevel)
 
 python = sys.executable
 git = os.environ.get('GIT', "git")
@@ -249,6 +252,8 @@ def run_extensions_installers(settings_file):
 
     with startup_timer.subcategory("run extensions installers"):
         for dirname_extension in list_extensions(settings_file):
+            logging.debug(f"Installing {dirname_extension}")
+
             path = os.path.join(extensions_dir, dirname_extension)
 
             if os.path.isdir(path):
