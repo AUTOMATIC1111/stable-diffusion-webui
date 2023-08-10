@@ -10,16 +10,16 @@ var observerAccordionOpen = new MutationObserver(function(mutations) {
         checkbox.checked = open;
         updateInput(checkbox);
 
-        extra = gradioApp().querySelector('#' + accordion.id + "-extra");
-        if(extra){
+        var extra = gradioApp().querySelector('#' + accordion.id + "-extra");
+        if (extra) {
             extra.style.display = open ? "" : "none";
         }
     });
 });
 
-function inputAccordionChecked(id, checked){
+function inputAccordionChecked(id, checked) {
     var label = gradioApp().querySelector('#' + id + " .label-wrap");
-    if(label.classList.contains('open') != checked){
+    if (label.classList.contains('open') != checked) {
         label.click();
     }
 }
@@ -30,8 +30,8 @@ onUiLoaded(function() {
         observerAccordionOpen.observe(labelWrap, {attributes: true, attributeFilter: ['class']});
 
         var extra = gradioApp().querySelector('#' + accordion.id + "-extra");
-        if(extra){
-            labelWrap.insertBefore(extra, labelWrap.lastElementChild)
+        if (extra) {
+            labelWrap.insertBefore(extra, labelWrap.lastElementChild);
         }
     }
 });
