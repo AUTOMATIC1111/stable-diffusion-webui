@@ -594,15 +594,14 @@ def train_auto(
 
     # 1.图片预处理
     train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
-                     preprocess_txt_action='ignore', process_keep_original_size=False,
-                     process_flip=False, process_split=False, process_caption=False,
-                     process_caption_deepbooru=not use_wd, split_threshold=0.5,
-                     overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
-                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
-                     model_path=general_model_path)
+                     preprocess_txt_action='ignore', process_keep_original_size=False, process_flip=False,
+                     process_split=False, process_caption=False, process_caption_deepbooru=not use_wd,
+                     split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=True,
+                     process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3,
+                     process_focal_crop_edges_weight=0.5, process_focal_crop_debug=False, process_multicrop=None,
+                     process_multicrop_mindim=None, process_multicrop_maxdim=None, process_multicrop_minarea=None,
+                     process_multicrop_maxarea=None, process_multicrop_objective=None, process_multicrop_threshold=None,
+                     progress_cb=None, model_path=general_model_path)
 
     if callable(train_callback):
         train_callback(2)
@@ -642,7 +641,7 @@ def train_auto(
         list_train_data_dir=[process_dir],
         save_model_as="safetensors",
         num_repeats=[f"{repeats_n}"],
-        batch_size=16,
+        batch_size=8,
         resolution=f"{width},{height}",
         epoch=10,  # 整数，随便填
         network_module="networks.lora",
@@ -666,7 +665,7 @@ def train_auto(
         # cache latents to main memory to reduce VRAM usage (augmentations must be disabled)
         cache_latents_to_disk=False,
         # cache latents to disk to reduce VRAM usage (augmentations must be disabled)
-        enable_bucket=True,  # enable buckets for multi aspect ratio training
+        enable_bucket=False,  # enable buckets for multi aspect ratio training
         min_bucket_reso=256,  # 范围自己定，minimum resolution for buckets
         max_bucket_reso=2048,  # 范围自己定，maximum resolution for buckets
         bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended

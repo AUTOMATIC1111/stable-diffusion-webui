@@ -570,7 +570,7 @@ class DigitalDoppelgangerTask(PreprocessTask):
         self.train_type = task.value('train_type', 0)  # 自动训练类型
         self.output_dir = os.path.join(Tmp, self.id+"-out")
         os.makedirs(self.output_dir, exist_ok=True)
-        self.general_model_path ="models"
+        self.general_model_path = "models"
         if not os.path.isdir(os.path.join("models", "tag_models")):
             raise OSError(f'cannot found tag model fodler:{ os.path.join("models", "tag_models")}')
 
