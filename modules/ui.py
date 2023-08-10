@@ -147,7 +147,7 @@ def create_seed_inputs(target_interface):
         if cmd_opts.use_textbox_seed:
             seed = gr.Textbox(label='Seed', value="", elem_id=f"{target_interface}_seed")
         else:
-            seed = gr.Number(label='Seed', value=-1, elem_id=f"{target_interface}_seed")
+            seed = gr.Number(label='Seed', value=-1, elem_id=f"{target_interface}_seed", precision=0)
 
         random_seed = ToolButton(random_symbol, elem_id=f"{target_interface}_random_seed", label='Random seed')
         reuse_seed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_seed", label='Reuse seed')
@@ -159,7 +159,7 @@ def create_seed_inputs(target_interface):
 
     with FormRow(visible=False, elem_id=f"{target_interface}_subseed_row") as seed_extra_row_1:
         seed_extras.append(seed_extra_row_1)
-        subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{target_interface}_subseed")
+        subseed = gr.Number(label='Variation seed', value=-1, elem_id=f"{target_interface}_subseed", precision=0)
         random_subseed = ToolButton(random_symbol, elem_id=f"{target_interface}_random_subseed")
         reuse_subseed = ToolButton(reuse_symbol, elem_id=f"{target_interface}_reuse_subseed")
         subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=f"{target_interface}_subseed_strength")
