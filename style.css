@@ -192,7 +192,7 @@ button.custom-button{
     text-align: center;
 }
 
-div.gradio-accordion {
+div.block.gradio-accordion {
     border: 1px solid var(--block-border-color) !important;
     border-radius: 8px !important;
     margin: 2px 0;
