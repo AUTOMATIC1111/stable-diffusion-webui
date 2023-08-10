@@ -1,6 +1,6 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-10
+## Update for 2023-08-11
 
 - diffusers:
   - **pipeline autodetect**
@@ -20,6 +20,8 @@
     thanks @hameerabbasi and @ai-casanova  
   - **sd-xl vae** from safetensors now applies correct config  
     result is that 3rd party vaes can be used without washed out colors  
+  - options for optimized memory handling for lower memory usage  
+    see *settings -> diffusers*
 - general:
   - new **civitai model search and download**  
     native support for civitai, integrated into ui as *models -> civitai*  

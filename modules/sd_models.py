@@ -532,6 +532,8 @@ def change_backend():
 
 
 def detect_pipeline(f: str, op: str = 'model'):
+    if not f.endswith('.safetensors'):
+        return None, None
     guess = shared.opts.diffusers_pipeline
     if guess == 'Autodetect':
         try:
@@ -583,7 +585,7 @@ def detect_pipeline(f: str, op: str = 'model'):
         pipeline = diffusers.ShapEImg2ImgPipeline
     else:
         shared.log.error(f'Diffusers unknown pipeline: {guess}')
-        pipeline = None
+        pipeline = None, None
     return pipeline, guess
 
 
@@ -657,7 +659,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             shared.log.info(f'Loading diffuser {op}: {checkpoint_info.filename}')
             if not os.path.isfile(checkpoint_info.path):
                 try:
-                    shared.log.debug(f'Diffusers load {op} config: {diffusers_load_config}')
+                    # shared.log.debug(f'Diffusers load {op} config: {diffusers_load_config}')
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(checkpoint_info.path, **diffusers_load_config)
                 except Exception as e:
                     shared.log.error(f'Diffusers {op} failed loading model: {checkpoint_info.path} {e}')
@@ -1050,11 +1052,12 @@ def unload_model_weights(op='model'):
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')
     else:
         if model_data.sd_refiner:
-            model_data.sd_refiner.to('meta')
             if shared.backend == shared.Backend.ORIGINAL:
+                model_data.sd_model.to(devices.cpu)
                 sd_hijack.model_hijack.undo_hijack(model_data.sd_refiner)
             else:
                 disable_offload(model_data.sd_model)
+                model_data.sd_refiner.to('meta')
             model_data.sd_refiner = None
             shared.log.debug(f'Unload weights {op}: {memory_stats()}')
     devices.torch_gc(force=True)
