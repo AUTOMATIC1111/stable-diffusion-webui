@@ -111,7 +111,7 @@ class StableDiffusionProcessing:
     cached_uc = [None, None]
     cached_c = [None, None]
 
-    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = False, tiling: bool = False, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = None, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
+    def __init__(self, sd_model=None, outpath_samples=None, outpath_grids=None, prompt: str = "", styles: List[str] = None, seed: int = -1, subseed: int = -1, subseed_strength: float = 0, seed_resize_from_h: int = -1, seed_resize_from_w: int = -1, seed_enable_extras: bool = True, sampler_name: str = None, batch_size: int = 1, n_iter: int = 1, steps: int = 50, cfg_scale: float = 7.0, width: int = 512, height: int = 512, restore_faces: bool = None, tiling: bool = None, do_not_save_samples: bool = False, do_not_save_grid: bool = False, extra_generation_params: Dict[Any, Any] = None, overlay_images: Any = None, negative_prompt: str = None, eta: float = None, do_not_reload_embeddings: bool = False, denoising_strength: float = 0, ddim_discretize: str = None, s_min_uncond: float = 0.0, s_churn: float = 0.0, s_tmax: float = None, s_tmin: float = 0.0, s_noise: float = None, override_settings: Dict[str, Any] = None, override_settings_restore_afterwards: bool = True, sampler_index: int = None, script_args: list = None):
         if sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
@@ -564,7 +564,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "CFG scale": p.cfg_scale,
         "Image CFG scale": getattr(p, 'image_cfg_scale', None),
         "Seed": p.all_seeds[0] if use_main_prompt else all_seeds[index],
-        "Face restoration": (opts.face_restoration_model if p.restore_faces else None),
+        "Face restoration": opts.face_restoration_model if p.restore_faces else None,
         "Size": f"{p.width}x{p.height}",
         "Model hash": getattr(p, 'sd_model_hash', None if not opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
         "Model": (None if not opts.add_model_name_to_info else shared.sd_model.sd_checkpoint_info.name_for_extra),
@@ -580,6 +580,7 @@ def create_infotext(p, all_prompts, all_seeds, all_subseeds, comments=None, iter
         "Init image hash": getattr(p, 'init_img_hash', None),
         "RNG": opts.randn_source if opts.randn_source != "GPU" and opts.randn_source != "NV" else None,
         "NGMS": None if p.s_min_uncond == 0 else p.s_min_uncond,
+        "Tiling": "True" if p.tiling else None,
         **p.extra_generation_params,
         "Version": program_version() if opts.add_version_to_infotext else None,
         "User": p.user if opts.add_user_name_to_info else None,
@@ -644,6 +645,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     seed = get_fixed_seed(p.seed)
     subseed = get_fixed_seed(p.subseed)
+
+    if p.restore_faces is None:
+        p.restore_faces = opts.face_restoration
+
+    if p.tiling is None:
+        p.tiling = opts.tiling
 
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()

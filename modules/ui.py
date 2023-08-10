@@ -432,8 +432,7 @@ def create_ui():
 
                     elif category == "checkboxes":
                         with FormRow(elem_classes="checkboxes-row", variant="compact"):
-                            restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
-                            tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
+                            pass
 
                     elif category == "hires_fix":
                         with InputAccordion(False, label="Hires. fix") as enable_hr:
@@ -516,8 +515,6 @@ def create_ui():
                     toprow.ui_styles.dropdown,
                     steps,
                     sampler_name,
-                    restore_faces,
-                    tiling,
                     batch_count,
                     batch_size,
                     cfg_scale,
@@ -572,7 +569,6 @@ def create_ui():
                 (toprow.negative_prompt, "Negative prompt"),
                 (steps, "Steps"),
                 (sampler_name, "Sampler"),
-                (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
                 (seed, "Seed"),
                 (width, "Size-1"),
@@ -792,8 +788,7 @@ def create_ui():
 
                     elif category == "checkboxes":
                         with FormRow(elem_classes="checkboxes-row", variant="compact"):
-                            restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(shared.face_restorers) > 1, elem_id="img2img_restore_faces")
-                            tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
+                            pass
 
                     elif category == "batch":
                         if not opts.dimensions_and_batch_together:
@@ -866,8 +861,6 @@ def create_ui():
                     mask_blur,
                     mask_alpha,
                     inpainting_fill,
-                    restore_faces,
-                    tiling,
                     batch_count,
                     batch_size,
                     cfg_scale,
@@ -959,7 +952,6 @@ def create_ui():
                 (toprow.negative_prompt, "Negative prompt"),
                 (steps, "Steps"),
                 (sampler_name, "Sampler"),
-                (restore_faces, "Face restoration"),
                 (cfg_scale, "CFG scale"),
                 (image_cfg_scale, "Image CFG scale"),
                 (seed, "Seed"),
