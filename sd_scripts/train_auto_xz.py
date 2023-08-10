@@ -581,7 +581,7 @@ def train_auto(
 ):
     # 预设参数
     width = 512
-    height = 768
+    height = 512
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
     use_wd = os.getenv('WD', '0') == '1'
