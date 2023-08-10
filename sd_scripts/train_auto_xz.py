@@ -613,7 +613,7 @@ def train_auto(
     pic_nums = len(contents) / 2
     repeats_n = int(20*50/pic_nums)
 
-    #2.tagger反推
+    # 2.tagger反推
     if use_wd:
         onnx = os.path.join(general_model_path, "tag_models/wd_onnx")
         if not os.path.isdir(onnx):
@@ -627,8 +627,8 @@ def train_auto(
             trigger_word=trigger_word
         )
 
-    	if callable(train_callback):
-        	train_callback(2)
+        if callable(train_callback):
+            train_callback(2)
 
     lora_name = f"{task_id}"
     # 3.自动训练出图
