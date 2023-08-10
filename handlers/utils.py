@@ -229,7 +229,8 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
 
 
 def load_sd_model_weights(filename, sha256=None):
-    # todo: touch 模型文件
+    # 修改文件mtime，便于后续清理
+    os.popen(f'touch {filename}')
     checkpoint = CheckpointInfo(filename, sha256)
     return reload_model_weights(info=checkpoint)
 
@@ -238,8 +239,8 @@ def close_pil(image: Image):
     image.close()
 
 
-def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
-                          script_dir: str, task_id: str, clean_upload_files: bool = True):
+def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, script_dir: str,
+                          task_id: str, clean_upload_files: bool = True, inspect=False):
     if not output_dir:
         raise ValueError('output is empty')
 
@@ -264,10 +265,6 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
             filename = f"{task_id}{ex}"
             out_obj = out_grid_image
         elif n <= proc.index_of_end_image:
-            seed = proc.all_seeds[n - proc.index_of_first_image]
-            sub_seed = proc.all_subseeds[n - proc.index_of_first_image]
-
-            print(f"seed:{seed},sub_seed:{sub_seed}")
             filename = f"{task_id}-{n}{ex}"
             out_obj = out_image
         else:
@@ -283,7 +280,7 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
         size = f"{processed_image.width}*{processed_image.height}"
         for k, v in processed_image.info.items():
             if 'parameters' == k:
-                v = str(v).replace('-automatic1111', "")
+                v = str(v).replace('-automatic1111', "-xingzhe")
                 print(f"image parameters:{v}")
                 v = des_encrypt(v)
             pnginfo_data.add_text(k, str(v))
@@ -294,6 +291,10 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
     grid_keys = out_grid_image.multi_upload_keys(clean_upload_files)
     image_keys = out_image.multi_upload_keys(clean_upload_files)
     script_keys = out_script_image.multi_upload_keys(clean_upload_files)
+
+    if inspect:
+        out_grid_image.inspect(grid_keys)
+        out_image.inspect(image_keys)
 
     output = {
         'grids': grid_keys.to_dict(),

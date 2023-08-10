@@ -170,14 +170,33 @@ def multicrop_pic(image: Image, mindim, maxdim, minarea, maxarea, objective, thr
 
 
 # 一键图片预处理函数
-def train_preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size,
-                    process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
-                    overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
-                    process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-                    process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-                    process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-                    process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None, model_path="",
-                    filter_tags = "",additional_tags = ""):
+def train_preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action,
+                     process_keep_original_size,
+                     process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
+                     overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
+                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
+                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
+                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
+                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
+                     model_path=""):
+    try:
+        from modules.textual_inversion.preprocess import preprocess
+        if process_caption_deepbooru or process_caption:
+            print("-->>> preprocess with clip&deepbooru tagger")
+            preprocess(
+                "", process_src, process_dst, process_width, process_height, preprocess_txt_action,
+                process_keep_original_size,
+                process_flip, process_split, process_caption, process_caption_deepbooru, split_threshold,
+                overlap_ratio, process_focal_crop, process_focal_crop_face_weight, process_focal_crop_entropy_weight,
+                process_focal_crop_edges_weight, process_focal_crop_debug, process_multicrop,
+                process_multicrop_mindim, process_multicrop_maxdim, process_multicrop_minarea,
+                process_multicrop_maxarea, process_multicrop_objective, process_multicrop_threshold
+            )
+            return
+    except:
+        pass
+
+
     width = process_width
     height = process_height
     src = os.path.abspath(process_src)
@@ -274,9 +293,9 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
             process_default_resize = False
 
         if process_keep_original_size:
-            if img.width>2048 or img.height>2048:  # 对于超大图片限制在2048的范围内
-                if img.width>img.height:
-                    ratio = 2048.0/img.width
+            if img.width > 2048 or img.height > 2048:  # 对于超大图片限制在2048的范围内
+                if img.width > img.height:
+                    ratio = 2048.0 / img.width
                 else:
                     ratio = 2048.0/img.height
                 img = deepbooru.resize_image(1, img, int(img.width*ratio), int(img.height*ratio))
@@ -287,7 +306,7 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
             img = deepbooru.resize_image(1, img, width, height)
             save_pic(img, index, params, existing_caption=existing_caption)
         
-        # os.remove(filename)
+        os.remove(filename)
 
         # shared.state.nextjob()
         if callable(progress_cb):
@@ -566,34 +585,33 @@ def train_auto(
     width = 512
     height = 768
     trigger_word = ""
-
     # 是否采用wd14作为反推tag，否则采用deepbooru
     use_wd=True
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
-    
-    # 图片处理后的路径
     dirname = os.path.dirname(train_data_dir)
     process_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(process_dir, exist_ok=True)
 
     # 1.图片预处理
-    train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height, preprocess_txt_action='ignore', process_keep_original_size=False,
-                    process_flip=False, process_split=False, process_caption=False, process_caption_deepbooru=not use_wd, split_threshold=0.5,
-                    overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
-                    process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-                    process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-                    process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-                    process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None, model_path=general_model_path,
-                    filter_tags=undesired_tags,additional_tags=trigger_word)
+   train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
+                     preprocess_txt_action='ignore', process_keep_original_size=False,
+                     process_flip=False, process_split=False, process_caption=False,
+                     process_caption_deepbooru=not use_wd, split_threshold=0.5,
+                     overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
+                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
+                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
+                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
+                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
+                     model_path=general_model_path)
 
     if callable(train_callback):
         train_callback(2)
 
     # 优化图片数量
     contents = os.listdir(process_dir)
-    pic_nums = len(contents)
+    pic_nums = len(contents) / 2
     repeats_n = int(20*50/pic_nums)
 
     #2.tagger反推

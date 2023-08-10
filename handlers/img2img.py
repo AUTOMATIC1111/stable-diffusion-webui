@@ -27,7 +27,7 @@ from worker.dumper import dumper
 from tools.image import plt_show, encode_pil_to_base64
 from modules import sd_models
 
-AlwaysonScriptsType = typing.Mapping[str, typing.Mapping[str, typing.Any]]
+AlwaysonScriptsType = typing.Dict[str, typing.Mapping[str, typing.Any]]
 PixelDeviation = 2
 
 
@@ -290,6 +290,9 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         if 'select_script_name' in kwargs:
             kwargs.pop('select_script_name')
 
+        if "nsfw" in prompt.lower():
+            prompt = prompt.lower().replace('nsfw', '')
+
         return cls(base_model_path,
                    user_id,
                    default_script_arg_img2img,
@@ -483,7 +486,8 @@ class Img2ImgTaskHandler(TaskHandler):
                                        process_args.outpath_samples,
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
-                                       task.id)
+                                       task.id,
+                                       inspect=process_args.kwargs.get("inspect", False))
 
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)
@@ -519,12 +523,12 @@ class Img2ImgTaskHandler(TaskHandler):
         time_since_start = time.time() - shared.state.time_start
         eta = (time_since_start / p)
         progress.eta_relative = eta - time_since_start
-        progress.task_progress = min(p, 0.99) * 100
+        progress.task_progress = min(p * 100, 99)
         # print(f"-> progress: {progress.task_progress}, real:{p}\n")
 
         shared.state.set_current_image()
         if shared.state.current_image:
-            current = encode_pil_to_base64(shared.state.current_image, 40)
+            current = encode_pil_to_base64(shared.state.current_image, 30)
             if current:
                 progress.preview = current
             print("\n>>set preview!!\n")

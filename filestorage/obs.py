@@ -86,3 +86,9 @@ class ObsFileStorage(FileStorage):
             return remoting_path
         else:
             raise OSError(f'cannot download file from obs, resp:{resp.errorMessage},key: {remoting_path}')
+
+    def preview_url(self, remoting_path: str) -> str:
+        bucket, key = self.extract_buack_key_from_path(remoting_path)
+        resp = self.obsClient.createSignedUrl('GET', bucket, key, expires=3000)
+        return resp.get('signedUrl')
+

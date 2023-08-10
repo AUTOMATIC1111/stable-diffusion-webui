@@ -761,7 +761,6 @@ def train(args, train_epoch_callback=None,accelerator=None,unwrap_model=None):
 
     del accelerator  # この後メモリを使うのでこれは消す
 
-
     if is_main_process:
         ckpt_name = train_util.get_last_ckpt_name(args, "." + args.save_model_as)
         save_model(ckpt_name, network, global_step, num_train_epochs, force_sync_upload=True)

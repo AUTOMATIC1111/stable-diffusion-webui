@@ -342,6 +342,19 @@ class TrainLoraTask(UserDict):
                 return f'{array[0].strip()},{array[1].strip()}'
         return str(res)
 
+    def auto_batch_size(self):
+        batch_size = self["batch_size"]
+        arr = self.resolution.split(",")
+        w, h = arr[0], arr[-1]
+
+        r = int(w) * int(h)
+        if r < 512*768:
+            return min(batch_size, 6)
+        elif r > 1024 * 768:
+            return min(batch_size, 2)
+
+        return batch_size
+
     @property
     def output_dir(self):
         return os.path.join(Tmp, self.id)
@@ -389,7 +402,7 @@ class TrainLoraTask(UserDict):
             f.write('\n')
             f.write('[[datasets]]\n')
             f.write(f'resolution = {self.resolution}             # 学习分辨率\n')
-            f.write(f'batch_size = {self["batch_size"]}          # 批量大小\n')
+            f.write(f'batch_size = {self.auto_batch_size()}          # 批量大小\n')
             f.write('\n')
             f.write(space_4 + '[[datasets.subsets]]\n')
             f.write(space_4 + f'image_dir = "{image_dir}"                 # 指定包含训练图像的文件夹\n')
@@ -453,7 +466,7 @@ class TrainLoraTask(UserDict):
             'output_name': key,
             'save_model_as': 'safetensors',
             'save_every_n_epochs': params.train.save_every_n_epochs,
-            'batch_size': params.train.batch_size,
+            'batch_size': self.auto_batch_size(),
             'epoch': params.train.epoch,
             'resolution': self.resolution,
             'num_repeats': num_repeats,
