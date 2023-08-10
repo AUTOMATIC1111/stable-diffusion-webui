@@ -66,7 +66,7 @@ def on_tmpdir_changed():
     if shared.opts.temp_dir == "" or shared.demo is None:
         return
 
-    os.makedirs(shared.opts.temp_dir, exist_ok=True)
+    Path(shared.opts.temp_dir).mkdir(exist_ok=True, parents=True)
 
     register_tmp_file(shared.demo, os.path.join(shared.opts.temp_dir, "x"))
 
