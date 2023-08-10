@@ -613,12 +613,12 @@ def train_auto(
     if callable(train_callback):
         train_callback(2)
 
-    if use_wd and os.getenv("DO_NOT_TRAIN_COPY_ORIGIN", "0") != "1":
+    if use_wd and os.getenv("DO_NOT_TRAIN_COPY_ORIGIN", "1") != "1":
         for f in os.listdir(train_data_dir):
             full = os.path.join(train_data_dir, f)
             if os.path.isfile(full):
                 target = os.path.join(process_dir, os.path.basename(f))
-                shutil.move(full, target)
+                shutil.copy(full, target)
 
     # 2.tagger反推
     if use_wd:
