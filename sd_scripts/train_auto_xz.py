@@ -594,6 +594,11 @@ def train_auto(
     process_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(process_dir, exist_ok=True)
 
+    # 优化图片数量
+    contents = os.listdir(train_data_dir)
+    pic_nums = len(contents)
+    repeats_n = min(int(20*50/pic_nums), 50)
+
     # 1.图片预处理
     train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
                      preprocess_txt_action='ignore', process_keep_original_size=False, process_flip=False,
@@ -608,17 +613,12 @@ def train_auto(
     if callable(train_callback):
         train_callback(2)
 
-    if os.getenv("DO_NOT_TRAIN_COPY_ORIGIN", "0") != "1":
+    if use_wd and os.getenv("DO_NOT_TRAIN_COPY_ORIGIN", "0") != "1":
         for f in os.listdir(train_data_dir):
             full = os.path.join(train_data_dir, f)
             if os.path.isfile(full):
                 target = os.path.join(process_dir, os.path.basename(f))
                 shutil.move(full, target)
-
-    # 优化图片数量
-    contents = os.listdir(process_dir)
-    pic_nums = len(contents) / 2
-    repeats_n = min(int(20*50/pic_nums), 50)
 
     # 2.tagger反推
     if use_wd:
