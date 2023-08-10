@@ -140,7 +140,7 @@ class ExtraNetworksPage:
                 continue
             try:
                 img = Image.open(f)
-                if img.width > 1024 or img.height > 1024:
+                if img.width > 1024 or img.height > 1024 or os.path.getsize(f) > 70000:
                     img = img.convert('RGB')
                     img.thumbnail((512, 512), Image.HAMMING)
                     img.save(fn)
