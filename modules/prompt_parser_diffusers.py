@@ -3,7 +3,6 @@ import typing
 import torch
 import diffusers
 from compel import Compel, ReturnedEmbeddingsType
-import modules.devices as devices
 import modules.shared as shared
 import modules.prompt_parser as prompt_parser
 
@@ -55,9 +54,10 @@ def compel_encode_prompts(
         negative_pooleds.append(negative_pooled)
 
     prompt_embeds = torch.cat(prompt_embeds, dim=0)
-    positive_pooleds = torch.cat(positive_pooleds, dim=0)
     negative_embeds = torch.cat(negative_embeds, dim=0)
-    negative_pooleds = torch.cat(negative_pooleds, dim=0)
+    if shared.sd_model_type == "sdxl":
+        positive_pooleds = torch.cat(positive_pooleds, dim=0)
+        negative_pooleds = torch.cat(negative_pooleds, dim=0)
     return prompt_embeds, positive_pooleds, negative_embeds, negative_pooleds
 
 
@@ -94,7 +94,7 @@ def compel_encode_prompt(
         text_encoder=pipeline.text_encoder,
         returned_embeddings_type=embedding_type,
         requires_pooled=False,
-        device=devices.device
+        device=shared.device
     )
 
     if shared.sd_model_type == "sdxl":
@@ -103,7 +103,7 @@ def compel_encode_prompt(
             text_encoder=pipeline.text_encoder_2,
             returned_embeddings_type=embedding_type,
             requires_pooled=True,
-            device=devices.device
+            device=shared.device
         )
         if not is_refiner:
             positive_te1 = compel_te1(prompt)

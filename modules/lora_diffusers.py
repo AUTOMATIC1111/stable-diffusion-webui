@@ -58,7 +58,7 @@ def load_diffusers_lora(name, lora, strength = 1.0):
             if shared.opts.diffusers_lora_loader == "merge and apply":
                 lora_network.merge_to(multiplier=strength)
             if shared.opts.diffusers_lora_loader == "sequential apply":
-                lora_network.to(pipe.device, dtype=pipe.unet.dtype)
+                lora_network.to(shared.device, dtype=pipe.unet.dtype)
                 lora_network.apply_to(multiplier=strength)
             lora_state['all_loras'].append(lora_network)
             shared.log.info(f"Diffusers LoRA loaded: {name} {strength}")
