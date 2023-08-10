@@ -8,7 +8,7 @@ from modules.shared_cmd_options import cmd_opts
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after=''):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after='', infotext=None):
         self.default = default
         self.label = label
         self.component = component
@@ -23,6 +23,8 @@ class OptionInfo:
 
         self.comment_after = comment_after
         """HTML text that will be added before label in UI"""
+
+        self.infotext = infotext
 
     def link(self, label, url):
         self.comment_before += f"[<a href='{url}' target='_blank'>{label}</a>]"
