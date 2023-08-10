@@ -594,7 +594,7 @@ def train_auto(
 
     # 1.图片预处理
     train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
-                     preprocess_txt_action='ignore', process_keep_original_size=False, process_flip=False,
+                     preprocess_txt_action='ignore', process_keep_original_size=True, process_flip=False,
                      process_split=False, process_caption=False, process_caption_deepbooru=not use_wd,
                      split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=True,
                      process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3,
@@ -641,7 +641,7 @@ def train_auto(
         list_train_data_dir=[process_dir],
         save_model_as="safetensors",
         num_repeats=[f"{repeats_n}"],
-        batch_size=8,
+        batch_size=24,
         resolution=f"{width},{height}",
         epoch=10,  # 整数，随便填
         network_module="networks.lora",
@@ -658,8 +658,8 @@ def train_auto(
         unet_lr=0.0001,
         text_encoder_lr=0.00001,
         lr_scheduler="cosine_with_restarts",
-        auto_lr=False,
-        auto_lr_param=1,
+        auto_lr=True,
+        auto_lr_param=4,
 
         cache_latents=True,
         # cache latents to main memory to reduce VRAM usage (augmentations must be disabled)
