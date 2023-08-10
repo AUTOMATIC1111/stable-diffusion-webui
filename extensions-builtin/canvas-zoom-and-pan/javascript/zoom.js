@@ -378,6 +378,11 @@ onUiLoaded(async() => {
             toggleOverlap("off");
             fullScreenMode = false;
 
+            const closeBtn = targetElement.querySelector("button[aria-label='Remove Image']");
+            if (closeBtn) {
+                closeBtn.addEventListener("click", resetZoom);
+            }
+
             if (
                 canvas &&
                 parseFloat(canvas.style.width) > 865 &&
