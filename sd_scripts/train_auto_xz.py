@@ -1,4 +1,6 @@
 import os #,sys,re,torch
+import shutil
+
 from PIL import Image, ImageOps
 # import random
 import time
@@ -594,7 +596,7 @@ def train_auto(
 
     # 1.图片预处理
     train_preprocess(process_src=train_data_dir, process_dst=process_dir, process_width=width, process_height=height,
-                     preprocess_txt_action='ignore', process_keep_original_size=True, process_flip=False,
+                     preprocess_txt_action='ignore', process_keep_original_size=False, process_flip=False,
                      process_split=False, process_caption=False, process_caption_deepbooru=not use_wd,
                      split_threshold=0.5, overlap_ratio=0.2, process_focal_crop=True,
                      process_focal_crop_face_weight=0.9, process_focal_crop_entropy_weight=0.3,
@@ -605,6 +607,13 @@ def train_auto(
 
     if callable(train_callback):
         train_callback(2)
+
+    if os.getenv("DO_NOT_TRAIN_COPY_ORIGIN", "0") != "1":
+        for f in os.listdir(train_data_dir):
+            full = os.path.join(train_data_dir, f)
+            if os.path.isfile(full):
+                target = os.path.join(process_dir, os.path.basename(f))
+                shutil.move(full, target)
 
     # 优化图片数量
     contents = os.listdir(process_dir)
