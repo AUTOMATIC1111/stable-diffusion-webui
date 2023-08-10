@@ -50,6 +50,8 @@ class UiLoadsave:
             else:
                 if isinstance(x, gr.Textbox) and field == 'value':  # due to an undersirable behavior of gr.Textbox, if you give it an int value instead of str, everything dies
                     saved_value = str(saved_value)
+                elif isinstance(x, gr.Number) and field == 'value':
+                    saved_value = float(saved_value)
 
                 setattr(obj, field, saved_value)
                 if init_field is not None:
