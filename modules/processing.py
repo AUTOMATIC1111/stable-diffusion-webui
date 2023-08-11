@@ -1243,11 +1243,10 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.image_mask = mask
         self.latent_mask = None
         self.mask_for_overlay = None
-        if mask_blur is not None:
-            mask_blur_x = mask_blur
-            mask_blur_y = mask_blur
         self.mask_blur_x = mask_blur_x
         self.mask_blur_y = mask_blur_y
+        if mask_blur is not None:
+            self.mask_blur = mask_blur
         self.inpainting_fill = inpainting_fill
         self.inpaint_full_res = inpaint_full_res
         self.inpaint_full_res_padding = inpaint_full_res_padding
@@ -1256,6 +1255,22 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.mask = None
         self.nmask = None
         self.image_conditioning = None
+
+    @property
+    def mask_blur(self):
+        if self.mask_blur_x == self.mask_blur_y:
+            return self.mask_blur_x
+        return None
+
+    @mask_blur.setter
+    def mask_blur(self, value):
+        self.mask_blur_x = value
+        self.mask_blur_y = value
+
+    @mask_blur.deleter
+    def mask_blur(self):
+        del self.mask_blur_x
+        del self.mask_blur_y
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         self.sampler = sd_samplers.create_sampler(self.sampler_name, self.sd_model)
@@ -1271,13 +1286,13 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
 
             if self.mask_blur_x > 0:
                 np_mask = np.array(image_mask)
-                kernel_size = 2 * int(4 * self.mask_blur_x + 0.5) + 1
+                kernel_size = 2 * int(2.5 * self.mask_blur_x + 0.5) + 1
                 np_mask = cv2.GaussianBlur(np_mask, (kernel_size, 1), self.mask_blur_x)
                 image_mask = Image.fromarray(np_mask)
 
             if self.mask_blur_y > 0:
                 np_mask = np.array(image_mask)
-                kernel_size = 2 * int(4 * self.mask_blur_y + 0.5) + 1
+                kernel_size = 2 * int(2.5 * self.mask_blur_y + 0.5) + 1
                 np_mask = cv2.GaussianBlur(np_mask, (1, kernel_size), self.mask_blur_y)
                 image_mask = Image.fromarray(np_mask)
 
