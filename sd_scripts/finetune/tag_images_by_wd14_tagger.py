@@ -136,18 +136,18 @@ class WaifuDiffusionInterrogator():
         self.model_path = model_path
         self.tags_path = tags_path
         self.kwargs = kwargs
-        self.model=None
-        self.tags=None
+        self.model = None
+        self.tags = None
 
-    def load(self,path) -> None:
+    def load(self, path) -> None:
         from onnxruntime import InferenceSession
         import pandas as pd
 
         # https://onnxruntime.ai/docs/execution-providers/
         # https://github.com/toriato/stable-diffusion-webui-wd14-tagger/commit/e4ec460122cf674bbf984df30cdb10b4370c1224#r92654958
         providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
-        model_path = os.path.join(path,self.model_path)
-        tags_path = os.path.join(path,self.tags_path)
+        model_path = os.path.join(path, self.model_path)
+        tags_path = os.path.join(path, self.tags_path)
 
         self.model = InferenceSession(str(model_path), providers=providers)
 
@@ -164,7 +164,7 @@ class WaifuDiffusionInterrogator():
     ]:
         # init model
         if not hasattr(self, 'model') or self.model is None:
-            self.load()
+            raise OSError('unload model')
 
         # code for converting the image and running the model is taken from the link below
         # thanks, SmilingWolf!
@@ -269,16 +269,17 @@ class WaifuDiffusionInterrogator():
 
         return tags
 
-wdInterrogator = WaifuDiffusionInterrogator("") 
 
-def get_wd_tagger(train_data_dir="", # 训练数据路径
-    model_dir="", # wd模型的地址
-    caption_extension=".txt", # 存tag的文件类型
-    general_threshold=0.35, # 为一般类别添加标签的置信阈值
-    recursive=True, # 搜索子文件夹中的图像
-    remove_underscore=True, # 将输出标记的下划线替换为空格
-    undesired_tags="", # 不想要（想要去除）的Tag，以英文逗号隔开
-    additional_tags="",):
+def get_wd_tagger(train_data_dir="",  # 训练数据路径
+                  model_dir="",  # wd模型的地址
+                  caption_extension=".txt",  # 存tag的文件类型
+                  general_threshold=0.35,  # 为一般类别添加标签的置信阈值
+                  recursive=True,  # 搜索子文件夹中的图像
+                  remove_underscore=True,  # 将输出标记的下划线替换为空格
+                  undesired_tags="",  # 不想要（想要去除）的Tag，以英文逗号隔开
+                  additional_tags=""):
+
+    wdInterrogator = WaifuDiffusionInterrogator("")
     if wdInterrogator.model is None:
         wdInterrogator.load(model_dir)
     
