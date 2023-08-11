@@ -357,7 +357,7 @@ def network_forward(module, input, original_forward):
         if module is None:
             continue
 
-        y = module.forward(y, input)
+        y = module.forward(input, y)
 
     return y
 
