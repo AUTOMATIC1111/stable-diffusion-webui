@@ -57,7 +57,7 @@ def apply_color_correction(correction, original_image):
 
     image = blendLayers(image, original_image, BlendType.LUMINOSITY)
 
-    return image
+    return image.convert('RGB')
 
 
 def apply_overlay(image, paste_loc, index, overlays):
