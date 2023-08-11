@@ -9,7 +9,7 @@
 - [Install and run on NVidia GPUs](Install-and-Run-on-NVidia-GPUs)
 - [Install and run on AMD GPUs](Install-and-Run-on-AMD-GPUs)
 - [Install and run on Apple Silicon](Installation-on-Apple-Silicon) 
-- [Install and run on Intel Silicon](https://github.com/openvinotoolkit/stable-diffusion-webui/wiki/Installation-on-Intel-Silicon)
+- [Install and run on Intel Silicon (external wiki page)](https://github.com/openvinotoolkit/stable-diffusion-webui/wiki/Installation-on-Intel-Silicon)
 - [Command Line Arguments and Settings](Command-Line-Arguments-and-Settings)
 - [Optimizations](Optimizations)
 - [Custom scripts](Custom-Scripts)
