@@ -357,7 +357,13 @@ def network_forward(module, input, original_forward):
         if module is None:
             continue
 
-        y = module.forward(y, input)
+        if shared.opts.lora_functional:
+            module.up_model.to(device=devices.device)
+            module.down_model.to(device=devices.device)
+
+            y = y + module.up_model(module.down_model(input)) * module.multiplier() * module.calc_scale()
+        else:
+            y = module.forward(y, input)
 
     return y
 
