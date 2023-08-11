@@ -166,8 +166,9 @@ def pip(arg: str, ignore: bool = False, quiet: bool = False):
     arg = arg.replace('>=', '==')
     if not quiet:
         log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("--force", "").replace("  ", " ").strip()}')
-    log.debug(f"Running pip: {arg}")
-    result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    env_args = os.environ.get("PIP_EXTRA_ARGS", "")
+    log.debug(f"Running pip: {arg} {env_args}")
+    result = subprocess.run(f'"{sys.executable}" -m pip {arg} {env_args}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     txt = result.stdout.decode(encoding="utf8", errors="ignore")
     if len(result.stderr) > 0:
         txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
@@ -428,8 +429,17 @@ def install_packages():
     install(invisiblewatermark_package, 'invisible-watermark')
     install('onnxruntime==1.15.1', 'onnxruntime', ignore=True)
     install('pi-heif', 'pi_heif', ignore=True)
-    tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.12.0')
+    install('git+https://github.com/damian0815/compel', 'compel', ignore=True)
+    tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
+    bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', None)
+    if bitsandbytes_package is not None:
+        install(bitsandbytes_package, 'bitsandbytes', ignore=True)
+    else:
+        bitsandbytes_package = pkg_resources.working_set.by_key.get('bitsandbytes', None)
+        if bitsandbytes_package is not None:
+            log.warning(f'Not used, uninstalling: {bitsandbytes_package}')
+            pip('uninstall bitsandbytes --yes --quiet', ignore=True, quiet=True)
     if args.profile:
         print_profile(pr, 'Packages')
 

@@ -151,6 +151,8 @@ def install_extension_from_url(dirname, url, branch_name, search_text, sort_colu
     normalized_url = normalize_git_url(url)
     assert len([x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url]) == 0, 'Extension with this URL is already installed'
     tmpdir = os.path.join(paths.data_path, "tmp", dirname)
+    if url.endswith('.git'):
+        url = url.replace('.git', '')
     try:
         shutil.rmtree(tmpdir, True)
         if not branch_name:
@@ -175,6 +177,8 @@ def install_extension_from_url(dirname, url, branch_name, search_text, sort_colu
         run_extension_installer(target_dir)
         extensions.list_extensions()
         return [refresh_extensions_list_from_data(search_text, sort_column), html.escape(f"Extension installed: {target_dir} | Restart required")]
+    except Exception as e:
+        shared.log.error(f'Error installing extension: {url} {e}')
     finally:
         shutil.rmtree(tmpdir, True)
 

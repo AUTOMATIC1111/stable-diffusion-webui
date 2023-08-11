@@ -562,7 +562,6 @@
   {"id":"","label":"Token merging ratio","localized":"토큰 병합 비율","hint":"속도와 메모리 절감을 위해 tomesd를 사용해 토큰 병합을 활성화한다. (0이면 비활성화)"},
   {"id":"","label":"Token merging ratio for img2img","localized":"이미지➠이미지 토큰 병합 비율","hint":"속도와 메모리 절감을 위해 이미지➠이미지에서 tomesd를 사용해 토큰 병합을 활성화한다. (0이면 비활성화)"},
   {"id":"","label":"Token merging ratio for hires pass","localized":"텍스트➠이미지 업스케일링(Hires fix) 토큰 병합 비율","hint":"속도와 메모리 절감을 위해 Hires fix에서 tomesd를 사용해 토큰 병합을 활성화한다. (0이면 비활성화)"},
-  {"id":"","label":"Diffusers allow loading from safetensors files","localized":"safetensors 파일에서 로드 허용","hint":"safetensors 파일을 Diffusers 모델로 로드할 수 있게 한다."},
   {"id":"","label":"Select diffuser pipeline when loading from safetensors","localized":"safetensors 파일에서 로드할 때 사용할 파이프라인 선택","hint":""},
   {"id":"","label":"Move base model to CPU when using refiner","localized":"리파이너를 사용 중일 때 base 모델을 CPU로 이동","hint":""},
   {"id":"","label":"Move refiner model to CPU when not in use","localized":"사용 중이지 않을 때 리파이너 모델을 CPU로 이동","hint":""},
