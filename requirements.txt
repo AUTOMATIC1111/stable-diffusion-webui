@@ -7,7 +7,7 @@ blendmodes
 clean-fid
 einops
 gfpgan
-gradio==3.32.0
+gradio==3.39.0
 inflection
 jsonmerge
 kornia
@@ -30,4 +30,6 @@ tomesd
 torch
 torchdiffeq
 torchsde
-transformers==4.25.1
+transformers==4.30.0
+diffusers==0.18.2
+openvino==2023.1.0.dev20230728
