@@ -2,10 +2,12 @@
 
 ## Update for 2023-08-11
 
+This is a big one that's been cooking in `dev` for a while now, but finally ready for release...
+
 - diffusers:
   - **pipeline autodetect**
     if pipeline is set to autodetect (default for new installs), app will try to autodetect pipeline based on selected model  
-    this should reduce user errors such as loading sd-xl model when sd pipeline is selected  
+    this should reduce user errors such as loading **sd-xl** model when **sd** pipeline is selected  
   - **quick vae decode** as alternative to full vae decode which is very resource intensive  
     quick decode is based on `taesd` and produces lower quality, but its great for tests or grids as it runs much faster and uses far less vram  
     disabled by default, selectable in *txt2img/img2img -> advanced -> full quality*  
