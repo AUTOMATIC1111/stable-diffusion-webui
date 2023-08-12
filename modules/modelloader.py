@@ -35,6 +35,9 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, previ
                     written = written + len(data)
                     f.write(data)
                     progress.update(task, advance=block_size, description="Downloading")
+        if written < 1024 * 1024 * 1024: # min threshold
+            os.remove(model_file)
+            raise ValueError(f'removed invalid download: bytes={written}')
         if preview is not None:
             preview_file = os.path.splitext(model_file)[0] + '.jpg'
             preview.save(preview_file)

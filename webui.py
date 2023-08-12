@@ -18,7 +18,8 @@ local_url = None
 errors.log.debug('Loading Torch')
 import torch # pylint: disable=C0411
 try:
-    errors.log.debug(f'Torch init: {torch.sum(torch.randn(2, 2)).to(0) > 0}') # fix silly pytorch_lightning issue
+    rnd = torch.sum(torch.randn(2, 2)).to(0)
+    errors.log.debug(f'Torch init: {rnd / rnd == 1.0}') # fix silly pytorch_lightning issue
 except Exception:
     pass
 try:
