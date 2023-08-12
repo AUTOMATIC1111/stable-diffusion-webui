@@ -385,8 +385,6 @@ re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d
 re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*])?\s*")
 re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*])?\s*")
 
-use_dropdown = True
-
 
 class Script(scripts.Script):
     def title(self):
@@ -423,6 +421,8 @@ class Script(scripts.Script):
                 include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
                 include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
             with gr.Column():
+                use_dropdown = gr.Checkbox(label='use dropdown', value=True, elem_id=self.elem_id("use_dropdown"))
+            with gr.Column():
                 margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
 
         with gr.Row(variant="compact", elem_id="swap_axes"):
@@ -443,7 +443,7 @@ class Script(scripts.Script):
         def fill(axis_type):
             axis = self.current_axis_options[axis_type]
             if axis.choices:
-                if use_dropdown:
+                if use_dropdown.value:
                     return gr.update(), axis.choices()
                 else:
                     return list_to_csv_string(axis.choices()), gr.update()
@@ -463,11 +463,20 @@ class Script(scripts.Script):
                 if isinstance(current_values, str):
                     current_values = current_values.split(",")
                 current_values = list(filter(lambda x: x in choices, current_values))
-            return gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or not use_dropdown), gr.update(choices=choices if has_choices else None, visible=has_choices and use_dropdown, value=current_values)
+            return gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or not use_dropdown.value), gr.update(choices=choices if has_choices else None, visible=has_choices and use_dropdown.value, value=current_values)
 
         x_type.change(fn=select_axis, inputs=[x_type, x_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown])
         y_type.change(fn=select_axis, inputs=[y_type, y_values_dropdown], outputs=[fill_y_button, y_values, y_values_dropdown])
         z_type.change(fn=select_axis, inputs=[z_type, z_values_dropdown], outputs=[fill_z_button, z_values, z_values_dropdown])
+
+        def change_choice_mode(_use_dropdown, x_type, x_values_dropdown, y_type, y_values_dropdown, z_type, z_values_dropdown):
+            use_dropdown.value = _use_dropdown
+            _fill_x_button, _x_values, _x_values_dropdown = select_axis(x_type, x_values_dropdown)
+            _fill_y_button, _y_values, _y_values_dropdown = select_axis(y_type, y_values_dropdown)
+            _fill_z_button, _z_values, _z_values_dropdown = select_axis(z_type, z_values_dropdown)
+            return _fill_x_button, _x_values, _x_values_dropdown, _fill_y_button, _y_values, _y_values_dropdown, _fill_z_button, _z_values, _z_values_dropdown
+
+        use_dropdown.change(fn=change_choice_mode, inputs=[use_dropdown, x_type, x_values_dropdown, y_type, y_values_dropdown, z_type, z_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown, fill_y_button, y_values, y_values_dropdown, fill_z_button, z_values, z_values_dropdown])
 
         def get_dropdown_update_from_params(axis, params):
             val_key = f"{axis} Values"
@@ -487,9 +496,9 @@ class Script(scripts.Script):
             (z_values_dropdown, lambda params: get_dropdown_update_from_params("Z", params)),
         )
 
-        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, use_dropdown]
 
-    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size):
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, use_dropdown):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
