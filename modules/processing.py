@@ -1200,6 +1200,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.hr_c = self.get_conds_with_caching(prompt_parser.get_multicond_learned_conditioning, hr_prompts, total_steps, [self.cached_hr_c, self.cached_c], self.hr_extra_network_data)
 
     def setup_conds(self):
+        if self.is_hr_pass:
+            # if we are in hr pass right now, the call is being made from the refiner, and we don't need to setup firstpass cons or switch model
+            self.hr_c = None
+            self.calculate_hr_conds()
+            return
+
         super().setup_conds()
 
         self.hr_uc = None
