@@ -421,7 +421,7 @@ class Script(scripts.Script):
                 include_lone_images = gr.Checkbox(label='Include Sub Images', value=False, elem_id=self.elem_id("include_lone_images"))
                 include_sub_grids = gr.Checkbox(label='Include Sub Grids', value=False, elem_id=self.elem_id("include_sub_grids"))
             with gr.Column():
-                use_dropdown = gr.Checkbox(label='use dropdown', value=True, elem_id=self.elem_id("use_dropdown"))
+                csv_mode = gr.Checkbox(label='CSV mode', value=False, elem_id=self.elem_id("CSV mode"))
             with gr.Column():
                 margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
 
@@ -443,10 +443,10 @@ class Script(scripts.Script):
         def fill(axis_type):
             axis = self.current_axis_options[axis_type]
             if axis.choices:
-                if use_dropdown.value:
-                    return gr.update(), axis.choices()
-                else:
+                if csv_mode.value:
                     return list_to_csv_string(axis.choices()), gr.update()
+                else:
+                    return gr.update(), axis.choices()
             else:
                 return gr.update(), gr.update()
 
@@ -463,20 +463,20 @@ class Script(scripts.Script):
                 if isinstance(current_values, str):
                     current_values = current_values.split(",")
                 current_values = list(filter(lambda x: x in choices, current_values))
-            return gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or not use_dropdown.value), gr.update(choices=choices if has_choices else None, visible=has_choices and use_dropdown.value, value=current_values)
+            return gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or csv_mode.value), gr.update(choices=choices if has_choices else None, visible=has_choices and not csv_mode.value, value=current_values)
 
         x_type.change(fn=select_axis, inputs=[x_type, x_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown])
         y_type.change(fn=select_axis, inputs=[y_type, y_values_dropdown], outputs=[fill_y_button, y_values, y_values_dropdown])
         z_type.change(fn=select_axis, inputs=[z_type, z_values_dropdown], outputs=[fill_z_button, z_values, z_values_dropdown])
 
-        def change_choice_mode(_use_dropdown, x_type, x_values_dropdown, y_type, y_values_dropdown, z_type, z_values_dropdown):
-            use_dropdown.value = _use_dropdown
+        def change_choice_mode(_csv_mode, x_type, x_values_dropdown, y_type, y_values_dropdown, z_type, z_values_dropdown):
+            csv_mode.value = _csv_mode
             _fill_x_button, _x_values, _x_values_dropdown = select_axis(x_type, x_values_dropdown)
             _fill_y_button, _y_values, _y_values_dropdown = select_axis(y_type, y_values_dropdown)
             _fill_z_button, _z_values, _z_values_dropdown = select_axis(z_type, z_values_dropdown)
             return _fill_x_button, _x_values, _x_values_dropdown, _fill_y_button, _y_values, _y_values_dropdown, _fill_z_button, _z_values, _z_values_dropdown
 
-        use_dropdown.change(fn=change_choice_mode, inputs=[use_dropdown, x_type, x_values_dropdown, y_type, y_values_dropdown, z_type, z_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown, fill_y_button, y_values, y_values_dropdown, fill_z_button, z_values, z_values_dropdown])
+        csv_mode.change(fn=change_choice_mode, inputs=[csv_mode, x_type, x_values_dropdown, y_type, y_values_dropdown, z_type, z_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown, fill_y_button, y_values, y_values_dropdown, fill_z_button, z_values, z_values_dropdown])
 
         def get_dropdown_update_from_params(axis, params):
             val_key = f"{axis} Values"
@@ -496,9 +496,9 @@ class Script(scripts.Script):
             (z_values_dropdown, lambda params: get_dropdown_update_from_params("Z", params)),
         )
 
-        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, use_dropdown]
+        return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, csv_mode]
 
-    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, use_dropdown):
+    def run(self, p, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size, csv_mode):
         if not no_fixed_seeds:
             modules.processing.fix_seed(p)
 
@@ -509,7 +509,7 @@ class Script(scripts.Script):
             if opt.label == 'Nothing':
                 return [0]
 
-            if opt.choices is not None and use_dropdown:
+            if opt.choices is not None and not csv_mode:
                 valslist = vals_dropdown
             else:
                 valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
@@ -570,17 +570,17 @@ class Script(scripts.Script):
             return valslist
 
         x_opt = self.current_axis_options[x_type]
-        if x_opt.choices is not None and use_dropdown:
+        if x_opt.choices is not None and not csv_mode:
             x_values = ",".join(x_values_dropdown)
         xs = process_axis(x_opt, x_values, x_values_dropdown)
 
         y_opt = self.current_axis_options[y_type]
-        if y_opt.choices is not None and use_dropdown:
+        if y_opt.choices is not None and not csv_mode:
             y_values = ",".join(y_values_dropdown)
         ys = process_axis(y_opt, y_values, y_values_dropdown)
 
         z_opt = self.current_axis_options[z_type]
-        if z_opt.choices is not None and use_dropdown:
+        if z_opt.choices is not None and not csv_mode:
             z_values = ",".join(z_values_dropdown)
         zs = process_axis(z_opt, z_values, z_values_dropdown)
 
