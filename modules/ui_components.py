@@ -87,13 +87,23 @@ class InputAccordion(gr.Checkbox):
             self.accordion_id = f"input-accordion-{InputAccordion.global_index}"
             InputAccordion.global_index += 1
 
-        kwargs['elem_id'] = self.accordion_id + "-checkbox"
-        kwargs['visible'] = False
-        super().__init__(value, **kwargs)
+        kwargs_checkbox = {
+            **kwargs,
+            "elem_id": f"{self.accordion_id}-checkbox",
+            "visible": False,
+        }
+        super().__init__(value, **kwargs_checkbox)
 
         self.change(fn=None, _js='function(checked){ inputAccordionChecked("' + self.accordion_id + '", checked); }', inputs=[self])
 
-        self.accordion = gr.Accordion(kwargs.get('label', 'Accordion'), open=value, elem_id=self.accordion_id, elem_classes=['input-accordion'])
+        kwargs_accordion = {
+            **kwargs,
+            "elem_id": self.accordion_id,
+            "label": kwargs.get('label', 'Accordion'),
+            "elem_classes": ['input-accordion'],
+            "open": value,
+        }
+        self.accordion = gr.Accordion(**kwargs_accordion)
 
     def extra(self):
         """Allows you to put something into the label of the accordion.

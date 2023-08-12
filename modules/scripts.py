@@ -37,7 +37,10 @@ class Script:
     is_img2img = False
 
     group = None
-    """A gr.Group component that has all script's UI inside it"""
+    """A gr.Group component that has all script's UI inside it."""
+
+    create_group = True
+    """If False, for alwayson scripts, a group component will not be created."""
 
     infotext_fields = None
     """if set in ui(), this is a list of pairs of gradio component + text; the text will be used when
@@ -232,6 +235,7 @@ class Script:
         """
         pass
 
+
 current_basedir = paths.script_path
 
 
@@ -250,7 +254,7 @@ postprocessing_scripts_data = []
 ScriptClassData = namedtuple("ScriptClassData", ["script_class", "path", "basedir", "module"])
 
 
-def list_scripts(scriptdirname, extension):
+def list_scripts(scriptdirname, extension, *, include_extensions=True):
     scripts_list = []
 
     basedir = os.path.join(paths.script_path, scriptdirname)
@@ -258,8 +262,9 @@ def list_scripts(scriptdirname, extension):
         for filename in sorted(os.listdir(basedir)):
             scripts_list.append(ScriptFile(paths.script_path, filename, os.path.join(basedir, filename)))
 
-    for ext in extensions.active():
-        scripts_list += ext.list_files(scriptdirname, extension)
+    if include_extensions:
+        for ext in extensions.active():
+            scripts_list += ext.list_files(scriptdirname, extension)
 
     scripts_list = [x for x in scripts_list if os.path.splitext(x.path)[1].lower() == extension and os.path.isfile(x.path)]
 
@@ -288,7 +293,7 @@ def load_scripts():
     postprocessing_scripts_data.clear()
     script_callbacks.clear_callbacks()
 
-    scripts_list = list_scripts("scripts", ".py")
+    scripts_list = list_scripts("scripts", ".py") + list_scripts("modules/processing_scripts", ".py", include_extensions=False)
 
     syspath = sys.path
 
@@ -429,10 +434,13 @@ class ScriptRunner:
             if script.alwayson and script.section != section:
                 continue
 
-            with gr.Group(visible=script.alwayson) as group:
-                self.create_script_ui(script)
+            if script.create_group:
+                with gr.Group(visible=script.alwayson) as group:
+                    self.create_script_ui(script)
 
-            script.group = group
+                script.group = group
+            else:
+                self.create_script_ui(script)
 
     def prepare_ui(self):
         self.inputs = [None]

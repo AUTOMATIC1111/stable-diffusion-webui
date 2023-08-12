@@ -64,9 +64,10 @@ class CFGDenoiserKDiffusion(sd_samplers_cfg_denoiser.CFGDenoiser):
 
 
 class KDiffusionSampler(sd_samplers_common.Sampler):
-    def __init__(self, funcname, sd_model):
+    def __init__(self, funcname, sd_model, options=None):
         super().__init__(funcname)
 
+        self.options = options or {}
         self.func = funcname if callable(funcname) else getattr(k_diffusion.sampling, self.funcname)
 
         self.model_wrap_cfg = CFGDenoiserKDiffusion(self)

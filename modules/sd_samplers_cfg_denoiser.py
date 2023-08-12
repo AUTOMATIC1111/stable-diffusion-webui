@@ -45,6 +45,11 @@ class CFGDenoiser(torch.nn.Module):
         self.nmask = None
         self.init_latent = None
         self.steps = None
+        """number of steps as specified by user in UI"""
+
+        self.total_steps = None
+        """expected number of calls to denoiser calculated from self.steps and specifics of the selected sampler"""
+
         self.step = 0
         self.image_cfg_scale = None
         self.padded_cond_uncond = False
@@ -55,7 +60,6 @@ class CFGDenoiser(torch.nn.Module):
     @property
     def inner_model(self):
         raise NotImplementedError()
-
 
     def combine_denoised(self, x_out, conds_list, uncond, cond_scale):
         denoised_uncond = x_out[-uncond.shape[0]:]
