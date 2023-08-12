@@ -73,6 +73,7 @@ ui_reorder_categories_builtin_items = [
     "checkboxes",
     "dimensions",
     "cfg",
+    "denoising",
     "seed",
     "batch",
     "override_settings",
