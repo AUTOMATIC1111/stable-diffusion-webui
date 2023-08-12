@@ -81,7 +81,7 @@ def setup_logging():
     }))
     logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', handlers=[logging.NullHandler()]) # redirect default logger to null
     pretty_install(console=console)
-    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
+    traceback_install(console=console, extra_lines=1, max_frames=10, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
     while log.hasHandlers() and len(log.handlers) > 0:
         log.removeHandler(log.handlers[0])
 

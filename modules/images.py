@@ -477,7 +477,6 @@ def atomically_save_image():
                 image.save(fn, format=image_format, quality=shared.opts.jpeg_quality)
             except Exception as e:
                 shared.log.warning(f'Image save failed: {fn} {e}')
-        image.close()
         # additional metadata saved in files
         if shared.opts.save_txt and len(exifinfo) > 0:
             try:
