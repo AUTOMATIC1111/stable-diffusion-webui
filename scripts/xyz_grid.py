@@ -454,29 +454,36 @@ class Script(scripts.Script):
         fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values, y_values_dropdown])
         fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values, z_values_dropdown])
 
-        def select_axis(axis_type, axis_values_dropdown):
+        def select_axis(axis_type, axis_values, axis_values_dropdown):
             choices = self.current_axis_options[axis_type].choices
             has_choices = choices is not None
-            current_values = axis_values_dropdown
+
+            current_values = axis_values
+            current_dropdown_values = axis_values_dropdown
             if has_choices:
                 choices = choices()
-                if isinstance(current_values, str):
-                    current_values = current_values.split(",")
-                current_values = list(filter(lambda x: x in choices, current_values))
-            return gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or csv_mode.value), gr.update(choices=choices if has_choices else None, visible=has_choices and not csv_mode.value, value=current_values)
+                if csv_mode.value:
+                    current_dropdown_values = list(filter(lambda x: x in choices, current_dropdown_values))
+                    current_values = list_to_csv_string(current_dropdown_values)
+                else:
+                    current_dropdown_values = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(axis_values)))]
+                    current_dropdown_values = list(filter(lambda x: x in choices, current_dropdown_values))
 
-        x_type.change(fn=select_axis, inputs=[x_type, x_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown])
-        y_type.change(fn=select_axis, inputs=[y_type, y_values_dropdown], outputs=[fill_y_button, y_values, y_values_dropdown])
-        z_type.change(fn=select_axis, inputs=[z_type, z_values_dropdown], outputs=[fill_z_button, z_values, z_values_dropdown])
+            return (gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or csv_mode.value, value=current_values),
+                    gr.update(choices=choices if has_choices else None, visible=has_choices and not csv_mode.value, value=current_dropdown_values))
 
-        def change_choice_mode(_csv_mode, x_type, x_values_dropdown, y_type, y_values_dropdown, z_type, z_values_dropdown):
+        x_type.change(fn=select_axis, inputs=[x_type, x_values, x_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown])
+        y_type.change(fn=select_axis, inputs=[y_type, y_values, y_values_dropdown], outputs=[fill_y_button, y_values, y_values_dropdown])
+        z_type.change(fn=select_axis, inputs=[z_type, z_values, z_values_dropdown], outputs=[fill_z_button, z_values, z_values_dropdown])
+
+        def change_choice_mode(_csv_mode, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown):
             csv_mode.value = _csv_mode
-            _fill_x_button, _x_values, _x_values_dropdown = select_axis(x_type, x_values_dropdown)
-            _fill_y_button, _y_values, _y_values_dropdown = select_axis(y_type, y_values_dropdown)
-            _fill_z_button, _z_values, _z_values_dropdown = select_axis(z_type, z_values_dropdown)
+            _fill_x_button, _x_values, _x_values_dropdown = select_axis(x_type, x_values, x_values_dropdown)
+            _fill_y_button, _y_values, _y_values_dropdown = select_axis(y_type, y_values, y_values_dropdown)
+            _fill_z_button, _z_values, _z_values_dropdown = select_axis(z_type, z_values, z_values_dropdown)
             return _fill_x_button, _x_values, _x_values_dropdown, _fill_y_button, _y_values, _y_values_dropdown, _fill_z_button, _z_values, _z_values_dropdown
 
-        csv_mode.change(fn=change_choice_mode, inputs=[csv_mode, x_type, x_values_dropdown, y_type, y_values_dropdown, z_type, z_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown, fill_y_button, y_values, y_values_dropdown, fill_z_button, z_values, z_values_dropdown])
+        csv_mode.change(fn=change_choice_mode, inputs=[csv_mode, x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown, fill_y_button, y_values, y_values_dropdown, fill_z_button, z_values, z_values_dropdown])
 
         def get_dropdown_update_from_params(axis, params):
             val_key = f"{axis} Values"
