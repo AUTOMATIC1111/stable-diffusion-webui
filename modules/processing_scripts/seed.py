@@ -24,20 +24,25 @@ class ScriptSeed(scripts.ScriptBuiltin):
 
     def ui(self, is_img2img):
         with gr.Row(elem_id=self.elem_id("seed_row")):
-            if cmd_opts.use_textbox_seed:
-                self.seed = gr.Textbox(label='Seed', value="", elem_id=self.elem_id("seed"))
-            else:
-                self.seed = gr.Number(label='Seed', value=-1, elem_id=self.elem_id("seed"), precision=0)
+            with gr.Column(scale=1, min_width=205):
+                with gr.Row():
+                    if cmd_opts.use_textbox_seed:
+                        self.seed = gr.Textbox(label='Seed', value="", elem_id=self.elem_id("seed"), min_width=100)
+                    else:
+                        self.seed = gr.Number(label='Seed', value=-1, elem_id=self.elem_id("seed"), min_width=100, precision=0)
 
-            random_seed = ToolButton(ui.random_symbol, elem_id=self.elem_id("random_seed"), label='Random seed')
-            reuse_seed = ToolButton(ui.reuse_symbol, elem_id=self.elem_id("reuse_seed"), label='Reuse seed')
+                    random_seed = ToolButton(ui.random_symbol, elem_id=self.elem_id("random_seed"), label='Random seed')
+                    reuse_seed = ToolButton(ui.reuse_symbol, elem_id=self.elem_id("reuse_seed"), label='Reuse seed')
 
-            subseed = gr.Number(label='Variation seed', value=-1, elem_id=self.elem_id("subseed"), precision=0)
+            with gr.Column(scale=1, min_width=205):
+                with gr.Row():
+                    subseed = gr.Number(label='Variation seed', value=-1, elem_id=self.elem_id("subseed"), min_width=100, precision=0)
 
-            random_subseed = ToolButton(ui.random_symbol, elem_id=self.elem_id("random_subseed"))
-            reuse_subseed = ToolButton(ui.reuse_symbol, elem_id=self.elem_id("reuse_subseed"))
+                    random_subseed = ToolButton(ui.random_symbol, elem_id=self.elem_id("random_subseed"))
+                    reuse_subseed = ToolButton(ui.reuse_symbol, elem_id=self.elem_id("reuse_subseed"))
 
-            subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=self.elem_id("subseed_strength"))
+            with gr.Column(scale=2, min_width=100):
+                subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=self.elem_id("subseed_strength"))
 
         random_seed.click(fn=None, _js="function(){setRandomSeed('" + self.elem_id("seed") + "')}", show_progress=False, inputs=[], outputs=[])
         random_subseed.click(fn=None, _js="function(){setRandomSeed('" + self.elem_id("subseed") + "')}", show_progress=False, inputs=[], outputs=[])
