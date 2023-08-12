@@ -182,6 +182,10 @@ def str_permutations(x):
     """dummy function for specifying it in AxisOption's type when you want to get a list of permutations"""
     return x
 
+def list_to_csv_string(data_list):
+    with StringIO() as o:
+        csv.writer(o).writerow(data_list)
+        return o.getvalue().strip()
 
 class AxisOption:
     def __init__(self, label, type, apply, format_value=format_value_add_label, confirm=None, cost=0.0, choices=None):
@@ -377,6 +381,8 @@ re_range_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d
 re_range_count = re.compile(r"\s*([+-]?\s*\d+)\s*-\s*([+-]?\s*\d+)(?:\s*\[(\d+)\s*\])?\s*")
 re_range_count_float = re.compile(r"\s*([+-]?\s*\d+(?:.\d*)?)\s*-\s*([+-]?\s*\d+(?:.\d*)?)(?:\s*\[(\d+(?:.\d*)?)\s*\])?\s*")
 
+use_dropdown = True
+
 
 class Script(scripts.Script):
     def title(self):
@@ -430,28 +436,34 @@ class Script(scripts.Script):
         xz_swap_args = [x_type, x_values, x_values_dropdown, z_type, z_values, z_values_dropdown]
         swap_xz_axes_button.click(swap_axes, inputs=xz_swap_args, outputs=xz_swap_args)
 
-        def fill(x_type):
-            axis = self.current_axis_options[x_type]
-            return axis.choices() if axis.choices else gr.update()
+        def fill(axis_type):
+            axis = self.current_axis_options[axis_type]
+            if axis.choices:
+                if use_dropdown:
+                    return gr.update(), axis.choices()
+                else:
+                    return list_to_csv_string(axis.choices()), gr.update()
+            else:
+                return gr.update(), gr.update()
 
-        fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values_dropdown])
-        fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values_dropdown])
-        fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values_dropdown])
+        fill_x_button.click(fn=fill, inputs=[x_type], outputs=[x_values, x_values_dropdown])
+        fill_y_button.click(fn=fill, inputs=[y_type], outputs=[y_values, y_values_dropdown])
+        fill_z_button.click(fn=fill, inputs=[z_type], outputs=[z_values, z_values_dropdown])
 
-        def select_axis(axis_type,axis_values_dropdown):
+        def select_axis(axis_type, axis_values_dropdown):
             choices = self.current_axis_options[axis_type].choices
             has_choices = choices is not None
             current_values = axis_values_dropdown
             if has_choices:
                 choices = choices()
-                if isinstance(current_values,str):
+                if isinstance(current_values, str):
                     current_values = current_values.split(",")
                 current_values = list(filter(lambda x: x in choices, current_values))
-            return gr.Button.update(visible=has_choices),gr.Textbox.update(visible=not has_choices),gr.update(choices=choices if has_choices else None,visible=has_choices,value=current_values)
+            return gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or not use_dropdown), gr.update(choices=choices if has_choices else None, visible=has_choices and use_dropdown, value=current_values)
 
-        x_type.change(fn=select_axis, inputs=[x_type,x_values_dropdown], outputs=[fill_x_button,x_values,x_values_dropdown])
-        y_type.change(fn=select_axis, inputs=[y_type,y_values_dropdown], outputs=[fill_y_button,y_values,y_values_dropdown])
-        z_type.change(fn=select_axis, inputs=[z_type,z_values_dropdown], outputs=[fill_z_button,z_values,z_values_dropdown])
+        x_type.change(fn=select_axis, inputs=[x_type, x_values_dropdown], outputs=[fill_x_button, x_values, x_values_dropdown])
+        y_type.change(fn=select_axis, inputs=[y_type, y_values_dropdown], outputs=[fill_y_button, y_values, y_values_dropdown])
+        z_type.change(fn=select_axis, inputs=[z_type, z_values_dropdown], outputs=[fill_z_button, z_values, z_values_dropdown])
 
         def get_dropdown_update_from_params(axis,params):
             val_key = f"{axis} Values"
@@ -484,7 +496,7 @@ class Script(scripts.Script):
             if opt.label == 'Nothing':
                 return [0]
 
-            if opt.choices is not None:
+            if opt.choices is not None and use_dropdown:
                 valslist = vals_dropdown
             else:
                 valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
@@ -545,17 +557,17 @@ class Script(scripts.Script):
             return valslist
 
         x_opt = self.current_axis_options[x_type]
-        if x_opt.choices is not None:
+        if x_opt.choices is not None and use_dropdown:
             x_values = ",".join(x_values_dropdown)
         xs = process_axis(x_opt, x_values, x_values_dropdown)
 
         y_opt = self.current_axis_options[y_type]
-        if y_opt.choices is not None:
+        if y_opt.choices is not None and use_dropdown:
             y_values = ",".join(y_values_dropdown)
         ys = process_axis(y_opt, y_values, y_values_dropdown)
 
         z_opt = self.current_axis_options[z_type]
-        if z_opt.choices is not None:
+        if z_opt.choices is not None and use_dropdown:
             z_values = ",".join(z_values_dropdown)
         zs = process_axis(z_opt, z_values, z_values_dropdown)
 
