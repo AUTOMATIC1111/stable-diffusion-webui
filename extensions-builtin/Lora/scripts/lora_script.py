@@ -40,6 +40,18 @@ if not hasattr(torch.nn, 'Conv2d_forward_before_network'):
 if not hasattr(torch.nn, 'Conv2d_load_state_dict_before_network'):
     torch.nn.Conv2d_load_state_dict_before_network = torch.nn.Conv2d._load_from_state_dict
 
+if not hasattr(torch.nn, 'GroupNorm_forward_before_network'):
+    torch.nn.GroupNorm_forward_before_network = torch.nn.GroupNorm.forward
+
+if not hasattr(torch.nn, 'GroupNorm_load_state_dict_before_network'):
+    torch.nn.GroupNorm_load_state_dict_before_network = torch.nn.GroupNorm._load_from_state_dict
+
+if not hasattr(torch.nn, 'LayerNorm_forward_before_network'):
+    torch.nn.LayerNorm_forward_before_network = torch.nn.LayerNorm.forward
+
+if not hasattr(torch.nn, 'LayerNorm_load_state_dict_before_network'):
+    torch.nn.LayerNorm_load_state_dict_before_network = torch.nn.LayerNorm._load_from_state_dict
+
 if not hasattr(torch.nn, 'MultiheadAttention_forward_before_network'):
     torch.nn.MultiheadAttention_forward_before_network = torch.nn.MultiheadAttention.forward
 
@@ -50,6 +62,10 @@ torch.nn.Linear.forward = networks.network_Linear_forward
 torch.nn.Linear._load_from_state_dict = networks.network_Linear_load_state_dict
 torch.nn.Conv2d.forward = networks.network_Conv2d_forward
 torch.nn.Conv2d._load_from_state_dict = networks.network_Conv2d_load_state_dict
+torch.nn.GroupNorm.forward = networks.network_GroupNorm_forward
+torch.nn.GroupNorm._load_from_state_dict = networks.network_GroupNorm_load_state_dict
+torch.nn.LayerNorm.forward = networks.network_LayerNorm_forward
+torch.nn.LayerNorm._load_from_state_dict = networks.network_LayerNorm_load_state_dict
 torch.nn.MultiheadAttention.forward = networks.network_MultiheadAttention_forward
 torch.nn.MultiheadAttention._load_from_state_dict = networks.network_MultiheadAttention_load_state_dict
 
