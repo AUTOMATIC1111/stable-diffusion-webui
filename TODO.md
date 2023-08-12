@@ -42,6 +42,7 @@ Stuff to be added, in no particular order...
   - Style editor (use json format instead of csv)
   - Profile manager (for config.json and ui-config.json)
   - Multi-user support
+  - Add [SAG](https://huggingface.co/docs/diffusers/v0.19.3/en/api/pipelines/self_attention_guidance),(https://github.com/ashen-sensored/sd_webui_SAG)
   - Image phash and hdash using `imagehash`
   - Model merge using `git-rebasin`
   - Enable refiner-style workflow for `ldm` backend
