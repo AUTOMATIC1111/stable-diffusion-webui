@@ -145,10 +145,10 @@ class NetworkModule:
         if orig_weight.size().numel() == updown.size().numel():
             updown = updown.reshape(orig_weight.shape)
 
-        if ex_bias is None:
-            ex_bias = 0
+        if ex_bias is not None:
+            ex_bias = ex_bias * self.multiplier()
 
-        return updown * self.calc_scale() * self.multiplier(), ex_bias * self.multiplier()
+        return updown * self.calc_scale() * self.multiplier(), ex_bias
 
     def calc_updown(self, target):
         raise NotImplementedError()

@@ -322,7 +322,7 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
                         updown = torch.nn.functional.pad(updown, (0, 0, 0, 0, 0, 5))
 
                     self.weight += updown
-                    if getattr(self, 'bias', None) is not None:
+                    if ex_bias is not None and getattr(self, 'bias', None) is not None:
                         self.bias += ex_bias
                     continue
 
