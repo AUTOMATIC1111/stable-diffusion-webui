@@ -384,7 +384,7 @@ def check_torch():
     try:
         if 'xformers' in xformers_package:
             install(f'--no-deps {xformers_package}', ignore=True)
-        else:
+        elif not args.experimental:
             x = pkg_resources.working_set.by_key.get('xformers', None)
             if x is not None:
                 log.warning(f'Not used, uninstalling: {x}')
@@ -435,7 +435,7 @@ def install_packages():
     bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', None)
     if bitsandbytes_package is not None:
         install(bitsandbytes_package, 'bitsandbytes', ignore=True)
-    else:
+    elif not args.experimental:
         bitsandbytes_package = pkg_resources.working_set.by_key.get('bitsandbytes', None)
         if bitsandbytes_package is not None:
             log.warning(f'Not used, uninstalling: {bitsandbytes_package}')
