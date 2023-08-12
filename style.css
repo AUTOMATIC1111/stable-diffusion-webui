@@ -386,13 +386,16 @@ div#extras_scale_to_tab div.form{
 }
 
 #quicksettings > div, #quicksettings > fieldset{
-    max-width: 24em;
-    min-width: 24em;
-    width: 24em;
+    max-width: 36em;
+    width: fit-content;
+    flex: auto;
     padding: 0;
     border: none;
     box-shadow: none;
     background: none;
+}
+#quicksettings > div.gradio-dropdown{
+    min-width: 24em !important;
 }
 
 #settings{
