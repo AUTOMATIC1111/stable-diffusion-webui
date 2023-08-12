@@ -175,17 +175,21 @@ def do_nothing(p, x, xs):
 def format_nothing(p, opt, x):
     return ""
 
+
 def format_remove_path(p, opt, x):
     return os.path.basename(x)
+
 
 def str_permutations(x):
     """dummy function for specifying it in AxisOption's type when you want to get a list of permutations"""
     return x
 
+
 def list_to_csv_string(data_list):
     with StringIO() as o:
         csv.writer(o).writerow(data_list)
         return o.getvalue().strip()
+
 
 class AxisOption:
     def __init__(self, label, type, apply, format_value=format_value_add_label, confirm=None, cost=0.0, choices=None):
@@ -202,6 +206,7 @@ class AxisOptionImg2Img(AxisOption):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_img2img = True
+
 
 class AxisOptionTxt2Img(AxisOption):
     def __init__(self, *args, **kwargs):
@@ -290,10 +295,9 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
             cell_size = (processed_result.width, processed_result.height)
             if processed_result.images[0] is not None:
                 cell_mode = processed_result.images[0].mode
-                #This corrects size in case of batches:
+                # This corrects size in case of batches:
                 cell_size = processed_result.images[0].size
             processed_result.images[idx] = Image.new(cell_mode, cell_size)
-
 
     if first_axes_processed == 'x':
         for ix, x in enumerate(xs):
@@ -352,9 +356,9 @@ def draw_xyz_grid(p, xs, ys, zs, x_labels, y_labels, z_labels, cell, draw_legend
     if draw_legend:
         z_grid = images.draw_grid_annotations(z_grid, sub_grid_size[0], sub_grid_size[1], title_texts, [[images.GridAnnotation()]])
     processed_result.images.insert(0, z_grid)
-    #TODO: Deeper aspects of the program rely on grid info being misaligned between metadata arrays, which is not ideal.
-    #processed_result.all_prompts.insert(0, processed_result.all_prompts[0])
-    #processed_result.all_seeds.insert(0, processed_result.all_seeds[0])
+    # TODO: Deeper aspects of the program rely on grid info being misaligned between metadata arrays, which is not ideal.
+    # processed_result.all_prompts.insert(0, processed_result.all_prompts[0])
+    # processed_result.all_seeds.insert(0, processed_result.all_seeds[0])
     processed_result.infotexts.insert(0, processed_result.infotexts[0])
 
     return processed_result
@@ -396,19 +400,19 @@ class Script(scripts.Script):
                 with gr.Row():
                     x_type = gr.Dropdown(label="X type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[1].label, type="index", elem_id=self.elem_id("x_type"))
                     x_values = gr.Textbox(label="X values", lines=1, elem_id=self.elem_id("x_values"))
-                    x_values_dropdown = gr.Dropdown(label="X values",visible=False,multiselect=True,interactive=True)
+                    x_values_dropdown = gr.Dropdown(label="X values", visible=False, multiselect=True, interactive=True)
                     fill_x_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_x_tool_button", visible=False)
 
                 with gr.Row():
                     y_type = gr.Dropdown(label="Y type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("y_type"))
                     y_values = gr.Textbox(label="Y values", lines=1, elem_id=self.elem_id("y_values"))
-                    y_values_dropdown = gr.Dropdown(label="Y values",visible=False,multiselect=True,interactive=True)
+                    y_values_dropdown = gr.Dropdown(label="Y values", visible=False, multiselect=True, interactive=True)
                     fill_y_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_y_tool_button", visible=False)
 
                 with gr.Row():
                     z_type = gr.Dropdown(label="Z type", choices=[x.label for x in self.current_axis_options], value=self.current_axis_options[0].label, type="index", elem_id=self.elem_id("z_type"))
                     z_values = gr.Textbox(label="Z values", lines=1, elem_id=self.elem_id("z_values"))
-                    z_values_dropdown = gr.Dropdown(label="Z values",visible=False,multiselect=True,interactive=True)
+                    z_values_dropdown = gr.Dropdown(label="Z values", visible=False, multiselect=True, interactive=True)
                     fill_z_button = ToolButton(value=fill_values_symbol, elem_id="xyz_grid_fill_z_tool_button", visible=False)
 
         with gr.Row(variant="compact", elem_id="axis_options"):
@@ -465,22 +469,22 @@ class Script(scripts.Script):
         y_type.change(fn=select_axis, inputs=[y_type, y_values_dropdown], outputs=[fill_y_button, y_values, y_values_dropdown])
         z_type.change(fn=select_axis, inputs=[z_type, z_values_dropdown], outputs=[fill_z_button, z_values, z_values_dropdown])
 
-        def get_dropdown_update_from_params(axis,params):
+        def get_dropdown_update_from_params(axis, params):
             val_key = f"{axis} Values"
-            vals = params.get(val_key,"")
+            vals = params.get(val_key, "")
             valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
-            return gr.update(value = valslist)
+            return gr.update(value=valslist)
 
         self.infotext_fields = (
             (x_type, "X Type"),
             (x_values, "X Values"),
-            (x_values_dropdown, lambda params:get_dropdown_update_from_params("X",params)),
+            (x_values_dropdown, lambda params: get_dropdown_update_from_params("X", params)),
             (y_type, "Y Type"),
             (y_values, "Y Values"),
-            (y_values_dropdown, lambda params:get_dropdown_update_from_params("Y",params)),
+            (y_values_dropdown, lambda params: get_dropdown_update_from_params("Y", params)),
             (z_type, "Z Type"),
             (z_values, "Z Values"),
-            (z_values_dropdown, lambda params:get_dropdown_update_from_params("Z",params)),
+            (z_values_dropdown, lambda params: get_dropdown_update_from_params("Z", params)),
         )
 
         return [x_type, x_values, x_values_dropdown, y_type, y_values, y_values_dropdown, z_type, z_values, z_values_dropdown, draw_legend, include_lone_images, include_sub_grids, no_fixed_seeds, margin_size]
@@ -515,8 +519,8 @@ class Script(scripts.Script):
                         valslist_ext += list(range(start, end, step))
                     elif mc is not None:
                         start = int(mc.group(1))
-                        end   = int(mc.group(2))
-                        num   = int(mc.group(3)) if mc.group(3) is not None else 1
+                        end = int(mc.group(2))
+                        num = int(mc.group(3)) if mc.group(3) is not None else 1
 
                         valslist_ext += [int(x) for x in np.linspace(start=start, stop=end, num=num).tolist()]
                     else:
@@ -537,8 +541,8 @@ class Script(scripts.Script):
                         valslist_ext += np.arange(start, end + step, step).tolist()
                     elif mc is not None:
                         start = float(mc.group(1))
-                        end   = float(mc.group(2))
-                        num   = int(mc.group(3)) if mc.group(3) is not None else 1
+                        end = float(mc.group(2))
+                        num = int(mc.group(3)) if mc.group(3) is not None else 1
 
                         valslist_ext += np.linspace(start=start, stop=end, num=num).tolist()
                     else:
@@ -572,7 +576,7 @@ class Script(scripts.Script):
         zs = process_axis(z_opt, z_values, z_values_dropdown)
 
         # this could be moved to common code, but unlikely to be ever triggered anywhere else
-        Image.MAX_IMAGE_PIXELS = None # disable check in Pillow and rely on check below to allow large custom image sizes
+        Image.MAX_IMAGE_PIXELS = None  # disable check in Pillow and rely on check below to allow large custom image sizes
         grid_mp = round(len(xs) * len(ys) * len(zs) * p.width * p.height / 1000000)
         assert grid_mp < opts.img_max_size_mp, f'Error: Resulting grid would be too large ({grid_mp} MPixels) (max configured size is {opts.img_max_size_mp} MPixels)'
 
@@ -732,7 +736,7 @@ class Script(scripts.Script):
             # Auto-save main and sub-grids:
             grid_count = z_count + 1 if z_count > 1 else 1
             for g in range(grid_count):
-                #TODO: See previous comment about intentional data misalignment.
+                # TODO: See previous comment about intentional data misalignment.
                 adj_g = g-1 if g > 0 else g
                 images.save_image(processed.images[g], p.outpath_grids, "xyz_grid", info=processed.infotexts[g], extension=opts.grid_format, prompt=processed.all_prompts[adj_g], seed=processed.all_seeds[adj_g], grid=True, p=processed)
 
