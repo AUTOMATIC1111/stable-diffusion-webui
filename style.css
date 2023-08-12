@@ -348,8 +348,8 @@ div#extras_scale_to_tab div.form{
     z-index: 5;
 }
 
-.image-buttons button{
-    min-width: auto;
+.image-buttons > .form{
+    justify-content: center;
 }
 
 .infotext {
