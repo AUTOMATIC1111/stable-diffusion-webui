@@ -62,10 +62,10 @@ class Script:
     api_info = None
     """Generated value of type modules.api.models.ScriptInfo with information about the script for API"""
 
-    on_before_component_elem_id = []
+    on_before_component_elem_id = None
     """list of callbacks to be called before a component with an elem_id is created"""
 
-    on_after_component_elem_id = []
+    on_after_component_elem_id = None
     """list of callbacks to be called after a component with an elem_id is created"""
 
     def title(self):
@@ -235,6 +235,8 @@ class Script:
         This function is an alternative to before_component in that it also cllows to run before a component is created, but
         it doesn't require to be called for every created component - just for the one you need.
         """
+        if self.on_before_component_elem_id is None:
+            self.on_before_component_elem_id = []
 
         self.on_before_component_elem_id.append((elem_id, callback))
 
@@ -242,6 +244,8 @@ class Script:
         """
         Calls callback after a component is created. The callback function is called with a single argument of type OnComponent.
         """
+        if self.on_after_component_elem_id is None:
+            self.on_after_component_elem_id = []
 
         self.on_after_component_elem_id.append((elem_id, callback))
 
@@ -545,11 +549,15 @@ class ScriptRunner:
         self.infotext_fields.extend([(script.group, onload_script_visibility) for script in self.selectable_scripts])
 
         for script in self.scripts:
-            for elem_id, callback in script.on_before_component_elem_id:
-                self.on_before_component_elem_id.get(elem_id, []).append((callback, script))
+            for elem_id, callback in script.on_before_component_elem_id or []:
+                items = self.on_before_component_elem_id.get(elem_id, [])
+                items.append((callback, script))
+                self.on_before_component_elem_id[elem_id] = items
 
-            for elem_id, callback in script.on_after_component_elem_id:
-                self.on_after_component_elem_id.get(elem_id, []).append((callback, script))
+            for elem_id, callback in script.on_after_component_elem_id or []:
+                items = self.on_after_component_elem_id.get(elem_id, [])
+                items.append((callback, script))
+                self.on_after_component_elem_id[elem_id] = items
 
         return self.inputs
 
@@ -644,12 +652,11 @@ class ScriptRunner:
                 errors.report(f"Error running postprocess_image: {script.filename}", exc_info=True)
 
     def before_component(self, component, **kwargs):
-        for callbacks in self.on_before_component_elem_id.get(kwargs.get("elem_id"), []):
-            for callback, script in callbacks:
-                try:
-                    callback(OnComponent(component=component))
-                except Exception:
-                    errors.report(f"Error running on_before_component: {script.filename}", exc_info=True)
+        for callback, script in self.on_before_component_elem_id.get(kwargs.get("elem_id"), []):
+            try:
+                callback(OnComponent(component=component))
+            except Exception:
+                errors.report(f"Error running on_before_component: {script.filename}", exc_info=True)
 
         for script in self.scripts:
             try:
@@ -658,12 +665,11 @@ class ScriptRunner:
                 errors.report(f"Error running before_component: {script.filename}", exc_info=True)
 
     def after_component(self, component, **kwargs):
-        for callbacks in self.on_after_component_elem_id.get(component.elem_id, []):
-            for callback, script in callbacks:
-                try:
-                    callback(OnComponent(component=component))
-                except Exception:
-                    errors.report(f"Error running on_after_component: {script.filename}", exc_info=True)
+        for callback, script in self.on_after_component_elem_id.get(component.elem_id, []):
+            try:
+                callback(OnComponent(component=component))
+            except Exception:
+                errors.report(f"Error running on_after_component: {script.filename}", exc_info=True)
 
         for script in self.scripts:
             try:

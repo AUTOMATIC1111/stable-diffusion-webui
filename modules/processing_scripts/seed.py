@@ -54,7 +54,7 @@ class ScriptSeed(scripts.ScriptBuiltin):
         ]
 
         self.on_after_component(lambda x: connect_reuse_seed(self.seed, reuse_seed, x.component, False), elem_id=f'generation_info_{self.tabname}')
-        self.on_after_component(lambda x: connect_reuse_seed(self.seed, reuse_subseed, x.component, True), elem_id=f'generation_info_{self.tabname}')
+        self.on_after_component(lambda x: connect_reuse_seed(subseed, reuse_subseed, x.component, True), elem_id=f'generation_info_{self.tabname}')
 
         return self.seed, subseed, subseed_strength
 
