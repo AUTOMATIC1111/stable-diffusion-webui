@@ -12,7 +12,6 @@ class ModuleTypeNorm(network.ModuleType):
 class NetworkModuleNorm(network.NetworkModule):
     def __init__(self,  net: network.Network, weights: network.NetworkWeights):
         super().__init__(net, weights)
-        print("NetworkModuleNorm")
 
         self.w_norm = weights.w.get("w_norm")
         self.b_norm = weights.w.get("b_norm")
