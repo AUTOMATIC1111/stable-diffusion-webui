@@ -103,6 +103,11 @@ LoRA is added to the prompt by putting the following text into any location: `<l
 
 The text for adding LoRA to the prompt, `<lora:filename:multiplier>`, is only used to enable LoRA, and is erased from prompt afterwards, so you can't do tricks with prompt editing like `[<lora:one:1.0>|<lora:two:1.0>]`. A batch with multiple different prompts will only use the LoRA from the first prompt.
 
+### More LoRA types
+Since version `1.5.0`, webui supports other network types through the built-in extension.
+
+See the details in the [[PR]](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11821)
+
 ## Hypernetworks
 A method to fine tune weights for CLIP and Unet, the language model and the actual image de-noiser used by Stable Diffusion, generously donated to the world by our friends at Novel AI in autumn 2022. Works in the same way as LoRA except for sharing weights for some layers. Multiplier can be used to choose how strongly the hypernetwork will affect the output.
 
