@@ -370,14 +370,13 @@ div#extras_scale_to_tab div.form{
 
 /* settings */
 #quicksettings {
-    width: fit-content;
     align-items: end;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
     max-width: 36em;
     width: fit-content;
-    flex: auto;
+    flex: 0 1 fit-content;
     padding: 0;
     border: none;
     box-shadow: none;
