@@ -577,17 +577,17 @@ class Script(scripts.Script):
 
         x_opt = self.current_axis_options[x_type]
         if x_opt.choices is not None and not csv_mode:
-            x_values = ",".join(x_values_dropdown)
+            x_values = list_to_csv_string(x_values_dropdown)
         xs = process_axis(x_opt, x_values, x_values_dropdown)
 
         y_opt = self.current_axis_options[y_type]
         if y_opt.choices is not None and not csv_mode:
-            y_values = ",".join(y_values_dropdown)
+            y_values = list_to_csv_string(y_values_dropdown)
         ys = process_axis(y_opt, y_values, y_values_dropdown)
 
         z_opt = self.current_axis_options[z_type]
         if z_opt.choices is not None and not csv_mode:
-            z_values = ",".join(z_values_dropdown)
+            z_values = list_to_csv_string(z_values_dropdown)
         zs = process_axis(z_opt, z_values, z_values_dropdown)
 
         # this could be moved to common code, but unlikely to be ever triggered anywhere else
