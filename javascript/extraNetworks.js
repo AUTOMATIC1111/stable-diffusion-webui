@@ -133,7 +133,6 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
             }
             return found;
         });
-        
         if (foundAtPosition >= 0 && newTextareaText.substr(foundAtPosition, extraTextAfterNet.length) == extraTextAfterNet) {
             newTextareaText = newTextareaText.substr(0, foundAtPosition) + newTextareaText.substr(foundAtPosition + extraTextAfterNet.length);
         }
@@ -155,26 +154,21 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
 }
 function cardClicked(tabname, textChanged, allowNegativePrompt) {
     var textarea = allowNegativePrompt ? activePromptTextarea[tabname] : gradioApp().querySelector("#" + tabname + "_prompt > label > textarea");
-        
     if (!tryToRemoveExtraNetworkFromPrompt(textarea, textChanged)) {
-        
         var textToAdd;
         if (textarea.value.trim() === '') {
-            textToAdd = textChanged
-          } else if (textarea.value.trim().endsWith(opts.extra_networks_add_text_separator)) {
-            textToAdd = ' '+textChanged
-          } else {
-            textToAdd = opts.extra_networks_add_text_separator +' '+ textChanged
-          }
+            textToAdd = textChanged;
+        } else if (textarea.value.trim().endsWith(opts.extra_networks_add_text_separator)) {
+            textToAdd = ' ' + textChanged;
+        } else {
+            textToAdd = opts.extra_networks_add_text_separator + ' ' + textChanged;
+        }
         textarea.value = textarea.value.trim() + textToAdd;
     }
-    
-    patternClean=new RegExp(`(\\s|${opts.extra_networks_add_text_separator}){2,}`,"g")
-    textarea.value = textarea.value.replaceAll(patternClean,opts.extra_networks_add_text_separator+' ')
-    
-    patternTrim=new RegExp(`^(\\s|${opts.extra_networks_add_text_separator})+|(\\s|${opts.extra_networks_add_text_separator})+$`,"g")
-    textarea.value = textarea.value.replaceAll(patternTrim,'')
-    
+    var patternClean = new RegExp(`(\\s|${opts.extra_networks_add_text_separator}){2,}`, "g");
+    textarea.value = textarea.value.replaceAll(patternClean, opts.extra_networks_add_text_separator + ' ');
+    var patternTrim = new RegExp(`^(\\s|${opts.extra_networks_add_text_separator})+|(\\s|${opts.extra_networks_add_text_separator})+$`, "g");
+    textarea.value = textarea.value.replaceAll(patternTrim, '');
     updateInput(textarea);
 }
 
