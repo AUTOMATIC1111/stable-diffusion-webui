@@ -1089,8 +1089,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
             imgs.append(image)
-        if shared.backend == shared.Backend.DIFFUSERS:
-            self.init_images = unprocessed # assign early for diffusers
+        self.init_images = unprocessed if shared.backend == shared.Backend.DIFFUSERS else imgs
         if len(imgs) == 1:
             batch_images = np.expand_dims(imgs[0], axis=0).repeat(self.batch_size, axis=0)
             if self.overlay_images is not None:

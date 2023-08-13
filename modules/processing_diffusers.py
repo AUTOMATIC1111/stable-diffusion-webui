@@ -162,7 +162,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
     cross_attention_kwargs={}
-    if p.init_images is not None and len(p.init_images) > 0:
+    if len(getattr(p, 'init_images', [])) > 0:
         while len(p.init_images) < len(prompts):
             p.init_images.append(p.init_images[-1])
     if lora_state['active']:
