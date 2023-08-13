@@ -157,6 +157,7 @@ class StableDiffusionProcessing:
     cached_uc = [None, None]
     cached_c = [None, None]
 
+    comments: dict = None
     sampler: sd_samplers_common.Sampler | None = field(default=None, init=False)
     is_using_inpainting_conditioning: bool = field(default=False, init=False)
     paste_to: tuple | None = field(default=None, init=False)
@@ -196,6 +197,8 @@ class StableDiffusionProcessing:
         if self.sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
+        self.comments = {}
+
         self.sampler_noise_scheduler_override = None
         self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
         self.s_churn = self.s_churn if self.s_churn is not None else opts.s_churn
@@ -225,6 +228,9 @@ class StableDiffusionProcessing:
     @sd_model.setter
     def sd_model(self, value):
         pass
+
+    def comment(self, text):
+        self.comments[text] = 1
 
     def txt2img_image_conditioning(self, x, width=None, height=None):
         self.is_using_inpainting_conditioning = self.sd_model.model.conditioning_key in {'hybrid', 'concat'}
@@ -429,7 +435,7 @@ class Processed:
         self.subseed = subseed
         self.subseed_strength = p.subseed_strength
         self.info = info
-        self.comments = comments
+        self.comments = "".join(f"{comment}\n" for comment in p.comments)
         self.width = p.width
         self.height = p.height
         self.sampler_name = p.sampler_name
@@ -720,8 +726,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     modules.sd_hijack.model_hijack.apply_circular(p.tiling)
     modules.sd_hijack.model_hijack.clear_comments()
 
-    comments = {}
-
     p.setup_prompts()
 
     if type(seed) == list:
@@ -801,7 +805,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             p.setup_conds()
 
             for comment in model_hijack.comments:
-                comments[comment] = 1
+                p.comment(comment)
 
             p.extra_generation_params.update(model_hijack.extra_generation_params)
 
@@ -930,7 +934,6 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         images_list=output_images,
         seed=p.all_seeds[0],
         info=infotexts[0],
-        comments="".join(f"{comment}\n" for comment in comments),
         subseed=p.all_subseeds[0],
         index_of_first_image=index_of_first_image,
         infotexts=infotexts,

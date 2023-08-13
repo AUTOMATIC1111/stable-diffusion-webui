@@ -23,9 +23,9 @@ def unload():
 def before_ui():
     ui_extra_networks.register_page(ui_extra_networks_lora.ExtraNetworksPageLora())
 
-    extra_network = extra_networks_lora.ExtraNetworkLora()
-    extra_networks.register_extra_network(extra_network)
-    extra_networks.register_extra_network_alias(extra_network, "lyco")
+    networks.extra_network_lora = extra_networks_lora.ExtraNetworkLora()
+    extra_networks.register_extra_network(networks.extra_network_lora)
+    extra_networks.register_extra_network_alias(networks.extra_network_lora, "lyco")
 
 
 if not hasattr(torch.nn, 'Linear_forward_before_network'):
