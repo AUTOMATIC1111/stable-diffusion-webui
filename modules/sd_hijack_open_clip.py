@@ -55,7 +55,10 @@ class FrozenOpenCLIPEmbedder2WithCustomWords(sd_hijack_clip.FrozenCLIPEmbedderWi
 
     def encode_with_transformers(self, tokens):
         d = self.wrapped.encode_with_transformer(tokens)
-        z = d[self.wrapped.layer]
+        if opts.CLIP_stop_at_last_layers == 1:
+            z = d['last']
+        else:
+            z = d[self.wrapped.layer]
 
         pooled = d.get("pooled")
         if pooled is not None:
