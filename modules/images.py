@@ -237,7 +237,13 @@ def draw_prompt_matrix(im, width, height, all_prompts, margin=0):
 
     hor_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_horiz)] for pos in range(1 << len(prompts_horiz))]
     ver_texts = [[GridAnnotation(x, is_active=pos & (1 << i) != 0) for i, x in enumerate(prompts_vert)] for pos in range(1 << len(prompts_vert))]
+    return draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin)
 
+
+def single_col_matrix(im, width, height, all_prompts, margin=0):
+
+    hor_texts = [[GridAnnotation(all_prompts[0], is_active=True)]]
+    ver_texts=[[GridAnnotation(x, is_active=True)] for x in [""]+all_prompts[1:]]
     return draw_grid_annotations(im, width, height, hor_texts, ver_texts, margin)
 
 

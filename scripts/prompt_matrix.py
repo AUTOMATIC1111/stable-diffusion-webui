@@ -47,15 +47,16 @@ class Script(scripts.Script):
             with gr.Column():
                 put_at_start = gr.Checkbox(label='Put variable parts at start of prompt', value=False, elem_id=self.elem_id("put_at_start"))
                 different_seeds = gr.Checkbox(label='Use different seed for each picture', value=False, elem_id=self.elem_id("different_seeds"))
+                iter_only = gr.Checkbox(label="Just iterate, Don't make combinations", value=False, elem_id=self.elem_id("iter_only"))
             with gr.Column():
                 prompt_type = gr.Radio(["positive", "negative"], label="Select prompt", elem_id=self.elem_id("prompt_type"), value="positive")
                 variations_delimiter = gr.Radio(["comma", "space"], label="Select joining char", elem_id=self.elem_id("variations_delimiter"), value="comma")
             with gr.Column():
                 margin_size = gr.Slider(label="Grid margins (px)", minimum=0, maximum=500, value=0, step=2, elem_id=self.elem_id("margin_size"))
 
-        return [put_at_start, different_seeds, prompt_type, variations_delimiter, margin_size]
+        return [put_at_start, different_seeds, prompt_type, iter_only, variations_delimiter, margin_size]
 
-    def run(self, p, put_at_start, different_seeds, prompt_type, variations_delimiter, margin_size):
+    def run(self, p, put_at_start, different_seeds, prompt_type, iter_only, variations_delimiter, margin_size):
         modules.processing.fix_seed(p)
         # Raise error if promp type is not positive or negative
         if prompt_type not in ["positive", "negative"]:
@@ -70,18 +71,24 @@ class Script(scripts.Script):
 
         delimiter = ", " if variations_delimiter == "comma" else " "
 
-        all_prompts = []
         prompt_matrix_parts = original_prompt.split("|")
-        combination_count = 2 ** (len(prompt_matrix_parts) - 1)
-        for combination_num in range(combination_count):
-            selected_prompts = [text.strip().strip(',') for n, text in enumerate(prompt_matrix_parts[1:]) if combination_num & (1 << n)]
 
-            if put_at_start:
-                selected_prompts = selected_prompts + [prompt_matrix_parts[0]]
-            else:
-                selected_prompts = [prompt_matrix_parts[0]] + selected_prompts
+        all_prompts=[]
+        if iter_only:
+            all_prompts.append(prompt_matrix_parts[0])
+            for combination_num in range(len(prompt_matrix_parts) - 1):
+                all_prompts.append(delimiter.join([prompt_matrix_parts[0],prompt_matrix_parts[combination_num+1]]))
+        else:
+            combination_count = 2 ** (len(prompt_matrix_parts) - 1)
+            for combination_num in range(combination_count):
+                selected_prompts = [text.strip().strip(',') for n, text in enumerate(prompt_matrix_parts[1:]) if combination_num & (1 << n)]
 
-            all_prompts.append(delimiter.join(selected_prompts))
+                if put_at_start:
+                    selected_prompts = selected_prompts + [prompt_matrix_parts[0]]
+                else:
+                    selected_prompts = [prompt_matrix_parts[0]] + selected_prompts
+
+                all_prompts.append(delimiter.join(selected_prompts)) 
 
         p.n_iter = math.ceil(len(all_prompts) / p.batch_size)
         p.do_not_save_grid = True
@@ -96,8 +103,14 @@ class Script(scripts.Script):
         p.prompt_for_display = positive_prompt
         processed = process_images(p)
 
-        grid = images.image_grid(processed.images, p.batch_size, rows=1 << ((len(prompt_matrix_parts) - 1) // 2))
-        grid = images.draw_prompt_matrix(grid, processed.images[0].width, processed.images[0].height, prompt_matrix_parts, margin_size)
+        count_rows=len(prompt_matrix_parts) if iter_only else (1 << ((len(prompt_matrix_parts) - 1) // 2))
+        grid = images.image_grid(processed.images, p.batch_size, count_rows)
+
+        if(iter_only):
+            grid = images.single_col_matrix(grid, processed.images[0].width, processed.images[0].height, prompt_matrix_parts, margin_size)
+        else:
+            grid = images.draw_prompt_matrix(grid, processed.images[0].width, processed.images[0].height, prompt_matrix_parts, margin_size)
+
         processed.images.insert(0, grid)
         processed.index_of_first_image = 1
         processed.infotexts.insert(0, processed.infotexts[0])
