@@ -1,4 +1,4 @@
-from modules import extra_networks, shared, sd_hijack
+from modules import extra_networks, shared
 import networks
 
 
