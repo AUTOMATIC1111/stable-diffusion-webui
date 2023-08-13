@@ -1192,6 +1192,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
 
         sd_models.apply_token_merging(self.sd_model, self.get_token_merging_ratio())
 
+        self.sampler = None
+        devices.torch_gc()
+
         decoded_samples = decode_latent_batch(self.sd_model, samples, target_device=devices.cpu, check_for_nans=True)
 
         self.is_hr_pass = False
