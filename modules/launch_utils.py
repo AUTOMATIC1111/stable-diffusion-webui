@@ -173,9 +173,9 @@ def git_clone(url, dir, name, commithash=None):
         if current_hash == commithash:
             return
 
-        run_git('fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}", autofix=False)
+        run_git(dir, name, 'fetch', f"Fetching updates for {name}...", f"Couldn't fetch {name}", autofix=False)
 
-        run_git('checkout', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
+        run_git(dir, name, 'checkout', f"Checking out commit for {name} with hash: {commithash}...", f"Couldn't checkout commit {commithash} for {name}", live=True)
 
         return
 
