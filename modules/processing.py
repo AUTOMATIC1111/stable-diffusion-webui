@@ -1077,7 +1077,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if crop_region is not None:
                 image = image.crop(crop_region)
                 image = images.resize_image(3, image, self.width, self.height)
-            self.init_images = image # assign early for diffusers
+            self.init_images = [image] # assign early for diffusers
             if image_mask is not None:
                 if self.inpainting_fill != 1:
                     image = masking.fill(image, latent_mask)

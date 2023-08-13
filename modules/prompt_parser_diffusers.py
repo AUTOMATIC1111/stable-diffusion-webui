@@ -99,7 +99,7 @@ def compel_encode_prompt(
         text_encoder=pipeline.text_encoder,
         returned_embeddings_type=embedding_type,
         requires_pooled=False,
-        # truncate_long_prompts=False,
+        truncate_long_prompts=False,
         device=shared.device
     )
 
