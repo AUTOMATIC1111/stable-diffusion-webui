@@ -67,7 +67,7 @@ def torch_gc(force=False):
         previous_oom = oom
         shared.log.warning(f'GPU out-of-memory error: {mem}')
     if used > 95:
-        shared.log.warning(f'GPU high memory utilization: {used}% {mem}')
+        shared.log.info(f'GPU high memory utilization: {used}% {mem}')
         force = True
         if backend == "directml":
             practical_used = round(100 * torch.cuda.memory_allocated() / (1 << 30) / gpu.get('total', 1))
