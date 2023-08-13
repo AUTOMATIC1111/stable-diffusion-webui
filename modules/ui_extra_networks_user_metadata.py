@@ -93,11 +93,13 @@ class UserMetadataEditor:
         item = self.page.items.get(name, {})
         try:
             filename = item["filename"]
+            shorthash = item.get("shorthash", None)
 
             stats = os.stat(filename)
             params = [
                 ('Filename: ', os.path.basename(filename)),
                 ('File size: ', sysinfo.pretty_bytes(stats.st_size)),
+                ('Hash: ', shorthash),
                 ('Modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
             ]
 
@@ -115,7 +117,7 @@ class UserMetadataEditor:
             errors.display(e, f"reading metadata info for {name}")
             params = []
 
-        table = '<table class="file-metadata">' + "".join(f"<tr><th>{name}</th><td>{value}</td></tr>" for name, value in params) + '</table>'
+        table = '<table class="file-metadata">' + "".join(f"<tr><th>{name}</th><td>{value}</td></tr>" for name, value in params if value is not None) + '</table>'
 
         return html.escape(name), user_metadata.get('description', ''), table, self.get_card_html(name), user_metadata.get('notes', '')
 
