@@ -51,13 +51,13 @@ class CFGDenoiserTimesteps(CFGDenoiser):
         self.alphas = shared.sd_model.alphas_cumprod
 
     def get_pred_x0(self, x_in, x_out, sigma):
-        ts = int(sigma.item())
+        ts = int(torch.mean(sigma).item())
 
         s_in = x_in.new_ones([x_in.shape[0]])
         a_t = self.alphas[ts].item() * s_in
         sqrt_one_minus_at = (1 - a_t).sqrt()
 
-        pred_x0 = (x_in - sqrt_one_minus_at * x_out) / a_t.sqrt()
+        pred_x0 = (x_in - torch.mean(sqrt_one_minus_at) * x_out) / torch.mean(a_t).sqrt()
 
         return pred_x0
 
