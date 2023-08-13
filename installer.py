@@ -344,7 +344,8 @@ def check_torch():
             if arch == 'navi3x':
                 os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '11.0.0')
                 # do not use tensorflow-rocm for navi 3x
-                os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
+                if os.environ.get('TENSORFLOW_PACKAGE') == 'tensorflow-rocm':
+                    os.environ['TENSORFLOW_PACKAGE'] = 'tensorflow==2.13.0'
             elif arch == 'navi2x':
                 os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
             else:
