@@ -314,11 +314,17 @@ def check_torch():
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'xformers==0.0.20' if opts.get('cross_attention_optimization', '') == 'xFormers' else 'none')
     elif allow_rocm and (shutil.which('rocminfo') is not None or os.path.exists('/opt/rocm/bin/rocminfo') or os.path.exists('/dev/kfd')):
         log.info('AMD ROCm toolkit detected')
+        os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
+        os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow-rocm')
 
-        command = subprocess.run('rocm_agent_enumerator | grep -v gfx000', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        amd_gpus = command.stdout.decode(encoding="utf8", errors="ignore").split('\n')
-        amd_gpus = [x for x in amd_gpus if x]
-        log.debug(f'ROCm agents detected: {amd_gpus}')
+        try:
+            command = subprocess.run('rocm_agent_enumerator', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            amd_gpus = command.stdout.decode(encoding="utf8", errors="ignore").split('\n')
+            amd_gpus = [x for x in amd_gpus if x and x != 'gfx000']
+            log.debug(f'ROCm agents detected: {amd_gpus}')
+        except Exception as e:
+            log.debug(f'Run rocm_agent_enumerator failed: {e}')
+            amd_gpus = []
 
         # use the first available amd gpu by default
         hip_visible_devices = []
@@ -337,19 +343,21 @@ def check_torch():
             os.environ.setdefault('HIP_VISIBLE_DEVICES', str(idx))
             if arch == 'navi3x':
                 os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '11.0.0')
+                # do not use tensorflow-rocm for navi 3x
+                os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
             elif arch == 'navi2x':
                 os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
-                # install tensorflow-rocm for navi2x
-                os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow-rocm')
             else:
                 log.debug(f'HSA_OVERRIDE_GFX_VERSION auto config is skipped for {gpu}')
 
-        os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
-
-        command = subprocess.run('hipconfig --version', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        major_ver, minor_ver, *_ = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
-        rocm_ver = f'{major_ver}.{minor_ver}'
-        log.debug(f'ROCm version detected: {rocm_ver}')
+        try:
+            command = subprocess.run('hipconfig --version', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            major_ver, minor_ver, *_ = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
+            rocm_ver = f'{major_ver}.{minor_ver}'
+            log.debug(f'ROCm version detected: {rocm_ver}')
+        except Exception as e:
+            log.debug(f'Run hipconfig failed: {e}')
+            rocm_ver = None
 
         if rocm_ver in ['5.5', '5.6']:
             # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
