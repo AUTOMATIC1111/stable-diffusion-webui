@@ -40,7 +40,7 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
         item["prompt"] = quote_js(f"<lora:{alias}:") + " + " + (str(preferred_weight) if preferred_weight else "opts.extra_networks_default_multiplier") + " + " + quote_js(">")
 
         if activation_text:
-            item["prompt"] += " + " + quote_js(" " + activation_text)
+            item["prompt"] += " + " + "opts.extra_networks_add_text_separator" + " + " + quote_js(" " + activation_text)
 
         sd_version = item["user_metadata"].get("sd version")
         if sd_version in network.SdVersion.__members__:
