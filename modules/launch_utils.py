@@ -291,7 +291,7 @@ def prepare_environment():
     blip_commit_hash = os.environ.get('BLIP_COMMIT_HASH', "48211a1594f1321b00f14c9f7a5b4813144b2fb9")
 
     try:
-        # the existance of this file is a signal to webui.sh/bat that webui needs to be restarted when it stops execution
+        # the existence of this file is a signal to webui.sh/bat that webui needs to be restarted when it stops execution
         os.remove(os.path.join(script_path, "tmp", "restart"))
         os.environ.setdefault('SD_WEBUI_RESTARTING', '1')
     except OSError:
