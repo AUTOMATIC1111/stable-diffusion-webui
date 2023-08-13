@@ -316,12 +316,12 @@ def prepare_environment():
             'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
         )
 
-    if not is_installed("gfpgan"):
-        run_pip(f"install {gfpgan_package}", "gfpgan")
+    
 
     if not is_installed("clip"):
         run_pip(f"install {clip_package}", "clip")
-
+    if not is_installed("gfpgan"):
+        run_pip(f"install {gfpgan_package}", "gfpgan")
     if not is_installed("open_clip"):
         run_pip(f"install {openclip_package}", "open_clip")
 
