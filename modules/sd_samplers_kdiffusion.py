@@ -67,6 +67,8 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
     def __init__(self, funcname, sd_model, options=None):
         super().__init__(funcname)
 
+        self.extra_params = sampler_extra_params.get(funcname, [])
+
         self.options = options or {}
         self.func = funcname if callable(funcname) else getattr(k_diffusion.sampling, self.funcname)
 
