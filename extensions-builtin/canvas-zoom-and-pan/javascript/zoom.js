@@ -12,6 +12,7 @@ onUiLoaded(async() => {
         "Sketch": elementIDs.sketch
     };
 
+
     // Helper functions
     // Get active tab
     function getActiveTab(elements, all = false) {
@@ -40,6 +41,11 @@ onUiLoaded(async() => {
             }
             await new Promise(resolve => setTimeout(resolve, 100));
         }
+    }
+
+    // Detect whether the element has a horizontal scroll bar
+    function hasHorizontalScrollbar(element) {
+        return element.scrollWidth > element.clientWidth;
     }
 
     // Function for defining the "Ctrl", "Shift" and "Alt" keys
@@ -201,7 +207,8 @@ onUiLoaded(async() => {
         canvas_hotkey_overlap: "KeyO",
         canvas_disabled_functions: [],
         canvas_show_tooltip: true,
-        canvas_blur_prompt: false
+        canvas_auto_expand: true,
+        canvas_blur_prompt: false,
     };
 
     const functionMap = {
@@ -370,6 +377,11 @@ onUiLoaded(async() => {
 
             toggleOverlap("off");
             fullScreenMode = false;
+
+            const closeBtn = targetElement.querySelector("button[aria-label='Remove Image']");
+            if (closeBtn) {
+                closeBtn.addEventListener("click", resetZoom);
+            }
 
             if (
                 canvas &&
@@ -648,7 +660,49 @@ onUiLoaded(async() => {
             mouseY = e.offsetY;
         }
 
+        // Simulation of the function to put a long image into the screen.
+        // We detect if an image has a scroll bar or not, make a fullscreen to reveal the image, then reduce it to fit into the element.
+        // We hide the image and show it to the user when it is ready.
+
+        targetElement.isExpanded = false;
+        function autoExpand() {
+            const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
+            const isMainTab = activeElement === elementIDs.inpaint || activeElement === elementIDs.inpaintSketch || activeElement === elementIDs.sketch;
+
+            if (canvas && isMainTab) {
+                if (hasHorizontalScrollbar(targetElement) && targetElement.isExpanded === false) {
+                    targetElement.style.visibility = "hidden";
+                    setTimeout(() => {
+                        fitToScreen();
+                        resetZoom();
+                        targetElement.style.visibility = "visible";
+                        targetElement.isExpanded = true;
+                    }, 10);
+                }
+            }
+        }
+
         targetElement.addEventListener("mousemove", getMousePosition);
+
+        //observers
+        // Creating an observer with a callback function to handle DOM changes
+        const observer = new MutationObserver((mutationsList, observer) => {
+            for (let mutation of mutationsList) {
+                // If the style attribute of the canvas has changed, by observation it happens only when the picture changes
+                if (mutation.type === 'attributes' && mutation.attributeName === 'style' &&
+                    mutation.target.tagName.toLowerCase() === 'canvas') {
+                    targetElement.isExpanded = false;
+                    setTimeout(resetZoom, 10);
+                }
+            }
+        });
+
+        // Apply auto expand if enabled
+        if (hotkeysConfig.canvas_auto_expand) {
+            targetElement.addEventListener("mousemove", autoExpand);
+            // Set up an observer to track attribute changes
+            observer.observe(targetElement, {attributes: true, childList: true, subtree: true});
+        }
 
         // Handle events only inside the targetElement
         let isKeyDownHandlerAttached = false;

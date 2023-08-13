@@ -19,8 +19,8 @@ prompt: (emphasized | scheduled | alternate | plain | WHITESPACE)*
 !emphasized: "(" prompt ")"
         | "(" prompt ":" prompt ")"
         | "[" prompt "]"
-scheduled: "[" [prompt ":"] prompt ":" [WHITESPACE] NUMBER "]"
-alternate: "[" prompt ("|" prompt)+ "]"
+scheduled: "[" [prompt ":"] prompt ":" [WHITESPACE] NUMBER [WHITESPACE] "]"
+alternate: "[" prompt ("|" [prompt])+ "]"
 WHITESPACE: /\s+/
 plain: /([^\\\[\]():|]|\\.)+/
 %import common.SIGNED_NUMBER -> NUMBER
@@ -53,6 +53,10 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     [[3, '((a][:b:c '], [10, '((a][:b:c d']]
     >>> g("[a|(b:1.1)]")
     [[1, 'a'], [2, '(b:1.1)'], [3, 'a'], [4, '(b:1.1)'], [5, 'a'], [6, '(b:1.1)'], [7, 'a'], [8, '(b:1.1)'], [9, 'a'], [10, '(b:1.1)']]
+    >>> g("[fe|]male")
+    [[1, 'female'], [2, 'male'], [3, 'female'], [4, 'male'], [5, 'female'], [6, 'male'], [7, 'female'], [8, 'male'], [9, 'female'], [10, 'male']]
+    >>> g("[fe|||]male")
+    [[1, 'female'], [2, 'male'], [3, 'male'], [4, 'male'], [5, 'female'], [6, 'male'], [7, 'male'], [8, 'male'], [9, 'female'], [10, 'male']]
     """
 
     def collect_steps(steps, tree):
@@ -60,11 +64,11 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
 
         class CollectSteps(lark.Visitor):
             def scheduled(self, tree):
-                tree.children[-1] = float(tree.children[-1])
-                if tree.children[-1] < 1:
-                    tree.children[-1] *= steps
-                tree.children[-1] = min(steps, int(tree.children[-1]))
-                res.append(tree.children[-1])
+                tree.children[-2] = float(tree.children[-2])
+                if tree.children[-2] < 1:
+                    tree.children[-2] *= steps
+                tree.children[-2] = min(steps, int(tree.children[-2]))
+                res.append(tree.children[-2])
 
             def alternate(self, tree):
                 res.extend(range(1, steps+1))
@@ -75,10 +79,11 @@ def get_learned_conditioning_prompt_schedules(prompts, steps):
     def at_step(step, tree):
         class AtStep(lark.Transformer):
             def scheduled(self, args):
-                before, after, _, when = args
+                before, after, _, when, _ = args
                 yield before or () if step <= when else after
             def alternate(self, args):
-                yield next(args[(step - 1)%len(args)])
+                args = ["" if not arg else arg for arg in args]
+                yield args[(step - 1) % len(args)]
             def start(self, args):
                 def flatten(x):
                     if type(x) == str:
@@ -333,7 +338,7 @@ re_attention = re.compile(r"""
 \\|
 \(|
 \[|
-:([+-]?[.\d]+)\)|
+:\s*([+-]?[.\d]+)\s*\)|
 \)|
 ]|
 [^\\()\[\]:]+|

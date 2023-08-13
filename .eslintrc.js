@@ -87,5 +87,9 @@ module.exports = {
         modalNextImage: "readonly",
         // token-counters.js
         setupTokenCounters: "readonly",
+        // localStorage.js
+        localSet: "readonly",
+        localGet: "readonly",
+        localRemove: "readonly"
     }
 };

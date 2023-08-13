@@ -10,7 +10,7 @@ import psutil
 import re
 
 import launch
-from modules import paths_internal, timer
+from modules import paths_internal, timer, shared, extensions, errors
 
 checksum_token = "DontStealMyGamePlz__WINNERS_DONT_USE_DRUGS__DONT_COPY_THAT_FLOPPY"
 environment_whitelist = {
@@ -23,7 +23,6 @@ environment_whitelist = {
     "TORCH_COMMAND",
     "REQS_FILE",
     "XFORMERS_PACKAGE",
-    "GFPGAN_PACKAGE",
     "CLIP_PACKAGE",
     "OPENCLIP_PACKAGE",
     "STABLE_DIFFUSION_REPO",
@@ -109,11 +108,13 @@ def format_traceback(tb):
     return [[f"{x.filename}, line {x.lineno}, {x.name}", x.line] for x in traceback.extract_tb(tb)]
 
 
+def format_exception(e, tb):
+    return {"exception": str(e), "traceback": format_traceback(tb)}
+
+
 def get_exceptions():
     try:
-        from modules import errors
-
-        return [{"exception": str(e), "traceback": format_traceback(tb)} for e, tb in reversed(errors.exception_records)]
+        return list(reversed(errors.exception_records))
     except Exception as e:
         return str(e)
 
@@ -138,8 +139,6 @@ def get_torch_sysinfo():
 def get_extensions(*, enabled):
 
     try:
-        from modules import extensions
-
         def to_json(x: extensions.Extension):
             return {
                 "name": x.name,
@@ -156,7 +155,6 @@ def get_extensions(*, enabled):
 
 def get_config():
     try:
-        from modules import shared
         return shared.opts.data
     except Exception as e:
         return str(e)

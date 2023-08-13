@@ -8,6 +8,7 @@
     --checkbox-label-gap: 0.25em 0.1em;
     --section-header-text-size: 12pt;
     --block-background-fill: transparent;
+
 }
 
 .block.padded:not(.gradio-accordion) {
@@ -42,12 +43,15 @@ div.form{
 .block.gradio-radio,
 .block.gradio-checkboxgroup,
 .block.gradio-number,
-.block.gradio-colorpicker
-{
+.block.gradio-colorpicker {
     border-width: 0 !important;
     box-shadow: none !important;
 }
 
+div.gradio-group, div.styler{
+    border-width: 0 !important;
+    background: none;
+}
 .gap.compact{
     padding: 0;
     gap: 0.2em 0;
@@ -133,6 +137,11 @@ a{
     cursor: pointer;
 }
 
+/* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reqasaon. */
+.block.gradio-textbox, div.gradio-group, div.gradio-group div, div.gradio-dropdown{
+    overflow: visible !important;
+}
+
 
 /* general styled components */
 
@@ -157,16 +166,6 @@ a{
     color: var(--button-secondary-text-color-hover);
 }
 
-.checkboxes-row{
-    margin-bottom: 0.5em;
-    margin-left: 0em;
-}
-.checkboxes-row > div{
-    flex: 0;
-    white-space: nowrap;
-    min-width: auto;
-}
-
 button.custom-button{
     border-radius: var(--button-large-radius);
     padding: var(--button-large-padding);
@@ -181,6 +180,13 @@ button.custom-button{
     transition: var(--button-transition);
     box-shadow: var(--button-shadow);
     text-align: center;
+}
+
+div.block.gradio-accordion {
+    border: 1px solid var(--block-border-color) !important;
+    border-radius: 8px !important;
+    margin: 2px 0;
+    padding: 8px 8px;
 }
 
 
@@ -214,17 +220,6 @@ button.custom-button{
 
 .block.token-counter span{
     padding: 0.1em 0.75em;
-}
-
-[id$=_subseed_show]{
-    min-width: auto !important;
-    flex-grow: 0 !important;
-    display: flex;
-}
-
-[id$=_subseed_show] label{
-    margin-bottom: 0.5em;
-    align-self: end;
 }
 
 .html-log .comments{
@@ -313,12 +308,6 @@ button.custom-button{
     border-radius: 0 0.5rem 0.5rem 0;
 }
 
-#txtimg_hr_finalres{
-    min-height: 0 !important;
-    padding: .625rem .75rem;
-    margin-left: -0.75em
-}
-
 #img2img_scale_resolution_preview.block{
     display: flex;
     align-items: end;
@@ -342,7 +331,7 @@ button.custom-button{
 }
 
 div.dimensions-tools{
-    min-width: 0 !important;
+    min-width: 1.6em !important;
     max-width: fit-content;
     flex-direction: column;
     place-content: center;
@@ -359,8 +348,8 @@ div#extras_scale_to_tab div.form{
     z-index: 5;
 }
 
-.image-buttons button{
-    min-width: auto;
+.image-buttons > .form{
+    justify-content: center;
 }
 
 .infotext {
@@ -381,17 +370,20 @@ div#extras_scale_to_tab div.form{
 
 /* settings */
 #quicksettings {
-    width: fit-content;
     align-items: end;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
-    max-width: 24em;
-    min-width: 24em;
+    max-width: 36em;
+    width: fit-content;
+    flex: 0 1 fit-content;
     padding: 0;
     border: none;
     box-shadow: none;
     background: none;
+}
+#quicksettings > div.gradio-dropdown{
+    min-width: 24em !important;
 }
 
 #settings{
@@ -480,6 +472,13 @@ table.popup-table .link{
 
 #sysinfo_validity{
     font-size: 18pt;
+}
+
+#settings .settings-info{
+    max-width: 48em;
+    border: 1px dotted #777;
+    margin: 0;
+    padding: 1em;
 }
 
 
@@ -767,9 +766,14 @@ footer {
 /* extra networks UI */
 
 .extra-network-cards{
-    height: 725px;
-    overflow: scroll;
+    height: calc(100vh - 24rem);
+    overflow: clip scroll;
     resize: vertical;
+    min-height: 52rem;
+}
+
+.extra-networks > div.tab-nav{
+    min-height: 3.4rem;
 }
 
 .extra-networks > div > [id *= '_extra_']{
@@ -784,10 +788,12 @@ footer {
     margin: 0 0.15em;
 }
 .extra-networks .tab-nav .search,
-.extra-networks .tab-nav .sort{
-    display: inline-block;
+.extra-networks .tab-nav .sort,
+.extra-networks .tab-nav .show-dirs
+{
     margin: 0.3em;
     align-self: center;
+    width: auto;
 }
 
 .extra-networks .tab-nav .search {
@@ -972,3 +978,44 @@ div.block.gradio-box.edit-user-metadata {
 .edit-user-metadata-buttons{
     margin-top: 1.5em;
 }
+
+
+
+
+div.block.gradio-box.popup-dialog, .popup-dialog {
+    width: 56em;
+    background: var(--body-background-fill);
+    padding: 2em !important;
+}
+
+div.block.gradio-box.popup-dialog > div:last-child, .popup-dialog > div:last-child{
+    margin-top: 1em;
+}
+
+div.block.input-accordion{
+
+}
+
+.input-accordion-extra{
+    flex: 0 0 auto !important;
+    margin: 0 0.5em 0 auto;
+}
+
+div.accordions > div.input-accordion{
+    min-width: fit-content !important;
+}
+
+div.accordions > div.gradio-accordion .label-wrap span{
+    white-space: nowrap;
+    margin-right: 0.25em;
+}
+
+div.accordions{
+    gap: 0.5em;
+}
+
+div.accordions > div.input-accordion.input-accordion-open{
+    flex: 1 auto;
+    flex-flow: column;
+}
+
