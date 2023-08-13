@@ -38,7 +38,7 @@ class ScriptRefiner(scripts.Script):
 
         return enable_refiner, refiner_checkpoint, refiner_switch_at
 
-    def before_process(self, p, enable_refiner, refiner_checkpoint, refiner_switch_at):
+    def setup(self, p, enable_refiner, refiner_checkpoint, refiner_switch_at):
         # the actual implementation is in sd_samplers_common.py, apply_refiner
 
         if not enable_refiner or refiner_checkpoint in (None, "", "None"):
