@@ -1058,6 +1058,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         if add_color_corrections:
             self.color_corrections = []
         imgs = []
+        unprocessed = []
         for img in self.init_images:
             # Save init image
             if shared.opts.save_init_img:
@@ -1077,6 +1078,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             if crop_region is not None:
                 image = image.crop(crop_region)
                 image = images.resize_image(3, image, self.width, self.height)
+            if shared.backend == shared.Backend.DIFFUSERS:
+                unprocessed.append(image)
             self.init_images = [image] # assign early for diffusers
             if image_mask is not None:
                 if self.inpainting_fill != 1:
@@ -1086,6 +1089,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             image = np.array(image).astype(np.float32) / 255.0
             image = np.moveaxis(image, 2, 0)
             imgs.append(image)
+        if shared.backend == shared.Backend.DIFFUSERS:
+            self.init_images = unprocessed # assign early for diffusers
         if len(imgs) == 1:
             batch_images = np.expand_dims(imgs[0], axis=0).repeat(self.batch_size, axis=0)
             if self.overlay_images is not None:

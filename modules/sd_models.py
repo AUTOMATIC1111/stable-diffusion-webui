@@ -874,7 +874,6 @@ def get_diffusers_task(pipe: diffusers.DiffusionPipeline) -> DiffusersTaskType:
         return DiffusersTaskType.IMAGE_2_IMAGE
     elif pipe.__class__ in diffusers.pipelines.auto_pipeline.AUTO_INPAINT_PIPELINES_MAPPING.values():
         return DiffusersTaskType.INPAINTING
-
     return DiffusersTaskType.TEXT_2_IMAGE
 
 

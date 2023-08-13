@@ -29,7 +29,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def vae_decode(latents, model, output_type='np'):
         if hasattr(model, 'vae') and torch.is_tensor(latents):
-            shared.log.debug(f'Diffusers VAE decode: name={sd_vae.loaded_vae_file} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)}')
+            if latents.shape[0] == 0:
+                shared.log.error(f'VAE nothing to decode: {latents.shape}')
+                return []
+            shared.log.debug(f'Diffusers VAE decode: name={sd_vae.loaded_vae_file} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]}')
             if shared.opts.diffusers_move_unet and not model.has_accelerate:
                 shared.log.debug('Diffusers: Moving UNet to CPU')
                 unet_device = model.unet.device
@@ -159,6 +162,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         sd_samplers.create_sampler(sampler.name, shared.sd_model) # TODO(Patrick): For wrapped pipelines this is currently a no-op
 
     cross_attention_kwargs={}
+    if p.init_images is not None and len(p.init_images) > 0:
+        while len(p.init_images) < len(prompts):
+            p.init_images.append(p.init_images[-1])
     if lora_state['active']:
         cross_attention_kwargs['scale'] = lora_state['multiplier']
     task_specific_kwargs={}
@@ -196,7 +202,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         **task_specific_kwargs
     )
     output = shared.sd_model(**pipe_args) # pylint: disable=not-callable
-
     if shared.state.interrupted or shared.state.skipped:
         unload_diffusers_lora()
         return results
