@@ -152,7 +152,9 @@ class StableDiffusionProcessing:
     token_merging_ratio_hr = 0
     disable_extra_networks: bool = False
 
-    script_args: list = None
+    scripts_value: scripts.ScriptRunner = field(default=None, init=False)
+    script_args_value: list = field(default=None, init=False)
+    scripts_setup_complete: bool = field(default=False, init=False)
 
     cached_uc = [None, None]
     cached_c = [None, None]
@@ -171,7 +173,6 @@ class StableDiffusionProcessing:
     step_multiplier: int = field(default=1, init=False)
     color_corrections: list = field(default=None, init=False)
 
-    scripts: list = field(default=None, init=False)
     all_prompts: list = field(default=None, init=False)
     all_negative_prompts: list = field(default=None, init=False)
     all_seeds: list = field(default=None, init=False)
@@ -228,6 +229,33 @@ class StableDiffusionProcessing:
     @sd_model.setter
     def sd_model(self, value):
         pass
+
+    @property
+    def scripts(self):
+        return self.scripts_value
+
+    @scripts.setter
+    def scripts(self, value):
+        self.scripts_value = value
+
+        if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
+            self.setup_scripts()
+
+    @property
+    def script_args(self):
+        return self.script_args_value
+
+    @script_args.setter
+    def script_args(self, value):
+        self.script_args_value = value
+
+        if self.scripts_value and self.script_args_value and not self.scripts_setup_complete:
+            self.setup_scripts()
+
+    def setup_scripts(self):
+        self.scripts_setup_complete = True
+
+        self.scripts.setup_scrips(self)
 
     def comment(self, text):
         self.comments[text] = 1

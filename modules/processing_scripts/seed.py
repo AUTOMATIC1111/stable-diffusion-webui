@@ -58,7 +58,7 @@ class ScriptSeed(scripts.ScriptBuiltin):
 
         return self.seed, subseed, subseed_strength
 
-    def before_process(self, p, seed, subseed, subseed_strength):
+    def setup(self, p, seed, subseed, subseed_strength):
         p.seed = seed
 
         if subseed_strength > 0:
