@@ -92,7 +92,15 @@ def images_tensor_to_samples(image, approximation=None, model=None):
             model = shared.sd_model
         image = image.to(shared.device, dtype=devices.dtype_vae)
         image = image * 2 - 1
-        x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
+        if opts.sd_vae_sliced_encoding:
+            x_latent = torch.stack([
+                model.get_first_stage_encoding(
+                    model.encode_first_stage(torch.unsqueeze(img, 0))
+                )[0]
+                for img in image
+            ])
+        else:
+            x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
 
     return x_latent
 
