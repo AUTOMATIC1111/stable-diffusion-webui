@@ -45,6 +45,12 @@ sampler_extra_params = {
     'sample_euler': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
     'sample_heun': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
     'sample_dpm_2': ['s_churn', 's_tmin', 's_tmax', 's_noise'],
+    'sample_dpm_fast': ['s_noise'],
+    'sample_dpm_2_ancestral': ['s_noise'],
+    'sample_dpmpp_2s_ancestral': ['s_noise'],
+    'sample_dpmpp_sde': ['s_noise'],
+    'sample_dpmpp_2m_sde': ['s_noise'],
+    'sample_dpmpp_3m_sde': ['s_noise'],
 }
 
 k_diffusion_samplers_map = {x.name: x for x in samplers_data_k_diffusion}
