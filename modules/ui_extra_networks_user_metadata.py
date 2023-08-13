@@ -36,8 +36,8 @@ class UserMetadataEditor:
         item = self.page.items.get(name, {})
 
         user_metadata = item.get('user_metadata', None)
-        if user_metadata is None:
-            user_metadata = {}
+        if not user_metadata:
+            user_metadata = {'description': item.get('description', '')}
             item['user_metadata'] = user_metadata
 
         return user_metadata
@@ -96,6 +96,7 @@ class UserMetadataEditor:
 
             stats = os.stat(filename)
             params = [
+                ('Filename: ', os.path.basename(filename)),
                 ('File size: ', sysinfo.pretty_bytes(stats.st_size)),
                 ('Modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
             ]
@@ -124,7 +125,7 @@ class UserMetadataEditor:
         basename, ext = os.path.splitext(filename)
 
         with open(basename + '.json', "w", encoding="utf8") as file:
-            json.dump(metadata, file)
+            json.dump(metadata, file, indent=4)
 
     def save_user_metadata(self, name, desc, notes):
         user_metadata = self.get_user_metadata(name)
