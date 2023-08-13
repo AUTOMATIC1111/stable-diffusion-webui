@@ -1,5 +1,15 @@
 # Change Log for SD.Next
 
+## Update for 2023-08-13
+
+- general:
+  - fix img2img resizing (applies to original, diffusers, hires)
+- diffusers:
+  - enable batch img2img workflows
+- original:
+  - new samplers: **dpm++ 3M sde** (standard and karras variations)  
+    enable in *settings -> samplers -> show samplers*
+
 ## Update for 2023-08-11
 
 This is a big one that's been cooking in `dev` for a while now, but finally ready for release...
