@@ -41,15 +41,9 @@ class ScriptRefiner(scripts.Script):
     def before_process(self, p, enable_refiner, refiner_checkpoint, refiner_switch_at):
         # the actual implementation is in sd_samplers_common.py, apply_refiner
 
-        p.refiner_checkpoint_info = None
-        p.refiner_switch_at = None
-
         if not enable_refiner or refiner_checkpoint in (None, "", "None"):
-            return
-
-        refiner_checkpoint_info = sd_models.get_closet_checkpoint_match(refiner_checkpoint)
-        if refiner_checkpoint_info is None:
-            raise Exception(f'Could not find checkpoint with name {refiner_checkpoint}')
-
-        p.refiner_checkpoint_info = refiner_checkpoint_info
-        p.refiner_switch_at = refiner_switch_at
+            p.refiner_checkpoint_info = None
+            p.refiner_switch_at = None
+        else:
+            p.refiner_checkpoint = refiner_checkpoint
+            p.refiner_switch_at = refiner_switch_at

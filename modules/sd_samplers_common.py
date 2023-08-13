@@ -145,7 +145,7 @@ def apply_refiner(cfg_denoiser):
     refiner_switch_at = cfg_denoiser.p.refiner_switch_at
     refiner_checkpoint_info = cfg_denoiser.p.refiner_checkpoint_info
 
-    if refiner_switch_at is not None and completed_ratio <= refiner_switch_at:
+    if refiner_switch_at is not None and completed_ratio < refiner_switch_at:
         return False
 
     if refiner_checkpoint_info is None or shared.sd_model.sd_checkpoint_info == refiner_checkpoint_info:
