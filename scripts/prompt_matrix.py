@@ -88,13 +88,41 @@ class Script(scripts.Script):
 
         print(f"Prompt matrix will create {len(all_prompts)} images using a total of {p.n_iter} batches.")
 
-        if prompt_type == "positive":
-            p.prompt = all_prompts
-        else:
-            p.negative_prompt = all_prompts
-        p.seed = [p.seed + (i if different_seeds else 0) for i in range(len(all_prompts))]
-        p.prompt_for_display = positive_prompt
-        processed = process_images(p)
+        alt_batch_size=len(all_prompts)%p.batch_size
+        if alt_batch_size:
+            p.n_iter-=1
+
+        processed=None
+        last_seed=None
+        if p.n_iter:
+            if prompt_type == "positive":
+                p.prompt = all_prompts[:len(all_prompts)-alt_batch_size]
+            else:
+                p.negative_prompt= all_prompts[:len(all_prompts)-alt_batch_size]
+            p.seed = [p.seed + (i if different_seeds else 0) for i in range(len(all_prompts)-alt_batch_size)]
+            last_seed=p.seed[-1]
+            p.prompt_for_display = positive_prompt
+            processed = process_images(p)
+
+        if alt_batch_size:
+            old_batch_size=p.batch_size
+            p.batch_size=alt_batch_size
+            p.n_iter=1
+            if prompt_type == "positive":
+                p.prompt = all_prompts[-alt_batch_size:]
+            else:
+                p.negative_prompt= all_prompts[-alt_batch_size:]
+            if last_seed:
+                p.seed = [last_seed+ (i if different_seeds else 0) for i in range(alt_batch_size)]
+            else:
+                p.seed = [p.seed + (i if different_seeds else 0) for i in range(alt_batch_size)]
+            new_processed=process_images(p)
+            if processed:
+                processed.images=processed.images+new_processed.images
+                processed.infotexts=processed.infotexts+new_processed.infotexts
+            else:
+                processed=new_processed
+            p.batch_size=old_batch_size
 
         grid = images.image_grid(processed.images, p.batch_size, rows=1 << ((len(prompt_matrix_parts) - 1) // 2))
         grid = images.draw_prompt_matrix(grid, processed.images[0].width, processed.images[0].height, prompt_matrix_parts, margin_size)
