@@ -222,6 +222,21 @@ div.block.gradio-accordion {
     padding: 0.1em 0.75em;
 }
 
+[id$=_subseed_show]{
+    min-width: auto !important;
+    flex-grow: 0 !important;
+    display: flex;
+}
+
+[id$=_subseed_show] label{
+    margin-bottom: 0.65em;
+    align-self: end;
+}
+
+[id$=_seed_extras] > div{
+    gap: 0.5em;
+}
+
 .html-log .comments{
     padding-top: 0.5em;
 }

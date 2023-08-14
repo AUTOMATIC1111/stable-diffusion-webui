@@ -24,46 +24,57 @@ class ScriptSeed(scripts.ScriptBuiltin):
 
     def ui(self, is_img2img):
         with gr.Row(elem_id=self.elem_id("seed_row")):
-            with gr.Column(scale=1, min_width=205):
-                with gr.Row():
-                    if cmd_opts.use_textbox_seed:
-                        self.seed = gr.Textbox(label='Seed', value="", elem_id=self.elem_id("seed"), min_width=100)
-                    else:
-                        self.seed = gr.Number(label='Seed', value=-1, elem_id=self.elem_id("seed"), min_width=100, precision=0)
+            if cmd_opts.use_textbox_seed:
+                self.seed = gr.Textbox(label='Seed', value="", elem_id=self.elem_id("seed"), min_width=100)
+            else:
+                self.seed = gr.Number(label='Seed', value=-1, elem_id=self.elem_id("seed"), min_width=100, precision=0)
 
-                    random_seed = ToolButton(ui.random_symbol, elem_id=self.elem_id("random_seed"), label='Random seed')
-                    reuse_seed = ToolButton(ui.reuse_symbol, elem_id=self.elem_id("reuse_seed"), label='Reuse seed')
+            random_seed = ToolButton(ui.random_symbol, elem_id=self.elem_id("random_seed"), label='Random seed')
+            reuse_seed = ToolButton(ui.reuse_symbol, elem_id=self.elem_id("reuse_seed"), label='Reuse seed')
 
-            with gr.Column(scale=1, min_width=205):
-                with gr.Row():
-                    subseed = gr.Number(label='Variation seed', value=-1, elem_id=self.elem_id("subseed"), min_width=100, precision=0)
+            seed_checkbox = gr.Checkbox(label='Extra', elem_id=self.elem_id("subseed_show"), value=False)
 
-                    random_subseed = ToolButton(ui.random_symbol, elem_id=self.elem_id("random_subseed"))
-                    reuse_subseed = ToolButton(ui.reuse_symbol, elem_id=self.elem_id("reuse_subseed"))
-
-            with gr.Column(scale=2, min_width=100):
+        with gr.Group(visible=False, elem_id=self.elem_id("seed_extras")) as seed_extras:
+            with gr.Row(elem_id=self.elem_id("subseed_row")):
+                subseed = gr.Number(label='Variation seed', value=-1, elem_id=self.elem_id("subseed"), precision=0)
+                random_subseed = ToolButton(ui.random_symbol, elem_id=self.elem_id("random_subseed"))
+                reuse_subseed = ToolButton(ui.reuse_symbol, elem_id=self.elem_id("reuse_subseed"))
                 subseed_strength = gr.Slider(label='Variation strength', value=0.0, minimum=0, maximum=1, step=0.01, elem_id=self.elem_id("subseed_strength"))
+
+            with gr.Row(elem_id=self.elem_id("seed_resize_from_row")):
+                seed_resize_from_w = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from width", value=0, elem_id=self.elem_id("seed_resize_from_w"))
+                seed_resize_from_h = gr.Slider(minimum=0, maximum=2048, step=8, label="Resize seed from height", value=0, elem_id=self.elem_id("seed_resize_from_h"))
 
         random_seed.click(fn=None, _js="function(){setRandomSeed('" + self.elem_id("seed") + "')}", show_progress=False, inputs=[], outputs=[])
         random_subseed.click(fn=None, _js="function(){setRandomSeed('" + self.elem_id("subseed") + "')}", show_progress=False, inputs=[], outputs=[])
 
+        seed_checkbox.change(lambda x: gr.update(visible=x), show_progress=False, inputs=[seed_checkbox], outputs=[seed_extras])
+
         self.infotext_fields = [
             (self.seed, "Seed"),
+            (seed_checkbox, lambda d: "Variation seed" in d or "Seed resize from-1" in d),
             (subseed, "Variation seed"),
             (subseed_strength, "Variation seed strength"),
+            (seed_resize_from_w, "Seed resize from-1"),
+            (seed_resize_from_h, "Seed resize from-2"),
         ]
 
         self.on_after_component(lambda x: connect_reuse_seed(self.seed, reuse_seed, x.component, False), elem_id=f'generation_info_{self.tabname}')
         self.on_after_component(lambda x: connect_reuse_seed(subseed, reuse_subseed, x.component, True), elem_id=f'generation_info_{self.tabname}')
 
-        return self.seed, subseed, subseed_strength
+        return self.seed, seed_checkbox, subseed, subseed_strength, seed_resize_from_w, seed_resize_from_h
 
-    def setup(self, p, seed, subseed, subseed_strength):
+    def setup(self, p, seed, seed_checkbox, subseed, subseed_strength, seed_resize_from_w, seed_resize_from_h):
         p.seed = seed
 
-        if subseed_strength > 0:
+        if seed_checkbox and subseed_strength > 0:
             p.subseed = subseed
             p.subseed_strength = subseed_strength
+
+        if seed_checkbox and seed_resize_from_w > 0 and seed_resize_from_h > 0:
+            p.seed_resize_from_w = seed_resize_from_w
+            p.seed_resize_from_h = seed_resize_from_h
+
 
 
 def connect_reuse_seed(seed: gr.Number, reuse_seed: gr.Button, generation_info: gr.Textbox, is_subseed):
