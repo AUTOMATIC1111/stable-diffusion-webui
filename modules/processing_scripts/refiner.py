@@ -5,7 +5,7 @@ from modules.ui_common import create_refresh_button
 from modules.ui_components import InputAccordion
 
 
-class ScriptRefiner(scripts.Script):
+class ScriptRefiner(scripts.ScriptBuiltinUI):
     section = "accordions"
     create_group = False
 

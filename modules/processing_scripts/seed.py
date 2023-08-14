@@ -7,7 +7,7 @@ from modules.shared import cmd_opts
 from modules.ui_components import ToolButton
 
 
-class ScriptSeed(scripts.ScriptBuiltin):
+class ScriptSeed(scripts.ScriptBuiltinUI):
     section = "seed"
     create_group = False
 

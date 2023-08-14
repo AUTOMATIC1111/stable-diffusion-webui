@@ -194,6 +194,8 @@ class StableDiffusionProcessing:
     sd_vae_name: str = field(default=None, init=False)
     sd_vae_hash: str = field(default=None, init=False)
 
+    is_api: bool = field(default=False, init=False)
+
     def __post_init__(self):
         if self.sampler_index is not None:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
@@ -258,7 +260,7 @@ class StableDiffusionProcessing:
     def setup_scripts(self):
         self.scripts_setup_complete = True
 
-        self.scripts.setup_scrips(self)
+        self.scripts.setup_scrips(self, is_ui=not self.is_api)
 
     def comment(self, text):
         self.comments[text] = 1

@@ -68,6 +68,9 @@ class Script:
     on_after_component_elem_id = None
     """list of callbacks to be called after a component with an elem_id is created"""
 
+    setup_for_ui_only = False
+    """If true, the script setup will only be run in Gradio UI, not in API"""
+
     def title(self):
         """this function should return the title of the script. This is what will be displayed in the dropdown menu."""
 
@@ -258,7 +261,6 @@ class Script:
 
         self.on_after_component_elem_id.append((elem_id, callback))
 
-
     def describe(self):
         """unused"""
         return ""
@@ -280,7 +282,8 @@ class Script:
         pass
 
 
-class ScriptBuiltin(Script):
+class ScriptBuiltinUI(Script):
+    setup_for_ui_only = True
 
     def elem_id(self, item_id):
         """helper function to generate id for a HTML element, constructs final id out of tab and user-supplied item_id"""
@@ -728,8 +731,11 @@ class ScriptRunner:
             except Exception:
                 errors.report(f"Error running before_hr: {script.filename}", exc_info=True)
 
-    def setup_scrips(self, p):
+    def setup_scrips(self, p, *, is_ui=True):
         for script in self.alwayson_scripts:
+            if not is_ui and script.setup_for_ui_only:
+                continue
+
             try:
                 script_args = p.script_args[script.args_from:script.args_to]
                 script.setup(p, *script_args)
