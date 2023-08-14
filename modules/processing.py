@@ -114,7 +114,7 @@ class StableDiffusionProcessing:
     prompt: str = ""
     prompt_for_display: str = None
     negative_prompt: str = ""
-    styles: list[str] = field(default_factory=list)
+    styles: list[str] = None
     seed: int = -1
     subseed: int = -1
     subseed_strength: float = 0
@@ -199,6 +199,7 @@ class StableDiffusionProcessing:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
         self.comments = {}
+        self.styles = []
 
         self.sampler_noise_scheduler_override = None
         self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
