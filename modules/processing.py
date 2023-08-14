@@ -199,7 +199,9 @@ class StableDiffusionProcessing:
             print("sampler_index argument for StableDiffusionProcessing does not do anything; use sampler_name", file=sys.stderr)
 
         self.comments = {}
-        self.styles = []
+
+        if self.styles is None:
+            self.styles = []
 
         self.sampler_noise_scheduler_override = None
         self.s_min_uncond = self.s_min_uncond if self.s_min_uncond is not None else opts.s_min_uncond
