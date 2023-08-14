@@ -166,16 +166,6 @@ a{
     color: var(--button-secondary-text-color-hover);
 }
 
-.checkboxes-row{
-    margin-bottom: 0.5em;
-    margin-left: 0em;
-}
-.checkboxes-row > div{
-    flex: 0;
-    white-space: nowrap;
-    min-width: auto !important;
-}
-
 button.custom-button{
     border-radius: var(--button-large-radius);
     padding: var(--button-large-padding);
@@ -192,7 +182,7 @@ button.custom-button{
     text-align: center;
 }
 
-div.gradio-accordion {
+div.block.gradio-accordion {
     border: 1px solid var(--block-border-color) !important;
     border-radius: 8px !important;
     margin: 2px 0;
@@ -239,8 +229,12 @@ div.gradio-accordion {
 }
 
 [id$=_subseed_show] label{
-    margin-bottom: 0.5em;
+    margin-bottom: 0.65em;
     align-self: end;
+}
+
+[id$=_seed_extras] > div{
+    gap: 0.5em;
 }
 
 .html-log .comments{
@@ -352,7 +346,7 @@ div.gradio-accordion {
 }
 
 div.dimensions-tools{
-    min-width: 0 !important;
+    min-width: 1.6em !important;
     max-width: fit-content;
     flex-direction: column;
     place-content: center;
@@ -369,8 +363,8 @@ div#extras_scale_to_tab div.form{
     z-index: 5;
 }
 
-.image-buttons button{
-    min-width: auto;
+.image-buttons > .form{
+    justify-content: center;
 }
 
 .infotext {
@@ -391,18 +385,20 @@ div#extras_scale_to_tab div.form{
 
 /* settings */
 #quicksettings {
-    width: fit-content;
     align-items: end;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
-    max-width: 24em;
-    min-width: 24em;
-    width: 24em;
+    max-width: 36em;
+    width: fit-content;
+    flex: 0 1 fit-content;
     padding: 0;
     border: none;
     box-shadow: none;
     background: none;
+}
+#quicksettings > div.gradio-dropdown{
+    min-width: 24em !important;
 }
 
 #settings{
@@ -1012,10 +1008,29 @@ div.block.gradio-box.popup-dialog > div:last-child, .popup-dialog > div:last-chi
 }
 
 div.block.input-accordion{
-    margin-bottom: 0.4em;
+
 }
 
 .input-accordion-extra{
     flex: 0 0 auto !important;
     margin: 0 0.5em 0 auto;
 }
+
+div.accordions > div.input-accordion{
+    min-width: fit-content !important;
+}
+
+div.accordions > div.gradio-accordion .label-wrap span{
+    white-space: nowrap;
+    margin-right: 0.25em;
+}
+
+div.accordions{
+    gap: 0.5em;
+}
+
+div.accordions > div.input-accordion.input-accordion-open{
+    flex: 1 auto;
+    flex-flow: column;
+}
+

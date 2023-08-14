@@ -69,10 +69,11 @@ def reload_hypernetworks():
 ui_reorder_categories_builtin_items = [
     "inpaint",
     "sampler",
+    "accordions",
     "checkboxes",
-    "hires_fix",
     "dimensions",
     "cfg",
+    "denoising",
     "seed",
     "batch",
     "override_settings",
@@ -86,7 +87,7 @@ def ui_reorder_categories():
 
     sections = {}
     for script in scripts.scripts_txt2img.scripts + scripts.scripts_img2img.scripts:
-        if isinstance(script.section, str):
+        if isinstance(script.section, str) and script.section not in ui_reorder_categories_builtin_items:
             sections[script.section] = 1
 
     yield from sections

@@ -31,7 +31,9 @@ def get_loaded_vae_hash():
     if loaded_vae_file is None:
         return None
 
-    return hashes.sha256(loaded_vae_file, 'vae')[0:10]
+    sha256 = hashes.sha256(loaded_vae_file, 'vae')
+
+    return sha256[0:10] if sha256 else None
 
 
 def get_base_vae(model):
