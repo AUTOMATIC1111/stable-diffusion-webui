@@ -1,4 +1,5 @@
 import os
+import sys
 import contextlib
 import torch
 import intel_extension_for_pytorch as ipex
@@ -39,6 +40,8 @@ def ipex_init():
     torch.Tensor.is_cuda = torch.Tensor.is_xpu
 
     #Memory:
+    if 'linux' in sys.platform and "WSL2" in os.popen("uname -a").read():
+        torch.xpu.empty_cache = lambda: None
     torch.cuda.empty_cache = torch.xpu.empty_cache
     torch.cuda.memory_stats = torch.xpu.memory_stats
     torch.cuda.memory_summary = torch.xpu.memory_summary
@@ -76,7 +79,6 @@ def ipex_init():
     #Fix functions with ipex:
     torch.cuda.mem_get_info = lambda device=None: [(torch.xpu.get_device_properties(device).total_memory - torch.xpu.memory_allocated(device)), torch.xpu.get_device_properties(device).total_memory]
     torch._utils._get_available_device_type = lambda: "xpu" # pylint: disable=protected-access
-    torch.xpu.empty_cache = torch.xpu.empty_cache if "WSL2" not in os.popen("uname -a").read() else lambda: None
     torch.cuda.get_device_properties.major = 2023
     torch.cuda.get_device_properties.minor = 2
     torch.backends.cuda.sdp_kernel = return_null_context

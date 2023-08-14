@@ -5,7 +5,6 @@ from openvino.frontend.pytorch.torchdynamo.execute import execute
 from openvino.frontend.pytorch.torchdynamo.partition import Partitioner
 from torch._dynamo.backends.common import fake_tensor_unsupported
 from torch._dynamo.backends.registry import register_backend
-from torch._inductor.compile_fx import compile_fx
 from torch.fx.experimental.proxy_tensor import make_fx
 
 class ModelState:
