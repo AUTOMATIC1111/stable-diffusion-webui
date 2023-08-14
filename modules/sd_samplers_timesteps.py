@@ -76,6 +76,7 @@ class CompVisSampler(sd_samplers_common.Sampler):
 
         self.eta_option_field = 'eta_ddim'
         self.eta_infotext_field = 'Eta DDIM'
+        self.eta_default = 0.0
 
         self.model_wrap_cfg = CFGDenoiserTimesteps(self)
 

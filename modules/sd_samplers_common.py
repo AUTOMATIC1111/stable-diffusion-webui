@@ -217,6 +217,7 @@ class Sampler:
 
         self.eta_option_field = 'eta_ancestral'
         self.eta_infotext_field = 'Eta'
+        self.eta_default = 1.0
 
         self.conditioning_key = shared.sd_model.model.conditioning_key
 
@@ -273,7 +274,7 @@ class Sampler:
                 extra_params_kwargs[param_name] = getattr(p, param_name)
 
         if 'eta' in inspect.signature(self.func).parameters:
-            if self.eta != 1.0:
+            if self.eta != self.eta_default:
                 p.extra_generation_params[self.eta_infotext_field] = self.eta
 
             extra_params_kwargs['eta'] = self.eta
