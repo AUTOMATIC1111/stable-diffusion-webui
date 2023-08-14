@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 
@@ -194,7 +195,7 @@ def load_network(name, network_on_disk):
         net.modules[key] = net_module
 
     if keys_failed_to_match:
-        print(f"Failed to match keys when loading network {network_on_disk.filename}: {keys_failed_to_match}")
+        logging.debug(f"Network {network_on_disk.filename} didn't match keys: {keys_failed_to_match}")
 
     return net
 
@@ -205,7 +206,6 @@ def purge_networks_from_memory():
         networks_in_memory.pop(name, None)
 
     devices.torch_gc()
-
 
 
 def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=None):
@@ -248,7 +248,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
 
         if net is None:
             failed_to_load_networks.append(name)
-            print(f"Couldn't find network with name {name}")
+            logging.info(f"Couldn't find network with name {name}")
             continue
 
         net.te_multiplier = te_multipliers[i] if te_multipliers else 1.0
@@ -257,7 +257,7 @@ def load_networks(names, te_multipliers=None, unet_multipliers=None, dyn_dims=No
         loaded_networks.append(net)
 
     if failed_to_load_networks:
-        sd_hijack.model_hijack.comments.append("Failed to find networks: " + ", ".join(failed_to_load_networks))
+        sd_hijack.model_hijack.comments.append("Networks not found: " + ", ".join(failed_to_load_networks))
 
     purge_networks_from_memory()
 
@@ -327,20 +327,25 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
         for net in loaded_networks:
             module = net.modules.get(network_layer_name, None)
             if module is not None and hasattr(self, 'weight'):
-                with torch.no_grad():
-                    updown, ex_bias = module.calc_updown(self.weight)
+                try:
+                    with torch.no_grad():
+                        updown, ex_bias = module.calc_updown(self.weight)
 
-                    if len(self.weight.shape) == 4 and self.weight.shape[1] == 9:
-                        # inpainting model. zero pad updown to make channel[1]  4 to 9
-                        updown = torch.nn.functional.pad(updown, (0, 0, 0, 0, 0, 5))
+                        if len(self.weight.shape) == 4 and self.weight.shape[1] == 9:
+                            # inpainting model. zero pad updown to make channel[1]  4 to 9
+                            updown = torch.nn.functional.pad(updown, (0, 0, 0, 0, 0, 5))
 
-                    self.weight += updown
-                    if ex_bias is not None and hasattr(self, 'bias'):
-                        if self.bias is None:
-                            self.bias = torch.nn.Parameter(ex_bias)
-                        else:
-                            self.bias += ex_bias
-                    continue
+                        self.weight += updown
+                        if ex_bias is not None and hasattr(self, 'bias'):
+                            if self.bias is None:
+                                self.bias = torch.nn.Parameter(ex_bias)
+                            else:
+                                self.bias += ex_bias
+                except RuntimeError as e:
+                    logging.debug(f"Network {net.name} layer {network_layer_name}: {e}")
+                    extra_network_lora.errors[net.name] = extra_network_lora.errors.get(net.name, 0) + 1
+
+                continue
 
             module_q = net.modules.get(network_layer_name + "_q_proj", None)
             module_k = net.modules.get(network_layer_name + "_k_proj", None)
@@ -348,26 +353,33 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
             module_out = net.modules.get(network_layer_name + "_out_proj", None)
 
             if isinstance(self, torch.nn.MultiheadAttention) and module_q and module_k and module_v and module_out:
-                with torch.no_grad():
-                    updown_q, _ = module_q.calc_updown(self.in_proj_weight)
-                    updown_k, _ = module_k.calc_updown(self.in_proj_weight)
-                    updown_v, _ = module_v.calc_updown(self.in_proj_weight)
-                    updown_qkv = torch.vstack([updown_q, updown_k, updown_v])
-                    updown_out, ex_bias = module_out.calc_updown(self.out_proj.weight)
+                try:
+                    with torch.no_grad():
+                        updown_q, _ = module_q.calc_updown(self.in_proj_weight)
+                        updown_k, _ = module_k.calc_updown(self.in_proj_weight)
+                        updown_v, _ = module_v.calc_updown(self.in_proj_weight)
+                        updown_qkv = torch.vstack([updown_q, updown_k, updown_v])
+                        updown_out, ex_bias = module_out.calc_updown(self.out_proj.weight)
 
-                    self.in_proj_weight += updown_qkv
-                    self.out_proj.weight += updown_out
+                        self.in_proj_weight += updown_qkv
+                        self.out_proj.weight += updown_out
                     if ex_bias is not None:
                         if self.out_proj.bias is None:
                             self.out_proj.bias = torch.nn.Parameter(ex_bias)
                         else:
                             self.out_proj.bias += ex_bias
-                    continue
+
+                except RuntimeError as e:
+                    logging.debug(f"Network {net.name} layer {network_layer_name}: {e}")
+                    extra_network_lora.errors[net.name] = extra_network_lora.errors.get(net.name, 0) + 1
+
+                continue
 
             if module is None:
                 continue
 
-            print(f'failed to calculate network weights for layer {network_layer_name}')
+            logging.debug(f"Network {net.name} layer {network_layer_name}: couldn't find supported operation")
+            extra_network_lora.errors[net.name] = extra_network_lora.errors.get(net.name, 0) + 1
 
         self.network_current_names = wanted_names
 
@@ -540,6 +552,7 @@ def infotext_pasted(infotext, params):
     if added:
         params["Prompt"] += "\n" + "".join(added)
 
+extra_network_lora = None
 
 available_networks = {}
 available_network_aliases = {}

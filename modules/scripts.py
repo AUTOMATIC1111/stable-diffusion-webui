@@ -106,9 +106,16 @@ class Script:
 
         pass
 
+    def setup(self, p, *args):
+        """For AlwaysVisible scripts, this function is called when the processing object is set up, before any processing starts.
+        args contains all values returned by components from ui().
+        """
+        pass
+
+
     def before_process(self, p, *args):
         """
-        This function is called very early before processing begins for AlwaysVisible scripts.
+        This function is called very early during processing begins for AlwaysVisible scripts.
         You can modify the processing object (p) here, inject hooks, etc.
         args contains all values returned by components from ui()
         """
@@ -705,6 +712,14 @@ class ScriptRunner:
                 script.before_hr(p, *script_args)
             except Exception:
                 errors.report(f"Error running before_hr: {script.filename}", exc_info=True)
+
+    def setup_scrips(self, p):
+        for script in self.alwayson_scripts:
+            try:
+                script_args = p.script_args[script.args_from:script.args_to]
+                script.setup(p, *script_args)
+            except Exception:
+                errors.report(f"Error running setup: {script.filename}", exc_info=True)
 
 
 scripts_txt2img: ScriptRunner = None
