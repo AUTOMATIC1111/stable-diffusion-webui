@@ -18,11 +18,6 @@ local_url = None
 errors.log.debug('Loading Torch')
 import torch # pylint: disable=C0411
 try:
-    rnd = torch.sum(torch.randn(2, 2)).to(0)
-    errors.log.debug(f'Torch init: {rnd / rnd == 1.0}') # fix silly pytorch_lightning issue
-except Exception:
-    pass
-try:
     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
 except Exception:
     pass
