@@ -1,7 +1,11 @@
-# Stable Diffusion web UI
-A browser interface based on Gradio library for Stable Diffusion.
+# Stable Diffusion web UI with OpenVINO™ Acceleration
+A browser interface based on Gradio library for Stable Diffusion with OpenVINO™ Acceleration Script.
 
-![](screenshot.png)
+This repo is a fork of [AUTOMATIC1111/stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui) which includes OpenVINO support through a [custom script](https://github.com/openvinotoolkit/stable-diffusion-webui/blob/master/scripts/openvino_accelerate.py) to run it on Intel CPUs and Intel GPUs.
+
+See wiki page for [Installation-on-Intel-Silicon](https://github.com/openvinotoolkit/stable-diffusion-webui/wiki/Installation-on-Intel-Silicon)
+
+![](screenshot_OpenVINO.png)
 
 ## Features
 [Detailed feature showcase with images](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features):
