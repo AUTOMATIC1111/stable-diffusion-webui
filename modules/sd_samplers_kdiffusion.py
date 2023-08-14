@@ -22,6 +22,9 @@ samplers_k_diffusion = [
     ('DPM++ 2M', 'sample_dpmpp_2m', ['k_dpmpp_2m'], {}),
     ('DPM++ SDE', 'sample_dpmpp_sde', ['k_dpmpp_sde'], {"second_order": True, "brownian_noise": True}),
     ('DPM++ 2M SDE', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_ka'], {"brownian_noise": True}),
+    ('DPM++ 2M SDE Heun', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_heun'], {"brownian_noise": True, "solver_type": "heun"}),
+    ('DPM++ 2M SDE Heun Karras', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_heun_ka'], {'scheduler': 'karras', "brownian_noise": True, "solver_type": "heun"}),
+    ('DPM++ 2M SDE Heun Exponential', 'sample_dpmpp_2m_sde', ['k_dpmpp_2m_sde_heun_exp'], {'scheduler': 'exponential', "brownian_noise": True, "solver_type": "heun"}),
     ('DPM++ 3M SDE', 'sample_dpmpp_3m_sde', ['k_dpmpp_3m_sde'], {'discard_next_to_last_sigma': True, "brownian_noise": True}),
     ('DPM++ 3M SDE Karras', 'sample_dpmpp_3m_sde', ['k_dpmpp_3m_sde_ka'], {'scheduler': 'karras', 'discard_next_to_last_sigma': True, "brownian_noise": True}),
     ('DPM++ 3M SDE Exponential', 'sample_dpmpp_3m_sde', ['k_dpmpp_3m_sde_exp'], {'scheduler': 'exponential', 'discard_next_to_last_sigma': True, "brownian_noise": True}),
@@ -161,6 +164,9 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             noise_sampler = self.create_noise_sampler(x, sigmas, p)
             extra_params_kwargs['noise_sampler'] = noise_sampler
 
+        if self.config.options.get('solver_type', None) == 'heun':
+            extra_params_kwargs['solver_type'] = 'heun'
+
         self.model_wrap_cfg.init_latent = x
         self.last_latent = x
         self.sampler_extra_args = {
@@ -202,6 +208,9 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             noise_sampler = self.create_noise_sampler(x, sigmas, p)
             extra_params_kwargs['noise_sampler'] = noise_sampler
 
+        if self.config.options.get('solver_type', None) == 'heun':
+            extra_params_kwargs['solver_type'] = 'heun'
+
         self.last_latent = x
         self.sampler_extra_args = {
             'cond': conditioning,
@@ -210,6 +219,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
             'cond_scale': p.cfg_scale,
             's_min_uncond': self.s_min_uncond
         }
+
         samples = self.launch_sampling(steps, lambda: self.func(self.model_wrap_cfg, x, extra_args=self.sampler_extra_args, disable=False, callback=self.callback_state, **extra_params_kwargs))
 
         if self.model_wrap_cfg.padded_cond_uncond:
