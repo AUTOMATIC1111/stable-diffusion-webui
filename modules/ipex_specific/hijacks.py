@@ -8,6 +8,40 @@ def ipex_no_cuda(orig_func, *args, **kwargs): # pylint: disable=redefined-outer-
     orig_func(*args, **kwargs)
     torch.cuda.is_available = torch.xpu.is_available
 
+#FP32:
+original_linear_forward = torch.nn.modules.Linear.forward
+def linear_forward(self, input):
+    if input.dtype != self.weight.data.dtype:
+        return original_linear_forward(self, input.to(self.weight.data.dtype))
+    else:
+        return original_linear_forward(self, input)
+
+#Embedding BF16
+original_torch_cat = torch.cat
+def torch_cat(input, *args, **kwargs):
+    if len(input) == 3 and (input[0].dtype != input[1].dtype or input[2].dtype != input[1].dtype):
+        return original_torch_cat([input[0].to(input[1].dtype), input[1], input[2].to(input[1].dtype)], *args, **kwargs)
+    else:
+        return original_torch_cat(input, *args, **kwargs)
+
+original_conv2d = torch.nn.functional.conv2d
+#Diffusers BF16:
+def conv2d(input, weight, *args, **kwargs):
+    if input.dtype != weight.data.dtype:
+        return original_conv2d(input.to(weight.data.dtype), weight, *args, **kwargs)
+    else:
+        return original_conv2d(input, weight, *args, **kwargs)
+
+original_interpolate = torch.nn.functional.interpolate
+#Latent antialias:
+def interpolate(input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False):
+    if antialias:
+        return original_interpolate(input.to("cpu"), size=size, scale_factor=scale_factor, mode=mode,
+        align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias).to(shared.device)
+    else:
+        return original_interpolate(input, size=size, scale_factor=scale_factor, mode=mode,
+        align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias)
+
 def ipex_hijacks():
     #Libraries that blindly uses cuda:
     #Adetailer:
@@ -36,10 +70,6 @@ def ipex_hijacks():
     CondFunc('torch.nn.modules.GroupNorm.forward',
         lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
         lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
-    #FP32:
-    CondFunc('torch.nn.modules.Linear.forward',
-        lambda orig_func, self, input: orig_func(self, input.to(self.weight.data.dtype)),
-        lambda orig_func, self, input: input.dtype != self.weight.data.dtype)
     #Embedding FP32:
     CondFunc('torch.bmm',
         lambda orig_func, input, mat2, *args, **kwargs: orig_func(input, mat2.to(input.dtype), *args, **kwargs),
@@ -50,14 +80,6 @@ def ipex_hijacks():
         orig_func(input.to(weight.data.dtype), normalized_shape, weight, *args, **kwargs),
         lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
         input.dtype != weight.data.dtype and weight is not None)
-    #Embedding BF16
-    CondFunc('torch.cat',
-        lambda orig_func, input, *args, **kwargs: orig_func([input[0].to(input[1].dtype), input[1], input[2].to(input[1].dtype)], *args, **kwargs),
-        lambda orig_func, input, *args, **kwargs: len(input) == 3 and (input[0].dtype != input[1].dtype or input[2].dtype != input[1].dtype))
-    #Diffusers BF16:
-    CondFunc('torch.nn.functional.conv2d',
-        lambda orig_func, input, weight, *args, **kwargs: orig_func(input.to(weight.data.dtype), weight, *args, **kwargs),
-        lambda orig_func, input, weight, *args, **kwargs: input.dtype != weight.data.dtype)
 
     #Functions that does not work with the XPU:
     #UniPC:
@@ -68,10 +90,6 @@ def ipex_hijacks():
     CondFunc('torch.Generator',
         lambda orig_func, device: torch.xpu.Generator(device),
         lambda orig_func, device: device != torch.device("cpu") and device != "cpu")
-    #Latent antialias:
-    CondFunc('torch.nn.functional.interpolate',
-        lambda orig_func, input, *args, **kwargs: orig_func(input.to("cpu"), *args, **kwargs).to(shared.device),
-        lambda orig_func, input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False: antialias)
     #Diffusers Float64 (ARC GPUs doesn't support double or Float64):
     if not torch.xpu.has_fp64_dtype():
         CondFunc('torch.from_numpy',
@@ -89,3 +107,9 @@ def ipex_hijacks():
         weight if weight is not None else torch.ones(input.size()[1], device=shared.device),
         bias if bias is not None else torch.zeros(input.size()[1], device=shared.device), *args, **kwargs),
         lambda orig_func, input, *args, **kwargs: input.device != torch.device("cpu"))
+
+    #Functions that make compile mad with CondFunc:
+    torch.nn.modules.Linear.forward = linear_forward
+    torch.cat = torch_cat
+    torch.nn.functional.conv2d = conv2d
+    torch.nn.functional.interpolate = interpolate
