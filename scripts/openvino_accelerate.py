@@ -22,6 +22,7 @@ from modules.processing import (
 )
 from modules.sd_models import CheckpointInfo
 from modules.shared import opts, state
+from modules.ui_common import create_refresh_button
 
 from PIL import Image, ImageOps
 from pathlib import Path
@@ -310,14 +311,14 @@ def set_scheduler(sd_model, sampler_name):
 
     return sd_model.scheduler
 
-def get_diffusers_sd_model(local_config, model_config, sampler_name, enable_caching, openvino_device, mode):
+def get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_device, mode):
     if (model_state.recompile == 1):
         torch._dynamo.reset()
         openvino_clear_caches()
         curr_dir_path = os.getcwd()
         checkpoint_name = shared.opts.sd_model_checkpoint.split(" ")[0]
         checkpoint_path = os.path.join(curr_dir_path, 'models', 'Stable-diffusion', checkpoint_name)
-        if local_config:
+        if model_config != "None":
             local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
             sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, load_safety_checker=False)
         else:
@@ -434,7 +435,7 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
         raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
 
-def process_images_openvino(p: StableDiffusionProcessing, local_config, model_config, sampler_name, enable_caching, openvino_device, mode) -> Processed:
+def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_name, enable_caching, openvino_device, mode) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
     if (mode == 0 and p.enable_hr):
@@ -514,7 +515,7 @@ def process_images_openvino(p: StableDiffusionProcessing, local_config, model_co
                 model_state.mode = mode
                 model_state.model_hash = shared.sd_model.sd_model_hash
 
-            shared.sd_diffusers_model = get_diffusers_sd_model(local_config, model_config, sampler_name, enable_caching, openvino_device, mode)
+            shared.sd_diffusers_model = get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_device, mode)
             shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
 
             extra_network_data = p.parse_extra_network_prompts()
@@ -705,15 +706,20 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         core = Core()
-        config_dir_list = os.listdir(os.path.join(os.getcwd(), 'configs'))
 
-        config_list = []
-        for file in config_dir_list:
-            if file.endswith('.yaml'):
-                config_list.append(file)
+        def get_config_list():
+            config_dir_list = os.listdir(os.path.join(os.getcwd(), 'configs'))
+            config_list = []
+            config_list.append("None")
+            for file in config_dir_list:
+                if file.endswith('.yaml'):
+                    config_list.append(file)
+            return config_list
 
-        local_config = gr.Checkbox(label="Use a local inference config file", value=False)
-        model_config = gr.Dropdown(label="Select a config for the model (Below config files are listed from the configs directory of the WebUI root)", choices=config_list, value="v1-inference.yaml", visible=False)
+        with gr.Row():
+            model_config = gr.Dropdown(label="Select a local config for the model from the configs directory of the webui root", choices=get_config_list(), value="None", visible=True)
+            create_refresh_button(model_config, get_config_list, lambda: {"choices": get_config_list()},"refresh_model_config")
+
         openvino_device = gr.Dropdown(label="Select a device", choices=list(core.available_devices), value=model_state.device)
         override_sampler = gr.Checkbox(label="Override the sampling selection from the main UI (Recommended as only below sampling methods have been validated for OpenVINO)", value=True)
         sampler_name = gr.Radio(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Heun", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
@@ -731,13 +737,6 @@ class Script(scripts.Script):
         So it's normal for the first inference after a settings change to be slower, while subsequent inferences use the optimized compiled model and run faster.
         """)
 
-        def local_config_change(choice):
-            if choice:
-                return gr.update(visible=True)
-            else:
-                return gr.update(visible=False)
-        local_config.change(local_config_change, local_config, model_config)
-
         def device_change(choice):
             if (model_state.device == choice):
                 return gr.update(value="Device selected is " + choice, visible=True)
@@ -747,9 +746,9 @@ class Script(scripts.Script):
                 return gr.update(value="Device changed to " + choice + ". Model will be re-compiled", visible=True)
         openvino_device.change(device_change, openvino_device, warmup_status)
 
-        return [local_config, model_config, openvino_device, override_sampler, sampler_name, enable_caching]
+        return [model_config, openvino_device, override_sampler, sampler_name, enable_caching]
 
-    def run(self, p, local_config, model_config, openvino_device, override_sampler, sampler_name, enable_caching):
+    def run(self, p, model_config, openvino_device, override_sampler, sampler_name, enable_caching):
         model_state.partition_id = 0
         os.environ["OPENVINO_TORCH_BACKEND_DEVICE"] = str(openvino_device)
 
@@ -767,14 +766,14 @@ class Script(scripts.Script):
         mode = 0
         if self.is_txt2img:
             mode = 0
-            processed = process_images_openvino(p, local_config, model_config, p.sampler_name, enable_caching, openvino_device, mode)
+            processed = process_images_openvino(p, model_config, p.sampler_name, enable_caching, openvino_device, mode)
         else:
             if p.image_mask is None:
                 mode = 1
             else:
                 mode = 2
             p.init = functools.partial(init_new, p)
-            processed = process_images_openvino(p, local_config, model_config, p.sampler_name, enable_caching, openvino_device, mode)
+            processed = process_images_openvino(p, model_config, p.sampler_name, enable_caching, openvino_device, mode)
         return processed
 
 
