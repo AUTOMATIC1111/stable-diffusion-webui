@@ -1,9 +1,14 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-13
+## Update for 2023-08-14
 
 - general:
-  - fix img2img resizing (applies to original, diffusers, hires)
+  - update all metadata saved with images  
+    see <https://github.com/vladmandic/automatic/wiki/Metadata> for details  
+    (work-in-progress)
+  - improved **amd** installer with support for **navi 2x & 3x** and **rocm 5.4/5.5/5.6**  
+    thanks @evshiron  
+  - fix img2img resizing (applies to original, diffusers, hires)  
 - diffusers:
   - enable batch img2img workflows
 - original:
