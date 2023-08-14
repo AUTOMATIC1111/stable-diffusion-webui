@@ -445,16 +445,13 @@ def fix_seed(p):
     p.subseed = get_fixed_seed(p.subseed)
 
 
-def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, index=None, all_negative_prompts=None): # pylint: disable=unused-argument
+def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, index=None, all_negative_prompts=None):
     if index is None:
         index = position_in_batch + iteration * p.batch_size
-
     if all_negative_prompts is None:
         all_negative_prompts = p.all_negative_prompts
-    if p.full_quality:
-        vae = None if not shared.opts.add_model_name_to_info or sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(sd_vae.loaded_vae_file))[0]
-    else:
-        vae = 'TAESD'
+    vae = (None if not shared.opts.add_model_name_to_info or sd_vae.loaded_vae_file is None else os.path.splitext(os.path.basename(sd_vae.loaded_vae_file))[0]) if p.full_quality else 'TAESD'
+    comment = ', '.join(comments) if comments is not None and type(comments) is list else None
 
     generation_params = {
         "Steps": p.steps,
@@ -462,14 +459,15 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Sampler": p.sampler_name,
         "CFG scale": p.cfg_scale,
         "Size": f"{p.width}x{p.height}",
+        "Batch": f'{p.n_iter}x{p.batch_size}' if p.n_iter > 1 or p.batch_size > 1 else None,
         "Parser": shared.opts.prompt_attention,
-        "Model": None if not shared.opts.add_model_name_to_info or not shared.sd_model.sd_checkpoint_info.model_name else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', ''),
-        "Model hash": getattr(p, 'sd_model_hash', None if not shared.opts.add_model_hash_to_info or not shared.sd_model.sd_model_hash else shared.sd_model.sd_model_hash),
-        "Refiner": None if not shared.opts.add_model_name_to_info or not shared.sd_refiner or not shared.sd_refiner.sd_checkpoint_info.model_name else shared.sd_refiner.sd_checkpoint_info.model_name.replace(',', '').replace(':', ''),
+        "Model": None if (not shared.opts.add_model_name_to_info) or (not shared.sd_model.sd_checkpoint_info.model_name) else shared.sd_model.sd_checkpoint_info.model_name.replace(',', '').replace(':', ''),
+        "Model hash": getattr(p, 'sd_model_hash', None if (not shared.opts.add_model_hash_to_info) or (not shared.sd_model.sd_model_hash) else shared.sd_model.sd_model_hash),
+        "Refiner": None if (not shared.opts.add_model_name_to_info) or (not shared.sd_refiner) or (not shared.sd_refiner.sd_checkpoint_info.model_name) else shared.sd_refiner.sd_checkpoint_info.model_name.replace(',', '').replace(':', ''),
         "VAE": vae,
         # subseed
         "Variation seed": None if p.subseed_strength == 0 else all_subseeds[index],
-        "Variation seed strength": None if p.subseed_strength == 0 else p.subseed_strength,
+        "Variation strength": None if p.subseed_strength == 0 else p.subseed_strength,
         # seed resize
         "Seed resize from": None if p.seed_resize_from_w == 0 or p.seed_resize_from_h == 0 else f"{p.seed_resize_from_w}x{p.seed_resize_from_h}",
         "Init image hash": getattr(p, 'init_img_hash', None),
@@ -478,18 +476,19 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
         "Clip skip": p.clip_skip if p.clip_skip > 1 else None,
         # ensd
         "ENSD": shared.opts.eta_noise_seed_delta if shared.opts.eta_noise_seed_delta != 0 and sd_samplers_common.is_sampler_using_eta_noise_seed_delta(p) else None,
-        # enable_hr
-        "Latent sampler": p.latent_sampler if p.enable_hr else None,
-        "Image CFG scale": p.image_cfg_scale if p.enable_hr else None,
-        "Denoising strength": p.denoising_strength if p.enable_hr else None,
-        "Refiner start": p.refiner_start if p.enable_hr else None,
-        "Secondary steps": p.hr_second_pass_steps if p.enable_hr else None,
-        # restore_faces
+        # restore_faces, tiling
         "Face restoration": shared.opts.face_restoration_model if p.restore_faces else None,
+        "Tiling": p.tiling if p.tiling else None,
+        # enable_hr
+        "Prompt2": p.refiner_prompt if p.enable_hr and len(p.refiner_prompt) > 0 else None,
+        "Negative2": p.refiner_negative if p.enable_hr and len(p.refiner_negative) > 0 else None,
+        "Latent sampler": p.latent_sampler if p.enable_hr and p.latent_sampler != p.sampler_name else None,
+        "Denoising strength": p.denoising_strength if p.enable_hr else None,
         # sdnext
+        "Backend": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
         "Version": git_commit,
-        "Pipeline": 'Diffusers' if shared.backend == shared.Backend.DIFFUSERS else 'Original',
-        "Operations": ', '.join(list(set(p.ops))) if len(p.ops) > 0 else None
+        "Comment": comment,
+        "Operations": ', '.join(list(set(p.ops))) if len(p.ops) > 0 else None,
     }
     token_merging_ratio = p.get_token_merging_ratio()
     token_merging_ratio_hr = p.get_token_merging_ratio(for_hr=True) if p.enable_hr else None

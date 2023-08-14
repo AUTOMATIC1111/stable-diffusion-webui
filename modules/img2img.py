@@ -177,6 +177,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     )
     p.scripts = modules.scripts.scripts_img2img
     p.script_args = args
+    p.extra_generation_params['Resize mode'] = resize_mode
     if mask:
         p.extra_generation_params["Mask blur"] = mask_blur
     if is_batch:
