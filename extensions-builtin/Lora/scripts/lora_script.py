@@ -1,6 +1,5 @@
 import re
 
-import torch
 import gradio as gr
 from fastapi import FastAPI
 
@@ -10,7 +9,7 @@ import lora  # noqa:F401
 import lora_patches
 import extra_networks_lora
 import ui_extra_networks_lora
-from modules import script_callbacks, ui_extra_networks, extra_networks, shared, patches
+from modules import script_callbacks, ui_extra_networks, extra_networks, shared
 
 
 def unload():
