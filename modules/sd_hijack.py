@@ -188,8 +188,6 @@ class StableDiffusionModelHijack:
                 import logging
                 shared.log.info(f"Compiling pipeline={m.model.__class__.__name__} mode={opts.cuda_compile_backend}")
                 import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
-                if shared.opts.cuda_compile_backend == "openvino_fx":
-                    from modules.ipex_specific.openvino import openvino_fx
                 log_level = logging.WARNING if opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                 if hasattr(torch, '_logging'):
                     torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access

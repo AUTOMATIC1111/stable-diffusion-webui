@@ -745,7 +745,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model.unet.to(memory_format=torch.channels_last)
 
         base_sent_to_cpu=False
-        if (shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none') or shared.opts.ipex_optimize:
+        if (shared.opts.cuda_compile or shared.opts.ipex_optimize) and torch.cuda.is_available():
             if op == 'refiner' and not sd_model.has_accelerate:
                 gpu_vram = memory_stats().get('gpu', {})
                 free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)
@@ -775,11 +775,9 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             except Exception as err:
                 shared.log.warning(f"IPEX Optimize not supported: {err}")
             try:
-                if shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none':
+                if shared.opts.cuda_compile:
                     shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_backend}")
                     import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
-                    if shared.opts.cuda_compile_backend == "openvino_fx":
-                        from modules.ipex_specific.openvino import openvino_fx
                     log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                     if hasattr(torch, '_logging'):
                         torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
