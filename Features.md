@@ -778,4 +778,4 @@ One purpose for this tweak is to add back additional detail into hires fix. It i
 The below example is of a 512x512 image with hires fix applied, using a GAN upscaler (4x-UltraSharp), at a denoising strength of 0.45. The image on the right utilizes this extra noise tweak.
 Extra noise = 0             |  Extra noise = 0.2
 :-------------------------:|:-------------------------:
-![without](https://user-images.githubusercontent.com/122327233/260556373-9257aa18-dfc8-49f6-9984-a0a1f430c029.png)  |  ![with](https://user-images.githubusercontent.com/122327233/260556387-0c6df12c-7412-43d5-84d2-2a69ad6152c4.png)
+[![without](https://user-images.githubusercontent.com/122327233/260556373-9257aa18-dfc8-49f6-9984-a0a1f430c029.png)](https://user-images.githubusercontent.com/122327233/260556373-9257aa18-dfc8-49f6-9984-a0a1f430c029.png)  |  [![with](https://user-images.githubusercontent.com/122327233/260556387-0c6df12c-7412-43d5-84d2-2a69ad6152c4.png)](https://user-images.githubusercontent.com/122327233/260556387-0c6df12c-7412-43d5-84d2-2a69ad6152c4.png)
