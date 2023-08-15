@@ -36,7 +36,8 @@ gradio_hf_hub_themes = [
     "step-3-profit/Midnight-Deep",
     "Taithrah/Minimal",
     "ysharma/huggingface",
-    "ysharma/steampunk"
+    "ysharma/steampunk",
+    "NoCrypt/miku"
 ]
 
 
