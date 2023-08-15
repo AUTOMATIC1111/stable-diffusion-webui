@@ -103,6 +103,10 @@ class CompVisSampler(sd_samplers_common.Sampler):
 
         xi = x * sqrt_alpha_cumprod + noise * sqrt_one_minus_alpha_cumprod
 
+        if opts.img2img_extra_noise > 0:
+            p.extra_generation_params["Extra noise"] = opts.img2img_extra_noise
+            xi += noise * opts.img2img_extra_noise * sqrt_alpha_cumprod
+
         extra_params_kwargs = self.initialize(p)
         parameters = inspect.signature(self.func).parameters
 
