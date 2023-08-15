@@ -1,3 +1,99 @@
+## 1.6.0
+
+### Features:
+ * refiner support
+ * add NV option for Random number generator source setting, which allows to generate same pictures on CPU/AMD/Mac as on NVidia videocards
+ * add style editor dialog
+ * hires fix: add an option to use a different checkpoint for second pass
+ * option to keep multiple loaded models in memory
+ * new samplers: Restart, DPM++ 2M SDE Exponential, DPM++ 2M SDE Heun, DPM++ 2M SDE Heun Karras, DPM++ 2M SDE Heun Exponential, DPM++ 3M SDE, DPM++ 3M SDE Karras, DPM++ 3M SDE Exponential
+ * rework DDIM, PLMS, UniPC to use CFG denoiser same as in k-diffusion samplers:
+   * makes all of them work with img2img
+   * makes prompt composition posssible (AND)
+   * makes them available for SDXL
+ * always show extra networks tabs in the UI
+ * use less RAM when creating models
+ * textual inversion inference support for SDXL
+ * extra networks UI: show metadata for SD checkpoints
+ * checkpoint merger: add metadata support 
+ * prompt editing and attention: add support for whitespace after the number ([ red : green : 0.5 ]) (seed breaking change)
+ * VAE: allow selecting own VAE for each checkpoint (in user metadata editor)
+ * VAE: add selected VAE to infotext
+ * options in main UI: add own separate setting for txt2img and img2img, correctly read values from pasted infotext, add setting for column count
+
+
+### Minor:
+ * img2img batch: RAM savings, VRAM savings, .tif, .tiff in img2img batch
+ * postprocessing/extras: RAM savings
+ * XYZ: in the axis labels, remove pathnames from model filenames
+ * XYZ: support hires sampler
+ * XYZ: new option: use text inputs instead of dropdowns
+ * add gradio version warning
+ * sort list of VAE checkpoints
+ * use transparent white for mask in inpainting, along with an option to select the color
+ * move some settings to their own section: img2img, VAE
+ * add checkbox to show/hide dirs for extra networks
+ * Add TAESD(or more) options for all the VAE encode/decode operation
+ * gradio theme cache, new gradio themes, along with explanation that the user can input his own values
+ * sampler fixes/tweaks: s_tmax, s_churn, s_noise, s_tmax
+ * update README.md with correct instructions for Linux installation
+ * option to not save incomplete images, on by default
+ * enable cond cache by default
+ * git autofix for repos that are corrupted
+ * allow to open images in new browser tab by middle mouse button
+ * automatically open webui in browser when running "locally"
+ * put commonly used samplers on top, make DPM++ 2M Karras the default choice
+ * zoom and pan: option to auto-expand a wide image
+ * option to cache Lora networks in memory
+ * rework hires fix UI to use accordion
+ * face restoration and tiling moved to settings - use "Options in main UI" setting if you want them back
+ * change quicksettings items to have variable width
+ * Lora: add Norm module, add support for bias
+ * Lora: output warnings in UI rather than fail for unfitting loras; switch to logging for error output in console
+ * support search and display of hashes for all extra network items
+ * Add extra noise param for img2img operations
+
+### Extensions and API:
+ * gradio 3.39
+ * also bump versions for packages: transformers, GitPython, accelerate, scikit-image, timm, tomesd
+ * support tooltip kwarg for gradio elements: gr.Textbox(label='hello', tooltip='world')
+ * properly clear the total console progressbar when using txt2img and img2img from API
+ * add cmd_arg --disable-extensions all extra
+ * shared.py and webui.py split into many files
+ * add --loglevel commandline argument for logging
+ * add a custom UI element that combines accordion and checkbox
+ * avoid importing gradio in tests because it spams warnings
+ * put infotext label for setting into OptionInfo definition rather than in a separate list
+ * make `StableDiffusionProcessingImg2Img.mask_blur` a property, make more inline with PIL `GaussianBlur`
+ * option to make scripts UI without gr.Group
+ * add a way for scripts to register a callback for before/after just a single component's creation
+ * use dataclass for StableDiffusionProcessing
+
+### Bug Fixes:
+ * Don't crash if out of local storage quota for javascriot localStorage
+ * fix memory leak when generation fails
+ * XYZ plot do not fail if an exception occurs
+ * update doggettx cross attention optimization to not use an unreasonable amount of memory in some edge cases -- suggestion by MorkTheOrk
+ * fix missing TI hash in infotext if generation uses both negative and positive TI
+ * localization fixes
+ * fix sdxl model invalid configuration after the hijack
+ * correctly toggle extras checkbox for infotext paste
+ * open raw sysinfo link in new page
+ * prompt parser: Account for empty field in alternating words syntax
+ * add tab and carriage return to invalid filename chars
+ * fix api only Lora not working
+ * fix options in main UI misbehaving when there's just one element
+ * make it possible to use a sampler from infotext even if it's hidden in the dropdown
+ * fix styles missing from the prompt in infotext when making a grid of batch of multiplie images
+ * prevent bogus progress output in console when calculating hires fix dimensions
+ * fix --use-textbox-seed
+ * fix broken `Lora/Networks: use old method` option
+ * properly return `None` for VAE hash when using `--no-hashing`
+ * MPS/macOS fixes and optimizations
+ * add second_order to samplers that mistakenly didn't have it
+ * when refreshing cards in extra networks UI, do not discard user's custom resolution
+ * fix processing error that happens if batch_size is not a multiple of how many prompts/negative prompts there are #12509
+
 ## 1.5.1
 
 ### Minor:
