@@ -1,3 +1,6 @@
+> ℹ️ **Note:**
+> This page is not actively maintained. For a more up-to-date list of script and extensions, you may use the built-in tab within the web UI (`Extensions` -> `Available`).
+
 # Installing and Using Custom Scripts
 To install custom scripts, place them into the `scripts` directory and click the `Reload custom script` button at the bottom in the settings tab. Custom scripts will appear in the lower-left dropdown menu on the txt2img and img2img tabs after being installed. Below are some notable custom scripts created by Web UI users:
 
