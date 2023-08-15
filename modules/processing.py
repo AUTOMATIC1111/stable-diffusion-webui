@@ -81,6 +81,12 @@ def apply_overlay(image, paste_loc, index, overlays):
 
     return image
 
+def create_binary_mask(image):
+    if image.mode == 'RGBA' and image.getextrema()[-1] != (255, 255):
+        image = image.split()[-1].convert("L").point(lambda x: 255 if x > 128 else 0)
+    else:
+        image = image.convert('L')
+    return image
 
 def txt2img_image_conditioning(sd_model, x, width, height):
     if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
@@ -1385,7 +1391,9 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         image_mask = self.image_mask
 
         if image_mask is not None:
-            image_mask = image_mask.convert('L')
+            # image_mask is passed in as RGBA by Gradio to support alpha masks,
+            # but we still want to support binary masks.
+            image_mask = create_binary_mask(image_mask)
 
             if self.inpainting_mask_invert:
                 image_mask = ImageOps.invert(image_mask)
