@@ -98,7 +98,7 @@ def slerp(val, low, high):
 
 class ImageRNG:
     def __init__(self, shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0):
-        self.shape = shape
+        self.shape = tuple(map(int, shape))
         self.seeds = seeds
         self.subseeds = subseeds
         self.subseed_strength = subseed_strength
