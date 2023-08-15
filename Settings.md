@@ -3,4 +3,4 @@
 
 # Saving images/grids
 
-#### [#](#samples_save) Always save all generated iamges
+#### [#](#samples_save) Always save all generated images
