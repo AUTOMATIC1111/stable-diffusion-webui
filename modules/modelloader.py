@@ -1,4 +1,5 @@
 import os
+import time
 import shutil
 import importlib
 from typing import Dict
@@ -6,15 +7,11 @@ from urllib.parse import urlparse
 from modules import shared
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
-import inspect
-import time
 
 diffuser_repos = []
 
 def walk(top, onerror:callable=None):
-    # A near-exact copy of `os.path.walk()`, trimmed slightly.  
-    # Probably not nessesary for most people's collections, but makes 
-    # a difference on really large datasets.
+    # A near-exact copy of `os.path.walk()`, trimmed slightly. Probably not nessesary for most people's collections, but makes a difference on really large datasets.
     nondirs = []
     walk_dirs = []
 
@@ -36,12 +33,10 @@ def walk(top, onerror:callable=None):
                 if onerror is not None:
                     onerror(error, top)
                 return
-
             try:
                 is_dir = entry.is_dir()
             except OSError:
                 is_dir = False
-
             if not is_dir:
                 nondirs.append(entry.name)
             else:
@@ -52,7 +47,6 @@ def walk(top, onerror:callable=None):
                 except OSError as error:
                     if onerror is not None:
                         onerror(error, entry.path)
-
     # Recurse into sub-directories
     for new_path in walk_dirs:
         yield from walk(new_path, onerror)
@@ -105,7 +99,6 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, previ
 def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None, variant = None, revision = None, mirror = None):
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
-
     shared.state.begin()
     shared.state.job = 'downloload model'
     if download_config is None:
@@ -170,7 +163,6 @@ def load_diffusers_models(model_path: str, command_path: str = None):
 
 def find_diffuser(name: str):
     import huggingface_hub as hf
-
     if name in diffuser_repos:
         return name
     if shared.cmd_opts.no_download:
@@ -187,11 +179,13 @@ def find_diffuser(name: str):
         return models[0].modelId
     return None
 
+
 modelloader_directories = {}
 cache_last = 0
 cache_time = 1
 
-def directory_has_changed(dir:str, *, recursive:bool=True) -> bool:
+
+def directory_has_changed(dir:str, *, recursive:bool=True) -> bool: # pylint: disable=redefined-builtin
     try:
         dir = os.path.abspath(dir)
         if dir not in modelloader_directories:
@@ -207,10 +201,10 @@ def directory_has_changed(dir:str, *, recursive:bool=True) -> bool:
     except Exception as e:
         shared.log.error(f"Filesystem Error: {e.__class__.__name__}({e})")
         return True
-
     return False
 
-def directory_directories(dir:str, *, recursive:bool=True) -> dict[str,tuple[float,list[str]]]:
+
+def directory_directories(dir:str, *, recursive:bool=True) -> dict[str,tuple[float,list[str]]]: # pylint: disable=redefined-builtin
     dir = os.path.abspath(dir)
     if directory_has_changed(dir, recursive=recursive):
         for _dir in modelloader_directories:
@@ -228,20 +222,22 @@ def directory_directories(dir:str, *, recursive:bool=True) -> dict[str,tuple[flo
             except Exception as e:
                 shared.log.error(f"Filesystem Error: {e.__class__.__name__}({e})")
                 del modelloader_directories[_dir]
-
-    directory_directories = {}
+    res = {}
     for _dir in modelloader_directories:
         if _dir == dir or (recursive and _dir.startswith(dir)):
-            directory_directories[_dir] = modelloader_directories[_dir]
+            res[_dir] = modelloader_directories[_dir]
             if not recursive:
                 break
-    return directory_directories
+    return res
 
-def directory_mtime(dir:str, *, recursive:bool=True) -> float:
+
+def directory_mtime(dir:str, *, recursive:bool=True) -> float: # pylint: disable=redefined-builtin
     return float(max(0, *[mtime for mtime, _ in directory_directories(dir, recursive=recursive).values()]))
+
 
 def directories_file_paths(directories:dict) -> list[str]:
     return sum([dat[1] for dat in directories.values()],[])
+
 
 def unique_directories(directories:list[str], *, recursive:bool=True) -> list[str]:
     '''Ensure no empty, or duplicates'''
@@ -251,25 +247,28 @@ def unique_directories(directories:list[str], *, recursive:bool=True) -> list[st
         directories = [dir for dir in directories if not any(_dir != dir and dir.startswith(os.path.join(_dir,'')) for _dir in directories)]
     return directories
 
+
 def unique_paths(paths:list[str]) -> list[str]:
     return { fp: True for fp in paths }.keys()
 
+
 def directory_files(*directories:list[str], recursive:bool=True) -> list[str]:
     return unique_paths(sum([[*directories_file_paths(directory_directories(dir, recursive=recursive))] for dir in unique_directories(directories, recursive=recursive)],[]))
+
 
 def extension_filter(ext_filter=None, ext_blacklist=None):
     if ext_filter:
         ext_filter = [*map(str.upper, ext_filter)]
     if ext_blacklist:
         ext_blacklist = [*map(str.upper, ext_blacklist)]
-    def filter(fp:str):
+    def filter(fp:str): # pylint: disable=redefined-builtin
         return (not ext_filter or any(fp.upper().endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.upper().endswith(ew) for ew in ext_blacklist))
     return filter
+
 
 def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
     """
     A one-and done loader to try finding the desired models in specified directories.
-
     @param download_name: Specify to download from model_url immediately.
     @param model_url: If no other models are found, this will be downloaded on upscale.
     @param model_path: The location to store/find models in.
@@ -367,7 +366,6 @@ def load_upscalers():
                 importlib.import_module(full_model)
             except Exception:
                 pass
-
     datas = []
     commandline_options = vars(shared.cmd_opts)
     # some of upscaler classes will not go away after reloading their modules, and we'll end up with two copies of those classes. The newest copy will always be the last in the list, so we go from end to beginning and ignore duplicates
@@ -376,7 +374,6 @@ def load_upscalers():
         classname = str(cls)
         if classname not in used_classes:
             used_classes[classname] = cls
-
     for cls in reversed(used_classes.values()):
         name = cls.__name__
         cmd_name = f"{name.lower().replace('upscaler', '')}_models_path"
@@ -385,7 +382,6 @@ def load_upscalers():
         scaler.user_path = commandline_model_path
         scaler.model_download_path = commandline_model_path or scaler.model_path
         datas += scaler.scalers
-
     shared.sd_upscalers = sorted(
         datas,
         # Special case for UpscalerNone keeps it at the beginning of the list.

@@ -1,6 +1,14 @@
 # Change Log for SD.Next
 
+## Update for 2023-08-18
+
+- general:
+  - caching of extra network information to enable much faster create/refresh operations  
+    thanks @midcoastal
+
 ## Update for 2023-08-17
+
+Smaller update, but with some breaking changes (to prepare for future larger functionality)...
 
 - general:
   - update all metadata saved with images  
