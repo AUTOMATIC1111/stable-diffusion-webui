@@ -137,6 +137,62 @@ def find_diffuser(name: str):
         return models[0].modelId
     return None
 
+modelloader_directories = {}
+
+def directory_has_changed(dir:str, *, recursive:bool=True) -> bool:
+    dir = os.path.abspath(dir)
+    if dir not in modelloader_directories:
+        return True
+    if not (os.path.exists(dir) and os.path.isdir(dir) and os.path.getmtime(dir) == modelloader_directories[dir][0]):
+        return True
+    if recursive:
+        for _dir in modelloader_directories:
+            if _dir.startswith(dir) and _dir != dir and not (os.path.exists(_dir) and os.path.isdir(_dir) and os.path.getmtime(_dir) == modelloader_directories[_dir][0]):
+                return True
+    return False
+
+def directory_directories(dir:str, *, recursive:bool=True) -> dict[str,tuple[float,list[str]]]:
+    dir = os.path.abspath(dir)
+    if directory_has_changed(dir, recursive=recursive):
+        for _dir in modelloader_directories:
+            if not (os.path.exists(_dir) and os.path.isdir(_dir)):
+                del modelloader_directories[_dir]
+        for _dir, _subdirs, _files in os.walk(dir, topdown=False, followlinks=True):
+            mtime = os.path.getmtime(_dir)
+            if _dir not in modelloader_directories or mtime>modelloader_directories[_dir][0]:
+                modelloader_directories[_dir] = (mtime, [os.path.join(_dir, fn) for fn in _files])
+    directory_directories = {}
+    for _dir in modelloader_directories:
+        if _dir == dir or (recursive and _dir.startswith(dir)):
+            directory_directories[_dir] = modelloader_directories[_dir]
+            if not recursive:
+                break
+    return directory_directories
+
+def directories_file_paths(directories:dict) -> list[str]:
+    return sum([[fp for fp in dat[1]] for dat in directories.values()], [])
+
+def filter_paths(paths:list[str], *, filter:callable=None) -> list[str]:
+    return [fp for fp in paths if not (os.path.islink(fp) and not os.path.exists(fp)) and filter(fp)]
+
+def unique_directories(directories:list[str], *, recursive:bool=True) -> list[str]:
+    '''Ensure no empty, or duplicates'''
+    directories = { os.path.abspath(dir): True for dir in directories if dir }.keys()
+    if recursive:
+        '''If we are going recursive, then directories that are children of other directories are redundant'''
+        directories = [dir for dir in directories if not any(_dir != dir and dir.startswith(_dir) for _dir in directories)]
+    return directories
+
+def unique_paths(paths:list[str]) -> list[str]:
+    return { fp: True for fp in paths }.keys()
+
+def directory_files(*directories:list[str], recursive:bool=True) -> list[str]:
+    return unique_paths(sum([[fp for fp in directories_file_paths(directory_directories(dir, recursive=recursive))] for dir in unique_directories(directories, recursive=recursive)],[]))
+
+def extension_filter(ext_filter=None, ext_blacklist=None):
+    def filter(fp:str):
+        return (not ext_filter or any(fp.endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.endswith(ew) for ew in ext_blacklist))
+    return filter
 
 def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
     """
@@ -149,21 +205,10 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
-    places = []
-    places.append(model_path)
-    if command_path is not None and command_path != model_path and os.path.isdir(command_path):
-        places.append(command_path)
+    places = unique_directories([model_path, command_path])
     output = []
     try:
-        for place in places:
-            for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
-                if os.path.islink(full_path) and not os.path.exists(full_path):
-                    shared.log.error(f"Skipping broken symlink: {full_path}")
-                    continue
-                if ext_blacklist is not None and any(full_path.endswith(x) for x in ext_blacklist):
-                    continue
-                if full_path not in output:
-                    output.append(full_path)
+        output:list = filter_paths(directory_files(*places), filter=extension_filter(ext_filter, ext_blacklist))
         if model_url is not None and len(output) == 0:
             if download_name is not None:
                 from basicsr.utils.download_util import load_file_from_url
