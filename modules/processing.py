@@ -382,13 +382,18 @@ class StableDiffusionProcessing:
     def setup_prompts(self):
         if type(self.prompt) == list:
             self.all_prompts = self.prompt
+        elif type(self.negative_prompt) == list:
+            self.all_prompts = [self.prompt] * len(self.negative_prompt)
         else:
             self.all_prompts = self.batch_size * self.n_iter * [self.prompt]
 
         if type(self.negative_prompt) == list:
             self.all_negative_prompts = self.negative_prompt
         else:
-            self.all_negative_prompts = self.batch_size * self.n_iter * [self.negative_prompt]
+            self.all_negative_prompts = [self.negative_prompt] * len(self.all_prompts)
+
+        if len(self.all_prompts) != len(self.all_negative_prompts):
+            raise RuntimeError(f"Received a different number of prompts ({len(self.all_prompts)}) and negative prompts ({len(self.all_negative_prompts)})")
 
         self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
         self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
