@@ -22,8 +22,8 @@ except Exception as e:
     log.error(f'Diffusers import error: version={diffusers.__version__} error: {e}')
 
 config = {
-    # TODO beta_start, beta_end are typically per-scheduler, but we don't want them as they should be taken from the model itself as those are values model was trained on
-    # TODO prediction_type is ideally set in model as well, but it maybe needed that we do auto-detect of model type in the future
+    # beta_start, beta_end are typically per-scheduler, but we don't want them as they should be taken from the model itself as those are values model was trained on
+    # prediction_type is ideally set in model as well, but it maybe needed that we do auto-detect of model type in the future
     'All': { 'num_train_timesteps': 1000, 'beta_start': 0.0001, 'beta_end': 0.02, 'beta_schedule': 'linear', 'prediction_type': 'epsilon' },
     'DDIM': { 'clip_sample': True, 'set_alpha_to_one': True, 'steps_offset': 0, 'thresholding': False, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace', 'rescale_betas_zero_snr': False },
     'DDPM': { 'variance_type': "fixed_small", 'clip_sample': True, 'thresholding': False, 'clip_sample_range': 1.0, 'sample_max_value': 1.0, 'timestep_spacing': 'linspace'},

@@ -141,7 +141,7 @@ class EmbeddingDatabase:
         name = os.path.basename(fn)
         embedding = Embedding(vec=None, name=name)
         try:
-            pipe.load_textual_inversion(path, cache_dir=shared.opts.data["diffusers_dir"], local_files_only=True)
+            pipe.load_textual_inversion(path, cache_dir=shared.opts.diffusers_dir, local_files_only=True)
             self.word_embeddings[name] = embedding
         except Exception:
             self.skipped_embeddings[name] = embedding

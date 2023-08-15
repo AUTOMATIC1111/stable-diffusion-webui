@@ -35,7 +35,6 @@ scipy
 tb_nightly
 toml
 torchdiffeq
-torchsde
 voluptuous
 yapf
 scikit-image

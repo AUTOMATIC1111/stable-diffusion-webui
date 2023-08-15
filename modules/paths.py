@@ -65,7 +65,9 @@ def create_paths(opts):
             return
         if os.path.isabs(opts.data[folder]) or opts.data[folder].startswith(data_path):
             return
-        opts.data[folder] = os.path.join(data_path, opts.data[folder])
+        fullpath = os.path.join(data_path, opts.data[folder])
+        relpath = os.path.relpath(fullpath, script_path)
+        opts.data[folder] = relpath
         return
 
     create_path(fix_path('temp_dir'))

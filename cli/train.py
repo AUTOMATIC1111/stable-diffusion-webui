@@ -375,7 +375,7 @@ def check_versions():
     log.info('checking accelerate')
     error = False
     import accelerate
-    if accelerate.__version__ != '0.20.3':
+    if accelerate.__version__ != '0.19.0':
         log.error(f'invalid accelerate version: accelerate=0.19.0 found={accelerate.__version__}')
         error = True
     log.info('checking diffusers')

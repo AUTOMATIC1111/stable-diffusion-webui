@@ -506,6 +506,7 @@ def install_packages():
     install('git+https://github.com/damian0815/compel', 'compel', ignore=True)
     tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
+    install('git+https://github.com/google-research/torchsde', 'torchsde', ignore=True)
     bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', None)
     if bitsandbytes_package is not None:
         install(bitsandbytes_package, 'bitsandbytes', ignore=True)
@@ -898,5 +899,7 @@ def read_options():
         with open(args.config, "r", encoding="utf8") as file:
             try:
                 opts = json.load(file)
+                if type(opts) is str:
+                    opts = json.loads(opts)
             except Exception as e:
                 log.error(f'Error reading options file: {file} {e}')

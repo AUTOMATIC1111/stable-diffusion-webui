@@ -45,7 +45,7 @@ pipelines = [
     'Stable Diffusion', 'Stable Diffusion XL', 'Kandinsky V1', 'Kandinsky V2', 'DeepFloyd IF', 'Shap-E',
     'Stable Diffusion Img2Img', 'Stable Diffusion XL Img2Img', 'Kandinsky V1 Img2Img', 'Kandinsky V2 Img2Img', 'DeepFloyd IF Img2Img', 'Shap-E Img2Img'
 ]
-latent_upscale_default_mode = "Latent"
+latent_upscale_default_mode = "None"
 latent_upscale_modes = {
     "Latent": {"mode": "bilinear", "antialias": False},
     "Latent (antialiased)": {"mode": "bilinear", "antialias": True},
@@ -302,6 +302,8 @@ def readfile(filename, silent=False):
         with fasteners.InterProcessLock(f"{filename}.lock"):
             with open(filename, "r", encoding="utf8") as file:
                 data = json.load(file)
+                if type(data) is str:
+                    data = json.loads(data)
             if not silent:
                 log.debug(f'Reading: {filename} len={len(data)}')
     except Exception as e:
@@ -558,6 +560,7 @@ options_templates.update(options_section(('sampler-params', "Sampler Settings"),
     's_tmin':  OptionInfo(0.0, "sigma tmin",  gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     's_noise': OptionInfo(1.0, "sigma noise", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     'always_discard_next_to_last_sigma': OptionInfo(False, "Always discard next-to-last sigma"),
+    'never_discard_next_to_last_sigma': OptionInfo(False, "Never discard next-to-last sigma"),
 
     "schedulers_sep_compvis": OptionInfo("<h2>CompVis specific config</h2>", "", gr.HTML),
     "ddim_discretize": OptionInfo('uniform', "DDIM discretize img2img", gr.Radio, {"choices": ['uniform', 'quad']}),
@@ -672,6 +675,8 @@ class Options:
     def set(self, key, value):
         """sets an option and calls its onchange callback, returning True if the option changed and False otherwise"""
         oldval = self.data.get(key, None)
+        if oldval is None:
+            oldval = self.data_labels[key].default
         if oldval == value:
             return False
         try:
@@ -699,10 +704,14 @@ class Options:
             log.warning(f'Settings saving is disabled: {filename}')
             return
         try:
-            output = json.dumps(self.data, indent=2)
-            log.debug(f'Saving settings: {filename} len={len(output)}')
-            with open(filename, "w", encoding="utf8") as file:
-                file.write(output)
+            # output = json.dumps(self.data, indent=2)
+            diff = {}
+            for k, v in self.data.items():
+                if k in self.data_labels:
+                    if self.data_labels[k].default != v:
+                        diff[k] = v
+            output = json.dumps(diff, indent=2)
+            writefile(output, filename)
         except Exception as e:
             log.error(f'Saving settings failed: {filename} {e}')
 

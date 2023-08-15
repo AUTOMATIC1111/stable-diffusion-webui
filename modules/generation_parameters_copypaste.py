@@ -170,10 +170,7 @@ def connect_paste_params_buttons():
 
 
 def send_image_and_dimensions(x):
-    if isinstance(x, Image.Image):
-        img = x
-    else:
-        img = image_from_url_text(x)
+    img = x if isinstance(x, Image.Image) else image_from_url_text(x)
     if shared.opts.send_size and isinstance(img, Image.Image):
         w = img.width
         h = img.height
@@ -183,13 +180,10 @@ def send_image_and_dimensions(x):
     return img, w, h
 
 
-
 def find_hypernetwork_key(hypernet_name, hypernet_hash=None):
     """Determines the config parameter name to use for the hypernet based on the parameters in the infotext.
-
     Example: an infotext provides "Hypernet: ke-ta" and "Hypernet hash: 1234abcd". For the "Hypernet" config
     parameter this means there should be an entry that looks like "ke-ta-10000(1234abcd)" to set it to.
-
     If the infotext has no hash, then a hypernet with the same name will be selected instead.
     """
     hypernet_name = hypernet_name.lower()
@@ -302,12 +296,17 @@ settings_map = {}
 
 
 infotext_to_setting_name_mapping = [
+    ('VAE', 'sd_vae'),
     ('Conditional mask weight', 'inpainting_mask_weight'),
     ('Model hash', 'sd_model_checkpoint'),
+    ('Backed', 'sd_backend'),
+    ('Refiner', 'sd_model_refiner'),
+    ('Parser', 'prompt_attention'),
     ('ENSD', 'eta_noise_seed_delta'),
     ('Noise multiplier', 'initial_noise_multiplier'),
     ('Eta', 'eta_ancestral'),
     ('Eta DDIM', 'eta_ddim'),
+    ('Lora method', 'diffusers_lora_loader'),
     ('Discard penultimate sigma', 'always_discard_next_to_last_sigma'),
     ('UniPC variant', 'uni_pc_variant'),
     ('UniPC skip type', 'uni_pc_skip_type'),
@@ -383,8 +382,9 @@ def connect_paste(button, local_paste_fields, input_comp, override_settings_comp
                 v = params.get(param_name, None)
                 if v is None:
                     continue
-                if setting_name == "sd_model_checkpoint" and shared.opts.disable_weights_auto_swap:
-                    continue
+                if shared.opts.disable_weights_auto_swap:
+                    if setting_name == "sd_model_checkpoint" or setting_name == 'sd_model_refiner' or setting_name == 'sd_backend':
+                        continue
                 v = shared.opts.cast_value(setting_name, v)
                 current_value = getattr(shared.opts, setting_name, None)
                 if v == current_value:

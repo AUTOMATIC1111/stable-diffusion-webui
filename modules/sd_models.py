@@ -2,6 +2,7 @@ import collections
 import os.path
 import re
 import io
+import sys
 import json
 import threading
 from os import mkdir
@@ -240,7 +241,10 @@ def select_checkpoint(op='model'):
         return None
     checkpoint_info = next(iter(checkpoints_list.values()))
     if model_checkpoint is not None:
-        shared.log.warning(f"Selected checkpoint not found: {model_checkpoint}")
+        if model_checkpoint != 'model.ckpt' and model_checkpoint != 'runwayml/stable-diffusion-v1-5':
+            shared.log.warning(f"Selected checkpoint not found: {model_checkpoint}")
+        else:
+            shared.log.info("Selecting first available checkpoint")
         # shared.log.warning(f"Loading fallback checkpoint: {checkpoint_info.title}")
         shared.opts.data['sd_checkpoint'] = checkpoint_info.title
     shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
@@ -455,7 +459,7 @@ def repair_config(sd_config):
     if shared.opts.no_half:
         sd_config.model.params.unet_config.params.use_fp16 = False
     elif shared.opts.upcast_sampling:
-        sd_config.model.params.unet_config.params.use_fp16 = True
+        sd_config.model.params.unet_config.params.use_fp16 = True if sys.platform != 'darwin' else False
     if getattr(sd_config.model.params.first_stage_config.params.ddconfig, "attn_type", None) == "vanilla-xformers" and not shared.xformers_available:
         sd_config.model.params.first_stage_config.params.ddconfig.attn_type = "vanilla"
     # For UnCLIP-L, override the hardcoded karlo directory

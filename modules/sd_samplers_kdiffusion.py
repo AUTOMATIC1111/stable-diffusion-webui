@@ -292,10 +292,12 @@ class KDiffusionSampler:
 
     def get_sigmas(self, p, steps):
         discard_next_to_last_sigma = self.config is not None and self.config.options.get('discard_next_to_last_sigma', False)
-        if opts.always_discard_next_to_last_sigma and not discard_next_to_last_sigma:
+        if opts.always_discard_next_to_last_sigma:
             discard_next_to_last_sigma = True
             p.extra_generation_params["Discard penultimate sigma"] = True
-
+        if opts.never_discard_next_to_last_sigma:
+            discard_next_to_last_sigma = False
+            p.extra_generation_params["Discard penultimate sigma"] = False
         steps += 1 if discard_next_to_last_sigma else 0
 
         if p.sampler_noise_scheduler_override:

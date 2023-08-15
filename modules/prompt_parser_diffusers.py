@@ -88,7 +88,7 @@ def compel_encode_prompt(
         if clip_skip not in CLIP_SKIP_MAPPING:
             shared.log.warning(f"Prompt parser unsupported: clip_skip={clip_skip} expected={set(CLIP_SKIP_MAPPING.keys())}")
 
-    if shared.opts.data["prompt_attention"] != "Compel parser":
+    if shared.opts.prompt_attention != "Compel parser":
         prompt = convert_to_compel(prompt)
         negative_prompt = convert_to_compel(negative_prompt)
         prompt_2 = convert_to_compel(prompt_2)
