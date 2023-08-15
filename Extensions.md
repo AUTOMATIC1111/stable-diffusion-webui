@@ -1,3 +1,6 @@
+> ℹ️ **Note:**
+> This page is not actively maintained. For a more up-to-date list of scripts and extensions, you may use the built-in tab within the web UI (`Extensions` -> `Available`)
+
 # General Info
 
 Extensions are a more convenient form of user scripts.
