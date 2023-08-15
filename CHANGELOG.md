@@ -58,7 +58,7 @@
  * also bump versions for packages: transformers, GitPython, accelerate, scikit-image, timm, tomesd
  * support tooltip kwarg for gradio elements: gr.Textbox(label='hello', tooltip='world')
  * properly clear the total console progressbar when using txt2img and img2img from API
- * add cmd_arg --disable-extensions all extra ([#12294](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12294))
+ * add cmd_arg --disable-extra-extensions and --disable-all-extensions ([#12294](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12294))
  * shared.py and webui.py split into many files
  * add --loglevel commandline argument for logging
  * add a custom UI element that combines accordion and checkbox
