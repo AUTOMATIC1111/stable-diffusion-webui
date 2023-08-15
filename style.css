@@ -229,8 +229,12 @@ div.block.gradio-accordion {
 }
 
 [id$=_subseed_show] label{
-    margin-bottom: 0.5em;
+    margin-bottom: 0.65em;
     align-self: end;
+}
+
+[id$=_seed_extras] > div{
+    gap: 0.5em;
 }
 
 .html-log .comments{
@@ -359,8 +363,8 @@ div#extras_scale_to_tab div.form{
     z-index: 5;
 }
 
-.image-buttons button{
-    min-width: auto;
+.image-buttons > .form{
+    justify-content: center;
 }
 
 .infotext {
@@ -381,14 +385,13 @@ div#extras_scale_to_tab div.form{
 
 /* settings */
 #quicksettings {
-    width: fit-content;
     align-items: end;
 }
 
 #quicksettings > div, #quicksettings > fieldset{
     max-width: 36em;
     width: fit-content;
-    flex: auto;
+    flex: 0 1 fit-content;
     padding: 0;
     border: none;
     box-shadow: none;
@@ -1028,5 +1031,6 @@ div.accordions{
 
 div.accordions > div.input-accordion.input-accordion-open{
     flex: 1 auto;
+    flex-flow: column;
 }
 

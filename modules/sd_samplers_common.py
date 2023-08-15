@@ -92,7 +92,15 @@ def images_tensor_to_samples(image, approximation=None, model=None):
             model = shared.sd_model
         image = image.to(shared.device, dtype=devices.dtype_vae)
         image = image * 2 - 1
-        x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
+        if len(image) > 1:
+            x_latent = torch.stack([
+                model.get_first_stage_encoding(
+                    model.encode_first_stage(torch.unsqueeze(img, 0))
+                )[0]
+                for img in image
+            ])
+        else:
+            x_latent = model.get_first_stage_encoding(model.encode_first_stage(image))
 
     return x_latent
 
@@ -145,7 +153,7 @@ def apply_refiner(cfg_denoiser):
     refiner_switch_at = cfg_denoiser.p.refiner_switch_at
     refiner_checkpoint_info = cfg_denoiser.p.refiner_checkpoint_info
 
-    if refiner_switch_at is not None and completed_ratio <= refiner_switch_at:
+    if refiner_switch_at is not None and completed_ratio < refiner_switch_at:
         return False
 
     if refiner_checkpoint_info is None or shared.sd_model.sd_checkpoint_info == refiner_checkpoint_info:
@@ -209,6 +217,7 @@ class Sampler:
 
         self.eta_option_field = 'eta_ancestral'
         self.eta_infotext_field = 'Eta'
+        self.eta_default = 1.0
 
         self.conditioning_key = shared.sd_model.model.conditioning_key
 
@@ -265,7 +274,7 @@ class Sampler:
                 extra_params_kwargs[param_name] = getattr(p, param_name)
 
         if 'eta' in inspect.signature(self.func).parameters:
-            if self.eta != 1.0:
+            if self.eta != self.eta_default:
                 p.extra_generation_params[self.eta_infotext_field] = self.eta
 
             extra_params_kwargs['eta'] = self.eta
@@ -276,19 +285,19 @@ class Sampler:
             s_tmax = getattr(opts, 's_tmax', p.s_tmax) or self.s_tmax # 0 = inf
             s_noise = getattr(opts, 's_noise', p.s_noise)
 
-            if s_churn != self.s_churn:
+            if 's_churn' in extra_params_kwargs and s_churn != self.s_churn:
                 extra_params_kwargs['s_churn'] = s_churn
                 p.s_churn = s_churn
                 p.extra_generation_params['Sigma churn'] = s_churn
-            if s_tmin != self.s_tmin:
+            if 's_tmin' in extra_params_kwargs and s_tmin != self.s_tmin:
                 extra_params_kwargs['s_tmin'] = s_tmin
                 p.s_tmin = s_tmin
                 p.extra_generation_params['Sigma tmin'] = s_tmin
-            if s_tmax != self.s_tmax:
+            if 's_tmax' in extra_params_kwargs and s_tmax != self.s_tmax:
                 extra_params_kwargs['s_tmax'] = s_tmax
                 p.s_tmax = s_tmax
                 p.extra_generation_params['Sigma tmax'] = s_tmax
-            if s_noise != self.s_noise:
+            if 's_noise' in extra_params_kwargs and s_noise != self.s_noise:
                 extra_params_kwargs['s_noise'] = s_noise
                 p.s_noise = s_noise
                 p.extra_generation_params['Sigma noise'] = s_noise
@@ -305,5 +314,8 @@ class Sampler:
         current_iter_seeds = p.all_seeds[p.iteration * p.batch_size:(p.iteration + 1) * p.batch_size]
         return BrownianTreeNoiseSampler(x, sigma_min, sigma_max, seed=current_iter_seeds)
 
+    def sample(self, p, x, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+        raise NotImplementedError()
 
-
+    def sample_img2img(self, p, x, noise, conditioning, unconditional_conditioning, steps=None, image_conditioning=None):
+        raise NotImplementedError()

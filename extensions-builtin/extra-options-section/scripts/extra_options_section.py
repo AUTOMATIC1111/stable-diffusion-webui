@@ -22,22 +22,23 @@ class ExtraOptionsSection(scripts.Script):
         self.comps = []
         self.setting_names = []
         self.infotext_fields = []
+        extra_options = shared.opts.extra_options_img2img if is_img2img else shared.opts.extra_options_txt2img
 
         mapping = {k: v for v, k in generation_parameters_copypaste.infotext_to_setting_name_mapping}
 
         with gr.Blocks() as interface:
-            with gr.Accordion("Options", open=False) if shared.opts.extra_options_accordion and shared.opts.extra_options else gr.Group():
+            with gr.Accordion("Options", open=False) if shared.opts.extra_options_accordion and extra_options else gr.Group():
 
-                row_count = math.ceil(len(shared.opts.extra_options) / shared.opts.extra_options_cols)
+                row_count = math.ceil(len(extra_options) / shared.opts.extra_options_cols)
 
                 for row in range(row_count):
                     with gr.Row():
                         for col in range(shared.opts.extra_options_cols):
                             index = row * shared.opts.extra_options_cols + col
-                            if index >= len(shared.opts.extra_options):
+                            if index >= len(extra_options):
                                 break
 
-                            setting_name = shared.opts.extra_options[index]
+                            setting_name = extra_options[index]
 
                             with FormColumn():
                                 comp = ui_settings.create_setting_component(setting_name)
@@ -64,7 +65,8 @@ class ExtraOptionsSection(scripts.Script):
 
 
 shared.options_templates.update(shared.options_section(('ui', "User interface"), {
-    "extra_options": shared.OptionInfo([], "Options in main UI", ui_components.DropdownMulti, lambda: {"choices": list(shared.opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that also appear in txt2img/img2img interfaces").needs_reload_ui(),
+    "extra_options_txt2img": shared.OptionInfo([], "Options in main UI - txt2img", ui_components.DropdownMulti, lambda: {"choices": list(shared.opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that also appear in txt2img interfaces").needs_reload_ui(),
+    "extra_options_img2img": shared.OptionInfo([], "Options in main UI - img2img", ui_components.DropdownMulti, lambda: {"choices": list(shared.opts.data_labels.keys())}).js("info", "settingsHintsShowQuicksettings").info("setting entries that also appear in img2img interfaces").needs_reload_ui(),
     "extra_options_cols": shared.OptionInfo(1, "Options in main UI - number of columns", gr.Number, {"precision": 0}).needs_reload_ui(),
     "extra_options_accordion": shared.OptionInfo(False, "Options in main UI - place into an accordion").needs_reload_ui()
 }))

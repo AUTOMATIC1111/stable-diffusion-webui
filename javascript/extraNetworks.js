@@ -332,7 +332,7 @@ function extraNetworksRefreshSingleCard(page, tabname, name) {
             newDiv.innerHTML = data.html;
             var newCard = newDiv.firstElementChild;
 
-            newCard.style = '';
+            newCard.style.display = '';
             card.parentElement.insertBefore(newCard, card);
             card.parentElement.removeChild(card);
         }
