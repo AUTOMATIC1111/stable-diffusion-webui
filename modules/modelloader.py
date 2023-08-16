@@ -3,7 +3,6 @@ import shutil
 import importlib
 from typing import Dict
 from urllib.parse import urlparse
-
 from modules import shared
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
@@ -11,10 +10,54 @@ from modules.paths import script_path, models_path
 diffuser_repos = []
 
 
+def download_civit_model(model_url: str, model_name: str, model_path: str, preview):
+    model_file = os.path.join(shared.opts.ckpt_dir, model_path, model_name)
+    res = f'CivitAI download: name={model_name} url={model_url} path={model_path}'
+    if os.path.isfile(model_file):
+        res += ' already exists'
+        shared.log.warning(res)
+        return res
+    import requests
+    import rich.progress as p
+
+    req = requests.get(model_url, stream=True, timeout=30)
+    total_size = int(req.headers.get('content-length', 0))
+    block_size = 16384 # 16KB blocks
+    written = 0
+    shared.state.begin()
+    shared.state.job = 'downloload model'
+    try:
+        with open(model_file, 'wb') as f:
+            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn()) as progress:
+                task = progress.add_task(description="Download starting", total=total_size)
+                # for data in tqdm(req.iter_content(block_size), total=total_size//1024, unit='KB', unit_scale=False):
+                for data in req.iter_content(block_size):
+                    written = written + len(data)
+                    f.write(data)
+                    progress.update(task, advance=block_size, description="Downloading")
+        if written < 1024 * 1024 * 1024: # min threshold
+            os.remove(model_file)
+            raise ValueError(f'removed invalid download: bytes={written}')
+        if preview is not None:
+            preview_file = os.path.splitext(model_file)[0] + '.jpg'
+            preview.save(preview_file)
+            res += f' preview={preview_file}'
+    except Exception as e:
+        shared.log.error(f'CivitAI download error: name={model_name} url={model_url} path={model_path} {e}')
+    if total_size == written:
+        shared.log.info(f'{res} size={total_size}')
+    else:
+        shared.log.error(f'{res} size={total_size} written={written}')
+    shared.state.end()
+    return res
+
+
 def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config: Dict[str, str] = None, token = None, variant = None, revision = None, mirror = None):
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
 
+    shared.state.begin()
+    shared.state.job = 'downloload model'
     if download_config is None:
         download_config = {
             "force_download": False,
@@ -47,6 +90,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
         with open(os.path.join(download_dir, "hidden"), "w", encoding="utf-8") as f:
             f.write("True")
     shared.writefile(model_info_dict, os.path.join(pipeline_dir, "model_info.json"))
+    shared.state.end()
     return pipeline_dir
 
 

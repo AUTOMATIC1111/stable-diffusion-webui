@@ -36,7 +36,7 @@ def print_error_explanation(message):
 
 def display(e: Exception, task, suppress=[]): # noqa: B006
     log.error(f"{task or 'error'}: {type(e).__name__}")
-    console.print_exception(show_locals=False, max_frames=5, extra_lines=1, suppress=suppress, theme="ansi_dark", word_wrap=False, width=min([console.width, 200]))
+    console.print_exception(show_locals=False, max_frames=10, extra_lines=1, suppress=suppress, theme="ansi_dark", word_wrap=False, width=min([console.width, 200]))
 
 
 def display_once(e: Exception, task):

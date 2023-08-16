@@ -81,7 +81,7 @@ def setup_logging():
     }))
     logging.basicConfig(level=logging.ERROR, format='%(asctime)s | %(name)s | %(levelname)s | %(module)s | %(message)s', handlers=[logging.NullHandler()]) # redirect default logger to null
     pretty_install(console=console)
-    traceback_install(console=console, extra_lines=1, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
+    traceback_install(console=console, extra_lines=1, max_frames=10, width=console.width, word_wrap=False, indent_guides=False, suppress=[])
     while log.hasHandlers() and len(log.handlers) > 0:
         log.removeHandler(log.handlers[0])
 
@@ -166,8 +166,9 @@ def pip(arg: str, ignore: bool = False, quiet: bool = False):
     arg = arg.replace('>=', '==')
     if not quiet:
         log.info(f'Installing package: {arg.replace("install", "").replace("--upgrade", "").replace("--no-deps", "").replace("--force", "").replace("  ", " ").strip()}')
-    log.debug(f"Running pip: {arg}")
-    result = subprocess.run(f'"{sys.executable}" -m pip {arg}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    env_args = os.environ.get("PIP_EXTRA_ARGS", "")
+    log.debug(f"Running pip: {arg} {env_args}")
+    result = subprocess.run(f'"{sys.executable}" -m pip {arg} {env_args}', shell=True, check=False, env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     txt = result.stdout.decode(encoding="utf8", errors="ignore")
     if len(result.stderr) > 0:
         txt += ('\n' if len(txt) > 0 else '') + result.stderr.decode(encoding="utf8", errors="ignore")
@@ -339,7 +340,56 @@ def check_torch():
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
         os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow-rocm')
-        torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/rocm5.4.2')
+
+        try:
+            command = subprocess.run('rocm_agent_enumerator', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            amd_gpus = command.stdout.decode(encoding="utf8", errors="ignore").split('\n')
+            amd_gpus = [x for x in amd_gpus if x and x != 'gfx000']
+            log.debug(f'ROCm agents detected: {amd_gpus}')
+        except Exception as e:
+            log.debug(f'Run rocm_agent_enumerator failed: {e}')
+            amd_gpus = []
+
+        # use the first available amd gpu by default
+        hip_visible_devices = []
+        for idx, gpu in enumerate(amd_gpus):
+            if gpu in ['gfx1100', 'gfx1101', 'gfx1102']:
+                hip_visible_devices.append((idx, gpu, 'navi3x'))
+                break
+            # experimental navi 2x support
+            if gpu in ['gfx1030', 'gfx1031', 'gfx1032', 'gfx1034']:
+                hip_visible_devices.append((idx, gpu, 'navi2x'))
+                break
+        if len(hip_visible_devices) > 0:
+            idx, gpu, arch = hip_visible_devices[0]
+            log.debug(f'ROCm agent used by default: idx={idx} gpu={gpu} arch={arch}')
+
+            os.environ.setdefault('HIP_VISIBLE_DEVICES', str(idx))
+            if arch == 'navi3x':
+                os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '11.0.0')
+                # do not use tensorflow-rocm for navi 3x
+                if os.environ.get('TENSORFLOW_PACKAGE') == 'tensorflow-rocm':
+                    os.environ['TENSORFLOW_PACKAGE'] = 'tensorflow==2.13.0'
+            elif arch == 'navi2x':
+                os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
+            else:
+                log.debug(f'HSA_OVERRIDE_GFX_VERSION auto config is skipped for {gpu}')
+
+        try:
+            command = subprocess.run('hipconfig --version', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            major_ver, minor_ver, *_ = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
+            rocm_ver = f'{major_ver}.{minor_ver}'
+            log.debug(f'ROCm version detected: {rocm_ver}')
+        except Exception as e:
+            log.debug(f'Run hipconfig failed: {e}')
+            rocm_ver = None
+
+        if rocm_ver in ['5.5', '5.6']:
+            # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
+            torch_command = os.environ.get('TORCH_COMMAND', f'torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
+        else:
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/rocm5.4.2')
+
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     elif allow_ipex and (args.use_ipex or shutil.which('sycl-ls') is not None or shutil.which('sycl-ls.exe') is not None or os.environ.get('ONEAPI_ROOT') is not None or os.path.exists('/opt/intel/oneapi') or os.path.exists("C:/Program Files (x86)/Intel/oneAPI") or os.path.exists("C:/oneAPI")):
         args.use_ipex = True # pylint: disable=attribute-defined-outside-init
@@ -349,10 +399,10 @@ def check_torch():
         os.environ.setdefault('NEOReadDebugKeys', '1')
         os.environ.setdefault('ClDeviceGlobalMemSizeAvailablePercent', '100')
         if "linux" in sys.platform:
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1a0 torchvision==0.15.2a0 intel_extension_for_pytorch==2.0.110+xpu -f https://developer.intel.com/ipex-whl-stable-xpu')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1a0 torchvision==0.15.2a0 intel_extension_for_pytorch==2.0.110+xpu openvino==2023.1.0.dev20230728 -f https://developer.intel.com/ipex-whl-stable-xpu')
             os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0 intel-extension-for-tensorflow[gpu]')
         else:
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 torchvision==0.15.2a0 intel_extension_for_pytorch==2.0.110+gitba7f6c1 -f https://developer.intel.com/ipex-whl-stable-xpu')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 torchvision==0.15.1 intel_extension_for_pytorch==2.0.110+gitba7f6c1 openvino==2023.1.0.dev20230728 -f https://developer.intel.com/ipex-whl-stable-xpu')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
@@ -408,7 +458,7 @@ def check_torch():
     try:
         if 'xformers' in xformers_package:
             install(f'--no-deps {xformers_package}', ignore=True)
-        else:
+        elif not args.experimental:
             x = pkg_resources.working_set.by_key.get('xformers', None)
             if x is not None:
                 log.warning(f'Not used, uninstalling: {x}')
@@ -453,8 +503,17 @@ def install_packages():
     install(invisiblewatermark_package, 'invisible-watermark')
     install('onnxruntime==1.15.1', 'onnxruntime', ignore=True)
     install('pi-heif', 'pi_heif', ignore=True)
-    tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.12.0')
+    install('git+https://github.com/damian0815/compel', 'compel', ignore=True)
+    tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
+    bitsandbytes_package = os.environ.get('BITSANDBYTES_PACKAGE', None)
+    if bitsandbytes_package is not None:
+        install(bitsandbytes_package, 'bitsandbytes', ignore=True)
+    elif not args.experimental:
+        bitsandbytes_package = pkg_resources.working_set.by_key.get('bitsandbytes', None)
+        if bitsandbytes_package is not None:
+            log.warning(f'Not used, uninstalling: {bitsandbytes_package}')
+            pip('uninstall bitsandbytes --yes --quiet', ignore=True, quiet=True)
     if args.profile:
         print_profile(pr, 'Packages')
 
@@ -478,7 +537,7 @@ def install_repositories():
     clone(taming_transformers_repo, d('taming-transformers'), taming_transformers_commit)
     k_diffusion_repo = os.environ.get('K_DIFFUSION_REPO', 'https://github.com/crowsonkb/k-diffusion.git')
     # k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', "b43db16749d51055f813255eea2fdf1def801919")
-    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', None)
+    k_diffusion_commit = os.environ.get('K_DIFFUSION_COMMIT_HASH', 'ab527a9')
     clone(k_diffusion_repo, d('k-diffusion'), k_diffusion_commit)
     codeformer_repo = os.environ.get('CODEFORMER_REPO', 'https://github.com/sczhou/CodeFormer.git')
     # codeformer_commit = os.environ.get('CODEFORMER_COMMIT_HASH', "c5b4593074ba6214284d6acd5f1719b6c5d739af")

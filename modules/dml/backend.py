@@ -7,7 +7,6 @@ import modules.dml.amp as amp
 from .utils import rDevice, get_device
 from .device import device
 from .device_properties import DeviceProperties
-from .memory import MemoryProvider
 
 def amd_mem_get_info(device: Optional[rDevice]=None) -> tuple[int, int]:
     from .memory_amd import AMDMemoryProvider
@@ -29,7 +28,7 @@ class DirectML:
     is_autocast_enabled = False
     autocast_gpu_dtype = torch.float16
 
-    memory_provider: Optional[MemoryProvider] = None
+    memory_provider = None
 
     def is_available() -> bool:
         return torch_directml.is_available()

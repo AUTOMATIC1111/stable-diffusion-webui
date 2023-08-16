@@ -2,7 +2,6 @@ import copy
 import random
 import shlex
 import gradio as gr
-from PIL import Image
 import modules.scripts as scripts
 from modules import sd_samplers, errors
 from modules.processing import Processed, process_images

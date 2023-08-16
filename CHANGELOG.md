@@ -1,5 +1,51 @@
 # Change Log for SD.Next
 
+## Update for 2023-08-14
+
+- general:
+  - update all metadata saved with images  
+    see <https://github.com/vladmandic/automatic/wiki/Metadata> for details  
+    (work-in-progress)
+  - improved **amd** installer with support for **navi 2x & 3x** and **rocm 5.4/5.5/5.6**  
+    thanks @evshiron  
+  - fix img2img resizing (applies to original, diffusers, hires)  
+- diffusers:
+  - enable batch img2img workflows
+- original:
+  - new samplers: **dpm++ 3M sde** (standard and karras variations)  
+    enable in *settings -> samplers -> show samplers*
+
+## Update for 2023-08-11
+
+This is a big one that's been cooking in `dev` for a while now, but finally ready for release...
+
+- diffusers:
+  - **pipeline autodetect**
+    if pipeline is set to autodetect (default for new installs), app will try to autodetect pipeline based on selected model  
+    this should reduce user errors such as loading **sd-xl** model when **sd** pipeline is selected  
+  - **quick vae decode** as alternative to full vae decode which is very resource intensive  
+    quick decode is based on `taesd` and produces lower quality, but its great for tests or grids as it runs much faster and uses far less vram  
+    disabled by default, selectable in *txt2img/img2img -> advanced -> full quality*  
+  - **prompt attention** for sd and sd-xl  
+    supports both `full parser` and native `compel`  
+    thanks @ai-casanova  
+  - advanced **lora load/apply** methods  
+    in addition to standard lora loading that was recently added to sd-xl using diffusers, now we have  
+    - **sequential apply** (load & apply multiple loras in sequential manner) and  
+    - **merge and apply** (load multiple loras and merge before applying to model)  
+    see *settings -> diffusers -> lora methods*  
+    thanks @hameerabbasi and @ai-casanova  
+  - **sd-xl vae** from safetensors now applies correct config  
+    result is that 3rd party vaes can be used without washed out colors  
+  - options for optimized memory handling for lower memory usage  
+    see *settings -> diffusers*
+- general:
+  - new **civitai model search and download**  
+    native support for civitai, integrated into ui as *models -> civitai*  
+  - updated requirements  
+    this time its a bigger change so upgrade may take longer to install new requirements
+  - improved **extra networks** performance with large number of networks
+
 ## Update for 2023-08-05
 
 Another minor update, but it unlocks some cool new items...
@@ -11,7 +57,6 @@ Another minor update, but it unlocks some cool new items...
   - new torch 2.0 with ipex (intel arc)  
   - additional callbacks for extensions  
     enables latest comfyui extension  
-  - update requirements  
 
 ## Update for 2023-07-30
 

@@ -44,8 +44,8 @@ do
     esac
 done
 
-# Do not run as root
-if [[ $(id -u) -eq 0 && can_run_as_root -eq 0 ]]
+# Do not run as root unless inside a Docker container
+if [[ $(id -u) -eq 0 && can_run_as_root -eq 0 && ! -f /.dockerenv ]]
 then
     echo "Cannot run as root"
     exit 1

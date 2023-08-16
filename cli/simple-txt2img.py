@@ -5,6 +5,7 @@ import sys
 import base64
 import logging
 import requests
+import urllib3
 from PIL import Image
 
 sd_url = os.environ.get('SDAPI_URL', "http://127.0.0.1:7860")
@@ -13,6 +14,7 @@ sd_password = os.environ.get('SDAPI_PWD', None)
 
 logging.basicConfig(level = logging.INFO, format = '%(asctime)s %(levelname)s: %(message)s')
 log = logging.getLogger(__name__)
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 filename='/tmp/simple-txt2img.jpg'
 model = None # desired model name, will be set if not none
@@ -30,6 +32,7 @@ options = {
     "save_images": False,
     "send_images": True,
 }
+
 
 def auth():
     if sd_username is not None and sd_password is not None:

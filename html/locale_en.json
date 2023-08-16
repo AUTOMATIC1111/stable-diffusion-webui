@@ -562,21 +562,20 @@
   {"id":"","label":"Token merging ratio","localized":"","hint":"Enable redundant token merging via tomesd for speed and memory improvements, 0=disabled"},
   {"id":"","label":"Token merging ratio for img2img","localized":"","hint":"Enable redundant token merging for img2img via tomesd for speed and memory improvements, 0=disabled"},
   {"id":"","label":"Token merging ratio for hires pass","localized":"","hint":"Enable redundant token merging for hires pass via tomesd for speed and memory improvements, 0=disabled"},
-  {"id":"","label":"Diffusers allow loading from safetensors files","localized":"","hint":"Allow loading of safetensors files as diffuser models"},
   {"id":"","label":"Select diffuser pipeline when loading from safetensors","localized":"","hint":""},
   {"id":"","label":"Move base model to CPU when using refiner","localized":"","hint":""},
   {"id":"","label":"Move refiner model to CPU when not in use","localized":"","hint":""},
   {"id":"","label":"Move UNet to CPU while VAE decoding","localized":"","hint":""},
   {"id":"","label":"Use model EMA weights when possible","localized":"","hint":""},
   {"id":"","label":"Generator device","localized":"","hint":""},
-  {"id":"","label":"Enable sequential CPU offload","localized":"","hint":"Reduces GPU memory usage by transferring weights to the CPU. Increases inference time approximately 10%. Use with Enable Attention slicing for minimal memory consumption"},
-  {"id":"","label":"Enable model CPU offload","localized":"","hint":"Transferring of entire models to the CPU, negligible impact on inference time while still providing some memory savings. Use with Enable Attention slicing for additional memory savings"},
-  {"id":"","label":"Enable VAE slicing","localized":"","hint":"Decodes batch latents one image at a time with limited VRAM. Small performance boost in VAE decode on multi-image batches. Use with Enable Attention slicing"},
-  {"id":"","label":"Enable VAE tiling","localized":"","hint":"Divide large images into overlapping tiles with limited VRAM. Might result in a minor increase in processing time. Use with Enable Attention Slicing"},
-  {"id":"","label":"Enable attention slicing","localized":"","hint":"Performs attention computation in steps instead of all at once. 10% slower inference times. Greatly reduces memory usage. Best used, period"},
+  {"id":"","label":"Enable sequential CPU offload","localized":"","hint":"Reduces GPU memory usage by transferring weights to the CPU. Increases inference time approximately 10%"},
+  {"id":"","label":"Enable model CPU offload","localized":"","hint":"Transferring of entire models to the CPU, negligible impact on inference time while still providing some memory savings"},
+  {"id":"","label":"Enable VAE slicing","localized":"","hint":"Decodes batch latents one image at a time with limited VRAM. Small performance boost in VAE decode on multi-image batches"},
+  {"id":"","label":"Enable VAE tiling","localized":"","hint":"Divide large images into overlapping tiles with limited VRAM. Results in a minor increase in processing time"},
+  {"id":"","label":"Enable attention slicing","localized":"","hint":"Performs attention computation in steps instead of all at once. Slower inference times, but greatly reduced memory usage"},
   {"id":"","label":"Diffusers model loading variant","localized":"","hint":""},
-  {"id":"","label":"Diffusers VAE loading variant","localized":"","hint":""}
-
+  {"id":"","label":"Diffusers VAE loading variant","localized":"","hint":""},
+  {"id":"","label":"Diffusers LoRA loading variant","localized":"","hint":"'sequential apply' loads and applies each LoRA in order of appearance, 'merge and apply' loads all LoRAs and merges them in-memory before applying to model, 'diffusers default' uses single LoRA loading method"}
 ],
 "scripts": [
   {"id":"","label":"Script","localized":"","hint":""},

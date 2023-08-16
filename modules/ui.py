@@ -379,6 +379,7 @@ def create_ui(startup_timer = None):
                         cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG Scale', value=6.0, elem_id="txt2img_cfg_scale")
                         clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
                     with FormRow(elem_classes="checkboxes-row", variant="compact"):
+                        full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="txt2img_full_quality")
                         restore_faces = gr.Checkbox(label='Face restore', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                         tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
 
@@ -435,7 +436,7 @@ def create_ui(startup_timer = None):
                     txt2img_prompt_styles,
                     steps,
                     sampler_index, latent_index,
-                    restore_faces, tiling,
+                    full_quality, restore_faces, tiling,
                     batch_count, batch_size,
                     cfg_scale, image_cfg_scale,
                     diffusers_guidance_rescale,
@@ -484,6 +485,7 @@ def create_ui(startup_timer = None):
                 (latent_index, "Latent sampler"),
                 (denoising_strength, "Denoising strength"),
                 (refiner_start, "Refiner start"),
+                (full_quality, "Full quality"),
                 (restore_faces, "Face restoration"),
                 (batch_size, "Batch size"),
                 (batch_count, "Batch count"),
@@ -669,6 +671,7 @@ def create_ui(startup_timer = None):
                         clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=4, step=1, elem_id='img2img_clip_skip', interactive=True)
                         diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance Rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
                     with FormRow(elem_classes="img2img_checkboxes_row", variant="compact"):
+                        full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="img2img_full_quality")
                         restore_faces = gr.Checkbox(label='Restore faces', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="img2img_restore_faces")
                         tiling = gr.Checkbox(label='Tiling', value=False, elem_id="img2img_tiling")
 
@@ -733,7 +736,7 @@ def create_ui(startup_timer = None):
                     sampler_index, latent_index,
                     mask_blur, mask_alpha,
                     inpainting_fill,
-                    restore_faces, tiling,
+                    full_quality, restore_faces, tiling,
                     batch_count, batch_size,
                     cfg_scale, image_cfg_scale,
                     diffusers_guidance_rescale,
