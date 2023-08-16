@@ -173,7 +173,7 @@ def directory_mtime(dir:str, *, recursive:bool=True) -> float:
     return float(max(0, *[mtime for mtime, _ in directory_directories(dir, recursive=recursive).values()]))
 
 def directories_file_paths(directories:dict) -> list[str]:
-    return sum([fp for fp in dat[1] for dat in directories.values()], [])
+    return sum(list([fp for fp in dat[1]] for dat in directories.values()), [])
 
 def filter_paths(paths:list[str], *, filter:callable=None) -> list[str]:
     return [fp for fp in paths if not (os.path.islink(fp) and not os.path.exists(fp)) and filter(fp)]
@@ -190,7 +190,7 @@ def unique_paths(paths:list[str]) -> list[str]:
     return { fp: True for fp in paths }.keys()
 
 def directory_files(*directories:list[str], recursive:bool=True) -> list[str]:
-    return unique_paths(sum([fp for fp in directories_file_paths(directory_directories(dir, recursive=recursive)) for dir in unique_directories(directories, recursive=recursive)],[]))
+    return unique_paths(sum(list([fp for fp in directories_file_paths(directory_directories(dir, recursive=recursive))] for dir in unique_directories(directories, recursive=recursive)),[]))
 
 def extension_filter(ext_filter=None, ext_blacklist=None):
     if ext_filter:
