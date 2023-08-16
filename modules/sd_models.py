@@ -518,6 +518,13 @@ def send_model_to_cpu(m):
     devices.torch_gc()
 
 
+def model_target_device():
+    if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+        return devices.cpu
+    else:
+        return devices.device
+
+
 def send_model_to_device(m):
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.setup_for_low_vram(m, shared.cmd_opts.medvram)
@@ -579,7 +586,15 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     timer.record("create model")
 
-    with sd_disable_initialization.LoadStateDictOnMeta(state_dict, devices.cpu):
+    if shared.cmd_opts.no_half:
+        weight_dtype_conversion = None
+    else:
+        weight_dtype_conversion = {
+            'first_stage_model': None,
+            '': torch.float16,
+        }
+
+    with sd_disable_initialization.LoadStateDictOnMeta(state_dict, device=model_target_device(), weight_dtype_conversion=weight_dtype_conversion):
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
     timer.record("load weights from state dict")
 
