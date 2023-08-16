@@ -142,6 +142,9 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                 raise TypeError('select_script type err')
             select_script_name = select_script['name']
             select_script_args = select_script['args']
+        else:
+            select_script_name = task.get('select_script_name')
+            select_script_args = task.get('select_script_args')
         kwargs = task.data.copy()
         kwargs.pop('base_model_path')
         kwargs.pop('alwayson_scripts')
