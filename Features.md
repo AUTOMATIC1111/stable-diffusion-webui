@@ -779,3 +779,5 @@ The below example is of a 512x512 image with hires fix applied, using a GAN upsc
 Extra noise = 0             |  Extra noise = 0.2
 :-------------------------:|:-------------------------:
 [![without](https://user-images.githubusercontent.com/122327233/260556373-9257aa18-dfc8-49f6-9984-a0a1f430c029.png)](https://user-images.githubusercontent.com/122327233/260556373-9257aa18-dfc8-49f6-9984-a0a1f430c029.png)  |  [![with](https://user-images.githubusercontent.com/122327233/260556387-0c6df12c-7412-43d5-84d2-2a69ad6152c4.png)](https://user-images.githubusercontent.com/122327233/260556387-0c6df12c-7412-43d5-84d2-2a69ad6152c4.png)
+
+Note that the previous setting implemented at the time (`Noise multiplier for img2img`) technically achieves the same effect, but as noted in the name *only* applies to img2img (not hires fix), and due to how that parameter functions it is very sensitive, realisticly only useful in a range of `1` to `1.1`. For almost all operations it would be suggested to use the new `Extra noise` parameter instead.
