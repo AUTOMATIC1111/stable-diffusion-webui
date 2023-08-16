@@ -153,7 +153,7 @@ def ipex_init():
     torch.has_cuda = True
     torch.cuda.has_half = True
     torch.cuda.is_bf16_supported = True
-    torch.version.cuda = "11.7"
+    #torch.version.cuda = "11.7" #Breaks System Info
     torch.cuda.get_device_properties.major = 11
     torch.cuda.get_device_properties.minor = 7
     torch.backends.cuda.sdp_kernel = return_null_context
