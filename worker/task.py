@@ -125,7 +125,7 @@ class TaskType(IntEnum):
     Image2Image = 2
     Extra = 3
     Train = 4
-    Tagger=5
+    Tagger = 5
 
 class TaskStatus(IntEnum):
     Waiting = 0
