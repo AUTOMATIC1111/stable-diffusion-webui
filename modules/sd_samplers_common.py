@@ -44,8 +44,7 @@ def samples_to_images_tensor(sample, approximation=None, model=None):
     elif approximation == 1:
         x_sample = sd_vae_approx.model()(sample.to(devices.device, devices.dtype)).detach()
     elif approximation == 3:
-        x_sample = sample * 1.5
-        x_sample = sd_vae_taesd.decoder_model()(x_sample.to(devices.device, devices.dtype)).detach()
+        x_sample = sd_vae_taesd.decoder_model()(sample.to(devices.device, devices.dtype)).detach()
         x_sample = x_sample * 2 - 1
     else:
         if model is None:
