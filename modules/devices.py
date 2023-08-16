@@ -40,7 +40,7 @@ def get_cuda_device_string():
 
 
 def get_optimal_device_name():
-    if cuda_ok or backend == 'ipex' or backend == 'directml':
+    if cuda_ok or backend == 'directml':
         return get_cuda_device_string()
     if has_mps():
         return "mps"
@@ -76,7 +76,7 @@ def torch_gc(force=False):
     if shared.opts.disable_gc and not force:
         return
     collected = gc.collect()
-    if cuda_ok or backend == 'ipex':
+    if cuda_ok:
         try:
             with torch.cuda.device(get_cuda_device_string()):
                 torch.cuda.empty_cache()
@@ -182,7 +182,7 @@ elif sys.platform == 'darwin':
 else:
     backend = 'cpu'
 
-cuda_ok = torch.cuda.is_available() and not backend == 'ipex'
+cuda_ok = torch.cuda.is_available()
 cpu = torch.device("cpu")
 device = device_interrogate = device_gfpgan = device_esrgan = device_codeformer = None
 dtype = torch.float16
@@ -221,8 +221,6 @@ def autocast(disable=False):
         return contextlib.nullcontext()
     if shared.cmd_opts.use_directml:
         return torch.dml.amp.autocast(dtype)
-    if backend == 'ipex':
-        return torch.xpu.amp.autocast(enabled=True, dtype=dtype)
     if cuda_ok:
         return torch.autocast("cuda")
     else:
@@ -234,8 +232,6 @@ def without_autocast(disable=False):
         return contextlib.nullcontext()
     if shared.cmd_opts.use_directml:
         return torch.dml.amp.autocast(enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext() # pylint: disable=unexpected-keyword-arg
-    if backend == 'ipex':
-        return torch.xpu.amp.autocast(enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
     if cuda_ok:
         return torch.autocast("cuda", enabled=False) if torch.is_autocast_enabled() else contextlib.nullcontext()
     else:

@@ -7,13 +7,6 @@ from torch._dynamo.backends.common import fake_tensor_unsupported
 from torch._dynamo.backends.registry import register_backend
 from torch.fx.experimental.proxy_tensor import make_fx
 
-class ModelState:
-    def __init__(self):
-        self.recompile = 1
-        self.partition_id = 0
-
-model_state = ModelState()
-
 @register_backend
 @fake_tensor_unsupported
 def openvino_fx(subgraph, example_inputs):
