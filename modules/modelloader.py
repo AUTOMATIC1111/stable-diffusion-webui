@@ -169,6 +169,9 @@ def directory_directories(dir:str, *, recursive:bool=True) -> dict[str,tuple[flo
                 break
     return directory_directories
 
+def directory_mtime(dir:str, *, recursive:bool=True) -> float:
+    return float(max(0, *[mtime for mtime, _ in directory_directories(dir, recursive=recursive).values()]))
+
 def directories_file_paths(directories:dict) -> list[str]:
     return sum([[fp for fp in dat[1]] for dat in directories.values()], [])
 
@@ -190,8 +193,12 @@ def directory_files(*directories:list[str], recursive:bool=True) -> list[str]:
     return unique_paths(sum([[fp for fp in directories_file_paths(directory_directories(dir, recursive=recursive))] for dir in unique_directories(directories, recursive=recursive)],[]))
 
 def extension_filter(ext_filter=None, ext_blacklist=None):
+    if ext_filter:
+        ext_filter = [ext.upper() for ext in ext_filter]
+    if ext_blacklist:
+        ext_blacklist = [ext.upper() for ext in ext_blacklist]
     def filter(fp:str):
-        return (not ext_filter or any(fp.endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.endswith(ew) for ew in ext_blacklist))
+        return (not ext_filter or any(fp.upper().endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.upper().endswith(ew) for ew in ext_blacklist))
     return filter
 
 def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
