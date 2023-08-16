@@ -579,7 +579,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
 
     timer.record("create model")
 
-    with sd_disable_initialization.LoadStateDictOnMeta(state_dict, devices.device):
+    with sd_disable_initialization.LoadStateDictOnMeta(state_dict, devices.cpu):
         load_model_weights(sd_model, checkpoint_info, state_dict, timer)
     timer.record("load weights from state dict")
 
