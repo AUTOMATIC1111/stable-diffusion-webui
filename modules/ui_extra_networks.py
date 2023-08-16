@@ -193,11 +193,11 @@ class ExtraNetworksPage:
             htmls = []
             with Progress(
                 SpinnerColumn(),
-                TextColumn('[cyan]Creating Extra Network '+self.title+' HTML - {task.description}'), 
+                TextColumn('[cyan]Creating Extra Network '+self.title+' HTML - {task.description}'),
                 BarColumn(), TaskProgressColumn(), TextColumn('({task.completed}/{task.total})'),
                 TimeRemainingColumn(), TimeElapsedColumn(), transient=not shared.log.isEnabledFor(DEBUG), expand=True
             ) as progress:
-                task = progress.add_task(description=f'Initializing Items')
+                task = progress.add_task(description='Initializing Items')
                 items = self.items
                 progress.update(task, total=len(items))
                 __t = time()
