@@ -1,4 +1,4 @@
-GitPython==3.1.30
+GitPython==3.1.32
 Pillow==9.5.0
 accelerate==0.18.0
 basicsr==1.4.2
