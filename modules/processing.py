@@ -608,6 +608,12 @@ def decode_latent_batch(model, batch, target_device=None, check_for_nans=False):
 
         samples.append(sample)
 
+    # Revert VAE back to half precision incase user changes to a more stable VAE later
+    if devices.dtype_vae == torch.float32 and not cmd_opts.no_half and not cmd_opts.no_half_vae:
+        devices.dtype_vae = torch.float16
+        model.first_stage_model.to(devices.dtype_vae)
+        batch = batch.to(devices.dtype_vae)
+
     return samples
 
 
