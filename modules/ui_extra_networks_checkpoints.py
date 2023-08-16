@@ -30,8 +30,9 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         }
 
     def list_items(self):
-        for index, name in enumerate(sd_models.checkpoints_list):
-            yield self.create_item(name, index)
+        with sd_models.checkpoints_list_lock:
+            for index, name in enumerate(sd_models.checkpoints_list):
+                yield self.create_item(name, index)
 
     def allowed_directories_for_previews(self):
         return [v for v in [shared.cmd_opts.ckpt_dir, sd_models.model_path] if v is not None]
