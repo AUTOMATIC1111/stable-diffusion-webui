@@ -34,7 +34,7 @@ def fetch_file(filename: str = ""):
         return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
     if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
         return JSONResponse({"error": f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages."})
-    if os.path.splitext(filename)[1].lower() not in (".png", ".jpg", ".webp"):
+    if os.path.splitext(filename)[1].lower() not in (".png", ".jpg", ".jpeg", ".webp"):
         return JSONResponse({"error": f"File cannot be fetched: {filename}. Only png and jpg and webp."})
     return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
 
