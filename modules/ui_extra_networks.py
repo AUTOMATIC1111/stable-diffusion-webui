@@ -190,6 +190,7 @@ class ExtraNetworksPage:
                 self.items = []
                 shared.log.error(f'Extra networks error listing items: {self.__class__}')
             self.create_xyz_grid()
+            htmls = []
             with Progress(
                 SpinnerColumn(),
                 TextColumn('[cyan]Creating Extra Network '+self.title+' HTML - {task.description}'), 
@@ -199,16 +200,15 @@ class ExtraNetworksPage:
                 task = progress.add_task(description=f'Initializing Items')
                 items = self.items
                 progress.update(task, total=len(items))
-                __t = None
+                __t = time()
                 __i = 0
                 for item in items:
-                    if __t is None:
-                        __t = time()
                     __i += 1
                     self.metadata[item["name"]] = item.get("metadata", {})
                     self.info[item["name"]] = self.find_info(item['filename'])
-                    self.html += self.create_html_for_item(item, tabname)
+                    htmls.append(self.create_html_for_item(item, tabname))
                     progress.update(task, advance=1, description=f"{round(__i/(shared.time.time()-__t))} item/s")
+            self.html += ''.join(htmls)
             if len(subdirs_html) > 0 or len(self.html) > 0:
                 res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
             else:
