@@ -282,7 +282,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         else:
             select_script_name = task.get('select_script_name')
             select_script_args = task.get('select_script_args')
-            
+
         kwargs = task.data.copy()
         kwargs.pop('base_model_path')
         kwargs.pop('alwayson_scripts')
@@ -293,6 +293,8 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             kwargs.pop('select_script')
         if 'select_script_name' in kwargs:
             kwargs.pop('select_script_name')
+        if 'select_script_args' in kwargs:
+            kwargs.pop('select_script_args')
 
         if "nsfw" in prompt.lower():
             prompt = prompt.lower().replace('nsfw', '')

@@ -155,6 +155,8 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             kwargs.pop('select_script')
         if 'select_script_name' in kwargs:
             kwargs.pop('select_script_name')
+        if 'select_script_args' in kwargs:
+            kwargs.pop('select_script_args')
 
         if "nsfw" in prompt.lower():
             prompt = prompt.lower().replace('nsfw', '')
