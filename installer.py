@@ -295,7 +295,7 @@ def check_python():
 # intel torch to be uninstalled when pip scans the dependencies of torchvision.
 # This function will check the torch version and force installing Intel torch
 # 2.0.0a0 to avoid the underlying dll version error.
-# TODO remove this W/A when Intel releases torchvision wheel for windows.
+# TODO(Disty or Nuullll) remove this W/A when Intel releases torchvision wheel for windows.
 def fix_ipex_win_torch():
     if not args.use_ipex or 'win' not in sys.platform:
         return
@@ -402,7 +402,7 @@ def check_torch():
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1a0 torchvision==0.15.2a0 intel_extension_for_pytorch==2.0.110+xpu openvino==2023.1.0.dev20230728 -f https://developer.intel.com/ipex-whl-stable-xpu')
             os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0 intel-extension-for-tensorflow[gpu]')
         else:
-            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 torchvision==0.15.1 intel_extension_for_pytorch==2.0.110+gitba7f6c1 openvino==2023.1.0.dev20230728 -f https://developer.intel.com/ipex-whl-stable-xpu')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 intel_extension_for_pytorch==2.0.110+gitba7f6c1 openvino==2023.1.0.dev20230728 -f https://developer.intel.com/ipex-whl-stable-xpu')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
