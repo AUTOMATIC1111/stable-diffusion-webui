@@ -343,7 +343,10 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         model.to(memory_format=torch.channels_last)
         timer.record("apply channels_last")
 
-    if not shared.cmd_opts.no_half:
+    if shared.cmd_opts.no_half:
+        model.float()
+        timer.record("apply float()")
+    else:
         vae = model.first_stage_model
         depth_model = getattr(model, 'depth_model', None)
 
