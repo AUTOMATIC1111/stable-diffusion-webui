@@ -1,0 +1,88 @@
+name: 🐛 报BUG Bug Report
+description: 报告一个可复现的Bug以帮助我们修复PaddleSeg。 Report a bug to help us reproduce and fix it.
+labels: [bug]
+
+body:
+- type: markdown
+  attributes:
+    value: |
+        Thank you for submitting a PaddleSeg Bug Report!
+
+- type: checkboxes
+  attributes:
+    label: 问题确认 Search before asking
+    description: >
+      (必选项) 在向PaddleSeg报bug之前，请先查询[历史issue](https://github.com/PaddlePaddle/PaddleSeg/issues)(包括open与closed)是否报过同样的bug。
+
+      (Required) Before submitting a bug, please make sure the issue hasn't been already addressed by searching through the [open and closed issues](https://github.com/PaddlePaddle/PaddleSeg/issues).
+
+    options:
+      - label: >
+          我已经查询[历史issue](https://github.com/PaddlePaddle/PaddleSeg/issues)(包括open与closed)，没有发现相似的bug。I have searched the [open and closed issues](https://github.com/PaddlePaddle/PaddleSeg/issues) and found no similar bug report.
+        required: true
+
+- type: textarea
+  id: code
+  attributes:
+    label: Bug描述 Describe the Bug
+    description:  |
+      请清晰而简洁地描述这个bug，并附上bug复现步骤、报错信息或截图、代码改动说明或最小可复现代码。如果代码太长，请将可执行代码放到[AIStudio](https://aistudio.baidu.com/aistudio/index)中并将项目设置为公开（或者放到github gist上），并在项目中描述清楚bug复现步骤，在issue中描述期望结果与实际结果。
+
+      如果你报告的是一个报错信息，请将完整回溯的报错贴在这里，并使用 ` ```三引号块``` `展示错误信息。
+
+
+    placeholder: |
+      请清晰简洁的描述这个bug。 A clear and concise description of what the bug is.
+
+      ```python
+      代码改动说明，或最小可复现代码。 Code change description, or sample code to reproduce the problem.
+      ```
+
+      ```shell
+      带有完整回溯信息的报错日志或截图。 The error log or screenshot you got, with the full traceback.
+      ```
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: 复现环境 Environment
+    description: 请具体说明复现bug的环境信息。Please specify the environment information for reproducing the bug.
+    placeholder: |
+      - OS: Linux/Windows
+      - PaddlePaddle: 2.2.2
+      - PaddleSeg: release/2.4
+      - Python: 3.8.0
+      - CUDA: 10.2
+      - CUDNN: 7.6
+      - GCC: 8.2.0
+  validations:
+    required: true
+
+- type: checkboxes
+  attributes:
+    label: Bug描述确认 Bug description confirmation
+    description: >
+      (必选项) 请确认是否提供了详细的Bug描述和环境信息，确认问题是否可以复现。
+
+      (Required) Please confirm whether the bug description and environment information are provided, and whether the problem can be reproduced.
+
+    options:
+      - label: >
+          我确认已经提供了Bug复现步骤、代码改动说明、以及环境信息，确认问题是可以复现的。I confirm that the bug replication steps, code change instructions, and environment information have been provided, and the problem can be reproduced.
+        required: true
+
+- type: checkboxes
+  attributes:
+    label: 是否愿意提交PR？ Are you willing to submit a PR?
+    description: >
+      (可选项) 如果你对修复bug有自己的想法，十分鼓励提交[Pull Request](https://github.com/PaddlePaddle/PaddleSeg/pulls)，共同提升PaddleSeg。
+
+      (Optional) We encourage you to submit a [Pull Request](https://github.com/PaddlePaddle/PaddleSeg/pulls) (PR) to help improve PaddleSeg for everyone, especially if you have a good understanding of how to implement a fix or feature.
+    options:
+      - label: 我愿意提交PR！I'd like to help by submitting a PR!
+
+- type: markdown
+  attributes:
+    value: >
+      感谢你的贡献 🎉！Thanks for your contribution 🎉!

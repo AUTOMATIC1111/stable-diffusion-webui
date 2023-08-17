@@ -1,8 +1,11 @@
 from tqdm import tqdm
+from sd_scripts.library import model_util
 import sd_scripts.library.train_util as train_util
 import argparse
 from transformers import CLIPTokenizer
 import torch
+
+import sd_scripts.library.model_util as model_util
 import lora
 
 TOKENIZER_PATH = "openai/clip-vit-large-patch14"
