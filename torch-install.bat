@@ -1,7 +1,7 @@
 @echo off
 
 
-start /wait cmd /k "%cd%\venv\Scripts\activate && pip install torch==2.1.0.dev20230713+cpu -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html && exit"
+start /wait cmd /k "%cd%\venv\Scripts\activate && pip install --pre torch==2.1.0.dev20230713+cpu torchvision==0.16.0.dev20230713+cpu -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html && exit"
 
 echo torch 2.1.0 dev installation completed.
 
