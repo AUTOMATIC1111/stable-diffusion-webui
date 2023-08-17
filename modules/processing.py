@@ -1242,7 +1242,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         self.sampler = None
         devices.torch_gc()
 
-        decoded_samples = decode_latent_batch(self.sd_model, samples, target_device=devices.cpu, check_for_nans=True)
+        try:
+            decoded_samples = decode_latent_batch(self.sd_model, samples, target_device=devices.cpu, check_for_nans=True)
+        except devices.NansException:
+            decoded_samples = samples
 
         self.is_hr_pass = False
 
