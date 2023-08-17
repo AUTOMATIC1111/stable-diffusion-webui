@@ -31,7 +31,7 @@ def encode_pil_to_base64(image, quality=50):
 
 
 # compress_image 压缩图片函数，减轻网络压力
-def compress_image(infile, outfile, kb=400, step=25, quality=70):
+def compress_image(infile, outfile, kb=300, step=30, quality=70):
     """不改变图片尺寸压缩到指定大小
     :param infile: 压缩源文件
     :param outfile: 输出路径。

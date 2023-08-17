@@ -230,9 +230,10 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
 
 def load_sd_model_weights(filename, sha256=None):
     # 修改文件mtime，便于后续清理
-    os.popen(f'touch {filename}')
-    checkpoint = CheckpointInfo(filename, sha256)
-    return reload_model_weights(info=checkpoint)
+    if filename:
+        os.popen(f'touch {filename}')
+        checkpoint = CheckpointInfo(filename, sha256)
+        return reload_model_weights(info=checkpoint)
 
 
 def close_pil(image: Image):
@@ -276,7 +277,7 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
         full_path = os.path.join(out_obj.output_dir, filename)
 
         pnginfo_data = PngInfo()
-        pnginfo_data.add_text('by', 'xing-zhe')
+        pnginfo_data.add_text('by', 'xingzhe')
         size = f"{processed_image.width}*{processed_image.height}"
         for k, v in processed_image.info.items():
             if 'parameters' == k:

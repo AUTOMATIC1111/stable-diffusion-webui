@@ -128,6 +128,7 @@ class TaskDumper(Thread):
         #     return 0
 
         info = self.progress_to_info(task_progress)
+        self.before_push_info(task_progress, info)
         self.queue.put(info)
         self._set_cache(info)
         if not self._dump_now:
@@ -139,6 +140,9 @@ class TaskDumper(Thread):
     @abc.abstractmethod
     def progress_to_info(self, task_progress: TaskProgress) -> DumpInfo:
         raise NotImplementedError
+
+    def before_push_info(self, task_progress, info):
+        pass
 
     def do_others(self):
         pass
@@ -160,6 +164,17 @@ class MongoTaskDumper(TaskDumper):
         mgo.collect.create_index('task.model_name')
         mgo.collect.create_index('task.model_hash')
 
+        image_cols = mgo.db['images']
+        image_cols.create_index('task_id')
+        image_cols.create_index('user_id')
+        image_cols.create_index('create_at')
+        image_cols.create_index('minor_type')
+        image_cols.create_index('task_type')
+        image_cols.create_index('model_name')
+        image_cols.create_index('model_hash')
+        image_cols.create_index('image_type')
+        image_cols.create_index('group_id')
+
         self.clean_time = 0
         super(MongoTaskDumper, self).__init__(mgo)
 
@@ -178,6 +193,9 @@ class MongoTaskDumper(TaskDumper):
             multi=False
         )
         return info
+
+    def before_push_info(self, task_progress, info):
+        self.write_images(task_progress)
 
     def do_others(self):
         self.clean_timeout()
@@ -200,6 +218,32 @@ class MongoTaskDumper(TaskDumper):
                 )
 
             self.clean_time = now
+
+    def write_images(self, task_progress: TaskProgress):
+        if task_progress.completed and task_progress.result:
+            r = task_progress.result
+            flatten_images = []
+            index = 0
+            if 'grids' in r:
+                for i, sample in enumerate(r['grids']['low']):
+                    t = {'task_id': task_progress.task.id, 'model_hash': task_progress.task['model_hash'],
+                         'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
+                         'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
+                         'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'grid',
+                         'high_image': r['grids']['high'][i]}
+                    flatten_images.append(t)
+                    index += 1
+            if 'samples' in r:
+                for i, sample in enumerate(r['samples']['low']):
+                    t = {'task_id': task_progress.task.id, 'model_hash': task_progress.task['model_hash'],
+                         'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
+                         'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
+                         'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'sample',
+                         'high_image': r['samples']['high'][i]}
+                    flatten_images.append(t)
+                    index += 1
+            if flatten_images:
+                self.db.db['images'].insert_many(flatten_images)
 
 
 dumper = MongoTaskDumper()

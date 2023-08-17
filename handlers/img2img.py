@@ -38,6 +38,18 @@ class Img2ImgMinorTaskType(IntEnum):
     RunControlnetAnnotator = 100
 
 
+class ModelInfo:
+
+    def __init__(self, **kwargs):
+        self.name = kwargs['name']
+        self.key = kwargs['key']
+        self.type = ModelType(kwargs['type'])
+        base_name, _ = os.path.splitext(self.name)
+        hash, ex = os.path.splitext(self.key)
+        self.name = base_name + ex
+        self.hash = hash
+
+
 def gen_mask(image: Image):
     shape = list(image.size)
     shape.append(4)  # rgba
@@ -87,6 +99,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
                  denoising_strength: float = 0.75,  # 重绘幅度（含手涂和上传）
                  select_script_name: str = None,  # 选择下拉框脚本名
                  select_script_args: typing.Sequence = None,  # 选择下拉框脚本参数
+                 select_script_nets: typing.Sequence[typing.Mapping] = None,   # 选择下拉框脚本涉及的模型信息
                  alwayson_scripts: AlwaysonScriptsType = None,  # 插件脚本，object格式： {插件名: {'args': [参数列表]}}
                  img2img_batch_input_dir: str = None,
                  img2img_batch_output_dir: str = None,
@@ -241,6 +254,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
         self.kwargs = kwargs
         self.loras = lora_models
         self.embedding = embeddings
+        self.select_script_nets = select_script_nets
 
         if mask:
             self.extra_generation_params["Mask blur"] = mask_blur
@@ -398,7 +412,14 @@ class Img2ImgTaskHandler(TaskHandler):
         return t
 
     def _get_local_checkpoint(self, task: Task):
+        '''
+        下载大模型，或者脚本中的模型列表
+        '''
         progress = TaskProgress.new_prepare(task, f"0%")
+
+        # 脚本任务，不需要再下载生图的大模型了~
+        if self._get_select_script_models(progress):
+            return
 
         def progress_callback(*args):
             if len(args) < 2:
@@ -420,6 +441,39 @@ class Img2ImgTaskHandler(TaskHandler):
         # embeddings = [get_model_local_path(p, ModelType.Embedding) for p in embeddings]
         embeddings = batch_model_local_paths(ModelType.Embedding, *embeddings)
         return set((os.path.dirname(p) for p in embeddings if p and os.path.isfile(p)))
+
+    def _get_select_script_models(self, progress: TaskProgress):
+        '''
+        下载下拉脚本用到的模型列表
+        '''
+        task = progress.task
+        select_script_nets = task.get('select_script_nets')
+        if select_script_nets:
+            total = len(select_script_nets)
+
+            def dump_progress(i):
+                p = int(i * 100 / total)
+
+                current_progress = int(progress.task_desc[:-1])
+                if p >= current_progress:
+                    progress.task_desc = f"{p}%"
+                    self._set_task_status(progress)
+
+            for i, mi in enumerate(select_script_nets):
+                dump_progress(i)
+                model_info = ModelInfo(**mi)
+                local = get_model_local_path(model_info.key, model_info.type)
+                if not local:
+                    raise OSError(f'cannot download file:{model_info.key}')
+
+                dir = os.path.dirname(local)
+                link = os.path.join(dir, model_info.name)
+                if os.path.islink(link):
+                    # 防止有重名导致问题~
+                    os.unlink(link)
+                os.symlink(local, link)
+            return True
+        return False
 
     def _get_local_loras(self, loras: typing.Sequence[str]) -> typing.Sequence[str]:
         # loras = [get_model_local_path(p, ModelType.Lora) for p in loras]
@@ -443,7 +497,7 @@ class Img2ImgTaskHandler(TaskHandler):
 
         base_model_path = self._get_local_checkpoint(task)
         load_sd_model_weights(base_model_path, task.model_hash)
-        progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run i2i...')
+        progress = TaskProgress.new_ready(task, f'model loaded, run i2i...')
         yield progress
         # 参数有使用到sd_model因此在切换模型后再构造参数。
         process_args = self._build_img2img_arg(progress)

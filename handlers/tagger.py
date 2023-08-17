@@ -127,6 +127,8 @@ def get_tagger(
         if path not in tags_res.keys():
             basename = os.path.basename(local_image)
             tags_res[basename] = tags
+        if image:
+            image.close()
 
     if unload_model_after_running:
         interrogator.unload()  # 卸载模型
@@ -198,9 +200,9 @@ class TaggerTaskHandler(DumpTaskHandler):
     def _exec(self, task: Task) -> typing.Iterable[TaskProgress]:
         minor_type = TaggerTaskMinorTaskType(task.minor_type)
         if minor_type <= TaggerTaskMinorTaskType.SingleTagger:
-            yield from self.__exec_Tagger_task(task)
+            yield from self.__exec_tagger_task(task)
 
-    def __exec_Tagger_task(self, task: Task):
+    def __exec_tagger_task(self, task: Task):
         p = TaskProgress.new_running(task, "tagger image ...")
         yield p
         result = TaggerTask.exec_task(task)
@@ -216,18 +218,4 @@ class TaggerTaskHandler(DumpTaskHandler):
             p.task_desc = f'tagger task:{task.id} failed.'
         yield p
 
-    def _save_images(self, task: Task, r: typing.List):
-        high, low = [], []
-        if r:
-            images = r[0]
-            for image in images:
-                filename = task.id + '.png'
-                full_path = os.path.join(Tmp, filename)
-                image.save(full_path)
-                high.append(full_path)
-                low_file = os.path.join(Tmp, 'low-' + filename)
-                if not os.path.isfile(low_file):
-                    compress_image(full_path, low_file)
-                low.append(low_file)
 
-        return high, low
