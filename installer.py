@@ -288,6 +288,30 @@ def check_python():
         log.debug(f'Git {git_version.replace("git version", "").strip()}')
 
 
+# Intel hasn't released a corresponding torchvision wheel along with torch and
+# ipex wheels, so we have to install official pytorch torchvision as a W/A.
+# However, the latest torchvision explicitly requires torch version == 2.0.1,
+# which is incompatible with the Intel torch version 2.0.0a0. This will cause
+# intel torch to be uninstalled when pip scans the dependencies of torchvision.
+# This function will check the torch version and force installing Intel torch
+# 2.0.0a0 to avoid the underlying dll version error.
+# TODO remove this W/A when Intel releases torchvision wheel for windows.
+def fix_ipex_win_torch():
+    if not args.use_ipex or 'win' not in sys.platform:
+        return
+    try:
+        ipex_torch_ver = '2.0.0a0'
+        installed_torch_ver = pkg_resources.get_distribution('torch').version
+        if not installed_torch_ver.startswith(ipex_torch_ver):
+            log.warning(f'Incompatible torch version {installed_torch_ver} for ipex windows, reinstalling to {ipex_torch_ver}')
+            torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 intel_extension_for_pytorch==2.0.110+gitba7f6c1 -f https://developer.intel.com/ipex-whl-stable-xpu')
+            install(torch_command)
+            import torch
+            import intel_extension_for_pytorch as ipex
+    except Exception as e:
+        log.warning(e)
+
+
 # check torch version
 def check_torch():
     if args.quick:
@@ -398,6 +422,7 @@ def check_torch():
             import torch
             log.info(f'Torch {torch.__version__}')
             if args.use_ipex and allow_ipex:
+                fix_ipex_win_torch()
                 import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
                 log.info(f'Torch backend: Intel IPEX {ipex.__version__}')
                 if shutil.which('icpx') is not None:
