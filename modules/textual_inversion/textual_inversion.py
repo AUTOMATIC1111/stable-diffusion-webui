@@ -13,7 +13,7 @@ import modules.textual_inversion.dataset
 from modules.textual_inversion.learn_schedule import LearnRateScheduler
 from modules.textual_inversion.image_embedding import embedding_to_b64, embedding_from_b64, insert_image_data_embed, extract_image_data_embed, caption_image_overlay
 from modules.textual_inversion.logging import save_settings_to_file
-from modules.modelloader import filter_paths, directory_files, extension_filter, directory_mtime
+from modules.modelloader import directory_files, extension_filter, directory_mtime
 
 TextualInversionTemplate = namedtuple("TextualInversionTemplate", ["name", "path"])
 textual_inversion_templates = {}
@@ -215,11 +215,11 @@ class EmbeddingDatabase:
     def load_from_dir(self, embdir):
         if not os.path.isdir(embdir.path):
             return
-        
+
         is_ext = extension_filter(['.PNG', '.WEBP', '.JXL', '.AVIF', '.BIN', '.PT', '.SAFETENSORS'])
         is_not_preview = lambda fp: not next(iter(os.path.splitext(fp))).upper().endswith('.PREVIEW')
 
-        for file_path in filter_paths(directory_files(embdir.path), filter=lambda fp: is_ext(fp) and is_not_preview(fp)):
+        for file_path in [*filter(lambda fp: is_ext(fp) and is_not_preview(fp), directory_files(embdir.path))]:
             try:
                 if os.stat(file_path).st_size == 0:
                     continue

@@ -264,11 +264,11 @@ class ExtraNetworksPage:
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         dir = os.path.dirname(path)
         paths = modelloader.directory_directories(dir, recursive=False)
-        for file in sum([[f'{path}.thumb.{ext}'] for ext in preview_extensions], []): # use thumbnail if exists
-            if file in paths[dir][1]:
+        for file in [f'{path}.thumb.{ext}' for ext in preview_extensions]: # use thumbnail if exists
+            if file in paths[dir][1] and os.path.exists(file):
                 return self.link_preview(file)
-        for file in sum([[f'{path}.preview.{ext}', f'{path}.{ext}'] for ext in preview_extensions], []):
-            if file in paths[dir][1]:
+        for file in [f'{path}{mid}{ext}' for ext in preview_extensions for mid in ['.preview.', '.']]:
+            if file in paths[dir][1] and os.path.exists(file):
                 self.missing_thumbs.append(file)
                 return self.link_preview(file)
         return self.link_preview('html/card-no-preview.png')
@@ -363,6 +363,7 @@ def create_ui(container, button, tabname, skip_indexing = False):
         ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
         for page in ui.stored_extra_pages:
+            shared.log.debug(f"Create UI Extra Network Page: {page.title}")
             page_html = page.create_html(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
                 page_elem = gr.HTML(page_html, elem_id=tabname+page.name+"_extra_page", elem_classes="extra-networks-page")
@@ -378,6 +379,7 @@ def create_ui(container, button, tabname, skip_indexing = False):
     button_close.click(fn=toggle_visibility, inputs=[state_visible], outputs=[state_visible, container])
 
     def refresh():
+        shared.log.debug("Refreshing UI Extra Networks Pages")
         res = []
         for pg in ui.stored_extra_pages:
             pg.html = ''
