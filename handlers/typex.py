@@ -232,8 +232,10 @@ class ImageOutput:
                     'tasks': list(urls.values())
                 }, timeout=5)
 
+                logger.info(f"request {api}")
                 if resp:
                     data = resp.json()
+                    logger.debug(f"response {resp.text}")
                     if data.get('code', 0) == 200:
                         results = data['results']
                         for image_item in results:
@@ -248,6 +250,7 @@ class ImageOutput:
                                         high_key = os.path.join(dirname, basename.replace('low-', ''))
                                         forbidden_keys[low_key] = 1
                                         forbidden_keys[high_key] = 1
+                                        logger.info(f"forbidden: {low_key}")
 
         except Exception as e:
             logger.exception(f'request {api} failed')
