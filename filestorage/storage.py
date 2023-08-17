@@ -106,7 +106,7 @@ class FileStorage:
         return logger
 
     @abc.abstractmethod
-    def download(self, remoting_path, local_path) -> str:
+    def download(self, remoting_path, local_path, progress_callback=None) -> str:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -118,6 +118,9 @@ class FileStorage:
         raise NotImplementedError
 
     def upload_content(self, remoting_path, content) -> str:
+        raise NotImplementedError
+
+    def preview_url(self, remoting_path: str) -> str:
         raise NotImplementedError
 
     def multi_upload(self, local_remoting_pars: typing.Sequence[typing.Tuple[str, str]]):
@@ -174,7 +177,7 @@ class PrivatizationFileStorage(FileStorage):
     def name(self):
         return 'default'
 
-    def download(self, remoting_path: str, local_path: str) -> str:
+    def download(self, remoting_path: str, local_path: str, progress_callback=None) -> str:
         if os.path.isfile(local_path):
             return local_path
 
@@ -219,6 +222,9 @@ class PrivatizationFileStorage(FileStorage):
     def upload_content(self, remoting_path, content) -> str:
         with open(remoting_path, 'wb+') as f:
             f.write(content)
+        return remoting_path
+
+    def preview_url(self, remoting_path: str) -> str:
         return remoting_path
 
 

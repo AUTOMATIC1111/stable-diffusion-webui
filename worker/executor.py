@@ -5,16 +5,19 @@
 # @Site    : 
 # @File    : executor.py
 # @Software: Hifive
+import random
 import time
 import typing
 from queue import Queue
 from loguru import logger
-from worker.task import Task
-from datetime import datetime
+from worker.task import Task, TaskProgress
+from modules.shared import mem_mon as vram_mon
 from worker.handler import TaskHandler
+from modules.devices import torch_gc
 from worker.task_recv import TaskReceiver, TaskTimeout
 from threading import Thread, Condition, Lock
 from tools.model_hist import CkptLoadRecorder
+from worker.k8s_health import write_healthy, system_exit
 
 
 class TaskExecutor(Thread):
@@ -37,6 +40,7 @@ class TaskExecutor(Thread):
     def _close(self):
         for h in self._handlers:
             h.close()
+        self.receiver.close()
 
     def stop(self):
         self.__stop = True
@@ -51,25 +55,48 @@ class TaskExecutor(Thread):
     def error_handler(self, task: Task, ex: Exception):
         logger.error(f'exec task failed: {task.desc()}, ex: {ex}')
 
+    def nofity(self):
+        if getattr(self.not_busy, "value", 0) == 0:
+            return
+
+        with self.not_busy:
+            self.not_busy.notify()
+            logger.debug("notify receiver ")
+            setattr(self.not_busy, "value", 0)
+
+    def task_progress(self, p: TaskProgress):
+        if p.pre_task_completed():
+            self.nofity()
+
     def exec_task(self):
+        write_healthy(True)
         handlers = [x.name for x in self._handlers.keys()]
         logger.info(f"executor start with:{','.join(handlers)}")
         while not self.__stop:
-            task = self.queue.get()
-            logger.info(f"====>>> receive task:{task.desc()}")
-            logger.info(f"====>>> model history:{self.recorder.history()}")
+            try:
+                task = self.queue.get()
+                logger.info(f"====>>> receive task:{task.desc()}")
+                logger.info(f"====>>> model history:{self.recorder.history()}")
 
-            handler = self.get_handler(task)
-            if not handler:
-                self.error_handler(task, Exception('can not found task handler'))
-            # 判断TASK超时。
-            if self._is_timeout(task):
-                now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
-                create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(task.create_at))
-                handler.set_failed(task, f'task time out(task create time:{create_time}, now:{now})')
-                continue
-            handler(task)
-            self.not_busy.notify()
+                handler = self.get_handler(task)
+                if not handler:
+                    self.error_handler(task, Exception('can not found task handler'))
+                # 判断TASK超时。
+                if self._is_timeout(task):
+                    now = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))
+                    create_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(task.create_at))
+                    handler.set_failed(task, f'task time out(task create time:{create_time}, now:{now})')
+                    self.nofity()
+                    continue
+                handler(task, progress_callback=self.task_progress)
+                if random.randint(1, 10) < 3:
+                    torch_gc()
+                    free, total = vram_mon.cuda_mem_get_info()
+                    system_exit(free, total)
+            except Exception:
+                logger.exception("executor err")
+                self.nofity()
+
         logger.info('executor stopping...')
         self._close()
 
@@ -78,7 +105,13 @@ class TaskExecutor(Thread):
             with self.not_busy:
                 if not self.queue.full():
                     for task in self.receiver.task_iter():
+                        logger.info(f"====>>> preload task:{task.id}")
                         self.queue.put(task)
+                        if isinstance(task, Task):
+                            logger.debug(f"====>>> waiting task:{task.id}, stop receive.")
+                            setattr(self.not_busy, "value", 1)
+                            self.not_busy.wait()
+                            logger.debug(f"====>>> waiting task:{task.id}, begin receive.")
                 else:
                     self.not_busy.wait()
         logger.info("=======> task receiver quit!!!!!!")

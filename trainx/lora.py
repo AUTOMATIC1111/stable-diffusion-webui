@@ -12,7 +12,7 @@ import typing
 import torch
 import psutil
 
-from Crypto.Hash import SHA256
+from modules.shared import mem_mon as vram_mon
 from loguru import logger
 from worker.task import Task, TaskStatus, TaskProgress, TrainEpoch
 from sd_scripts.train_network_all import train_with_params
@@ -20,6 +20,7 @@ from .typex import TrainLoraTask
 from .utils import upload_files
 from worker.task_send import RedisSender
 from multiprocessing import Process
+from trainx.utils import calculate_sha256
 from modules.devices import torch_gc
 
 
@@ -63,6 +64,8 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
 
     def progress_callback(epoch, loss, num_train_epochs):
         print(f">>> update progress, epoch:{epoch},loss:{loss},len:{len(p.train.epoch)}")
+        free, total = vram_mon.cuda_mem_get_info()
+        logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
         progress = epoch / num_train_epochs * 100 * 0.9
         p.train.add_epoch_log(TrainEpoch(epoch, loss))
         p.task_progress = progress
@@ -79,7 +82,7 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
     local_models = get_train_models(train_lora_task, kwargs['output_name'])
     if ok:
         logger.info("=============>>>> end of train <<<<=============")
-        material = train_lora_task.compress_train_material(p.train.format_epoch_log())
+        material = train_lora_task.compress_train_material(p.train.format_epoch_log(), kwargs)
         result = {
             'material': None,
             'models': []
@@ -91,7 +94,8 @@ def exec_train_lora_task(task: Task, dump_func: typing.Callable = None):
             dirname = os.path.dirname(m)
             basename = os.path.basename(m)
             without, ex = os.path.splitext(basename)
-            sha256 = SHA256.new(basename.encode()).hexdigest()
+            # sha256 = SHA256.new(basename.encode()).hexdigest()
+            sha256 = calculate_sha256(m, 1024 * 1024 * 512)
             array = without.split('-')
             epoch = array[-1] if len(array) > 1 else ''
             hash_file_path = os.path.join(dirname, sha256+ex)
@@ -156,7 +160,8 @@ def do_train_with_process(task: Task,  dump_progress_cb: typing.Callable):
             dirname = os.path.dirname(m)
             basename = os.path.basename(m)
             without, ex = os.path.splitext(basename)
-            sha256 = SHA256.new(basename.encode()).hexdigest()
+            # sha256 = SHA256.new(basename.encode()).hexdigest()
+            sha256 = calculate_sha256(m, 1024*1024*512)
             array = without.split('-')
             epoch = array[-1] if len(array) > 1 else ''
             hash_file_path = os.path.join(dirname, sha256 + ex)

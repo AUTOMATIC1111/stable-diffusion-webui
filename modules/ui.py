@@ -1661,8 +1661,8 @@ def create_ui():
         (train_interface, "Train", "train"),
     ]
 
-    from .upload_model_ui import append_upload_model_ui
-    append_upload_model_ui(interfaces)
+    #from .upload_model_ui import append_upload_model_ui
+    #append_upload_model_ui(interfaces)
 
     interfaces += script_callbacks.ui_tabs_callback()
     interfaces += [(settings_interface, "Settings", "settings")]
@@ -1734,6 +1734,10 @@ def create_ui():
             #     </div>
             #     """)
 
+            if cmd_opts.logo:
+                gradio.HTML(f"""
+                <img src="{cmd_opts.logo}"  height="60" style="color:blue;margin-right:2px;"/>
+                """)
         parameters_copypaste.connect_paste_params_buttons()
 
         with gr.Tabs(elem_id="tabs") as tabs:
@@ -1759,12 +1763,15 @@ def create_ui():
         if os.path.exists(os.path.join(script_path, "notification.mp3")):
             gr.Audio(interactive=False, value=os.path.join(script_path, "notification.mp3"), elem_id="audio_notification", visible=False)
 
+        notice = "请勿利用该工具恶意生成违规、违法内容，一经发现，立刻封号严重者将追究其法律责任"
+        if cmd_opts.no_notice:
+            notice = ""
         footer = shared.html("footer.html")
-        footer = footer.format(versions=versions_html())
+        footer = footer.format(versions=versions_html(), notice=notice)
         gr.HTML(
             footer,
             elem_id="footer",
-            _js= '''
+            _js='''
             
                 <script>
                     function toPgae(name) {

@@ -61,7 +61,7 @@ def find_classes(module_path):
     :return:
     '''
     path = module_path.replace('.', "/")
-    for importer, name, ispkg in pkgutil.walk_packages([f'./{path}', ]):
+    for importer, name, ispkg in pkgutil.walk_packages([f'./{path}']):
         module = import_module(f'{module_path}.{name}')
         for (_, c) in getmembers(module):
             if isclass(c):

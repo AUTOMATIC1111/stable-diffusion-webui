@@ -24,14 +24,14 @@ from tools.environment import get_file_storage_system_env, Env_BucketKey, S3Imag
 from filestorage import FileStorageCls, get_local_path, batch_download
 from handlers.typex import ModelLocation, ModelType, ImageOutput, OutImageType, UserModelLocation
 
-StrMapMap = typing.Mapping[str, typing.Mapping[str, typing.Any]]
+StrMapMap = typing.Dict[str, typing.Mapping[str, typing.Any]]
 
 
 def clean_models():
     pass
 
 
-def get_model_local_path(remoting_path: str, model_type: ModelType):
+def get_model_local_path(remoting_path: str, model_type: ModelType, progress_callback=None):
     if not remoting_path:
         raise OSError(f'remoting path is empty')
     if os.path.isfile(remoting_path):
@@ -47,7 +47,7 @@ def get_model_local_path(remoting_path: str, model_type: ModelType):
     if os.path.isfile(dst):
         return dst
 
-    dst = get_local_path(remoting_path, dst)
+    dst = get_local_path(remoting_path, dst, progress_callback=progress_callback)
     if os.path.isfile(dst):
         if model_type == ModelType.CheckPoint:
             checkpoint = CheckpointInfo(dst)
@@ -164,9 +164,18 @@ def get_selectable_script(script_runner, script_name):
 
 def script_name_to_index(name, scripts):
     try:
-        return [script.title().lower().replace(' ', '-') for script in scripts].index(name.lower())
+        return [script.title().lower().replace(' ', '-') for script in scripts].index(name.lower().replace(' ', '-'))
     except:
         raise Exception(f"Script '{name}' not found")
+
+
+default_alwayson_scripts = {
+    'ADetailer': {
+        'args': [{
+            'ad_model': 'mediapipe_face_full'
+        }]
+    }
+}
 
 
 def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: StrMapMap, selectable_scripts: Script,
@@ -177,8 +186,11 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
         script_args[selectable_scripts.args_from:selectable_scripts.args_to] = request_script_args
         script_args[0] = selectable_idx + 1
 
+    alwayson_scripts = alwayson_scripts or {}
+    alwayson_scripts.update(default_alwayson_scripts)
     # Now check for always on scripts
     if alwayson_scripts:
+
         for alwayson_script_name in alwayson_scripts.keys():
             alwayson_script = get_script(alwayson_script_name, script_runner)
             if not alwayson_script:
@@ -217,16 +229,19 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
 
 
 def load_sd_model_weights(filename, sha256=None):
-    checkpoint = CheckpointInfo(filename, sha256)
-    return reload_model_weights(info=checkpoint)
+    # 修改文件mtime，便于后续清理
+    if filename:
+        os.popen(f'touch {filename}')
+        checkpoint = CheckpointInfo(filename, sha256)
+        return reload_model_weights(info=checkpoint)
 
 
 def close_pil(image: Image):
     image.close()
 
 
-def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
-                          script_dir: str, task_id: str, clean_upload_files: bool = True):
+def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, script_dir: str,
+                          task_id: str, clean_upload_files: bool = True, inspect=False):
     if not output_dir:
         raise ValueError('output is empty')
 
@@ -262,10 +277,12 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
         full_path = os.path.join(out_obj.output_dir, filename)
 
         pnginfo_data = PngInfo()
-        pnginfo_data.add_text('by', 'xing-zhe')
+        pnginfo_data.add_text('by', 'xingzhe')
         size = f"{processed_image.width}*{processed_image.height}"
         for k, v in processed_image.info.items():
             if 'parameters' == k:
+                v = str(v).replace('-automatic1111', "-xingzhe")
+                print(f"image parameters:{v}")
                 v = des_encrypt(v)
             pnginfo_data.add_text(k, str(v))
 
@@ -275,6 +292,10 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str,
     grid_keys = out_grid_image.multi_upload_keys(clean_upload_files)
     image_keys = out_image.multi_upload_keys(clean_upload_files)
     script_keys = out_script_image.multi_upload_keys(clean_upload_files)
+
+    if inspect:
+        out_grid_image.inspect(grid_keys)
+        out_image.inspect(image_keys)
 
     output = {
         'grids': grid_keys.to_dict(),

@@ -57,6 +57,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                  steps: int = 30,  # 步数
                  select_script_name: str = None,  # 选择下拉框脚本名
                  select_script_args: typing.Sequence = None,  # 选择下拉框脚本参数
+                 select_script_nets: typing.Sequence[typing.Mapping] = None,  # 选择下拉框脚本涉及的模型信息
                  alwayson_scripts: AlwaysonScriptsType = None,  # 插件脚本，object格式： {插件名: {'args': [参数列表]}}
                  override_settings_texts=None,  # 自定义设置 TEXT,如: ['Clip skip: 2', 'ENSD: 31337', 'sd_vae': 'None']
                  lora_models: typing.Sequence[str] = None,  # 使用LORA，用户和系统全部LORA列表
@@ -117,6 +118,7 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
         self.kwargs = kwargs
         self.loras = lora_models
         self.embedding = embeddings
+        self.select_script_nets = select_script_nets
 
     def close(self):
         for obj in self.script_args:
@@ -142,6 +144,9 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
                 raise TypeError('select_script type err')
             select_script_name = select_script['name']
             select_script_args = select_script['args']
+        else:
+            select_script_name = task.get('select_script_name')
+            select_script_args = task.get('select_script_args')
         kwargs = task.data.copy()
         kwargs.pop('base_model_path')
         kwargs.pop('alwayson_scripts')
@@ -152,6 +157,11 @@ class Txt2ImgTask(StableDiffusionProcessingTxt2Img):
             kwargs.pop('select_script')
         if 'select_script_name' in kwargs:
             kwargs.pop('select_script_name')
+        if 'select_script_args' in kwargs:
+            kwargs.pop('select_script_args')
+
+        if "nsfw" in prompt.lower():
+            prompt = prompt.lower().replace('nsfw', '')
 
         return cls(base_model_path,
                    user_id,
@@ -183,7 +193,7 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
     def _exec_txt2img(self, task: Task) -> typing.Iterable[TaskProgress]:
         base_model_path = self._get_local_checkpoint(task)
         load_sd_model_weights(base_model_path, task.model_hash)
-        progress = TaskProgress.new_ready(task, f'model loaded:{os.path.basename(base_model_path)}, run t2i...')
+        progress = TaskProgress.new_ready(task, f'model loaded, run t2i...')
         yield progress
         process_args = self._build_txt2img_arg(progress)
         self._set_little_models(process_args)
@@ -191,6 +201,8 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
         progress.task_desc = f't2i task({task.id}) running'
         yield progress
         shared.state.begin()
+        # shared.state.job_count = process_args.n_iter * process_args.batch_size
+
         if process_args.selectable_scripts:
             processed = process_args.scripts.run(process_args, *process_args.script_args)
         else:
@@ -205,10 +217,11 @@ class Txt2ImgTaskHandler(Img2ImgTaskHandler):
                                        process_args.outpath_samples,
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
-                                       task.id)
+                                       task.id,
+                                       inspect=process_args.kwargs.get("inspect", False))
 
         progress = TaskProgress.new_finish(task, images)
-        progress.update_seed(processed.seed, processed.subseed)
+        progress.update_seed(processed.all_seeds, processed.all_subseeds)
 
         yield progress
 

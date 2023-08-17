@@ -121,6 +121,8 @@ def run_pip(command, desc=None, live=default_command_live):
         return
 
     index_url_line = f' --index-url {index_url}' if index_url != '' else ''
+
+    print(f"> pip command:{command}")
     return run(f'"{python}" -m pip {command} --prefer-binary{index_url_line}', desc=f"Installing {desc}", errdesc=f"Couldn't install {desc}", live=live)
 
 
@@ -328,7 +330,10 @@ def configure_for_tests():
 def start():
     print(f"Launching {'API server' if '--nowebui' in sys.argv else 'Web UI'} with arguments: {' '.join(sys.argv[1:])}")
     import webui
+    from tools.mysql import dispose
     if '--nowebui' in sys.argv:
         webui.api_only()
     else:
         webui.webui()
+    dispose()
+

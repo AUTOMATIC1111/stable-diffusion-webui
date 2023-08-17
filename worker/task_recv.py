@@ -27,7 +27,8 @@ from tools.gpu import GpuInfo
 from tools.wrapper import timed_lru_cache
 from tools.host import get_host_name
 from modules.shared import mem_mon as vram_mon
-from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api,\
+from apscheduler.schedulers.background import BackgroundScheduler
+from tools.environment import get_run_train_time_cfg, get_worker_group, get_gss_count_api, run_train_ratio,\
     Env_Run_Train_Time_Start, Env_Run_Train_Time_End, is_flexible_worker, get_worker_state_dump_path
 
 try:
@@ -36,7 +37,7 @@ except:
     from collections import Iterable  # <=py3.9
 
 TaskQueuePrefix = "task_"
-OtherTaskQueueToken = 'others-'
+OtherTaskQueueToken = TaskQueuePrefix + 'others'
 TrainTaskQueueToken = 'train'
 UpscaleCoeff = 100 * 1000
 TaskScoreRange = (0, 100 * UpscaleCoeff)
@@ -44,6 +45,7 @@ TaskTimeout = 20 * 3600 if not cmd_opts.train_only else 48 * 3600
 Tmp = 'tmp'
 SDWorkerZset = 'sd-workers'
 ElasticResWorkerFlag = "[ElasticRes]"
+TrainOnlyWorkerFlag = "[TrainOnly]"
 
 
 def find_files_from_dir(directory, *args):
@@ -112,6 +114,20 @@ class TaskReceiverRecorder:
             self.dump_ts = int(time.time())
 
 
+def register_worker(worker_id):
+    try:
+        pool = RedisPool()
+        conn = pool.get_connection()
+        conn.setex(worker_id, 300, 60)
+        conn.zadd(SDWorkerZset, {
+            worker_id: int(time.time())
+        })
+        conn.expire(SDWorkerZset, timedelta(hours=1))
+        pool.close()
+    except:
+        pass
+
+
 class TaskReceiver:
 
     def __init__(self, recoder: CkptLoadRecorder, train_only: bool = False):
@@ -123,6 +139,8 @@ class TaskReceiver:
         # self.worker_id = self._worker_id()
         self.is_elastic = is_flexible_worker()
         self.recorder = TaskReceiverRecorder()
+        self.task_score_limit = 5 if cmd_opts.lowvram else (10 if cmd_opts.medvram else -1)
+
         self.worker_id = self._worker_id()
 
         run_train_time_cfg = get_run_train_time_cfg()
@@ -134,16 +152,21 @@ class TaskReceiver:
                 return 24 + day_of_time
             return day_of_time
 
-        run_train_time_start = formate_day_of_time(int(run_train_time_start) - 8 if run_train_time_start else 15)
+        run_train_time_start = formate_day_of_time(int(run_train_time_start) - 8 if run_train_time_start else 10)
         run_train_time_end = formate_day_of_time(int(run_train_time_end) - 8 if run_train_time_end else 23)
 
         self.run_train_time_start = min(run_train_time_start, run_train_time_end)
         self.run_train_time_end = max(run_train_time_start, run_train_time_end)
 
-        logger.info(f"worker id:{self.worker_id}, train work receive clock:{self.run_train_time_start} - {self.run_train_time_end}")
+        logger.info(
+            f"worker id:{self.worker_id}, train work receive clock:{self.run_train_time_start} - {self.run_train_time_end}")
 
         self.register_time = 0
         self.local_cache = {}
+        self.timer = BackgroundScheduler()
+
+        self.timer.add_job(register_worker, 'interval', seconds=30, args=[self.worker_id])
+        self.timer.start()
 
     def _worker_id(self):
         group_id = get_worker_group()
@@ -174,8 +197,12 @@ class TaskReceiver:
 
         if is_flexible_worker():
             nvidia_video_card_id = ElasticResWorkerFlag + nvidia_video_card_id
+        if self.train_only:
+            nvidia_video_card_id = TrainOnlyWorkerFlag + nvidia_video_card_id
+            if is_flexible_worker():
+                raise OSError('elastic resource cannot run with train only mode')
 
-        return f"{group_id}:{nvidia_video_card_id}"
+        return f"{group_id}:{self.task_score_limit}.{nvidia_video_card_id}"
 
     def _clean_tmp_files(self):
         now = time.time()
@@ -216,6 +243,10 @@ class TaskReceiver:
                     return task
 
     def _search_train_task(self):
+        # 弹性不训练
+        if self.is_elastic:
+            return
+
         if self.train_only or self._can_gener_img_worker_run_train():
             keys = self._search_queue_names()
             for queue_name in keys:
@@ -231,15 +262,43 @@ class TaskReceiver:
         if self.run_train_time_start <= utc.hour < self.run_train_time_end:
             logger.info(f"worker receive train task")
 
-            workers = self.get_all_workers()
+            group_workers = self.get_group_workers()
+            group_id = get_worker_group()
+            workers = group_workers.get(group_id) or []
             if workers:
+                def can_exec_train(worker_id: str):
+                    if TrainOnlyWorkerFlag in worker_id:
+                        return False
+
+                    start = worker_id.index(':')
+                    end = worker_id.index(".")
+                    if end > start > 0:
+                        try:
+                            limit = int(worker_id[start: end])
+                            return limit == -1
+                        except:
+                            return True
+
+                    return True
+
                 # 1/5的WOEKER 生图，剩下的执行训练。
-                run_train_worker_flag = self.worker_id in workers[len(workers) // 5:]
+                workers = [w for w in workers if can_exec_train(w)]
+
+                run_train_worker_num = int(len(workers) * run_train_ratio())
+
+                if run_train_worker_num >= 1:
+                    run_train_workers = workers[:run_train_worker_num]
+                else:
+                    run_train_workers = []
+
+                no_group_worker_id = self.worker_id.replace(group_id + ":", '')
+                logger.info(f"run train task worker ids:{';'.join(run_train_workers)}, current id:{no_group_worker_id}")
+                run_train_worker_flag = no_group_worker_id in run_train_workers
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
-                
+
                 if run_train_worker_flag and free / 2 ** 30 > 16:
-                    logger.info(">>> worker can run train task.")
+                    logger.info(f">>> worker receive train task, train worker count:{run_train_worker_num}")
 
                 return run_train_worker_flag
 
@@ -248,6 +307,17 @@ class TaskReceiver:
     def search_task_with_id(self, rds, task_id) -> typing.Any:
         # redis > 6.2.0
         # meta = rds.getdel(task_id)
+        if self.task_score_limit > 0:
+            arr = task_id.split('_')
+            if len(arr) == 2:
+                try:
+                    score = int(arr[-1])
+                    if self.task_score_limit < score:
+                        print(f"====> task:{task_id} out of limit({self.task_score_limit}).")
+                        return
+                except:
+                    pass
+
         meta = rds.get(task_id)
         if meta:
             task_id = task_id.decode('utf8') if isinstance(task_id, bytes) else task_id
@@ -329,6 +399,10 @@ class TaskReceiver:
             else:
                 task = self._search_task()
             if task:
+                if isinstance(task, Task):
+                    task.setdefault("worker", self.worker_id)
+
+                self.recorder.set_state(TaskReceiverState.Running)
                 return task
             if not block:
                 return None
@@ -354,6 +428,9 @@ class TaskReceiver:
                         task = self._search_task()
 
                 if task:
+                    if isinstance(task, Task):
+                        task.setdefault("worker", self.worker_id)
+
                     self.recorder.set_state(TaskReceiverState.Running)
                     yield task
                 else:
@@ -376,13 +453,12 @@ class TaskReceiver:
             try:
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] GPU free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
-                conn = self.redis_pool.get_connection()
+                # conn = self.redis_pool.get_connection()
                 # conn.setex(self.worker_id, 300, 60)
-                conn.zadd(SDWorkerZset, {
-                    self.worker_id: int(time.time())
-                })
-                conn.expire(SDWorkerZset, timedelta(hours=1))
-                print("register worker id:" + self.worker_id)
+                # conn.zadd(SDWorkerZset, {
+                #     self.worker_id: int(time.time())
+                # })
+                # conn.expire(SDWorkerZset, timedelta(hours=1))
                 self.register_time = time.time()
             except:
                 return False
@@ -396,8 +472,15 @@ class TaskReceiver:
         worker_ids = [k.decode('utf8') if isinstance(k, bytes) else k for k in keys]
 
         def get_work_id_num(x: str):
+            # def hashs(s):
+            #     hash_md5 = hashlib.md5()
+            #     hash_md5.update(s.encode())
+            #
+            #     return hash_md5.hexdigest()[:8]
             if 'Host:' in x:
-                return x[-16:-8]
+                idx = x.index('Host:')
+                return x[idx:]
+
             return x.replace("-", "")[-8:]
 
         worker_ids = sorted(worker_ids, key=get_work_id_num)
@@ -426,7 +509,8 @@ class TaskReceiver:
                     try:
                         resp = requests.get(url, timeout=5)
                         json_data = resp.json() or {}
-                        need_workers = json_data.get('need_workers', 0)
+                        data = json_data.get('data') or {}
+                        need_workers = data.get('need_workers', 0)
                         self.release_flag = need_workers == 0
                     except Exception as ex:
                         logger.exception('cannot get elastic workers')
@@ -434,3 +518,6 @@ class TaskReceiver:
         else:
             self.release_flag = False
         return self.release_flag
+
+    def close(self):
+        self.timer.shutdown()

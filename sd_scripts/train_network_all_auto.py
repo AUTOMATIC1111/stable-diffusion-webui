@@ -29,6 +29,9 @@ import sd_scripts.library.custom_train_functions as custom_train_functions
 from sd_scripts.library.custom_train_functions import apply_snr_weight, get_weighted_text_embeddings, pyramid_noise_like, \
     apply_noise_offset
 
+# from library.train_util import auto_generate_pics
+
+
 
 # TODO 他のスクリプトと共通化する
 def generate_step_logs(args: argparse.Namespace, current_loss, avr_loss, lr_scheduler):
@@ -46,8 +49,11 @@ def generate_step_logs(args: argparse.Namespace, current_loss, avr_loss, lr_sche
             logs["lr/unet"] = float(lrs[-1])  # may be same to textencoder
 
         if args.optimizer_type.lower().startswith("DAdapt".lower()):  # tracking d*lr value of unet.
+            # logs["lr/d*lr"] = lr_scheduler.optimizer.param_groups[0]["d"] * \
+            #                   lr_scheduler.optimizer.param_groups[0]["lr"]
             logs["lr/d*lr"] = lr_scheduler.optimizers[-1].param_groups[0]["d"] * \
                               lr_scheduler.optimizers[-1].param_groups[0]["lr"]
+            print("dadaption lr:", logs["lr/d*lr"])
     else:
         idx = 0
         if not args.network_train_unet_only:
@@ -58,14 +64,15 @@ def generate_step_logs(args: argparse.Namespace, current_loss, avr_loss, lr_sche
             logs[f"lr/group{i}"] = float(lrs[i])
             if args.optimizer_type.lower().startswith("DAdapt".lower()):
                 logs[f"lr/d*lr/group{i}"] = (
-                        lr_scheduler.optimizers[-1].param_groups[i]["d"] * lr_scheduler.optimizers[-1].param_groups[i][
+                        lr_scheduler.optimizer.param_groups[i]["d"] * lr_scheduler.optimizer.param_groups[i][
                     "lr"]
                 )
+                print("dadaption lr:", logs[f"lr/d*lr/group{i}"])
 
     return logs
 
 
-def train(args, train_epoch_callback=None):
+def train(args, train_epoch_callback=None,accelerator=None,unwrap_model=None):
     session_id = random.randint(0, 2 ** 32)
     training_started_at = time.time()
     train_util.verify_training_args(args)
@@ -112,7 +119,8 @@ def train(args, train_epoch_callback=None):
                 "datasets": [
                     # {"subsets": config_util.generate_dreambooth_subsets_config_by_subdirs(args.train_data_dir, args.reg_data_dir)}
                     {"subsets": config_util.generate_dreambooth_subsets_config_by_args(
-                        list_repeats, class_tokens, list_train_data_dirs, list_reg_repeats, reg_tokens, list_reg_data_dirs)}
+                        list_repeats, class_tokens, list_train_data_dirs, list_reg_repeats, reg_tokens,
+                        list_reg_data_dirs)}
                 ]
             }
         else:
@@ -154,8 +162,8 @@ def train(args, train_epoch_callback=None):
 
     # acceleratorを準備する
     print("prepare accelerator")
-
-    accelerator, unwrap_model = train_util.prepare_accelerator(args)
+    if not accelerator and not unwrap_model:
+        accelerator, unwrap_model = train_util.prepare_accelerator(args)
     is_main_process = accelerator.is_main_process
 
     # mixed precisionに対応した型を用意しておき適宜castする
@@ -666,9 +674,9 @@ def train(args, train_epoch_callback=None):
                 progress_bar.update(1)
                 global_step += 1
 
-                train_util.sample_images(
-                    accelerator, args, None, global_step, accelerator.device, vae, tokenizer, text_encoder, unet
-                )
+                # train_util.sample_images(
+                #     accelerator, args, None, global_step, accelerator.device, vae, tokenizer, text_encoder, unet
+                # )
 
                 # 指定ステップごとにモデルを保存
                 if args.save_every_n_steps is not None and global_step % args.save_every_n_steps == 0:
@@ -707,14 +715,24 @@ def train(args, train_epoch_callback=None):
         if args.logging_dir is not None:
             logs = {"loss/epoch": loss_total / len(loss_list)}
             accelerator.log(logs, step=epoch + 1)
-
+        
         accelerator.wait_for_everyone()
+
+        print("ceshi:",args.optimizer_type.lower().startswith("DAdapt".lower()), epoch, args.auto_lr)
+        if args.optimizer_type.lower().startswith("DAdapt".lower()) and epoch>-1 and args.auto_lr:
+            accelerator.end_training()
+            del accelerator  # この後メモリを使うのでこれは消す
+            # return lr_scheduler.optimizer.param_groups[0]["d"] * lr_scheduler.optimizer.param_groups[0]["lr"]
+            return lr_scheduler.optimizers[-1].param_groups[0]["d"] * lr_scheduler.optimizers[-1].param_groups[0]["lr"]
 
         # 指定エポックごとにモデルを保存
         if args.save_every_n_epochs is not None:
             saving = (epoch + 1) % args.save_every_n_epochs == 0 and (epoch + 1) < num_train_epochs
             if is_main_process and saving:
                 ckpt_name = train_util.get_epoch_ckpt_name(args, "." + args.save_model_as, epoch + 1)
+                #for test:
+                names = ckpt_name.split(".")
+                ckpt_name = names[0]+f"loss_{round(loss_total / len(loss_list),4)}."+names[1]
                 save_model(ckpt_name, unwrap_model(network), global_step, epoch + 1)
 
                 remove_epoch_no = train_util.get_remove_epoch_no(args, epoch + 1)
@@ -725,16 +743,12 @@ def train(args, train_epoch_callback=None):
                 if args.save_state:
                     train_util.save_and_remove_state_on_epoch_end(args, accelerator, epoch + 1)
 
-        train_util.sample_images(accelerator, args, epoch + 1, global_step, accelerator.device, vae, tokenizer,
-                                 text_encoder, unet)
+        # train_util.sample_images(accelerator, args, epoch + 1, global_step, accelerator.device, vae, tokenizer,
+        #                          text_encoder, unet)
         if callable(train_epoch_callback):
-            train_epoch_callback(epoch + 1, loss_total / len(loss_list), num_train_epochs)
+            # train_epoch_callback(epoch, loss_total / len(loss_list))
+            train_epoch_callback((epoch*1.0+1.0)*100.0/num_train_epochs)
         # end of epoch
-        if math.isnan(loss_total / len(loss_list)):
-            # nan(task failed)
-            return False
-
-    # metadata["ss_epoch"] = str(num_train_epochs)
     metadata["ss_training_finished_at"] = str(time.time())
 
     if is_main_process:
@@ -750,17 +764,22 @@ def train(args, train_epoch_callback=None):
     if is_main_process:
         ckpt_name = train_util.get_last_ckpt_name(args, "." + args.save_model_as)
         save_model(ckpt_name, network, global_step, num_train_epochs, force_sync_upload=True)
-
         print("model saved.")
-        return True
+    # # 删除资源
+    # del text_encoder
+    # del unet
+    # del network
+
+    return 
 
 
 def setup_parser() -> argparse.ArgumentParser:
-    #parser = argparse.ArgumentParser()
+    # parser = argparse.ArgumentParser()
     parent_parser = argparse.ArgumentParser()
     subparsers = parent_parser.add_subparsers(title="sys_sub_parsers")
     parser = subparsers.add_parser("lora_train",
                                           help="create the lora_train environment")
+    # parser.required = True
 
     train_util.add_sd_models_arguments(parser)
     train_util.add_dataset_arguments(parser, True, True, True)
@@ -830,6 +849,14 @@ def setup_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--list_reg_repeats", type=list, default=[""],
         help="repeat times of source images for reg images"
+    )
+    parser.add_argument(
+        "--auto_lr", type=bool, default=False,
+        help="自动获取lr"
+    )
+    parser.add_argument(
+        "--auto_lr_param", type=int, default=1.0,
+        help="自动获取lr"
     )
 
     return parser
@@ -978,11 +1005,19 @@ def train_with_params(
         config_file=None,  # using .toml instead of args to pass hyperparameter
         output_config=False,  # output command line args to given .json file
         callback=None,
+        auto_lr=False,
+        auto_lr_param=1.0,
+        accelerator=None,
+        unwrap_model=None
                       ):
     # TODO 数据校验，或者流程重新梳理，去掉args
     parser = setup_parser()
     args = parser.parse_args([])
-    #args = train_util.read_config_from_file(args, parser)
+    # if config_file is not None:
+    #     args.config_file = config_file
+    #     args = train_util.read_config_from_json(args, parser)
+    #     train(args, train_callback)
+    #     return
 
     args.pretrained_model_name_or_path = pretrained_model_name_or_path
     if network_weights:
@@ -1029,7 +1064,7 @@ def train_with_params(
         args.min_bucket_reso = min_bucket_reso if min_bucket_reso!="" and min_bucket_reso!=-1 else None
         args.max_bucket_reso = max_bucket_reso if max_bucket_reso!="" and max_bucket_reso!=-1 else None
         args.bucket_reso_steps = bucket_reso_steps if bucket_reso_steps!="" and bucket_reso_steps!=-1 else None
-        args.bucket_no_upscale = bucket_no_upscale if bucket_no_upscale!="" and bucket_no_upscale!=-1 else None
+    args.bucket_no_upscale = bucket_no_upscale if bucket_no_upscale!="" and bucket_no_upscale!=-1 else None
 
     args.network_module = network_module
     if args.network_args is None:
@@ -1080,6 +1115,10 @@ def train_with_params(
     args.gradient_checkpointing = gradient_checkpointing if gradient_checkpointing!="" and gradient_checkpointing!=-1 else None
     args.gradient_accumulation_steps = gradient_accumulation_steps if gradient_accumulation_steps!="" and gradient_accumulation_steps!=-1 else None
     args.mixed_precision = mixed_precision if mixed_precision!="" and mixed_precision!=-1 else None
+
+    if os.getenv("MIXED_PRECISION"):
+        args.mixed_precision = os.getenv("MIXED_PRECISION")
+
     if noise_offset is not None:
         args.adaptive_noise_scale = adaptive_noise_scale if adaptive_noise_scale!="" and adaptive_noise_scale!=-1 else None
 
@@ -1098,7 +1137,34 @@ def train_with_params(
         elif config_file.endswith(".toml"):
             args = train_util.read_config_from_file(args, parser)
     # print("network_args:",args.network_args)
-    return train(args, callback)
+    if auto_lr:
+        args.auto_lr = auto_lr
+        args.learning_rate = 1.0
+        args.unet_lr=None
+        args.text_encoder_lr=None
+        args.optimizer_type = "DAdaptation"
+        args.lr_scheduler="cosine_with_restarts"
+        #"decouple=True" "weight_decay=0.01" "betas=0.9,0.99"
+        # args.optimizer_args.append(f"decouple={True}")
+        # args.optimizer_args.append(f"weight_decay={0.01}")
+        # args.optimizer_args.append(f"betas={0.9}")
+
+        print("auto_lr step1")
+        lr = train(args, callback,accelerator,unwrap_model)
+        print("auto_lr step2",lr)
+
+        args.auto_lr = False
+        args.learning_rate = lr/auto_lr_param
+        args.unet_lr = args.learning_rate #unet_lr if unet_lr!="" and unet_lr!=-1 else None
+        args.text_encoder_lr = args.learning_rate/5.0 #text_encoder_lr if text_encoder_lr!="" and text_encoder_lr!=-1 else None
+        args.optimizer_type = optimizer_type if optimizer_type!="" and optimizer_type!=-1 else None
+        args.lr_scheduler_num_cycles = lr_scheduler_num_cycles if lr_scheduler_num_cycles!="" and lr_scheduler_num_cycles!=-1 else None
+        args.lr_scheduler = lr_scheduler if lr_scheduler!="" and lr_scheduler!=-1 else None
+        args.resolution = resolution
+
+    return train(args, callback,accelerator,unwrap_model)
+
+
 
 
 if __name__ == "__main__":
@@ -1113,33 +1179,33 @@ if __name__ == "__main__":
     else:
         train_with_params(
 
-        pretrained_model_name_or_path=r"E:\qll\models\chilloutmix_NiPrunedFp32Fix.safetensors",
+        pretrained_model_name_or_path=r"/data/qll/stable-diffusion-webui/models/Stable-diffusion/chilloutmix_NiPrunedFp32Fix.safetensors",
         network_weights="",  # "output/y1s1_100v3.safetensors",
-        output_name="xhx-lion-0.0002",
+        output_name="qby_v3",
         save_model_as="safetensors",
         v2 = False,
         v_parameterization = False,
-        output_dir = "./output",
+        output_dir = "/data/qll/stable-diffusion-webui/models/LyCORIS",
         logging_dir = "./logs",
         save_every_n_epochs = 2,
-        save_last_n_epochs = 10,
+        save_last_n_epochs = 16,
         save_precision = None,
-        trigger_words=["xhx"],
+        trigger_words=["qby"],
         reg_tokens=[""],
-        list_train_data_dir=[r"E:\qll\pics\hanfu-512x768-tags"],
+        list_train_data_dir=[r"/data/qll/pics/BrosSis/qby/original_tag_after2"],
         list_reg_data_dir=[""],
         max_token_length = 75,  # max token length of text encoder (default for 75, 150 or 225)
-        num_repeats=["8"],
+        num_repeats=["5"],
         list_reg_repeats=None,  # ["8"]
-            batch_size=1,
-            resolution="512,512",  # 64的倍数
+            batch_size=4,
+            resolution="512,640",  # 64的倍数
             cache_latents=False,
             # cache latents to main memory to reduce VRAM usage (augmentations must be disabled)
             cache_latents_to_disk=False,
             # cache latents to disk to reduce VRAM usage (augmentations must be disabled)
-            enable_bucket=False,  # enable buckets for multi aspect ratio training
+            enable_bucket=True,  # enable buckets for multi aspect ratio training
             min_bucket_reso=256,  # 范围自己定，minimum resolution for buckets
-            max_bucket_reso=1024,  # 范围自己定，maximum resolution for buckets
+            max_bucket_reso=2048,  # 范围自己定，maximum resolution for buckets
             bucket_reso_steps=64,  # 秋叶版没有这个,steps of resolution for buckets, divisible by 8 is recommended
             bucket_no_upscale=False,  # 秋叶版没有这个,make bucket for each image without upscaling
             token_warmup_min=1,  # 秋叶版没有这个,start learning at N tags (token means comma separated strinfloatgs)
@@ -1171,7 +1237,7 @@ if __name__ == "__main__":
             # persistent DataLoader workers (useful for reduce time gap between epoch, but may use more memory)
 
             max_train_steps=1600,  # 秋叶版没有这个,
-            epoch=10,  # 整数，随便填
+            epoch=20,  # 整数，随便填
             gradient_checkpointing=True,
             gradient_accumulation_steps=1,
             # 整数，随便填, Number of updates steps to accumulate before performing a backward/update pass
@@ -1184,12 +1250,12 @@ if __name__ == "__main__":
             # ["ddim","pndm","lms","euler","euler_a","heun","dpm_2","dpm_2_a","dpmsolver","dpmsolver++","dpmsingle","k_lms","k_euler","k_euler_a","k_dpm_2","k_dpm_2_a",]
             sample_every_n_epochs=None,  # 1,2,3,4,5.....
 
-            network_module="networks.lora",
+            network_module="lycoris.kohya",
             network_train_unet_only=False,
             network_train_text_encoder_only=False,
-            network_dim=32,  # 4的倍数，<=256
-            network_alpha=16,  # 小于等于network_dim,可以不是4的倍数
-            clip_skip=1,  # 0-12
+            network_dim=128,  # 4的倍数，<=256
+            network_alpha=64,  # 小于等于network_dim,可以不是4的倍数
+            clip_skip=2,  # 0-12
 
             # network额外参数
             conv_dim=None,  # 默认为None，可以填4的倍数，类似于network_dim,
@@ -1211,15 +1277,15 @@ if __name__ == "__main__":
 
             optimizer_type="AdamW8bit",
             # AdamW (default), AdamW8bit, Lion8bit, Lion, SGDNesterov, SGDNesterov8bit, DAdaptation(DAdaptAdam), DAdaptAdaGrad, DAdaptAdan, DAdaptSGD, AdaFactor
-            weight_decay=None,  # optimizer_args,优化器内部的参数，权重衰减系数，不建议随便改
-            betas=None,  # optimizer_args,优化器内部的参数，不建议随便改
+            weight_decay=0.01,  # optimizer_args,优化器内部的参数，权重衰减系数，不建议随便改
+            betas=0.9,  # optimizer_args,优化器内部的参数，不建议随便改
 
             max_grad_norm=1.0,  # Max gradient norm, 0 for no clipping
 
             learning_rate=0.0001,
             unet_lr=0.0001,
             text_encoder_lr=0.00001,
-            lr_scheduler="cosine_with_restarts",
+            lr_scheduler="cosine",
             # linear, cosine, cosine_with_restarts, polynomial, constant (default), constant_with_warmup, adafactor
             lr_scheduler_num_cycles=1,  # Number of restarts for cosine scheduler with restarts
             lr_warmup_steps=0,  # Number of steps for the warmup in the lr scheduler
@@ -1231,11 +1297,12 @@ if __name__ == "__main__":
             noise_offset=None,  # float型，0.1左右,enable noise offset with this value (if enabled, around 0.1 is recommended)
             adaptive_noise_scale=None,  #  float型， 1.0
             # 与noise_offset配套使用；add `latent mean absolute value * this value` to noise_offset (disabled if None, default)
-            multires_noise_iterations=None,  # 整数，多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
-            multires_noise_discount=0.3,  # 多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
+            multires_noise_iterations=6,  # 整数，多分辨率（金字塔）噪声迭代次数 推荐 6-10。无法与 noise_offset 一同启用。
+            multires_noise_discount=0.3,  # 多分辨率（金字塔）噪声衰减率 推荐 6-10。无法与 noise_offset 一同启用。
 
-            config_file="test_config.toml",  # using .toml instead of args to pass hyperparameter
+            config_file=None,#"test_config.toml",  # using .toml instead of args to pass hyperparameter
             output_config=False,  # output command line args to given .toml file
+            auto_lr=True
         )
     # train(args)
 # python train_network_qll.py --pretrained_model_name_or_path "/data/qll/qianzai_ai_draw/v1-5-pruned-emaonly.ckpt" --train_data_dir "/data/qll/lora_pictures/train_ironman" --output_name im2 --resolution 512 --network_module "networks.lora" --network_dim 32 --xformers  --caption_extension ".txt" --prior_loss_weight 1 --output_dir "./output" --logging_dir "./logs" --repeats_times "20" --class_tokens iiiiimqll --output_name iiiiimqll --list_train_data_dir "/data/qll/lora_pictures/train_ironman/10_immmmmman"

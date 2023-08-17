@@ -5,21 +5,78 @@
 # @Site    : 
 # @File    : utils.py
 # @Software: Hifive
+import hashlib
 import os
+from enum import IntEnum
 from worker.task_recv import Tmp
 from datetime import datetime
 from tools.environment import get_file_storage_system_env, Env_BucketKey, S3ImageBucket, S3Tmp, S3SDWEB
 from filestorage import FileStorageCls, get_local_path, batch_download
 
 
-def get_tmp_local_path(remoting_path: str):
+class ModelType(IntEnum):
+    Embedding = 1
+    CheckPoint = 2
+    Lora = 3
+
+
+ModelLocation = {
+    ModelType.Embedding: 'embeddings',
+    ModelType.CheckPoint: 'models/Stable-diffusion',
+    ModelType.Lora: 'models/Lora'
+}
+
+UserModelLocation = {
+    ModelType.Embedding: 'embendings',
+    ModelType.CheckPoint: 'user-models/Stable-diffusion',
+    ModelType.Lora: 'user-models/Lora'
+}
+
+
+def calculate_sha256(filename, size=0):
+    hash_sha256 = hashlib.sha256()
+    blksize = size if size > 0 else 1024 * 1024
+
+    with open(filename, "rb") as f:
+        for chunk in iter(lambda: f.read(blksize), b""):
+            hash_sha256.update(chunk)
+
+    return hash_sha256.hexdigest()
+
+
+def get_model_local_path(remoting_path: str, model_type: ModelType):
+    if not remoting_path:
+        raise OSError(f'remoting path is empty')
+    if os.path.isfile(remoting_path):
+        return remoting_path
+    # 判断user-models下
+    os.makedirs(UserModelLocation[model_type], exist_ok=True)
+    dst = os.path.join(UserModelLocation[model_type], os.path.basename(remoting_path))
+    if os.path.isfile(dst):
+        return dst
+
+    os.makedirs(ModelLocation[model_type], exist_ok=True)
+    dst = os.path.join(ModelLocation[model_type], os.path.basename(remoting_path))
+    if os.path.isfile(dst):
+        return dst
+
+    dst = get_local_path(remoting_path, dst)
+    if os.path.isfile(dst):
+        # if model_type == ModelType.CheckPoint:
+        #     checkpoint = CheckpointInfo(dst)
+        #     checkpoint.register()
+        return dst
+
+
+def get_tmp_local_path(remoting_path: str, dir=None):
     if not remoting_path:
         raise OSError(f'remoting path is empty')
     if os.path.isfile(remoting_path):
         return remoting_path
 
-    os.makedirs(Tmp, exist_ok=True)
-    dst = os.path.join(Tmp, os.path.basename(remoting_path))
+    dirname = Tmp if not dir else dir
+    os.makedirs(dirname, exist_ok=True)
+    dst = os.path.join(dirname, os.path.basename(remoting_path))
     return get_local_path(remoting_path, dst)
 
 

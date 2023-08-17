@@ -118,7 +118,8 @@ class ExtraNetworksPage:
 </button>
 """ for subdir in subdirs])
 
-        for item in self.list_items():
+        items = self.list_items()
+        for item in items:
             metadata = item.get("metadata")
             if metadata:
                 self.metadata[item["name"]] = metadata

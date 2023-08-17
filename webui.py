@@ -25,8 +25,7 @@ from modules import paths, timer, import_hook, errors  # noqa: F401
 startup_timer = timer.Timer()
 
 import torch
-import \
-    pytorch_lightning  # pytorch_lightning should be imported after torch, but it re-enables warnings on import so import once to disable them
+
 
 warnings.filterwarnings(action="ignore", category=DeprecationWarning, module="pytorch_lightning")
 warnings.filterwarnings(action="ignore", category=UserWarning, module="torchvision")
@@ -373,6 +372,11 @@ def webui():
     launch_api = cmd_opts.api
     initialize()
 
+    from modules import crontab_clear_tmp
+
+    # 定时清除gradio临时文件
+    timer = crontab_clear_tmp.clear_gradio_tmp()
+
     while 1:
         if shared.opts.clean_temp_dir_at_start:
             ui_tempdir.cleanup_tmpdr()
@@ -481,6 +485,7 @@ def webui():
         modules.script_callbacks.on_list_optimizers(modules.sd_hijack_optimizations.list_optimizers)
         modules.sd_hijack.list_optimizers()
         startup_timer.record("scripts list_optimizers")
+    timer.shutdown()
 
 
 def check_resource():
@@ -496,10 +501,11 @@ def run_worker():
         from worker.task_send import RedisSender, VipLevel
 
         if cmd_opts.train_only:
-            from trainx.typex import PreprocessTask, TrainLoraTask
+            from trainx.typex import PreprocessTask, TrainLoraTask, DigitalDoppelgangerTask
             tasks = [
                 # PreprocessTask.debug_task(),
-                TrainLoraTask.debug_task()
+                # TrainLoraTask.debug_task()
+                DigitalDoppelgangerTask.debug_task()
             ]
         else:
             from handlers.img2img import Img2ImgTask
@@ -539,9 +545,6 @@ if __name__ == "__main__":
         if cmd_opts.nowebui:
             api_only()
         else:
-            from modules import crontab_clear_tmp
-            ##定时清除gradio临时文件
-            crontab_clear_tmp.clear_gradio_tmp()
             webui()
 
     dispose()

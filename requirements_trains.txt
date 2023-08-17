@@ -6,7 +6,8 @@ bitsandbytes==0.35.0
 tensorboard==2.10.1
 timm==0.6.12
 fairscale==0.4.13
-# tensorflow==2.10.1
+tensorrt
+tensorflow==2.10.1
 altair==4.2.2
 easygui==0.98.3
 toml==0.10.2

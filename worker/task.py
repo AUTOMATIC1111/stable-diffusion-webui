@@ -68,6 +68,9 @@ class Task(UserDict):
     def is_train(self):
         return TaskType.Train == self.task_type
 
+    def stop_receiver(self):
+        return (self.is_train and self.minor_type > 1)
+
     @property
     def sd_model_path(self):
         return self.get('base_model_path')
@@ -122,7 +125,7 @@ class TaskType(IntEnum):
     Image2Image = 2
     Extra = 3
     Train = 4
-
+    Tagger = 5
 
 class TaskStatus(IntEnum):
     Waiting = 0
@@ -203,6 +206,9 @@ class TaskProgress(SerializationObj):
     def result(self):
         return self._result
 
+    def pre_task_completed(self):
+        return self.completed or self.status >= TaskStatus.Uploading
+
     def set_status(self, status: TaskStatus, desc: str):
         self.task_desc = desc
         self.status = status
@@ -215,8 +221,8 @@ class TaskProgress(SerializationObj):
 
     def update_seed(self, seed, sub_seed):
         if isinstance(self.task, Task):
-            self.task['seed'] = seed
-            self.task['sub_seed'] = sub_seed
+            self.task['all_seed'] = seed
+            self.task['all_sub_seed'] = sub_seed
 
     @classmethod
     def new_failed(cls, task: Task, desc: str, trace: str = None):

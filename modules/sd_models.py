@@ -14,7 +14,8 @@ import ldm.modules.midas as midas
 
 from ldm.util import instantiate_from_config
 
-from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config
+from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, \
+    hashes, sd_models_config
 from modules.paths import models_path, user_models_path
 from modules.sd_hijack_inpainting import do_inpainting_hijack
 from modules.timer import Timer
@@ -34,6 +35,11 @@ class CheckpointInfo:
     def __init__(self, filename, sha256=None):
         self.filename = filename
         abspath = os.path.abspath(filename)
+
+        if os.path.islink(filename):
+            # 如果是LINK 说明是下拉脚本，对应文件的文件名就是HASH
+            real_path = os.readlink(filename)
+            sha256, _ = os.path.splitext(os.path.basename(real_path))
 
         if shared.cmd_opts.ckpt_dir is not None and abspath.startswith(shared.cmd_opts.ckpt_dir):
             name = abspath.replace(shared.cmd_opts.ckpt_dir, '')
@@ -57,14 +63,16 @@ class CheckpointInfo:
 
         self.title = name if self.shorthash is None else f'{name} [{self.shorthash}]'
 
-        self.ids = [self.hash, self.model_name, self.title, name, f'{name} [{self.hash}]'] + ([self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
+        self.ids = [self.hash, self.model_name, self.title, name, f'{name} [{self.hash}]'] + (
+            [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]'] if self.shorthash else [])
 
         self.metadata = {}
 
         _, ext = os.path.splitext(self.filename)
         if ext.lower() == ".safetensors":
             try:
-                self.metadata = read_metadata_from_safetensors(filename)
+                if os.path.isfile(filename):
+                    self.metadata = read_metadata_from_safetensors(filename)
             except Exception as e:
                 errors.display(e, f"reading checkpoint metadata: {filename}")
 
@@ -128,8 +136,13 @@ def list_models():
         # model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
         model_url = 'https://xingzheassert.obs.cn-north-4.myhuaweicloud.com/sd-web/models/v1-5-pruned-emaonly.safetensors'
 
-    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
-    model_list.extend(modelloader.load_models(model_path=os.path.join(user_models_path, model_dir), ext_filter=[".ckpt", ".safetensors"], ext_blacklist=[".vae.ckpt", ".vae.safetensors"]))
+    model_list = modelloader.load_models(model_path=model_path, model_url=model_url,
+                                         command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"],
+                                         download_name="v1-5-pruned-emaonly.safetensors",
+                                         ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    model_list.extend(modelloader.load_models(model_path=os.path.join(user_models_path, model_dir),
+                                              ext_filter=[".ckpt", ".safetensors"],
+                                              ext_blacklist=[".vae.ckpt", ".vae.safetensors"]))
 
     if os.path.exists(cmd_ckpt):
         checkpoint_info = CheckpointInfo(cmd_ckpt)
@@ -137,7 +150,8 @@ def list_models():
 
         shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif cmd_ckpt is not None and cmd_ckpt != shared.default_sd_model_file:
-        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}", file=sys.stderr)
+        print(f"Checkpoint in --ckpt argument not found (Possible it was moved to {model_path}: {cmd_ckpt}",
+              file=sys.stderr)
 
     for filename in sorted(model_list, key=str.lower):
         checkpoint_info = CheckpointInfo(filename)
@@ -149,7 +163,8 @@ def get_closet_checkpoint_match(search_string):
     if checkpoint_info is not None:
         return checkpoint_info
 
-    found = sorted([info for info in checkpoints_list.values() if search_string in info.title], key=lambda x: len(x.title))
+    found = sorted([info for info in checkpoints_list.values() if search_string in info.title],
+                   key=lambda x: len(x.title))
     if found:
         return found[0]
 
@@ -185,7 +200,9 @@ def select_checkpoint():
         print(f" - directory {model_path}", file=sys.stderr)
         if shared.cmd_opts.ckpt_dir is not None:
             print(f" - directory {os.path.abspath(shared.cmd_opts.ckpt_dir)}", file=sys.stderr)
-        print("Can't run without a checkpoint. Find and place a .ckpt or .safetensors file into any of those locations. The program will exit.", file=sys.stderr)
+        print(
+            "Can't run without a checkpoint. Find and place a .ckpt or .safetensors file into any of those locations. The program will exit.",
+            file=sys.stderr)
         exit(1)
 
     checkpoint_info = next(iter(checkpoints_list.values()))
@@ -236,7 +253,7 @@ def read_metadata_from_safetensors(filename):
         json_start = file.read(2)
 
         assert metadata_len > 2 and json_start in (b'{"', b"{'"), f"{filename} is not a safetensors file"
-        json_data = json_start + file.read(metadata_len-2)
+        json_data = json_start + file.read(metadata_len - 2)
         try:
             json_obj = json.loads(json_data)
         except:
@@ -397,7 +414,6 @@ def enable_midas_autodownload():
 
 
 def repair_config(sd_config):
-
     if not hasattr(sd_config.model.params, "use_ema"):
         sd_config.model.params.use_ema = False
 
@@ -406,13 +422,16 @@ def repair_config(sd_config):
     elif shared.cmd_opts.upcast_sampling:
         sd_config.model.params.unet_config.params.use_fp16 = True
 
-    if getattr(sd_config.model.params.first_stage_config.params.ddconfig, "attn_type", None) == "vanilla-xformers" and not shared.xformers_available:
+    if getattr(sd_config.model.params.first_stage_config.params.ddconfig, "attn_type",
+               None) == "vanilla-xformers" and not shared.xformers_available:
         sd_config.model.params.first_stage_config.params.ddconfig.attn_type = "vanilla"
 
     # For UnCLIP-L, override the hardcoded karlo directory
-    if hasattr(sd_config.model.params, "noise_aug_config") and hasattr(sd_config.model.params.noise_aug_config.params, "clip_stats_path"):
+    if hasattr(sd_config.model.params, "noise_aug_config") and hasattr(sd_config.model.params.noise_aug_config.params,
+                                                                       "clip_stats_path"):
         karlo_path = os.path.join(paths.models_path, 'karlo')
-        sd_config.model.params.noise_aug_config.params.clip_stats_path = sd_config.model.params.noise_aug_config.params.clip_stats_path.replace("checkpoints/karlo_models", karlo_path)
+        sd_config.model.params.noise_aug_config.params.clip_stats_path = sd_config.model.params.noise_aug_config.params.clip_stats_path.replace(
+            "checkpoints/karlo_models", karlo_path)
 
 
 sd1_clip_weight = 'cond_stage_model.transformer.text_model.embeddings.token_embedding.weight'
@@ -514,7 +533,8 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     model_data.sd_model = sd_model
     model_data.was_loaded_at_least_once = True
 
-    sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
+    sd_hijack.model_hijack.embedding_db.load_textual_inversion_embeddings(
+        force_reload=True)  # Reload embeddings after model load as they may or may not fit the model
 
     timer.record("load textual inversion embeddings")
 
