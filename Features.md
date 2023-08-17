@@ -771,9 +771,9 @@ CLIP is a very advanced neural network that transforms your prompt text into a n
 Some models were trained with this kind of tweak, so setting this value helps produce better results on those models.
 
 ## Extra noise
-Adds additional noise from the latent representation of the input image, determined by the setting, defaulting to `0`. Implemented in [#12564](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12564), available in settings under `img2img` -> `Extra noise multiplier for img2img and hires fix`. As noted in the UI, it should always be lower than the denoising strength used to yield the best results.
+Adds additional noise from the random seed, determined by the setting, defaulting to `0`. Implemented in [#12564](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12564), available in settings under `img2img` -> `Extra noise multiplier for img2img and hires fix`. As noted in the UI, it should always be lower than the denoising strength used to yield the best results.
 
-One purpose for this tweak is to add back additional detail into hires fix. It is somewhat of a cross between GAN upscaling and latent upscaling.
+One purpose for this tweak is to add back additional detail into hires fix. For a very simplified understanding, you may think of it as a cross between GAN upscaling and latent upscaling.
 
 The below example is of a 512x512 image with hires fix applied, using a GAN upscaler (4x-UltraSharp), at a denoising strength of 0.45. The image on the right utilizes this extra noise tweak.
 Extra noise = 0             |  Extra noise = 0.2
