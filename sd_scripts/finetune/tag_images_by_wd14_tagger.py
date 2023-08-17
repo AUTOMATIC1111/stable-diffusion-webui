@@ -1,70 +1,22 @@
 import argparse
 import csv
 # import glob
-import os
-import re
-import cv2
-import numpy as np
-from PIL import Image
+import os,re
 
+from PIL import Image
+import cv2
 from tqdm import tqdm
+import numpy as np
 # from tensorflow.keras.models import load_model
 # from huggingface_hub import hf_hub_download
 # import torch
 from pathlib import Path
 
 import sd_scripts.library.train_util as train_util
+import sd_scripts.finetune.dbimutils as dbimutils
 
 # from wd14 tagger
 IMAGE_SIZE = 448
-
-def smart_imread(img, flag=cv2.IMREAD_UNCHANGED):
-    if img.endswith(".gif"):
-        img = Image.open(img)
-        img = img.convert("RGB")
-        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-    else:
-        img = cv2.imread(img, flag)
-    return img
-
-
-def smart_24bit(img):
-    if img.dtype is np.dtype(np.uint16):
-        img = (img / 257).astype(np.uint8)
-
-    if len(img.shape) == 2:
-        img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
-    elif img.shape[2] == 4:
-        trans_mask = img[:, :, 3] == 0
-        img[trans_mask] = [255, 255, 255, 255]
-        img = cv2.cvtColor(img, cv2.COLOR_BGRA2BGR)
-    return img
-
-
-def make_square(img, target_size):
-    old_size = img.shape[:2]
-    desired_size = max(old_size)
-    desired_size = max(desired_size, target_size)
-
-    delta_w = desired_size - old_size[1]
-    delta_h = desired_size - old_size[0]
-    top, bottom = delta_h // 2, delta_h - (delta_h // 2)
-    left, right = delta_w // 2, delta_w - (delta_w // 2)
-
-    color = [255, 255, 255]
-    new_im = cv2.copyMakeBorder(
-        img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color
-    )
-    return new_im
-
-
-def smart_resize(img, size):
-    # Assumes the image has already gone through make_square
-    if img.shape[0] > size:
-        img = cv2.resize(img, (size, size), interpolation=cv2.INTER_AREA)
-    elif img.shape[0] < size:
-        img = cv2.resize(img, (size, size), interpolation=cv2.INTER_CUBIC)
-    return img
 
 # wd-v1-4-swinv2-tagger-v2 / wd-v1-4-vit-tagger / wd-v1-4-vit-tagger-v2/ wd-v1-4-convnext-tagger / wd-v1-4-convnext-tagger-v2
 DEFAULT_WD14_TAGGER_REPO = "SmilingWolf/wd-v1-4-convnext-tagger-v2"
@@ -136,18 +88,18 @@ class WaifuDiffusionInterrogator():
         self.model_path = model_path
         self.tags_path = tags_path
         self.kwargs = kwargs
-        self.model = None
-        self.tags = None
+        self.model=None
+        self.tags=None
 
-    def load(self, path) -> None:
+    def load(self,path) -> None:
         from onnxruntime import InferenceSession
         import pandas as pd
 
         # https://onnxruntime.ai/docs/execution-providers/
         # https://github.com/toriato/stable-diffusion-webui-wd14-tagger/commit/e4ec460122cf674bbf984df30cdb10b4370c1224#r92654958
         providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
-        model_path = os.path.join(path, self.model_path)
-        tags_path = os.path.join(path, self.tags_path)
+        model_path = os.path.join(path,self.model_path)
+        tags_path = os.path.join(path,self.tags_path)
 
         self.model = InferenceSession(str(model_path), providers=providers)
 
@@ -164,7 +116,7 @@ class WaifuDiffusionInterrogator():
     ]:
         # init model
         if not hasattr(self, 'model') or self.model is None:
-            raise OSError('unload model')
+            self.load()
 
         # code for converting the image and running the model is taken from the link below
         # thanks, SmilingWolf!
@@ -183,8 +135,8 @@ class WaifuDiffusionInterrogator():
         # PIL RGB to OpenCV BGR
         image = image[:, :, ::-1]
 
-        image = make_square(image, height)
-        image = smart_resize(image, height)
+        image = dbimutils.make_square(image, height)
+        image = dbimutils.smart_resize(image, height)
         image = image.astype(np.float32)
         image = np.expand_dims(image, 0)
 
@@ -215,7 +167,8 @@ class WaifuDiffusionInterrogator():
 
         if hasattr(self, 'tags'):
             del self.tags
-
+        self.model=None
+        self.tags=None
         return unloaded
     
     @staticmethod
@@ -269,17 +222,16 @@ class WaifuDiffusionInterrogator():
 
         return tags
 
+wdInterrogator = WaifuDiffusionInterrogator("") 
 
-def get_wd_tagger(train_data_dir="",  # 训练数据路径
-                  model_dir="",  # wd模型的地址
-                  caption_extension=".txt",  # 存tag的文件类型
-                  general_threshold=0.35,  # 为一般类别添加标签的置信阈值
-                  recursive=True,  # 搜索子文件夹中的图像
-                  remove_underscore=True,  # 将输出标记的下划线替换为空格
-                  undesired_tags="",  # 不想要（想要去除）的Tag，以英文逗号隔开
-                  additional_tags=""):
-
-    wdInterrogator = WaifuDiffusionInterrogator("")
+def get_wd_tagger(train_data_dir="", # 训练数据路径
+    model_dir="", # wd模型的地址
+    caption_extension=".txt", # 存tag的文件类型
+    general_threshold=0.35, # 为一般类别添加标签的置信阈值
+    recursive=True, # 搜索子文件夹中的图像
+    remove_underscore=True, # 将输出标记的下划线替换为空格
+    undesired_tags="", # 不想要（想要去除）的Tag，以英文逗号隔开
+    additional_tags="",):
     if wdInterrogator.model is None:
         wdInterrogator.load(model_dir)
     
@@ -293,7 +245,7 @@ def get_wd_tagger(train_data_dir="",  # 训练数据路径
             print(f'${path} is not supported image type')
             continue
         
-        _, tags = wdInterrogator.interrogate(image)
+        _,tags = wdInterrogator.interrogate(image)
         # print(f"{path}")
         post_tags = wdInterrogator.postprocess_tags(tags=tags, threshold=general_threshold, additional_tags=additional_tags.split(","),
                                                     exclude_tags=undesired_tags.split(","),sort_by_alphabetical_order=False,

@@ -21,9 +21,9 @@ def upscaler_inner(image, upscale_by, upscaler, upscaler2_path, upscaler_2_visib
     second_upscaled_image = esrgan_upscaler.upscale(image, upscale_by, upscaler2_path)
 
     if not swap:
-        upscaled_image = Image.blend(first_upscaled_image, second_upscaled_image, upscaler_2_visibility,models_path=models_path)
+        upscaled_image = Image.blend(first_upscaled_image, second_upscaled_image, upscaler_2_visibility)
     else:
-        upscaled_image = Image.blend(second_upscaled_image, first_upscaled_image, upscaler_2_visibility,models_path=models_path)
+        upscaled_image = Image.blend(second_upscaled_image, first_upscaled_image, upscaler_2_visibility)
 
     return upscaled_image
 

@@ -19,7 +19,17 @@ class LoRAModule(torch.nn.Module):
     replaces forward method of the original Linear, instead of replacing the original Linear module.
     """
 
-    def __init__(self, lora_name, org_module: torch.nn.Module, multiplier=1.0, lora_dim=4, alpha=1):
+    def __init__(
+        self,
+        lora_name,
+        org_module: torch.nn.Module,
+        multiplier=1.0,
+        lora_dim=4,
+        alpha=1,
+        dropout=None,
+        rank_dropout=None,
+        module_dropout=None,
+    ):
         """if alpha == 0 or None, alpha is rank (no scaling)."""
         super().__init__()
         self.lora_name = lora_name
@@ -60,6 +70,9 @@ class LoRAModule(torch.nn.Module):
 
         self.multiplier = multiplier
         self.org_module = org_module  # remove in applying
+        self.dropout = dropout
+        self.rank_dropout = rank_dropout
+        self.module_dropout = module_dropout
 
     def apply_to(self):
         self.org_forward = self.org_module.forward
@@ -67,11 +80,50 @@ class LoRAModule(torch.nn.Module):
         del self.org_module
 
     def forward(self, x):
-        return self.org_forward(x) + self.lora_up(self.lora_down(x)) * self.multiplier * self.scale
+        org_forwarded = self.org_forward(x)
+
+        # module dropout
+        if self.module_dropout is not None and self.training:
+            if torch.rand(1) < self.module_dropout:
+                return org_forwarded
+
+        lx = self.lora_down(x)
+
+        # normal dropout
+        if self.dropout is not None and self.training:
+            lx = torch.nn.functional.dropout(lx, p=self.dropout)
+
+        # rank dropout
+        if self.rank_dropout is not None and self.training:
+            mask = torch.rand((lx.size(0), self.lora_dim), device=lx.device) > self.rank_dropout
+            if len(lx.size()) == 3:
+                mask = mask.unsqueeze(1)  # for Text Encoder
+            elif len(lx.size()) == 4:
+                mask = mask.unsqueeze(-1).unsqueeze(-1)  # for Conv2d
+            lx = lx * mask
+
+            # scaling for rank dropout: treat as if the rank is changed
+            # maskから計算することも考えられるが、augmentation的な効果を期待してrank_dropoutを用いる
+            scale = self.scale * (1.0 / (1.0 - self.rank_dropout))  # redundant for readability
+        else:
+            scale = self.scale
+
+        lx = self.lora_up(lx)
+
+        return org_forwarded + lx * self.multiplier * scale
 
 
 class LoRAInfModule(LoRAModule):
-    def __init__(self, lora_name, org_module: torch.nn.Module, multiplier=1.0, lora_dim=4, alpha=1):
+    def __init__(
+        self,
+        lora_name,
+        org_module: torch.nn.Module,
+        multiplier=1.0,
+        lora_dim=4,
+        alpha=1,
+        **kwargs,
+    ):
+        # no dropout for inference
         super().__init__(lora_name, org_module, multiplier, lora_dim, alpha)
         
         self.org_module_ref = [org_module]  # 後から参照できるように
@@ -319,7 +371,36 @@ class LoRAInfModule(LoRAModule):
         return out
 
 
-def create_network(multiplier, network_dim, network_alpha, vae, text_encoder, unet, **kwargs):
+def parse_block_lr_kwargs(nw_kwargs):
+    down_lr_weight = nw_kwargs.get("down_lr_weight", None)
+    mid_lr_weight = nw_kwargs.get("mid_lr_weight", None)
+    up_lr_weight = nw_kwargs.get("up_lr_weight", None)
+
+    # 以上のいずれにも設定がない場合は無効としてNoneを返す
+    if down_lr_weight is None and mid_lr_weight is None and up_lr_weight is None:
+        return None, None, None
+
+    # extract learning rate weight for each block
+    if down_lr_weight is not None:
+        # if some parameters are not set, use zero
+        if "," in down_lr_weight:
+            down_lr_weight = [(float(s) if s else 0.0) for s in down_lr_weight.split(",")]
+
+    if mid_lr_weight is not None:
+        mid_lr_weight = float(mid_lr_weight)
+
+    if up_lr_weight is not None:
+        if "," in up_lr_weight:
+            up_lr_weight = [(float(s) if s else 0.0) for s in up_lr_weight.split(",")]
+
+    down_lr_weight, mid_lr_weight, up_lr_weight = get_block_lr_weight(
+        down_lr_weight, mid_lr_weight, up_lr_weight, float(nw_kwargs.get("block_lr_zero_threshold", 0.0))
+    )
+
+    return down_lr_weight, mid_lr_weight, up_lr_weight
+
+
+def create_network(multiplier, network_dim, network_alpha, vae, text_encoder, unet, neuron_dropout=None, **kwargs):
     if network_dim is None:
         network_dim = 4  # default
     if network_alpha is None:
@@ -337,9 +418,7 @@ def create_network(multiplier, network_dim, network_alpha, vae, text_encoder, un
 
     # block dim/alpha/lr
     block_dims = kwargs.get("block_dims", None)
-    down_lr_weight = kwargs.get("down_lr_weight", None)
-    mid_lr_weight = kwargs.get("mid_lr_weight", None)
-    up_lr_weight = kwargs.get("up_lr_weight", None)
+    down_lr_weight, mid_lr_weight, up_lr_weight = parse_block_lr_kwargs(kwargs)
 
     # 以上のいずれかに指定があればblockごとのdim(rank)を有効にする
     if block_dims is not None or down_lr_weight is not None or mid_lr_weight is not None or up_lr_weight is not None:
@@ -349,23 +428,6 @@ def create_network(multiplier, network_dim, network_alpha, vae, text_encoder, un
 
         block_dims, block_alphas, conv_block_dims, conv_block_alphas = get_block_dims_and_alphas(
             block_dims, block_alphas, network_dim, network_alpha, conv_block_dims, conv_block_alphas, conv_dim, conv_alpha
-        )
-
-        # extract learning rate weight for each block
-        if down_lr_weight is not None:
-            # if some parameters are not set, use zero
-            if "," in down_lr_weight:
-                down_lr_weight = [(float(s) if s else 0.0) for s in down_lr_weight.split(",")]
-
-        if mid_lr_weight is not None:
-            mid_lr_weight = float(mid_lr_weight)
-
-        if up_lr_weight is not None:
-            if "," in up_lr_weight:
-                up_lr_weight = [(float(s) if s else 0.0) for s in up_lr_weight.split(",")]
-
-        down_lr_weight, mid_lr_weight, up_lr_weight = get_block_lr_weight(
-            down_lr_weight, mid_lr_weight, up_lr_weight, float(kwargs.get("block_lr_zero_threshold", 0.0))
         )
 
         # remove block dim/alpha without learning rate
@@ -378,6 +440,14 @@ def create_network(multiplier, network_dim, network_alpha, vae, text_encoder, un
         conv_block_dims = None
         conv_block_alphas = None
 
+    # rank/module dropout
+    rank_dropout = kwargs.get("rank_dropout", None)
+    if rank_dropout is not None:
+        rank_dropout = float(rank_dropout)
+    module_dropout = kwargs.get("module_dropout", None)
+    if module_dropout is not None:
+        module_dropout = float(module_dropout)
+
     # すごく引数が多いな ( ^ω^)･･･
     network = LoRANetwork(
         text_encoder,
@@ -385,6 +455,9 @@ def create_network(multiplier, network_dim, network_alpha, vae, text_encoder, un
         multiplier=multiplier,
         lora_dim=network_dim,
         alpha=network_alpha,
+        dropout=neuron_dropout,
+        rank_dropout=rank_dropout,
+        module_dropout=module_dropout,
         conv_lora_dim=conv_dim,
         conv_alpha=conv_alpha,
         block_dims=block_dims,
@@ -627,13 +700,19 @@ def create_network_from_weights(multiplier, file, vae, text_encoder, unet, weigh
     # support old LoRA without alpha
     for key in modules_dim.keys():
         if key not in modules_alpha:
-            modules_alpha = modules_dim[key]
+            modules_alpha[key] = modules_dim[key]
 
     module_class = LoRAInfModule if for_inference else LoRAModule
 
     network = LoRANetwork(
         text_encoder, unet, multiplier=multiplier, modules_dim=modules_dim, modules_alpha=modules_alpha, module_class=module_class
     )
+
+    # block lr
+    down_lr_weight, mid_lr_weight, up_lr_weight = parse_block_lr_kwargs(kwargs)
+    if up_lr_weight is not None or mid_lr_weight is not None or down_lr_weight is not None:
+        network.set_block_lr_weight(up_lr_weight, mid_lr_weight, down_lr_weight)
+
     return network, weights_sd
 
 
@@ -654,6 +733,9 @@ class LoRANetwork(torch.nn.Module):
         multiplier=1.0,
         lora_dim=4,
         alpha=1,
+        dropout=None,
+        rank_dropout=None,
+        module_dropout=None,
         conv_lora_dim=None,
         conv_alpha=None,
         block_dims=None,
@@ -680,11 +762,15 @@ class LoRANetwork(torch.nn.Module):
         self.alpha = alpha
         self.conv_lora_dim = conv_lora_dim
         self.conv_alpha = conv_alpha
+        self.dropout = dropout
+        self.rank_dropout = rank_dropout
+        self.module_dropout = module_dropout
 
         if modules_dim is not None:
             print(f"create LoRA network from weights")
         elif block_dims is not None:
             print(f"create LoRA network from block_dims")
+            print(f"neuron dropout: p={self.dropout}, rank dropout: p={self.rank_dropout}, module dropout: p={self.module_dropout}")
             print(f"block_dims: {block_dims}")
             print(f"block_alphas: {block_alphas}")
             if conv_block_dims is not None:
@@ -692,6 +778,7 @@ class LoRANetwork(torch.nn.Module):
                 print(f"conv_block_alphas: {conv_block_alphas}")
         else:
             print(f"create LoRA network. base dim (rank): {lora_dim}, alpha: {alpha}")
+            print(f"neuron dropout: p={self.dropout}, rank dropout: p={self.rank_dropout}, module dropout: p={self.module_dropout}")
             if self.conv_lora_dim is not None:
                 print(f"apply LoRA to Conv2d with kernel size (3,3). dim (rank): {self.conv_lora_dim}, alpha: {self.conv_alpha}")
 
@@ -738,7 +825,16 @@ class LoRANetwork(torch.nn.Module):
                                     skipped.append(lora_name)
                                 continue
 
-                            lora = module_class(lora_name, child_module, self.multiplier, dim, alpha)
+                            lora = module_class(
+                                lora_name,
+                                child_module,
+                                self.multiplier,
+                                dim,
+                                alpha,
+                                dropout=dropout,
+                                rank_dropout=rank_dropout,
+                                module_dropout=module_dropout,
+                            )
                             loras.append(lora)
             return loras, skipped
 
@@ -1030,3 +1126,46 @@ class LoRANetwork(torch.nn.Module):
 
             org_module._lora_restored = False
             lora.enabled = False
+
+    def apply_max_norm_regularization(self, max_norm_value, device):
+        downkeys = []
+        upkeys = []
+        alphakeys = []
+        norms = []
+        keys_scaled = 0
+
+        state_dict = self.state_dict()
+        for key in state_dict.keys():
+            if "lora_down" in key and "weight" in key:
+                downkeys.append(key)
+                upkeys.append(key.replace("lora_down", "lora_up"))
+                alphakeys.append(key.replace("lora_down.weight", "alpha"))
+
+        for i in range(len(downkeys)):
+            down = state_dict[downkeys[i]].to(device)
+            up = state_dict[upkeys[i]].to(device)
+            alpha = state_dict[alphakeys[i]].to(device)
+            dim = down.shape[0]
+            scale = alpha / dim
+
+            if up.shape[2:] == (1, 1) and down.shape[2:] == (1, 1):
+                updown = (up.squeeze(2).squeeze(2) @ down.squeeze(2).squeeze(2)).unsqueeze(2).unsqueeze(3)
+            elif up.shape[2:] == (3, 3) or down.shape[2:] == (3, 3):
+                updown = torch.nn.functional.conv2d(down.permute(1, 0, 2, 3), up).permute(1, 0, 2, 3)
+            else:
+                updown = up @ down
+
+            updown *= scale
+
+            norm = updown.norm().clamp(min=max_norm_value / 2)
+            desired = torch.clamp(norm, max=max_norm_value)
+            ratio = desired.cpu() / norm.cpu()
+            sqrt_ratio = ratio**0.5
+            if ratio != 1:
+                keys_scaled += 1
+                state_dict[upkeys[i]] *= sqrt_ratio
+                state_dict[downkeys[i]] *= sqrt_ratio
+            scalednorm = updown.norm() * ratio
+            norms.append(scalednorm.item())
+
+        return keys_scaled, sum(norms) / len(norms), max(norms)

@@ -1,0 +1,73 @@
+batch_size: 8
+iters: 1000
+
+train_dataset:
+  type: Dataset
+  dataset_root: data/mini_supervisely
+  train_path: data/mini_supervisely/train.txt
+  num_classes: 2
+  transforms:
+    - type: Resize
+      target_size: [192, 192]
+    - type: ResizeStepScaling
+      scale_step_size: 0
+    - type: RandomRotation
+    - type: RandomPaddingCrop
+      crop_size: [192, 192]
+    - type: RandomHorizontalFlip
+    - type: RandomDistort
+    - type: RandomBlur
+      prob: 0.3
+    - type: Normalize
+  mode: train
+
+val_dataset:
+  type: Dataset
+  dataset_root: data/mini_supervisely
+  val_path: data/mini_supervisely/val.txt
+  num_classes: 2
+  transforms:
+    - type: Resize
+      target_size: [192, 192]
+    - type: Normalize
+  mode: val
+
+export:
+  transforms:
+    - type: Resize
+      target_size: [192, 192]
+    - type: Normalize
+
+optimizer:
+  type: sgd
+  momentum: 0.9
+  weight_decay: 0.0005
+
+lr_scheduler:
+  type: PolynomialDecay
+  learning_rate: 0.0001
+  end_lr: 0
+  power: 0.9
+
+loss:
+  types:
+    - type: MixedLoss
+      losses:
+        - type: CrossEntropyLoss
+        - type: LovaszSoftmaxLoss
+      coef: [0.8, 0.2]
+  coef: [1, 1, 1, 1]
+
+model:
+  type: MobileSeg
+  num_classes: 2
+  backbone:
+    type: MobileNetV3_large_x1_0  # out channels: [24, 40, 112, 160]
+    pretrained: https://paddleseg.bj.bcebos.com/dygraph/backbone/mobilenetv3_large_x1_0_ssld.tar.gz
+  cm_bin_sizes: [1, 2, 4]
+  backbone_indices: [0, 1, 2, 3]
+  cm_out_ch: 128
+  arm_out_chs: [32, 64, 96, 128]
+  seg_head_inter_chs: [16, 32, 32, 32]
+  use_last_fuse: True
+  pretrained: https://paddleseg.bj.bcebos.com/dygraph/pp_humanseg_v2/human_pp_humansegv2_lite_192x192_pretrained.zip

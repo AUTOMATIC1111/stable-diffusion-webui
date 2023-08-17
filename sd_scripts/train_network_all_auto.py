@@ -712,18 +712,27 @@ def train(args, train_epoch_callback=None,accelerator=None,unwrap_model=None):
             if global_step >= args.max_train_steps:
                 break
 
+            # print("ceshi:",args.optimizer_type.lower().startswith("DAdapt".lower()), epoch, args.auto_lr)
+            if args.optimizer_type.lower().startswith("DAdapt".lower()) and global_step>50 and args.auto_lr:
+                accelerator.end_training()
+                del accelerator  # この後メモリを使うのでこれは消す
+                # return lr_scheduler.optimizer.param_groups[0]["d"] * lr_scheduler.optimizer.param_groups[0]["lr"]
+                lr = lr_scheduler.optimizers[-1].param_groups[0]["d"] * lr_scheduler.optimizers[-1].param_groups[0]["lr"]
+                print(f"auto lr:{lr}")
+                return lr
+
         if args.logging_dir is not None:
             logs = {"loss/epoch": loss_total / len(loss_list)}
             accelerator.log(logs, step=epoch + 1)
         
         accelerator.wait_for_everyone()
 
-        print("ceshi:",args.optimizer_type.lower().startswith("DAdapt".lower()), epoch, args.auto_lr)
-        if args.optimizer_type.lower().startswith("DAdapt".lower()) and epoch>-1 and args.auto_lr:
-            accelerator.end_training()
-            del accelerator  # この後メモリを使うのでこれは消す
-            # return lr_scheduler.optimizer.param_groups[0]["d"] * lr_scheduler.optimizer.param_groups[0]["lr"]
-            return lr_scheduler.optimizers[-1].param_groups[0]["d"] * lr_scheduler.optimizers[-1].param_groups[0]["lr"]
+        # print("ceshi:",args.optimizer_type.lower().startswith("DAdapt".lower()), epoch, args.auto_lr)
+        # if args.optimizer_type.lower().startswith("DAdapt".lower()) and epoch>-1 and args.auto_lr:
+        #     accelerator.end_training()
+        #     del accelerator  # この後メモリを使うのでこれは消す
+        #     # return lr_scheduler.optimizer.param_groups[0]["d"] * lr_scheduler.optimizer.param_groups[0]["lr"]
+        #     return lr_scheduler.optimizers[-1].param_groups[0]["d"] * lr_scheduler.optimizers[-1].param_groups[0]["lr"]
 
         # 指定エポックごとにモデルを保存
         if args.save_every_n_epochs is not None:
