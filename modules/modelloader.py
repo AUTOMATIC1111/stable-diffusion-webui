@@ -6,8 +6,58 @@ from urllib.parse import urlparse
 from modules import shared
 from modules.upscaler import Upscaler, UpscalerLanczos, UpscalerNearest, UpscalerNone
 from modules.paths import script_path, models_path
+import inspect
+import time
 
 diffuser_repos = []
+
+def walk(top, onerror:callable=None):
+    # A near-exact copy of `os.path.walk()`, trimmed slightly.  
+    # Probably not nessesary for most people's collections, but makes 
+    # a difference on really large datasets.
+    nondirs = []
+    walk_dirs = []
+
+    try:
+        scandir_it = os.scandir(top)
+    except OSError as error:
+        if onerror is not None:
+            onerror(error, top)
+        return
+
+    with scandir_it:
+        while True:
+            try:
+                try:
+                    entry = next(scandir_it)
+                except StopIteration:
+                    break
+            except OSError as error:
+                if onerror is not None:
+                    onerror(error, top)
+                return
+
+            try:
+                is_dir = entry.is_dir()
+            except OSError:
+                is_dir = False
+
+            if not is_dir:
+                nondirs.append(entry.name)
+            else:
+                try:
+                    if entry.is_symlink() and not os.path.exists(entry.path):
+                        raise NotADirectoryError('Broken Symlink')
+                    walk_dirs.append(entry.path)
+                except OSError as error:
+                    if onerror is not None:
+                        onerror(error, entry.path)
+
+    # Recurse into sub-directories
+    for new_path in walk_dirs:
+        yield from walk(new_path, onerror)
+    # Yield after recursion if going bottom up
+    yield top, nondirs
 
 
 def download_civit_model(model_url: str, model_name: str, model_path: str, preview):
@@ -137,6 +187,84 @@ def find_diffuser(name: str):
         return models[0].modelId
     return None
 
+modelloader_directories = {}
+cache_last = 0
+cache_time = 1
+
+def directory_has_changed(dir:str, *, recursive:bool=True) -> bool:
+    try:
+        dir = os.path.abspath(dir)
+        if dir not in modelloader_directories:
+            return True
+        if cache_last > (time.time() - cache_time):
+            return False
+        if not (os.path.exists(dir) and os.path.isdir(dir) and os.path.getmtime(dir) == modelloader_directories[dir][0]):
+            return True
+        if recursive:
+            for _dir in modelloader_directories:
+                if _dir.startswith(dir) and _dir != dir and not (os.path.exists(_dir) and os.path.isdir(_dir) and os.path.getmtime(_dir) == modelloader_directories[_dir][0]):
+                    return True
+    except Exception as e:
+        shared.log.error(f"Filesystem Error: {e.__class__.__name__}({e})")
+        return True
+
+    return False
+
+def directory_directories(dir:str, *, recursive:bool=True) -> dict[str,tuple[float,list[str]]]:
+    dir = os.path.abspath(dir)
+    if directory_has_changed(dir, recursive=recursive):
+        for _dir in modelloader_directories:
+            try:
+                if (os.path.exists(_dir) and os.path.isdir(_dir)):
+                    continue
+            except Exception:
+                pass
+            del modelloader_directories[_dir]
+        for _dir, _files in walk(dir, lambda e, path: shared.log.error(f"Filesystem Walk Error: {e.__class__.__name__}({e}) -> {path}")):
+            try:
+                mtime = os.path.getmtime(_dir)
+                if _dir not in modelloader_directories or mtime != modelloader_directories[_dir][0]:
+                    modelloader_directories[_dir] = (mtime, [os.path.join(_dir, fn) for fn in _files])
+            except Exception as e:
+                shared.log.error(f"Filesystem Error: {e.__class__.__name__}({e})")
+                del modelloader_directories[_dir]
+
+    directory_directories = {}
+    for _dir in modelloader_directories:
+        if _dir == dir or (recursive and _dir.startswith(dir)):
+            directory_directories[_dir] = modelloader_directories[_dir]
+            if not recursive:
+                break
+    return directory_directories
+
+def directory_mtime(dir:str, *, recursive:bool=True) -> float:
+    return float(max(0, *[mtime for mtime, _ in directory_directories(dir, recursive=recursive).values()]))
+
+def directories_file_paths(directories:dict) -> list[str]:
+    return sum([dat[1] for dat in directories.values()],[])
+
+def unique_directories(directories:list[str], *, recursive:bool=True) -> list[str]:
+    '''Ensure no empty, or duplicates'''
+    directories = { os.path.abspath(dir): True for dir in directories if dir }.keys()
+    if recursive:
+        '''If we are going recursive, then directories that are children of other directories are redundant'''
+        directories = [dir for dir in directories if not any(_dir != dir and dir.startswith(os.path.join(_dir,'')) for _dir in directories)]
+    return directories
+
+def unique_paths(paths:list[str]) -> list[str]:
+    return { fp: True for fp in paths }.keys()
+
+def directory_files(*directories:list[str], recursive:bool=True) -> list[str]:
+    return unique_paths(sum([[*directories_file_paths(directory_directories(dir, recursive=recursive))] for dir in unique_directories(directories, recursive=recursive)],[]))
+
+def extension_filter(ext_filter=None, ext_blacklist=None):
+    if ext_filter:
+        ext_filter = [*map(str.upper, ext_filter)]
+    if ext_blacklist:
+        ext_blacklist = [*map(str.upper, ext_blacklist)]
+    def filter(fp:str):
+        return (not ext_filter or any(fp.upper().endswith(ew) for ew in ext_filter)) and (not ext_blacklist or not any(fp.upper().endswith(ew) for ew in ext_blacklist))
+    return filter
 
 def load_models(model_path: str, model_url: str = None, command_path: str = None, ext_filter=None, download_name=None, ext_blacklist=None) -> list:
     """
@@ -149,21 +277,11 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @param ext_filter: An optional list of filename extensions to filter by
     @return: A list of paths containing the desired model(s)
     """
-    places = []
-    places.append(model_path)
-    if command_path is not None and command_path != model_path and os.path.isdir(command_path):
-        places.append(command_path)
+    places = unique_directories([model_path, command_path])
+    #shared.log.debug(f"{inspect.currentframe().f_code.co_name}: {', '.join(places)}")
     output = []
     try:
-        for place in places:
-            for full_path in shared.walk_files(place, allowed_extensions=ext_filter):
-                if os.path.islink(full_path) and not os.path.exists(full_path):
-                    shared.log.error(f"Skipping broken symlink: {full_path}")
-                    continue
-                if ext_blacklist is not None and any(full_path.endswith(x) for x in ext_blacklist):
-                    continue
-                if full_path not in output:
-                    output.append(full_path)
+        output:list = [*filter(extension_filter(ext_filter, ext_blacklist), directory_files(*places))]
         if model_url is not None and len(output) == 0:
             if download_name is not None:
                 from basicsr.utils.download_util import load_file_from_url
