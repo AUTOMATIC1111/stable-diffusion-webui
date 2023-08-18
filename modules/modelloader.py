@@ -14,14 +14,12 @@ def walk(top, onerror:callable=None):
     # A near-exact copy of `os.path.walk()`, trimmed slightly. Probably not nessesary for most people's collections, but makes a difference on really large datasets.
     nondirs = []
     walk_dirs = []
-
     try:
         scandir_it = os.scandir(top)
     except OSError as error:
         if onerror is not None:
             onerror(error, top)
         return
-
     with scandir_it:
         while True:
             try:
@@ -49,6 +47,8 @@ def walk(top, onerror:callable=None):
                         onerror(error, entry.path)
     # Recurse into sub-directories
     for new_path in walk_dirs:
+        if os.path.basename(new_path).startswith('models--'):
+            continue
         yield from walk(new_path, onerror)
     # Yield after recursion if going bottom up
     yield top, nondirs
@@ -214,7 +214,7 @@ def directory_directories(dir:str, *, recursive:bool=True) -> dict[str,tuple[flo
             except Exception:
                 pass
             del modelloader_directories[_dir]
-        for _dir, _files in walk(dir, lambda e, path: shared.log.error(f"Filesystem Walk Error: {e.__class__.__name__}({e}) -> {path}")):
+        for _dir, _files in walk(dir, lambda e, path: shared.log.debug(f"FS walk error: {e} {path}")):
             try:
                 mtime = os.path.getmtime(_dir)
                 if _dir not in modelloader_directories or mtime != modelloader_directories[_dir][0]:

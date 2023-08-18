@@ -11,9 +11,6 @@ from PIL import Image
 from modules import shared, scripts, modelloader
 from modules.generation_parameters_copypaste import image_from_url_text
 from modules.ui_components import ToolButton
-from logging import DEBUG
-from time import time
-from rich.progress import Progress, TextColumn, BarColumn, TaskProgressColumn, TimeRemainingColumn, TimeElapsedColumn, SpinnerColumn
 
 extra_pages = []
 allowed_dirs = set()
@@ -161,8 +158,8 @@ class ExtraNetworksPage:
             return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network page not ready<br>Click refresh to try again</div>"
         subdirs = {}
         allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
-        for parentdir, dirs in {dir: modelloader.directory_directories(dir) for dir in allowed_folders}.items():
-            for dir in dirs.keys():
+        for parentdir, dirs in {dir: modelloader.directory_directories(dir) for dir in allowed_folders}.items(): # pylint: disable=redefined-builtin
+            for dir in dirs.keys(): # pylint: disable=redefined-builtin
                 if shared.opts.diffusers_dir in dir:
                     subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
                 if 'models--' in dir:
@@ -191,23 +188,11 @@ class ExtraNetworksPage:
                 shared.log.error(f'Extra networks error listing items: {self.__class__}')
             self.create_xyz_grid()
             htmls = []
-            with Progress(
-                SpinnerColumn(),
-                TextColumn('[cyan]Creating Extra Network '+self.title+' HTML - {task.description}'),
-                BarColumn(), TaskProgressColumn(), TextColumn('({task.completed}/{task.total})'),
-                TimeRemainingColumn(), TimeElapsedColumn(), transient=not shared.log.isEnabledFor(DEBUG), expand=True
-            ) as progress:
-                task = progress.add_task(description='Initializing Items')
-                items = self.items
-                progress.update(task, total=len(items))
-                __t = time()
-                __i = 0
-                for item in items:
-                    __i += 1
-                    self.metadata[item["name"]] = item.get("metadata", {})
-                    self.info[item["name"]] = self.find_info(item['filename'])
-                    htmls.append(self.create_html_for_item(item, tabname))
-                    progress.update(task, advance=1, description=f"{round(__i/(shared.time.time()-__t))} item/s")
+            items = self.items
+            for item in items:
+                self.metadata[item["name"]] = item.get("metadata", {})
+                self.info[item["name"]] = self.find_info(item['filename'])
+                htmls.append(self.create_html_for_item(item, tabname))
             self.html += ''.join(htmls)
             if len(subdirs_html) > 0 or len(self.html) > 0:
                 res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
@@ -262,7 +247,7 @@ class ExtraNetworksPage:
 
     def find_preview(self, path):
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        dir = os.path.dirname(path)
+        dir = os.path.dirname(path) # pylint: disable=redefined-builtin
         paths = modelloader.directory_directories(dir, recursive=False)
         for file in [f'{path}.thumb.{ext}' for ext in preview_extensions]: # use thumbnail if exists
             if file in paths[dir][1] and os.path.exists(file):
@@ -274,7 +259,7 @@ class ExtraNetworksPage:
         return self.link_preview('html/card-no-preview.png')
 
     def find_description(self, path):
-        dir = os.path.dirname(path)
+        dir = os.path.dirname(path) # pylint: disable=redefined-builtin
         paths = modelloader.directory_directories(dir, recursive=False)
         for file in [f"{path}.txt", f"{path}.description.txt"]:
             if file in paths[dir][1]:
@@ -288,7 +273,7 @@ class ExtraNetworksPage:
         return None
 
     def find_info(self, path):
-        dir = os.path.dirname(path)
+        dir = os.path.dirname(path) # pylint: disable=redefined-builtin
         paths = modelloader.directory_directories(dir, recursive=False)
         basename, _ext = os.path.splitext(path)
         for file in [f"{path}.info", f"{path}.civitai.info", f"{basename}.info", f"{basename}.civitai.info"]:

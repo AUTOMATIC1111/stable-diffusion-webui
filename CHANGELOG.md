@@ -5,6 +5,8 @@
 - general:
   - caching of extra network information to enable much faster create/refresh operations  
     thanks @midcoastal
+- diffusers:
+  - redo "move model to cpu" logic to be more reliable
 
 ## Update for 2023-08-17
 

@@ -51,6 +51,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
             devices.torch_gc()
+        model.vae.to(devices.device)
         latents.to(model.vae.device)
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
@@ -117,13 +118,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_pooled = None
         prompts, negative_prompts, prompts_2, negative_prompts_2 = fix_prompts(prompts, negative_prompts, prompts_2, negative_prompts_2)
         if shared.opts.prompt_attention in {'Compel parser', 'Full parser'}:
-            prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model,
-                                                                                                                  prompts,
-                                                                                                                  negative_prompts,
-                                                                                                                  prompts_2,
-                                                                                                                  negative_prompts_2,
-                                                                                                                  is_refiner,
-                                                                                                                  kwargs.pop("clip_skip", None))
+            prompt_embed, pooled, negative_embed, negative_pooled = prompt_parser_diffusers.compel_encode_prompts(model, prompts, negative_prompts,
+                                                                                                                  prompts_2, negative_prompts_2,
+                                                                                                                  is_refiner, kwargs.pop("clip_skip", None))
         if 'prompt' in possible:
             if hasattr(model, 'text_encoder') and 'prompt_embeds' in possible and prompt_embed is not None:
                 args['prompt_embeds'] = prompt_embed
@@ -261,7 +258,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 for i in range(len(decoded)):
                     images.save_image(decoded[i], path=p.outpath_samples, basename="", seed=seeds[i], prompt=prompts[i], extension=shared.opts.samples_format, info=info, p=p, suffix="-before-refiner")
 
-        if (shared.opts.diffusers_move_base or shared.cmd_opts.medvram or shared.opts.diffusers_model_cpu_offload) and not (shared.cmd_opts.lowvram or shared.opts.diffusers_seq_cpu_offload):
+        if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
             shared.log.debug('Diffusers: Moving base model to CPU')
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()

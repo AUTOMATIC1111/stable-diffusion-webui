@@ -268,7 +268,7 @@ def list_themes():
 
 
 def disable_extensions():
-    if opts.lora_disable:
+    if opts.lyco_patch_lora:
         if 'Lora' not in opts.disabled_extensions:
             opts.data['disabled_extensions'].append('Lora')
     else:
@@ -403,8 +403,8 @@ options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_move_refiner": OptionInfo(True, "Move refiner model to CPU when not in use"),
     "diffusers_extract_ema": OptionInfo(True, "Use model EMA weights when possible"),
     "diffusers_generator_device": OptionInfo("default", "Generator device", gr.Radio, lambda: {"choices": ["default", "cpu"]}),
-    "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload"),
-    "diffusers_model_cpu_offload": OptionInfo(False, "Enable model CPU offload"),
+    "diffusers_model_cpu_offload": OptionInfo(False, "Enable model CPU offload (--medvram)"),
+    "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload (--lowvram)"),
     "diffusers_vae_upcast": OptionInfo("default", "VAE upcasting", gr.Radio, lambda: {"choices": ['default', 'true', 'false']}),
     "diffusers_vae_slicing": OptionInfo(True, "Enable VAE slicing"),
     "diffusers_vae_tiling": OptionInfo(False, "Enable VAE tiling"),
@@ -627,7 +627,7 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, lambda: {"choices": ["contain", "cover", "fill"]}),
     "extra_network_skip_indexing": OptionInfo(False, "Do not automatically build extra network pages", gr.Checkbox),
     "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all Lora types", gr.Checkbox),
-    "lora_disable": OptionInfo(False, "Disable built-in Lora handler", gr.Checkbox, { "visible": True }, onchange=disable_extensions),
+    # "lora_disable": OptionInfo(False, "Disable built-in Lora handler", gr.Checkbox, { "visible": True }, onchange=disable_extensions),
     "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple Loras", gr.Checkbox),
     "extra_networks_add_text_separator": OptionInfo(" ", "Extra text to add before <...> when adding extra network to prompt", gr.Text, { "visible": False }),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),

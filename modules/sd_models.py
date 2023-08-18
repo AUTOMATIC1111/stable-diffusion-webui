@@ -696,7 +696,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
 
         if (shared.opts.diffusers_model_cpu_offload or shared.cmd_opts.medvram) and (shared.opts.diffusers_seq_cpu_offload or shared.cmd_opts.lowvram):
             shared.log.warning(f'Diffusers {op}: Model CPU offload (--medvram) and Sequential CPU offload (--lowvram) are not compatible')
-            shared.log.debug(f'Diffusers {op}: disable model CPU offload and --medvram')
+            shared.log.debug(f'Diffusers {op}: disabling model CPU offload and --medvram')
             shared.opts.diffusers_model_cpu_offload=False
             shared.cmd_opts.medvram=False
 
@@ -706,11 +706,21 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if hasattr(sd_model, "enable_model_cpu_offload"):
             if (shared.cmd_opts.medvram and devices.backend != "directml") or shared.opts.diffusers_model_cpu_offload:
                 shared.log.debug(f'Diffusers {op}: enable model CPU offload')
+                if shared.opts.diffusers_move_base or shared.opts.diffusers_move_unet or shared.opts.diffusers_move_refiner:
+                    shared.opts.diffusers_move_base = False
+                    shared.opts.diffusers_move_unet = False
+                    shared.opts.diffusers_move_refiner = False
+                    shared.log.warning(f'Disabling {op} "Move model to CPU" since "Model CPU offload" is enabled')
                 sd_model.enable_model_cpu_offload()
                 sd_model.has_accelerate = True
         if hasattr(sd_model, "enable_sequential_cpu_offload"):
             if shared.cmd_opts.lowvram or shared.opts.diffusers_seq_cpu_offload:
                 shared.log.debug(f'Diffusers {op}: enable sequential CPU offload')
+                if shared.opts.diffusers_move_base or shared.opts.diffusers_move_unet or shared.opts.diffusers_move_refiner:
+                    shared.opts.diffusers_move_base = False
+                    shared.opts.diffusers_move_unet = False
+                    shared.opts.diffusers_move_refiner = False
+                    shared.log.warning(f'Disabling {op} "Move model to CPU" since "Sequential CPU offload" is enabled')
                 sd_model.enable_sequential_cpu_offload(device=devices.device)
                 sd_model.has_accelerate = True
         if hasattr(sd_model, "enable_vae_slicing"):
@@ -760,10 +770,11 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 else:
                     if not refiner_enough_vram and not (shared.opts.diffusers_move_base and shared.opts.diffusers_move_refiner):
                         shared.log.warning(f"Insufficient GPU memory, using system memory as fallback: free={free_vram} GB")
-                        shared.log.debug('Enabled moving base model to CPU')
-                        shared.log.debug('Enabled moving refiner model to CPU')
-                        shared.opts.diffusers_move_base=True
-                        shared.opts.diffusers_move_refiner=True
+                        if not shared.opts.shared.opts.diffusers_seq_cpu_offload and not shared.opts.diffusers_model_cpu_offload:
+                            shared.log.debug('Enabled moving base model to CPU')
+                            shared.log.debug('Enabled moving refiner model to CPU')
+                            shared.opts.diffusers_move_base=True
+                            shared.opts.diffusers_move_refiner=True
                     shared.log.debug('Moving base model to CPU')
                     model_data.sd_model.to(devices.cpu)
                     devices.torch_gc(force=True)
