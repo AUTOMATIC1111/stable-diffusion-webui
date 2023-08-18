@@ -49,8 +49,11 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                 logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
 
                 p.task_progress = min(progress, 97)
-                eta = (time_since_start / p.task_progress)
+                eta = (time_since_start*100 / p.task_progress)
                 p.eta_relative = int(eta - time_since_start)
+                #  time_since_start = time.time() - shared.state.time_start
+                #         eta = (time_since_start / progress)
+                #         eta_relative = eta - time_since_start
 
                 if callable(dump_func):
                     dump_func(p)
