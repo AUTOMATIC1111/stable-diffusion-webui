@@ -138,7 +138,7 @@ a{
 }
 
 /* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reqasaon. */
-.block.gradio-textbox, div.gradio-group, div.gradio-group div, div.gradio-dropdown{
+.block.gradio-textbox, div.gradio-group, div.gradio-dropdown{
     overflow: visible !important;
 }
 

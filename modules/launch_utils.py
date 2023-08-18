@@ -246,7 +246,7 @@ def list_extensions(settings_file):
     disabled_extensions = set(settings.get('disabled_extensions', []))
     disable_all_extensions = settings.get('disable_all_extensions', 'none')
 
-    if disable_all_extensions != 'none' or args.disable_extra_extensions or args.disable_all_extensions:
+    if disable_all_extensions != 'none' or args.disable_extra_extensions or args.disable_all_extensions or not os.path.isdir(extensions_dir):
         return []
 
     return [x for x in os.listdir(extensions_dir) if x not in disabled_extensions]
