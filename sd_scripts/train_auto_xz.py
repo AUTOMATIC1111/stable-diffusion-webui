@@ -590,6 +590,8 @@ def train_auto(
         other_args=None  # 预留一个，以备用
 ):
     # 预设参数
+    width_train = 512
+    height_train = 768
     width = 512
     height = 768
     options = ["抠出头部", "放大"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸"
@@ -616,7 +618,7 @@ def train_auto(
                      preprocess_txt_action='ignore', process_keep_original_size=False,
                      process_split=False, process_flip=False, process_caption=True,
                      process_caption_deepbooru=not use_wd, split_threshold=0.5,
-                     overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
+                     overlap_ratio=0.2, process_focal_crop=True, process_focal_crop_face_weight=0.9,
                      process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
                      process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
                      process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
@@ -685,7 +687,7 @@ def train_auto(
         save_model_as="safetensors",
         num_repeats=[f"{repeats_n}"],
         batch_size=24,
-        resolution=f"{width},{height}",
+        resolution=f"{width_train},{height_train}",
         epoch=10,  # 整数，随便填
         network_module="networks.lora",
         network_train_unet_only=False,
