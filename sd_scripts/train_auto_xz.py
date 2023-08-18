@@ -26,18 +26,19 @@ import tempfile
 # )
 from accelerate import Accelerator
 # from library.lpw_stable_diffusion import StableDiffusionLongPromptWeightingPipeline
-from sd_scripts.train_network_all_auto import train_with_params, train_callback
+from train_network_all_auto import train_with_params, train_callback
 
 # from prompts_generate import txt2img_prompts
-from sd_scripts.finetune.tag_images_by_wd14_tagger import get_wd_tagger
-from sd_scripts.library import autocrop
-from sd_scripts.library.process_function import *
+from finetune.tag_images_by_wd14_tagger import get_wd_tagger
+from library import autocrop
+from library.process_function import *
 from sd_scripts.super_upscaler.super_upscaler import upscaler
 from sd_scripts.library import train_util
 import uuid
 import argparse
-from sd_scripts.library.common_path import model_p
+from finetune.deepbooru import deepbooru
 import sys
+
 sys.path.append("PaddleSeg/contrib/PP-HumanSeg")
 
 
@@ -50,11 +51,13 @@ SCHEDULER_LINEAR_END = 0.0120
 SCHEDULER_TIMESTEPS = 1000
 SCHEDLER_SCHEDULE = "scaled_linear"
 
+
 class PreprocessTxtAction(Enum):
     Prepend = 'prepend'
     Append = 'append'
     Copy = 'copy'
     Ignore = 'ignore'
+
 
 class PreprocessParams:
     src = None
@@ -200,6 +203,7 @@ class PreprocessParams:
             PreprocessTxtAction.Prepend, PreprocessTxtAction.Copy, PreprocessTxtAction.Append
         ]
 
+
 def save_pic_with_caption(image, index, params: PreprocessParams, existing_caption=None):
     caption = ""
 
@@ -234,13 +238,14 @@ def save_pic_with_caption(image, index, params: PreprocessParams, existing_capti
     params.subindex += 1
 
 
-def image_process(proc_image_input_batch, options, resize_weight=512, resize_height=512, if_res_oribody=False, model_p=""):
-    op1, op2, op3, op4, op5, op6 = "抠出头部","抠出全身", "放大", "镜像", "旋转", "改变尺寸"
+def image_process(proc_image_input_batch, options, resize_weight=512, resize_height=512, if_res_oribody=False,
+                  model_p=""):
+    op1, op2, op3, op4, op5, op6 = "抠出头部", "抠出全身", "放大", "镜像", "旋转", "改变尺寸"
 
     if op1 or op2 in options:
         load_model = True
 
-    myseg = load_seg_model(load_model,model_p)
+    myseg = load_seg_model(load_model, model_p)
 
     sum_list = []
     sum_head_image_list = []
@@ -248,7 +253,7 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
     for image in proc_image_input_batch:
         image_process_list = []
         head_image_list = []
-        
+
         image_process_list.append(image)
         if op1 in options:
             result_list = []
@@ -260,7 +265,6 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
                 result_list += seg_head_img
 
             head_image_list += result_list
-
 
         if op2 in options:
             result_list = []
@@ -278,8 +282,6 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
                 image_process_list += result_list
             else:
                 image_process_list = result_list
-            
-
 
         if op3 in options:
             result_list = []
@@ -287,7 +289,7 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
                 if i.width * i.height >= 1024 * 1024:
                     result_list.append(i)
                 else:
-                    result_list.append(upscale_process(img=i,model_p=model_p))
+                    result_list.append(upscale_process(img=i, model_p=model_p))
             image_process_list = result_list
 
             result_list = []
@@ -295,10 +297,8 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
                 if i.width * i.height >= 1024 * 1024:
                     result_list.append(i)
                 else:
-                    result_list.append(upscale_process(img=i,model_p=model_p))
+                    result_list.append(upscale_process(img=i, model_p=model_p))
             head_image_list = result_list
-
-
 
         if op4 in options:
             result_list = []
@@ -311,7 +311,6 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
                 result_list.append(mirror_images(i))
             head_image_list += result_list
 
-
         if op5 in options:
             result_list = []
             for i in image_process_list:
@@ -322,7 +321,6 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
             for i in head_image_list:
                 result_list += rotate_pil_image(i)
             head_image_list += result_list
-
 
         if op6 in options:
             result_list = []
@@ -345,7 +343,6 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
     return sum_list, sum_head_image_list
 
 
-
 def get_image_list(directory):
     image_list = []
 
@@ -360,7 +357,7 @@ def get_image_list(directory):
     return image_list
 
 
-def custom_configurable_image_processing(directory, options, resize_weight, resize_height, if_res_oribody,model_p):
+def custom_configurable_image_processing(directory, options, resize_weight, resize_height, if_res_oribody, model_p):
     image_list = get_image_list(directory)
     images = get_image(image_list)
     # proc_image_input_batch = []
@@ -368,9 +365,10 @@ def custom_configurable_image_processing(directory, options, resize_weight, resi
     #         image = RGBA_image_BGrepair(img, 255)
     #         proc_image_input_batch.append(image)
 
-    res_list, head_list = image_process(images, options, resize_weight, resize_height, if_res_oribody,model_p)
+    res_list, head_list = image_process(images, options, resize_weight, resize_height, if_res_oribody, model_p)
 
     return res_list, head_list
+
 
 def save_images_to_temp(images):
     temp_dir = tempfile.mkdtemp()  # 创建临时目录
@@ -386,15 +384,16 @@ def save_images_to_temp(images):
 
 
 # 一键图片预处理函数
-def train_preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action, process_keep_original_size,
-                    process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
-                    overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
-                    process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-                    process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-                    process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-                    process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None, model_path="",
-                    filter_tags = "",additional_tags = ""):
-
+def train_preprocess(process_src, process_dst, process_width, process_height, preprocess_txt_action,
+                     process_keep_original_size,
+                     process_flip, process_split, process_caption, process_caption_deepbooru=False, split_threshold=0.5,
+                     overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
+                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
+                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
+                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
+                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
+                     model_path="",
+                     filter_tags="", additional_tags=""):
     if process_caption_deepbooru:
         deepbooru.model.start()
 
@@ -446,10 +445,11 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
 
         # if shared.state.interrupted:
         #     break
-        if img.width<1024 and img.height<1024:  # 对于尺寸不够的图片进行upscale
-            ratio=2
-            img = deepbooru.resize_image(1, img, int(img.width*ratio), int(img.height*ratio),upscaler_name="xyx",models_path=model_path)
-        
+        if img.width < 1024 and img.height < 1024:  # 对于尺寸不够的图片进行upscale
+            ratio = 2
+            img = deepbooru.resize_image(1, img, int(img.width * ratio), int(img.height * ratio), upscaler_name="xyx",
+                                         models_path=model_path)
+
         if img.height > img.width:
             ratio = (img.width * height) / (img.height * width)
             inverse_xy = False
@@ -510,7 +510,7 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
         if process_default_resize:
             img = deepbooru.resize_image(1, img, width, height)
             save_pic(img, index, params, existing_caption=existing_caption)
-        
+
         # os.remove(filename)
 
         # shared.state.nextjob()
@@ -522,7 +522,8 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
         os.remove(temp_path)
     if process_caption_deepbooru:
         deepbooru.model.stop()
-    return 
+    return
+
 
 # 一键打标函数
 def train_tagger(train_data_dir, model_dir, trigger_word=None, undesired_tags=None, general_threshold=0.35):
@@ -592,44 +593,50 @@ def train_auto(
     # 预设参数
     width = 512
     height = 768
-    options = ["抠出头部","放大"]   #数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸"
+    options = ["抠出头部", "放大"]  # 数据预处理方法 "抠出全身","抠出头部", "放大", "镜像", "旋转", "改变尺寸"
     head_width = 512
     head_height = 512
-	
     trigger_word = ""
     # 是否采用wd14作为反推tag，否则采用deepbooru
-    use_wd= = os.getenv('WD', '1') == '1'
+    use_wd = os.getenv('WD', '1') == '1'
 
     # 反推tag默认排除的提示词
     undesired_tags = "blur,blurry,motion blur"  # 待测试五官
-    
+
     # 图片处理后的路径
     dirname = os.path.dirname(train_data_dir)
-    image_list, head_list = custom_configurable_image_processing(train_data_dir, options, width, height, if_res_oribody = True,model_p=general_model_path)
+    image_list, head_list = custom_configurable_image_processing(train_data_dir, options, width, height,
+                                                                 if_res_oribody=True, model_p=general_model_path)
     train_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(train_dir, exist_ok=True)
     process_dir = train_dir
-    print("1111:::",image_list,head_list)
+    print("1111:::", image_list, head_list)
 
     # 1.图片预处理
-    train_preprocess(process_src=image_list, process_dst=train_dir, process_width=width, process_height=height, preprocess_txt_action='ignore', process_keep_original_size=False,
-                    process_split=False,process_flip=False, process_caption=True, process_caption_deepbooru=not use_wd, split_threshold=0.5,
-                    overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
-                    process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-                    process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-                    process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-                    process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None, model_path=general_model_path,
-                    filter_tags=undesired_tags,additional_tags=trigger_word)
+    train_preprocess(process_src=image_list, process_dst=train_dir, process_width=width, process_height=height,
+                     preprocess_txt_action='ignore', process_keep_original_size=False,
+                     process_split=False, process_flip=False, process_caption=True,
+                     process_caption_deepbooru=not use_wd, split_threshold=0.5,
+                     overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
+                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
+                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
+                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
+                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
+                     model_path=general_model_path,
+                     filter_tags=undesired_tags, additional_tags=trigger_word)
     train_callback(2)
 
-    train_preprocess(process_src=head_list, process_dst=train_dir, process_width=head_width, process_height=head_height, preprocess_txt_action='ignore', process_keep_original_size=False,
-                    process_split=False, process_flip=False, process_caption=True, process_caption_deepbooru=not use_wd, split_threshold=0.5,
-                    overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
-                    process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
-                    process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
-                    process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
-                    process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None, model_path=general_model_path,
-                    filter_tags=undesired_tags,additional_tags=trigger_word)
+    train_preprocess(process_src=head_list, process_dst=train_dir, process_width=head_width, process_height=head_height,
+                     preprocess_txt_action='ignore', process_keep_original_size=False,
+                     process_split=False, process_flip=False, process_caption=True,
+                     process_caption_deepbooru=not use_wd, split_threshold=0.5,
+                     overlap_ratio=0.2, process_focal_crop=False, process_focal_crop_face_weight=0.9,
+                     process_focal_crop_entropy_weight=0.3, process_focal_crop_edges_weight=0.5,
+                     process_focal_crop_debug=False, process_multicrop=None, process_multicrop_mindim=None,
+                     process_multicrop_maxdim=None, process_multicrop_minarea=None, process_multicrop_maxarea=None,
+                     process_multicrop_objective=None, process_multicrop_threshold=None, progress_cb=None,
+                     model_path=general_model_path,
+                     filter_tags=undesired_tags, additional_tags=trigger_word)
     train_callback(2)
 
     if use_wd and os.getenv("DO_NOT_TRAIN_COPY_ORIGIN", "1") != "1":
@@ -642,11 +649,11 @@ def train_auto(
     if use_wd:
         contents = os.listdir(train_dir)
         pic_nums = len(contents)
-        repeats_n = int(30*50/pic_nums)
+        repeats_n = int(30 * 50 / pic_nums)
     else:
         contents = os.listdir(train_dir)
-        pic_nums = len(contents)/2
-        repeats_n = int(30*50/pic_nums)
+        pic_nums = len(contents) / 2
+        repeats_n = int(30 * 50 / pic_nums)
     # 2.tagger反推
     if use_wd:
         onnx = os.path.join(general_model_path, "tag_models/wd_onnx")
