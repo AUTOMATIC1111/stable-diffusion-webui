@@ -56,6 +56,9 @@ BOX_TRESHOLD = 0.05
 TEXT_TRESHOLD = 0.05
 
 
+os.environ['U2NET_HOME'] = "models/U2NET"
+
+
 def show_mask(masks, image_source, random_color=True):
     image = image_source.copy()
     # print(image.shape, masks.shape)
