@@ -609,7 +609,7 @@ def train_auto(
     train_dir = os.path.join(dirname, f"{task_id}-preprocess")
     os.makedirs(train_dir, exist_ok=True)
     process_dir = train_dir
-    print("1111:::", image_list, head_list)
+    # print("1111:::", image_list, head_list)
 
     # 1.图片预处理
     train_preprocess(process_src=image_list, process_dst=train_dir, process_width=width, process_height=height,
@@ -648,11 +648,11 @@ def train_auto(
     if use_wd:
         contents = os.listdir(train_dir)
         pic_nums = len(contents)
-        repeats_n = int(30 * 50 / pic_nums)
+        repeats_n = int(30 * 40 / pic_nums)
     else:
         contents = os.listdir(train_dir)
         pic_nums = len(contents) / 2
-        repeats_n = int(30 * 50 / pic_nums)
+        repeats_n = int(30 * 40 / pic_nums)
     # 2.tagger反推
     if use_wd:
         onnx = os.path.join(general_model_path, "tag_models/wd_onnx")
@@ -661,7 +661,7 @@ def train_auto(
 
         train_tagger(
             train_data_dir=train_dir,
-            model_dir=os.path.join(model_p, "tag_models/wd_onnx"),
+            model_dir=os.path.join(general_model_path, "tag_models/wd_onnx"),
             # r"/data/qll/stable-diffusion-webui/models/tag_models",
             general_threshold=0.35,
             undesired_tags=undesired_tags,
