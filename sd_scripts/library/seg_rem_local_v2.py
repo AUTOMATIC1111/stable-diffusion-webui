@@ -107,11 +107,13 @@ class MySeg:
         self.device = 'cuda'
 
         ckpt_filenmae = os.path.join(models_path, "grounding-dino/groundingdino_swint_ogc.pth")
-        
-        self.groundingdino_model = self.load_model("local_groundingdino/config/GroundingDINO_SwinT_OGC.py", ckpt_filenmae, 'cuda')
+        parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        path =  os.path.join(parent_dir, "local_groundingdino/config/GroundingDINO_SwinT_OGC.py")
+        self.groundingdino_model = self.load_model(path, ckpt_filenmae, 'cuda')
         print(f'init groundingdino_model success')
         # rembg
         # rembg_model_name = 'u2net_human_seg'
+        os.environ['U2NET_HOME'] = os.path.join(models_path,"U2NET")
         rembg_model_name = 'u2net'
         self.sess = session_factory.new_session(rembg_model_name)
         
@@ -170,10 +172,10 @@ class MySeg:
             box = boxes_xyxy[resize_type].cpu().detach().numpy()
             cropped_image = Image.fromarray(image_source).crop(box)
             cropped_images = [cropped_image]
-            print("box,",box)
+            # print("box,",box)
         elif resize_type == -2: #剪切扩大后的头像
             box = boxes_xyxy[0].cpu().detach().numpy()
-            print("box1,",box)
+            # print("box1,",box)
             width1=box[2]-box[0]
             height1=box[3]-box[1]
             #width=max(abs(width1),abs(height1))*width1/abs(width1)
@@ -195,13 +197,13 @@ class MySeg:
             box[2]=box[2]+(width/2-width1/2)
             box[1]=box[1]-(height/2-height1/2)
             box[3]=box[3]+(height/2-height1/2)
-            print("box2,",box,width,height)
+            # print("box2,",box,width,height)
             cropped_image = Image.fromarray(image_source).crop(box)
             cropped_images = [cropped_image]
 
         elif resize_type == -3: #剪切的头像为正方形
             box = boxes_xyxy[0].cpu().detach().numpy()
-            print("box1,",box)
+            # print("box1,",box)
             width1=box[2]-box[0]
             height1=box[3]-box[1]
             #width=max(abs(width1),abs(height1))*width1/abs(width1)
@@ -214,7 +216,7 @@ class MySeg:
             else:   
                 height = height1
                 width = height * resize_x/resize_y
-            if abs(width)<300 or abs(height)<300:return []
+            if abs(width)<300 and abs(height)<300:return []
             #box[0]=max(0,box[0]-width/2)
             #box[2]=min(W,box[2]+width/2)
             #box[1]=max(0,box[1]-height/2)
@@ -223,7 +225,7 @@ class MySeg:
             box[2]=box[2]+(width/2-width1/2)
             box[1]=box[1]-(height/2-height1/2)
             box[3]=box[3]+(height/2-height1/2)
-            print("box2,",box,width,height)
+            # print("box2,",box,width,height)
             cropped_image = Image.fromarray(image_source).crop(box)
             cropped_images = [cropped_image]
             
@@ -251,7 +253,7 @@ class MySeg:
                 ci_new = ci.resize((resize_x,resize_y),Image.ANTIALIAS)
                 resize_images.append(ci_new)
                 #resize_images.append(ci.resize((resize_x,resize_y)))
-            print(resize_images)
+            # print(resize_images)
             return resize_images
         return cropped_images
         # return remove(cropped_image, session=self.sess) #.resize((512, 512))
