@@ -8,6 +8,7 @@
 import copy
 import os.path
 import shutil
+import time
 import typing
 
 from modules.shared import mem_mon as vram_mon
@@ -24,26 +25,33 @@ from trainx.lora import *
 def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
     task = DigitalDoppelgangerTask(job)
     p = TaskProgress.new_ready(job, 'ready preprocess')
+    p.eta_relative = 40 * 60
     yield p
 
     logger.debug(">> download images...")
     target_dir = os.path.join(Tmp, job.id)
     os.makedirs(target_dir, exist_ok=True)
+    time_start = time.time()
+
     image_dir = task.download_move_input_images()
     logger.debug(f">> input images dir:{image_dir}")
 
     if image_dir:
-
+        p.eta_relative = 35 * 60
         p = TaskProgress.new_running(job, 'train running.')
         yield p
 
         def train_progress_callback(progress):
             progress = progress if progress > 1 else progress * 100
             if progress - p.task_progress >= 2:
+                time_since_start = time.time() - time_start
                 free, total = vram_mon.cuda_mem_get_info()
                 logger.info(f'[VRAM] free: {free / 2 ** 30:.3f} GB, total: {total / 2 ** 30:.3f} GB')
 
-                p.task_progress = min(progress, 99)
+                p.task_progress = min(progress, 97)
+                eta = (time_since_start / p.task_progress)
+                p.eta_relative = int(eta - time_since_start)
+
                 if callable(dump_func):
                     dump_func(p)
 

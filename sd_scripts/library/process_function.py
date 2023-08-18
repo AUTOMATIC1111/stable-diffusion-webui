@@ -6,7 +6,7 @@ import io
 from super_upscaler.super_upscaler import upscaler
 from library.seg_rem_local_v2 import MySeg
 
-model_p = "/data/longcheng/stable-diffusion-webui/models"
+# model_p = "/data/longcheng/stable-diffusion-webui/models"
 
 def filter_images_by_size(image_list):
     smaller_than_1000 = []

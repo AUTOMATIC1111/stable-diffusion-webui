@@ -8,7 +8,7 @@ from PIL import Image
 from torchvision.ops import box_convert
 
 import local_groundingdino.datasets.transforms as T
-from local_groundingdino.models import build_model
+from local_groundingdino.modelsx import build_model
 from local_groundingdino.util.misc import clean_state_dict
 from local_groundingdino.util.slconfig import SLConfig
 from local_groundingdino.util.utils import get_phrases_from_posmap

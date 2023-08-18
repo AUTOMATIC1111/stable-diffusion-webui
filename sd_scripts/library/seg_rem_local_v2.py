@@ -6,7 +6,7 @@ from torchvision.ops import box_convert
 
 # Grounding DINO
 from local_groundingdino.datasets import transforms as T
-from local_groundingdino.models import build_model
+from local_groundingdino.modelsx import build_model
 from local_groundingdino.util import box_ops
 from local_groundingdino.util.slconfig import SLConfig
 from local_groundingdino.util.utils import clean_state_dict, get_phrases_from_posmap
@@ -272,7 +272,8 @@ class MySeg:
 
 # app = Flask(__name__)
 
-my_seg = MySeg("/data/qll/stable-diffusion-webui/models")
+# my_seg = MySeg("/data/qll/stable-diffusion-webui/models")
+
 
 def encode_pil_to_base64(pil_image):
     with BytesIO() as output_bytes:

@@ -41,7 +41,6 @@ import sys
 
 sys.path.append("PaddleSeg/contrib/PP-HumanSeg")
 
-
 import sd_scripts.library.config_util as config_util
 import sd_scripts.library.custom_train_functions as custom_train_functions
 
@@ -294,7 +293,7 @@ def image_process(proc_image_input_batch, options, resize_weight=512, resize_hei
 
             result_list = []
             for i in head_image_list:
-                if i.width * i.height >= 1024 * 1024:
+                if i.width * i.height >= 512 ** 2:
                     result_list.append(i)
                 else:
                     result_list.append(upscale_process(img=i, model_p=model_p))
@@ -445,7 +444,7 @@ def train_preprocess(process_src, process_dst, process_width, process_height, pr
 
         # if shared.state.interrupted:
         #     break
-        if img.width < 1024 and img.height < 1024:  # 对于尺寸不够的图片进行upscale
+        if img.width < 512 and img.height < 512:  # 对于尺寸不够的图片进行upscale
             ratio = 2
             img = deepbooru.resize_image(1, img, int(img.width * ratio), int(img.height * ratio), upscaler_name="xyx",
                                          models_path=model_path)

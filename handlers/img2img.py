@@ -580,14 +580,14 @@ class Img2ImgTaskHandler(TaskHandler):
         if shared.state.sampling_steps > 0:
             p += 1 / (progress.task['n_iter'] * progress.task['batch_size']) * shared.state.sampling_step / shared.state.sampling_steps
 
-        time_since_start = time.time() - shared.state.time_start
-        eta = (time_since_start / p)
-        progress.eta_relative = eta - time_since_start
         current_progress = min(p * 100, 99)
         if current_progress < progress.task_progress:
             return
 
+        time_since_start = time.time() - shared.state.time_start
+        eta = (time_since_start / p)
         progress.task_progress = current_progress
+        progress.eta_relative = int(eta - time_since_start)
         # print(f"-> progress: {progress.task_progress}, real:{p}\n")
 
         shared.state.set_current_image()
