@@ -72,3 +72,4 @@ oss2
 tomesd
 esdk-obs-python
 gradio-orz==3.36.1
+opencv-python>=4.8.0
