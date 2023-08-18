@@ -61,14 +61,10 @@ class SlicedAttnProcessor:
         if block_size >= 4000:
             do_split_2 = True
             #Find something divisible with the query_tokens
-            sanity_check = 0
             while ((self.slice_size * split_2_slice_size * shape_three) / 1024 * block_multiply) > 4000:
                 split_2_slice_size = split_2_slice_size // 2
                 if split_2_slice_size <= 1:
                     split_2_slice_size = 1
-                    break
-                sanity_check = sanity_check + 1
-                if sanity_check >= 128:
                     break
         else:
             do_split_2 = False
@@ -185,14 +181,10 @@ class AttnProcessor2_0:
         if block_size >= 4000:
             do_split = True
             #Find something divisible with the shape_one
-            sanity_check = 0
             while ((shape_one * split_slice_size * query_tokens * shape_four) / 1024 * block_multiply) > 4000:
                 split_slice_size = split_slice_size // 2
                 if split_slice_size <= 1:
                     split_slice_size = 1
-                    break
-                sanity_check = sanity_check + 1
-                if sanity_check >= 128:
                     break
         else:
             do_split = False
@@ -202,14 +194,10 @@ class AttnProcessor2_0:
         if split_block_size >= 4000:
             do_split_2 = True
             #Find something divisible with the batch_size_attention
-            sanity_check = 0
             while ((shape_one * split_slice_size * split_2_slice_size * shape_four) / 1024 * block_multiply) > 4000:
                 split_2_slice_size = split_2_slice_size // 2
                 if split_2_slice_size <= 1:
                     split_2_slice_size = 1
-                    break
-                sanity_check = sanity_check + 1
-                if sanity_check >= 128:
                     break
         else:
             do_split_2 = False

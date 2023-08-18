@@ -77,6 +77,9 @@ def ipex_hijacks():
     CondFunc('torch.zeros',
         lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=devices.device, **kwargs),
         lambda orig_func, *args, device=None, **kwargs: (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
+    CondFunc('torch.tensor',
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=devices.device, **kwargs),
+        lambda orig_func, *args, device=None, **kwargs: (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
 
     #Broken functions when torch.cuda.is_available is True:
     #Pin Memory:
