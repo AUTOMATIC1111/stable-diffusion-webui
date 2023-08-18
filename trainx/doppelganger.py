@@ -54,7 +54,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                 #  time_since_start = time.time() - shared.state.time_start
                 #         eta = (time_since_start / progress)
                 #         eta_relative = eta - time_since_start
-
+                logger.info(f"eta: {p.eta_relative}S ({eta} - {time_since_start}) ")
                 if callable(dump_func):
                     dump_func(p)
 
