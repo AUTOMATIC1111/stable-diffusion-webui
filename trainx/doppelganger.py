@@ -31,7 +31,6 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
     logger.debug(">> download images...")
     target_dir = os.path.join(Tmp, job.id)
     os.makedirs(target_dir, exist_ok=True)
-    time_start = time.time()
 
     image_dir = task.download_move_input_images()
     logger.debug(f">> input images dir:{image_dir}")
@@ -40,6 +39,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         p.eta_relative = 35 * 60
         p = TaskProgress.new_running(job, 'train running.')
         yield p
+        time_start = time.time()
 
         def train_progress_callback(progress):
             progress = progress if progress > 1 else progress * 100
