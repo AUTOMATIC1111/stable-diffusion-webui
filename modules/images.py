@@ -355,7 +355,9 @@ class FilenameGenerator:
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
-        'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
+        'prompt_hash': lambda self, *args: self.string_hash(self.prompt, *args),
+        'negative_prompt_hash': lambda self, *args: self.string_hash(self.p.negative_prompt, *args),
+        'full_prompt_hash': lambda self, *args: self.string_hash(f"{self.p.prompt} {self.p.negative_prompt}", *args),  # a space in between to create a unique string
         'prompt': lambda self: sanitize_filename_part(self.prompt),
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
@@ -452,6 +454,10 @@ class FilenameGenerator:
     def image_hash(self, *args):
         length = int(args[0]) if (args and args[0] != "") else None
         return hashlib.sha256(self.image.tobytes()).hexdigest()[0:length]
+
+    def string_hash(self, text, *args):
+        length = int(args[0]) if (args and args[0] != "") else 8
+        return hashlib.sha256(text.encode()).hexdigest()[0:length]
 
     def apply(self, x):
         res = ''
