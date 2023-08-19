@@ -30,7 +30,8 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         }
 
     def list_items(self):
-        for index, name in enumerate(sd_models.checkpoints_list):
+        names = list(sd_models.checkpoints_list)
+        for index, name in enumerate(names):
             yield self.create_item(name, index)
 
     def allowed_directories_for_previews(self):
