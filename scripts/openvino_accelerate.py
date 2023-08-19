@@ -74,6 +74,7 @@ class ModelState:
         self.mode = 0
         self.partition_id = 0
         self.model_hash = ""
+        self.custom_vae = "None"
 
 model_state = ModelState()
 
@@ -338,14 +339,13 @@ def get_diffusers_sd_model(model_config, vae_config, sampler_name, enable_cachin
             sd_model = StableDiffusionInpaintPipeline(**sd_model.components)
         if vae_config == "Disable-VAE-Acceleration":
             sd_model.vae.decode = sd_model.vae.decode
-        elif vae_config != "None":
+        elif vae_config == "None":
+            sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino_fx")
+        else:
             vae_path = os.path.join(curr_dir_path, 'models', 'VAE', vae_config)
             print("OpenVINO Script:  loading vae from : " + vae_path)
             sd_model.vae = AutoencoderKL.from_single_file(vae_path, local_files_only=True)
             sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino_fx")
-        
-
-
         sd_model.sd_checkpoint_info = checkpoint_info
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
         sd_model.safety_checker = None
@@ -453,7 +453,7 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
         raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
 
-def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_config, sampler_name, enable_caching, openvino_device, mode) -> Processed:
+def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_name, enable_caching, openvino_device, mode, vae_config) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
     if (mode == 0 and p.enable_hr):
@@ -533,7 +533,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_conf
                 model_state.mode = mode
                 model_state.model_hash = shared.sd_model.sd_model_hash
 
-            shared.sd_diffusers_model = get_diffusers_sd_model(model_config, vae_config, sampler_name, enable_caching, openvino_device, mode)
+            shared.sd_diffusers_model = get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_device, mode, vae_config)
             shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
 
             extra_network_data = p.parse_extra_network_prompts()
@@ -757,6 +757,7 @@ class Script(scripts.Script):
         sampler_name = gr.Radio(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Heun", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
         enable_caching = gr.Checkbox(label="Cache the compiled models on disk for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
         warmup_status = gr.Textbox(label="Device", interactive=False, visible=False)
+        vae_status = gr.Textbox(label="VAE", interactive=False, visible=False)
         gr.Markdown(
         """
         ###
@@ -777,6 +778,14 @@ class Script(scripts.Script):
                 model_state.recompile = 1
                 return gr.update(value="Device changed to " + choice + ". Model will be re-compiled", visible=True)
         openvino_device.change(device_change, openvino_device, warmup_status)
+        def vae_change(choice):
+            if (model_state.custom_vae == choice):
+                return gr.update(value="Custom_VAE selected is " + choice, visible=True)
+            else:
+                model_state.custom_vae = choice
+                model_state.recompile = 1
+                return gr.update(value="Custom VAE changed to " + choice + ". Model will be re-compiled", visible=True)
+        vae_config.change(vae_change, vae_config, vae_status)
 
         return [model_config, vae_config, openvino_device, override_sampler, sampler_name, enable_caching]
 
@@ -798,7 +807,7 @@ class Script(scripts.Script):
         mode = 0
         if self.is_txt2img:
             mode = 0
-            processed = process_images_openvino(p, model_config, vae_config, p.sampler_name, enable_caching, openvino_device, mode)
+            processed = process_images_openvino(p, model_config, vae_config,  p.sampler_name, enable_caching, openvino_device, mode)
         else:
             if p.image_mask is None:
                 mode = 1
