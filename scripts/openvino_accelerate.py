@@ -44,6 +44,8 @@ from diffusers import (
     StableDiffusionPipeline,
     StableDiffusionImg2ImgPipeline,
     StableDiffusionInpaintPipeline,
+    StableDiffusionXLPipeline,
+    StableDiffusionXLImg2ImgPipeline,
     DDIMScheduler,
     DPMSolverMultistepScheduler,
     EulerAncestralDiscreteScheduler,
@@ -51,6 +53,7 @@ from diffusers import (
     HeunDiscreteScheduler,
     LMSDiscreteScheduler,
     PNDMScheduler,
+    AutoencoderKL,
 )
 
 from diffusers.pipelines.stable_diffusion.convert_from_ckpt import download_from_original_stable_diffusion_ckpt
@@ -58,7 +61,7 @@ from diffusers.pipelines.stable_diffusion.convert_from_ckpt import download_from
 from diffusers.utils import (
     DIFFUSERS_CACHE,
     HF_HUB_OFFLINE,
-    is_safetensors_available,
+    #is_safetensors_available,
 )
 
 class ModelState:
@@ -183,14 +186,14 @@ def from_single_file(self, pretrained_model_link_or_path, **kwargs):
 
     torch_dtype = kwargs.pop("torch_dtype", None)
 
-    use_safetensors = kwargs.pop("use_safetensors", None if is_safetensors_available() else False)
+    #use_safetensors = kwargs.pop("use_safetensors", None if is_safetensors_available() else False)
 
     pipeline_name = self.__name__
     file_extension = pretrained_model_link_or_path.rsplit(".", 1)[-1]
     from_safetensors = file_extension == "safetensors"
 
-    if from_safetensors and use_safetensors is False:
-        raise ValueError("Make sure to install `safetensors` with `pip install safetensors`.")
+    #if from_safetensors and use_safetensors is False:
+       # raise ValueError("Make sure to install `safetensors` with `pip install safetensors`.")
 
     # TODO: For now we only support stable diffusion
     stable_unclip = None
@@ -312,7 +315,7 @@ def set_scheduler(sd_model, sampler_name):
 
     return sd_model.scheduler
 
-def get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_device, mode):
+def get_diffusers_sd_model(model_config, vae_config, sampler_name, enable_caching, openvino_device, mode):
     if (model_state.recompile == 1):
         torch._dynamo.reset()
         openvino_clear_caches()
@@ -333,13 +336,23 @@ def get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_
             sd_model = StableDiffusionImg2ImgPipeline(**sd_model.components)
         elif (mode == 2):
             sd_model = StableDiffusionInpaintPipeline(**sd_model.components)
+        if vae_config == "Disable-VAE-Acceleration":
+            sd_model.vae.decode = sd_model.vae.decode
+        elif vae_config != "None":
+            vae_path = os.path.join(curr_dir_path, 'models', 'VAE', vae_config)
+            print("OpenVINO Script:  loading vae from : " + vae_path)
+            sd_model.vae = AutoencoderKL.from_single_file(vae_path, local_files_only=True)
+            sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino_fx")
+        
+
+
         sd_model.sd_checkpoint_info = checkpoint_info
         sd_model.sd_model_hash = checkpoint_info.calculate_shorthash()
         sd_model.safety_checker = None
         sd_model.cond_stage_key = functools.partial(cond_stage_key, shared.sd_model)
         sd_model.scheduler = set_scheduler(sd_model, sampler_name)
         sd_model.unet = torch.compile(sd_model.unet, backend="openvino_fx")
-        sd_model.vae.decode = torch.compile(sd_model.vae.decode, backend="openvino_fx")
+        
         shared.sd_diffusers_model = sd_model
         del sd_model
     return shared.sd_diffusers_model
@@ -440,7 +453,7 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
         raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
 
-def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_name, enable_caching, openvino_device, mode) -> Processed:
+def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_config, sampler_name, enable_caching, openvino_device, mode) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
     if (mode == 0 and p.enable_hr):
@@ -520,7 +533,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                 model_state.mode = mode
                 model_state.model_hash = shared.sd_model.sd_model_hash
 
-            shared.sd_diffusers_model = get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_device, mode)
+            shared.sd_diffusers_model = get_diffusers_sd_model(model_config, vae_config, sampler_name, enable_caching, openvino_device, mode)
             shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
 
             extra_network_data = p.parse_extra_network_prompts()
@@ -720,10 +733,24 @@ class Script(scripts.Script):
                 if file.endswith('.yaml'):
                     config_list.append(file)
             return config_list
+        
+        def get_vae_list():
+            vae_dir_list = os.listdir(os.path.join(os.getcwd(), 'models', 'VAE'))
+            vae_list = []
+            vae_list.append("None")
+            vae_list.append("Disable-VAE-Acceleration")
+            for file in vae_dir_list:
+                if file.endswith('.safetensors') or file.endswith('.ckpt'):
+                    vae_list.append(file)
+            return vae_list
+
 
         with gr.Row():
             model_config = gr.Dropdown(label="Select a local config for the model from the configs directory of the webui root", choices=get_config_list(), value="None", visible=True)
             create_refresh_button(model_config, get_config_list, lambda: {"choices": get_config_list()},"refresh_model_config")
+        with gr.Row():
+            vae_config = gr.Dropdown(label="Select a local vae for the model from the models/vae directory of the webui root", choices=get_vae_list(), value="None", visible=True)
+            create_refresh_button(vae_config, get_vae_list, lambda: {"choices": get_vae_list()},"refresh_vae_directory")
 
         openvino_device = gr.Dropdown(label="Select a device", choices=list(core.available_devices), value=model_state.device)
         override_sampler = gr.Checkbox(label="Override the sampling selection from the main UI (Recommended as only below sampling methods have been validated for OpenVINO)", value=True)
@@ -751,9 +778,9 @@ class Script(scripts.Script):
                 return gr.update(value="Device changed to " + choice + ". Model will be re-compiled", visible=True)
         openvino_device.change(device_change, openvino_device, warmup_status)
 
-        return [model_config, openvino_device, override_sampler, sampler_name, enable_caching]
+        return [model_config, vae_config, openvino_device, override_sampler, sampler_name, enable_caching]
 
-    def run(self, p, model_config, openvino_device, override_sampler, sampler_name, enable_caching):
+    def run(self, p, model_config, vae_config, openvino_device, override_sampler, sampler_name, enable_caching):
         model_state.partition_id = 0
         os.environ["OPENVINO_TORCH_BACKEND_DEVICE"] = str(openvino_device)
 
@@ -771,14 +798,14 @@ class Script(scripts.Script):
         mode = 0
         if self.is_txt2img:
             mode = 0
-            processed = process_images_openvino(p, model_config, p.sampler_name, enable_caching, openvino_device, mode)
+            processed = process_images_openvino(p, model_config, vae_config, p.sampler_name, enable_caching, openvino_device, mode)
         else:
             if p.image_mask is None:
                 mode = 1
             else:
                 mode = 2
             p.init = functools.partial(init_new, p)
-            processed = process_images_openvino(p, model_config, p.sampler_name, enable_caching, openvino_device, mode)
+            processed = process_images_openvino(p, model_config, vae_config, p.sampler_name, enable_caching, openvino_device, mode)
         return processed
 
 
