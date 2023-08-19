@@ -60,7 +60,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
             devices.torch_gc()
-        model.vae.to(devices.device)
+        if not shared.cmd_opts.lowvram and not shared.opts.diffusers_seq_cpu_offload:
+            model.vae.to(devices.device)
         latents.to(model.vae.device)
         decoded = model.vae.decode(latents / model.vae.config.scaling_factor, return_dict=False)[0]
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
