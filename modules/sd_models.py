@@ -600,6 +600,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
     import logging
     logging.getLogger("diffusers").setLevel(logging.ERROR)
     timer.record("diffusers")
+    devices.set_cuda_params()
     diffusers_load_config = {
         "low_cpu_mem_usage": True,
         "torch_dtype": devices.dtype,
@@ -636,7 +637,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             if model_name is not None:
                 shared.log.info(f'Loading diffuser {op}: {model_name}')
                 model_file = modelloader.download_diffusers_model(hub_id=model_name)
-                devices.set_cuda_params()
                 try:
                     shared.log.debug(f'Diffusers load {op} config: {diffusers_load_config}')
                     sd_model = diffusers.DiffusionPipeline.from_pretrained(model_file, **diffusers_load_config)
@@ -651,7 +651,6 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                 unload_model_weights(op=op)
                 return
 
-            devices.set_cuda_params()
             vae = None
             sd_vae.loaded_vae_file = None
             if op == 'model' or op == 'refiner':
