@@ -373,7 +373,7 @@ options_templates.update(options_section(('optimizations', "Optimizations"), {
 options_templates.update(options_section(('cuda', "Compute Settings"), {
     "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "precision": OptionInfo("Autocast", "Precision type", gr.Radio, lambda: {"choices": ["Autocast", "Full"]}),
-    "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
+    "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" else "BF16" if devices.backend == "ipex" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
     "no_half": OptionInfo(False, "Use full precision for model (--no-half)", None, None, None),
     "no_half_vae": OptionInfo(False, "Use full precision for VAE (--no-half-vae)"),
     "upcast_sampling": OptionInfo(True if sys.platform == "darwin" else False, "Enable upcast sampling"),
