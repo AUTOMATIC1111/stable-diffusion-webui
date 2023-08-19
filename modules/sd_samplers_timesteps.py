@@ -3,6 +3,7 @@ import inspect
 import sys
 from modules import devices, sd_samplers_common, sd_samplers_timesteps_impl
 from modules.sd_samplers_cfg_denoiser import CFGDenoiser
+from modules.script_callbacks import ExtraNoiseParams, extra_noise_callback
 
 from modules.shared import opts
 import modules.shared as shared
@@ -106,6 +107,9 @@ class CompVisSampler(sd_samplers_common.Sampler):
 
         if opts.img2img_extra_noise > 0:
             p.extra_generation_params["Extra noise"] = opts.img2img_extra_noise
+            extra_noise_params = ExtraNoiseParams(noise, x)
+            extra_noise_callback(extra_noise_params)
+            noise = extra_noise_params.noise
             xi += noise * opts.img2img_extra_noise * sqrt_alpha_cumprod
 
         extra_params_kwargs = self.initialize(p)
