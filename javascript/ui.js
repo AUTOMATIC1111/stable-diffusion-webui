@@ -19,28 +19,11 @@ function all_gallery_buttons() {
 }
 
 function selected_gallery_button() {
-    var allCurrentButtons = gradioApp().querySelectorAll('[style="display: block;"].tabitem div[id$=_gallery].gradio-gallery .thumbnail-item.thumbnail-small.selected');
-    var visibleCurrentButton = null;
-    allCurrentButtons.forEach(function(elem) {
-        if (elem.parentElement.offsetParent) {
-            visibleCurrentButton = elem;
-        }
-    });
-    return visibleCurrentButton;
+    return all_gallery_buttons().find(elem => elem.classList.contains('selected')) ?? null;
 }
 
 function selected_gallery_index() {
-    var buttons = all_gallery_buttons();
-    var button = selected_gallery_button();
-
-    var result = -1;
-    buttons.forEach(function(v, i) {
-        if (v == button) {
-            result = i;
-        }
-    });
-
-    return result;
+    return all_gallery_buttons().findIndex(elem => elem.classList.contains('selected'));
 }
 
 function extract_image_from_gallery(gallery) {
