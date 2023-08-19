@@ -137,8 +137,8 @@ a{
     cursor: pointer;
 }
 
-/* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reqasaon. */
-.block.gradio-textbox, div.gradio-group, div.gradio-dropdown{
+/* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reason. */
+div.gradio-container, .block.gradio-textbox, div.gradio-group, div.gradio-dropdown{
     overflow: visible !important;
 }
 
@@ -609,13 +609,19 @@ table.popup-table .link{
     display: flex;
     gap: 1em;
     padding: 1em;
-    background-color: rgba(0,0,0,0.2);
+    background-color:rgba(0,0,0,0);
+    z-index: 1;
+    transition: 0.2s ease background-color;
+}
+.modalControls:hover {
+    background-color:rgba(0,0,0,0.9);
 }
 .modalClose {
     margin-left: auto;
 }
 .modalControls span{
     color: white;
+    text-shadow: 0px 0px 0.25em black;
     font-size: 35px;
     font-weight: bold;
     cursor: pointer;
@@ -638,6 +644,13 @@ table.popup-table .link{
     height: 100%;
     width: 100%;
     min-height: 0;
+}
+
+#modalImage{
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-50%);
 }
 
 .modalPrev,
@@ -1034,3 +1047,10 @@ div.accordions > div.input-accordion.input-accordion-open{
     flex-flow: column;
 }
 
+
+/* sticky right hand columns */
+
+#img2img_results, #txt2img_results, #extras_results {
+    position: sticky;
+    top: 0.5em;
+}
