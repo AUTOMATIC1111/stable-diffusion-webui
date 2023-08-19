@@ -167,7 +167,7 @@ def set_cuda_params():
 args = cmd_args.parser.parse_args()
 if args.use_ipex or (hasattr(torch, 'xpu') and torch.xpu.is_available()):
     backend = 'ipex'
-    from modules.ipex_specific import ipex_init
+    from modules.intel.ipex import ipex_init
     ipex_init()
 elif args.use_directml:
     backend = 'directml'

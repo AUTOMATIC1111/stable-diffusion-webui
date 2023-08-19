@@ -749,7 +749,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             sd_model.unet.to(memory_format=torch.channels_last)
 
         base_sent_to_cpu=False
-        if (shared.opts.cuda_compile or shared.opts.ipex_optimize) and torch.cuda.is_available():
+        if (shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none') or shared.opts.ipex_optimize:
             if op == 'refiner' and not sd_model.has_accelerate:
                 gpu_vram = memory_stats().get('gpu', {})
                 free_vram = gpu_vram.get('total', 0) - gpu_vram.get('used', 0)
@@ -774,20 +774,25 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
             try:
                 if shared.opts.ipex_optimize:
                     sd_model.unet.training = False
+                    sd_model.vae.training = False
                     sd_model.unet = torch.xpu.optimize(sd_model.unet, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
+                    sd_model.vae = torch.xpu.optimize(sd_model.vae, dtype=devices.dtype_unet, inplace=True, weights_prepack=False) # pylint: disable=attribute-defined-outside-init
                     shared.log.info("Applied IPEX Optimize.")
             except Exception as err:
                 shared.log.warning(f"IPEX Optimize not supported: {err}")
             try:
-                if shared.opts.cuda_compile:
+                if shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none':
                     shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_backend}")
                     import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
+                    if shared.opts.cuda_compile_backend == "openvino_fx":
+                        from modules.intel.openvino import openvino_fx
                     log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                     if hasattr(torch, '_logging'):
                         torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
                     torch._dynamo.config.verbose = shared.opts.cuda_compile_verbose # pylint: disable=protected-access
                     torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
                     sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
+                    sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
                     sd_model("dummy prompt")
                     shared.log.info("Complilation done.")
             except Exception as err:

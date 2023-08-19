@@ -11,7 +11,7 @@ def ipex_no_cuda(orig_func, *args, **kwargs): # pylint: disable=redefined-outer-
 #Autocast
 original_autocast = torch.autocast
 def ipex_autocast(*args, **kwargs):
-    if args[0] == "cuda":
+    if args[0] == "cuda" or args[0] == "xpu":
         if "dtype" in kwargs:
             return original_autocast("xpu", *args[1:], **kwargs)
         else:

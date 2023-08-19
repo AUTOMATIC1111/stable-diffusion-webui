@@ -1,6 +1,5 @@
 import os
 import torch
-import intel_extension_for_pytorch as ipex
 from openvino.frontend.pytorch.torchdynamo.execute import execute
 from openvino.frontend.pytorch.torchdynamo.partition import Partitioner
 from torch._dynamo.backends.common import fake_tensor_unsupported

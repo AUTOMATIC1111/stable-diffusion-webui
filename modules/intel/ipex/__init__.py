@@ -163,7 +163,3 @@ def ipex_init():
 
     ipex_hijacks()
     ipex_diffusers()
-    try:
-        from .openvino import openvino_fx
-    except Exception:
-        pass
