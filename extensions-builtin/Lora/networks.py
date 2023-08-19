@@ -304,7 +304,10 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
     wanted_names = tuple((x.name, x.te_multiplier, x.unet_multiplier, x.dyn_dim) for x in loaded_networks)
 
     weights_backup = getattr(self, "network_weights_backup", None)
-    if weights_backup is None:
+    if weights_backup is None and wanted_names != ():
+        if current_names != ():
+            raise RuntimeError("no backup weights found and current weights are not unchanged")
+
         if isinstance(self, torch.nn.MultiheadAttention):
             weights_backup = (self.in_proj_weight.to(devices.cpu, copy=True), self.out_proj.weight.to(devices.cpu, copy=True))
         else:
