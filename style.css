@@ -137,8 +137,8 @@ a{
     cursor: pointer;
 }
 
-/* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reqasaon. */
-.block.gradio-textbox, div.gradio-group, div.gradio-dropdown{
+/* gradio 3.39 puts a lot of overflow: hidden all over the place for an unknown reason. */
+div.gradio-container, .block.gradio-textbox, div.gradio-group, div.gradio-dropdown{
     overflow: visible !important;
 }
 
@@ -1034,3 +1034,10 @@ div.accordions > div.input-accordion.input-accordion-open{
     flex-flow: column;
 }
 
+
+/* sticky right hand columns */
+
+#img2img_results, #txt2img_results, #extras_results {
+    position: sticky;
+    top: 0.5em;
+}
