@@ -1155,6 +1155,9 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             devices.torch_gc()
 
     def sample_hr_pass(self, samples, decoded_samples, seeds, subseeds, subseed_strength, prompts):
+        if shared.state.interrupted:
+            return samples
+
         self.is_hr_pass = True
 
         target_width = self.hr_upscale_to_x
