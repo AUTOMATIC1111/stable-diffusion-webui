@@ -256,6 +256,21 @@ class StableDiffusionModelHijack:
             m.cond_stage_model.wrapped.model.token_embedding = m.cond_stage_model.wrapped.model.token_embedding.wrapped
             m.cond_stage_model = m.cond_stage_model.wrapped
 
+        conditioner = getattr(m, 'conditioner', None)
+        if conditioner:
+            for i in range(len(conditioner.embedders)):
+                embedder = conditioner.embedders[i]
+                if type(embedder) == sd_hijack_open_clip.FrozenOpenCLIPEmbedderWithCustomWords:
+                    embedder.wrapped.model.token_embedding = embedder.wrapped.model.token_embedding.wrapped
+                    conditioner.embedders[i] = embedder.wrapped
+                if type(embedder) == sd_hijack_clip.FrozenCLIPEmbedderForSDXLWithCustomWords:
+                    model_embeddings = embedder.wrapped.transformer.text_model.embeddings
+                    model_embeddings.token_embedding = model_embeddings.token_embedding.wrapped
+                    conditioner.embedders[i] = embedder.wrapped
+                if type(embedder) == sd_hijack_open_clip.FrozenOpenCLIPEmbedder2WithCustomWords:
+                    embedder.wrapped.model.token_embedding = embedder.wrapped.model.token_embedding.wrapped
+                    conditioner.embedders[i] = embedder.wrapped
+
         undo_optimizations()
         undo_weighted_forward(m)
 
