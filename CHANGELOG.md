@@ -1,12 +1,24 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-18
+## Update for 2023-08-19
+
+Another larger release thats been baking in dev branch for a while...
 
 - general:
   - caching of extra network information to enable much faster create/refresh operations  
     thanks @midcoastal
 - diffusers:
-  - redo "move model to cpu" logic to be more reliable
+  - add **hires** support (*experimental*)  
+    applies to all model types that support img2img, including **sd** and **sd-xl**  
+    also supports all hires upscaler types as well as standard params like steps and denoising strength  
+    when used with **sd-xl**, it can be used with or without refiner loaded  
+    how to enable - there are no explicit checkboxes other than second pass itself:
+    - hires: upscaler is set and target resolution is not at default  
+    - refiner: if refiner model is loaded  
+  - images save options: *before hires*, *before refiner*
+  - redo `move model to cpu` logic in settings -> diffusers to be more reliable  
+    note that system defaults have also changed, so you may need to tweak to your liking  
+  - update dependencies
 
 ## Update for 2023-08-17
 
