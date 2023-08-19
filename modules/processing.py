@@ -386,14 +386,14 @@ class StableDiffusionProcessing:
         return self.token_merging_ratio or opts.token_merging_ratio
 
     def setup_prompts(self):
-        if type(self.prompt) == list:
+        if isinstance(self.prompt,list):
             self.all_prompts = self.prompt
-        elif type(self.negative_prompt) == list:
+        elif isinstance(self.negative_prompt, list):
             self.all_prompts = [self.prompt] * len(self.negative_prompt)
         else:
             self.all_prompts = self.batch_size * self.n_iter * [self.prompt]
 
-        if type(self.negative_prompt) == list:
+        if isinstance(self.negative_prompt, list):
             self.all_negative_prompts = self.negative_prompt
         else:
             self.all_negative_prompts = [self.negative_prompt] * len(self.all_prompts)
@@ -512,10 +512,10 @@ class Processed:
         self.s_noise = p.s_noise
         self.s_min_uncond = p.s_min_uncond
         self.sampler_noise_scheduler_override = p.sampler_noise_scheduler_override
-        self.prompt = self.prompt if type(self.prompt) != list else self.prompt[0]
-        self.negative_prompt = self.negative_prompt if type(self.negative_prompt) != list else self.negative_prompt[0]
-        self.seed = int(self.seed if type(self.seed) != list else self.seed[0]) if self.seed is not None else -1
-        self.subseed = int(self.subseed if type(self.subseed) != list else self.subseed[0]) if self.subseed is not None else -1
+        self.prompt = self.prompt if not isinstance(self.prompt, list) else self.prompt[0]
+        self.negative_prompt = self.negative_prompt if not isinstance(self.negative_prompt, list) else self.negative_prompt[0]
+        self.seed = int(self.seed if not isinstance(self.seed, list) else self.seed[0]) if self.seed is not None else -1
+        self.subseed = int(self.subseed if not isinstance(self.subseed, list) else self.subseed[0]) if self.subseed is not None else -1
         self.is_using_inpainting_conditioning = p.is_using_inpainting_conditioning
 
         self.all_prompts = all_prompts or p.all_prompts or [self.prompt]
@@ -741,7 +741,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
 def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
-    if type(p.prompt) == list:
+    if isinstance(p.prompt, list):
         assert(len(p.prompt) > 0)
     else:
         assert p.prompt is not None
@@ -772,12 +772,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     p.setup_prompts()
 
-    if type(seed) == list:
+    if isinstance(seed, list):
         p.all_seeds = seed
     else:
         p.all_seeds = [int(seed) + (x if p.subseed_strength == 0 else 0) for x in range(len(p.all_prompts))]
 
-    if type(subseed) == list:
+    if isinstance(subseed, list):
         p.all_subseeds = subseed
     else:
         p.all_subseeds = [int(subseed) + x for x in range(len(p.all_prompts))]
@@ -1268,12 +1268,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if self.hr_negative_prompt == '':
             self.hr_negative_prompt = self.negative_prompt
 
-        if type(self.hr_prompt) == list:
+        if isinstance(self.hr_prompt, list):
             self.all_hr_prompts = self.hr_prompt
         else:
             self.all_hr_prompts = self.batch_size * self.n_iter * [self.hr_prompt]
 
-        if type(self.hr_negative_prompt) == list:
+        if isinstance(self.hr_negative_prompt, list):
             self.all_hr_negative_prompts = self.hr_negative_prompt
         else:
             self.all_hr_negative_prompts = self.batch_size * self.n_iter * [self.hr_negative_prompt]
