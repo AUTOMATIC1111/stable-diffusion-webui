@@ -453,7 +453,7 @@ def init_new(self, all_prompts, all_seeds, all_subseeds):
         raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
 
 
-def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_name, enable_caching, openvino_device, mode, vae_config) -> Processed:
+def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_config, sampler_name, enable_caching, openvino_device, mode) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
     if (mode == 0 and p.enable_hr):
@@ -533,7 +533,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                 model_state.mode = mode
                 model_state.model_hash = shared.sd_model.sd_model_hash
 
-            shared.sd_diffusers_model = get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_device, mode, vae_config)
+            shared.sd_diffusers_model = get_diffusers_sd_model(model_config, vae_config, sampler_name, enable_caching, openvino_device, mode)
             shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
 
             extra_network_data = p.parse_extra_network_prompts()
@@ -807,7 +807,7 @@ class Script(scripts.Script):
         mode = 0
         if self.is_txt2img:
             mode = 0
-            processed = process_images_openvino(p, model_config, vae_config,  p.sampler_name, enable_caching, openvino_device, mode)
+            processed = process_images_openvino(p, model_config, vae_config, p.sampler_name, enable_caching, openvino_device, mode)
         else:
             if p.image_mask is None:
                 mode = 1
