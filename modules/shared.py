@@ -6,6 +6,7 @@ from modules import shared_cmd_options, shared_gradio_themes, options, shared_it
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir  # noqa: F401
 from ldm.models.diffusion.ddpm import LatentDiffusion
 from modules import util
+from fake_useragent import FakeUserAgent
 
 cmd_opts = shared_cmd_options.cmd_opts
 parser = shared_cmd_options.parser
@@ -86,3 +87,5 @@ list_checkpoint_tiles = shared_items.list_checkpoint_tiles
 refresh_checkpoints = shared_items.refresh_checkpoints
 list_samplers = shared_items.list_samplers
 reload_hypernetworks = shared_items.reload_hypernetworks
+
+user_agent = FakeUserAgent(min_percentage=1.0).random
