@@ -28,10 +28,13 @@ def list_config_states():
     for filename in os.listdir(config_states_dir):
         if filename.endswith(".json"):
             path = os.path.join(config_states_dir, filename)
-            with open(path, "r", encoding="utf-8") as f:
-                j = json.load(f)
-                j["filepath"] = path
-                config_states.append(j)
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    j = json.load(f)
+                    j["filepath"] = path
+                    config_states.append(j)
+            except Exception as e:
+                print(f'[ERROR]{path}, {e}')
 
     config_states = sorted(config_states, key=lambda cs: cs["created_at"], reverse=True)
 
