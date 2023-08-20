@@ -142,6 +142,10 @@ div.gradio-container, .block.gradio-textbox, div.gradio-group, div.gradio-dropdo
     overflow: visible !important;
 }
 
+.flex-basis-revert {
+    flex-basis: revert !important;
+}
+
 
 /* general styled components */
 

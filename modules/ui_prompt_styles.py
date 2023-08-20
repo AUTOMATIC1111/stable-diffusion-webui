@@ -50,12 +50,14 @@ def refresh_styles():
 
 
 class UiPromptStyles:
-    def __init__(self, tabname, main_ui_prompt, main_ui_negative_prompt):
+    def __init__(self, tabname, main_ui_prompt, main_ui_negative_prompt, extra_buttons=None):
         self.tabname = tabname
 
         with gr.Row(elem_id=f"{tabname}_styles_row"):
             self.dropdown = gr.Dropdown(label="Styles", show_label=False, elem_id=f"{tabname}_styles", choices=list(shared.prompt_styles.styles), value=[], multiselect=True, tooltip="Styles")
             edit_button = ui_components.ToolButton(value=styles_edit_symbol, elem_id=f"{tabname}_styles_edit_button", tooltip="Edit styles")
+            if extra_buttons is not None:
+                extra_buttons()
 
         with gr.Box(elem_id=f"{tabname}_styles_dialog", elem_classes="popup-dialog") as styles_dialog:
             with gr.Row():

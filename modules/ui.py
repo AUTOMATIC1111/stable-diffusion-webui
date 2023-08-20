@@ -4,6 +4,7 @@ import os
 import sys
 from functools import reduce
 import warnings
+from contextlib import nullcontext
 
 import gradio as gr
 import gradio.utils
@@ -169,69 +170,54 @@ def update_token_counter(text, steps):
     return f"<span class='gr-box gr-text-input'>{token_count}/{max_length}</span>"
 
 
+class ToprowPrompt:
+    """Creates prompt components for Toprow"""
+    def __init__(self, id_part):
+        self.prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+        self.negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+
+
 class Toprow:
     """Creates a top row UI with prompts, generate button, styles, extra little buttons for things, and enables some functionality related to their operation"""
 
-    def __init__(self, is_img2img):
+    def __init__(self, is_img2img: bool, toprow_prompt: ToprowPrompt, in_settings_column=False):
         id_part = "img2img" if is_img2img else "txt2img"
         self.id_part = id_part
+        self.in_settings_column = in_settings_column
+        self.prompt = toprow_prompt.prompt
+        self.negative_prompt = toprow_prompt.negative_prompt
+        self.flex_revert = ["flex-basis-revert"] if in_settings_column else []
 
         with gr.Row(elem_id=f"{id_part}_toprow", variant="compact"):
-            with gr.Column(elem_id=f"{id_part}_prompt_container", scale=6):
-                with gr.Row():
-                    with gr.Column(scale=80):
-                        with gr.Row():
-                            self.prompt = gr.Textbox(label="Prompt", elem_id=f"{id_part}_prompt", show_label=False, lines=3, placeholder="Prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
-                            self.prompt_img = gr.File(label="", elem_id=f"{id_part}_prompt_image", file_count="single", type="binary", visible=False)
+            if in_settings_column:
+                with gr.Row(elem_classes=self.flex_revert):
+                    self._create_generate_box()
 
-                with gr.Row():
-                    with gr.Column(scale=80):
-                        with gr.Row():
-                            self.negative_prompt = gr.Textbox(label="Negative prompt", elem_id=f"{id_part}_neg_prompt", show_label=False, lines=3, placeholder="Negative prompt (press Ctrl+Enter or Alt+Enter to generate)", elem_classes=["prompt"])
+            with gr.Column(elem_id=f"{id_part}_prompt_container", scale=6):
+                with gr.Column() if self.in_settings_column else nullcontext():
+                    with gr.Row():
+                        toprow_prompt.prompt.render()
+                        self.prompt_img = gr.File(label="", elem_id=f"{id_part}_prompt_image", file_count="single", type="binary", visible=False)
+
+                    with gr.Row():
+                        self.negative_prompt.render()
 
             self.button_interrogate = None
             self.button_deepbooru = None
             if is_img2img:
-                with gr.Column(scale=1, elem_classes="interrogate-col"):
+                with gr.Column(scale=1, elem_classes="interrogate-col") if not in_settings_column else gr.Row():
                     self.button_interrogate = gr.Button('Interrogate\nCLIP', elem_id="interrogate")
                     self.button_deepbooru = gr.Button('Interrogate\nDeepBooru', elem_id="deepbooru")
 
-            with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
-                with gr.Row(elem_id=f"{id_part}_generate_box", elem_classes="generate-box"):
-                    self.interrupt = gr.Button('Interrupt', elem_id=f"{id_part}_interrupt", elem_classes="generate-box-interrupt")
-                    self.skip = gr.Button('Skip', elem_id=f"{id_part}_skip", elem_classes="generate-box-skip")
-                    self.submit = gr.Button('Generate', elem_id=f"{id_part}_generate", variant='primary')
+            if in_settings_column:
+                with gr.Row(elem_classes=self.flex_revert):
+                    self._create_styles(extra_buttons=self._create_tools)
 
-                    self.skip.click(
-                        fn=lambda: shared.state.skip(),
-                        inputs=[],
-                        outputs=[],
-                    )
-
-                    self.interrupt.click(
-                        fn=lambda: shared.state.interrupt(),
-                        inputs=[],
-                        outputs=[],
-                    )
-
-                with gr.Row(elem_id=f"{id_part}_tools"):
-                    self.paste = ToolButton(value=paste_symbol, elem_id="paste")
-                    self.clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{id_part}_clear_prompt")
-                    self.restore_progress_button = ToolButton(value=restore_progress_symbol, elem_id=f"{id_part}_restore_progress", visible=False)
-
-                    self.token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_token_counter", elem_classes=["token-counter"])
-                    self.token_button = gr.Button(visible=False, elem_id=f"{id_part}_token_button")
-                    self.negative_token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{id_part}_negative_token_counter", elem_classes=["token-counter"])
-                    self.negative_token_button = gr.Button(visible=False, elem_id=f"{id_part}_negative_token_button")
-
-                    self.clear_prompt_button.click(
-                        fn=lambda *x: x,
-                        _js="confirm_clear_prompt",
-                        inputs=[self.prompt, self.negative_prompt],
-                        outputs=[self.prompt, self.negative_prompt],
-                    )
-
-                self.ui_styles = ui_prompt_styles.UiPromptStyles(id_part, self.prompt, self.negative_prompt)
+            if not in_settings_column:
+                with gr.Column(scale=1, elem_id=f"{id_part}_actions_column"):
+                    self._create_generate_box()
+                    self._create_tools()
+                    self._create_styles()
 
         self.prompt_img.change(
             fn=modules.images.image_data,
@@ -239,6 +225,46 @@ class Toprow:
             outputs=[self.prompt, self.prompt_img],
             show_progress=False,
         )
+
+    def _create_generate_box(self):
+        with gr.Row(elem_id=f"{self.id_part}_generate_box", elem_classes=["generate-box"] + self.flex_revert):
+            self.interrupt = gr.Button('Interrupt', elem_id=f"{self.id_part}_interrupt", elem_classes="generate-box-interrupt")
+            self.skip = gr.Button('Skip', elem_id=f"{self.id_part}_skip", elem_classes="generate-box-skip")
+            self.submit = gr.Button('Generate', elem_id=f"{self.id_part}_generate", variant='primary')
+
+            self.skip.click(
+                fn=lambda: shared.state.skip(),
+                inputs=[],
+                outputs=[],
+            )
+
+            self.interrupt.click(
+                fn=lambda: shared.state.interrupt(),
+                inputs=[],
+                outputs=[],
+            )
+
+    def _create_tools(self):
+        with gr.Row(elem_id=f"{self.id_part}_tools", elem_classes=self.flex_revert) if not self.in_settings_column else nullcontext():
+            self.paste = ToolButton(value=paste_symbol, elem_id="paste")
+            self.clear_prompt_button = ToolButton(value=clear_prompt_symbol, elem_id=f"{self.id_part}_clear_prompt")
+            self.restore_progress_button = ToolButton(value=restore_progress_symbol, elem_id=f"{self.id_part}_restore_progress", visible=False)
+
+            self.token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{self.id_part}_token_counter", elem_classes=["token-counter"])
+            self.token_button = gr.Button(visible=False, elem_id=f"{self.id_part}_token_button")
+            self.negative_token_counter = gr.HTML(value="<span>0/75</span>", elem_id=f"{self.id_part}_negative_token_counter", elem_classes=["token-counter"])
+            self.negative_token_button = gr.Button(visible=False, elem_id=f"{self.id_part}_negative_token_button")
+
+            self.clear_prompt_button.click(
+                fn=lambda *x: x,
+                _js="confirm_clear_prompt",
+                inputs=[self.prompt, self.negative_prompt],
+                outputs=[self.prompt, self.negative_prompt],
+            )
+
+    def _create_styles(self, extra_buttons=None):
+        with gr.Row(elem_classes=self.flex_revert) if self.in_settings_column else nullcontext():
+            self.ui_styles = ui_prompt_styles.UiPromptStyles(self.id_part, self.prompt, self.negative_prompt, extra_buttons=extra_buttons)
 
 
 def setup_progressbar(*args, **kwargs):
@@ -325,9 +351,10 @@ def create_ui():
     scripts.scripts_current = scripts.scripts_txt2img
     scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
+    txt2img_prompt = ToprowPrompt("txt2img")
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
         if not opts.move_toprow_to_settings_column:
-            toprow = Toprow(is_img2img=False)
+            toprow = Toprow(is_img2img=False, toprow_prompt=txt2img_prompt)
 
         dummy_component = gr.Label(visible=False)
 
@@ -337,7 +364,7 @@ def create_ui():
         with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, gr.Row(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
                 if opts.move_toprow_to_settings_column:
-                    toprow = Toprow(is_img2img=False)
+                    toprow = Toprow(is_img2img=False, toprow_prompt=txt2img_prompt, in_settings_column=True)
 
                 scripts.scripts_txt2img.prepare_ui()
 
@@ -547,9 +574,10 @@ def create_ui():
     scripts.scripts_current = scripts.scripts_img2img
     scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
+    img2img_prompt = ToprowPrompt("img2img")
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
         if not opts.move_toprow_to_settings_column:
-            toprow = Toprow(is_img2img=True)
+            toprow = Toprow(is_img2img=True, toprow_prompt=img2img_prompt)
 
         extra_tabs = gr.Tabs(elem_id="img2img_extra_tabs")
         extra_tabs.__enter__()
@@ -557,7 +585,7 @@ def create_ui():
         with gr.Tab("Generation", id="img2img_generation") as img2img_generation_tab, FormRow(equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
                 if opts.move_toprow_to_settings_column:
-                    toprow = Toprow(is_img2img=True)
+                    toprow = Toprow(is_img2img=True, toprow_prompt=img2img_prompt, in_settings_column=True)
 
                 copy_image_buttons = []
                 copy_image_destinations = {}
