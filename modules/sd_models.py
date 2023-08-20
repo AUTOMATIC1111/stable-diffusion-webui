@@ -498,8 +498,8 @@ class SdModelData:
             pass
 
         if v is not None:
-            setattr(v, "base_vae", sd_vae.base_vae)
-            setattr(v, "loaded_vae_file", sd_vae.loaded_vae_file)
+            v.base_vae = sd_vae.base_vae
+            v.loaded_vae_file = sd_vae.loaded_vae_file
             self.loaded_sd_models.insert(0, v)
 
 
