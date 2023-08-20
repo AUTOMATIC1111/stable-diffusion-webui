@@ -3,7 +3,7 @@ import html
 import threading
 import time
 
-from modules import shared, progress, errors
+from modules import shared, progress, errors, devices
 
 queue_lock = threading.Lock()
 
@@ -74,6 +74,8 @@ def wrap_gradio_call(func, extra_outputs=None, add_stats=False):
 
             error_message = f'{type(e).__name__}: {e}'
             res = extra_outputs_array + [f"<div class='error'>{html.escape(error_message)}</div>"]
+
+        devices.torch_gc()
 
         shared.state.skipped = False
         shared.state.interrupted = False
