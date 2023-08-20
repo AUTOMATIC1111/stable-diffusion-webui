@@ -69,7 +69,6 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var dateStart = new Date();
     var wasEverActive = false;
     var parentProgressbar = progressbarContainer.parentNode;
-    var parentGallery = gallery ? gallery.parentNode : null;
 
     var divProgress = document.createElement('div');
     divProgress.className = 'progressDiv';
@@ -80,16 +79,16 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     divProgress.appendChild(divInner);
     parentProgressbar.insertBefore(divProgress, progressbarContainer);
 
-    if (parentGallery) {
+    if (gallery) {
         var livePreview = document.createElement('div');
         livePreview.className = 'livePreview';
-        parentGallery.insertBefore(livePreview, gallery);
+        gallery.insertBefore(livePreview, gallery.firstElementChild);
     }
 
     var removeProgressBar = function() {
         setTitle("");
         parentProgressbar.removeChild(divProgress);
-        if (parentGallery) parentGallery.removeChild(livePreview);
+        if (gallery) gallery.removeChild(livePreview);
         atEnd();
     };
 
@@ -98,12 +97,6 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
             if (res.completed) {
                 removeProgressBar();
                 return;
-            }
-
-            var rect = progressbarContainer.getBoundingClientRect();
-
-            if (rect.width) {
-                divProgress.style.width = rect.width + "px";
             }
 
             let progressText = "";
@@ -151,17 +144,11 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
         }, function() {
             removeProgressBar();
         });
-    }
+    };
 
     var funLivePreview = function(id_task, id_live_preview) {
         request("./internal/progress", {id_task: id_task, id_live_preview: id_live_preview}, function(res) {
             if (res.live_preview && gallery) {
-                rect = gallery.getBoundingClientRect();
-                if (rect.width) {
-                    livePreview.style.width = rect.width + "px";
-                    livePreview.style.height = rect.height + "px";
-                }
-
                 var img = new Image();
                 img.onload = function() {
                     livePreview.appendChild(img);
