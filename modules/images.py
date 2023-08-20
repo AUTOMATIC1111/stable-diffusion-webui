@@ -638,7 +638,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
         fullfn = os.path.join(path, f"{forced_filename}.{extension}")
 
     pnginfo = existing_info or {}
-    if info is not None:
+    if info is not None and p is not None:
         true_loras_reg_match = re.search(r"Lora hashes: (.+?),", info)
         true_loras = re.findall(r"(.+?):", true_loras_reg_match.group(1)) if true_loras_reg_match else ""
         prompt_loras = re.findall(r"<lora:(.+?)[:>]", info)
