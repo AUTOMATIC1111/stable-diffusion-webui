@@ -1,22 +1,20 @@
+import gradio as gr
+import numpy as np
 import os
 import re
 import traceback
+from PIL import Image, ImageOps, ImageFilter, ImageEnhance, UnidentifiedImageError
 from contextlib import closing
 from pathlib import Path
 
-import numpy as np
-from PIL import Image, ImageOps, ImageFilter, ImageEnhance, UnidentifiedImageError
-import gradio as gr
-
+import modules.processing as processing
+import modules.scripts
+import modules.shared as shared
 from modules import images as imgutil
 from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
-from modules.images import save_image
-import modules.shared as shared
-import modules.processing as processing
 from modules.ui import plaintext_to_html
-import modules.scripts
 
 
 def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0, use_png_info=False, png_info_props=None, png_info_dir=None, use_prompt_metadata=False):
@@ -69,7 +67,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
 
         if use_prompt_metadata:
             try:
-                geninfo, _ = read_info_from_image(img)
+                geninfo, _ = imgutil.read_info_from_image(img)
 
                 prompt_result = re.search(r"^([\S\s]+?)\nNegative prompt: ", geninfo)
                 p.prompt = prompt_result.group(1) if prompt_result else ""
@@ -79,7 +77,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
 
                 seed_result = re.search(r"Seed: (\d+),", geninfo)
                 p.seed = seed_result.group(1) if seed_result else ""
-            except:
+            except Exception:
                 print("Exception reading prompt data from img!")
                 traceback.print_exc()
 
@@ -178,10 +176,10 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
 
     if use_prompt_metadata and not is_batch:
         try:
-            geninfo, _ = read_info_from_image(image)
+            geninfo, _ = imgutil.read_info_from_image(image)
             prompt, negative_prompt, _ = geninfo.split("\n")
             negative_prompt.replace("Negative prompt: ", "", 1)
-        except:
+        except Exception:
             print("Exception reading prompt data from img!")
             traceback.print_exc()
 
