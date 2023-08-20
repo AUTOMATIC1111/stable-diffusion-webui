@@ -1,8 +1,8 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-19
+## Update for 2023-08-20
 
-Another larger release thats been baking in dev branch for a while...
+Another release thats been baking in dev branch for a while...
 
 - general:
   - caching of extra network information to enable much faster create/refresh operations  
