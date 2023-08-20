@@ -340,7 +340,7 @@ def get_diffusers_sd_model(model_config, vae_config, sampler_name, enable_cachin
                 sd_model = StableDiffusionXLImg2ImgPipeline(**sd_model.components)
             elif (mode == 2):
                 sd_model = StableDiffusionXLInpaintPipeline(**sd_model.components)
-        else:    
+        else:
             if model_config != "None":
                 local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
                 sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, load_safety_checker=False)
@@ -796,7 +796,6 @@ class Script(scripts.Script):
                 model_state.recompile = 1
                 return gr.update(value="Custom VAE changed to " + choice + ". Model will be re-compiled", visible=True)
         vae_config.change(vae_change, vae_config, vae_status)
-        
         return [model_config, vae_config, openvino_device, override_sampler, sampler_name, enable_caching, is_xl_ckpt]
 
     def run(self, p, model_config, vae_config, openvino_device, override_sampler, sampler_name, enable_caching, is_xl_ckpt):
