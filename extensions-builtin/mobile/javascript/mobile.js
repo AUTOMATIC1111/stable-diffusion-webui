@@ -18,7 +18,13 @@ function reportWindowSize() {
 
     for (var tab of ["txt2img", "img2img"]) {
         var button = gradioApp().getElementById(tab + '_generate_box');
-        var target = gradioApp().getElementById(currentlyMobile ? tab + '_results' : tab + '_actions_column');
+        var target = null;
+        if (currentlyMobile) {
+            target = gradioApp().getElementById(tab + '_results');
+        } else {
+            target = gradioApp().getElementById(tab + '_actions_column') || gradioApp().getElementById(tab + '_generate_row');
+        }
+
         target.insertBefore(button, target.firstElementChild);
     }
 }

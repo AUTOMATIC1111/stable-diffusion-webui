@@ -190,7 +190,7 @@ class Toprow:
 
         with gr.Row(elem_id=f"{id_part}_toprow", variant="compact"):
             if in_settings_column:
-                with gr.Row(elem_classes=self.flex_revert):
+                with gr.Row(elem_id=f"{id_part}_generate_row", elem_classes=self.flex_revert):
                     self._create_generate_box()
 
             with gr.Column(elem_id=f"{id_part}_prompt_container", scale=6):
