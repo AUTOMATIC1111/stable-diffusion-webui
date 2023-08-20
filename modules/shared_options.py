@@ -233,6 +233,7 @@ options_templates.update(options_section(('ui', "User interface"), {
     "gradio_theme": OptionInfo("Default", "Gradio theme", ui_components.DropdownEditable, lambda: {"choices": ["Default"] + shared_gradio_themes.gradio_hf_hub_themes}).info("you can also manually enter any of themes from the <a href='https://huggingface.co/spaces/gradio/theme-gallery'>gallery</a>.").needs_reload_ui(),
     "gradio_themes_cache": OptionInfo(True, "Cache gradio themes locally").info("disable to update the selected Gradio theme"),
     "move_toprow_to_settings_column": OptionInfo(False, "Move top row (prompt, generate button) to settings column").needs_reload_ui(),
+    "move_generate_button_outside_toprow": OptionInfo(False, "Make generate button stick during scroll").info("only applies when the setting above is ticked").needs_reload_ui(),
     "gallery_height": OptionInfo("", "Gallery height", gr.Textbox).info("an be any valid CSS value").needs_reload_ui(),
     "return_grid": OptionInfo(True, "Show grid in results for web"),
     "do_not_show_images": OptionInfo(False, "Do not show any images in results for web"),

@@ -326,6 +326,12 @@ div.block.gradio-accordion {
     right: 0;
     border-radius: 0 0.5rem 0.5rem 0;
 }
+.generate-sticky{
+    position: sticky;
+    z-index: 500;
+    top: 0.5em;
+    margin-bottom: 1em;
+}
 
 #img2img_scale_resolution_preview.block{
     display: flex;
