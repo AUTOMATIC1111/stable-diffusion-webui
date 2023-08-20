@@ -282,8 +282,8 @@ div.block.gradio-accordion {
     }
 }
 
-#txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
-    object-fit: scale-down;
+.gradio-gallery .thumbnails img {
+    object-fit: scale-down !important;
 }
 #txt2img_actions_column, #img2img_actions_column {
     gap: 0.5em;
@@ -499,11 +499,15 @@ table.popup-table .link{
 
 /* live preview */
 .progressDiv{
-    position: relative;
+    position: absolute;
     height: 20px;
     background: #b4c0cc;
     border-radius: 3px !important;
-    margin-bottom: -3px;
+    top: -20px;
+}
+
+[id$=_results].mobile{
+    margin-top: 28px;
 }
 
 .dark .progressDiv{
@@ -528,12 +532,9 @@ table.popup-table .link{
 .livePreview{
     position: absolute;
     z-index: 300;
-    background-color: white;
-    margin: -4px;
-}
-
-.dark .livePreview{
-    background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+    background: var(--background-fill-primary);
+    width: 100%;
+    height: 100%;
 }
 
 .livePreview img{

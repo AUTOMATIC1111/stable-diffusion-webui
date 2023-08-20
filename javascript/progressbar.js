@@ -69,7 +69,6 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var dateStart = new Date();
     var wasEverActive = false;
     var parentProgressbar = progressbarContainer.parentNode;
-    var parentGallery = gallery ? gallery.parentNode : null;
 
     var divProgress = document.createElement('div');
     divProgress.className = 'progressDiv';
@@ -80,30 +79,24 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     divProgress.appendChild(divInner);
     parentProgressbar.insertBefore(divProgress, progressbarContainer);
 
-    if (parentGallery) {
+    if (gallery) {
         var livePreview = document.createElement('div');
         livePreview.className = 'livePreview';
-        parentGallery.insertBefore(livePreview, gallery);
+        gallery.insertBefore(livePreview, gallery.firstElementChild);
     }
 
     var removeProgressBar = function() {
         setTitle("");
         parentProgressbar.removeChild(divProgress);
-        if (parentGallery) parentGallery.removeChild(livePreview);
+        if (gallery) gallery.removeChild(livePreview);
         atEnd();
     };
 
-    var fun = function(id_task, id_live_preview) {
-        request("./internal/progress", {id_task: id_task, id_live_preview: id_live_preview}, function(res) {
+    var funProgress = function(id_task) {
+        request("./internal/progress", {id_task: id_task, live_preview: false}, function(res) {
             if (res.completed) {
                 removeProgressBar();
                 return;
-            }
-
-            var rect = progressbarContainer.getBoundingClientRect();
-
-            if (rect.width) {
-                divProgress.style.width = rect.width + "px";
             }
 
             let progressText = "";
@@ -118,7 +111,6 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
             if (res.eta) {
                 progressText += " ETA: " + formatTime(res.eta);
             }
-
 
             setTitle(progressText);
 
@@ -142,14 +134,21 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
                 return;
             }
 
+            if (onProgress) {
+                onProgress(res);
+            }
 
+            setTimeout(() => {
+                funProgress(id_task, res.id_live_preview);
+            }, opts.live_preview_refresh_period || 500);
+        }, function() {
+            removeProgressBar();
+        });
+    };
+
+    var funLivePreview = function(id_task, id_live_preview) {
+        request("./internal/progress", {id_task: id_task, id_live_preview: id_live_preview}, function(res) {
             if (res.live_preview && gallery) {
-                rect = gallery.getBoundingClientRect();
-                if (rect.width) {
-                    livePreview.style.width = rect.width + "px";
-                    livePreview.style.height = rect.height + "px";
-                }
-
                 var img = new Image();
                 img.onload = function() {
                     livePreview.appendChild(img);
@@ -160,18 +159,14 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
                 img.src = res.live_preview;
             }
 
-
-            if (onProgress) {
-                onProgress(res);
-            }
-
             setTimeout(() => {
-                fun(id_task, res.id_live_preview);
+                funLivePreview(id_task, res.id_live_preview);
             }, opts.live_preview_refresh_period || 500);
         }, function() {
             removeProgressBar();
         });
     };
 
-    fun(id_task, 0);
+    funProgress(id_task, 0);
+    funLivePreview(id_task, 0);
 }
