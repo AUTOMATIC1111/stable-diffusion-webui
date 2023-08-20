@@ -11,21 +11,13 @@ def ipex_no_cuda(orig_func, *args, **kwargs): # pylint: disable=redefined-outer-
 #Autocast
 original_autocast = torch.autocast
 def ipex_autocast(*args, **kwargs):
-    if args[0] == "cuda":
+    if args[0] == "cuda" or args[0] == "xpu":
         if "dtype" in kwargs:
             return original_autocast("xpu", *args[1:], **kwargs)
         else:
             return original_autocast("xpu", *args[1:], dtype=devices.dtype, **kwargs)
     else:
         return original_autocast(*args, **kwargs)
-
-#Diffusers BF16:
-original_linear_forward = torch.nn.modules.Linear.forward
-def linear_forward(self, input):
-    if input.dtype != self.weight.data.dtype:
-        return original_linear_forward(self, input.to(self.weight.data.dtype))
-    else:
-        return original_linear_forward(self, input)
 
 #Embedding BF16
 original_torch_cat = torch.cat
@@ -34,14 +26,6 @@ def torch_cat(input, *args, **kwargs):
         return original_torch_cat([input[0].to(input[1].dtype), input[1], input[2].to(input[1].dtype)], *args, **kwargs)
     else:
         return original_torch_cat(input, *args, **kwargs)
-
-original_conv2d = torch.nn.functional.conv2d
-#Diffusers BF16:
-def conv2d(input, weight, *args, **kwargs):
-    if input.dtype != weight.data.dtype:
-        return original_conv2d(input.to(weight.data.dtype), weight, *args, **kwargs)
-    else:
-        return original_conv2d(input, weight, *args, **kwargs)
 
 original_interpolate = torch.nn.functional.interpolate
 #Latent antialias:
@@ -77,6 +61,9 @@ def ipex_hijacks():
     CondFunc('torch.zeros',
         lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=devices.device, **kwargs),
         lambda orig_func, *args, device=None, **kwargs: (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
+    CondFunc('torch.tensor',
+        lambda orig_func, *args, device=None, **kwargs: orig_func(*args, device=devices.device, **kwargs),
+        lambda orig_func, *args, device=None, **kwargs: (type(device) is torch.device and device.type == "cuda") or (type(device) is str and "cuda" in device))
 
     #Broken functions when torch.cuda.is_available is True:
     #Pin Memory:
@@ -98,7 +85,7 @@ def ipex_hijacks():
         lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
         orig_func(input.to(weight.data.dtype), normalized_shape, weight, *args, **kwargs),
         lambda orig_func, input, normalized_shape=None, weight=None, *args, **kwargs:
-        input.dtype != weight.data.dtype and weight is not None)
+        weight is not None and input.dtype != weight.data.dtype)
 
     #Functions that does not work with the XPU:
     #UniPC:
@@ -129,7 +116,5 @@ def ipex_hijacks():
 
     #Functions that make compile mad with CondFunc:
     torch.autocast = ipex_autocast
-    torch.nn.modules.Linear.forward = linear_forward
     torch.cat = torch_cat
-    torch.nn.functional.conv2d = conv2d
     torch.nn.functional.interpolate = interpolate
