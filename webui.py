@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+import subprocess
 
 from modules import timer
 from modules import initialize_util
@@ -76,6 +77,17 @@ def webui():
             elif shared.opts.auto_launch_browser == "Local":
                 auto_launch_browser = not any([cmd_opts.listen, cmd_opts.share, cmd_opts.ngrok])
 
+        electron_exe = False
+        if auto_launch_browser and cmd_opts.electron:
+            try:
+                electron_exe = subprocess.check_output(["node", "-p", "require('electron')"])
+            except OSError as ex:
+                print('Cannot find nodejs or electron...', ex)
+
+            if electron_exe:
+                auto_launch_browser = False
+                print('Found Electron in {}'.format(electron_exe))
+
         app, local_url, share_url = shared.demo.launch(
             share=cmd_opts.share,
             server_name=initialize_util.gradio_server_name(),
@@ -120,6 +132,16 @@ def webui():
 
         timer.startup_record = startup_timer.dump()
         print(f"Startup time: {startup_timer.summary()}.")
+
+        if electron_exe:
+            try:
+                electron_args = [
+                    "--disable-renderer-backgrounding"
+                ]
+                subprocess.run([electron_exe.strip()] + electron_args + [local_url])
+            except OSError as ex:
+                print('Failed running electron...', ex)
+
 
         try:
             while True:
