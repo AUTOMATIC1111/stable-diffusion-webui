@@ -282,8 +282,8 @@ div.block.gradio-accordion {
     }
 }
 
-#txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
-    object-fit: scale-down;
+.gradio-gallery .thumbnails img {
+    object-fit: scale-down !important;
 }
 #txt2img_actions_column, #img2img_actions_column {
     gap: 0.5em;
