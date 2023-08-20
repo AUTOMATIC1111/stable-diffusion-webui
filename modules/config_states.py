@@ -8,14 +8,12 @@ import time
 import tqdm
 
 from datetime import datetime
-from collections import OrderedDict
 import git
 
 from modules import shared, extensions, errors
 from modules.paths_internal import script_path, config_states_dir
 
-
-all_config_states = OrderedDict()
+all_config_states = {}
 
 
 def list_config_states():
