@@ -1,0 +1,10 @@
+.resize-handle{
+	cursor: col-resize;
+	grid-column: 2 / 3;
+	min-width: 8px !important;
+	max-width: 8px !important;
+	height: 100%;
+	border-left: 1px dashed var(--border-color-primary);
+	user-select: none;
+	margin-left: 8px;
+}
