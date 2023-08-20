@@ -108,7 +108,11 @@ def checkpoint_tiles():
     def alphanumeric_key(key):
         return [convert(c) for c in re.split('([0-9]+)', key)]
 
-    return sorted([x.title for x in checkpoints_list.values()], key=alphanumeric_key)
+    def pathsort_key(path):
+        folders, file_name = os.path.split(path)
+        return ([alphanumeric_key(folder) for folder in folders.split(os.sep)], alphanumeric_key(file_name))
+
+    return sorted([x.title for x in checkpoints_list.values()], key=pathsort_key)
 
 
 def list_models():
