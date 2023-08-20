@@ -711,7 +711,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
             else:
                 raise ValueError(f"Unknown backend {shared.backend}")
 
-            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+            if shared.cmd_opts.lowvram or shared.cmd_opts.medvram and shared.backend == shared.Backend.ORIGINAL:
                 lowvram.send_everything_to_cpu()
                 devices.torch_gc()
             if p.scripts is not None:

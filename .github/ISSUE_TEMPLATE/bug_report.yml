@@ -61,6 +61,30 @@ body:
       value: |
         If unsure if this is a right place to ask your question, perhaps post on [Discussions](https://github.com/vladmandic/automatic/discussions)
         Or reach-out to us on [Discord](https://discord.gg/WqMzTUDC)
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Backend
+      description: What is the backend you're using?
+      options:
+        - Original
+        - Diffusers
+      default: 0
+    validations:
+      required: true
+  - type: dropdown
+    id: model
+    attributes:
+      label: Model
+      description: What is the model type you're using?
+      options:
+        - SD 1.5
+        - SD-XL
+        - Kandinsky
+        - Other
+      default: 0
+    validations:
+      required: true
   - type: checkboxes
     attributes:
       label: Acknowledgements
@@ -68,5 +92,5 @@ body:
       options:
         - label: I have read the above and searched for existing issues
           required: true
-        - label: I confirm that this is classified correctly and its not an extension or diffusers-specific issue
+        - label: I confirm that this is classified correctly and its not an extension issue
           required: true

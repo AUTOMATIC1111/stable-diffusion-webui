@@ -3,6 +3,7 @@ import re
 from typing import Union
 import torch
 from modules import shared, devices, sd_models, errors, scripts, sd_hijack, hashes
+from modules.modelloader import directory_files, extension_filter
 
 metadata_tags_order = {"ss_sd_model_name": 1, "ss_resolution": 2, "ss_clip_skip": 3, "ss_num_train_images": 10, "ss_tag_frequency": 20}
 
@@ -444,10 +445,7 @@ def list_available_loras():
 
     os.makedirs(shared.cmd_opts.lora_dir, exist_ok=True)
 
-    candidates = list(shared.walk_files(shared.cmd_opts.lora_dir, allowed_extensions=[".pt", ".ckpt", ".safetensors"]))
-    for filename in sorted(candidates, key=str.lower):
-        if os.path.isdir(filename):
-            continue
+    for filename in sorted([*filter(extension_filter(['.PT', '.CKPT', '.SAFETENSORS']), directory_files(shared.cmd_opts.lora_dir))], key=str.lower):
 
         name = os.path.splitext(os.path.basename(filename))[0]
         entry = LoraOnDisk(name, filename)

@@ -268,7 +268,7 @@ def list_themes():
 
 
 def disable_extensions():
-    if opts.lora_disable:
+    if opts.lyco_patch_lora and backend != Backend.DIFFUSERS:
         if 'Lora' not in opts.disabled_extensions:
             opts.data['disabled_extensions'].append('Lora')
     else:
@@ -398,16 +398,16 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {
     "diffusers_pipeline": OptionInfo(pipelines[0], 'Diffusers pipeline', gr.Dropdown, lambda: {"choices": pipelines}),
-    "diffusers_move_base": OptionInfo(False, "Move base model to CPU when using refiner"),
-    "diffusers_move_unet": OptionInfo(False, "Move base model to CPU when using VAE"),
+    "diffusers_move_base": OptionInfo(True, "Move base model to CPU when using refiner"),
+    "diffusers_move_unet": OptionInfo(True, "Move base model to CPU when using VAE"),
     "diffusers_move_refiner": OptionInfo(True, "Move refiner model to CPU when not in use"),
     "diffusers_extract_ema": OptionInfo(True, "Use model EMA weights when possible"),
     "diffusers_generator_device": OptionInfo("default", "Generator device", gr.Radio, lambda: {"choices": ["default", "cpu"]}),
-    "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload"),
-    "diffusers_model_cpu_offload": OptionInfo(False, "Enable model CPU offload"),
+    "diffusers_model_cpu_offload": OptionInfo(False, "Enable model CPU offload (--medvram)"),
+    "diffusers_seq_cpu_offload": OptionInfo(False, "Enable sequential CPU offload (--lowvram)"),
     "diffusers_vae_upcast": OptionInfo("default", "VAE upcasting", gr.Radio, lambda: {"choices": ['default', 'true', 'false']}),
     "diffusers_vae_slicing": OptionInfo(True, "Enable VAE slicing"),
-    "diffusers_vae_tiling": OptionInfo(False, "Enable VAE tiling"),
+    "diffusers_vae_tiling": OptionInfo(True, "Enable VAE tiling"),
     "diffusers_attention_slicing": OptionInfo(False, "Enable attention slicing"),
     "diffusers_model_load_variant": OptionInfo("default", "Diffusers model loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
     "diffusers_vae_load_variant": OptionInfo("default", "Diffusers VAE loading variant", gr.Radio, lambda: {"choices": ['default', 'fp32', 'fp16']}),
@@ -422,7 +422,7 @@ options_templates.update(options_section(('system-paths', "System Paths"), {
     "ckpt_dir": OptionInfo(os.path.join(paths.models_path, 'Stable-diffusion'), "Path to directory with stable diffusion checkpoints"),
     "diffusers_dir": OptionInfo(os.path.join(paths.models_path, 'Diffusers'), "Path to directory with stable diffusion diffusers"),
     "vae_dir": OptionInfo(os.path.join(paths.models_path, 'VAE'), "Path to directory with VAE files"),
-    "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with Lora network(s)"),
+    "lora_dir": OptionInfo(os.path.join(paths.models_path, 'Lora'), "Path to directory with LoRA network(s)"),
     "lyco_dir": OptionInfo(os.path.join(paths.models_path, 'LyCORIS'), "Path to directory with LyCORIS network(s)"),
     "styles_dir": OptionInfo(os.path.join(paths.data_path, 'styles.csv'), "Path to user-defined styles file"),
     "embeddings_dir": OptionInfo(os.path.join(paths.models_path, 'embeddings'), "Embeddings directory for textual inversion"),
@@ -626,9 +626,9 @@ options_templates.update(options_section(('extra_networks', "Extra Networks"), {
     "extra_networks_card_square": OptionInfo(True, "UI disable variable aspect ratio"),
     "extra_networks_card_fit": OptionInfo("cover", "UI image contain method", gr.Radio, lambda: {"choices": ["contain", "cover", "fill"]}),
     "extra_network_skip_indexing": OptionInfo(False, "Do not automatically build extra network pages", gr.Checkbox),
-    "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all Lora types", gr.Checkbox),
-    "lora_disable": OptionInfo(False, "Disable built-in Lora handler", gr.Checkbox, { "visible": True }, onchange=disable_extensions),
-    "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple Loras", gr.Checkbox),
+    "lyco_patch_lora": OptionInfo(False, "Use LyCoris handler for all LoRA types", gr.Checkbox),
+    # "lora_disable": OptionInfo(False, "Disable built-in Lora handler", gr.Checkbox, { "visible": True }, onchange=disable_extensions),
+    "lora_functional": OptionInfo(False, "Use Kohya method for handling multiple LoRA", gr.Checkbox),
     "extra_networks_add_text_separator": OptionInfo(" ", "Extra text to add before <...> when adding extra network to prompt", gr.Text, { "visible": False }),
     "extra_networks_default_multiplier": OptionInfo(1.0, "Multiplier for extra networks", gr.Slider, {"minimum": 0.0, "maximum": 1.0, "step": 0.01}),
     "sd_hypernetwork": OptionInfo("None", "Add hypernetwork to prompt", gr.Dropdown, lambda: {"choices": ["None"] + list(hypernetworks.keys())}, refresh=reload_hypernetworks),
@@ -708,10 +708,11 @@ class Options:
             diff = {}
             for k, v in self.data.items():
                 if k in self.data_labels:
+                    if type(v) is list:
+                        diff[k] = v
                     if self.data_labels[k].default != v:
                         diff[k] = v
-            output = json.dumps(diff, indent=2)
-            writefile(output, filename)
+            writefile(diff, filename)
         except Exception as e:
             log.error(f'Saving settings failed: {filename} {e}')
 

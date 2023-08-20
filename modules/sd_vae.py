@@ -126,6 +126,9 @@ def resolve_vae(checkpoint_file):
         vae_from_options = vae_dict.get(shared.opts.sd_vae, None) # 5th
         if vae_from_options is not None:
             return vae_from_options, 'specified in settings'
+        vae_from_options = vae_dict.get(shared.opts.sd_vae + '.safetensors', None) # 6th
+        if vae_from_options is not None:
+            return vae_from_options, 'specified in settings'
         shared.log.warning(f"VAE not found: {shared.opts.sd_vae}")
     return None, None
 
@@ -188,10 +191,8 @@ def load_vae_diffusers(model_file, vae_file=None, vae_source="from unknown sourc
         pass
     else:
         diffusers_load_config['variant'] = shared.opts.diffusers_vae_load_variant
-
     if shared.opts.diffusers_vae_upcast != 'default':
         diffusers_load_config['force_upcast'] = True if shared.opts.diffusers_vae_upcast == 'true' else False
-
     shared.log.debug(f'Diffusers VAE load config: {diffusers_load_config}')
     try:
         import diffusers
@@ -251,8 +252,11 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         load_vae(sd_model, vae_file, vae_source)
         sd_hijack.model_hijack.hijack(sd_model)
         script_callbacks.model_loaded_callback(sd_model)
+        if vae_file is not None:
+            shared.log.info(f"VAE weights loaded: {vae_file}")
+    # else:
+    #    load_vae_diffusers(model_file, vae_file, vae_source)
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
         sd_model.to(devices.device)
-    shared.log.info(f"VAE weights loaded: {vae_file}")
     return sd_model

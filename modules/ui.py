@@ -92,8 +92,8 @@ def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resiz
     from modules import processing, devices
     if not enable:
         return ""
-    if modules.shared.backend == modules.shared.Backend.DIFFUSERS:
-       return "Hires resize: disabled"
+    # if modules.shared.backend == modules.shared.Backend.DIFFUSERS:
+    #   return "Hires resize: disabled"
     p = processing.StableDiffusionProcessingTxt2Img(width=width, height=height, enable_hr=True, hr_scale=hr_scale, hr_resize_x=hr_resize_x, hr_resize_y=hr_resize_y)
     p.init_hr()
     with devices.autocast():
@@ -106,8 +106,8 @@ def resize_from_to_html(width, height, scale_by):
     target_height = int(height * scale_by)
     if not target_width or not target_height:
         return "no image selected"
-    if modules.shared.backend == modules.shared.Backend.DIFFUSERS:
-       return "Hires resize: disabled"
+    # if modules.shared.backend == modules.shared.Backend.DIFFUSERS:
+    #   return "Hires resize: disabled"
     return f"Hires resize: from <span class='resolution'>{width}x{height}</span> to <span class='resolution'>{target_width}x{target_height}</span>"
 
 

@@ -288,12 +288,9 @@ def check_python():
         log.debug(f'Git {git_version.replace("git version", "").strip()}')
 
 
-# Intel hasn't released a corresponding torchvision wheel along with torch and
-# ipex wheels, so we have to install official pytorch torchvision as a W/A.
-# However, the latest torchvision explicitly requires torch version == 2.0.1,
-# which is incompatible with the Intel torch version 2.0.0a0. This will cause
-# intel torch to be uninstalled when pip scans the dependencies of torchvision.
-# This function will check the torch version and force installing Intel torch
+# Intel hasn't released a corresponding torchvision wheel along with torch and ipex wheels, so we have to install official pytorch torchvision as a W/A.
+# However, the latest torchvision explicitly requires torch version == 2.0.1, which is incompatible with the Intel torch version 2.0.0a0. This will cause
+# intel torch to be uninstalled when pip scans the dependencies of torchvision. This function will check the torch version and force installing Intel torch
 # 2.0.0a0 to avoid the underlying dll version error.
 # TODO(Disty or Nuullll) remove this W/A when Intel releases torchvision wheel for windows.
 def fix_ipex_win_torch():
@@ -306,8 +303,8 @@ def fix_ipex_win_torch():
             log.warning(f'Incompatible torch version {installed_torch_ver} for ipex windows, reinstalling to {ipex_torch_ver}')
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 intel_extension_for_pytorch==2.0.110+gitba7f6c1 -f https://developer.intel.com/ipex-whl-stable-xpu')
             install(torch_command)
-            import torch
-            import intel_extension_for_pytorch as ipex
+            import torch # pylint: disable=unused-import
+            import intel_extension_for_pytorch as ipex # pylint: disable=unused-import
     except Exception as e:
         log.warning(e)
 
@@ -340,7 +337,6 @@ def check_torch():
         log.info('AMD ROCm toolkit detected')
         os.environ.setdefault('PYTORCH_HIP_ALLOC_CONF', 'garbage_collection_threshold:0.8,max_split_size_mb:512')
         os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow-rocm')
-
         try:
             command = subprocess.run('rocm_agent_enumerator', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             amd_gpus = command.stdout.decode(encoding="utf8", errors="ignore").split('\n')
@@ -350,31 +346,26 @@ def check_torch():
             log.debug(f'Run rocm_agent_enumerator failed: {e}')
             amd_gpus = []
 
-        # use the first available amd gpu by default
-        hip_visible_devices = []
+        hip_visible_devices = [] # use the first available amd gpu by default
         for idx, gpu in enumerate(amd_gpus):
             if gpu in ['gfx1100', 'gfx1101', 'gfx1102']:
                 hip_visible_devices.append((idx, gpu, 'navi3x'))
                 break
-            # experimental navi 2x support
-            if gpu in ['gfx1030', 'gfx1031', 'gfx1032', 'gfx1034']:
+            if gpu in ['gfx1030', 'gfx1031', 'gfx1032', 'gfx1034']: # experimental navi 2x support
                 hip_visible_devices.append((idx, gpu, 'navi2x'))
                 break
         if len(hip_visible_devices) > 0:
             idx, gpu, arch = hip_visible_devices[0]
             log.debug(f'ROCm agent used by default: idx={idx} gpu={gpu} arch={arch}')
-
             os.environ.setdefault('HIP_VISIBLE_DEVICES', str(idx))
             if arch == 'navi3x':
                 os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '11.0.0')
-                # do not use tensorflow-rocm for navi 3x
-                if os.environ.get('TENSORFLOW_PACKAGE') == 'tensorflow-rocm':
+                if os.environ.get('TENSORFLOW_PACKAGE') == 'tensorflow-rocm': # do not use tensorflow-rocm for navi 3x
                     os.environ['TENSORFLOW_PACKAGE'] = 'tensorflow==2.13.0'
             elif arch == 'navi2x':
                 os.environ.setdefault('HSA_OVERRIDE_GFX_VERSION', '10.3.0')
             else:
                 log.debug(f'HSA_OVERRIDE_GFX_VERSION auto config is skipped for {gpu}')
-
         try:
             command = subprocess.run('hipconfig --version', shell=True, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             major_ver, minor_ver, *_ = command.stdout.decode(encoding="utf8", errors="ignore").split('.')
@@ -383,13 +374,11 @@ def check_torch():
         except Exception as e:
             log.debug(f'Run hipconfig failed: {e}')
             rocm_ver = None
-
         if rocm_ver in ['5.5', '5.6']:
             # install torch nightly via torchvision to avoid wasting bandwidth when torchvision depends on torch from yesterday
             torch_command = os.environ.get('TORCH_COMMAND', f'torchvision --pre --index-url https://download.pytorch.org/whl/nightly/rocm{rocm_ver}')
         else:
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/rocm5.4.2')
-
         xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     elif allow_ipex and (args.use_ipex or shutil.which('sycl-ls') is not None or shutil.which('sycl-ls.exe') is not None or os.environ.get('ONEAPI_ROOT') is not None or os.path.exists('/opt/intel/oneapi') or os.path.exists("C:/Program Files (x86)/Intel/oneAPI") or os.path.exists("C:/oneAPI")):
         args.use_ipex = True # pylint: disable=attribute-defined-outside-init

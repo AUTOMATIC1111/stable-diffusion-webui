@@ -306,7 +306,7 @@ infotext_to_setting_name_mapping = [
     ('Noise multiplier', 'initial_noise_multiplier'),
     ('Eta', 'eta_ancestral'),
     ('Eta DDIM', 'eta_ddim'),
-    ('Lora method', 'diffusers_lora_loader'),
+    ('LoRA method', 'diffusers_lora_loader'),
     ('Discard penultimate sigma', 'always_discard_next_to_last_sigma'),
     ('UniPC variant', 'uni_pc_variant'),
     ('UniPC skip type', 'uni_pc_skip_type'),
