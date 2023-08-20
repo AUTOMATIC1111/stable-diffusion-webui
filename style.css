@@ -1048,9 +1048,28 @@ div.accordions > div.input-accordion.input-accordion-open{
 }
 
 
-/* sticky right hand columns */
-
-#img2img_results, #txt2img_results, #extras_results {
+/* sticky behavior */
+.tabs-sticky > div.tab-nav{
     position: sticky;
+    top: 0;
+    z-index: 999;
+    background-color: var(--background-fill-primary);
+}
+
+#img2img_results, #txt2img_results, #extras_results{
+    position: sticky;
+}
+
+.generate-sticky{
+    position: sticky;
+    z-index: 500;
+    margin-bottom: 1em;
+}
+
+div#tabs:not(.tabs-sticky) :is(#img2img_results, #txt2img_results, #extras_results, .generate-sticky){
     top: 0.5em;
+}
+
+div#tabs.tabs-sticky :is(#img2img_results, #txt2img_results, #extras_results, .generate-sticky){
+    top: 3em;
 }

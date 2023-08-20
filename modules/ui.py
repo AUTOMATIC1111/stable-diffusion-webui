@@ -1269,7 +1269,7 @@ def create_ui():
 
         parameters_copypaste.connect_paste_params_buttons()
 
-        with gr.Tabs(elem_id="tabs") as tabs:
+        with gr.Tabs(elem_id="tabs", elem_classes="tabs-sticky" if opts.sticky_tabs else []) as tabs:
             tab_order = {k: i for i, k in enumerate(opts.ui_tab_order)}
             sorted_interfaces = sorted(interfaces, key=lambda x: tab_order.get(x[1], 9999))
 
