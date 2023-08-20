@@ -11,6 +11,8 @@
 | INDEX_URL              | `--index-url` parameter for pip.                                                                                                             |
 | TRANSFORMERS_CACHE     | Path to where transformers library will download and keep its files related to the CLIP model.                                             |
 | CUDA_VISIBLE_DEVICES   | Select GPU to use for your instance on a system with multiple GPUs. For example, if you want to use secondary GPU, put "1".<br>(add a new line to webui-user.bat not in COMMANDLINE_ARGS): `set CUDA_VISIBLE_DEVICES=0`<br>Alternatively, just use `--device-id` flag in `COMMANDLINE_ARGS`. |
+| SD_WEBUI_LOG_LEVEL   | Log verbosity. Supports any valid logging level supported by Python's built-in `logging` module. Defaults to `INFO` if not set. |
+| SD_WEBUI_CACHE_FILE   | Cache file path. Defaults to `cache.json` in the root directory if not set. |
 
 ### webui-user
 The recommended way to specify environment variables is by editing `webui-user.bat` (Windows) and `webui-user.sh` (Linux):
