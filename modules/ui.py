@@ -764,6 +764,8 @@ def create_ui():
                 with FormRow():
                     resize_mode = gr.Radio(label="Resize mode", elem_id="resize_mode", choices=["Just resize", "Crop and resize", "Resize and fill", "Just resize (latent upscale)"], type="index", value="Just resize")
 
+                use_prompt_metadata = gr.Checkbox(label="Use prompt metadata", elem_id="use_prompt_metadata")
+
                 modules.scripts.scripts_img2img.prepare_ui()
 
                 for category in ordered_ui_categories():
@@ -930,6 +932,7 @@ def create_ui():
                     width,
                     scale_by,
                     resize_mode,
+                    use_prompt_metadata,
                     inpaint_full_res,
                     inpaint_full_res_padding,
                     inpainting_mask_invert,

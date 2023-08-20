@@ -1,4 +1,6 @@
 import os
+import re
+import traceback
 from contextlib import closing
 from pathlib import Path
 
@@ -10,14 +12,14 @@ from modules import sd_samplers, images as imgutil
 from modules.generation_parameters_copypaste import create_override_settings_dict, parse_generation_parameters
 from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images
 from modules.shared import opts, state
-from modules.images import save_image
+from modules.images import save_image, read_info_from_image
 import modules.shared as shared
 import modules.processing as processing
 from modules.ui import plaintext_to_html
 import modules.scripts
 
 
-def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0, use_png_info=False, png_info_props=None, png_info_dir=None):
+def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=False, scale_by=1.0, use_png_info=False, png_info_props=None, png_info_dir=None, use_prompt_metadata=False):
     processing.fix_seed(p)
 
     images = list(shared.walk_files(input_dir, allowed_extensions=(".png", ".jpg", ".jpeg", ".webp")))
@@ -68,6 +70,22 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
             p.height = int(img.height * scale_by)
 
         p.init_images = [img] * p.batch_size
+
+        if use_prompt_metadata:
+            try:
+                geninfo, _ = read_info_from_image(img)
+
+                prompt_result = re.search(r"^([\S\s]+?)\nNegative prompt: ", geninfo)
+                p.prompt = prompt_result.group(1) if prompt_result else ""
+
+                negative_prompt_result = re.search(r"Negative prompt: ([\S\s]+?)\nSteps: ", geninfo)
+                p.negative_prompt = negative_prompt_result.group(1).strip() if negative_prompt_result else ""
+
+                seed_result = re.search(r"Seed: (\d+),", geninfo)
+                p.seed = seed_result.group(1) if seed_result else ""
+            except:
+                print("Exception reading prompt data from img!")
+                traceback.print_exc()
 
         image_path = Path(image)
         if is_inpaint_batch:
@@ -128,7 +146,7 @@ def process_batch(p, input_dir, output_dir, inpaint_mask_dir, args, to_scale=Fal
                 save_image(processed_image, os.path.join(output_dir, relpath), None, extension=opts.samples_format, info=infotext, forced_filename=filename, save_to_dirs=False)
 
 
-def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
+def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_styles, init_img, sketch, init_img_with_mask, inpaint_color_sketch, inpaint_color_sketch_orig, init_img_inpaint, init_mask_inpaint, steps: int, sampler_index: int, mask_blur: int, mask_alpha: float, inpainting_fill: int, restore_faces: bool, tiling: bool, n_iter: int, batch_size: int, cfg_scale: float, image_cfg_scale: float, denoising_strength: float, seed: int, subseed: int, subseed_strength: float, seed_resize_from_h: int, seed_resize_from_w: int, seed_enable_extras: bool, selected_scale_tab: int, height: int, width: int, scale_by: float, resize_mode: int, use_prompt_metadata: bool, inpaint_full_res: bool, inpaint_full_res_padding: int, inpainting_mask_invert: int, img2img_batch_input_dir: str, img2img_batch_output_dir: str, img2img_batch_inpaint_mask_dir: str, override_settings_texts, img2img_batch_use_png_info: bool, img2img_batch_png_info_props: list, img2img_batch_png_info_dir: str, request: gr.Request, *args):
     override_settings = create_override_settings_dict(override_settings_texts)
 
     is_batch = mode == 5
@@ -172,6 +190,15 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         height = int(image.height * scale_by)
 
     assert 0. <= denoising_strength <= 1., 'can only work with strength in [0.0, 1.0]'
+
+    if use_prompt_metadata and not is_batch:
+        try:
+            geninfo, _ = read_info_from_image(image)
+            prompt, negative_prompt, _ = geninfo.split("\n")
+            negative_prompt.replace("Negative prompt: ", "", 1)
+        except:
+            print("Exception reading prompt data from img!")
+            traceback.print_exc()
 
     p = StableDiffusionProcessingImg2Img(
         sd_model=shared.sd_model,
@@ -223,7 +250,7 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         if is_batch:
             assert not shared.cmd_opts.hide_ui_dir_config, "Launched with --hide-ui-dir-config, batch img2img disabled"
 
-            process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by, use_png_info=img2img_batch_use_png_info, png_info_props=img2img_batch_png_info_props, png_info_dir=img2img_batch_png_info_dir)
+            process_batch(p, img2img_batch_input_dir, img2img_batch_output_dir, img2img_batch_inpaint_mask_dir, args, to_scale=selected_scale_tab == 1, scale_by=scale_by, use_png_info=img2img_batch_use_png_info, png_info_props=img2img_batch_png_info_props, png_info_dir=img2img_batch_png_info_dir, use_prompt_metadata=use_prompt_metadata)
 
             processed = Processed(p, [], p.seed, "")
         else:

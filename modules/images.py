@@ -624,6 +624,21 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
 
     pnginfo = existing_info or {}
     if info is not None:
+        true_loras_reg_match = re.search(r"Lora hashes: (.+?),", info)
+        true_loras = re.findall(r"(.+?):", true_loras_reg_match.group(1)) if true_loras_reg_match else ""
+        prompt_loras = re.findall(r"<lora:(.+?)[:>]", info)
+
+        if set(prompt_loras) != set(true_loras):
+            prompt_reg_match = re.search(r"^([\S\s]+?)\nNegative prompt: ", info)
+            prompt = prompt_reg_match.group(1) if prompt_reg_match else ""
+            true_lora_index = p.all_prompts.index(prompt) - p.batch_index
+            true_lora_prompt = p.all_prompts[true_lora_index]
+            true_loras_with_weights = re.findall(r"<lora:[\S\s]+?>", true_lora_prompt)
+            # cut out old loras
+            info = re.sub(r"<lora:[\S\s]+?>", '', info)
+            # append new ones
+            info = re.sub(r"^([\S\s]+?)(\nNegative prompt: )", r"\g<1>" + "".join(true_loras_with_weights) + r"\g<2>", info)
+
         pnginfo[pnginfo_section_name] = info
 
     params = script_callbacks.ImageSaveParams(image, p, fullfn, pnginfo)
