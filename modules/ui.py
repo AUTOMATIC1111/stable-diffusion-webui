@@ -188,12 +188,12 @@ class Toprow:
         self.negative_prompt = toprow_prompt.negative_prompt
         self.flex_revert = ["flex-basis-revert"] if in_settings_column else []
 
-        if in_settings_column and opts.move_generate_button_outside_toprow:
+        if in_settings_column and opts.sticky_generate_button:
             with gr.Row(elem_id=f"{id_part}_generate_row", elem_classes=["generate-sticky"] + self.flex_revert):
                 self._create_generate_box()
 
         with gr.Row(elem_id=f"{id_part}_toprow", variant="compact"):
-            if in_settings_column and not opts.move_generate_button_outside_toprow:
+            if in_settings_column and not opts.sticky_generate_button:
                 with gr.Row(elem_id=f"{id_part}_generate_row", elem_classes=self.flex_revert):
                     self._create_generate_box()
 
