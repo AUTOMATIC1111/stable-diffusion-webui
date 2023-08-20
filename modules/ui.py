@@ -326,7 +326,8 @@ def create_ui():
     scripts.scripts_txt2img.initialize_scripts(is_img2img=False)
 
     with gr.Blocks(analytics_enabled=False) as txt2img_interface:
-        toprow = Toprow(is_img2img=False)
+        if not opts.move_toprow_to_settings_column:
+            toprow = Toprow(is_img2img=False)
 
         dummy_component = gr.Label(visible=False)
 
@@ -335,6 +336,9 @@ def create_ui():
 
         with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, gr.Row(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
+                if opts.move_toprow_to_settings_column:
+                    toprow = Toprow(is_img2img=False)
+
                 scripts.scripts_txt2img.prepare_ui()
 
                 for category in ordered_ui_categories():
@@ -544,13 +548,17 @@ def create_ui():
     scripts.scripts_img2img.initialize_scripts(is_img2img=True)
 
     with gr.Blocks(analytics_enabled=False) as img2img_interface:
-        toprow = Toprow(is_img2img=True)
+        if not opts.move_toprow_to_settings_column:
+            toprow = Toprow(is_img2img=True)
 
         extra_tabs = gr.Tabs(elem_id="img2img_extra_tabs")
         extra_tabs.__enter__()
 
         with gr.Tab("Generation", id="img2img_generation") as img2img_generation_tab, FormRow(equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
+                if opts.move_toprow_to_settings_column:
+                    toprow = Toprow(is_img2img=True)
+
                 copy_image_buttons = []
                 copy_image_destinations = {}
 
