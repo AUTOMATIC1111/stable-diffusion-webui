@@ -253,9 +253,8 @@ class SpecifiedCache:
         logging.info(f"add cache: {key}")
         self.lru[key] = value
         if self.ram.get(key) is not None:
-            v = self.ram.pop(key)
+            self.ram.pop(key)
             logging.info(f"checkpoint should not exists: {key}")
-            del v
             gc.collect()
 
     def get_model_name(self, key):

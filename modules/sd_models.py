@@ -704,7 +704,7 @@ def reload_model_weights_arc(sd_model=None, info=None):
 
     if not sd_model:
         sd_model = model_data.sd_model
- 
+
     timer = Timer()
     if sd_model is not None:  # previous model load failed
         if sd_model.sd_model_checkpoint == checkpoint_info.filename:
