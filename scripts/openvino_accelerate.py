@@ -337,9 +337,9 @@ def get_diffusers_sd_model(model_config, vae_config, sampler_name, enable_cachin
             else:
                 sd_model = StableDiffusionXLPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, load_safety_checker=False, torch_dtype=torch.float32)
             if (mode == 1):
-                sd_model = StableDiffusionXLImg2ImgPipeline(**sd_model.components)
+                sd_model = StableDiffusionXLImg2ImgPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, load_safety_checker=False, torch_dtype=torch.float32)
             elif (mode == 2):
-                sd_model = StableDiffusionXLInpaintPipeline(**sd_model.components)
+                sd_model = StableDiffusionXLInpaintPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, load_safety_checker=False, torch_dtype=torch.float32)
         else:
             if model_config != "None":
                 local_config_file = os.path.join(curr_dir_path, 'configs', model_config)
