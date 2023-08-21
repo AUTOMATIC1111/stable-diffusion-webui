@@ -13,7 +13,7 @@ group.add_argument("--medvram", action='store_true', help="Split model stages an
 group.add_argument("--lowvram", action='store_true', help="Split model components and keep only active part in VRAM, default: %(default)s")
 group.add_argument("--ckpt", type=str, default=None, help="Path to model checkpoint to load immediately, default: %(default)s")
 group.add_argument('--vae', type=str, default=None, help='Path to VAE checkpoint to load immediately, default: %(default)s')
-group.add_argument("--data-dir", type=str, default=os.path.dirname(os.path.dirname(os.path.realpath(__file__))), help="Base path where all user data is stored, default: %(default)s")
+group.add_argument("--data-dir", type=str, default="", help="Base path where all user data is stored, default: %(default)s")
 group.add_argument("--models-dir", type=str, default="models", help="Base path where all models are stored, default: %(default)s",)
 group.add_argument("--allow-code", action='store_true', help="Allow custom script execution, default: %(default)s")
 group.add_argument("--share", action='store_true', help="Enable UI accessible through Gradio site, default: %(default)s")

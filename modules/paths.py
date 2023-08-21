@@ -63,7 +63,7 @@ def create_paths(opts):
     def fix_path(folder):
         if opts.data.get(folder, None) is None or opts.data[folder] is None or opts.data[folder] == '':
             return
-        if os.path.isabs(opts.data[folder]) or opts.data[folder].startswith(data_path):
+        if os.path.isabs(opts.data[folder]) or (len(data_path) > 0 and opts.data[folder].startswith(data_path)) and not opts.data[folder].startswith(script_path):
             return
         fullpath = os.path.join(data_path, opts.data[folder])
         relpath = os.path.relpath(fullpath, script_path)

@@ -266,7 +266,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_highres_fix and hasattr(shared.sd_model, 'vae'):
                 save_intermediate(latents=output.images, suffix="-before-hires")
             hires_resize(latents=output.images)
-            print('HERE', p.init_images)
             sd_models.set_diffuser_pipe(shared.sd_model, sd_models.DiffusersTaskType.IMAGE_2_IMAGE)
             p.ops.append('hires')
             hires_args = set_pipeline_args(

@@ -16,8 +16,6 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
         checkpoint: sd_models.CheckpointInfo
         for name, checkpoint in sd_models.checkpoints_list.items():
             path, _ext = os.path.splitext(checkpoint.filename)
-            if not os.path.exists(path) and sd_models.model_path not in path:
-                path = os.path.abspath(os.path.join(checkpoint.path, os.pardir, os.pardir))
             yield {
                 "name": checkpoint.name_for_extra,
                 "filename": path,

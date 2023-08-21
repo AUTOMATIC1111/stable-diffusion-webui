@@ -12,7 +12,7 @@ default_sd_model_file = sd_model_file
 
 # Parse the --data-dir flag first so we can use it as a base for our other argument default values
 parser_pre = argparse.ArgumentParser(add_help=False)
-parser_pre.add_argument("--data-dir", type=str, default=os.path.dirname(modules_path), help="base path where all user data is stored", )
+parser_pre.add_argument("--data-dir", type=str, default="", help="base path where all user data is stored", )
 parser_pre.add_argument("--models-dir", type=str, default="models", help="base path where all models are stored",)
 cmd_opts_pre = parser_pre.parse_known_args()[0]
 data_path = cmd_opts_pre.data_dir

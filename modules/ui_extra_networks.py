@@ -113,7 +113,8 @@ class ExtraNetworksPage:
     def link_preview(self, filename):
         quoted_filename = urllib.parse.quote(filename.replace('\\', '/'))
         mtime = os.path.getmtime(filename)
-        return f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
+        preview = f"./sd_extra_networks/thumb?filename={quoted_filename}&mtime={mtime}"
+        return preview
 
     def search_terms_from_path(self, filename, possible_directories=None):
         abspath = os.path.abspath(filename)
@@ -158,16 +159,16 @@ class ExtraNetworksPage:
             return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network page not ready<br>Click refresh to try again</div>"
         subdirs = {}
         allowed_folders = [os.path.abspath(x) for x in self.allowed_directories_for_previews()]
-        for parentdir, dirs in {dir: modelloader.directory_directories(dir) for dir in allowed_folders}.items(): # pylint: disable=redefined-builtin
-            for dir in dirs.keys(): # pylint: disable=redefined-builtin
-                if shared.opts.diffusers_dir in dir:
+        for parentdir, dirs in {d: modelloader.directory_directories(d) for d in allowed_folders}.items():
+            for tgt in dirs.keys():
+                if shared.opts.diffusers_dir in tgt:
                     subdirs[os.path.basename(shared.opts.diffusers_dir)] = 1
-                if 'models--' in dir:
+                if 'models--' in tgt:
                     continue
-                subdir = dir[len(parentdir):].replace("\\", "/")
+                subdir = tgt[len(parentdir):].replace("\\", "/")
                 while subdir.startswith("/"):
                     subdir = subdir[1:]
-                if not self.is_empty(dir):
+                if not self.is_empty(tgt):
                     subdirs[subdir] = 1
         if subdirs:
             subdirs = OrderedDict(sorted(subdirs.items()))
@@ -183,9 +184,9 @@ class ExtraNetworksPage:
             self.html = ''
             try:
                 self.items = list(self.list_items())
-            except Exception:
+            except Exception as e:
                 self.items = []
-                shared.log.error(f'Extra networks error listing items: {self.__class__}')
+                shared.log.error(f'Extra networks error listing items: class={self.__class__} tab={tabname} {e}')
             self.create_xyz_grid()
             htmls = []
             items = self.items
@@ -202,7 +203,7 @@ class ExtraNetworksPage:
             threading.Thread(target=self.create_thumb).start()
             return res
         except Exception as e:
-            shared.log.error(f'Extra networks {self.title} {tabname} page error: {e.__class__.__name__} -> {e}')
+            shared.log.error(f'Extra networks page error: title={self.title} tab={tabname} class={e.__class__.__name__} {e}')
             return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network error<br>{e}</div>"
 
     def list_items(self):
@@ -247,22 +248,18 @@ class ExtraNetworksPage:
 
     def find_preview(self, path):
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        dir = os.path.dirname(path) # pylint: disable=redefined-builtin
-        paths = modelloader.directory_directories(dir, recursive=False)
         for file in [f'{path}.thumb.{ext}' for ext in preview_extensions]: # use thumbnail if exists
-            if file in paths[dir][1] and os.path.exists(file):
+            if os.path.exists(file):
                 return self.link_preview(file)
         for file in [f'{path}{mid}{ext}' for ext in preview_extensions for mid in ['.preview.', '.']]:
-            if file in paths[dir][1] and os.path.exists(file):
+            if os.path.exists(file):
                 self.missing_thumbs.append(file)
                 return self.link_preview(file)
         return self.link_preview('html/card-no-preview.png')
 
     def find_description(self, path):
-        dir = os.path.dirname(path) # pylint: disable=redefined-builtin
-        paths = modelloader.directory_directories(dir, recursive=False)
         for file in [f"{path}.txt", f"{path}.description.txt"]:
-            if file in paths[dir][1]:
+            if os.path.exists(file):
                 try:
                     with open(file, "r", encoding="utf-8", errors="replace") as f:
                         txt = f.read()
@@ -273,11 +270,9 @@ class ExtraNetworksPage:
         return None
 
     def find_info(self, path):
-        dir = os.path.dirname(path) # pylint: disable=redefined-builtin
-        paths = modelloader.directory_directories(dir, recursive=False)
         basename, _ext = os.path.splitext(path)
         for file in [f"{path}.info", f"{path}.civitai.info", f"{basename}.info", f"{basename}.civitai.info"]:
-            if file in paths[dir][1]:
+            if os.path.exists(file):
                 try:
                     with open(file, "r", encoding="utf-8", errors="replace") as f:
                         txt = f.read()

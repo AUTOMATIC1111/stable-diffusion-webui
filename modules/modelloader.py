@@ -277,7 +277,6 @@ def load_models(model_path: str, model_url: str = None, command_path: str = None
     @return: A list of paths containing the desired model(s)
     """
     places = unique_directories([model_path, command_path])
-    #shared.log.debug(f"{inspect.currentframe().f_code.co_name}: {', '.join(places)}")
     output = []
     try:
         output:list = [*filter(extension_filter(ext_filter, ext_blacklist), directory_files(*places))]
