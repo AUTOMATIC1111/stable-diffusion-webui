@@ -111,6 +111,12 @@ options_templates.update(options_section(('system', "System"), {
     "hide_ldm_prints": OptionInfo(True, "Prevent Stability-AI's ldm/sgm modules from printing noise to console."),
 }))
 
+options_templates.update(options_section(('API', "API"), {
+    "api_enable_requests": OptionInfo(True, "Allow http:// and https:// URLs for input images in API"),
+    "api_forbid_local_requests": OptionInfo(True, "Forbid URLs to local resources"),
+    "api_useragent": OptionInfo("", "User agent for requests"),
+}))
+
 options_templates.update(options_section(('training', "Training"), {
     "unload_models_when_training": OptionInfo(False, "Move VAE and CLIP to RAM when training if possible. Saves VRAM."),
     "pin_memory": OptionInfo(False, "Turn on pin_memory for DataLoader. Makes training slightly faster but can increase memory usage."),

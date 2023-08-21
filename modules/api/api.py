@@ -57,29 +57,35 @@ def setUpscalers(req: dict):
     return reqDict
 
 
+def verify_url(url):
+    """Returns True if the url refers to a global resource."""
+
+    import socket
+    from urllib.parse import urlparse
+    try:
+        parsed_url = urlparse(url)
+        domain_name = parsed_url.netloc
+        host = socket.gethostbyname_ex(domain_name)
+        for ip in host[2]:
+            ip_addr = ipaddress.ip_address(ip)
+            if not ip_addr.is_global:
+                return False
+    except Exception:
+        return False
+
+    return True
+
+
 def decode_base64_to_image(encoding):
-    def verify_url(url):
-        import socket
-        from urllib.parse import urlparse
-        try:
-            parsed_url = urlparse(url)
-            domain_name = parsed_url.netloc
-            host = socket.gethostbyname_ex(domain_name)
-            for ip in host[2]:
-                ip_addr = ipaddress.ip_address(ip)
-                # https://docs.python.org/3/library/ipaddress.html#ipaddress.IPv4Address.is_global
-                if not ip_addr.is_global:
-                    return False
-        except Exception:
-            return False
-
-        return True
-
     if encoding.startswith("http://") or encoding.startswith("https://"):
-        if not verify_url(encoding):
-            raise HTTPException(status_code=500, detail="Invalid image url")
+        if not opts.api_enable_requests:
+            raise HTTPException(status_code=500, detail="Requests not allowed")
 
-        response = requests.get(encoding, timeout=30, headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'})
+        if opts.api_forbid_local_requests and not verify_url(encoding):
+            raise HTTPException(status_code=500, detail="Request to local resource not allowed")
+
+        headers = {'user-agent': opts.api_useragent} if opts.api_useragent else {}
+        response = requests.get(encoding, timeout=30, headers=headers)
         try:
             image = Image.open(BytesIO(response.content))
             return image
