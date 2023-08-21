@@ -95,7 +95,7 @@ def directml_override_opts():
             if item.message is not None:
                 shared.log.warning(item.message)
             shared.log.warning(f'{key} is automatically overriden to {item.value}.')
-    
+
     if count > 0:
         shared.log.info(f'{count} options are automatically overriden. If you want to keep them from overriding, run with --experimental argument.')
 

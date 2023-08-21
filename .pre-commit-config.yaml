@@ -1,0 +1,66 @@
+# To use:
+#
+#     pre-commit run -a
+#
+# Or:
+#
+#     pre-commit install  # (runs every time you commit in git)
+#
+# To update this file:
+#
+#     pre-commit autoupdate
+#
+# See https://github.com/pre-commit/pre-commit
+
+ci:
+  autoupdate_commit_msg: "chore: update pre-commit hooks"
+  autofix_commit_msg: "style: pre-commit fixes"
+
+repos:
+# Standard hooks
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+  - id: check-added-large-files
+  - id: check-case-conflict
+  - id: check-merge-conflict
+  - id: check-symlinks
+  - id: check-yaml
+    args: ["--allow-multiple-documents"]
+  - id: debug-statements
+  - id: end-of-file-fixer
+  - id: mixed-line-ending
+  - id: trailing-whitespace
+    exclude: |
+            (?x)^(
+                .*\.md|
+                .github/ISSUE_TEMPLATE/.*\.yml
+            )$
+
+- repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: 'v0.0.285'
+  hooks:
+    - id: ruff
+      args: [--fix, --exit-non-zero-on-fix]
+- repo: local
+  hooks:
+    - id: pylint
+      name: pylint
+      entry: pylint
+      language: system
+      types: [python]
+      args: []
+
+# Black, the code formatter, natively supports pre-commit
+# - repo: https://github.com/psf/black
+#   rev: 23.7.0
+#   hooks:
+#   - id: black
+#     exclude: ^(docs)
+
+# Changes tabs to spaces
+# - repo: https://github.com/Lucas-C/pre-commit-hooks
+#   rev: v1.5.3
+#   hooks:
+#   - id: remove-tabs
+#     exclude: ^(docs)
