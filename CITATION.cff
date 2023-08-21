@@ -1,0 +1,6 @@
+cff-version: 1.2.0
+title: Stable Diffusion Web UI
+message: "If you use this software, please cite it as below."
+type: software
+authors:
+  - given-names: AUTOMATIC1111
