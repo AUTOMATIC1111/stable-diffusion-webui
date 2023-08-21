@@ -531,7 +531,7 @@ class Api:
         rams = arc.get_rams()
 
         return models.getCachedModelsResponse(gpu_cached_models=cudas, ram_cached_models=rams)
-    
+
     def setCachedmodelsapi(self, req: models.setCachedModelsRequest = Depends()):
         arc = sd_models.arc
         not_exist = arc.set_specified(req.gpu_cached_models, req.ram_cached_models)

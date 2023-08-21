@@ -117,7 +117,7 @@ class SpecifiedCache:
     def get_free_cuda(self):
         sysinfo = get_memory()
         free_size = sysinfo.get('cuda', {}).get('system', {}).get('free', 24*1024**3)/1024**3
-        return free_size 
+        return free_size
 
     def get_free_ram(self):
         sysinfo = get_memory()
@@ -217,7 +217,7 @@ class SpecifiedCache:
         del oldest
         del v
         return True
-    
+
     def get_model_size(self, config):
         model_size = self.model_size_xl
         if config:
@@ -291,9 +291,9 @@ class SpecifiedCache:
             if p.sd_model.is_sd1 or p.sd_model.is_sd2:
                 size_base = self.size_base
 
-            need_size = (p.height * p.width / (512*512) - 1) * (self.size_base + self.batch_base) + 4 # 4 is keep size
+            need_size = (p.height * p.width / (512*512) - 1) * (size_base + self.batch_base) + 4 # 4 is keep size
             for item in p.script_args:
-                if ("controlnet" in str(type(item)).lower() and item.enabled) or (type(item) == dict and item.get("model") is not None):
+                if ("controlnet" in str(type(item)).lower() and item.enabled) or (item.isinstance(dict) and item.get("model") is not None):
                     need_size += 0.7
                     logging.info("prepare memory for controlnet")
             is_delete = False
@@ -369,7 +369,7 @@ class SpecifiedCache:
     def delete_disk(self):
         if len(self.disk) == 0:
             return
-        ckpts = [k for k in self.disk.keys()]
+        ckpts = self.disk.keys().list()
         sorted_disks = sorted(ckpts, key=lambda x: self.reload_count.get(x, 0))
         least = sorted_disks[0]
         del ckpts
@@ -382,7 +382,7 @@ class SpecifiedCache:
     def is_more_disk_frequent(self, key):
         if len(self.disk) == 0:
             return True
-        ckpts = [k for k in self.disk.keys()]
+        ckpts = self.disk.keys().list()
         sorted_disks = sorted(ckpts, key=lambda x: self.reload_count.get(x, 0))
         least = sorted_disks[0]
         if self.reload_count.get(key, 0) > self.reload_count.get(least, 0):
@@ -410,7 +410,7 @@ class SpecifiedCache:
     def delete_ram(self,):
         if len(self.ram) == 0:
             return False
-        ckpts = [k for k in self.ram.keys()]
+        ckpts = self.ram.keys().list()
         sorted_rams = sorted(ckpts, key=lambda x: self.reload_time.get(x, 0))
         oldest = sorted_rams[0]
         del ckpts
