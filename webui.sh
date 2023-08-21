@@ -99,7 +99,7 @@ then
 elif [[ "$@" == *"--use-ipex"* ]] && [[ -z "${first_launch}" ]] && [ -x "$(command -v ipexrun)" ] && [ -x "$(command -v sycl-ls)" ]
 then
     echo "Launching ipexrun launch.py..."
-    exec ipexrun --multi-task-manager 'taskset' launch.py "$@"
+    exec ipexrun --multi-task-manager 'taskset' --memory-allocator 'jemalloc' launch.py "$@"
 else
     echo "Launching launch.py..."
     exec "${python_cmd}" launch.py "$@"
