@@ -91,7 +91,6 @@ class SingleUpscalerTask:
     
 class MultiUpscalerTask:
     def __init__(self,
-                 task_id: str,                  # task id
                  images: typing.Sequence[str],  # 图片路径
                  resize_mode: int = 0,  # 模式 0-scale by, 1-scale to
                  gfpgan_visibility: float = 0,  # gfpgan 可见度，0-1
@@ -107,7 +106,6 @@ class MultiUpscalerTask:
                  ):
         self.resize_mode = resize_mode
         self.extras_mode = 1  # 0-single, 1-batch
-        self.image_folder = mk_tmp_dir(task_id)
         self.input_dir = ""
         self.output_dir = ""
         self.save_output = False
@@ -127,21 +125,21 @@ class MultiUpscalerTask:
         for image in images:
             local_image = get_tmp_local_path(image)
             if local_image and os.path.isfile(local_image):
-                self.image = Image.open(local_image).convert('RGB')
+                image_obj = Image.open(local_image).convert('RGB')
+                self.images.append(image_obj)
+
             else:
                 raise OSError(f'cannot found image:{image}')
-
-            basename = os.path.basename(local_image)
-            dst = os.path.join(self.image_folder, basename)
-            shutil.move(local_image, dst)
-            self.images.append(dst)
+            #
+            # basename = os.path.basename(local_image)
+            # dst = os.path.join(image_folder, basename)
+            # shutil.move(local_image, dst)
 
     @classmethod
     def exec_task(cls, task: Task):
 
         images = task['image'].split(',')
         t = MultiUpscalerTask(
-            task.id,
             images,
             task.get('resize_mode', 0),
             task.get('gfpgan_visibility', 0),
@@ -155,7 +153,8 @@ class MultiUpscalerTask:
             task.get('extras_upscaler_2'),
             task.get('extras_upscaler_2_visibility', 0)
         )
-        return run_extras(t.extras_mode, t.resize_mode, t.image, t.image_folder, t.input_dir, t.output_dir,
+
+        return run_extras(t.extras_mode, t.resize_mode, None, t.images, t.input_dir, t.output_dir,
                           t.show_extras_results, t.gfpgan_visibility, t.codeformer_visibility,
                           t.codeformer_weight, t.upscaling_resize, t.upscaling_resize_w,
                           t.upscaling_resize_h, t.upscaling_crop, t.extras_upscaler_1,
