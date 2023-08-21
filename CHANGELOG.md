@@ -1,5 +1,12 @@
 # Change Log for SD.Next
 
+## Update for 2023-08-21
+
+- general:
+  - all system and image paths are now relative by default
+  - fix extra networks previews
+  - add settings validation when performing load/save
+
 ## Update for 2023-08-20
 
 Another release thats been baking in dev branch for a while...

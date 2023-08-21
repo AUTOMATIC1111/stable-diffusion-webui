@@ -322,6 +322,7 @@ def webui(restart=False):
     start_ui()
     modules.sd_models.write_metadata()
     load_model()
+    shared.opts.save(shared.config_filename)
     log.info(f"Startup time: {startup_timer.summary()}")
 
     if not restart:

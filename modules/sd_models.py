@@ -246,7 +246,7 @@ def select_checkpoint(op='model'):
         else:
             shared.log.info("Selecting first available checkpoint")
         # shared.log.warning(f"Loading fallback checkpoint: {checkpoint_info.title}")
-        shared.opts.data['sd_checkpoint'] = checkpoint_info.title
+        shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     shared.log.debug(f'Select checkpoint: {checkpoint_info.title if checkpoint_info is not None else None}')
     return checkpoint_info
 
