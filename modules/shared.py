@@ -10,7 +10,7 @@ from modules import util
 cmd_opts = shared_cmd_options.cmd_opts
 parser = shared_cmd_options.parser
 
-batch_cond_uncond = cmd_opts.always_batch_cond_uncond or not (cmd_opts.lowvram or cmd_opts.medvram)
+batch_cond_uncond = True  # old field, unused now in favor of shared.opts.batch_cond_uncond
 parallel_processing_allowed = not cmd_opts.lowvram and not cmd_opts.medvram
 styles_filename = cmd_opts.styles_file
 config_filename = cmd_opts.ui_settings_file
