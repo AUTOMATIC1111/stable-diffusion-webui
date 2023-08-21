@@ -70,7 +70,6 @@ def get_filename(filepath):
 
 
 def refresh_vae_list():
-    global vae_dict
     vae_dict.clear()
 
     paths = [
@@ -104,7 +103,7 @@ def refresh_vae_list():
         name = get_filename(filepath)
         vae_dict[name] = filepath
 
-    vae_dict = dict(sorted(vae_dict.items(), key=lambda item: shared.natural_sort_key(item[0])))
+    vae_dict.update(dict(sorted(vae_dict.items(), key=lambda item: shared.natural_sort_key(item[0]))))
 
 
 def find_vae_near_checkpoint(checkpoint_file):
@@ -193,7 +192,7 @@ def load_vae_dict(filename, map_location):
 
 
 def load_vae(model, vae_file=None, vae_source="from unknown source"):
-    global vae_dict, loaded_vae_file
+    global vae_dict, base_vae, loaded_vae_file
     # save_settings = False
 
     cache_enabled = shared.opts.sd_vae_checkpoint_cache > 0
@@ -231,6 +230,8 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
         restore_base_vae(model)
 
     loaded_vae_file = vae_file
+    model.base_vae = base_vae
+    model.loaded_vae_file = loaded_vae_file
 
 
 # don't call this from outside

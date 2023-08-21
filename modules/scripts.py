@@ -269,7 +269,7 @@ class Script:
         """helper function to generate id for a HTML element, constructs final id out of script name, tab and user-supplied item_id"""
 
         need_tabname = self.show(True) == self.show(False)
-        tabkind = 'img2img' if self.is_img2img else 'txt2txt'
+        tabkind = 'img2img' if self.is_img2img else 'txt2img'
         tabname = f"{tabkind}_" if need_tabname else ""
         title = re.sub(r'[^a-z_0-9]', '', re.sub(r'\s', '_', self.title().lower()))
 
@@ -289,7 +289,7 @@ class ScriptBuiltinUI(Script):
         """helper function to generate id for a HTML element, constructs final id out of tab and user-supplied item_id"""
 
         need_tabname = self.show(True) == self.show(False)
-        tabname = ('img2img' if self.is_img2img else 'txt2txt') + "_" if need_tabname else ""
+        tabname = ('img2img' if self.is_img2img else 'txt2img') + "_" if need_tabname else ""
 
         return f'{tabname}{item_id}'
 

@@ -355,7 +355,9 @@ class FilenameGenerator:
         'date': lambda self: datetime.datetime.now().strftime('%Y-%m-%d'),
         'datetime': lambda self, *args: self.datetime(*args),  # accepts formats: [datetime], [datetime<Format>], [datetime<Format><Time Zone>]
         'job_timestamp': lambda self: getattr(self.p, "job_timestamp", shared.state.job_timestamp),
-        'prompt_hash': lambda self: hashlib.sha256(self.prompt.encode()).hexdigest()[0:8],
+        'prompt_hash': lambda self, *args: self.string_hash(self.prompt, *args),
+        'negative_prompt_hash': lambda self, *args: self.string_hash(self.p.negative_prompt, *args),
+        'full_prompt_hash': lambda self, *args: self.string_hash(f"{self.p.prompt} {self.p.negative_prompt}", *args),  # a space in between to create a unique string
         'prompt': lambda self: sanitize_filename_part(self.prompt),
         'prompt_no_styles': lambda self: self.prompt_no_style(),
         'prompt_spaces': lambda self: sanitize_filename_part(self.prompt, replace_spaces=False),
@@ -368,7 +370,8 @@ class FilenameGenerator:
         'denoising': lambda self: self.p.denoising_strength if self.p and self.p.denoising_strength else NOTHING_AND_SKIP_PREVIOUS_TEXT,
         'user': lambda self: self.p.user,
         'vae_filename': lambda self: self.get_vae_filename(),
-        'none': lambda self: '', # Overrides the default so you can get just the sequence number
+        'none': lambda self: '',  # Overrides the default, so you can get just the sequence number
+        'image_hash': lambda self, *args: self.image_hash(*args)  # accepts formats: [image_hash<length>] default full hash
     }
     default_time_format = '%Y%m%d%H%M%S'
 
@@ -447,6 +450,14 @@ class FilenameGenerator:
             formatted_time = time_zone_time.strftime(self.default_time_format)
 
         return sanitize_filename_part(formatted_time, replace_spaces=False)
+
+    def image_hash(self, *args):
+        length = int(args[0]) if (args and args[0] != "") else None
+        return hashlib.sha256(self.image.tobytes()).hexdigest()[0:length]
+
+    def string_hash(self, text, *args):
+        length = int(args[0]) if (args and args[0] != "") else 8
+        return hashlib.sha256(text.encode()).hexdigest()[0:length]
 
     def apply(self, x):
         res = ''
@@ -588,6 +599,11 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='png', i
             If a text file is saved for this image, this will be its full path. Otherwise None.
     """
     namegen = FilenameGenerator(p, seed, prompt, image)
+
+    # WebP and JPG formats have maximum dimension limits of 16383 and 65535 respectively. switch to PNG which has a much higher limit
+    if (image.height > 65535 or image.width > 65535) and extension.lower() in ("jpg", "jpeg") or (image.height > 16383 or image.width > 16383) and extension.lower() == "webp":
+        print('Image dimensions too large; saving as PNG')
+        extension = ".png"
 
     if save_to_dirs is None:
         save_to_dirs = (grid and opts.grid_save_to_dirs) or (not grid and opts.save_to_dirs and not no_prompt)

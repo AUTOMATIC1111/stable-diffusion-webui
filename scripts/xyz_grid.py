@@ -200,6 +200,10 @@ def list_to_csv_string(data_list):
         return o.getvalue().strip()
 
 
+def csv_string_to_list_strip(data_str):
+    return list(map(str.strip, chain.from_iterable(csv.reader(StringIO(data_str)))))
+
+
 class AxisOption:
     def __init__(self, label, type, apply, format_value=format_value_add_label, confirm=None, cost=0.0, choices=None):
         self.label = label
@@ -438,7 +442,6 @@ class Script(scripts.Script):
             with gr.Column():
                 csv_mode = gr.Checkbox(label='Use text inputs instead of dropdowns', value=False, elem_id=self.elem_id("csv_mode"))
 
-
         with gr.Row(variant="compact", elem_id="swap_axes"):
             swap_xy_axes_button = gr.Button(value="Swap X/Y axes", elem_id="xy_grid_swap_axes_button")
             swap_yz_axes_button = gr.Button(value="Swap Y/Z axes", elem_id="yz_grid_swap_axes_button")
@@ -472,19 +475,19 @@ class Script(scripts.Script):
             choices = self.current_axis_options[axis_type].choices
             has_choices = choices is not None
 
-            current_values = axis_values
-            current_dropdown_values = axis_values_dropdown
             if has_choices:
                 choices = choices()
                 if csv_mode:
-                    current_dropdown_values = list(filter(lambda x: x in choices, current_dropdown_values))
-                    current_values = list_to_csv_string(current_dropdown_values)
+                    if axis_values_dropdown:
+                        axis_values = list_to_csv_string(list(filter(lambda x: x in choices, axis_values_dropdown)))
+                        axis_values_dropdown = []
                 else:
-                    current_dropdown_values = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(axis_values)))]
-                    current_dropdown_values = list(filter(lambda x: x in choices, current_dropdown_values))
+                    if axis_values:
+                        axis_values_dropdown = list(filter(lambda x: x in choices, csv_string_to_list_strip(axis_values)))
+                        axis_values = ""
 
-            return (gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or csv_mode, value=current_values),
-                    gr.update(choices=choices if has_choices else None, visible=has_choices and not csv_mode, value=current_dropdown_values))
+            return (gr.Button.update(visible=has_choices), gr.Textbox.update(visible=not has_choices or csv_mode, value=axis_values),
+                    gr.update(choices=choices if has_choices else None, visible=has_choices and not csv_mode, value=axis_values_dropdown))
 
         x_type.change(fn=select_axis, inputs=[x_type, x_values, x_values_dropdown, csv_mode], outputs=[fill_x_button, x_values, x_values_dropdown])
         y_type.change(fn=select_axis, inputs=[y_type, y_values, y_values_dropdown, csv_mode], outputs=[fill_y_button, y_values, y_values_dropdown])
@@ -501,7 +504,7 @@ class Script(scripts.Script):
         def get_dropdown_update_from_params(axis, params):
             val_key = f"{axis} Values"
             vals = params.get(val_key, "")
-            valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+            valslist = csv_string_to_list_strip(vals)
             return gr.update(value=valslist)
 
         self.infotext_fields = (
@@ -532,7 +535,7 @@ class Script(scripts.Script):
             if opt.choices is not None and not csv_mode:
                 valslist = vals_dropdown
             else:
-                valslist = [x.strip() for x in chain.from_iterable(csv.reader(StringIO(vals))) if x]
+                valslist = csv_string_to_list_strip(vals)
 
             if opt.type == int:
                 valslist_ext = []

@@ -122,15 +122,14 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
     is_batch = mode == 5
 
     if mode == 0:  # img2img
-        image = init_img.convert("RGB")
+        image = init_img
         mask = None
     elif mode == 1:  # img2img sketch
-        image = sketch.convert("RGB")
+        image = sketch
         mask = None
     elif mode == 2:  # inpaint
         image, mask = init_img_with_mask["image"], init_img_with_mask["mask"]
         mask = processing.create_binary_mask(mask)
-        image = image.convert("RGB")
     elif mode == 3:  # inpaint sketch
         image = inpaint_color_sketch
         orig = inpaint_color_sketch_orig or inpaint_color_sketch
@@ -139,7 +138,6 @@ def img2img(id_task: str, mode: int, prompt: str, negative_prompt: str, prompt_s
         mask = ImageEnhance.Brightness(mask).enhance(1 - mask_alpha / 100)
         blur = ImageFilter.GaussianBlur(mask_blur)
         image = Image.composite(image.filter(blur), orig, mask.filter(blur))
-        image = image.convert("RGB")
     elif mode == 4:  # inpaint upload mask
         image = init_img_inpaint
         mask = init_mask_inpaint

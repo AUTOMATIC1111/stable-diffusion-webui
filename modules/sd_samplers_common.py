@@ -36,7 +36,7 @@ approximation_indexes = {"Full": 0, "Approx NN": 1, "Approx cheap": 2, "TAESD": 
 
 def samples_to_images_tensor(sample, approximation=None, model=None):
     '''latents -> images [-1, 1]'''
-    if approximation is None:
+    if approximation is None or (shared.state.interrupted and opts.live_preview_fast_interrupt):
         approximation = approximation_indexes.get(opts.show_progress_type, 0)
 
     if approximation == 2:
@@ -49,7 +49,8 @@ def samples_to_images_tensor(sample, approximation=None, model=None):
     else:
         if model is None:
             model = shared.sd_model
-        x_sample = model.decode_first_stage(sample.to(model.first_stage_model.dtype))
+        with devices.without_autocast(): # fixes an issue with unstable VAEs that are flaky even in fp32
+            x_sample = model.decode_first_stage(sample.to(model.first_stage_model.dtype))
 
     return x_sample
 
