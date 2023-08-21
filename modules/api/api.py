@@ -23,6 +23,7 @@ from modules.textual_inversion.textual_inversion import create_embedding, train_
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
+import modules.sd_models as sd_models
 from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights, checkpoint_aliases
 from modules.sd_vae import vae_dict
 from modules.sd_models_config import find_checkpoint_config_near_filename
@@ -208,6 +209,8 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
+        self.add_api_route("/sdapi/v1/set-cachedmodels", self.setCachedmodelsapi, methods=["POST"], response_model=models.setCachedModelsResponse)
+        self.add_api_route("/sdapi/v1/get-cachedmodels", self.getCachedmodelsapi, methods=["GET"], response_model=models.getCachedModelsResponse)
 
         if shared.cmd_opts.api_server_stop:
             self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
@@ -480,6 +483,26 @@ class Api:
             current_image = encode_pil_to_base64(shared.state.current_image)
 
         return models.ProgressResponse(progress=progress, eta_relative=eta_relative, state=shared.state.dict(), current_image=current_image, textinfo=shared.state.textinfo)
+
+
+    def getCachedmodelsapi(self, req: models.getCachedModelsRequest = Depends()):
+        # copy from check_progress_call of ui.py
+        arc = sd_models.arc
+        cudas = arc.get_cudas()
+        if sd_models.model_data.sd_model:
+            filename = arc.get_model_name(sd_models.model_data.sd_model.sd_model_checkpoint)
+            if filename not in cudas:
+                cudas.append(filename)
+        rams = arc.get_rams()
+
+        return models.getCachedModelsResponse(gpu_cached_models=cudas, ram_cached_models=rams)
+    
+    def setCachedmodelsapi(self, req: models.setCachedModelsRequest = Depends()):
+        arc = sd_models.arc
+        not_exist = arc.set_specified(req.gpu_cached_models, req.ram_cached_models)
+
+        return models.setCachedModelsResponse(not_exist_models=not_exist)
+
 
     def interrogateapi(self, interrogatereq: models.InterrogateRequest):
         image_b64 = interrogatereq.image
