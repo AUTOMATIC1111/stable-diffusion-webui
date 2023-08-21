@@ -706,13 +706,19 @@ class Options:
         try:
             # output = json.dumps(self.data, indent=2)
             diff = {}
+            unused_settings = []
             for k, v in self.data.items():
                 if k in self.data_labels:
                     if type(v) is list:
                         diff[k] = v
                     if self.data_labels[k].default != v:
                         diff[k] = v
+                else:
+                    unused_settings.append(k)
+                    diff[k] = v
             writefile(diff, filename)
+            if len(unused_settings) > 0:
+                log.debug(f"Unknown settings: {unused_settings}")
         except Exception as e:
             log.error(f'Saving settings failed: {filename} {e}')
 
@@ -731,14 +737,15 @@ class Options:
         self.data = readfile(filename)
         if self.data.get('quicksettings') is not None and self.data.get('quicksettings_list') is None:
             self.data['quicksettings_list'] = [i.strip() for i in self.data.get('quicksettings').split(',')]
-        bad_settings = 0
+        unknown_settings = []
         for k, v in self.data.items():
             info = self.data_labels.get(k, None)
             if info is not None and not self.same_type(info.default, v):
-                log.error(f"Warning: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})")
-                bad_settings += 1
-        if bad_settings > 0:
-            log.error(f"Error: Bad settings found in {filename}")
+                log.error(f"Error: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})")
+            if info is None:
+                unknown_settings.append(k)
+        if len(unknown_settings) > 0:
+            log.debug(f"Unknown settings: {unknown_settings}")
 
     def onchange(self, key, func, call=True):
         item = self.data_labels.get(key)
