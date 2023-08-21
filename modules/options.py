@@ -116,7 +116,7 @@ class Options:
 
         return super(Options, self).__getattribute__(item)
 
-    def set(self, key, value, is_api=False):
+    def set(self, key, value, is_api=False, run_callbacks=True):
         """sets an option and calls its onchange callback, returning True if the option changed and False otherwise"""
 
         oldval = self.data.get(key, None)
@@ -135,7 +135,7 @@ class Options:
         except RuntimeError:
             return False
 
-        if option.onchange is not None:
+        if run_callbacks and option.onchange is not None:
             try:
                 option.onchange()
             except Exception as e:
