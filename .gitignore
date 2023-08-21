@@ -15,6 +15,7 @@ pnpm-lock.yaml
 package-lock.json
 venv
 .history
+cache
 
 # all models and temp files
 *.log

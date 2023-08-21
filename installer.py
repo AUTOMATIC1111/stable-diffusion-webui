@@ -458,6 +458,7 @@ def check_torch():
         install('hidet', 'hidet')
     if opts.get('cuda_compile_backend', '') == 'openvino_fx':
         install('openvino==2023.1.0.dev20230811', 'openvino')
+        os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
     if args.profile:
         print_profile(pr, 'Torch')
 
@@ -829,8 +830,8 @@ def add_args(parser):
     group.add_argument('--upgrade', default = False, action='store_true', help = "Upgrade main repository to latest version, default: %(default)s")
     group.add_argument('--requirements', default = False, action='store_true', help = "Force re-check of requirements, default: %(default)s")
     group.add_argument('--quick', default = False, action='store_true', help = "Run with startup sequence only, default: %(default)s")
-    group.add_argument("--use-ipex", default = False, action='store_true', help="Use Intel OneAPI XPU backend, default: %(default)s")
     group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
+    group.add_argument("--use-ipex", default = False, action='store_true', help="Force use Intel OneAPI XPU backend, default: %(default)s")
     group.add_argument("--use-cuda", default=False, action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")
     group.add_argument("--use-rocm", default=False, action='store_true', help="Force use AMD ROCm backend, default: %(default)s")
     group.add_argument('--skip-requirements', default = False, action='store_true', help = "Skips checking and installing requirements, default: %(default)s")
