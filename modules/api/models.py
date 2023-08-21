@@ -190,6 +190,20 @@ class ProgressResponse(BaseModel):
     current_image: str = Field(default=None, title="Current image", description="The current image in base64 format. opts.show_progress_every_n_steps is required for this to work.")
     textinfo: str = Field(default=None, title="Info text", description="Info text used by WebUI.")
 
+class getCachedModelsRequest(BaseModel):
+    only_gpu: bool = Field(default=False, title="Only GPU models", description="Only return gpu cached models")
+
+class getCachedModelsResponse(BaseModel):
+    gpu_cached_models: List[str] = Field(default=[], title="GPU cached models", description="models cached on gpu ram.")
+    ram_cached_models: List[str] = Field(default=[], title="Ram cached models", description="models cached on ram.")
+
+class setCachedModelsRequest(BaseModel):
+    gpu_cached_models: List[str] = Field(default=[], title="CudaCacheFilenames", description="models' filename to be cached on gpu.")
+    ram_cached_models: List[str] = Field(default=[], title="RAMCacheFilenames", description="models' filename to be cached on ram.")
+
+class setCachedModelsResponse(BaseModel):
+    not_exist_models: List[str] = Field(default=None, title="CacheFilenames", description="models' filename not exist on disk.")
+
 class InterrogateRequest(BaseModel):
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
     model: str = Field(default="clip", title="Model", description="The interrogate model used.")

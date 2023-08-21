@@ -721,9 +721,21 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 sd_vae.reload_vae_weights()
 
         sd_models.apply_token_merging(p.sd_model, p.get_token_merging_ratio())
-
-        res = process_images_inner(p)
-
+        if shared.cmd_opts.arc:
+            model_name = os.path.basename(str(p.sd_model.sd_model_checkpoint)) if p.sd_model else ''
+            logging.info(f"start, {{checkpoint: {model_name}, prompt: {p.prompt}, negative_prompt: {p.negative_prompt}, height: {p.height}, width: {p.width}, batch_count: {p.n_iter}, batch_size: {p.batch_size}, steps: {p.steps}}}")
+            sd_models.arc.release_memory(p)
+            res = process_images_inner(p)
+            logging.info("finished")
+        else:
+            res = process_images_inner(p)
+    except RuntimeError as e:
+        if shared.cmd_opts.arc and 'CUDA out of memory' in str(e):
+            import signal
+            pid = os.getpid()
+            logging.error("kill process becauce CUDA out of memory.")
+            os.kill(pid, signal.SIGTERM)
+        raise e
     finally:
         sd_models.apply_token_merging(p.sd_model, 0)
 

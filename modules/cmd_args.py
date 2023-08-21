@@ -115,3 +115,6 @@ parser.add_argument('--api-server-stop', action='store_true', help='enable serve
 parser.add_argument('--timeout-keep-alive', type=int, default=30, help='set timeout_keep_alive for uvicorn')
 parser.add_argument("--disable-all-extensions", action='store_true', help="prevent all extensions from running regardless of any other settings", default=False)
 parser.add_argument("--disable-extra-extensions", action='store_true', help=" prevent all extensions except built-in from running regardless of any other settings", default=False)
+parser.add_argument("--arc", action='store_true', help="enable to control memory and gpu memory controal by arc", default=False)
+parser.add_argument("--arc-disk-size", type=int, help="maxium disk size used to cache model in GB controal by arc", default=None)
+parser.add_argument("--system-ram-size", type=int, help="sytem ram size in GB", default=None)

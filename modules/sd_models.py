@@ -17,6 +17,7 @@ from ldm.util import instantiate_from_config
 from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet, sd_models_xl, cache, extra_networks, processing, lowvram, sd_hijack
 from modules.timer import Timer
 import tomesd
+from modules import sd_arc
 
 model_dir = "Stable-diffusion"
 model_path = os.path.abspath(os.path.join(paths.models_path, model_dir))
@@ -25,6 +26,7 @@ checkpoints_list = {}
 checkpoint_aliases = {}
 checkpoint_alisases = checkpoint_aliases  # for compatibility with old name
 checkpoints_loaded = collections.OrderedDict()
+arc = sd_arc.SpecifiedCache()
 
 
 class CheckpointInfo:
@@ -335,7 +337,8 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     if shared.opts.sd_checkpoint_cache > 0:
         # cache newly loaded model
-        checkpoints_loaded[checkpoint_info] = state_dict
+        if not shared.cmd_opts.arc:
+            checkpoints_loaded[checkpoint_info] = state_dict
 
     del state_dict
 
@@ -559,7 +562,9 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None):
     timer.record("load config")
 
     print(f"Creating model from config: {checkpoint_config}")
-
+    if shared.cmd_opts.arc:
+        arc.prepare_memory(checkpoint_config) 
+        
     sd_model = None
     try:
         with sd_disable_initialization.DisableInitialization(disable_clip=clip_is_included_into_sd or shared.cmd_opts.do_not_download_clip):
@@ -666,7 +671,71 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
         return None
 
 
+def reload_model_weights_arc(sd_model=None, info=None):
+    from modules import lowvram, devices, sd_hijack
+    checkpoint_info = info or select_checkpoint()
+
+    if not sd_model:
+        sd_model = model_data.sd_model
+    
+    timer = Timer()
+    if sd_model is not None:  # previous model load failed
+        if sd_model.sd_model_checkpoint == checkpoint_info.filename:
+            return
+        if arc.contains(checkpoint_info.filename):         
+            # get cache model.
+            model = arc.pop(checkpoint_info.filename)
+            timer.record('get cached model')
+
+            # cache model.
+            sd_unet.apply_unet("None")
+            sd_hijack.model_hijack.undo_hijack(sd_model)
+            model_data.sd_model = None
+            arc.put(sd_model.sd_model_checkpoint, sd_model)
+            sd_model = None
+            timer.record('cache model')
+
+            if model:
+                sd_hijack.model_hijack.hijack(model)
+                model_data.set_sd_model(model)
+                script_callbacks.model_loaded_callback(model)
+                # sd_unet.apply_unet("None")
+                sd_vae.delete_base_vae()
+                sd_vae.clear_loaded_vae()
+                vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename).tuple()
+                sd_vae.load_vae(model, vae_file, vae_source)
+                timer.record("load VAE")
+                print(f"Weights loaded in {timer.summary()}.")
+                return 
+            else:
+                print(f"model miss in cache {checkpoint_info.filename}.")
+
+        if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+            lowvram.send_everything_to_cpu()
+
+    # cache model.
+    if sd_model is not None:
+        sd_unet.apply_unet("None")
+        sd_hijack.model_hijack.undo_hijack(sd_model)
+        model_data.sd_model = None
+        arc.put(sd_model.sd_model_checkpoint, sd_model)
+        sd_model = None
+        timer.record('cache model')
+    
+    state_dict = get_checkpoint_state_dict(checkpoint_info, timer)
+
+    # new model object.
+    sd_model = load_model(checkpoint_info, already_loaded_state_dict=state_dict)
+    timer.record('new model')
+    print(f"Weights loaded in {timer.summary()}.")
+
+    return sd_model
+
+
 def reload_model_weights(sd_model=None, info=None):
+    if shared.cmd_opts.arc:
+        return reload_model_weights_arc(sd_model, info)
+
     checkpoint_info = info or select_checkpoint()
 
     timer = Timer()
