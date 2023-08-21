@@ -115,6 +115,10 @@ def autocast(disable=False):
 
     if dtype == torch.float32 or shared.cmd_opts.precision == "full":
         return contextlib.nullcontext()
+    
+    if "40HX" in torch.cuda.get_device_name(0):
+        print("检测到40HX  停用半精度,使用单精度")
+        return torch.autocast("cuda",dtype=torch.float32,enabled=True)
 
     return torch.autocast("cuda")
 
