@@ -138,9 +138,11 @@ class MultiUpscalerTask:
 
     @classmethod
     def exec_task(cls, task: Task):
+
+        images = task['image'].split(',')
         t = MultiUpscalerTask(
             task.id,
-            task['images'],
+            images,
             task.get('resize_mode', 0),
             task.get('gfpgan_visibility', 0),
             task.get('codeformer_visibility', 0),
@@ -192,11 +194,13 @@ class ExtraTaskHandler(DumpTaskHandler):
             #         'size': '' if not images else f'{images[0].width}*{images[0].height}',
             #     }
             # })
+
+            size = '' if not images else ','.join((f'{image.width}*{image.height}' for image in images))
             p = TaskProgress.new_finish(task,
                                         {
                                             'all': image_keys.to_dict(),
                                             'upscaler': {
-                                                'size': '' if not images else f'{images[0].width}*{images[0].height}',
+                                                'size': size,
                                             }
                                         })
             p.task_desc = f'upscaler task:{task.id} finished.'
