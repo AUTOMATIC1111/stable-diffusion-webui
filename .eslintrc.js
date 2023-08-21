@@ -90,6 +90,8 @@ module.exports = {
         // localStorage.js
         localSet: "readonly",
         localGet: "readonly",
-        localRemove: "readonly"
+        localRemove: "readonly",
+        // resizeHandle.js
+        setupResizeHandle: "writable"
     }
 };
