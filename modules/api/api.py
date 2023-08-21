@@ -570,7 +570,7 @@ class Api:
             raise RuntimeError(f"model {checkpoint_name!r} not found")
 
         for k, v in req.items():
-            shared.opts.set(k, v)
+            shared.opts.set(k, v, is_api=True)
 
         shared.opts.save(shared.config_filename)
         return

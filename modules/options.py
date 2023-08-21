@@ -8,7 +8,7 @@ from modules.shared_cmd_options import cmd_opts
 
 
 class OptionInfo:
-    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after='', infotext=None):
+    def __init__(self, default=None, label="", component=None, component_args=None, onchange=None, section=None, refresh=None, comment_before='', comment_after='', infotext=None, restrict_api=False):
         self.default = default
         self.label = label
         self.component = component
@@ -25,6 +25,9 @@ class OptionInfo:
         """HTML text that will be added before label in UI"""
 
         self.infotext = infotext
+
+        self.restrict_api = restrict_api
+        """If True, the setting will not be accessible via API"""
 
     def link(self, label, url):
         self.comment_before += f"[<a href='{url}' target='_blank'>{label}</a>]"
@@ -71,7 +74,7 @@ options_builtin_fields = {"data_labels", "data", "restricted_opts", "typemap"}
 class Options:
     typemap = {int: float}
 
-    def __init__(self, data_labels, restricted_opts):
+    def __init__(self, data_labels: dict[str, OptionInfo], restricted_opts):
         self.data_labels = data_labels
         self.data = {k: v.default for k, v in self.data_labels.items()}
         self.restricted_opts = restricted_opts
@@ -113,14 +116,18 @@ class Options:
 
         return super(Options, self).__getattribute__(item)
 
-    def set(self, key, value):
+    def set(self, key, value, is_api=False):
         """sets an option and calls its onchange callback, returning True if the option changed and False otherwise"""
 
         oldval = self.data.get(key, None)
         if oldval == value:
             return False
 
-        if self.data_labels[key].do_not_save:
+        option = self.data_labels[key]
+        if option.do_not_save:
+            return False
+
+        if is_api and option.restrict_api:
             return False
 
         try:
@@ -128,9 +135,9 @@ class Options:
         except RuntimeError:
             return False
 
-        if self.data_labels[key].onchange is not None:
+        if option.onchange is not None:
             try:
-                self.data_labels[key].onchange()
+                option.onchange()
             except Exception as e:
                 errors.display(e, f"changing setting {key} to {value}")
                 setattr(self, key, oldval)

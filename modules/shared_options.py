@@ -112,9 +112,9 @@ options_templates.update(options_section(('system', "System"), {
 }))
 
 options_templates.update(options_section(('API', "API"), {
-    "api_enable_requests": OptionInfo(True, "Allow http:// and https:// URLs for input images in API"),
-    "api_forbid_local_requests": OptionInfo(True, "Forbid URLs to local resources"),
-    "api_useragent": OptionInfo("", "User agent for requests"),
+    "api_enable_requests": OptionInfo(True, "Allow http:// and https:// URLs for input images in API", restrict_api=True),
+    "api_forbid_local_requests": OptionInfo(True, "Forbid URLs to local resources", restrict_api=True),
+    "api_useragent": OptionInfo("", "User agent for requests", restrict_api=True),
 }))
 
 options_templates.update(options_section(('training', "Training"), {
