@@ -1,6 +1,6 @@
 import os
 import torch
-from openvino.frontend.pytorch.torchdynamo.execute import execute
+from openvino.frontend.pytorch.torchdynamo.execute import execute, partitioned_modules, compiled_cache
 from openvino.frontend.pytorch.torchdynamo.partition import Partitioner
 from openvino.runtime import Core, Type, PartialShape
 from torch._dynamo.backends.common import fake_tensor_unsupported
@@ -12,7 +12,7 @@ from hashlib import sha256
 class ModelState:
     def __init__(self):
         self.recompile = 1
-        self.device = "CPU"
+        self.device = "GPU"
         self.height = 512
         self.width = 512
         self.batch_size = 1
@@ -112,3 +112,10 @@ def get_cached_file_name(*args, model_hash_str, device, cache_root):
             file_name = None
             model_hash_str = None
     return file_name
+
+def openvino_clear_caches():
+    global partitioned_modules
+    global compiled_cache
+
+    compiled_cache.clear()
+    partitioned_modules.clear()
