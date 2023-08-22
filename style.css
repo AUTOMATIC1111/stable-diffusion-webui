@@ -1062,7 +1062,7 @@ div.accordions > div.input-accordion.input-accordion-open{
 }
 
 body.resizing {
-	cursor: col-resize !important;
+    cursor: col-resize !important;
 }
 
 body.resizing :not(.resize-handle) {
@@ -1071,11 +1071,11 @@ body.resizing :not(.resize-handle) {
 
 .resize-handle {
     position: relative;
-	cursor: col-resize;
-	grid-column: 2 / 3;
-	min-width: 16px !important;
-	max-width: 16px !important;
-	height: 100%;
+    cursor: col-resize;
+    grid-column: 2 / 3;
+    min-width: 16px !important;
+    max-width: 16px !important;
+    height: 100%;
 }
 
 .resize-handle::after {
