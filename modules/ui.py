@@ -967,8 +967,15 @@ def create_ui(startup_timer = None):
         if cmd_opts.use_directml:
             directml_override_opts()
         if cmd_opts.use_openvino:
-            from modules.intel.openvino import openvino_override_opts
-            openvino_override_opts()
+            if not modules.shared.opts.cuda_compile:
+                modules.shared.log.warn("OpenVINO: Enabling Torch Compile")
+                modules.shared.opts.cuda_compile = True
+            if modules.shared.opts.cuda_compile_backend != "openvino_fx":
+                modules.shared.log.warn("OpenVINO: Setting Torch Compiler backend to OpenVINO FX")
+                modules.shared.opts.cuda_compile_backend = "openvino_fx"
+            if modules.shared.opts.sd_backend != "diffusers":
+                modules.shared.log.warn("OpenVINO: Setting backend to Diffusers")
+                modules.shared.opts.sd_backend = "diffusers"
         try:
             opts.save(modules.shared.config_filename)
             log.info(f'Settings changed: {len(changed)} {changed}')

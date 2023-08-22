@@ -184,6 +184,8 @@ class State:
 
 state = State()
 state.server_start = time.time()
+if not hasattr(cmd_opts, "use_openvino"):
+    cmd_opts.use_openvino = False
 if cmd_opts.use_openvino:
     backend = Backend.DIFFUSERS
     cmd_opts.backend = 'diffusers'
