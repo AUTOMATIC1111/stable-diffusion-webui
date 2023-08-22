@@ -128,7 +128,7 @@ class State:
         devices.torch_gc()
 
     def set_current_image(self):
-        """sets self.current_image from self.current_latent if enough sampling steps have been made after the last call to this"""
+        """if enough sampling steps have been made after the last call to this, sets self.current_image from self.current_latent, and modifies self.id_live_preview accordingly"""
         if not shared.parallel_processing_allowed:
             return
 
