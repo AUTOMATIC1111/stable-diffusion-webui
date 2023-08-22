@@ -1065,8 +1065,12 @@ body.resizing {
     cursor: col-resize !important;
 }
 
-body.resizing :not(.resize-handle) {
+body.resizing * {
     pointer-events: none !important;
+}
+
+body.resizing .resize-handle {
+    pointer-events: initial !important;
 }
 
 .resize-handle {
