@@ -132,10 +132,29 @@ def get_gradio_auth_creds():
                         yield cred
 
 
+def dumpstacks():
+    import threading
+    import traceback
+
+    id2name = {th.ident: th.name for th in threading.enumerate()}
+    code = []
+    for threadId, stack in sys._current_frames().items():
+        code.append(f"\n# Thread: {id2name.get(threadId, '')}({threadId})")
+        for filename, lineno, name, line in traceback.extract_stack(stack):
+            code.append(f"""File: "{filename}", line {lineno}, in {name}""")
+            if line:
+                code.append("  " + line.strip())
+
+    print("\n".join(code))
+
+
 def configure_sigint_handler():
     # make the program just exit at ctrl+c without waiting for anything
     def sigint_handler(sig, frame):
         print(f'Interrupted with signal {sig} in {frame}')
+
+        dumpstacks()
+
         os._exit(0)
 
     if not os.environ.get("COVERAGE_RUN"):
