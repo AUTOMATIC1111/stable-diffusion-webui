@@ -1,4 +1,4 @@
-GitPython==3.1.30
+GitPython==3.1.32
 Pillow==9.5.0
 accelerate==0.18.0
 basicsr==1.4.2
@@ -30,5 +30,5 @@ torchdiffeq==0.2.3
 torchsde==0.2.5
 transformers==4.30.0
 diffusers==0.18.2
-openvino==2023.1.0.dev20230728
+openvino==2023.1.0.dev20230811
 
