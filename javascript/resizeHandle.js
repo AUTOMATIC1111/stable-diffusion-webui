@@ -75,6 +75,8 @@
             R.screenX = evt.screenX;
         });
 
+        resizeHandle.addEventListener('dblclick', () => parent.style.gridTemplateColumns = GRID_TEMPLATE_COLUMNS);
+
         afterResize(parent);
     }
 
