@@ -15,6 +15,19 @@ onUiLoaded(async() => {
 
     // Helper functions
     // Get active tab
+
+    /**
+     * Waits for an element to be present in the DOM.
+     */
+    const waitForElement = (id) => new Promise(resolve => {
+        const checkForElement = () => {
+            const element = document.querySelector(id);
+            if (element) return resolve(element);
+            setTimeout(checkForElement, 100);
+        };
+        checkForElement();
+    });
+
     function getActiveTab(elements, all = false) {
         const tabs = elements.img2imgTabs.querySelectorAll("button");
 
@@ -393,9 +406,6 @@ onUiLoaded(async() => {
             }
 
             targetElement.style.width = "";
-            if (canvas) {
-                targetElement.style.height = canvas.style.height;
-            }
         }
 
         // Toggle the zIndex of the target element between two values, allowing it to overlap or be overlapped by other elements
@@ -558,7 +568,7 @@ onUiLoaded(async() => {
             if (!canvas) return;
 
             if (canvas.offsetWidth > 862) {
-                targetElement.style.width = canvas.offsetWidth + "px";
+                targetElement.style.width = (canvas.offsetWidth + 2) + "px";
             }
 
             if (fullScreenMode) {
@@ -826,5 +836,52 @@ onUiLoaded(async() => {
     applyZoomAndPan(elementIDs.inpaintSketch);
 
     // Make the function global so that other extensions can take advantage of this solution
-    window.applyZoomAndPan = applyZoomAndPan;
+    const applyZoomAndPanIntegration = async(id, elementIDs) => {
+        const mainEl = document.querySelector(id);
+        if (id.toLocaleLowerCase() === "none") {
+            for (const elementID of elementIDs) {
+                const el = await waitForElement(elementID);
+                if (!el) break;
+                applyZoomAndPan(elementID);
+            }
+            return;
+        }
+
+        if (!mainEl) return;
+        mainEl.addEventListener("click", async() => {
+            for (const elementID of elementIDs) {
+                const el = await waitForElement(elementID);
+                if (!el) break;
+                applyZoomAndPan(elementID);
+            }
+        }, {once: true});
+    };
+
+    window.applyZoomAndPan = applyZoomAndPan; // Only 1 elements, argument elementID, for example applyZoomAndPan("#txt2img_controlnet_ControlNet_input_image")
+
+    window.applyZoomAndPanIntegration = applyZoomAndPanIntegration; // for any extension
+
+    /*
+        The function `applyZoomAndPanIntegration` takes two arguments:
+
+        1. `id`: A string identifier for the element to which zoom and pan functionality will be applied on click.
+        If the `id` value is "none", the functionality will be applied to all elements specified in the second argument without a click event.
+
+        2. `elementIDs`: An array of string identifiers for elements. Zoom and pan functionality will be applied to each of these elements on click of the element specified by the first argument.
+        If "none" is specified in the first argument, the functionality will be applied to each of these elements without a click event.
+
+        Example usage:
+        applyZoomAndPanIntegration("#txt2img_controlnet", ["#txt2img_controlnet_ControlNet_input_image"]);
+        In this example, zoom and pan functionality will be applied to the element with the identifier "txt2img_controlnet_ControlNet_input_image" upon clicking the element with the identifier "txt2img_controlnet".
+    */
+
+    // More examples
+    // Add integration with ControlNet txt2img One TAB
+    // applyZoomAndPanIntegration("#txt2img_controlnet", ["#txt2img_controlnet_ControlNet_input_image"]);
+
+    // Add integration with ControlNet txt2img Tabs
+    // applyZoomAndPanIntegration("#txt2img_controlnet",Array.from({ length: 10 }, (_, i) => `#txt2img_controlnet_ControlNet-${i}_input_image`));
+
+    // Add integration with Inpaint Anything
+    // applyZoomAndPanIntegration("None", ["#ia_sam_image", "#ia_sel_mask"]);
 });

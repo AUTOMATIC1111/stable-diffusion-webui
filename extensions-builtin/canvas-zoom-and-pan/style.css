@@ -61,3 +61,6 @@
   to {opacity: 1;}
 }
 
+.styler {
+  overflow:inherit !important;
+}
