@@ -15,7 +15,6 @@ from modules.ui_components import FormRow, FormColumn, FormGroup, ToolButton, Fo
 from modules.paths import script_path, data_path
 from modules.shared import opts, cmd_opts, readfile
 from modules.dml import directml_override_opts
-from modules.intel.openvino import openvino_override_opts
 from modules import prompt_parser
 import modules.codeformer_model
 import modules.generation_parameters_copypaste as parameters_copypaste
@@ -968,6 +967,7 @@ def create_ui(startup_timer = None):
         if cmd_opts.use_directml:
             directml_override_opts()
         if cmd_opts.use_openvino:
+            from modules.intel.openvino import openvino_override_opts
             openvino_override_opts()
         try:
             opts.save(modules.shared.config_filename)
