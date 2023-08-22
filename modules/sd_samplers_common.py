@@ -111,7 +111,7 @@ def images_tensor_to_samples(image, approximation=None, model=None):
 
 
 def store_latent(decoded):
-    state.current_latent = decoded
+    state.current_latent = decoded.clone()
 
     if opts.live_previews_enable and opts.show_progress_every_n_steps > 0 and shared.state.sampling_step % opts.show_progress_every_n_steps == 0:
         if not shared.parallel_processing_allowed:
