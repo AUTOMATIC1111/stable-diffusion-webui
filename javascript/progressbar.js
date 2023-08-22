@@ -86,7 +86,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
         setTitle("");
         parentProgressbar.removeChild(divProgress);
-        if (gallery) gallery.removeChild(livePreview);
+        if (gallery && livePreview) gallery.removeChild(livePreview);
         atEnd();
 
         divProgress = null;
