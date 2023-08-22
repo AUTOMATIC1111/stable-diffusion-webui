@@ -541,7 +541,7 @@ table.popup-table .link{
     position: absolute;
     object-fit: contain;
     width: 100%;
-    height: 100%;
+    height: calc(100% - 60px);  /* to match gradio's height */
 }
 
 /* fullscreen popup (ie in Lora's (i) button) */
