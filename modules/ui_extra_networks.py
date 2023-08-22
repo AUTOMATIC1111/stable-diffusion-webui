@@ -343,7 +343,7 @@ def create_ui(container, button, tabname, skip_indexing = False):
         ui.description_target_filename = gr.Textbox('Description save filename', elem_id=tabname+"_description_filename", visible=False)
 
         for page in ui.stored_extra_pages:
-            shared.log.debug(f"Create UI Extra Network Page: {page.title}")
+            shared.log.debug(f"Extra network page: {page.title} tab={tabname}")
             page_html = page.create_html(ui.tabname, skip_indexing)
             with gr.Tab(page.title, id=page.title.lower().replace(" ", "_"), elem_classes="extra-networks-tab"):
                 page_elem = gr.HTML(page_html, elem_id=tabname+page.name+"_extra_page", elem_classes="extra-networks-page")

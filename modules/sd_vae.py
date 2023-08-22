@@ -98,7 +98,7 @@ def refresh_vae_list():
                 vae_dict[name] = os.path.dirname(filepath)
             else:
                 vae_dict[name] = filepath
-    shared.log.info(f"Available VAEs: {vae_path} {len(vae_dict)}")
+    shared.log.info(f"Available VAEs: {vae_path} items={len(vae_dict)}")
     return vae_dict
 
 

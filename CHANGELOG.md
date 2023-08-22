@@ -1,11 +1,18 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-21
+## Update for 2023-08-22
 
 - general:
-  - all system and image paths are now relative by default
-  - fix extra networks previews
-  - add settings validation when performing load/save
+  - all system and image paths are now relative by default  
+  - fix extra networks previews  
+  - add settings validation when performing load/save  
+  - optimize model hashing  
+  - add cli param `--skip-all` that skips all installer checks  
+    use at personal discretion, but it can be useful for bulk deployments  
+  - add **openvino** (experimental) cpu optimized model compile and inference  
+    enable with `--use-openvino`  
+    thanks @disty0  
+  - add model **precompile** option (when model compile is enbled)  
 
 ## Update for 2023-08-20
 

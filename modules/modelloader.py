@@ -157,7 +157,7 @@ def load_diffusers_models(model_path: str, command_path: str = None):
                     output.append(str(r.repo_id))
         except Exception as e:
             shared.log.error(f"Error listing diffusers: {place} {e}")
-    shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} {len(output)}')
+    shared.log.debug(f'Scanning diffusers cache: {model_path} {command_path} items={len(output)}')
     return output
 
 

@@ -60,7 +60,7 @@ class StyleDatabase:
                     self.styles[row["name"]] = PromptStyle(row["name"], prompt, negative_prompt)
                 except Exception:
                     log.error(f'Styles error: {self.path} {row}')
-            log.debug(f'Loaded styles: {self.path} {len(self.styles.keys())}')
+            log.debug(f'Loaded styles: {self.path} items={len(self.styles.keys())}')
 
     def get_style_prompts(self, styles):
         return [self.styles.get(x, self.no_style).prompt for x in styles]

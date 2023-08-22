@@ -736,6 +736,8 @@ def check_extensions():
 
 # check version of the main repo and optionally upgrade it
 def check_version(offline=False, reset=True): # pylint: disable=unused-argument
+    if args.skip_all:
+        return
     if not os.path.exists('.git'):
         log.error('Not a git repository')
         if not args.ignore:
@@ -843,6 +845,7 @@ def add_args(parser):
     group.add_argument('--skip-extensions', default = False, action='store_true', help = "Skips running individual extension installers, default: %(default)s")
     group.add_argument('--skip-git', default = False, action='store_true', help = "Skips running all GIT operations, default: %(default)s")
     group.add_argument('--skip-torch', default = False, action='store_true', help = "Skips running Torch checks, default: %(default)s")
+    group.add_argument('--skip-all', default = False, action='store_true', help = "Skips running all checks, default: %(default)s")
     group.add_argument('--experimental', default = False, action='store_true', help = "Allow unsupported versions of libraries, default: %(default)s")
     group.add_argument('--reinstall', default = False, action='store_true', help = "Force reinstallation of all requirements, default: %(default)s")
     group.add_argument('--test', default = False, action='store_true', help = "Run test only and exit")

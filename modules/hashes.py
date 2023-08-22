@@ -15,10 +15,7 @@ def dump_cache():
 def cache(subsection):
     global cache_data # pylint: disable=global-statement
     if cache_data is None:
-        if not os.path.isfile(cache_filename):
-            cache_data = {}
-        else:
-            cache_data = shared.readfile(cache_filename)
+        cache_data = {} if not os.path.isfile(cache_filename) else shared.readfile(cache_filename)
     s = cache_data.get(subsection, {})
     cache_data[subsection] = s
     return s
@@ -59,7 +56,7 @@ def sha256(filename, title, use_addnet_hash=False):
         sha256_value = calculate_sha256(filename)
     hashes[title] = {
         "mtime": os.path.getmtime(filename),
-        "sha256": sha256_value,
+        "sha256": sha256_value
     }
     dump_cache()
     return sha256_value

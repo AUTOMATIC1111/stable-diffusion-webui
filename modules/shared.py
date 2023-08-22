@@ -66,6 +66,7 @@ restricted_opts = {
     "outdir_save",
     "outdir_init_images"
 }
+compatibility_opts = ['clip_skip', 'uni_pc_lower_order_final', 'uni_pc_order']
 
 
 def is_url(string):
@@ -720,11 +721,12 @@ class Options:
                     if self.data_labels[k].default != v:
                         diff[k] = v
                 else:
-                    unused_settings.append(k)
+                    if k not in compatibility_opts:
+                        unused_settings.append(k)
                     diff[k] = v
             writefile(diff, filename)
             if len(unused_settings) > 0:
-                log.debug(f"Unknown settings: {unused_settings}")
+                log.debug(f"Unused settings: {unused_settings}")
         except Exception as e:
             log.error(f'Saving settings failed: {filename} {e}')
 
@@ -748,10 +750,10 @@ class Options:
             info = self.data_labels.get(k, None)
             if info is not None and not self.same_type(info.default, v):
                 log.error(f"Error: bad setting value: {k}: {v} ({type(v).__name__}; expected {type(info.default).__name__})")
-            if info is None:
+            if info is None and k not in compatibility_opts:
                 unknown_settings.append(k)
         if len(unknown_settings) > 0:
-            log.debug(f"Unknown settings: {unknown_settings}")
+            log.warning(f"Unknown settings: {unknown_settings}")
 
     def onchange(self, key, func, call=True):
         item = self.data_labels.get(key)

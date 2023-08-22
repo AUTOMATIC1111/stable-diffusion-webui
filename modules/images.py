@@ -448,7 +448,7 @@ def atomically_save_image():
             image_format = 'JPEG'
         if shared.opts.image_watermark_enabled:
             image = set_watermark(image, shared.opts.image_watermark)
-        shared.log.debug(f'Saving image: {image_format} {fn} {image.size}')
+        shared.log.debug(f'Saving image: type={image_format} size={image.size} {fn}')
         # actual save
         exifinfo = (exifinfo or "") if shared.opts.image_metadata else ""
         if image_format == 'PNG':

@@ -843,7 +843,7 @@ def create_ui(startup_timer = None):
                 (latent_index, "Latent sampler"),
                 (denoising_strength, "Denoising strength"),
                 (refiner_start, "Refiner start"),
-                (full_quality, "Full quality"), # TODO
+                (full_quality, "Full quality"),
                 (restore_faces, "Face restoration"),
                 (batch_size, "Batch size"),
                 (batch_count, "Batch count"),
@@ -968,13 +968,13 @@ def create_ui(startup_timer = None):
             directml_override_opts()
         if cmd_opts.use_openvino:
             if not modules.shared.opts.cuda_compile:
-                modules.shared.log.warn("OpenVINO: Enabling Torch Compile")
+                modules.shared.log.warning("OpenVINO: Enabling Torch Compile")
                 modules.shared.opts.cuda_compile = True
             if modules.shared.opts.cuda_compile_backend != "openvino_fx":
-                modules.shared.log.warn("OpenVINO: Setting Torch Compiler backend to OpenVINO FX")
+                modules.shared.log.warning("OpenVINO: Setting Torch Compiler backend to OpenVINO FX")
                 modules.shared.opts.cuda_compile_backend = "openvino_fx"
             if modules.shared.opts.sd_backend != "diffusers":
-                modules.shared.log.warn("OpenVINO: Setting backend to Diffusers")
+                modules.shared.log.warning("OpenVINO: Setting backend to Diffusers")
                 modules.shared.opts.sd_backend = "diffusers"
         try:
             opts.save(modules.shared.config_filename)

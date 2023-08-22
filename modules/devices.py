@@ -53,6 +53,7 @@ def get_optimal_device():
 
 def get_device_for(task):
     if task in shared.cmd_opts.use_cpu:
+        shared.log.debug(f'Forcing CPU for task: {task}')
         return cpu
     return get_optimal_device()
 

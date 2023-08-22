@@ -4,6 +4,7 @@ import re
 import io
 import sys
 import json
+import time
 import threading
 from os import mkdir
 from urllib import request
@@ -38,7 +39,7 @@ skip_next_load = False
 sd_metadata_file = os.path.join(paths.data_path, "metadata.json")
 sd_metadata = None
 sd_metadata_pending = 0
-
+sd_metadata_timer = 0
 
 class CheckpointInfo:
     def __init__(self, filename):
@@ -59,8 +60,8 @@ class CheckpointInfo:
             if name.startswith("\\") or name.startswith("/"):
                 name = name[1:]
             self.name = name
-            self.hash = model_hash(self.filename)
             self.sha256 = hashes.sha256_from_cache(self.filename, f"checkpoint/{name}")
+            self.hash = self.sha256[0:8] if self.sha256 is not None else None
             self.path = abspath
             self.type = abspath.split('.')[-1].lower()
             self.name_for_extra = os.path.splitext(os.path.basename(filename))[0]
@@ -155,7 +156,7 @@ def list_models():
                 shared.opts.data['sd_model_checkpoint'] = checkpoint_info.title
     elif shared.cmd_opts.ckpt != shared.default_sd_model_file and shared.cmd_opts.ckpt is not None:
         shared.log.warning(f"Checkpoint not found: {shared.cmd_opts.ckpt}")
-    shared.log.info(f'Available models: {shared.opts.ckpt_dir} {len(checkpoints_list)}')
+    shared.log.info(f'Available models: {shared.opts.ckpt_dir} items={len(checkpoints_list)}')
 
     if len(checkpoints_list) == 0:
         if not shared.cmd_opts.no_download:
@@ -212,10 +213,14 @@ def model_hash(filename):
     try:
         with open(filename, "rb") as file:
             import hashlib
+            t0 = time.time()
             m = hashlib.sha256()
             file.seek(0x100000)
             m.update(file.read(0x10000))
-            return m.hexdigest()[0:8]
+            shorthash = m.hexdigest()[0:8]
+            t1 = time.time()
+            shared.log.debug(f'Calculating short hash: {filename} hash={shorthash} time={(t1-t0):.2f}')
+            return shorthash
     except FileNotFoundError:
         return 'NOFILE'
     except Exception:
@@ -284,7 +289,7 @@ def write_metadata():
         shared.log.debug(f"Model metadata: {sd_metadata_file} no changes")
         return
     shared.writefile(sd_metadata, sd_metadata_file)
-    shared.log.info(f"Model metadata saved: {sd_metadata_file} {sd_metadata_pending}")
+    shared.log.info(f"Model metadata saved: {sd_metadata_file} items={sd_metadata_pending} time={sd_metadata_timer:.2f}s")
     sd_metadata_pending = 0
 
 
@@ -300,6 +305,7 @@ def read_metadata_from_safetensors(filename):
         return res
     res = {}
     try:
+        t0 = time.time()
         with open(filename, mode="rb") as file:
             metadata_len = file.read(8)
             metadata_len = int.from_bytes(metadata_len, "little")
@@ -318,6 +324,9 @@ def read_metadata_from_safetensors(filename):
         sd_metadata[filename] = res
         global sd_metadata_pending # pylint: disable=global-statement
         sd_metadata_pending += 1
+        t1 = time.time()
+        global sd_metadata_timer # pylint: disable=global-statement
+        sd_metadata_timer += (t1 - t0)
     except Exception as e:
         shared.log.error(f"Error reading metadata from: {filename} {e}")
     return res
@@ -368,7 +377,6 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
 
 def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, state_dict, timer):
     shared.log.debug(f'Model weights loading: {memory_stats()}')
-    sd_model_hash = checkpoint_info.calculate_shorthash()
     timer.record("hash")
     if model_data.sd_dict == 'None':
         shared.opts.data["sd_model_checkpoint"] = checkpoint_info.title
@@ -407,7 +415,7 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     # clean up cache if limit is reached
     while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
         checkpoints_loaded.popitem(last=False)
-    model.sd_model_hash = sd_model_hash
+    model.sd_model_hash = checkpoint_info.calculate_shorthash()
     model.sd_model_checkpoint = checkpoint_info.filename
     model.sd_checkpoint_info = checkpoint_info
     shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
@@ -795,7 +803,7 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     shared.log.info(f"Compiling pipeline={sd_model.__class__.__name__} shape={8 * sd_model.unet.config.sample_size} mode={shared.opts.cuda_compile_backend}")
                     import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                     if shared.opts.cuda_compile_backend == "openvino_fx":
-                        from modules.intel.openvino import openvino_fx
+                        from modules.intel.openvino import openvino_fx # pylint: disable=unused-import
                     log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                     if hasattr(torch, '_logging'):
                         torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access
@@ -812,9 +820,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         if sd_model is None:
             shared.log.error('Diffuser model not loaded')
             return
+        sd_model.sd_model_hash = checkpoint_info.calculate_shorthash() # pylint: disable=attribute-defined-outside-init
         sd_model.sd_checkpoint_info = checkpoint_info # pylint: disable=attribute-defined-outside-init
         sd_model.sd_model_checkpoint = checkpoint_info.filename # pylint: disable=attribute-defined-outside-init
-        sd_model.sd_model_hash = checkpoint_info.hash # pylint: disable=attribute-defined-outside-init
+        shared.opts.data["sd_checkpoint_hash"] = checkpoint_info.sha256
         if hasattr(sd_model, "set_progress_bar_config"):
             sd_model.set_progress_bar_config(bar_format='Progress {rate_fmt}{postfix} {bar} {percentage:3.0f}% {n_fmt}/{total_fmt} {elapsed} {remaining}', ncols=80, colour='#327fba')
         if op == 'refiner' and shared.opts.diffusers_move_refiner and not sd_model.has_accelerate:
