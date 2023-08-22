@@ -78,7 +78,7 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Clip skip
 - Hypernetworks
 - Loras (same as Hypernetworks but more pretty)
-- A sparate UI where you can choose, with preview, which embeddings, hypernetworks or Loras to add to your prompt 
+- A separate UI where you can choose, with preview, which embeddings, hypernetworks or Loras to add to your prompt 
 - Can select to load a different VAE from settings screen
 - Estimated completion time in progress bar
 - API
@@ -93,7 +93,10 @@ A browser interface based on Gradio library for Stable Diffusion.
 - Reorder elements in the UI from settings screen
 
 ## Installation and Running
-Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for both [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended) and [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
+Make sure the required [dependencies](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Dependencies) are met and follow the instructions available for:
+- [NVidia](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-NVidia-GPUs) (recommended)
+- [AMD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Install-and-Run-on-AMD-GPUs) GPUs.
+- [Intel CPUs, Intel GPUs (both integrated and discrete)](https://github.com/openvinotoolkit/stable-diffusion-webui/wiki/Installation-on-Intel-Silicon) (external wiki page)
 
 Alternatively, use online services (like Google Colab):
 
