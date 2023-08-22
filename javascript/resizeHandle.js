@@ -66,6 +66,11 @@
         parent.insertBefore(resizeHandle, rightCol);
 
         resizeHandle.addEventListener('mousedown', (evt) => {
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            document.body.classList.add('resizing');
+
             R.tracking = true;
             R.parent = parent;
             R.parentWidth = parent.offsetWidth;
@@ -75,20 +80,37 @@
             R.screenX = evt.screenX;
         });
 
-        resizeHandle.addEventListener('dblclick', () => parent.style.gridTemplateColumns = GRID_TEMPLATE_COLUMNS);
+        resizeHandle.addEventListener('dblclick', (evt) => {
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            parent.style.gridTemplateColumns = GRID_TEMPLATE_COLUMNS;
+        });
 
         afterResize(parent);
     }
 
     window.addEventListener('mousemove', (evt) => {
         if (R.tracking) {
+            evt.preventDefault();
+            evt.stopPropagation();
+
             const delta = R.screenX - evt.screenX;
             const leftColWidth = Math.max(Math.min(R.leftColStartWidth - delta, R.parent.offsetWidth - GRADIO_MIN_WIDTH - PAD), GRADIO_MIN_WIDTH);
             setLeftColGridTemplate(R.parent, leftColWidth);
         }
     });
 
-    window.addEventListener('mouseup', () => R.tracking = false);
+    window.addEventListener('mouseup', (evt) => {
+        if (R.tracking) {
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            R.tracking = false;
+
+            document.body.classList.remove('resizing');
+        }
+    });
 
 
     window.addEventListener('resize', () => {
