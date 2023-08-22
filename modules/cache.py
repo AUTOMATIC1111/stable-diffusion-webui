@@ -30,8 +30,11 @@ def dump_cache():
             time.sleep(1)
 
         with cache_lock:
-            with open(cache_filename, "w", encoding="utf8") as file:
+            cache_filename_tmp = cache_filename + "-"
+            with open(cache_filename_tmp, "w", encoding="utf8") as file:
                 json.dump(cache_data, file, indent=4)
+
+            os.replace(cache_filename_tmp, cache_filename)
 
             dump_cache_after = None
             dump_cache_thread = None
