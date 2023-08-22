@@ -39,6 +39,7 @@ voluptuous
 yapf
 scikit-image
 basicsr
+compel==2.0.2
 fasteners
 typing-extensions==4.7.1
 antlr4-python3-runtime==4.9.3

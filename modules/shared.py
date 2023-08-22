@@ -184,8 +184,11 @@ class State:
 
 state = State()
 state.server_start = time.time()
-
-backend = Backend.DIFFUSERS if (cmd_opts.backend is not None) and (cmd_opts.backend.lower() == 'diffusers') else Backend.ORIGINAL # initial since we don't have opts loaded yet
+if cmd_opts.use_openvino:
+    backend = Backend.DIFFUSERS
+    cmd_opts.backend = 'diffusers'
+else:
+    backend = Backend.DIFFUSERS if (cmd_opts.backend is not None) and (cmd_opts.backend.lower() == 'diffusers') else Backend.ORIGINAL # initial since we don't have opts loaded yet
 
 
 class OptionInfo:
@@ -342,7 +345,7 @@ else: # cuda
     cross_attention_optimization_default ="Scaled-Dot-Product"
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
-    "sd_backend": OptionInfo("original", "Stable Diffusion backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
+    "sd_backend": OptionInfo("diffusers" if cmd_opts.use_openvino else "original", "Stable Diffusion backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
     "sd_checkpoint_autoload": OptionInfo(True, "Stable Diffusion checkpoint autoload on server start"),
     "sd_model_checkpoint": OptionInfo(default_checkpoint, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "sd_model_refiner": OptionInfo('None', "Stable Diffusion refiner", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
@@ -373,7 +376,7 @@ options_templates.update(options_section(('optimizations', "Optimizations"), {
 options_templates.update(options_section(('cuda', "Compute Settings"), {
     "memmon_poll_rate": OptionInfo(2, "VRAM usage polls per second during generation", gr.Slider, {"minimum": 0, "maximum": 40, "step": 1}),
     "precision": OptionInfo("Autocast", "Precision type", gr.Radio, lambda: {"choices": ["Autocast", "Full"]}),
-    "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" else "BF16" if devices.backend == "ipex" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
+    "cuda_dtype": OptionInfo("FP32" if sys.platform == "darwin" or cmd_opts.use_openvino else "BF16" if devices.backend == "ipex" else "FP16", "Device precision type", gr.Radio, lambda: {"choices": ["FP32", "FP16", "BF16"]}),
     "no_half": OptionInfo(False, "Use full precision for model (--no-half)", None, None, None),
     "no_half_vae": OptionInfo(False, "Use full precision for VAE (--no-half-vae)"),
     "upcast_sampling": OptionInfo(True if sys.platform == "darwin" else False, "Enable upcast sampling"),
@@ -385,8 +388,8 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
     # "cuda_allow_tf32": OptionInfo(True, "Allow TF32 math ops"),
     # "cuda_allow_tf16_reduced": OptionInfo(True, "Allow TF16 reduced precision math ops"),
-    "cuda_compile": OptionInfo(False, "Enable model compile (experimental)"),
-    "cuda_compile_backend": OptionInfo("none", "Model compile backend (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
+    "cuda_compile": OptionInfo(True if cmd_opts.use_openvino else False, "Enable model compile (experimental)"),
+    "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
@@ -801,9 +804,9 @@ config_filename = cmd_opts.config
 opts.load(config_filename)
 cmd_opts = cmd_args.compatibility_args(opts, cmd_opts)
 if cmd_opts.backend is None:
-    backend = Backend.DIFFUSERS if opts.data.get('sd_backend', 'original') == 'diffusers' else Backend.ORIGINAL
+    backend = Backend.DIFFUSERS if cmd_opts.use_openvino or opts.data.get('sd_backend', 'original') == 'diffusers' else Backend.ORIGINAL
 else:
-    backend = Backend.DIFFUSERS if cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
+    backend = Backend.DIFFUSERS if cmd_opts.use_openvino or cmd_opts.backend.lower() == 'diffusers' else Backend.ORIGINAL
 opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
 opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder
 opts.data['uni_pc_order'] = opts.schedulers_solver_order
@@ -997,7 +1000,7 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
 
     @property
     def backend(self):
-        return Backend.ORIGINAL if opts.data['sd_backend'] == 'original' else Backend.DIFFUSERS
+        return Backend.ORIGINAL if not cmd_opts.use_openvino and opts.data['sd_backend'] == 'original' else Backend.DIFFUSERS
 
     @property
     def sd_model_type(self):

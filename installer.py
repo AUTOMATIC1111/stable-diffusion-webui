@@ -319,12 +319,13 @@ def check_torch():
     if args.profile:
         pr = cProfile.Profile()
         pr.enable()
-    allow_cuda = not (args.use_rocm or args.use_directml or args.use_ipex)
-    allow_rocm = not (args.use_cuda or args.use_directml or args.use_ipex)
-    allow_ipex = not (args.use_cuda or args.use_rocm or args.use_directml)
-    allow_directml = not (args.use_cuda or args.use_rocm or args.use_ipex)
-    log.debug(f'Torch overrides: cuda={args.use_cuda} rocm={args.use_rocm} ipex={args.use_ipex} diml={args.use_directml}')
-    log.debug(f'Torch allowed: cuda={allow_cuda} rocm={allow_rocm} ipex={allow_ipex} diml={allow_directml}')
+    allow_cuda = not (args.use_rocm or args.use_directml or args.use_ipex or args.use_openvino)
+    allow_rocm = not (args.use_cuda or args.use_directml or args.use_ipex or args.use_openvino)
+    allow_ipex = not (args.use_cuda or args.use_rocm or args.use_directml or args.use_openvino)
+    allow_directml = not (args.use_cuda or args.use_rocm or args.use_ipex or args.use_openvino)
+    allow_openvino = not (args.use_cuda or args.use_rocm or args.use_ipex or args.use_directml)
+    log.debug(f'Torch overrides: cuda={args.use_cuda} rocm={args.use_rocm} ipex={args.use_ipex} diml={args.use_directml} openvino={args.use_openvino}')
+    log.debug(f'Torch allowed: cuda={allow_cuda} rocm={allow_rocm} ipex={allow_ipex} diml={allow_directml} openvino={allow_openvino}')
     torch_command = os.environ.get('TORCH_COMMAND', '')
     xformers_package = os.environ.get('XFORMERS_PACKAGE', 'none')
     if torch_command != '':
@@ -392,6 +393,10 @@ def check_torch():
             os.environ.setdefault('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0 intel-extension-for-tensorflow[gpu]')
         else:
             torch_command = os.environ.get('TORCH_COMMAND', 'torch==2.0.0a0 intel_extension_for_pytorch==2.0.110+gitba7f6c1 -f https://developer.intel.com/ipex-whl-stable-xpu')
+    elif allow_openvino and args.use_openvino:
+        #Remove this after 2.1.0 releases
+        log.info('Using OpenVINO with Torch Nightly CPU')
+        torch_command = os.environ.get('TORCH_COMMAND', '--pre torch==2.1.0.dev20230713+cpu torchvision==0.16.0.dev20230713+cpu -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html')
     else:
         machine = platform.machine()
         if sys.platform == 'darwin':
@@ -456,7 +461,7 @@ def check_torch():
         log.debug(f'Cannot install xformers package: {e}')
     if opts.get('cuda_compile_backend', '') == 'hidet':
         install('hidet', 'hidet')
-    if opts.get('cuda_compile_backend', '') == 'openvino_fx':
+    if args.use_openvino or opts.get('cuda_compile_backend', '') == 'openvino_fx':
         install('openvino==2023.1.0.dev20230811', 'openvino')
         os.environ.setdefault('PYTORCH_TRACING_MODE', 'TORCHFX')
     if args.profile:
@@ -495,7 +500,6 @@ def install_packages():
     install(invisiblewatermark_package, 'invisible-watermark')
     install('onnxruntime==1.15.1', 'onnxruntime', ignore=True)
     install('pi-heif', 'pi_heif', ignore=True)
-    install('git+https://github.com/damian0815/compel', 'compel', ignore=True)
     tensorflow_package = os.environ.get('TENSORFLOW_PACKAGE', 'tensorflow==2.13.0')
     install(tensorflow_package, 'tensorflow', ignore=True)
     install('git+https://github.com/google-research/torchsde', 'torchsde', ignore=True)
@@ -831,6 +835,7 @@ def add_args(parser):
     group.add_argument('--requirements', default = False, action='store_true', help = "Force re-check of requirements, default: %(default)s")
     group.add_argument('--quick', default = False, action='store_true', help = "Run with startup sequence only, default: %(default)s")
     group.add_argument('--use-directml', default = False, action='store_true', help = "Use DirectML if no compatible GPU is detected, default: %(default)s")
+    group.add_argument("--use-openvino", default = False, action='store_true', help="Use Intel OpenVINO backend, default: %(default)s")
     group.add_argument("--use-ipex", default = False, action='store_true', help="Force use Intel OneAPI XPU backend, default: %(default)s")
     group.add_argument("--use-cuda", default=False, action='store_true', help="Force use nVidia CUDA backend, default: %(default)s")
     group.add_argument("--use-rocm", default=False, action='store_true', help="Force use AMD ROCm backend, default: %(default)s")

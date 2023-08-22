@@ -8,7 +8,6 @@ from torch._dynamo.backends.registry import register_backend
 from torch.fx.experimental.proxy_tensor import make_fx
 from torch._inductor.compile_fx import compile_fx
 from hashlib import sha256
-import modules.shared
 
 class ModelState:
     def __init__(self):
@@ -113,3 +112,15 @@ def get_cached_file_name(*args, model_hash_str, device, cache_root):
             file_name = None
             model_hash_str = None
     return file_name
+
+def openvino_override_opts():
+    from modules import shared
+    if not shared.opts.cuda_compile:
+        shared.log.warn("OpenVINO: Enabling Torch Compile")
+        shared.opts.cuda_compile = True
+    if shared.opts.cuda_compile_backend != "openvino_fx":
+        shared.log.warn("OpenVINO: Setting Torch Compiler backend to OpenVINO FX")
+        shared.opts.cuda_compile_backend = "openvino_fx"
+    if shared.opts.sd_backend != "diffusers":
+        shared.log.warn("OpenVINO: Setting backend to Diffusers")
+        shared.opts.sd_backend = "diffusers"

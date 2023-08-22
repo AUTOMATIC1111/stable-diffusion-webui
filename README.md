@@ -69,7 +69,7 @@ Additional models will be added as they become available and there is public int
 - Any GPU compatibile with *DirectX* on *Windows* using **DirectML** libraries.  
   This includes support for AMD GPUs that are not supported by native ROCm libraries
 - *Intel Arc* GPUs using *Intel OneAPI* **Ipex/XPU** libraries
-- *Intel* iGPUs using *Intel OneAPI* **OpenVINO** libraries
+- *Intel* GPUs using *Intel OneAPI* **OpenVINO** libraries
 - *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
 
 ## Install & Run
@@ -96,6 +96,7 @@ Below is partial list of all available parameters, run `webui --help` for the fu
 
     Setup options:
       --use-directml                   Use DirectML if no compatible GPU is detected, default: False
+      --use-openvino                   Use Intel OpenVINO backend, default: False
       --use-ipex                       Force use Intel OneAPI XPU backend, default: False
       --use-cuda                       Force use nVidia CUDA backend, default: False
       --use-rocm                       Force use AMD ROCm backend, default: False
