@@ -26,11 +26,11 @@ from modules.shared import opts, state
 from PIL import Image, ImageOps
 from pathlib import Path
 from types import MappingProxyType
+from typing import Callable, Optional
 
 from openvino.frontend import FrontEndManager
 from openvino.frontend.pytorch.fx_decoder import TorchFXPythonDecoder
-from openvino.frontend.pytorch.torchdynamo import backend, compile # noqa: F401
-from openvino.frontend.pytorch.torchdynamo.execute import execute # noqa: F401
+from openvino.frontend.pytorch.torchdynamo import backend #, compile # noqa: F401
 from openvino.frontend.pytorch.torchdynamo.partition import Partitioner
 from openvino.runtime import Core, Type, PartialShape, serialize
 
@@ -96,79 +96,103 @@ partitioned_modules = {}
 def openvino_fx(subgraph, example_inputs):
     try:
         executor_parameters = None
-        core = Core()
-        model_hash_str_file = ""
+        inputs_reversed = False
         if os.getenv("OPENVINO_TORCH_MODEL_CACHING") is not None:
+            # Create a hash to be used for caching
             model_hash_str = sha256(subgraph.code.encode('utf-8')).hexdigest()
-            model_hash_str_file = model_hash_str + str(model_state.partition_id)
             if (model_state.cn_model != "None" and model_state.partition_id == 0):
-                model_hash_str_file = model_hash_str_file + model_state.cn_model
+                model_hash_str = model_hash_str + model_state.cn_model
 
             executor_parameters = {"model_hash_str": model_hash_str}
-
-        example_inputs.reverse()
-        cache_root = "./cache/"
-        if os.getenv("OPENVINO_TORCH_CACHE_DIR") is not None:
-            cache_root = os.getenv("OPENVINO_TORCH_CACHE_DIR")
-
-        device = "CPU"
-
-        if os.getenv("OPENVINO_TORCH_BACKEND_DEVICE") is not None:
-            device = os.getenv("OPENVINO_TORCH_BACKEND_DEVICE")
-            assert device in core.available_devices, "Specified device " + device + " is not in the list of OpenVINO Available Devices"
-
-        file_name = get_cached_file_name(*example_inputs, model_hash_str=model_hash_str_file, device=device, cache_root=cache_root)
-
-        if (file_name is not None and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin")
-                and model_state.cn_model == "None"):
-            model_state.partition_id = model_state.partition_id + 1
-            om = core.read_model(file_name + ".xml")
-
-            dtype_mapping = {
-                torch.float32: Type.f32,
-                torch.float64: Type.f64,
-                torch.float16: Type.f16,
-                torch.int64: Type.i64,
-                torch.int32: Type.i32,
-                torch.uint8: Type.u8,
-                torch.int8: Type.i8,
-                torch.bool: Type.boolean
-            }
-
-            for idx, input_data in enumerate(example_inputs):
-                om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
-                om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
-            om.validate_nodes_and_infer_types()
-
-            if model_hash_str is not None:
-                core.set_property({'CACHE_DIR': cache_root + '/blob'})
-
-            compiled_model = core.compile_model(om, device)
-            def _call(*args):
-                ov_inputs = [a.detach().cpu().numpy() for a in args]
-                ov_inputs.reverse()
-                res = compiled_model(ov_inputs)
-                result = [torch.from_numpy(res[out]) for out in compiled_model.outputs]
-                return result
-            return _call
-        else:
+            # Check if the model was fully supported and already cached
             example_inputs.reverse()
-            if os.getenv("OPENVINO_TORCH_MODEL_CACHING") is not None:
-                model_hash_str = sha256(subgraph.code.encode('utf-8')).hexdigest()
-                executor_parameters = {"model_hash_str": model_hash_str}
-            model = make_fx(subgraph)(*example_inputs)
-            with torch.no_grad():
-                model.eval()
-            partitioner = Partitioner()
-            compiled_model = partitioner.make_partitions(model)
+            inputs_reversed = True
+            maybe_fs_cached_name = cached_model_name(model_hash_str + "_fs", get_device(), example_inputs, cache_root_path())
 
-            def _call(*args):
-                res = openvino_execute_partitioned(compiled_model, *args,
-                           executor_parameters=executor_parameters, file_name=file_name)
-                return res
-            return _call
-    except Exception:
+            if os.path.isfile(maybe_fs_cached_name + ".xml") and os.path.isfile(maybe_fs_cached_name + ".bin"):
+                if (model_state.cn_model != "None" and model_state.cn_model in maybe_fs_cached_name): 
+                    example_inputs_reordered = []
+                    if (os.path.isfile(maybe_fs_cached_name + ".txt")):
+                        f = open(maybe_fs_cached_name + ".txt", "r")
+                        for idx, input_data in enumerate(example_inputs):
+                            shape = f.readline()
+                            if (str(input_data.size()) != shape):
+                                for idx1, input_data1 in enumerate(example_inputs):
+                                    if (str(input_data1.size()).strip() == str(shape).strip()):
+                                        example_inputs_reordered.append(example_inputs[idx1])
+                        example_inputs = example_inputs_reordered
+
+                    # Model is fully supported and already cached. Run the cached OV model directly.
+                    compiled_model = openvino_compile_cached_model(maybe_fs_cached_name, *example_inputs)
+
+                    def _call(*args):
+                        if (model_state.cn_model != "None" and model_state.cn_model in maybe_fs_cached_name): 
+                            args_reordered = []
+                            if (os.path.isfile(maybe_fs_cached_name + ".txt")):
+                                f = open(maybe_fs_cached_name + ".txt", "r")
+                                for idx, input_data in enumerate(args):
+                                    shape = f.readline()
+                                    if (str(input_data.size()) != shape):
+                                        for idx1, input_data1 in enumerate(args):
+                                            if (str(input_data1.size()).strip() == str(shape).strip()):
+                                                args_reordered.append(args[idx1])
+                            args = args_reordered
+
+                        res = execute_cached(compiled_model, *args)
+                        model_state.partition_id = model_state.partition_id + 1
+                        return res
+                    return _call
+
+        if inputs_reversed:
+            example_inputs.reverse()
+        model = make_fx(subgraph)(*example_inputs)
+        with torch.no_grad():
+            model.eval()
+        partitioner = Partitioner()
+        compiled_model = partitioner.make_partitions(model)
+
+        if executor_parameters is not None and 'model_hash_str' in executor_parameters:
+            # Check if the model is fully supported.
+            fully_supported = partitioner.check_fully_supported(compiled_model)
+            if fully_supported:
+                executor_parameters["model_hash_str"] += "_fs"
+
+        def _call(*args):
+            res = execute(compiled_model, *args, executor="openvino",
+                          executor_parameters=executor_parameters, file_name=maybe_fs_cached_name)
+            return res
+        return _call
+    except Exception as e:
         return compile_fx(subgraph, example_inputs)
+
+def check_fully_supported(self, graph_module: GraphModule) -> bool:
+    num_fused = 0
+    for node in graph_module.graph.nodes:
+        if node.op == "call_module" and "fused_" in node.name:
+            num_fused += 1
+        elif node.op != "placeholder" and node.op != "output":
+            return False
+    if num_fused == 1:
+        return True
+    return False
+
+Partitioner.check_fully_supported = functools.partial(check_fully_supported, Partitioner)
+
+def execute(
+    gm: GraphModule,
+    *args,
+    executor: str = "openvino",
+    executor_parameters: Optional[dict] = None,
+    file_name = ""
+):
+    if executor == "openvino":
+        return openvino_execute_partitioned(gm, *args, executor_parameters=executor_parameters, file_name=file_name)
+    elif executor == "strictly_openvino":
+        return openvino_execute(gm, *args, executor_parameters=executor_parameters, file_name=file_name)
+
+    msg = "Received unexpected value for 'executor': {0}. Allowed values are: openvino, strictly_openvino.".format(executor)
+    raise ValueError(msg)
+
 
 class OpenVINOGraphModule(torch.nn.Module):
     def __init__(self, gm, partition_id, use_python_fusion_cache, model_hash_str: str = None, file_name=""):
@@ -185,7 +209,7 @@ class OpenVINOGraphModule(torch.nn.Module):
            return self.gm(*args)
 
         try:
-           result = openvino_execute(self.gm, *args, executor_parameters=self.executor_parameters, partition_id=self.partition_id, file_name=self.file_name)
+            result = openvino_execute(self.gm, *args, executor_parameters=self.executor_parameters, partition_id=self.partition_id, file_name=self.file_name)
         except Exception:
            self.perm_fallback = True
            return self.gm(*args)
@@ -202,7 +226,7 @@ def partition_graph(gm: GraphModule, use_python_fusion_cache: bool, model_hash_s
             gm.add_submodule(
                 node.target,
                 OpenVINOGraphModule(openvino_submodule, model_state.partition_id, use_python_fusion_cache,
-                        model_hash_str = model_hash_str, file_name=file_name),
+                        model_hash_str=model_hash_str, file_name=file_name),
             )
             model_state.partition_id = model_state.partition_id + 1
 
@@ -225,7 +249,11 @@ def openvino_execute(gm: GraphModule, *args, executor_parameters=None, partition
     if use_cache and (partition_id in compiled_cache):
         compiled = compiled_cache[partition_id]
     else:
-        compiled = openvino_compile(gm, *args, model_hash_str=model_hash_str, file_name=file_name)
+        if (model_state.cn_model != "None" and file_name is not None 
+                and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin")):
+            compiled = openvino_compile_cached_model(file_name, *args)
+        else:
+            compiled = openvino_compile(gm, *args, model_hash_str=model_hash_str, file_name=file_name)
         compiled_cache[partition_id] = compiled
 
     flat_args, _ = tree_flatten(args)
@@ -259,24 +287,90 @@ def openvino_execute_partitioned(gm: GraphModule, *args, executor_parameters=Non
     if signature not in partitioned_modules:
         partitioned_modules[signature] = partition_graph(gm, use_python_fusion_cache=use_python_fusion_cache,
                                                          model_hash_str=model_hash_str, file_name=file_name)
+
     return partitioned_modules[signature](*args)
 
-def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_name=""):
-    core = Core()
+def execute_cached(compiled_model, *args):
+    flat_args, _ = tree_flatten(args)
+    ov_inputs = [a.detach().cpu().numpy() for a in flat_args]
 
+    if (model_state.cn_model == "None"):
+        ov_inputs.reverse()
+
+    res = compiled_model(ov_inputs)
+    result = [torch.from_numpy(res[out]) for out in compiled_model.outputs]
+    return result
+
+def cached_model_name(model_hash_str, device, args, cache_root, reversed = False):
+    if model_hash_str is None:
+        return None
+
+    model_cache_dir = cache_root + "/model/"
+
+    try:
+        os.makedirs(model_cache_dir, exist_ok=True)
+        file_name = model_cache_dir + model_hash_str + "_" + device
+    except OSError as error:
+        print("Cache directory ", cache_root, " cannot be created. Model caching is disabled. Error: ", error)
+        return None
+
+    inputs_str = ""
+    for idx, input_data in enumerate(args):
+        if reversed:
+            inputs_str = "_" + str(input_data.type()) + str(input_data.size())[11:-1].replace(" ", "") + inputs_str
+        else:
+            inputs_str += "_" + str(input_data.type()) + str(input_data.size())[11:-1].replace(" ", "")
+    inputs_str = sha256(inputs_str.encode('utf-8')).hexdigest()
+    file_name += inputs_str
+
+    return file_name
+
+def cache_root_path():
+    cache_root = "./cache/"
+    if os.getenv("OPENVINO_TORCH_CACHE_DIR") is not None:
+        cache_root = os.getenv("OPENVINO_TORCH_CACHE_DIR")
+    return cache_root
+
+def get_device():
     device = "CPU"
-
+    core = Core()
     if os.getenv("OPENVINO_TORCH_BACKEND_DEVICE") is not None:
         device = os.getenv("OPENVINO_TORCH_BACKEND_DEVICE")
         assert device in core.available_devices, "Specified device " + device + " is not in the list of OpenVINO Available Devices"
 
-    cache_root = "./cache/"
-    if os.getenv("OPENVINO_TORCH_CACHE_DIR") is not None:
-        cache_root = os.getenv("OPENVINO_TORCH_CACHE_DIR")
+    return device
 
-    type_shape_string = ""
-    for input_data in args:
-        type_shape_string += "_" + str(input_data.type()) + str(input_data.size())[11:-1].replace(" ", "")
+def openvino_compile_cached_model(cached_model_path, *example_inputs):
+    core = Core()
+    om = core.read_model(cached_model_path + ".xml")
+
+    dtype_mapping = {
+        torch.float32: Type.f32,
+        torch.float64: Type.f64,
+        torch.float16: Type.f16,
+        torch.int64: Type.i64,
+        torch.int32: Type.i32,
+        torch.uint8: Type.u8,
+        torch.int8: Type.i8,
+        torch.bool: Type.boolean
+    }
+
+    for idx, input_data in enumerate(example_inputs):
+        om.inputs[idx].get_node().set_element_type(dtype_mapping[input_data.dtype])
+        om.inputs[idx].get_node().set_partial_shape(PartialShape(list(input_data.shape)))
+    om.validate_nodes_and_infer_types()
+
+    core.set_property({'CACHE_DIR': cache_root_path() + '/blob'})
+
+    compiled_model = core.compile_model(om, get_device())
+
+    return compiled_model
+
+def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_name=""):
+    core = Core()
+
+    device = get_device()
+    cache_root = cache_root_path()
 
     if file_name is not None and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin"):
         om = core.read_model(file_name + ".xml")
@@ -286,7 +380,7 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
 
         input_shapes = []
         input_types = []
-        for input_data in args:
+        for idx, input_data in enumerate(args):
             input_types.append(input_data.type())
             input_shapes.append(input_data.size())
 
@@ -296,8 +390,14 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
 
         om = fe.convert(im)
 
-        if file_name is not None:
+        if (file_name is not None):
             serialize(om, file_name + ".xml", file_name + ".bin")
+            if (model_state.cn_model != "None"):
+                f = open(file_name + ".txt", "w")
+                for idx, input_data in enumerate(args):
+                    f.write(str(input_data.size()))
+                    f.write("\n")
+                f.close()
 
     dtype_mapping = {
         torch.float32: Type.f32,
@@ -320,25 +420,6 @@ def openvino_compile(gm: GraphModule, *args, model_hash_str: str = None, file_na
 
     compiled = core.compile_model(om, device)
     return compiled
-
-def get_cached_file_name(*args, model_hash_str, device, cache_root):
-    file_name = None
-    if model_hash_str is not None:
-        model_cache_dir = cache_root + "/model/"
-        try:
-            os.makedirs(model_cache_dir, exist_ok=True)
-            file_name = model_cache_dir + model_hash_str + "_" + device
-            type_shape_string = ""
-            for input_data in args:
-                if file_name is not None:
-                    type_shape_string += "_" + str(input_data.type()) + str(input_data.size())[11:-1].replace(" ", "")
-            file_name += sha256(type_shape_string.encode('utf-8')).hexdigest()
-        except OSError as error:
-            print("Cache directory ", cache_root, " cannot be created. Model caching is disabled. Error: ", error)
-            file_name = None
-            model_hash_str = None
-    return file_name
-
 
 def from_single_file(self, pretrained_model_link_or_path, **kwargs):
 
@@ -675,6 +756,7 @@ def process_images_openvino(p: StableDiffusionProcessing, local_config, model_co
             )
             p.scripts.postprocess(p, control_res)
             control_image = control_images[0]
+            #cn_model = "lllyasviel/" + cn_model
             mode = 3
 
     infotexts = []
