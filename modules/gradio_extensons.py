@@ -1,6 +1,7 @@
 import gradio as gr
 
-from modules import scripts, ui_tempdir
+from modules import scripts, ui_tempdir, patches
+
 
 def add_classes_to_gradio_component(comp):
     """
@@ -40,6 +41,8 @@ def Block_get_config(self):
     if webui_tooltip:
         config["webui_tooltip"] = webui_tooltip
 
+    config.pop('example_inputs', None)
+
     return config
 
 
@@ -51,12 +54,20 @@ def BlockContext_init(self, *args, **kwargs):
     return res
 
 
-original_IOComponent_init = gr.components.IOComponent.__init__
-original_Block_get_config = gr.blocks.Block.get_config
-original_BlockContext_init = gr.blocks.BlockContext.__init__
+def Blocks_get_config_file(self, *args, **kwargs):
+    config = original_Blocks_get_config_file(self, *args, **kwargs)
 
-gr.components.IOComponent.__init__ = IOComponent_init
-gr.blocks.Block.get_config = Block_get_config
-gr.blocks.BlockContext.__init__ = BlockContext_init
+    for comp_config in config["components"]:
+        if "example_inputs" in comp_config:
+            comp_config["example_inputs"] = {"serialized": []}
+
+    return config
+
+
+original_IOComponent_init = patches.patch(__name__, obj=gr.components.IOComponent, field="__init__", replacement=IOComponent_init)
+original_Block_get_config = patches.patch(__name__, obj=gr.blocks.Block, field="get_config", replacement=Block_get_config)
+original_BlockContext_init = patches.patch(__name__, obj=gr.blocks.BlockContext, field="__init__", replacement=BlockContext_init)
+original_Blocks_get_config_file = patches.patch(__name__, obj=gr.blocks.Blocks, field="get_config_file", replacement=Blocks_get_config_file)
+
 
 ui_tempdir.install_ui_tempdir_override()

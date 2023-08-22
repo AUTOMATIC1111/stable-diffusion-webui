@@ -20,6 +20,18 @@ class ToolButton(FormComponent, gr.Button):
         return "button"
 
 
+class ResizeHandleRow(gr.Row):
+    """Same as gr.Row but fits inside gradio forms"""
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.elem_classes.append("resize-handle-row")
+
+    def get_block_name(self):
+        return "row"
+
+
 class FormRow(FormComponent, gr.Row):
     """Same as gr.Row but fits inside gradio forms"""
 

@@ -709,7 +709,7 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
             sd_models.reload_model_weights()
 
         for k, v in p.override_settings.items():
-            setattr(opts, k, v)
+            opts.set(k, v, is_api=True, run_callbacks=False)
 
             if k == 'sd_model_checkpoint':
                 sd_models.reload_model_weights()

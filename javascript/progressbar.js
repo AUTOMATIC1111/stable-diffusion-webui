@@ -79,17 +79,17 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     divProgress.appendChild(divInner);
     parentProgressbar.insertBefore(divProgress, progressbarContainer);
 
-    if (gallery) {
-        var livePreview = document.createElement('div');
-        livePreview.className = 'livePreview';
-        gallery.insertBefore(livePreview, gallery.firstElementChild);
-    }
+    var livePreview = null;
 
     var removeProgressBar = function() {
+        if (!divProgress) return;
+
         setTitle("");
         parentProgressbar.removeChild(divProgress);
-        if (gallery) gallery.removeChild(livePreview);
+        if (gallery && livePreview) gallery.removeChild(livePreview);
         atEnd();
+
+        divProgress = null;
     };
 
     var funProgress = function(id_task) {
@@ -149,8 +149,16 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var funLivePreview = function(id_task, id_live_preview) {
         request("./internal/progress", {id_task: id_task, id_live_preview: id_live_preview}, function(res) {
             if (res.live_preview && gallery) {
+
+
                 var img = new Image();
                 img.onload = function() {
+                    if (!livePreview) {
+                        livePreview = document.createElement('div');
+                        livePreview.className = 'livePreview';
+                        gallery.insertBefore(livePreview, gallery.firstElementChild);
+                    }
+
                     livePreview.appendChild(img);
                     if (livePreview.childElementCount > 2) {
                         livePreview.removeChild(livePreview.firstElementChild);
@@ -168,5 +176,9 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     };
 
     funProgress(id_task, 0);
-    funLivePreview(id_task, 0);
+
+    if (gallery) {
+        funLivePreview(id_task, 0);
+    }
+
 }

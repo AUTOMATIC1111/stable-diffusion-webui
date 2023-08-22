@@ -192,7 +192,7 @@ def load_vae_dict(filename, map_location):
 
 
 def load_vae(model, vae_file=None, vae_source="from unknown source"):
-    global vae_dict, loaded_vae_file
+    global vae_dict, base_vae, loaded_vae_file
     # save_settings = False
 
     cache_enabled = shared.opts.sd_vae_checkpoint_cache > 0
@@ -230,6 +230,8 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
         restore_base_vae(model)
 
     loaded_vae_file = vae_file
+    model.base_vae = base_vae
+    model.loaded_vae_file = loaded_vae_file
 
 
 # don't call this from outside
