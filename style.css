@@ -1062,13 +1062,20 @@ div.accordions > div.input-accordion.input-accordion-open{
 }
 
 
-.resize-handle{
+.resize-handle {
+    position: relative;
 	cursor: col-resize;
 	grid-column: 2 / 3;
-	min-width: 8px !important;
-	max-width: 8px !important;
+	min-width: 16px !important;
+	max-width: 16px !important;
 	height: 100%;
-	border-left: 1px dashed var(--border-color-primary);
-	user-select: none;
-	margin-left: 8px;
+}
+
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 7.5px;
+    border-left: 1px dashed var(--border-color-primary);
 }
