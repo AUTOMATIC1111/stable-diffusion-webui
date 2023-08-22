@@ -142,6 +142,11 @@ div.gradio-container, .block.gradio-textbox, div.gradio-group, div.gradio-dropdo
     overflow: visible !important;
 }
 
+/* align-items isn't enough and elements may overflow in Safari. */
+.unequal-height {
+    align-content: flex-start;
+}
+
 
 /* general styled components */
 
