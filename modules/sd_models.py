@@ -803,7 +803,8 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     torch._dynamo.config.suppress_errors = shared.opts.cuda_compile_errors # pylint: disable=protected-access
                     sd_model.unet = torch.compile(sd_model.unet, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
                     sd_model.vae.decode = torch.compile(sd_model.vae.decode, mode=shared.opts.cuda_compile_mode, backend=shared.opts.cuda_compile_backend, fullgraph=shared.opts.cuda_compile_fullgraph) # pylint: disable=attribute-defined-outside-init
-                    sd_model("dummy prompt")
+                    if shared.opts.cuda_compile_precompile:
+                        sd_model("dummy prompt")
                     shared.log.info("Complilation done.")
             except Exception as err:
                 shared.log.warning(f"Model compile not supported: {err}")

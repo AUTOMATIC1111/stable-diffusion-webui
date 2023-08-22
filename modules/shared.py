@@ -394,6 +394,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_backend": OptionInfo("openvino_fx" if cmd_opts.use_openvino else "none", "Model compile backend (experimental)", gr.Radio, lambda: {"choices": ['none', 'inductor', 'cudagraphs', 'aot_ts_nvfuser', 'hidet', 'ipex', 'openvino_fx']}),
     "cuda_compile_mode": OptionInfo("default", "Model compile mode (experimental)", gr.Radio, lambda: {"choices": ['default', 'reduce-overhead', 'max-autotune']}),
     "cuda_compile_fullgraph": OptionInfo(False, "Model compile fullgraph"),
+    "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
     "disable_gc": OptionInfo(True, "Disable Torch memory garbage collection"),
