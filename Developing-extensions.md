@@ -1,4 +1,4 @@
-[Adding to Index](#Official-Extension-Index)
+[Adding to Index](#official-extension-index)
 
 An extension is just a subdirectory in the `extensions` directory.
 
