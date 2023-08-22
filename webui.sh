@@ -4,26 +4,35 @@
 # change the variables in webui-user.sh instead #
 #################################################
 
+
+use_venv=1
+if [[ $venv_dir == "-" ]]; then
+  use_venv=0
+fi
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+
 # If run from macOS, load defaults from webui-macos-env.sh
 if [[ "$OSTYPE" == "darwin"* ]]; then
-    if [[ -f webui-macos-env.sh ]]
+    if [[ -f "$SCRIPT_DIR"/webui-macos-env.sh ]]
         then
-        source ./webui-macos-env.sh
+        source "$SCRIPT_DIR"/webui-macos-env.sh
     fi
 fi
 
 # Read variables from webui-user.sh
 # shellcheck source=/dev/null
-if [[ -f webui-user.sh ]]
+if [[ -f "$SCRIPT_DIR"/webui-user.sh ]]
 then
-    source ./webui-user.sh
+    source "$SCRIPT_DIR"/webui-user.sh
 fi
 
 # Set defaults
 # Install directory without trailing slash
 if [[ -z "${install_dir}" ]]
 then
-    install_dir="$(pwd)"
+    install_dir="$SCRIPT_DIR"
 fi
 
 # Name of the subdirectory (defaults to stable-diffusion-webui)
@@ -45,7 +54,7 @@ then
 fi
 
 # python3 venv without trailing slash (defaults to ${install_dir}/${clone_dir}/venv)
-if [[ -z "${venv_dir}" ]]
+if [[ -z "${venv_dir}" ]] && [[ $use_venv -eq 1 ]]
 then
     venv_dir="venv"
 fi
@@ -112,9 +121,28 @@ then
 fi
 
 # Check prerequisites
-gpu_info=$(lspci 2>/dev/null | grep VGA)
+gpu_info=$(lspci 2>/dev/null | grep -E "VGA|Display")
 case "$gpu_info" in
-    *"Navi 1"*|*"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
+    *"Navi 1"*)
+        export HSA_OVERRIDE_GFX_VERSION=10.3.0
+        if [[ -z "${TORCH_COMMAND}" ]]
+        then
+            pyv="$(${python_cmd} -c 'import sys; print(".".join(map(str, sys.version_info[0:2])))')"
+            if [[ $(bc <<< "$pyv <= 3.10") -eq 1 ]] 
+            then
+                # Navi users will still use torch 1.13 because 2.0 does not seem to work.
+                export TORCH_COMMAND="pip install torch==1.13.1+rocm5.2 torchvision==0.14.1+rocm5.2 --index-url https://download.pytorch.org/whl/rocm5.2"
+            else
+                printf "\e[1m\e[31mERROR: RX 5000 series GPUs must be using at max python 3.10, aborting...\e[0m"
+                exit 1
+            fi
+        fi
+    ;;
+    *"Navi 2"*) export HSA_OVERRIDE_GFX_VERSION=10.3.0
+    ;;
+    *"Navi 3"*) [[ -z "${TORCH_COMMAND}" ]] && \
+        export TORCH_COMMAND="pip install --pre torch==2.1.0.dev-20230614+rocm5.5 torchvision==0.16.0.dev-20230614+rocm5.5 --index-url https://download.pytorch.org/whl/nightly/rocm5.5"
+        # Navi 3 needs at least 5.5 which is only on the nightly chain
     ;;
     *"Renoir"*) export HSA_OVERRIDE_GFX_VERSION=9.0.0
         printf "\n%s\n" "${delimiter}"
@@ -124,9 +152,12 @@ case "$gpu_info" in
     *)
     ;;
 esac
-if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
+if ! echo "$gpu_info" | grep -q "NVIDIA";
 then
-    export TORCH_COMMAND="pip install torch==2.0.1+rocm5.4.2 torchvision==0.15.2+rocm5.4.2 --index-url https://download.pytorch.org/whl/rocm5.4.2"
+    if echo "$gpu_info" | grep -q "AMD" && [[ -z "${TORCH_COMMAND}" ]]
+    then
+        export TORCH_COMMAND="pip install torch==2.0.1+rocm5.4.2 torchvision==0.15.2+rocm5.4.2 --index-url https://download.pytorch.org/whl/rocm5.4.2"
+    fi
 fi
 
 for preq in "${GIT}" "${python_cmd}"
@@ -140,7 +171,7 @@ do
     fi
 done
 
-if ! "${python_cmd}" -c "import venv" &>/dev/null
+if [[ $use_venv -eq 1 ]] && ! "${python_cmd}" -c "import venv" &>/dev/null
 then
     printf "\n%s\n" "${delimiter}"
     printf "\e[1m\e[31mERROR: python3-venv is not installed, aborting...\e[0m"
@@ -160,7 +191,7 @@ else
     cd "${clone_dir}"/ || { printf "\e[1m\e[31mERROR: Can't cd to %s/%s/, aborting...\e[0m" "${install_dir}" "${clone_dir}"; exit 1; }
 fi
 
-if [[ -z "${VIRTUAL_ENV}" ]];
+if [[ $use_venv -eq 1 ]] && [[ -z "${VIRTUAL_ENV}" ]];
 then
     printf "\n%s\n" "${delimiter}"
     printf "Create and activate python venv"
@@ -183,14 +214,14 @@ then
     fi
 else
     printf "\n%s\n" "${delimiter}"
-    printf "python venv already activate: ${VIRTUAL_ENV}"
+    printf "python venv already activate or run without venv: ${VIRTUAL_ENV}"
     printf "\n%s\n" "${delimiter}"
 fi
 
 # Try using TCMalloc on Linux
 prepare_tcmalloc() {
     if [[ "${OSTYPE}" == "linux"* ]] && [[ -z "${NO_TCMALLOC}" ]] && [[ -z "${LD_PRELOAD}" ]]; then
-        TCMALLOC="$(ldconfig -p | grep -Po "libtcmalloc.so.\d" | head -n 1)"
+        TCMALLOC="$(PATH=/usr/sbin:$PATH ldconfig -p | grep -Po "libtcmalloc(_minimal|)\.so\.\d" | head -n 1)"
         if [[ ! -z "${TCMALLOC}" ]]; then
             echo "Using TCMalloc: ${TCMALLOC}"
             export LD_PRELOAD="${TCMALLOC}"
@@ -200,17 +231,24 @@ prepare_tcmalloc() {
     fi
 }
 
-if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]
-then
-    printf "\n%s\n" "${delimiter}"
-    printf "Accelerating launch.py..."
-    printf "\n%s\n" "${delimiter}"
-    prepare_tcmalloc
-    exec accelerate launch --num_cpu_threads_per_process=6 "${LAUNCH_SCRIPT}" "$@"
-else
-    printf "\n%s\n" "${delimiter}"
-    printf "Launching launch.py..."
-    printf "\n%s\n" "${delimiter}"
-    prepare_tcmalloc
-    exec "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
-fi
+KEEP_GOING=1
+export SD_WEBUI_RESTART=tmp/restart
+while [[ "$KEEP_GOING" -eq "1" ]]; do
+    if [[ ! -z "${ACCELERATE}" ]] && [ ${ACCELERATE}="True" ] && [ -x "$(command -v accelerate)" ]; then
+        printf "\n%s\n" "${delimiter}"
+        printf "Accelerating launch.py..."
+        printf "\n%s\n" "${delimiter}"
+        prepare_tcmalloc
+        accelerate launch --num_cpu_threads_per_process=6 "${LAUNCH_SCRIPT}" "$@"
+    else
+        printf "\n%s\n" "${delimiter}"
+        printf "Launching launch.py..."
+        printf "\n%s\n" "${delimiter}"
+        prepare_tcmalloc
+        "${python_cmd}" "${LAUNCH_SCRIPT}" "$@"
+    fi
+
+    if [[ ! -f tmp/restart ]]; then
+        KEEP_GOING=0
+    fi
+done

@@ -15,7 +15,7 @@ var titles = {
     "CFG Scale": "Classifier Free Guidance Scale - how strongly the image should conform to prompt - lower values produce more creative results",
     "Seed": "A value that determines the output of random number generator - if you create an image with same parameters and seed as another image, you'll get the same result",
     "\u{1f3b2}\ufe0f": "Set seed to -1, which will cause a new random number to be used every time",
-    "\u267b\ufe0f": "Reuse seed from last generation, mostly useful if it was randomed",
+    "\u267b\ufe0f": "Reuse seed from last generation, mostly useful if it was randomized",
     "\u2199\ufe0f": "Read generation parameters from prompt or last generation if prompt is empty into user interface.",
     "\u{1f4c2}": "Open images output directory",
     "\u{1f4be}": "Save style",
@@ -84,8 +84,6 @@ var titles = {
     "Checkpoint name": "Loads weights from checkpoint before making images. You can either use hash or a part of filename (as seen in settings) for checkpoint name. Recommended to use with Y axis for less switching.",
     "Inpainting conditioning mask strength": "Only applies to inpainting models. Determines how strongly to mask off the original image for inpainting and img2img. 1.0 means fully masked, which is the default behaviour. 0.0 means a fully unmasked conditioning. Lower values will help preserve the overall composition of the image, but will struggle with large changes.",
 
-    "vram": "Torch active: Peak amount of VRAM used by Torch during generation, excluding cached data.\nTorch reserved: Peak amount of VRAM allocated by Torch, including all active and cached data.\nSys VRAM: Peak amount of VRAM allocation across all applications / total GPU VRAM (peak utilization%).",
-
     "Eta noise seed delta": "If this values is non-zero, it will be added to seed and used to initialize RNG for noises when using samplers with Eta. You can use this to produce even more variation of images, or you can use this to match images of other software if you know what you are doing.",
 
     "Filename word regex": "This regular expression will be used extract words from filename, and they will be joined using the option below into label text used for training. Leave empty to keep filename text as it is.",
@@ -110,23 +108,30 @@ var titles = {
     "Upscale by": "Adjusts the size of the image by multiplying the original width and height by the selected value. Ignored if either Resize width to or Resize height to are non-zero.",
     "Resize width to": "Resizes image to this width. If 0, width is inferred from either of two nearby sliders.",
     "Resize height to": "Resizes image to this height. If 0, height is inferred from either of two nearby sliders.",
-    "Multiplier for extra networks": "When adding extra network such as Hypernetwork or Lora to prompt, use this multiplier for it.",
     "Discard weights with matching name": "Regular expression; if weights's name matches it, the weights is not written to the resulting checkpoint. Use ^model_ema to discard EMA weights.",
-    "Extra networks tab order": "Comma-separated list of tab names; tabs listed here will appear in the extra networks UI first and in order lsited.",
+    "Extra networks tab order": "Comma-separated list of tab names; tabs listed here will appear in the extra networks UI first and in order listed.",
     "Negative Guidance minimum sigma": "Skip negative prompt for steps where image is already mostly denoised; the higher this value, the more skips there will be; provides increased performance in exchange for minor quality reduction."
 };
 
-function updateTooltipForSpan(span) {
-    if (span.title) return; // already has a title
+function updateTooltip(element) {
+    if (element.title) return; // already has a title
 
-    let tooltip = localization[titles[span.textContent]] || titles[span.textContent];
+    let text = element.textContent;
+    let tooltip = localization[titles[text]] || titles[text];
 
     if (!tooltip) {
-        tooltip = localization[titles[span.value]] || titles[span.value];
+        let value = element.value;
+        if (value) tooltip = localization[titles[value]] || titles[value];
     }
 
     if (!tooltip) {
-        for (const c of span.classList) {
+        // Gradio dropdown options have `data-value`.
+        let dataValue = element.dataset.value;
+        if (dataValue) tooltip = localization[titles[dataValue]] || titles[dataValue];
+    }
+
+    if (!tooltip) {
+        for (const c of element.classList) {
             if (c in titles) {
                 tooltip = localization[titles[c]] || titles[c];
                 break;
@@ -135,34 +140,53 @@ function updateTooltipForSpan(span) {
     }
 
     if (tooltip) {
-        span.title = tooltip;
+        element.title = tooltip;
     }
 }
 
-function updateTooltipForSelect(select) {
-    if (select.onchange != null) return;
+// Nodes to check for adding tooltips.
+const tooltipCheckNodes = new Set();
+// Timer for debouncing tooltip check.
+let tooltipCheckTimer = null;
 
-    select.onchange = function() {
-        select.title = localization[titles[select.value]] || titles[select.value] || "";
-    };
+function processTooltipCheckNodes() {
+    for (const node of tooltipCheckNodes) {
+        updateTooltip(node);
+    }
+    tooltipCheckNodes.clear();
 }
 
-var observedTooltipElements = {SPAN: 1, BUTTON: 1, SELECT: 1, P: 1};
-
-onUiUpdate(function(m) {
-    m.forEach(function(record) {
-        record.addedNodes.forEach(function(node) {
-            if (observedTooltipElements[node.tagName]) {
-                updateTooltipForSpan(node);
+onUiUpdate(function(mutationRecords) {
+    for (const record of mutationRecords) {
+        if (record.type === "childList" && record.target.classList.contains("options")) {
+            // This smells like a Gradio dropdown menu having changed,
+            // so let's enqueue an update for the input element that shows the current value.
+            let wrap = record.target.parentNode;
+            let input = wrap?.querySelector("input");
+            if (input) {
+                input.title = ""; // So we'll even have a chance to update it.
+                tooltipCheckNodes.add(input);
             }
-            if (node.tagName == "SELECT") {
-                updateTooltipForSelect(node);
+        }
+        for (const node of record.addedNodes) {
+            if (node.nodeType === Node.ELEMENT_NODE && !node.classList.contains("hide")) {
+                if (!node.title) {
+                    if (
+                        node.tagName === "SPAN" ||
+                        node.tagName === "BUTTON" ||
+                        node.tagName === "P" ||
+                        node.tagName === "INPUT" ||
+                        (node.tagName === "LI" && node.classList.contains("item")) // Gradio dropdown item
+                    ) {
+                        tooltipCheckNodes.add(node);
+                    }
+                }
+                node.querySelectorAll('span, button, p').forEach(n => tooltipCheckNodes.add(n));
             }
-
-            if (node.querySelectorAll) {
-                node.querySelectorAll('span, button, select, p').forEach(updateTooltipForSpan);
-                node.querySelectorAll('select').forEach(updateTooltipForSelect);
-            }
-        });
-    });
+        }
+    }
+    if (tooltipCheckNodes.size) {
+        clearTimeout(tooltipCheckTimer);
+        tooltipCheckTimer = setTimeout(processTooltipCheckNodes, 1000);
+    }
 });

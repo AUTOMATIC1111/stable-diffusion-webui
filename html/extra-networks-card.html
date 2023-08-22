@@ -1,11 +1,11 @@
-<div class='card' style={style} onclick={card_clicked}>
+<div class='card' style={style} onclick={card_clicked} data-name="{name}" {sort_keys}>
 	{background_image}
-	{metadata_button}
+	<div class="button-row">
+		{metadata_button}
+		{edit_button}
+	</div>
 	<div class='actions'>
 		<div class='additional'>
-			<ul>
-				<a href="#" title="replace preview image with currently selected in gallery" onclick={save_card_preview}>replace preview</a>
-			</ul>
 			<span style="display:none" class='search_term{search_only}'>{search_term}</span>
 		</div>
 		<span class='name'>{name}</span>
