@@ -82,7 +82,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
     var livePreview = null;
 
     var removeProgressBar = function() {
-        if(! divProgress) return;
+        if (!divProgress) return;
 
         setTitle("");
         parentProgressbar.removeChild(divProgress);
@@ -153,7 +153,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
                 var img = new Image();
                 img.onload = function() {
-                    if(!livePreview){
+                    if (!livePreview) {
                         livePreview = document.createElement('div');
                         livePreview.className = 'livePreview';
                         gallery.insertBefore(livePreview, gallery.firstElementChild);
@@ -177,7 +177,7 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
     funProgress(id_task, 0);
 
-    if(gallery){
+    if (gallery) {
         funLivePreview(id_task, 0);
     }
 

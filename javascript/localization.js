@@ -107,33 +107,28 @@ function processNode(node) {
     });
 }
 
-function localizeWholePage(){
+function localizeWholePage() {
     processNode(gradioApp());
 
     function elem(comp) {
-        if(comp.props.elem_id) {
-            elem_id = comp.props.elem_id;
-        } else{
-            elem_id = "component-" + comp.id;
-        }
-
+        var elem_id = comp.props.elem_id ? comp.props.elem_id : "component-" + comp.id;
         return gradioApp().getElementById(elem_id);
     }
 
-    for(comp of window.gradio_config.components) {
-        if(comp.props.webui_tooltip) {
-            var e = elem(comp);
+    for (var comp of window.gradio_config.components) {
+        if (comp.props.webui_tooltip) {
+            let e = elem(comp);
 
-            var tl = e ? getTranslation(e.title) : undefined;
+            let tl = e ? getTranslation(e.title) : undefined;
             if (tl !== undefined) {
                 e.title = tl;
             }
         }
-        if(comp.props.placeholder) {
-            var e = elem(comp);
-            var textbox = e ? e.querySelector('[placeholder]') : null;
+        if (comp.props.placeholder) {
+            let e = elem(comp);
+            let textbox = e ? e.querySelector('[placeholder]') : null;
 
-            var tl = textbox ? getTranslation(textbox.placeholder) : undefined;
+            let tl = textbox ? getTranslation(textbox.placeholder) : undefined;
             if (tl !== undefined) {
                 textbox.placeholder = tl;
             }
