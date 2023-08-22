@@ -142,6 +142,11 @@ div.gradio-container, .block.gradio-textbox, div.gradio-group, div.gradio-dropdo
     overflow: visible !important;
 }
 
+/* align-items isn't enough and elements may overflow in Safari. */
+.unequal-height {
+    align-content: flex-start;
+}
+
 
 /* general styled components */
 
@@ -1056,14 +1061,32 @@ div.accordions > div.input-accordion.input-accordion-open{
     top: 0.5em;
 }
 
+body.resizing {
+    cursor: col-resize !important;
+}
 
-.resize-handle{
-	cursor: col-resize;
-	grid-column: 2 / 3;
-	min-width: 8px !important;
-	max-width: 8px !important;
-	height: 100%;
-	border-left: 1px dashed var(--border-color-primary);
-	user-select: none;
-	margin-left: 8px;
+body.resizing * {
+    pointer-events: none !important;
+}
+
+body.resizing .resize-handle {
+    pointer-events: initial !important;
+}
+
+.resize-handle {
+    position: relative;
+    cursor: col-resize;
+    grid-column: 2 / 3;
+    min-width: 16px !important;
+    max-width: 16px !important;
+    height: 100%;
+}
+
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 7.5px;
+    border-left: 1px dashed var(--border-color-primary);
 }
