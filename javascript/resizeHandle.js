@@ -66,6 +66,8 @@
         parent.insertBefore(resizeHandle, rightCol);
 
         resizeHandle.addEventListener('mousedown', (evt) => {
+            if (evt.button !== 0) return;
+
             evt.preventDefault();
             evt.stopPropagation();
 
@@ -91,6 +93,8 @@
     }
 
     window.addEventListener('mousemove', (evt) => {
+        if (evt.button !== 0) return;
+
         if (R.tracking) {
             evt.preventDefault();
             evt.stopPropagation();
@@ -102,6 +106,8 @@
     });
 
     window.addEventListener('mouseup', (evt) => {
+        if (evt.button !== 0) return;
+
         if (R.tracking) {
             evt.preventDefault();
             evt.stopPropagation();
