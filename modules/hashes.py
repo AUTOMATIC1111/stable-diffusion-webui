@@ -32,11 +32,11 @@ def calculate_sha256(filename):
 
 def sha256_from_cache(filename, title, use_addnet_hash=False):
     hashes = cache("hashes-addnet") if use_addnet_hash else cache("hashes")
-    ondisk_mtime = os.path.getmtime(filename)
     if title not in hashes:
         return None
     cached_sha256 = hashes[title].get("sha256", None)
     cached_mtime = hashes[title].get("mtime", 0)
+    ondisk_mtime = os.path.getmtime(filename) if os.path.isfile(filename) else 0
     if ondisk_mtime > cached_mtime or cached_sha256 is None:
         return None
     return cached_sha256
@@ -48,6 +48,8 @@ def sha256(filename, title, use_addnet_hash=False):
     if sha256_value is not None:
         return sha256_value
     if shared.cmd_opts.no_hashing:
+        return None
+    if not os.path.isfile(filename):
         return None
     if use_addnet_hash:
         with progress.open(filename, 'rb', description=f'Calculating model hash: [cyan]{filename}', auto_refresh=True) as f:
