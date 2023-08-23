@@ -16,6 +16,7 @@ from loguru import logger
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
 from modules import deepbooru
 from handlers.typex import ModelType
+from modules.sd_models import CheckpointInfo
 from worker.handler import TaskHandler
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.img2img import process_batch
@@ -476,6 +477,12 @@ class Img2ImgTaskHandler(TaskHandler):
                     os.unlink(link)
                 logger.debug(f'{local} link to {link}')
                 os.symlink(local, link)
+                if model_info.type == ModelType.CheckPoint:
+                    basename = os.path.basename(model_info.key)
+                    sha256, _ = os.path.splitext(basename)
+                    checkpoint_info = CheckpointInfo(link, sha256)
+                    checkpoint_info.register()
+
             return True
         return False
 
