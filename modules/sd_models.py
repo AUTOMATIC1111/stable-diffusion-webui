@@ -345,6 +345,7 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
 
     if shared.cmd_opts.no_half:
         model.float()
+        devices.dtype_unet = torch.float32
         timer.record("apply float()")
     else:
         vae = model.first_stage_model
@@ -362,9 +363,9 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
         if depth_model:
             model.depth_model = depth_model
 
+        devices.dtype_unet = torch.float16
         timer.record("apply half()")
 
-    devices.dtype_unet = torch.float16 if model.is_sdxl and not shared.cmd_opts.no_half else model.model.diffusion_model.dtype
     devices.unet_needs_upcast = shared.cmd_opts.upcast_sampling and devices.dtype == torch.float16 and devices.dtype_unet == torch.float16
 
     model.first_stage_model.to(devices.dtype_vae)
