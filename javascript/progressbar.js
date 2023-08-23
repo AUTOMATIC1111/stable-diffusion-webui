@@ -148,9 +148,11 @@ function requestProgress(id_task, progressbarContainer, gallery, atEnd, onProgre
 
     var funLivePreview = function(id_task, id_live_preview) {
         request("./internal/progress", {id_task: id_task, id_live_preview: id_live_preview}, function(res) {
+            if (!divProgress) {
+                return;
+            }
+
             if (res.live_preview && gallery) {
-
-
                 var img = new Image();
                 img.onload = function() {
                     if (!livePreview) {
