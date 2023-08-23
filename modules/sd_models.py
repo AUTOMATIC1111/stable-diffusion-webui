@@ -864,10 +864,10 @@ class DiffusersTaskType(Enum):
     INPAINTING = 3
 
 def set_diffuser_pipe(pipe, new_pipe_type):
-    sd_checkpoint_info = pipe.sd_checkpoint_info
-    sd_model_checkpoint = pipe.sd_model_checkpoint
-    sd_model_hash = pipe.sd_model_hash
-    has_accelerate = pipe.has_accelerate
+    sd_checkpoint_info = pipe.sd_checkpoint_info if hasattr(pipe, "sd_checkpoint_info") else None
+    sd_model_checkpoint = pipe.sd_model_checkpoint if hasattr(pipe, "sd_model_checkpoint") else None
+    sd_model_hash = pipe.sd_model_hash if hasattr(pipe, "sd_model_hash") else None
+    has_accelerate = pipe.has_accelerate if hasattr(pipe, "has_accelerate") else None
 
     if new_pipe_type == DiffusersTaskType.TEXT_2_IMAGE:
         new_pipe = diffusers.AutoPipelineForText2Image.from_pipe(pipe)
@@ -882,7 +882,6 @@ def set_diffuser_pipe(pipe, new_pipe_type):
     new_pipe.sd_model_checkpoint = sd_model_checkpoint
     new_pipe.sd_model_hash = sd_model_hash
     new_pipe.has_accelerate = has_accelerate
-
     model_data.sd_model = new_pipe
     shared.log.info(f"Pipeline class changed from {pipe.__class__.__name__} to {new_pipe.__class__.__name__}")
 

@@ -34,7 +34,7 @@ CLIP_SKIP_MAPPING = {
 
 
 def compel_encode_prompts(
-    pipeline: diffusers.StableDiffusionXLPipeline | diffusers.StableDiffusionPipeline,
+    pipeline,
     prompts: list,
     negative_prompts: list,
     prompts_2: typing.Optional[list] = None,
@@ -67,7 +67,7 @@ def compel_encode_prompts(
 
 
 def compel_encode_prompt(
-    pipeline: diffusers.StableDiffusionXLPipeline | diffusers.StableDiffusionPipeline,
+    pipeline,
     prompt: str,
     negative_prompt: str,
     prompt_2: typing.Optional[str] = None,
