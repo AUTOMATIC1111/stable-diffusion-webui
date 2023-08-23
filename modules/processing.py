@@ -577,6 +577,25 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
     return res
 
 
+def validate_sample(sample):
+    ok = True
+    try:
+        sample = sample.astype(np.uint8)
+        return sample
+    except Exception as e:
+        shared.log.error(f'Failed to validate sample values: {e}')
+        ok = False
+    if not ok:
+        try:
+            sample = np.nan_to_num(sample, nan=0, posinf=255, neginf=0)
+            sample = sample.astype(np.uint8)
+        except Exception as e:
+            shared.log.error(f'Failed to correct sample values: {e}')
+            sample = np.zeros_like(sample)
+            sample = sample.astype(np.uint8)
+    return sample
+
+
 def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     """this is the main loop that both txt2img and img2img use; it calls func_init once inside all the scopes and func_sample once per batch"""
 
@@ -728,11 +747,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
-                if shared.backend == shared.Backend.ORIGINAL:
-                    x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-                    x_sample = x_sample.astype(np.uint8)
-                else:
-                    x_sample = (255. * x_sample).astype(np.uint8)
+                x_sample = 255. * (np.moveaxis(x_sample.cpu().numpy(), 0, 2) if shared.backend == shared.Backend.ORIGINAL else x_sample)
+                x_sample = validate_sample(x_sample)
                 if p.restore_faces:
                     if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_face_restoration:
                         orig = p.restore_faces
@@ -954,7 +970,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             batch_images = []
             for i, x_sample in enumerate(lowres_samples):
                 x_sample = 255. * np.moveaxis(x_sample.cpu().numpy(), 0, 2)
-                x_sample = x_sample.astype(np.uint8)
+                x_sample = validate_sample(x_sample)
                 image = Image.fromarray(x_sample)
                 save_intermediate(image, i)
                 image = images.resize_image(1, image, target_width, target_height, upscaler_name=self.hr_upscaler)
