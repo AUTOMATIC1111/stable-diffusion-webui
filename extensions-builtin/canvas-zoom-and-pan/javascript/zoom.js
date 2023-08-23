@@ -677,9 +677,8 @@ onUiLoaded(async() => {
         targetElement.isExpanded = false;
         function autoExpand() {
             const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
-            const isMainTab = activeElement === elementIDs.inpaint || activeElement === elementIDs.inpaintSketch || activeElement === elementIDs.sketch;
-
-            if (canvas && isMainTab) {
+            
+            if (canvas) {
                 if (hasHorizontalScrollbar(targetElement) && targetElement.isExpanded === false) {
                     targetElement.style.visibility = "hidden";
                     setTimeout(() => {
