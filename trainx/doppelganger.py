@@ -36,8 +36,8 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
     logger.debug(f">> input images dir:{image_dir}")
 
     if image_dir:
-        p.eta_relative = 35 * 60
         p = TaskProgress.new_running(job, 'train running.')
+        p.eta_relative = 35 * 60
         yield p
         time_start = time.time()
 
