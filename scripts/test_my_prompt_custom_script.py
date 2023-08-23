@@ -1,6 +1,6 @@
-from modules.shared import opts, cmd_opts, state
-from modules.processing import Processed, StableDiffusionProcessingImg2Img, process_images, images
-from PIL import Image, ImageFont, ImageDraw, ImageOps
+from modules.shared import opts
+from modules.processing import  process_images, images
+from PIL import ImageFont, ImageDraw
 from modules.paths_internal import roboto_ttf_file
 import modules.scripts as scripts
 import gradio as gr
@@ -22,13 +22,30 @@ class Script(scripts.Script):
 
     def ui(self, is_img2img):
         neg_pos = gr.Dropdown(label="Test negative or positive", choices=["Positive","Negative"], value="Positive")
+        action = gr.Radio(label="Action", choices=["Remove","Attention", "Wrap in"], value="Remove")
+        with gr.Column("Attention",visible=False) as att:
+            attention_strength = gr.Slider(minimum=-2, maximum=2, step=0.1, label='Attention Strength', value=1.4)
+        with gr.Column("Wrap in",visible=False) as wrap:
+            prefix = gr.Textbox(label="Before prompt", lines=1, value="(")
+            suffix = gr.Textbox(label="after prompt", lines=1, value=")")
+        def update_visible(action_type):
+            return [gr.update(visible=action_type=="Attention"),gr.update(visible=action_type=="Wrap in")]
+        action.change(update_visible, action, [att, wrap])
         skip_x_first = gr.Slider(minimum=0, maximum=32, step=1, label='Skip X first words', value=0)
         separator = gr.Textbox(label="Separator used", lines=1, value=", ")
         grid_option = gr.Radio(choices=list(self.grid_options_mapping.keys()), label='Grid generation', value=self.default_grid_opt)
         font_size = gr.Slider(minimum=12, maximum=64, step=1, label='Font size', value=32)
-        return [neg_pos,skip_x_first,separator,grid_option,font_size]
+        return [neg_pos,skip_x_first,separator,grid_option,font_size, action, attention_strength, prefix, suffix]
 
-    def run(self, p,neg_pos,skip_x_first,separator,grid_option,font_size):
+    def apply_action(self, action, *args):
+        if action == "Remove":
+            return self.remove_action(*args)
+        if action == "Attention":
+            return self.attention_action(*args)
+        if action == "Wrap in":
+            return self.wrap_action(*args)
+
+    def run(self, p,neg_pos,skip_x_first,separator,grid_option,font_size, action, *args):
         def write_on_image(img, msg):
             ix,iy = img.size
             draw = ImageDraw.Draw(img)
@@ -63,10 +80,7 @@ class Script(scripts.Script):
             f = g-1
             if f >= 0 and f < skip_x_first:
                 continue
-            if f >= 0:
-                new_prompt =  separator.join([prompt_array[x] for x in range(len(prompt_array)) if x is not f])
-            else:
-                new_prompt = initial_prompt
+            new_prompt = self.apply_action(action, separator, initial_prompt, prompt_array, f, *args)
 
             if neg_pos == "Positive":
                 p.prompt = new_prompt
@@ -80,7 +94,7 @@ class Script(scripts.Script):
                 proc.images.insert(0,appendimages.images[0])
                 proc.infotexts.insert(0,appendimages.infotexts[0])
             if f >= 0:
-                proc.images[0] = write_on_image(proc.images[0], "no "+prompt_array[f])
+                proc.images[0] = write_on_image(proc.images[0], f"{action} "+prompt_array[f])
             else:
                 proc.images[0] = write_on_image(proc.images[0], "full prompt")
 
@@ -96,3 +110,24 @@ class Script(scripts.Script):
             if opts.grid_save or grid_flags.always_save_grid:
                 images.save_image(grid, p.outpath_grids, "grid", initial_seed, initial_prompt, opts.grid_format, info=proc.info, short_filename=not opts.grid_extended_filename, p=p, grid=True)
         return proc
+
+    def remove_action(self, separator, initial_prompt, prompt_array, f, *args):
+        if f >= 0:
+            new_prompt =  separator.join([prompt_array[x] for x in range(len(prompt_array)) if x is not f])
+        else:
+            new_prompt = initial_prompt
+        return new_prompt
+
+    def attention_action(self, separator, initial_prompt, prompt_array, f, attention_strength,*args):
+        if f >= 0:
+            new_prompt =  separator.join([f"({prompt_array[x]}:{attention_strength})" if x == f else prompt_array[x] for x in range(len(prompt_array))])
+        else:
+            new_prompt = initial_prompt
+        return new_prompt
+
+    def wrap_action(self, separator, initial_prompt, prompt_array, f, _, prefix, suffix,*args):
+        if f >= 0:
+            new_prompt =  separator.join([f"{prefix}{prompt_array[x]}{suffix}" if x == f else prompt_array[x] for x in range(len(prompt_array))])
+        else:
+            new_prompt = initial_prompt
+        return new_prompt
