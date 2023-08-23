@@ -798,19 +798,3 @@ def train_auto(
         callback=train_callback,
     )
     return os.path.join(lora_path, lora_name + ".safetensors")
-
-model_p = "/data/qll/stable-diffusion-webui/models"
-trigger_word = f"liuxiangxzai"
-undesired_tags = ""  # 待测试五官
-train_data_dir = "/moba_expert_data/qll/pics/liuxiang"
-for i in range(3):
-   train_auto(
-       train_data_dir=train_data_dir,  # 训练的图片路径
-       train_type=0,  # 训练的类别
-       task_id="test",   # 任务id,作为Lora名称
-       sd_model_path=MODEL_PATH, # 底模路径
-       lora_path=LORA_PATH, # 文件夹名字
-       general_model_path=model_p, # 通用路径,
-       callback=train_callback, # callback函数
-       other_args=None # 预留一个，以备用
-   )
