@@ -79,6 +79,7 @@ class ModelState:
         self.partition_id = 0
         self.model_hash = ""
         self.cn_model = "None"
+        self.lora_model = "None"
 
 model_state = ModelState()
 
@@ -104,6 +105,9 @@ def openvino_fx(subgraph, example_inputs):
             model_hash_str = sha256(subgraph.code.encode('utf-8')).hexdigest()
             if (model_state.cn_model != "None" and model_state.partition_id == 0):
                 model_hash_str = model_hash_str + model_state.cn_model
+
+            if (model_state.lora_model != "None"):
+                model_hash_str = model_hash_str + model_state.lora_model
 
             executor_parameters = {"model_hash_str": model_hash_str}
             # Check if the model was fully supported and already cached
@@ -148,6 +152,9 @@ def openvino_fx(subgraph, example_inputs):
         if inputs_reversed:
             example_inputs.reverse()
         model = make_fx(subgraph)(*example_inputs)
+        for node in model.graph.nodes:
+            if node.target == torch.ops.aten.mul_.Tensor:
+                node.target = torch.ops.aten.mul.Tensor
         with torch.no_grad():
             model.eval()
         partitioner = Partitioner()
@@ -209,13 +216,13 @@ class OpenVINOGraphModule(torch.nn.Module):
 
     def __call__(self, *args):
         if self.perm_fallback:
-           return self.gm(*args)
+            return self.gm(*args)
 
         try:
             result = openvino_execute(self.gm, *args, executor_parameters=self.executor_parameters, partition_id=self.partition_id, file_name=self.file_name)
         except Exception:
-           self.perm_fallback = True
-           return self.gm(*args)
+            self.perm_fallback = True
+            return self.gm(*args)
 
         return result
 
@@ -593,6 +600,13 @@ def get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_
             sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=local_config_file, load_safety_checker=False)
         else:
             sd_model = StableDiffusionPipeline.from_single_file(checkpoint_path, local_config_file=checkpoint_config, load_safety_checker=False, torch_dtype=torch.float32)
+
+        if ('lora' in modules.extra_networks.extra_network_registry):
+            import lora
+            if lora.loaded_loras:
+                lora_model = lora.loaded_loras[0]
+                sd_model.load_lora_weights(os.path.join(os.getcwd(), "models", "Lora"), weight_name=lora_model.name + ".safetensors")
+
         if (mode == 1):
             sd_model = StableDiffusionImg2ImgPipeline(**sd_model.components)
         elif (mode == 2):
@@ -797,7 +811,21 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
             if len(p.prompts) == 0:
                 break
 
-            if (model_state.height != p.height or model_state.width != p.width or model_state.batch_size != p.batch_size
+            extra_network_data = p.parse_extra_network_prompts()
+
+            if not p.disable_extra_networks:
+                with devices.autocast():
+                    extra_networks.activate(p, p.extra_network_data)
+
+            lora_model_name = "None"
+            if ('lora' in modules.extra_networks.extra_network_registry):
+                import lora
+                if lora.loaded_loras:
+                    lora_model = lora.loaded_loras[0]
+                    lora_model_name = lora_model.name
+                    custom_inputs.update(cross_attention_kwargs={"scale" : lora_model.te_multiplier})
+
+            if (model_state.height != p.height or model_state.width != p.width or model_state.batch_size != p.batch_size or model_state.lora_model != lora_model_name
                     or model_state.mode != mode or model_state.model_hash != shared.sd_model.sd_model_hash or model_state.cn_model != cn_model):
                 model_state.recompile = 1
                 model_state.height = p.height
@@ -806,23 +834,10 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, sampler_
                 model_state.mode = mode
                 model_state.cn_model = cn_model
                 model_state.model_hash = shared.sd_model.sd_model_hash
+                model_state.lora_model = lora_model_name
 
             shared.sd_diffusers_model = get_diffusers_sd_model(model_config, sampler_name, enable_caching, openvino_device, mode)
             shared.sd_diffusers_model.scheduler = set_scheduler(shared.sd_diffusers_model, sampler_name)
-
-            extra_network_data = p.parse_extra_network_prompts()
-
-            if not p.disable_extra_networks:
-                with devices.autocast():
-                    extra_networks.activate(p, p.extra_network_data)
-
-            if ('lora' in modules.extra_networks.extra_network_registry):
-                import lora
-                # TODO: multiple Loras aren't supported for Diffusers now, needs to add warning
-                if lora.loaded_loras:
-                    lora_model = lora.loaded_loras[0]
-                    shared.sd_diffusers_model.load_lora_weights(os.path.join(os.getcwd(), "models", "Lora"), weight_name=lora_model.name + ".safetensors")
-                    custom_inputs.update(cross_attention_kwargs={"scale" : lora_model.te_multiplier})
 
             if p.scripts is not None:
                 p.scripts.process_batch(p, batch_number=n, prompts=p.prompts, seeds=p.seeds, subseeds=p.subseeds)
