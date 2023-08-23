@@ -3,8 +3,8 @@ from PIL import Image,ImageOps
 import cv2
 import numpy as np
 import io
-from super_upscaler.super_upscaler import upscaler
-from library.seg_rem_local_v2 import MySeg
+from sd_scripts.super_upscaler.super_upscaler import upscaler
+from sd_scripts.library.seg_rem_local_v2 import MySeg
 
 # model_p = "/data/longcheng/stable-diffusion-webui/models"
 

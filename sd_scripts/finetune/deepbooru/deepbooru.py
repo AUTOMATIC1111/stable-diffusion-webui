@@ -6,8 +6,8 @@ from PIL import Image
 import numpy as np
 
 # from modules import modelloader, paths, deepbooru_model, devices, images, shared
-from finetune.deepbooru import deepbooru_model
-from super_upscaler.super_upscaler import upscaler
+from sd_scripts.finetune.deepbooru import deepbooru_model
+from sd_scripts.super_upscaler.super_upscaler import upscaler
 
 re_special = re.compile(r'([\\()])')
 
