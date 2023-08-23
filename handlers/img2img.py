@@ -6,6 +6,7 @@
 # @File    : img2img.py
 # @Software: Hifive
 import os.path
+import shutil
 import time
 import typing
 import modules.scripts
@@ -442,6 +443,7 @@ class Img2ImgTaskHandler(TaskHandler):
     def _get_local_embedding_dirs(self, embeddings: typing.Sequence[str]) -> typing.Set[str]:
         # embeddings = [get_model_local_path(p, ModelType.Embedding) for p in embeddings]
         embeddings = batch_model_local_paths(ModelType.Embedding, *embeddings)
+        os.popen(f'touch {" ".join(embeddings)}')
         return set((os.path.dirname(p) for p in embeddings if p and os.path.isfile(p)))
 
     def _get_select_script_models(self, progress: TaskProgress):
@@ -471,16 +473,16 @@ class Img2ImgTaskHandler(TaskHandler):
                     raise OSError(f'cannot download file:{model_info.key}')
 
                 dir = os.path.dirname(local)
-                link = os.path.join(dir, model_info.name)
-                if os.path.islink(link):
+                dst = os.path.join(dir, model_info.name)
+                if not os.path.isfile(dst):
                     # 防止有重名导致问题~
-                    os.unlink(link)
-                logger.debug(f'{local} link to {link}')
-                os.symlink(local, link)
+                    shutil.copy(local, dst)
+                logger.debug(f'{local} copy to {dst}')
+                os.popen(f'touch {local} {dst}')
                 if model_info.type == ModelType.CheckPoint:
                     basename = os.path.basename(model_info.key)
                     sha256, _ = os.path.splitext(basename)
-                    checkpoint_info = CheckpointInfo(link, sha256)
+                    checkpoint_info = CheckpointInfo(dst, sha256)
                     checkpoint_info.register()
 
             return True
@@ -489,6 +491,8 @@ class Img2ImgTaskHandler(TaskHandler):
     def _get_local_loras(self, loras: typing.Sequence[str]) -> typing.Sequence[str]:
         # loras = [get_model_local_path(p, ModelType.Lora) for p in loras]
         loras = batch_model_local_paths(ModelType.Lora, *loras)
+        os.popen(f'touch {" ".join(loras)}')
+
         return [p for p in loras if p and os.path.isfile(p)]
 
     def _set_little_models(self, process_args):
