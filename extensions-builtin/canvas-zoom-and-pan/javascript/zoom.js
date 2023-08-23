@@ -419,7 +419,6 @@ onUiLoaded(async() => {
                 parseFloat(canvas.style.width) > 865 &&
                 parseFloat(targetElement.style.width) > 865
             ) {
-                console.log(parseFloat(canvas.style.width), parseFloat(targetElement.style.width));
                 fitToElement();
                 return;
             }
