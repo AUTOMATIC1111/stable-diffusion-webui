@@ -22,9 +22,9 @@ from tools.processor import MultiThreadWorker
 
 
 class ModelType(IntEnum):
-    Embedding = 1
-    CheckPoint = 2
-    Lora = 3
+    CheckPoint = 1
+    Lora = 2
+    Embedding = 3
 
 
 class OutImageType(IntEnum):

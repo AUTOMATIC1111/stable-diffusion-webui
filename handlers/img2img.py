@@ -12,6 +12,7 @@ import modules.scripts
 import modules.shared as shared
 import numpy as np
 from enum import IntEnum
+from loguru import logger
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
 from modules import deepbooru
 from handlers.typex import ModelType
@@ -459,10 +460,12 @@ class Img2ImgTaskHandler(TaskHandler):
                     progress.task_desc = f"{p}%"
                     self._set_task_status(progress)
 
+            logger.debug('>>> start download select_script_nets')
             for i, mi in enumerate(select_script_nets):
                 dump_progress(i)
                 model_info = ModelInfo(**mi)
                 local = get_model_local_path(model_info.key, model_info.type)
+                logger.debug(f'download {model_info.key} to {local} ')
                 if not local:
                     raise OSError(f'cannot download file:{model_info.key}')
 
@@ -471,6 +474,7 @@ class Img2ImgTaskHandler(TaskHandler):
                 if os.path.islink(link):
                     # 防止有重名导致问题~
                     os.unlink(link)
+                logger.debug(f'{local} link to {link}')
                 os.symlink(local, link)
             return True
         return False
