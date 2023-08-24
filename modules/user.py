@@ -29,6 +29,7 @@ def authorization(user, password):
         return 3600 * 24 + int(time.time())
 
     if os.getenv("ENABLE_TSS", "0") == '1':
+        print('tushuashua plugin enable!!!!')
         return request_tu(user, password)
 
     return find_users_from_db(user, password)
