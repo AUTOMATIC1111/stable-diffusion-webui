@@ -43,9 +43,7 @@ It's tested to produce same (or very close) images as Stability-AI's repo (need 
 
 ## SD-XL REFINER 
 
-This secondary model is **designed** to process the `1024×1024` SD-XL image **near completion***, to further enhance and refine details in your final output picture. You could use it to refine finished pictures in the img2img tab as well.
-
-- [wcde/sd-webui-refiner](https://github.com/wcde/sd-webui-refiner) *To try this kind of generation, you can use this extension. 
+This secondary model is **designed** to process the `1024×1024` SD-XL image **near completion***, to further enhance and refine details in your final output picture. As of version 1.6.0, this is now implemented in the webui natively.
 
 # SD2 Variation Models
 [PR](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/8958), ([more info.](https://github.com/Stability-AI/stablediffusion/blob/main/doc/UNCLIP.MD))
