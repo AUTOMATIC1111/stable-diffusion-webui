@@ -48,7 +48,7 @@ onUiLoaded(async() => {
 
     // Wait until opts loaded
     async function waitForOpts() {
-        for (;;) {
+        for (; ;) {
             if (window.opts && Object.keys(window.opts).length) {
                 return window.opts;
             }
@@ -269,7 +269,7 @@ onUiLoaded(async() => {
         input?.addEventListener("input", () => restoreImgRedMask(elements));
     }
 
-    function applyZoomAndPan(elemId) {
+    function applyZoomAndPan(elemId, isExtension = true) {
         const targetElement = gradioApp().querySelector(elemId);
 
         if (!targetElement) {
@@ -381,6 +381,10 @@ onUiLoaded(async() => {
                 panY: 0
             };
 
+            if (isExtension) {
+                targetElement.style.overflow = "hidden";
+            }
+
             fixCanvas();
             targetElement.style.transform = `scale(${elemData[elemId].zoomLevel}) translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px)`;
 
@@ -396,8 +400,22 @@ onUiLoaded(async() => {
                 closeBtn.addEventListener("click", resetZoom);
             }
 
+            if (canvas && isExtension) {
+                const parentElement = targetElement.closest('[id^="component-"]');
+                if (
+                    canvas &&
+                    parseFloat(canvas.style.width) > parentElement.offsetWidth &&
+                    parseFloat(targetElement.style.width) > parentElement.offsetWidth
+                ) {
+                    fitToElement();
+                    return;
+                }
+
+            }
+
             if (
                 canvas &&
+                !isExtension &&
                 parseFloat(canvas.style.width) > 865 &&
                 parseFloat(targetElement.style.width) > 865
             ) {
@@ -472,6 +490,10 @@ onUiLoaded(async() => {
             targetElement.style.transform = `translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px) scale(${newZoomLevel})`;
 
             toggleOverlap("on");
+            if (isExtension) {
+                targetElement.style.overflow = "visible";
+            }
+
             return newZoomLevel;
         }
 
@@ -494,7 +516,7 @@ onUiLoaded(async() => {
                 fullScreenMode = false;
                 elemData[elemId].zoomLevel = updateZoom(
                     elemData[elemId].zoomLevel +
-                        (operation === "+" ? delta : -delta),
+                    (operation === "+" ? delta : -delta),
                     zoomPosX - targetElement.getBoundingClientRect().left,
                     zoomPosY - targetElement.getBoundingClientRect().top
                 );
@@ -511,10 +533,19 @@ onUiLoaded(async() => {
             //Reset Zoom
             targetElement.style.transform = `translate(${0}px, ${0}px) scale(${1})`;
 
+            let parentElement;
+
+            if (isExtension) {
+                parentElement = targetElement.closest('[id^="component-"]');
+            } else {
+                parentElement = targetElement.parentElement;
+            }
+
+
             // Get element and screen dimensions
             const elementWidth = targetElement.offsetWidth;
             const elementHeight = targetElement.offsetHeight;
-            const parentElement = targetElement.parentElement;
+
             const screenWidth = parentElement.clientWidth;
             const screenHeight = parentElement.clientHeight;
 
@@ -565,9 +596,14 @@ onUiLoaded(async() => {
                 `${elemId} canvas[key="interface"]`
             );
 
+            if (isExtension) {
+                targetElement.style.overflow = "visible";
+            }
+
+
             if (!canvas) return;
 
-            if (canvas.offsetWidth > 862) {
+            if (canvas.offsetWidth > 862 || isExtension) {
                 targetElement.style.width = (canvas.offsetWidth + 2) + "px";
             }
 
@@ -677,9 +713,7 @@ onUiLoaded(async() => {
         targetElement.isExpanded = false;
         function autoExpand() {
             const canvas = document.querySelector(`${elemId} canvas[key="interface"]`);
-            const isMainTab = activeElement === elementIDs.inpaint || activeElement === elementIDs.inpaintSketch || activeElement === elementIDs.sketch;
-
-            if (canvas && isMainTab) {
+            if (canvas) {
                 if (hasHorizontalScrollbar(targetElement) && targetElement.isExpanded === false) {
                     targetElement.style.visibility = "hidden";
                     setTimeout(() => {
@@ -818,6 +852,11 @@ onUiLoaded(async() => {
             if (isMoving && elemId === activeElement) {
                 updatePanPosition(e.movementX, e.movementY);
                 targetElement.style.pointerEvents = "none";
+
+                if (isExtension) {
+                    targetElement.style.overflow = "visible";
+                }
+
             } else {
                 targetElement.style.pointerEvents = "auto";
             }
@@ -831,9 +870,9 @@ onUiLoaded(async() => {
         gradioApp().addEventListener("mousemove", handleMoveByKey);
     }
 
-    applyZoomAndPan(elementIDs.sketch);
-    applyZoomAndPan(elementIDs.inpaint);
-    applyZoomAndPan(elementIDs.inpaintSketch);
+    applyZoomAndPan(elementIDs.sketch, false);
+    applyZoomAndPan(elementIDs.inpaint, false);
+    applyZoomAndPan(elementIDs.inpaintSketch, false);
 
     // Make the function global so that other extensions can take advantage of this solution
     const applyZoomAndPanIntegration = async(id, elementIDs) => {
