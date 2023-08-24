@@ -863,6 +863,7 @@ footer {
     position: absolute;
     color: white;
     right: 0;
+    z-index: 1
 }
 .extra-network-cards .card:hover .button-row{
     display: flex;
