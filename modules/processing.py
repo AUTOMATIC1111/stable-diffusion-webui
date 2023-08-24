@@ -437,6 +437,12 @@ class StableDiffusionProcessing:
         caches is a list with items described above.
         """
 
+        if shared.opts.use_old_scheduling:
+            old_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, False)
+            new_schedules = prompt_parser.get_learned_conditioning_prompt_schedules(required_prompts, steps, hires_steps, True)
+            if old_schedules != new_schedules:
+                self.extra_generation_params["Old prompt editing timelines"] = True
+
         cached_params = self.cached_params(required_prompts, steps, extra_network_data, hires_steps, shared.opts.use_old_scheduling)
 
         for cache in caches:
