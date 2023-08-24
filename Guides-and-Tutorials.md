@@ -1,2 +1,3 @@
 - [How to make your own Inpainting model](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/How-to-make-your-own-Inpainting-model)
 - [SECourses's Stable Diffusion Tutorials Playlist](https://www.youtube.com/playlist?list=PL_pbwdIyffsmclLl0O144nQRnezKlNdx3)
+- [Optimum SDXL Usage](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimum-SDXL-Usage)
