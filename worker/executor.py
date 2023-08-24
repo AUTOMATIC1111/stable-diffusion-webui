@@ -5,6 +5,7 @@
 # @Site    : 
 # @File    : executor.py
 # @Software: Hifive
+import os.path
 import random
 import time
 import typing
@@ -93,6 +94,8 @@ class TaskExecutor(Thread):
                     torch_gc()
                     free, total = vram_mon.cuda_mem_get_info()
                     system_exit(free, total)
+                    # 释放磁盘空间
+                    self._clean_disk()
             except Exception:
                 logger.exception("executor err")
                 self.nofity()
@@ -126,9 +129,31 @@ class TaskExecutor(Thread):
 
         return now - task.create_at > self.timeout
 
+    def _clean_disk(self, expire_days=14):
+        # 根据mtime
+        dirnames = ['models/Stable-diffusion', 'models/Lora', 'models/LyCORIS']
+        now = time.time()
+        interval = expire_days*24*3600
+        for dir in dirnames:
+            if not os.path.isdir(dir):
+                continue
+            for f in os.listdir(dir):
+                full = os.path.join(dir, f)
+                if os.path.isfile(full):
+                    mtime = os.path.getmtime(full)
+                    if now - mtime < interval:
+                        continue
+                    try:
+                        logger.warning(f'[WARN] file:{full}, mtime expired!!!!')
+                        os.remove(full)
+                    except:
+                        logger.exception(f'cannot remove file:{full}')
+
+
     def run(self) -> None:
         self._get_task()
 
     def start(self) -> None:
         super(TaskExecutor, self).start()
         self.exec_task()
+

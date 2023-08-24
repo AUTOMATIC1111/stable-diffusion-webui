@@ -212,8 +212,8 @@ class ExtraTaskHandler(DumpTaskHandler):
         high, low = [], []
         if r:
             images = r[0]
-            for image in images:
-                filename = task.id + '.png'
+            for i, image in enumerate(images):
+                filename = f'{task.id}_{i}.png'
                 full_path = os.path.join(Tmp, filename)
                 image.save(full_path)
                 high.append(full_path)
