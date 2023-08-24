@@ -1,4 +1,18 @@
-## [2023-07-30](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12177) - add support for whitespace after the number in constructions like [fo…
+## 1.6.0 [2023-08-24](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12457) - prompt editing timeline has separate range for first pass and hires-fix pass
+Two changes:
+1. Before the change, prompt editing instructions like `[red:green:0.25]` were the same for normal generation and for hires fix second pass. After: values in range 0.0 - 1.0 apply to first pass, and in range 1.0 - 2.0 - to second pass.
+2. Before the change: numbers below 1 mean fraction of steps, number above - absolute number of steps. After the change: numbers with fractional point in them mean fraction of steps, without - absolute number of steps
+
+There is a setting to enable old behavior on compatibility page.
+
+| pattern            | old first pass                           | old second pass | new first pass                          | new second pass                          |
+|--------------------|------------------------------------------|-----------------|-----------------------------------------|------------------------------------------|
+| `[red:green:0.25]` | 25% of steps `red`, 75% of steps `green` | same            | 25% of steps `red`, 75% of steps `green` | `green`                                  |
+| `[red:green:1.25]` | first step `red`, other steps `green`    | same            | `red`                                   | 25% of steps `red`, 75% of steps `green` |
+| `[red:green:5]`    | first 5 steps `red`, other steps `green` | same            | first 5 steps `red`, other steps `green` | `green`                                  |
+| `[red:green:5.0]`  | first 5 steps `red`, other steps `green` | same            | `red`                                   | `red`                                    |
+
+## 1.6.0 [2023-07-30](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12177) - add support for whitespace after the number in attention and prompt editing
 Before the PR, whitespace after the number in prompt editing (`[foo:0.5]`), and also before and after number in attention (`(foo:0.5)`) caused them to not work and just be treated as plain text. The PR changes this and now `[foo : 0.5 ]` and `(foo : 0.5 )` work. Prompts where the user erroneously written whitespaces where they are not allowed will generate different pictures.
 
 ## [2023-04-29](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/9669) - Fix prompt schedule for second order samplers
