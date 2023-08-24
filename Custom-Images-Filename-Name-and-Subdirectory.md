@@ -51,7 +51,9 @@ user can chain these patterns together, forming a filename that suits their use 
 | `[prompt_spaces]`              | Prompt with Styles                                   | 1girl,   white space, ((very important)), [not important], (some value_1.5), (whatever), the end<br>,   (((crystals texture Hair)))，((( |
 | `[prompt]`                     | Prompt with Styles, `Space bar` replaced with`_`       | 1girl,\_\_\_white_space,\_((very\_important)),\_[not\_important],\_(some\_value\_1.5),\_(whatever),\_the\_end,\_(((crystals_texture_Hair)))，(((     |
 | `[prompt_words]`               | Prompt   with Styles, Bracket and Comma removed      | 1gir white space very important not important some value 1 5 whatever the   end crystals texture Hair ， extremely detailed           |
-| `[prompt_hash]` | The first 8 characters of the prompt's SHA-256 hash | 1girl -> 6362d0d2<br>(1girl:1.1) -> 0102e068 |
+| `[prompt_hash]`<br>`[prompt_hash<N>]`  | The first 8  or `N` characters of the prompt's SHA-256 hash | 1girl -> 6362d0d2<br>(1girl:1.1) -> 0102e068 |
+| `[negative_prompt_hash]`<br>`[negative_prompt_hash<N>]` | The first 8 or `N` characters of the negative prompt's SHA-256 hash | 1girl -> 6362d0d2<br>(1girl:1.1) -> 0102e068 |
+| `[full_prompt_hash]`<br>`[full_prompt_hash<N>]` | The first 8 or `N` characters of the `<prompt> <negative_prompt>`'s SHA-256 hash | 1girl -> 6362d0d2<br>(1girl:1.1) -> 0102e068 |
 | `[clip_skip]` | CLIP stop at last layers | 1 |
 | `denoising` | denoising_strength if applicable | 0.5 |
 | `[batch_number]` | the Nth image in a single batch job | BatchNo_[batch_number] -> BatchNo_3
@@ -59,6 +61,8 @@ user can chain these patterns together, forming a filename that suits their use 
 | `[generation_number]` | the Nth image in an entire job | GenNo_[generation_number] -> GenNo_9
 | `[hasprompt<prompt1\|default><prompt2>...]` | if specified `prompt` is found in prompts then `prompt` will be added to filename, else `default` will be added to filename (`default` can be blank) | [hasprompt<girl><boy>] -> girl<br>[hasprompt<girl\|no girl><boy\|no boy>] -> girlno boy
 | `[user]` | the username used to login to webui when using `--gradio-auth username:pass` | username |
+| `[image_hash]`<br>`[image_hash<N>]` | The first `N` characters or the full SHA-256 hash of the image (the image itself not the file) | 484a1e7a07e7573a9081ab6a527990bb4d410dc3 |
+| `[none]` | Overrides the default, so you can get just the sequence number  |  |
 
 If `<Format>` is blank or invalid, it will use the default time format "%Y%m%d%H%M%S"
 tip: you can use extra characters inside `<Format>` for punctuation, such as `_ -`
