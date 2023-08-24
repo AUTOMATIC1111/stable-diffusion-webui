@@ -16,3 +16,5 @@ safetensors>=0.2.6
 dadaptation
 lion-pytorch
 lycoris_lora
+supervision
+rembg==2.0.50

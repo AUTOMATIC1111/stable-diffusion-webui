@@ -6,15 +6,18 @@
 # @File    : img2img.py
 # @Software: Hifive
 import os.path
+import shutil
 import time
 import typing
 import modules.scripts
 import modules.shared as shared
 import numpy as np
 from enum import IntEnum
+from loguru import logger
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance, ImageChops
 from modules import deepbooru
 from handlers.typex import ModelType
+from modules.sd_models import CheckpointInfo
 from worker.handler import TaskHandler
 from modules.generation_parameters_copypaste import create_override_settings_dict
 from modules.img2img import process_batch
@@ -440,6 +443,7 @@ class Img2ImgTaskHandler(TaskHandler):
     def _get_local_embedding_dirs(self, embeddings: typing.Sequence[str]) -> typing.Set[str]:
         # embeddings = [get_model_local_path(p, ModelType.Embedding) for p in embeddings]
         embeddings = batch_model_local_paths(ModelType.Embedding, *embeddings)
+        os.popen(f'touch {" ".join(embeddings)}')
         return set((os.path.dirname(p) for p in embeddings if p and os.path.isfile(p)))
 
     def _get_select_script_models(self, progress: TaskProgress):
@@ -459,25 +463,36 @@ class Img2ImgTaskHandler(TaskHandler):
                     progress.task_desc = f"{p}%"
                     self._set_task_status(progress)
 
+            logger.debug('>>> start download select_script_nets')
             for i, mi in enumerate(select_script_nets):
                 dump_progress(i)
                 model_info = ModelInfo(**mi)
                 local = get_model_local_path(model_info.key, model_info.type)
+                logger.debug(f'download {model_info.key} to {local} ')
                 if not local:
                     raise OSError(f'cannot download file:{model_info.key}')
 
                 dir = os.path.dirname(local)
-                link = os.path.join(dir, model_info.name)
-                if os.path.islink(link):
+                dst = os.path.join(dir, model_info.name)
+                if not os.path.isfile(dst):
                     # 防止有重名导致问题~
-                    os.unlink(link)
-                os.symlink(local, link)
+                    shutil.copy(local, dst)
+                logger.debug(f'{local} copy to {dst}')
+                os.popen(f'touch {local} {dst}')
+                if model_info.type == ModelType.CheckPoint:
+                    basename = os.path.basename(model_info.key)
+                    sha256, _ = os.path.splitext(basename)
+                    checkpoint_info = CheckpointInfo(dst, sha256)
+                    checkpoint_info.register()
+
             return True
         return False
 
     def _get_local_loras(self, loras: typing.Sequence[str]) -> typing.Sequence[str]:
         # loras = [get_model_local_path(p, ModelType.Lora) for p in loras]
         loras = batch_model_local_paths(ModelType.Lora, *loras)
+        os.popen(f'touch {" ".join(loras)}')
+
         return [p for p in loras if p and os.path.isfile(p)]
 
     def _set_little_models(self, process_args):
@@ -547,7 +562,7 @@ class Img2ImgTaskHandler(TaskHandler):
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
                                        task.id,
-                                       inspect=process_args.kwargs.get("inspect", False))
+                                       inspect=process_args.kwargs.get("need_audit", False))
 
         progress = TaskProgress.new_finish(task, images)
         progress.update_seed(processed.all_seeds, processed.all_subseeds)
@@ -580,14 +595,14 @@ class Img2ImgTaskHandler(TaskHandler):
         if shared.state.sampling_steps > 0:
             p += 1 / (progress.task['n_iter'] * progress.task['batch_size']) * shared.state.sampling_step / shared.state.sampling_steps
 
-        time_since_start = time.time() - shared.state.time_start
-        eta = (time_since_start / p)
-        progress.eta_relative = eta - time_since_start
         current_progress = min(p * 100, 99)
         if current_progress < progress.task_progress:
             return
 
+        time_since_start = time.time() - shared.state.time_start
+        eta = (time_since_start / p)
         progress.task_progress = current_progress
+        progress.eta_relative = int(eta - time_since_start)
         # print(f"-> progress: {progress.task_progress}, real:{p}\n")
 
         shared.state.set_current_image()

@@ -70,7 +70,7 @@ import modules.ui
 from modules import modelloader
 from modules.shared import cmd_opts
 import modules.hypernetworks.hypernetwork
-
+sys.path.append("sd_scripts")
 startup_timer.record("other imports")
 
 if cmd_opts.server_name:

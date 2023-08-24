@@ -270,7 +270,7 @@ class TaskReceiver:
                     if TrainOnlyWorkerFlag in worker_id:
                         return False
 
-                    start = worker_id.index(':')
+                    start = worker_id.index(':') if ':' in worker_id else 0
                     end = worker_id.index(".")
                     if end > start > 0:
                         try:

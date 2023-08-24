@@ -126,6 +126,8 @@ class TaskType(IntEnum):
     Extra = 3
     Train = 4
     Tagger = 5
+    RefineImage = 6
+
 
 class TaskStatus(IntEnum):
     Waiting = 0
@@ -194,7 +196,7 @@ class TaskProgress(SerializationObj):
         self.task = task
         self._result = None
         self.task_progress = 0
-        self.eta_relative = None
+        self.eta_relative = 0
         self.train = TrainTaskInfo()
         self.preview = None
 

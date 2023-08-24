@@ -71,6 +71,12 @@ def batch_model_local_paths(model_type: ModelType, *remoting_paths: str) \
     return loc
 
 
+def mk_tmp_dir(dirname):
+    d = os.path.join(Tmp, dirname)
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
 def get_tmp_local_path(remoting_path: str):
     if not remoting_path:
         raise OSError(f'remoting path is empty')

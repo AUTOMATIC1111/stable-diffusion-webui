@@ -22,9 +22,9 @@ from tools.processor import MultiThreadWorker
 
 
 class ModelType(IntEnum):
-    Embedding = 1
-    CheckPoint = 2
-    Lora = 3
+    CheckPoint = 1
+    Lora = 2
+    Embedding = 3
 
 
 class OutImageType(IntEnum):
@@ -232,15 +232,21 @@ class ImageOutput:
                     'tasks': list(urls.values())
                 }, timeout=5)
 
+                logger.info(f"request {api}")
                 if resp:
                     data = resp.json()
+                    logger.debug(f"response {resp.text}")
                     if data.get('code', 0) == 200:
                         results = data['results']
                         for image_item in results:
                             img_res = image_item['result']
                             url = image_item['url']
                             for scene in img_res:
-                                if scene.get('suggestion', 'pass') != 'pass':
+                                if scene['scene'] == 'porn':
+                                    forbidden_flag = scene.get('suggestion', 'pass') == 'block'
+                                else:
+                                    forbidden_flag = scene.get('suggestion', 'pass') != 'pass'
+                                if forbidden_flag:
                                     if url in url_inspect_map:
                                         low_key = url_inspect_map[url]['key']
                                         dirname = os.path.dirname(low_key)
@@ -248,7 +254,7 @@ class ImageOutput:
                                         high_key = os.path.join(dirname, basename.replace('low-', ''))
                                         forbidden_keys[low_key] = 1
                                         forbidden_keys[high_key] = 1
-
+                                        logger.info(f"forbidden: {low_key}")
         except Exception as e:
             logger.exception(f'request {api} failed')
             pass

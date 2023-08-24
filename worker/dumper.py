@@ -239,9 +239,23 @@ class MongoTaskDumper(TaskDumper):
                          'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
                          'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
                          'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'sample',
-                         'high_image': r['samples']['high'][i]}
+                         'high_image': r['samples']['high'][i],
+                         'seed': task_progress.task['all_seed'][i],
+                         'sub_seed': task_progress.task['all_sub_seed'][i],
+                         }
                     flatten_images.append(t)
                     index += 1
+            if 'upscaler' in r:
+                for i, sample in enumerate(r['all']['low']):
+                    t = {'task_id': task_progress.task.id, 'model_hash': task_progress.task['model_hash'],
+                         'user_id': task_progress.task.user_id, 'create_at': task_progress.task['create_at'],
+                         'task_type': task_progress.task.task_type, 'minor_type': task_progress.task.minor_type,
+                         'group_id': "", 'index': index, 'low_image': sample, 'image_type': 'sample',
+                         'high_image': r['all']['high'][i],
+                         }
+                    flatten_images.append(t)
+                    index += 1
+
             if flatten_images:
                 self.db.db['images'].insert_many(flatten_images)
 

@@ -1,0 +1,38 @@
+name: 📚 文档 Documentation Issue
+description: 反馈一个官网文档错误。 Report an issue related to https://github.com/PaddlePaddle/PaddleSeg.
+labels: [documentation]
+
+body:
+- type: markdown
+  attributes:
+    value: >
+      #### 请确认反馈的问题来自PaddlePaddle官网文档：https://github.com/PaddlePaddle/PaddleSeg 。
+
+      #### Before submitting a Documentation Issue, Please make sure that issue is related to https://github.com/PaddlePaddle/PaddleSeg.
+
+- type: textarea
+  id: link
+  attributes:
+    label: 文档链接&描述 Document Links & Description
+    description: |
+      请说明有问题的文档链接以及该文档存在的问题。
+      Please fill in the link to the document and describe the question.
+  validations:
+    required: true
+
+
+- type: textarea
+  id: error
+  attributes:
+    label: 请提出你的建议 Please give your suggestion
+    description: |
+      请告诉我们，你希望如何改进这个文档。或者你可以提个PR修复这个问题。
+      Please tell us how you would like to improve this document. Or you can submit a PR to fix this problem.
+
+  validations:
+    required: false
+
+- type: markdown
+  attributes:
+    value: >
+      感谢你的贡献 🎉！Thanks for your contribution 🎉!
