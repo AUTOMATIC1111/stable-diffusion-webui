@@ -812,11 +812,12 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
 
     if not p.disable_extra_networks and extra_network_data:
         extra_networks.deactivate(p, extra_network_data)
+
     res = Processed(
         p,
         images_list=output_images,
         seed=p.all_seeds[0],
-        info=infotext(),
+        info=infotext() if 'infotext' in globals() else '',
         comments="\n".join(comments),
         subseed=p.all_subseeds[0],
         index_of_first_image=index_of_first_image,

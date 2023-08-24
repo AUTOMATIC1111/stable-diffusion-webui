@@ -702,9 +702,7 @@ class Options:
     def get_default(self, key):
         """returns the default value for the key"""
         data_label = self.data_labels.get(key)
-        if data_label is None:
-            return None
-        return data_label.default
+        return data_label.default if data_label is not None else None
 
     def save(self, filename):
         if cmd_opts.freeze:
@@ -753,7 +751,7 @@ class Options:
             if info is None and k not in compatibility_opts:
                 unknown_settings.append(k)
         if len(unknown_settings) > 0:
-            log.warning(f"Unknown settings: {unknown_settings}")
+            log.debug(f"Unknown settings: {unknown_settings}")
 
     def onchange(self, key, func, call=True):
         item = self.data_labels.get(key)

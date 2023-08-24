@@ -128,11 +128,11 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #settings .block.gradio-checkbox { margin: 0; width: auto; }
 #settings .dirtyable { display: grid; grid-template-columns: .3em auto; gap: .5em; }
 #settings .dirtyable.hidden { display: none; }
-#settings .modification-indicator { width: 100%; height: 100%; border-radius: 1em !important; padding: 0; }
+#settings .modification-indicator { width: 100%; height: 100%; border-radius: 1em !important; padding: 0; width: 0 }
 #settings .modification-indicator:disabled { visibility: hidden; }
-#settings .modification-indicator.unsaved { background: var(--color-accent-soft); }
-#settings .modification-indicator.changed { background: var(--color-accent); }
-#settings .modification-indicator.changed.unsaved { background-image: linear-gradient(var(--color-accent) 25%, var(--color-accent-soft) 75%); }
+#settings .modification-indicator.unsaved { background: var(--color-accent-soft); width: 4px; }
+#settings .modification-indicator.changed { background: var(--color-accent); width: 4px; }
+#settings .modification-indicator.changed.unsaved { background-image: linear-gradient(var(--color-accent) 25%, var(--color-accent-soft) 75%); width: 4px; }
 #settings_result { margin: 0 1.2em; }
 
 /* live preview */

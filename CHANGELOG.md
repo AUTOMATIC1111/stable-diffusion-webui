@@ -1,11 +1,12 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-22
+## Update for 2023-08-24
 
 - general:
   - all system and image paths are now relative by default  
   - fix extra networks previews  
   - add settings validation when performing load/save  
+  - settings tab in ui now shows settings that are changed from default values
   - optimize model hashing  
   - add cli param `--skip-all` that skips all installer checks  
     use at personal discretion, but it can be useful for bulk deployments  

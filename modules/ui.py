@@ -910,11 +910,7 @@ def create_ui(startup_timer = None):
         if not is_quicksettings:
             dirtyable_setting = gr.Group(elem_classes="dirtyable", visible=(args or {}).get("visible", True))
             dirtyable_setting.__enter__()
-            dirty_indicator = gr.Button(
-                "",
-                elem_classes="modification-indicator",
-                elem_id="modification_indicator_" + key
-            )
+            dirty_indicator = gr.Button("", elem_classes="modification-indicator", elem_id="modification_indicator_" + key)
 
         if info.refresh is not None:
             if is_quicksettings:
