@@ -1,3 +1,5 @@
+import json
+import os
 import re
 from collections import defaultdict
 
@@ -177,3 +179,20 @@ def parse_prompts(prompts):
 
     return res, extra_data
 
+
+def get_user_metadata(filename):
+    if filename is None:
+        return {}
+
+    basename, ext = os.path.splitext(filename)
+    metadata_filename = basename + '.json'
+
+    metadata = {}
+    try:
+        if os.path.isfile(metadata_filename):
+            with open(metadata_filename, "r", encoding="utf8") as file:
+                metadata = json.load(file)
+    except Exception as e:
+        errors.display(e, f"reading extra network user metadata from {metadata_filename}")
+
+    return metadata
