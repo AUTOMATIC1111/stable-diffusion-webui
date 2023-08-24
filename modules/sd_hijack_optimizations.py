@@ -256,9 +256,9 @@ def split_cross_attention_forward(self, x, context=None, mask=None, **kwargs):
             raise RuntimeError(f'Not enough memory, use lower resolution (max approx. {max_res}x{max_res}). '
                                f'Need: {mem_required / 64 / gb:0.1f}GB free, Have:{mem_free_total / gb:0.1f}GB free')
 
-        slice_size = q.shape[1] // steps if (q.shape[1] % steps) == 0 else q.shape[1]
+        slice_size = q.shape[1] // steps
         for i in range(0, q.shape[1], slice_size):
-            end = i + slice_size
+            end = min(i + slice_size, q.shape[1])
             s1 = einsum('b i d, b j d -> b i j', q[:, i:end], k)
 
             s2 = s1.softmax(dim=-1, dtype=q.dtype)

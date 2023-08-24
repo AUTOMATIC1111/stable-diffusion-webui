@@ -1,3 +1,10 @@
+## 1.5.2
+
+### Bug Fixes:
+ * fix memory leak when generation fails
+ * update doggettx cross attention optimization to not use an unreasonable amount of memory in some edge cases -- suggestion by MorkTheOrk
+
+
 ## 1.5.1
 
 ### Minor:
