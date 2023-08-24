@@ -771,7 +771,7 @@ CLIP is a very advanced neural network that transforms your prompt text into a n
 Some models were trained with this kind of tweak, so setting this value helps produce better results on those models.
 
 ## Extra noise
-Adds additional noise from the random seed, determined by the setting, defaulting to `0`. Implemented in version 1.6.0 via [#12564](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12564), available in settings under `img2img` -> `Extra noise multiplier for img2img and hires fix`. As noted in the UI, it should always be lower than the denoising strength used to yield the best results.
+Adds additional noise from the random seed, determined by the setting, defaulting to `0`. Implemented in version 1.6.0 via [#12564](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12564), available in settings under `img2img` -> `Extra noise multiplier for img2img and hires fix`. As noted in the UI, **this parameter should always be lower than the denoising strength used to yield the best results**.
 
 One purpose for this tweak is to add back additional detail into hires fix. For a very simplified understanding, you may think of it as a cross between GAN upscaling and latent upscaling.
 
@@ -780,6 +780,6 @@ Extra noise = 0             |  Extra noise = 0.2
 :-------------------------:|:-------------------------:
 [![without](https://user-images.githubusercontent.com/122327233/260556373-9257aa18-dfc8-49f6-9984-a0a1f430c029.png)](https://user-images.githubusercontent.com/122327233/260556373-9257aa18-dfc8-49f6-9984-a0a1f430c029.png)  |  [![with](https://user-images.githubusercontent.com/122327233/260556387-0c6df12c-7412-43d5-84d2-2a69ad6152c4.png)](https://user-images.githubusercontent.com/122327233/260556387-0c6df12c-7412-43d5-84d2-2a69ad6152c4.png)
 
-Note that the previous setting implemented at the time (`Noise multiplier for img2img`) technically achieves the same effect, but as noted in the name *only* applies to img2img (not hires fix), and due to how that parameter functions it is very sensitive, realisticly only useful in a range of `1` to `1.1`. For almost all operations it would be suggested to use the new `Extra noise` parameter instead.
+Note that the previous setting implemented at the time many months ago (`Noise multiplier for img2img`) technically achieves the same effect, but as noted in the name *only* applies to img2img (not hires. fix), and due to it was implemented it is very sensitive, realisticly only useful in a range of `1` to `1.1`. For almost all operations **it would be suggested to use the new `Extra noise` parameter instead**.
 
 For developers, a callback also exists (`on_extra_noise`). Here is an example of use that makes the region to add noise to maskable. https://gist.github.com/catboxanon/69ce64e0389fa803d26dc59bb444af53
