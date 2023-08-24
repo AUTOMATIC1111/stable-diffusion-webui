@@ -583,6 +583,7 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_conf
             if refiner_checkpoint_name != "None":
                 shared.sd_refiner_model = get_diffusers_sd_refiner_model(model_config, vae_config, sampler_name, enable_caching, openvino_device, mode, is_xl_ckpt, refiner_checkpoint_name, refiner_steps)
                 shared.sd_refiner_model.scheduler = set_scheduler(shared.sd_refiner_model, sampler_name)
+                print("refiner used: " + refiner_checkpoint_name)
 
             extra_network_data = p.parse_extra_network_prompts()
 
@@ -655,16 +656,15 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_conf
                     **custom_inputs
             )
 
-
-            refiner_output = shared.sd_refiner_model(
-                    prompt=p.prompts,
-                    negative_prompt=p.negative_prompts,
-                    num_inference_steps=refiner_steps,
-                    image=output.images[0][None, :],
-                    output_type="np"
-            )
-
-            print("refiner steps " + str(refiner_steps))
+            if refiner_checkpoint_name != "None":
+                refiner_output = shared.sd_refiner_model(
+                        prompt=p.prompts,
+                        negative_prompt=p.negative_prompts,
+                        num_inference_steps=refiner_steps,
+                        image=output.images[0][None, :],
+                        output_type="np"
+                )
+                print("refiner steps " + str(refiner_steps))
 
 
             model_state.recompile = 0
@@ -672,8 +672,10 @@ def process_images_openvino(p: StableDiffusionProcessing, model_config, vae_conf
             warmup_duration = time_stamps[1] - time_stamps[0]
             generation_rate = (p.steps - 1) / (time_stamps[-1] - time_stamps[1])
 
-
-            x_samples_ddim = refiner_output.images
+            if refiner_checkpoint_name != "None":
+                x_samples_ddim = refiner_output.images
+            else:
+                x_samples_ddim = output.images
 
             for i, x_sample in enumerate(x_samples_ddim):
                 p.batch_index = i
@@ -833,7 +835,7 @@ class Script(scripts.Script):
         is_xl_ckpt= gr.Checkbox(label="Loaded checkpoint is a SDXL checkpoint", value=False)
         with gr.Row():
                 refiner_checkpoint_name = gr.Dropdown(label="Model", choices=get_refiner_list(), value="None")
-                refiner_steps = gr.Slider(minimum=0, maximum=20, step=1, label='Refiner steps', value=5)
+                refiner_steps = gr.Slider(minimum=0, maximum=100, step=4, label='Refiner steps:', value=20)
         override_sampler = gr.Checkbox(label="Override the sampling selection from the main UI (Recommended as only below sampling methods have been validated for OpenVINO)", value=True)
         sampler_name = gr.Radio(label="Select a sampling method", choices=["Euler a", "Euler", "LMS", "Heun", "DPM++ 2M", "LMS Karras", "DPM++ 2M Karras", "DDIM", "PLMS"], value="Euler a")
         enable_caching = gr.Checkbox(label="Cache the compiled models on disk for faster model load in subsequent launches (Recommended)", value=True, elem_id=self.elem_id("enable_caching"))
