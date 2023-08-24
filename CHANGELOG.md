@@ -67,7 +67,7 @@
  * make it possible to localize tooltips and placeholders
 
 ### Extensions and API:
- * gradio 3.39
+ * gradio 3.41.0
  * also bump versions for packages: transformers, GitPython, accelerate, scikit-image, timm, tomesd
  * support tooltip kwarg for gradio elements: gr.Textbox(label='hello', tooltip='world')
  * properly clear the total console progressbar when using txt2img and img2img from API
