@@ -11,7 +11,7 @@ set TRANSFORMERS_CACHE=S:\\HuggingFace\\.cache\\transformers
 
 set PYTHON=python3.10.exe
 set GIT=
-set VENV_DIR=S:\\StableDiffusion\\venv
+set VENV_DIR=
 
 set SD_DATA=S:\\StableDiffusion\\data
 set COMMANDLINE_ARGS=^
