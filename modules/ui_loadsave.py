@@ -7,6 +7,10 @@ from modules import errors
 from modules.ui_components import ToolButton
 
 
+def radio_choices(comp):  # gradio 3.41 changes choices from list of values to list of pairs
+    return [x[0] if isinstance(x, tuple) else x for x in getattr(comp, 'choices', [])]
+
+
 class UiLoadsave:
     """allows saving and restoring default values for gradio components"""
 
@@ -27,6 +31,8 @@ class UiLoadsave:
         except Exception as e:
             self.error_loading = True
             errors.display(e, "loading settings")
+
+
 
     def add_component(self, path, x):
         """adds component to the registry of tracked components"""
@@ -73,7 +79,7 @@ class UiLoadsave:
             apply_field(x, 'step')
 
         if type(x) == gr.Radio:
-            apply_field(x, 'value', lambda val: val in x.choices)
+            apply_field(x, 'value', lambda val: val in radio_choices(x))
 
         if type(x) == gr.Checkbox:
             apply_field(x, 'value')
@@ -86,10 +92,11 @@ class UiLoadsave:
 
         if type(x) == gr.Dropdown:
             def check_dropdown(val):
+                choices = radio_choices(x)
                 if getattr(x, 'multiselect', False):
-                    return all(value in x.choices for value in val)
+                    return all(value in choices for value in val)
                 else:
-                    return val in x.choices
+                    return val in choices
 
             apply_field(x, 'value', check_dropdown, getattr(x, 'init_field', None))
 
@@ -146,12 +153,14 @@ class UiLoadsave:
         for (path, component), new_value in zip(self.component_mapping.items(), values):
             old_value = current_ui_settings.get(path)
 
-            choices = getattr(component, 'choices', None)
+            choices = radio_choices(component)
             if isinstance(new_value, int) and choices:
                 if new_value >= len(choices):
                     continue
 
                 new_value = choices[new_value]
+                if isinstance(new_value, tuple):
+                    new_value = new_value[0]
 
             if new_value == old_value:
                 continue
