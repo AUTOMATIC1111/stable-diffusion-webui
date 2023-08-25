@@ -119,10 +119,12 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #quicksettings > div, #quicksettings > fieldset{ max-width: 20em; min-width: 24em; padding: 0; border: none; box-shadow: none; background: none; }
 #quicksettings > button { margin-left: -0.5em; }
 
-#settings { display: flex; flex-flow: row wrap; gap: var(--layout-gap); }
-#settings div { border: none; min-width: max-content; overflow-x: auto; }
+#settings { display: flex; gap: var(--layout-gap); }
+#settings div { border: none; min-width: max-content; }
 #settings > div.tab-content { flex: 10 0 75%; }
+
 #settings > div.tab-content > div { border: none; padding: 0; }
+#settings > div.tab-content > div > div > div > div > div { flex-direction: unset; }
 #settings > div.tab-nav { display: grid; grid-template-columns: repeat(auto-fill, .3em minmax(10em, 1fr)); flex: 1 0 auto; width: 12em; align-self: flex-start; gap: var(--spacing-md); }
 #settings > div.tab-nav button { display: block; border: none; text-align: left; white-space: initial; padding: 0; }
 #settings > div.tab-nav > #settings_show_all_pages { padding: var(--size-2) var(--size-4); }
@@ -135,7 +137,6 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #settings .modification-indicator.changed { background: var(--color-accent); width: 4px; }
 #settings .modification-indicator.changed.unsaved { background-image: linear-gradient(var(--color-accent) 25%, var(--color-accent-soft) 75%); width: 4px; }
 #settings_result { margin: 0 1.2em; }
-.styler { flex-direction: unset !important; }
 
 /* live preview */
 .progressDiv{ position: relative; height: 20px; background: #b4c0cc; margin-bottom: -3px; }
