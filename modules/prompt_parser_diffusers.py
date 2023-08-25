@@ -1,7 +1,6 @@
 import os
 import typing
 import torch
-import diffusers
 from compel import Compel, ReturnedEmbeddingsType
 import modules.shared as shared
 import modules.prompt_parser as prompt_parser

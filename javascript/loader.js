@@ -39,6 +39,7 @@ async function removeSplash() {
   const splash = document.getElementById('splash');
   if (splash) splash.remove();
   console.log('removeSplash');
+  console.log('startupTime', Math.round(performance.now() - appStartTime) / 1000);
 }
 
 window.onload = createSplash;

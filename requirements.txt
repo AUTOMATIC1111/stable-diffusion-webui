@@ -49,7 +49,7 @@ accelerate==0.20.3
 opencv-python-headless==4.7.0.72
 diffusers==0.20.0
 einops==0.4.1
-gradio==3.32.0
+gradio==3.41.1
 huggingface_hub==0.16.4
 numexpr==2.8.4
 numpy==1.24.4

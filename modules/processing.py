@@ -532,7 +532,9 @@ def print_profile(profile, msg: str):
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
-    stored_opts = {k: shared.opts.data[k] for k in p.override_settings.keys()}
+    stored_opts = {}
+    for k in p.override_settings.keys():
+        stored_opts[k] = shared.opts.data.get(k, None)
     try:
         # if no checkpoint override or the override checkpoint can't be found, remove override entry and load opts checkpoint
         if p.override_settings.get('sd_model_checkpoint', None) is not None and sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
@@ -571,7 +573,6 @@ def process_images(p: StableDiffusionProcessing) -> Processed:
                 setattr(shared.opts, k, v)
                 if k == 'sd_model_checkpoint':
                     sd_models.reload_model_weights()
-
                 if k == 'sd_vae':
                     sd_vae.reload_vae_weights()
     return res
@@ -1031,6 +1032,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         self.refiner_prompt = refiner_prompt
         self.refiner_negative = refiner_negative
         self.enable_hr = None
+        self.is_batch = False
+        self.scale_by = 1.0
 
     def init(self, all_prompts, all_seeds, all_subseeds):
         if shared.backend == shared.Backend.DIFFUSERS and self.image_mask is None:
