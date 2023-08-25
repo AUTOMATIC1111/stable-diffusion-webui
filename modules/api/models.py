@@ -1,12 +1,10 @@
 import inspect
 
 from pydantic import BaseModel, Field, create_model
-from typing import Any, Optional
-from typing_extensions import Literal
+from typing import Any, Optional, Literal
 from inflection import underscore
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img
 from modules.shared import sd_upscalers, opts, parser
-from typing import Dict, List
 
 API_NOT_ALLOWED = [
     "self",
@@ -130,12 +128,12 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
 ).generate_model()
 
 class TextToImageResponse(BaseModel):
-    images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
+    images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: dict
     info: str
 
 class ImageToImageResponse(BaseModel):
-    images: List[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
+    images: list[str] = Field(default=None, title="Image", description="The generated image in base64 format.")
     parameters: dict
     info: str
 
@@ -168,10 +166,10 @@ class FileData(BaseModel):
     name: str = Field(title="File name")
 
 class ExtrasBatchImagesRequest(ExtrasBaseRequest):
-    imageList: List[FileData] = Field(title="Images", description="List of images to work on. Must be Base64 strings")
+    imageList: list[FileData] = Field(title="Images", description="List of images to work on. Must be Base64 strings")
 
 class ExtrasBatchImagesResponse(ExtraBaseResponse):
-    images: List[str] = Field(title="Images", description="The generated images in base64 format.")
+    images: list[str] = Field(title="Images", description="The generated images in base64 format.")
 
 class PNGInfoRequest(BaseModel):
     image: str = Field(title="Image", description="The base64 encoded PNG image")
@@ -233,8 +231,8 @@ FlagsModel = create_model("Flags", **flags)
 
 class SamplerItem(BaseModel):
     name: str = Field(title="Name")
-    aliases: List[str] = Field(title="Aliases")
-    options: Dict[str, str] = Field(title="Options")
+    aliases: list[str] = Field(title="Aliases")
+    options: dict[str, str] = Field(title="Options")
 
 class UpscalerItem(BaseModel):
     name: str = Field(title="Name")
@@ -285,8 +283,8 @@ class EmbeddingItem(BaseModel):
     vectors: int = Field(title="Vectors", description="The number of vectors in the embedding")
 
 class EmbeddingsResponse(BaseModel):
-    loaded: Dict[str, EmbeddingItem] = Field(title="Loaded", description="Embeddings loaded for the current model")
-    skipped: Dict[str, EmbeddingItem] = Field(title="Skipped", description="Embeddings skipped for the current model (likely due to architecture incompatibility)")
+    loaded: dict[str, EmbeddingItem] = Field(title="Loaded", description="Embeddings loaded for the current model")
+    skipped: dict[str, EmbeddingItem] = Field(title="Skipped", description="Embeddings skipped for the current model (likely due to architecture incompatibility)")
 
 class MemoryResponse(BaseModel):
     ram: dict = Field(title="RAM", description="System memory stats")
@@ -304,14 +302,14 @@ class ScriptArg(BaseModel):
     minimum: Optional[Any] = Field(default=None, title="Minimum", description="Minimum allowed value for the argumentin UI")
     maximum: Optional[Any] = Field(default=None, title="Minimum", description="Maximum allowed value for the argumentin UI")
     step: Optional[Any] = Field(default=None, title="Minimum", description="Step for changing value of the argumentin UI")
-    choices: Optional[List[str]] = Field(default=None, title="Choices", description="Possible values for the argument")
+    choices: Optional[list[str]] = Field(default=None, title="Choices", description="Possible values for the argument")
 
 
 class ScriptInfo(BaseModel):
     name: str = Field(default=None, title="Name", description="Script name")
     is_alwayson: bool = Field(default=None, title="IsAlwayson", description="Flag specifying whether this script is an alwayson script")
     is_img2img: bool = Field(default=None, title="IsImg2img", description="Flag specifying whether this script is an img2img script")
-    args: List[ScriptArg] = Field(title="Arguments", description="List of script's arguments")
+    args: list[ScriptArg] = Field(title="Arguments", description="List of script's arguments")
 
 class ExtensionItem(BaseModel):
     name: str = Field(title="Name", description="Extension name")
