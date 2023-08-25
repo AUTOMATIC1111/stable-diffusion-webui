@@ -11,7 +11,7 @@
 
 }
 
-.dark {
+:root:has(> .dark), .dark {
     color-scheme: dark;
 }
 
