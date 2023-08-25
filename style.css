@@ -142,6 +142,11 @@ div.gradio-container, .block.gradio-textbox, div.gradio-group, div.gradio-dropdo
     overflow: visible !important;
 }
 
+/* align-items isn't enough and elements may overflow in Safari. */
+.unequal-height {
+    align-content: flex-start;
+}
+
 
 /* general styled components */
 
@@ -282,8 +287,8 @@ div.block.gradio-accordion {
     }
 }
 
-#txt2img_gallery img, #img2img_gallery img, #extras_gallery img{
-    object-fit: scale-down;
+.gradio-gallery .thumbnails img {
+    object-fit: scale-down !important;
 }
 #txt2img_actions_column, #img2img_actions_column {
     gap: 0.5em;
@@ -499,11 +504,15 @@ table.popup-table .link{
 
 /* live preview */
 .progressDiv{
-    position: relative;
+    position: absolute;
     height: 20px;
     background: #b4c0cc;
     border-radius: 3px !important;
-    margin-bottom: -3px;
+    top: -20px;
+}
+
+[id$=_results].mobile{
+    margin-top: 28px;
 }
 
 .dark .progressDiv{
@@ -528,19 +537,16 @@ table.popup-table .link{
 .livePreview{
     position: absolute;
     z-index: 300;
-    background-color: white;
-    margin: -4px;
-}
-
-.dark .livePreview{
-    background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+    background: var(--background-fill-primary);
+    width: 100%;
+    height: 100%;
 }
 
 .livePreview img{
     position: absolute;
     object-fit: contain;
     width: 100%;
-    height: 100%;
+    height: calc(100% - 60px);  /* to match gradio's height */
 }
 
 /* fullscreen popup (ie in Lora's (i) button) */
@@ -857,6 +863,7 @@ footer {
     position: absolute;
     color: white;
     right: 0;
+    z-index: 1
 }
 .extra-network-cards .card:hover .button-row{
     display: flex;
@@ -1053,4 +1060,34 @@ div.accordions > div.input-accordion.input-accordion-open{
 #img2img_results, #txt2img_results, #extras_results {
     position: sticky;
     top: 0.5em;
+}
+
+body.resizing {
+    cursor: col-resize !important;
+}
+
+body.resizing * {
+    pointer-events: none !important;
+}
+
+body.resizing .resize-handle {
+    pointer-events: initial !important;
+}
+
+.resize-handle {
+    position: relative;
+    cursor: col-resize;
+    grid-column: 2 / 3;
+    min-width: 16px !important;
+    max-width: 16px !important;
+    height: 100%;
+}
+
+.resize-handle::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 7.5px;
+    border-left: 1px dashed var(--border-color-primary);
 }

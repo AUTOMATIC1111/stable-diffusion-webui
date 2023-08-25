@@ -192,7 +192,7 @@ def load_vae_dict(filename, map_location):
 
 
 def load_vae(model, vae_file=None, vae_source="from unknown source"):
-    global vae_dict, loaded_vae_file
+    global vae_dict, base_vae, loaded_vae_file
     # save_settings = False
 
     cache_enabled = shared.opts.sd_vae_checkpoint_cache > 0
@@ -230,6 +230,8 @@ def load_vae(model, vae_file=None, vae_source="from unknown source"):
         restore_base_vae(model)
 
     loaded_vae_file = vae_file
+    model.base_vae = base_vae
+    model.loaded_vae_file = loaded_vae_file
 
 
 # don't call this from outside
@@ -261,7 +263,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     if loaded_vae_file == vae_file:
         return
 
-    if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
+    if sd_model.lowvram:
         lowvram.send_everything_to_cpu()
     else:
         sd_model.to(devices.cpu)
@@ -273,7 +275,7 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
     sd_hijack.model_hijack.hijack(sd_model)
     script_callbacks.model_loaded_callback(sd_model)
 
-    if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram:
+    if not sd_model.lowvram:
         sd_model.to(devices.device)
 
     print("VAE weights loaded.")

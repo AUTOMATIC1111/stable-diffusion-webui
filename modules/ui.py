@@ -13,7 +13,7 @@ from modules.call_queue import wrap_gradio_gpu_call, wrap_queued_call, wrap_grad
 
 from modules import gradio_extensons  # noqa: F401
 from modules import sd_hijack, sd_models, script_callbacks, ui_extensions, deepbooru, extra_networks, ui_common, ui_postprocessing, progress, ui_loadsave, shared_items, ui_settings, timer, sysinfo, ui_checkpoint_merger, ui_prompt_styles, scripts, sd_samplers, processing, ui_extra_networks
-from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML, InputAccordion
+from modules.ui_components import FormRow, FormGroup, ToolButton, FormHTML, InputAccordion, ResizeHandleRow
 from modules.paths import script_path
 from modules.ui_common import create_refresh_button
 from modules.ui_gradio_extensions import reload_javascript
@@ -333,7 +333,7 @@ def create_ui():
         extra_tabs = gr.Tabs(elem_id="txt2img_extra_tabs")
         extra_tabs.__enter__()
 
-        with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, gr.Row(equal_height=False):
+        with gr.Tab("Generation", id="txt2img_generation") as txt2img_generation_tab, ResizeHandleRow(equal_height=False):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
                 scripts.scripts_txt2img.prepare_ui()
 
@@ -549,7 +549,7 @@ def create_ui():
         extra_tabs = gr.Tabs(elem_id="img2img_extra_tabs")
         extra_tabs.__enter__()
 
-        with gr.Tab("Generation", id="img2img_generation") as img2img_generation_tab, FormRow(equal_height=False):
+        with gr.Tab("Generation", id="img2img_generation") as img2img_generation_tab, ResizeHandleRow(equal_height=False):
             with gr.Column(variant='compact', elem_id="img2img_settings"):
                 copy_image_buttons = []
                 copy_image_destinations = {}
@@ -614,7 +614,7 @@ def create_ui():
                         with gr.Accordion("PNG info", open=False):
                             img2img_batch_use_png_info = gr.Checkbox(label="Append png info to prompts", **shared.hide_dirs, elem_id="img2img_batch_use_png_info")
                             img2img_batch_png_info_dir = gr.Textbox(label="PNG info directory", **shared.hide_dirs, placeholder="Leave empty to use input directory", elem_id="img2img_batch_png_info_dir")
-                            img2img_batch_png_info_props = gr.CheckboxGroup(["Prompt", "Negative prompt", "Seed", "CFG scale", "Sampler", "Steps"], label="Parameters to take from png info", info="Prompts from png info will be appended to prompts set in ui.")
+                            img2img_batch_png_info_props = gr.CheckboxGroup(["Prompt", "Negative prompt", "Seed", "CFG scale", "Sampler", "Steps", "Model hash"], label="Parameters to take from png info", info="Prompts from png info will be appended to prompts set in ui.")
 
                     img2img_tabs = [tab_img2img, tab_sketch, tab_inpaint, tab_inpaint_color, tab_inpaint_upload, tab_batch]
 

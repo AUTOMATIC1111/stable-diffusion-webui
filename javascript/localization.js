@@ -107,12 +107,41 @@ function processNode(node) {
     });
 }
 
+function localizeWholePage() {
+    processNode(gradioApp());
+
+    function elem(comp) {
+        var elem_id = comp.props.elem_id ? comp.props.elem_id : "component-" + comp.id;
+        return gradioApp().getElementById(elem_id);
+    }
+
+    for (var comp of window.gradio_config.components) {
+        if (comp.props.webui_tooltip) {
+            let e = elem(comp);
+
+            let tl = e ? getTranslation(e.title) : undefined;
+            if (tl !== undefined) {
+                e.title = tl;
+            }
+        }
+        if (comp.props.placeholder) {
+            let e = elem(comp);
+            let textbox = e ? e.querySelector('[placeholder]') : null;
+
+            let tl = textbox ? getTranslation(textbox.placeholder) : undefined;
+            if (tl !== undefined) {
+                textbox.placeholder = tl;
+            }
+        }
+    }
+}
+
 function dumpTranslations() {
     if (!hasLocalization()) {
         // If we don't have any localization,
         // we will not have traversed the app to find
         // original_lines, so do that now.
-        processNode(gradioApp());
+        localizeWholePage();
     }
     var dumped = {};
     if (localization.rtl) {
@@ -154,7 +183,7 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    processNode(gradioApp());
+    localizeWholePage();
 
     if (localization.rtl) { // if the language is from right to left,
         (new MutationObserver((mutations, observer) => { // wait for the style to load

@@ -4,6 +4,8 @@ import os
 import time
 import datetime
 import uvicorn
+import ipaddress
+import requests
 import gradio as gr
 from threading import Lock
 from io import BytesIO
@@ -55,10 +57,35 @@ def setUpscalers(req: dict):
     return reqDict
 
 
+def verify_url(url):
+    """Returns True if the url refers to a global resource."""
+
+    import socket
+    from urllib.parse import urlparse
+    try:
+        parsed_url = urlparse(url)
+        domain_name = parsed_url.netloc
+        host = socket.gethostbyname_ex(domain_name)
+        for ip in host[2]:
+            ip_addr = ipaddress.ip_address(ip)
+            if not ip_addr.is_global:
+                return False
+    except Exception:
+        return False
+
+    return True
+
+
 def decode_base64_to_image(encoding):
     if encoding.startswith("http://") or encoding.startswith("https://"):
-        import requests
-        response = requests.get(encoding, timeout=30, headers={'user-agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'})
+        if not opts.api_enable_requests:
+            raise HTTPException(status_code=500, detail="Requests not allowed")
+
+        if opts.api_forbid_local_requests and not verify_url(encoding):
+            raise HTTPException(status_code=500, detail="Request to local resource not allowed")
+
+        headers = {'user-agent': opts.api_useragent} if opts.api_useragent else {}
+        response = requests.get(encoding, timeout=30, headers=headers)
         try:
             image = Image.open(BytesIO(response.content))
             return image
@@ -216,6 +243,7 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
+        self.add_api_route("/sdapi/v1/extensions", self.get_extensions_list, methods=["GET"], response_model=List[models.ExtensionItem])
 
         if shared.cmd_opts.api_server_stop:
             self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
@@ -543,7 +571,7 @@ class Api:
             raise RuntimeError(f"model {checkpoint_name!r} not found")
 
         for k, v in req.items():
-            shared.opts.set(k, v)
+            shared.opts.set(k, v, is_api=True)
 
         shared.opts.save(shared.config_filename)
         return
@@ -742,6 +770,25 @@ class Api:
         except Exception as err:
             cuda = {'error': f'{err}'}
         return models.MemoryResponse(ram=ram, cuda=cuda)
+
+    def get_extensions_list(self):
+        from modules import extensions
+        extensions.list_extensions()
+        ext_list = []
+        for ext in extensions.extensions:
+            ext: extensions.Extension
+            ext.read_info_from_repo()
+            if ext.remote is not None:
+                ext_list.append({
+                    "name": ext.name,
+                    "remote": ext.remote,
+                    "branch": ext.branch,
+                    "commit_hash":ext.commit_hash,
+                    "commit_date":ext.commit_date,
+                    "version":ext.version,
+                    "enabled":ext.enabled
+                })
+        return ext_list
 
     def launch(self, server_name, port, root_path):
         self.app.include_router(self.router)
