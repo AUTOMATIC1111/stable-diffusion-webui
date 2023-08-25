@@ -9,6 +9,7 @@ import io
 import os
 import typing
 import uuid
+import hashlib
 
 from PIL import Image
 from loguru import logger
@@ -84,7 +85,13 @@ def get_tmp_local_path(remoting_path: str):
         return remoting_path
 
     os.makedirs(Tmp, exist_ok=True)
-    dst = os.path.join(Tmp, os.path.basename(remoting_path))
+    _, ex = os.path.splitext(remoting_path)
+
+    md5 = hashlib.md5()
+    md5.update(remoting_path.encode())
+    hash_str = md5.hexdigest()[:16]
+
+    dst = os.path.join(Tmp, hash_str+ex)
     return get_local_path(remoting_path, dst)
 
 

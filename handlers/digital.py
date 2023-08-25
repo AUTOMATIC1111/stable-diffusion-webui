@@ -31,7 +31,7 @@ class DigitalTaskHandler(Img2ImgTaskHandler):
 
     def _build_i2i_tasks(self, t: Task):
         tasks = []
-        for denoising_strength in [0.25, 0.35, 0.4, 0.45]:
+        for denoising_strength in [0.15, 0.25, 0.45, 0.55]:
             t['denoising_strength'] = denoising_strength
             t['n_iter'] = 1
             t['batch_size'] = 1
