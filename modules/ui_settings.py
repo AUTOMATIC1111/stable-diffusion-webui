@@ -40,13 +40,9 @@ def create_setting_component(key, is_quicksettings=False):
     elem_id = f"setting_{key}"
 
     if info.refresh is not None:
-        if is_quicksettings:
+        with FormRow():
             res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
             ui_common.create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
-        else:
-            with FormRow():
-                res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
-                ui_common.create_refresh_button(res, info.refresh, info.component_args, f"refresh_{key}")
     else:
         res = comp(label=info.label, value=fun(), elem_id=elem_id, **(args or {}))
 

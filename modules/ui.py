@@ -303,12 +303,12 @@ def ordered_ui_categories():
 
 
 def create_override_settings_dropdown(tabname, row):
-    dropdown = gr.Dropdown([], label="Override settings", visible=False, elem_id=f"{tabname}_override_settings", multiselect=True)
+    dropdown = gr.Dropdown([], label="Override settings", elem_id=f"{tabname}_override_settings", multiselect=True)
 
     dropdown.change(
-        fn=lambda x: gr.Dropdown.update(visible=bool(x)),
+        fn=lambda x: gr.update(visible=bool(x)),
         inputs=[dropdown],
-        outputs=[dropdown],
+        outputs=[row],
     )
 
     return dropdown
@@ -403,7 +403,7 @@ def create_ui():
                                 batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="txt2img_batch_size")
 
                     elif category == "override_settings":
-                        with FormRow(elem_id="txt2img_override_settings_row") as row:
+                        with FormRow(elem_id="txt2img_override_settings_row", visible=False) as row:
                             override_settings = create_override_settings_dropdown('txt2img', row)
 
                     elif category == "scripts":
@@ -720,7 +720,7 @@ def create_ui():
                                 batch_size = gr.Slider(minimum=1, maximum=8, step=1, label='Batch size', value=1, elem_id="img2img_batch_size")
 
                     elif category == "override_settings":
-                        with FormRow(elem_id="img2img_override_settings_row") as row:
+                        with FormRow(elem_id="img2img_override_settings_row", visible=False) as row:
                             override_settings = create_override_settings_dropdown('img2img', row)
 
                     elif category == "scripts":
