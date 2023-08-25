@@ -770,7 +770,7 @@ class Api:
         except Exception as err:
             cuda = {'error': f'{err}'}
         return models.MemoryResponse(ram=ram, cuda=cuda)
-    
+
     def get_extensions_list(self):
         from modules import extensions
         extensions.list_extensions()
