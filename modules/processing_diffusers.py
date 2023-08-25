@@ -192,6 +192,31 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
         return args
 
+    def recompile_model(hires=False):
+        if shared.opts.cuda_compile and shared.opts.cuda_compile_backend != 'none':
+            if shared.opts.cuda_compile_backend == "openvino_fx":
+                compile_height = p.height if not hires else p.hr_upscale_to_y
+                compile_width = p.width if not hires else p.hr_upscale_to_x
+                if (not hasattr(shared.sd_model, "compiled_model_state") or (not shared.sd_model.compiled_model_state.first_pass
+                and (shared.sd_model.compiled_model_state.height != compile_height or shared.sd_model.compiled_model_state.width != compile_width
+                or shared.sd_model.compiled_model_state.batch_size != p.batch_size))):
+                    shared.log.info("OpenVINO: Resolution change detected")
+                    shared.log.info("OpenVINO: Recompiling base model")
+                    sd_models.unload_model_weights(op='model')
+                    sd_models.reload_model_weights(op='model')
+                    if is_refiner_enabled:
+                        shared.log.info("OpenVINO: Recompiling refiner")
+                        sd_models.unload_model_weights(op='refiner')
+                        sd_models.reload_model_weights(op='refiner')
+                shared.sd_model.compiled_model_state.height = compile_height
+                shared.sd_model.compiled_model_state.width = compile_width
+                shared.sd_model.compiled_model_state.batch_size = p.batch_size
+                shared.sd_model.compiled_model_state.first_pass = False
+            else:
+                pass #Can be implemented for normal compile or TensorRT
+        else:
+            pass #Do nothing if compile is disabled
+
     is_karras_compatible = shared.sd_model.__class__.__init__.__annotations__.get("scheduler", None) == diffusers.schedulers.scheduling_utils.KarrasDiffusionSchedulers
     use_sampler = p.sampler_name if not p.is_hr_pass else p.latent_sampler
     if (not hasattr(shared.sd_model.scheduler, 'name')) or (shared.sd_model.scheduler.name != use_sampler) and (use_sampler != 'Default') and is_karras_compatible:
@@ -229,6 +254,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         unload_diffusers_lora()
         return results
 
+    recompile_model()
+
     if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
         shared.sd_model.to(devices.device)
 
@@ -262,6 +289,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     # optional hires pass
     if p.is_hr_pass:
         p.init_hr()
+        recompile_model(hires=True)
         if p.width != p.hr_upscale_to_x or p.height != p.hr_upscale_to_y:
             if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_highres_fix and hasattr(shared.sd_model, 'vae'):
                 save_intermediate(latents=output.images, suffix="-before-hires")

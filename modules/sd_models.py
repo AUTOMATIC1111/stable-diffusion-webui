@@ -807,9 +807,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                     if shared.opts.cuda_compile_backend == "openvino_fx":
                         torch._dynamo.reset()
-                        from modules.intel.openvino import openvino_fx, openvino_clear_caches, model_state # pylint: disable=unused-import
+                        from modules.intel.openvino import openvino_fx, openvino_clear_caches, ModelState # pylint: disable=unused-import
                         openvino_clear_caches()
-                        model_state.partition_id = 0
+                        sd_model.compiled_model_state = ModelState()
+                        sd_model.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
                     log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                     if hasattr(torch, '_logging'):
                         torch._logging.set_logs(dynamo=log_level, aot=log_level, inductor=log_level) # pylint: disable=protected-access

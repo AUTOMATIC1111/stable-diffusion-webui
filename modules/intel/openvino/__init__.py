@@ -11,16 +11,10 @@ from hashlib import sha256
 
 class ModelState:
     def __init__(self):
-        self.recompile = 1
-        self.device = "GPU"
         self.height = 512
         self.width = 512
         self.batch_size = 1
-        self.mode = 0
-        self.partition_id = 0
-        self.model_hash = ""
-
-model_state = ModelState()
+        self.first_pass = True
 
 @register_backend
 @fake_tensor_unsupported
@@ -31,8 +25,6 @@ def openvino_fx(subgraph, example_inputs):
         if os.getenv("OPENVINO_TORCH_MODEL_CACHING") != "0":
             os.environ.setdefault('OPENVINO_TORCH_MODEL_CACHING', "1")
             model_hash_str = sha256(subgraph.code.encode('utf-8')).hexdigest()
-            model_hash_str_file = model_hash_str + str(model_state.partition_id)
-            model_state.partition_id = model_state.partition_id + 1
             executor_parameters = {"model_hash_str": model_hash_str}
 
         example_inputs.reverse()
@@ -48,9 +40,17 @@ def openvino_fx(subgraph, example_inputs):
         else:
             os.environ.setdefault('OPENVINO_TORCH_BACKEND_DEVICE', device)
 
-        file_name = get_cached_file_name(*example_inputs, model_hash_str=model_hash_str_file, device=device, cache_root=cache_root)
+        #Cache saving keeps increasing the partition id
+        #This loop check if non 0 partition id caches exist
+        #Takes 0.002 seconds when nothing is found
+        use_cached_file = False
+        for i in range(100):
+            file_name = get_cached_file_name(*example_inputs, model_hash_str=str(model_hash_str + str(i)), device=device, cache_root=cache_root)
+            if file_name is not None and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin"):
+                use_cached_file = True
+                break
 
-        if file_name is not None and os.path.isfile(file_name + ".xml") and os.path.isfile(file_name + ".bin"):
+        if use_cached_file:
             om = core.read_model(file_name + ".xml")
 
             dtype_mapping = {
