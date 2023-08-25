@@ -662,11 +662,12 @@ table.popup-table .link{
     -webkit-user-select: none;
     flex-direction: column;
 }
+#lightboxModal svg {
+    display: block;
+}
 
 .modalControls {
     display: flex;
-    gap: 1em;
-    padding: 1em;
     background-color:rgba(0,0,0,0);
     z-index: 1;
     transition: 0.2s ease background-color;
@@ -677,18 +678,23 @@ table.popup-table .link{
 .modalClose {
     margin-left: auto;
 }
-.modalControls span{
+.modalControls a{
     color: white;
     text-shadow: 0px 0px 0.25em black;
     font-size: 35px;
     font-weight: bold;
     cursor: pointer;
-    width: 1em;
 }
 
-.modalControls span:hover, .modalControls span:focus{
+.modalControls a:hover, .modalControls a:focus{
     color: #999;
     text-decoration: none;
+}
+
+.modalControls svg {
+    padding: 16px;
+    width: 32px;
+    height: 32px;
 }
 
 #lightboxModal > img {
@@ -718,11 +724,9 @@ table.popup-table .link{
   top: 50%;
   width: auto;
   padding: 16px;
-  margin-top: -50px;
+  margin-top: -32px;
   color: white;
-  font-weight: bold;
-  font-size: 20px;
-  transition: 0.6s ease;
+  transition: 0.6s ease background-color;
   border-radius: 0 3px 3px 0;
   user-select: none;
   -webkit-user-select: none;

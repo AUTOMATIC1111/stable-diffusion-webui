@@ -195,31 +195,31 @@ document.addEventListener("DOMContentLoaded", function() {
     modalControls.className = 'modalControls gradio-container';
     modal.append(modalControls);
 
-    const modalZoom = document.createElement('span');
+    const modalZoom = document.createElement('a');
     modalZoom.className = 'modalZoom cursor';
-    modalZoom.innerHTML = '&#10529;';
+    modalZoom.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>';
     modalZoom.addEventListener('click', modalZoomToggle, true);
     modalZoom.title = "Toggle zoomed view";
     modalControls.appendChild(modalZoom);
 
-    const modalTileImage = document.createElement('span');
+    const modalTileImage = document.createElement('a');
     modalTileImage.className = 'modalTileImage cursor';
-    modalTileImage.innerHTML = '&#8862;';
+    modalTileImage.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>';
     modalTileImage.addEventListener('click', modalTileImageToggle, true);
     modalTileImage.title = "Preview tiling";
     modalControls.appendChild(modalTileImage);
 
-    const modalSave = document.createElement("span");
+    const modalSave = document.createElement("a");
     modalSave.className = "modalSave cursor";
     modalSave.id = "modal_save";
-    modalSave.innerHTML = "&#x1F5AB;";
+    modalSave.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>';
     modalSave.addEventListener("click", modalSaveImage, true);
-    modalSave.title = "Save Image(s)";
+    modalSave.title = "Save image(s)";
     modalControls.appendChild(modalSave);
 
-    const modalClose = document.createElement('span');
+    const modalClose = document.createElement('a');
     modalClose.className = 'modalClose cursor';
-    modalClose.innerHTML = '&times;';
+    modalClose.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
     modalClose.onclick = closeModal;
     modalClose.title = "Close image viewer";
     modalControls.appendChild(modalClose);
@@ -233,7 +233,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const modalPrev = document.createElement('a');
     modalPrev.className = 'modalPrev';
-    modalPrev.innerHTML = '&#10094;';
+    modalPrev.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>';
     modalPrev.tabIndex = 0;
     modalPrev.addEventListener('click', modalPrevImage, true);
     modalPrev.addEventListener('keydown', modalKeyHandler, true);
@@ -241,7 +241,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     const modalNext = document.createElement('a');
     modalNext.className = 'modalNext';
-    modalNext.innerHTML = '&#10095;';
+    modalNext.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
     modalNext.tabIndex = 0;
     modalNext.addEventListener('click', modalNextImage, true);
     modalNext.addEventListener('keydown', modalKeyHandler, true);
