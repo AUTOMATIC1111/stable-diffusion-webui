@@ -243,6 +243,7 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
+        self.add_api_route("/sdapi/v1/extensions", self.get_extensions_list, methods=["GET"], response_model=List[models.ExtensionItem])
 
         if shared.cmd_opts.api_server_stop:
             self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
@@ -769,6 +770,25 @@ class Api:
         except Exception as err:
             cuda = {'error': f'{err}'}
         return models.MemoryResponse(ram=ram, cuda=cuda)
+    
+    def get_extensions_list(self):
+        from modules import extensions
+        extensions.list_extensions()
+        ext_list = []
+        for ext in extensions.extensions:
+            ext: extensions.Extension
+            ext.read_info_from_repo()
+            if ext.remote is not None:
+                ext_list.append({
+                    "name": ext.name,
+                    "remote": ext.remote,
+                    "branch": ext.branch,
+                    "commit_hash":ext.commit_hash,
+                    "commit_date":ext.commit_date,
+                    "version":ext.version,
+                    "enabled":ext.enabled
+                })
+        return ext_list
 
     def launch(self, server_name, port, root_path):
         self.app.include_router(self.router)
