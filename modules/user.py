@@ -89,6 +89,7 @@ def encrypt(message: str, passphrase: str):
 def request_tu(username, password):
     host = 'https://draw-plus-backend-qa.xingzheai.cn'
     path = "/v1/login"
+    bucket_path = "/v1/users/user_info"
 
     try:
         encrypted = encrypt(password, 'ZSYL20200707ZSYL')
@@ -105,6 +106,17 @@ def request_tu(username, password):
                     'token': token,
                     'expire': expire,
                 })
+
+                bucket_resp = requests.get(host + bucket_path, headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {token}' if not token.startswith('Bearer') else token
+                }, timeout=10)
+                if bucket_resp:
+                    data = bucket_resp.json()
+                    if data.get('code', -1) == 200:
+                        xz_bucket = data['data']['bucket']
+                        setattr(opts, 'xz_bucket', xz_bucket)
+
                 return expire
 
     except Exception as ex:
