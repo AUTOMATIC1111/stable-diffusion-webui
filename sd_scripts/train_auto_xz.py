@@ -686,7 +686,7 @@ def train_auto(
         list_train_data_dir=[process_dir],
         save_model_as="safetensors",
         num_repeats=[f"{repeats_n}"],
-        batch_size=24,
+        batch_size=12,
         resolution=f"{width_train},{height_train}",
         epoch=10,  # 整数，随便填
         network_module="networks.lora",

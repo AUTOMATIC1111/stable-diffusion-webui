@@ -127,6 +127,7 @@ class TaskType(IntEnum):
     Train = 4
     Tagger = 5
     RefineImage = 6
+    Digital = 7
 
 
 class TaskStatus(IntEnum):

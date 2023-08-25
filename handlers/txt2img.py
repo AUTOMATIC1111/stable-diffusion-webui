@@ -5,7 +5,6 @@
 # @Site    : 
 # @File    : txt2img.py
 # @Software: Hifive
-import os.path
 import time
 import typing
 import modules.scripts
