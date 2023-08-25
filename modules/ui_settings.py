@@ -35,7 +35,8 @@ def create_setting_component(key, is_quicksettings=False):
     elif t == bool:
         comp = gr.Checkbox
     else:
-        raise Exception(f'bad options item type: {t} for key {key}')
+        msg = f'bad options item type: {t} for key {key}'
+        raise Exception(msg)
 
     elem_id = f"setting_{key}"
 

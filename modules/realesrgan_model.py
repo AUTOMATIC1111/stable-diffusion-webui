@@ -72,9 +72,11 @@ class UpscalerRealESRGAN(Upscaler):
                         model_dir=self.model_download_path,
                     )
                 if not os.path.exists(scaler.local_data_path):
-                    raise FileNotFoundError(f"RealESRGAN data missing: {scaler.local_data_path}")
+                    msg = f"RealESRGAN data missing: {scaler.local_data_path}"
+                    raise FileNotFoundError(msg)
                 return scaler
-        raise ValueError(f"Unable to find model info: {path}")
+        msg = f"Unable to find model info: {path}"
+        raise ValueError(msg)
 
     def load_models(self, _):
         return get_realesrgan_models(self)

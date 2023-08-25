@@ -353,9 +353,9 @@ def prepare_environment():
         startup_timer.record("install torch")
 
     if not args.skip_torch_cuda_test and not check_run_python("import torch; assert torch.cuda.is_available()"):
+        msg = 'Torch is not able to use GPU; add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
         raise RuntimeError(
-            'Torch is not able to use GPU; '
-            'add --skip-torch-cuda-test to COMMANDLINE_ARGS variable to disable this check'
+            msg
         )
     startup_timer.record("torch GPU test")
 

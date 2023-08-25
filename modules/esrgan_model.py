@@ -179,7 +179,8 @@ class UpscalerESRGAN(Upscaler):
         elif "conv_first.weight" in state_dict:
             state_dict = mod2normal(state_dict)
         elif "model.0.weight" not in state_dict:
-            raise Exception("The file is not a recognized ESRGAN model.")
+            msg = 'The file is not a recognized ESRGAN model.'
+            raise Exception(msg)
 
         in_nc, out_nc, nf, nb, plus, mscale = infer_params(state_dict)
 

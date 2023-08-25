@@ -37,7 +37,8 @@ class RRDBNet(nn.Module):
         elif upsample_mode == 'pixelshuffle':
             upsample_block = pixelshuffle_block
         else:
-            raise NotImplementedError(f'upsample mode [{upsample_mode}] is not found')
+            msg = f'upsample mode [{upsample_mode}] is not found'
+            raise NotImplementedError(msg)
         if upscale == 3:
             upsampler = upsample_block(nf, nf, 3, act_type=act_type, convtype=convtype)
         else:
@@ -349,7 +350,8 @@ def act(act_type, inplace=True, neg_slope=0.2, n_prelu=1, beta=1.0):
     elif act_type == 'sigmoid':  # [0, 1] range output
         layer = nn.Sigmoid()
     else:
-        raise NotImplementedError(f'activation layer [{act_type}] is not found')
+        msg = f'activation layer [{act_type}] is not found'
+        raise NotImplementedError(msg)
     return layer
 
 
@@ -371,7 +373,8 @@ def norm(norm_type, nc):
     elif norm_type == 'none':
         def norm_layer(x): return Identity()
     else:
-        raise NotImplementedError(f'normalization layer [{norm_type}] is not found')
+        msg = f'normalization layer [{norm_type}] is not found'
+        raise NotImplementedError(msg)
     return layer
 
 
@@ -387,7 +390,8 @@ def pad(pad_type, padding):
     elif pad_type == 'zero':
         layer = nn.ZeroPad2d(padding)
     else:
-        raise NotImplementedError(f'padding layer [{pad_type}] is not implemented')
+        msg = f'padding layer [{pad_type}] is not implemented'
+        raise NotImplementedError(msg)
     return layer
 
 
@@ -415,7 +419,8 @@ def sequential(*args):
     """ Flatten Sequential. It unwraps nn.Sequential. """
     if len(args) == 1:
         if isinstance(args[0], OrderedDict):
-            raise NotImplementedError('sequential does not support OrderedDict input.')
+            msg = 'sequential does not support OrderedDict input.'
+            raise NotImplementedError(msg)
         return args[0]  # No sequential is needed.
     modules = []
     for module in args:

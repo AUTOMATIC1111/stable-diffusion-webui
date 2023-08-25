@@ -61,7 +61,8 @@ class RestrictedUnpickler(pickle.Unpickler):
             return set
 
         # Forbid everything else.
-        raise Exception(f"global '{module}/{name}' is forbidden")
+        msg = f"global '{module}/{name}' is forbidden"
+        raise Exception(msg)
 
 
 # Regular expression that accepts 'dirname/version', 'dirname/data.pkl', and 'dirname/data/<number>'
@@ -73,7 +74,8 @@ def check_zip_filenames(filename, names):
         if allowed_zip_names_re.match(name):
             continue
 
-        raise Exception(f"bad file inside {filename}: {name}")
+        msg = f'bad file inside {filename}: {name}'
+        raise Exception(msg)
 
 
 def check_pt(filename, extra_handler):
@@ -86,9 +88,11 @@ def check_pt(filename, extra_handler):
             # find filename of data.pkl in zip file: '<directory name>/data.pkl'
             data_pkl_filenames = [f for f in z.namelist() if data_pkl_re.match(f)]
             if len(data_pkl_filenames) == 0:
-                raise Exception(f"data.pkl not found in {filename}")
+                msg = f'data.pkl not found in {filename}'
+                raise Exception(msg)
             if len(data_pkl_filenames) > 1:
-                raise Exception(f"Multiple data.pkl found in {filename}")
+                msg = f'Multiple data.pkl found in {filename}'
+                raise Exception(msg)
             with z.open(data_pkl_filenames[0]) as file:
                 unpickler = RestrictedUnpickler(file)
                 unpickler.extra_handler = extra_handler

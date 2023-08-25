@@ -198,9 +198,11 @@ def run_modelmerger(id_task, primary_model_name, secondary_model_name, tertiary_
             # have another 4 channels for unmasked picture's latent space, plus one channel for mask, for a total of 9
             if a.shape != b.shape and a.shape[0:1] + a.shape[2:] == b.shape[0:1] + b.shape[2:]:
                 if a.shape[1] == 4 and b.shape[1] == 9:
-                    raise RuntimeError("When merging inpainting model with a normal one, A must be the inpainting model.")
+                    msg = 'When merging inpainting model with a normal one, A must be the inpainting model.'
+                    raise RuntimeError(msg)
                 if a.shape[1] == 4 and b.shape[1] == 8:
-                    raise RuntimeError("When merging instruct-pix2pix model with a normal one, A must be the instruct-pix2pix model.")
+                    msg = 'When merging instruct-pix2pix model with a normal one, A must be the instruct-pix2pix model.'
+                    raise RuntimeError(msg)
 
                 if a.shape[1] == 8 and b.shape[1] == 4:#If we have an Instruct-Pix2Pix model...
                     theta_0[key][:, 0:4, :, :] = theta_func2(a[:, 0:4, :, :], b, multiplier)#Merge only the vectors the models have in common.  Otherwise we get an error due to dimension mismatch.

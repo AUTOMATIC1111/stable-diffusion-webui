@@ -12,7 +12,8 @@ class Git(git.Git):
     """
 
     def _get_persistent_cmd(self, attr_name, cmd_name, *args, **kwargs):
-        raise NotImplementedError(f"Refusing to use persistent process: {attr_name} ({cmd_name} {args} {kwargs})")
+        msg = f"Refusing to use persistent process: {attr_name} ({cmd_name} {args} {kwargs})"
+        raise NotImplementedError(msg)
 
     def get_object_header(self, ref: str | bytes) -> tuple[str, str, int]:
         ret = subprocess.check_output(

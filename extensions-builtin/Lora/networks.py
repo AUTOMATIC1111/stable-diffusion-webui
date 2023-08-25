@@ -191,7 +191,8 @@ def load_network(name, network_on_disk):
                 break
 
         if net_module is None:
-            raise AssertionError(f"Could not find a module type (out of {', '.join([x.__class__.__name__ for x in module_types])}) that would accept those keys: {', '.join(weights.w)}")
+            msg = f"Could not find a module type (out of {', '.join([x.__class__.__name__ for x in module_types])}) that would accept those keys: {', '.join(weights.w)}"
+            raise AssertionError(msg)
 
         net.modules[key] = net_module
 
@@ -306,7 +307,8 @@ def network_apply_weights(self: Union[torch.nn.Conv2d, torch.nn.Linear, torch.nn
     weights_backup = getattr(self, "network_weights_backup", None)
     if weights_backup is None and wanted_names != ():
         if current_names != ():
-            raise RuntimeError("no backup weights found and current weights are not unchanged")
+            msg = "no backup weights found and current weights are not unchanged"
+            raise RuntimeError(msg)
 
         if isinstance(self, torch.nn.MultiheadAttention):
             weights_backup = (self.in_proj_weight.to(devices.cpu, copy=True), self.out_proj.weight.to(devices.cpu, copy=True))

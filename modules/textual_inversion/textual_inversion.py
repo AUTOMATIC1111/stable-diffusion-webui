@@ -205,7 +205,8 @@ class EmbeddingDatabase:
             shape = vec.shape[-1]
             vectors = vec.shape[0]
         else:
-            raise Exception(f"Couldn't identify {filename} as neither textual inversion embedding nor diffuser concept.")
+            msg = f"Couldn't identify {filename} as neither textual inversion embedding nor diffuser concept."
+            raise Exception(msg)
 
         embedding = Embedding(vec, name)
         embedding.step = data.get('step', None)

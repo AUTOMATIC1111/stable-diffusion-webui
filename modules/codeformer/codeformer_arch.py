@@ -55,7 +55,8 @@ class PositionEmbeddingSine(nn.Module):
         self.temperature = temperature
         self.normalize = normalize
         if scale is not None and normalize is False:
-            raise ValueError("normalize should be True if scale is passed")
+            msg = 'normalize should be True if scale is passed'
+            raise ValueError(msg)
         if scale is None:
             scale = 2 * math.pi
         self.scale = scale
@@ -93,7 +94,8 @@ def _get_activation_fn(activation):
         return F.gelu
     if activation == "glu":
         return F.glu
-    raise RuntimeError(F"activation should be relu/gelu, not {activation}.")
+    msg = f'activation should be relu/gelu, not {activation}.'
+    raise RuntimeError(msg)
 
 
 class TransformerSALayer(nn.Module):

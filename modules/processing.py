@@ -399,7 +399,8 @@ class StableDiffusionProcessing:
             self.all_negative_prompts = [self.negative_prompt] * len(self.all_prompts)
 
         if len(self.all_prompts) != len(self.all_negative_prompts):
-            raise RuntimeError(f"Received a different number of prompts ({len(self.all_prompts)}) and negative prompts ({len(self.all_negative_prompts)})")
+            msg = f"Received a different number of prompts ({len(self.all_prompts)}) and negative prompts ({len(self.all_negative_prompts)})"
+            raise RuntimeError(msg)
 
         self.all_prompts = [shared.prompt_styles.apply_styles_to_prompt(x, self.styles) for x in self.all_prompts]
         self.all_negative_prompts = [shared.prompt_styles.apply_negative_styles_to_prompt(x, self.styles) for x in self.all_negative_prompts]
@@ -767,7 +768,8 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
     if p.refiner_checkpoint not in (None, "", "None", "none"):
         p.refiner_checkpoint_info = sd_models.get_closet_checkpoint_match(p.refiner_checkpoint)
         if p.refiner_checkpoint_info is None:
-            raise Exception(f'Could not find checkpoint with name {p.refiner_checkpoint}')
+            msg = f"Could not find checkpoint with name {p.refiner_checkpoint}"
+            raise Exception(msg)
 
     p.sd_model_name = shared.sd_model.sd_checkpoint_info.name_for_extra
     p.sd_model_hash = shared.sd_model.sd_model_hash
@@ -1099,7 +1101,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 self.hr_checkpoint_info = sd_models.get_closet_checkpoint_match(self.hr_checkpoint_name)
 
                 if self.hr_checkpoint_info is None:
-                    raise Exception(f'Could not find checkpoint with name {self.hr_checkpoint_name}')
+                    msg = f"Could not find checkpoint with name {self.hr_checkpoint_name}"
+                    raise Exception(msg)
 
                 self.extra_generation_params["Hires checkpoint"] = self.hr_checkpoint_info.short_title
 
@@ -1115,7 +1118,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.latent_scale_mode = shared.latent_upscale_modes.get(self.hr_upscaler, None) if self.hr_upscaler is not None else shared.latent_upscale_modes.get(shared.latent_upscale_default_mode, "nearest")
             if self.enable_hr and self.latent_scale_mode is None:
                 if not any(x.name == self.hr_upscaler for x in shared.sd_upscalers):
-                    raise Exception(f"could not find upscaler named {self.hr_upscaler}")
+                    msg = f"could not find upscaler named {self.hr_upscaler}"
+                    raise Exception(msg)
 
             self.calculate_target_resolution()
 
@@ -1491,7 +1495,8 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
             self.batch_size = len(imgs)
             batch_images = np.array(imgs)
         else:
-            raise RuntimeError(f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less")
+            msg = f"bad number of images passed: {len(imgs)}; expecting {self.batch_size} or less"
+            raise RuntimeError(msg)
 
         image = torch.from_numpy(batch_images)
         image = image.to(shared.device, dtype=devices.dtype_vae)

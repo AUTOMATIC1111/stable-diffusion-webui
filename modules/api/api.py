@@ -566,7 +566,8 @@ class Api:
     def set_config(self, req: Dict[str, Any]):
         checkpoint_name = req.get("sd_model_checkpoint", None)
         if checkpoint_name is not None and checkpoint_name not in checkpoint_aliases:
-            raise RuntimeError(f"model {checkpoint_name!r} not found")
+            msg = f"model {checkpoint_name!r} not found"
+            raise RuntimeError(msg)
 
         for k, v in req.items():
             shared.opts.set(k, v, is_api=True)

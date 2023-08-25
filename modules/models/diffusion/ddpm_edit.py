@@ -173,7 +173,8 @@ class DDPM(pl.LightningModule):
         elif self.parameterization == "x0":
             lvlb_weights = 0.5 * np.sqrt(torch.Tensor(alphas_cumprod)) / (2. * 1 - torch.Tensor(alphas_cumprod))
         else:
-            raise NotImplementedError("mu not supported")
+            msg = 'mu not supported'
+            raise NotImplementedError(msg)
         # TODO how to choose this term
         lvlb_weights[0] = lvlb_weights[1]
         self.register_buffer('lvlb_weights', lvlb_weights, persistent=False)
@@ -321,7 +322,8 @@ class DDPM(pl.LightningModule):
             else:
                 loss = torch.nn.functional.mse_loss(target, pred, reduction='none')
         else:
-            raise NotImplementedError("unknown loss type '{loss_type}'")
+            msg = "unknown loss type '{loss_type}'"
+            raise NotImplementedError(msg)
 
         return loss
 
@@ -336,7 +338,8 @@ class DDPM(pl.LightningModule):
         elif self.parameterization == "x0":
             target = x_start
         else:
-            raise NotImplementedError(f"Paramterization {self.parameterization} not yet supported")
+            msg = f'Paramterization {self.parameterization} not yet supported'
+            raise NotImplementedError(msg)
 
         loss = self.get_loss(model_out, target, mean=False).mean(dim=[1, 2, 3])
 
@@ -579,7 +582,8 @@ class LatentDiffusion(DDPM):
         elif isinstance(encoder_posterior, torch.Tensor):
             z = encoder_posterior
         else:
-            raise NotImplementedError(f"encoder_posterior of type '{type(encoder_posterior)}' not yet implemented")
+            msg = f"encoder_posterior of type '{type(encoder_posterior)}' not yet implemented"
+            raise NotImplementedError(msg)
         return self.scale_factor * z
 
     def get_learned_conditioning(self, c):
@@ -1091,7 +1095,8 @@ class LatentDiffusion(DDPM):
                                        return_x0=return_x0,
                                        score_corrector=score_corrector, corrector_kwargs=corrector_kwargs)
         if return_codebook_ids:
-            raise DeprecationWarning("Support dropped.")
+            msg = 'Support dropped.'
+            raise DeprecationWarning(msg)
             model_mean, _, model_log_variance, logits = outputs
         elif return_x0:
             model_mean, _, model_log_variance, x0 = outputs

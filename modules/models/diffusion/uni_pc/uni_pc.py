@@ -93,7 +93,8 @@ class NoiseScheduleVP:
         """
 
         if schedule not in ['discrete', 'linear', 'cosine']:
-            raise ValueError(f"Unsupported noise schedule {schedule}. The schedule needs to be 'discrete' or 'linear' or 'cosine'")
+            msg = f"Unsupported noise schedule {schedule}. The schedule needs to be 'discrete' or 'linear' or 'cosine'"
+            raise ValueError(msg)
 
         self.schedule = schedule
         if schedule == 'discrete':
@@ -471,7 +472,8 @@ class UniPC:
             t = torch.linspace(t_T**(1. / t_order), t_0**(1. / t_order), N + 1).pow(t_order).to(device)
             return t
         else:
-            raise ValueError(f"Unsupported skip_type {skip_type}, need to be 'logSNR' or 'time_uniform' or 'time_quadratic'")
+            msg = f"Unsupported skip_type {skip_type}, need to be 'logSNR' or 'time_uniform' or 'time_quadratic'"
+            raise ValueError(msg)
 
     def get_orders_and_timesteps_for_singlestep_solver(self, steps, order, skip_type, t_T, t_0, device):
         """
@@ -496,7 +498,8 @@ class UniPC:
             K = steps
             orders = [1,] * steps
         else:
-            raise ValueError("'order' must be '1' or '2' or '3'.")
+            msg = "'order' must be '1' or '2' or '3'."
+            raise ValueError(msg)
         if skip_type == 'logSNR':
             # To reproduce the results in DPM-Solver paper
             timesteps_outer = self.get_time_steps(skip_type, t_T, t_0, K, device)

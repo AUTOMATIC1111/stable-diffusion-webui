@@ -36,7 +36,8 @@ def apply_field(field):
 
 def apply_prompt(p, x, xs):
     if xs[0] not in p.prompt and xs[0] not in p.negative_prompt:
-        raise RuntimeError(f"Prompt S/R did not find {xs[0]} in prompt or negative prompt.")
+        msg = f"Prompt S/R did not find {xs[0]} in prompt or negative prompt."
+        raise RuntimeError(msg)
 
     p.prompt = p.prompt.replace(xs[0], x)
     p.negative_prompt = p.negative_prompt.replace(xs[0], x)
@@ -70,20 +71,23 @@ def apply_order(p, x, xs):
 def confirm_samplers(p, xs):
     for x in xs:
         if x.lower() not in sd_samplers.samplers_map:
-            raise RuntimeError(f"Unknown sampler: {x}")
+            msg = f"Unknown sampler: {x}"
+            raise RuntimeError(msg)
 
 
 def apply_checkpoint(p, x, xs):
     info = modules.sd_models.get_closet_checkpoint_match(x)
     if info is None:
-        raise RuntimeError(f"Unknown checkpoint: {x}")
+        msg = f"Unknown checkpoint: {x}"
+        raise RuntimeError(msg)
     p.override_settings['sd_model_checkpoint'] = info.name
 
 
 def confirm_checkpoints(p, xs):
     for x in xs:
         if modules.sd_models.get_closet_checkpoint_match(x) is None:
-            raise RuntimeError(f"Unknown checkpoint: {x}")
+            msg = f"Unknown checkpoint: {x}"
+            raise RuntimeError(msg)
 
 
 def confirm_checkpoints_or_none(p, xs):
@@ -92,7 +96,8 @@ def confirm_checkpoints_or_none(p, xs):
             continue
 
         if modules.sd_models.get_closet_checkpoint_match(x) is None:
-            raise RuntimeError(f"Unknown checkpoint: {x}")
+            msg = f"Unknown checkpoint: {x}"
+            raise RuntimeError(msg)
 
 
 def apply_clip_skip(p, x, xs):

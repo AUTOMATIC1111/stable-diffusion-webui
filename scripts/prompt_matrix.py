@@ -59,10 +59,12 @@ class Script(scripts.Script):
         modules.processing.fix_seed(p)
         # Raise error if promp type is not positive or negative
         if prompt_type not in ["positive", "negative"]:
-            raise ValueError(f"Unknown prompt type {prompt_type}")
+            msg = f"Unknown prompt type {prompt_type}"
+            raise ValueError(msg)
         # Raise error if variations delimiter is not comma or space
         if variations_delimiter not in ["comma", "space"]:
-            raise ValueError(f"Unknown variations delimiter {variations_delimiter}")
+            msg = f"Unknown variations delimiter {variations_delimiter}"
+            raise ValueError(msg)
 
         prompt = p.prompt if prompt_type == "positive" else p.negative_prompt
         original_prompt = prompt[0] if type(prompt) == list else prompt

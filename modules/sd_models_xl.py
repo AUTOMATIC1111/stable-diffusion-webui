@@ -60,7 +60,8 @@ def tokenize(self: sgm.modules.GeneralConditioner, texts):
     for embedder in [embedder for embedder in self.embedders if hasattr(embedder, 'tokenize')]:
         return embedder.tokenize(texts)
 
-    raise AssertionError('no tokenizer available')
+    msg = 'no tokenizer available'
+    raise AssertionError(msg)
 
 
 

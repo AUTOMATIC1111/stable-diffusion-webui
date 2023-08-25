@@ -93,10 +93,12 @@ class Options:
 
                 comp_args = info.component_args if info else None
                 if isinstance(comp_args, dict) and comp_args.get('visible', True) is False:
-                    raise RuntimeError(f"not possible to set {key} because it is restricted")
+                    msg = f"not possible to set {key} because it is restricted"
+                    raise RuntimeError(msg)
 
                 if cmd_opts.hide_ui_dir_config and key in self.restricted_opts:
-                    raise RuntimeError(f"not possible to set {key} because it is restricted")
+                    msg = f"not possible to set {key} because it is restricted"
+                    raise RuntimeError(msg)
 
                 self.data[key] = value
                 return

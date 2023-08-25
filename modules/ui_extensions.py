@@ -356,7 +356,8 @@ def install_extension_from_url(dirname, url, branch_name=None):
 
     normalized_url = normalize_git_url(url)
     if any(x for x in extensions.extensions if normalize_git_url(x.remote) == normalized_url):
-        raise Exception(f'Extension with this URL is already installed: {url}')
+        msg = f"Extension with this URL is already installed: {url}"
+        raise Exception(msg)
 
     tmpdir = os.path.join(paths.data_path, "tmp", dirname)
 

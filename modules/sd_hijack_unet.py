@@ -18,7 +18,8 @@ class TorchHijackForUnet:
         if hasattr(torch, item):
             return getattr(torch, item)
 
-        raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
+        msg = f"'{type(self).__name__}' object has no attribute '{item}'"
+        raise AttributeError(msg)
 
     def cat(self, tensors, *args, **kwargs):
         if len(tensors) == 2:

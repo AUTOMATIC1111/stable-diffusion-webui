@@ -100,7 +100,8 @@ def decoder_model():
             loaded_model.to(devices.device, devices.dtype)
             sd_vae_taesd_models[model_name] = loaded_model
         else:
-            raise FileNotFoundError('TAESD model not found')
+            msg = "TAESD model not found"
+            raise FileNotFoundError(msg)
 
     return loaded_model.decoder
 
@@ -119,6 +120,7 @@ def encoder_model():
             loaded_model.to(devices.device, devices.dtype)
             sd_vae_taesd_models[model_name] = loaded_model
         else:
-            raise FileNotFoundError('TAESD model not found')
+            msg = "TAESD model not found"
+            raise FileNotFoundError(msg)
 
     return loaded_model.encoder

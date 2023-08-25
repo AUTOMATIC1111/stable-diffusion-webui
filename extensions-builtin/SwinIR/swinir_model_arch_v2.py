@@ -620,7 +620,8 @@ class Upsample(nn.Sequential):
             m.append(nn.Conv2d(num_feat, 9 * num_feat, 3, 1, 1))
             m.append(nn.PixelShuffle(3))
         else:
-            raise ValueError(f'scale {scale} is not supported. ' 'Supported scales: 2^n and 3.')
+            msg = f"scale {scale} is not supported. Supported scales: 2^n and 3."
+            raise ValueError(msg)
         super(Upsample, self).__init__(*m)
 
 class Upsample_hf(nn.Sequential):
@@ -641,7 +642,8 @@ class Upsample_hf(nn.Sequential):
             m.append(nn.Conv2d(num_feat, 9 * num_feat, 3, 1, 1))
             m.append(nn.PixelShuffle(3))
         else:
-            raise ValueError(f'scale {scale} is not supported. ' 'Supported scales: 2^n and 3.')
+            msg = f"scale {scale} is not supported. Supported scales: 2^n and 3."
+            raise ValueError(msg)
         super(Upsample_hf, self).__init__(*m)
 
 

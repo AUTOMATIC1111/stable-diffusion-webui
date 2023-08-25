@@ -59,7 +59,8 @@ class PersonalizedBase(Dataset):
         for path in tqdm.tqdm(self.image_paths):
             alpha_channel = None
             if shared.state.interrupted:
-                raise Exception("interrupted")
+                msg = "interrupted"
+                raise Exception(msg)
             try:
                 image = Image.open(path)
                 #Currently does not work for single color transparency

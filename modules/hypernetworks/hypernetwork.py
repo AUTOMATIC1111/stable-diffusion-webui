@@ -56,7 +56,8 @@ class HypernetworkModule(torch.nn.Module):
             elif activation_func in self.activation_dict:
                 linears.append(self.activation_dict[activation_func]())
             else:
-                raise RuntimeError(f'hypernetwork uses an unsupported activation function: {activation_func}')
+                msg = f"hypernetwork uses an unsupported activation function: {activation_func}"
+                raise RuntimeError(msg)
 
             # Add layer normalization
             if add_layer_norm:
@@ -94,7 +95,8 @@ class HypernetworkModule(torch.nn.Module):
                         kaiming_normal_(w, nonlinearity='leaky_relu' if 'leakyrelu' == activation_func else 'relu')
                         zeros_(b)
                     else:
-                        raise KeyError(f"Key {weight_init} is not defined as initialization!")
+                        msg = f"Key {weight_init} is not defined as initialization!"
+                        raise KeyError(msg)
         self.to(devices.device)
 
     def fix_old_state_dict(self, state_dict):

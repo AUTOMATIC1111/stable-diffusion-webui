@@ -31,11 +31,13 @@ def fetch_file(filename: str = ""):
         raise HTTPException(status_code=404, detail="File not found")
 
     if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
-        raise ValueError(f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages.")
+        msg = f"File cannot be fetched: {filename}. Must be in one of directories registered by extra pages."
+        raise ValueError(msg)
 
     ext = os.path.splitext(filename)[1].lower()
     if ext not in (".png", ".jpg", ".jpeg", ".webp", ".gif"):
-        raise ValueError(f"File cannot be fetched: {filename}. Only png, jpg, webp, and gif.")
+        msg = f"File cannot be fetched: {filename}. Only png, jpg, webp, and gif."
+        raise ValueError(msg)
 
     # would profit from returning 304
     return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
