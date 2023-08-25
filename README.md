@@ -173,6 +173,6 @@ Licenses for borrowed code can be found in `Settings -> Licenses` screen, and al
 - TAESD - Ollin Boer Bohan - https://github.com/madebyollin/taesd
 - LyCORIS - KohakuBlueleaf
 - Restart sampling - lambertae - https://github.com/Newbeeer/diffusion_restart_sampling
-- Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - feather - Cole Bemis - https://github.com/feathericons/feather
+- Initial Gradio script - posted on 4chan by an Anonymous user. Thank you Anonymous user.
 - (You)
