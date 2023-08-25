@@ -177,6 +177,10 @@ a{
     cursor: pointer;
 }
 
+.gradio-container-3-41-0 .prose * {
+    --body-text-color: 'inherit';
+}
+
 /* align-items isn't enough and elements may overflow in Safari. */
 .unequal-height {
     align-content: flex-start;
@@ -627,17 +631,21 @@ table.popup-table .link{
     box-sizing: border-box;
 }
 
-.global-popup-close:before {
-    content: "×";
-}
-
 .global-popup-close{
     position: fixed;
-    right: 0.25em;
-    top: 0;
+    right: 8px;
+    top: 8px;
     cursor: pointer;
     color: white;
-    font-size: 32pt;
+}
+.global-popup-close:hover {
+    color: #999;
+}
+.global-popup-close svg {
+    padding: 8px;
+    box-sizing: content-box;
+    width: 32px;
+    height: 32px;
 }
 
 .global-popup-inner{
@@ -917,6 +925,7 @@ footer {
 .extra-network-cards .card .button-row{
     display: none;
     position: absolute;
+    margin: 6px;
     color: white;
     right: 0;
     z-index: 1
@@ -925,26 +934,19 @@ footer {
     display: flex;
 }
 
-.extra-network-cards .card .card-button{
-    color: white;
-}
-
-.extra-network-cards .card .metadata-button:before{
-    content: "🛈";
-}
-
-.extra-network-cards .card .edit-button:before{
-    content: "🛠";
-}
-
 .extra-network-cards .card .card-button {
+    color: white;
     text-shadow: 2px 2px 3px black;
-    padding: 0.25em 0.1em;
-    font-size: 200%;
-    width: 1.5em;
+    
 }
-.extra-network-cards .card .card-button:hover{
+.extra-network-cards .card .card-button:hover {
     color: red;
+}
+.extra-network-cards .card .card-button svg {
+    padding: 6px;
+    box-sizing: content-box;
+    width: 24px;
+    height: 24px;
 }
 
 
