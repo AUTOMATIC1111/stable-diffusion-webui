@@ -936,11 +936,10 @@ footer {
 
 .extra-network-cards .card .card-button {
     color: white;
-    text-shadow: 2px 2px 3px black;
-    
+    filter: drop-shadow(0 0 4px black);
 }
 .extra-network-cards .card .card-button:hover {
-    color: red;
+    color: var(--color-accent);
 }
 .extra-network-cards .card .card-button svg {
     padding: 6px;
