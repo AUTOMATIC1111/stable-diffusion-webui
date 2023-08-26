@@ -139,6 +139,7 @@ options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_checkpoint_cache": OptionInfo(0, "Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}).info("obsolete; set to 0 and use the two settings above instead"),
     "sd_unet": OptionInfo("Automatic", "SD Unet", gr.Dropdown, lambda: {"choices": shared_items.sd_unet_items()}, refresh=shared_items.refresh_unet_list).info("choose Unet model: Automatic = use one with same filename as checkpoint; None = use Unet from checkpoint"),
     "sd_CLIP": OptionInfo("Automatic", "CLIP", gr.Dropdown, lambda: {"choices": shared_items.sd_clip_items()}, refresh=shared_items.refresh_clip_list).info("choose CLIP model: Automatic = use one with same filename as checkpoint; None = use CLIP from checkpoint"),
+    "sd_clip_overrides_per_model_preferences": OptionInfo(True, "Selected clip overrides per-model preferences").info("you can set per-model clip either by editing user metadata for checkpoints, or by making the clip have same name as checkpoint"),
     "enable_quantization": OptionInfo(False, "Enable quantization in K samplers for sharper and cleaner results. This may change existing seeds").needs_reload_ui(),
     "enable_emphasis": OptionInfo(True, "Enable emphasis").info("use (text) to make model pay more attention to text and [text] to make it pay less attention"),
     "enable_batch_seeds": OptionInfo(True, "Make K-diffusion samplers produce same images in a batch as when making a single image"),

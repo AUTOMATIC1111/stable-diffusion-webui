@@ -164,12 +164,14 @@ def configure_sigint_handler():
 
 
 def configure_opts_onchange():
-    from modules import shared, sd_models, sd_vae, ui_tempdir, sd_hijack
+    from modules import shared, sd_models, sd_vae, sd_clip, ui_tempdir, sd_hijack
     from modules.call_queue import wrap_queued_call
 
     shared.opts.onchange("sd_model_checkpoint", wrap_queued_call(lambda: sd_models.reload_model_weights()), call=False)
     shared.opts.onchange("sd_vae", wrap_queued_call(lambda: sd_vae.reload_vae_weights()), call=False)
     shared.opts.onchange("sd_vae_overrides_per_model_preferences", wrap_queued_call(lambda: sd_vae.reload_vae_weights()), call=False)
+    shared.opts.onchange("sd_clip", wrap_queued_call(lambda: sd_clip.reload_clip_weights()), call=False)
+    shared.opts.onchange("sd_clip_overrides_per_model_preferences", wrap_queued_call(lambda: sd_clip.reload_clip_weights()), call=False)
     shared.opts.onchange("temp_dir", ui_tempdir.on_tmpdir_changed)
     shared.opts.onchange("gradio_theme", shared.reload_gradio_theme)
     shared.opts.onchange("cross_attention_optimization", wrap_queued_call(lambda: sd_hijack.model_hijack.redo_hijack(shared.sd_model)), call=False)

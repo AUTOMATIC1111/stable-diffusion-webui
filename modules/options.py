@@ -177,6 +177,10 @@ class Options:
         if self.data.get('sd_vae_as_default') is not None and self.data.get('sd_vae_overrides_per_model_preferences') is None:
             self.data['sd_vae_overrides_per_model_preferences'] = not self.data.get('sd_vae_as_default')
 
+        # clip defaults
+        if self.data.get('sd_clip_as_default') is not None and self.data.get('sd_clip_overrides_per_model_preferences') is None:
+            self.data['sd_clip_overrides_per_model_preferences'] = not self.data.get('sd_clip_as_default')
+
         # 1.1.1 quicksettings list migration
         if self.data.get('quicksettings') is not None and self.data.get('quicksettings_list') is None:
             self.data['quicksettings_list'] = [i.strip() for i in self.data.get('quicksettings').split(',')]
