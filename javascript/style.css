@@ -120,7 +120,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #quicksettings > button { margin-left: -0.5em; }
 
 #settings { display: flex; gap: var(--layout-gap); }
-#settings div { border: none; min-width: max-content; }
+#settings div { border: none; display: inline-flex; justify-content: normal; }
 #settings > div.tab-content { flex: 10 0 75%; }
 
 #settings > div.tab-content > div { border: none; padding: 0; }
@@ -129,7 +129,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #settings > div.tab-nav button { display: block; border: none; text-align: left; white-space: initial; padding: 0; }
 #settings > div.tab-nav > #settings_show_all_pages { padding: var(--size-2) var(--size-4); }
 #settings .block.gradio-checkbox { margin: 0; width: auto; }
-#settings .dirtyable { display: grid; grid-template-columns: .3em auto; gap: .5em; }
+#settings .dirtyable { display: grid; gap: .5em; }
 #settings .dirtyable.hidden { display: none; }
 #settings .modification-indicator { height: 1.2em; border-radius: 1em !important; padding: 0; width: 0; margin-right: 0.5em; }
 #settings .modification-indicator:disabled { visibility: hidden; }

@@ -1,16 +1,18 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-24
+## Update for 2023-08-26
 
 - general:
   - all system and image paths are now relative by default  
   - fix extra networks previews  
   - add settings validation when performing load/save  
   - settings tab in ui now shows settings that are changed from default values  
+  - settings tab switch to compact view  
   - enable batch **img2img** scale-by workflows  
     now you can batch process with rescaling based on eah individual original image size  
   - update **gradio** major version  
     this may result in some smaller layout changes since its a major version change  
+    however, browser page load is now much faster  
   - optimize model hashing  
   - add cli param `--skip-all` that skips all installer checks  
     use at personal discretion, but it can be useful for bulk deployments  
