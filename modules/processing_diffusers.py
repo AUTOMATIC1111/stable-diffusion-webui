@@ -27,7 +27,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
 
     def hires_resize(latents): # input=latents output=pil
         latent_upscaler = shared.latent_upscale_modes.get(p.hr_upscaler, None)
-        shared.log.info(f'Diffusers Hires: upscaler={p.hr_upscaler} width={p.hr_upscale_to_x} height={p.hr_upscale_to_y} images={latents.shape[0]}')
+        shared.log.info(f'Hires: upscaler={p.hr_upscaler} width={p.hr_upscale_to_x} height={p.hr_upscale_to_y} images={latents.shape[0]}')
         if latent_upscaler is not None:
             latents = torch.nn.functional.interpolate(latents, size=(p.hr_upscale_to_y // 8, p.hr_upscale_to_x // 8), mode=latent_upscaler["mode"], antialias=latent_upscaler["antialias"])
         first_pass_images = vae_decode(latents=latents, model=shared.sd_model, full_quality=True, output_type='pil')
@@ -54,9 +54,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         shared.state.current_latent = latents
 
     def full_vae_decode(latents, model):
-        shared.log.debug(f'Diffusers VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]}')
+        shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]}')
         if shared.opts.diffusers_move_unet and not model.has_accelerate:
-            shared.log.debug('Diffusers: Moving UNet to CPU')
+            shared.log.debug('Moving to CPU: model=UNet')
             unet_device = model.unet.device
             model.unet.to(devices.cpu)
             devices.torch_gc()
@@ -69,7 +69,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         return decoded
 
     def taesd_vae_decode(latents):
-        shared.log.debug(f'Diffusers VAE decode: name=TAESD images={latents.shape[0]}')
+        shared.log.debug(f'VAE decode: name=TAESD images={latents.shape[0]}')
         decoded = torch.zeros((len(latents), 3, p.height, p.width), dtype=devices.dtype_vae, device=devices.device)
         for i in range(len(output.images)):
             decoded[i] = (sd_vae_taesd.decode(latents[i]) * 2.0) - 1.0
@@ -181,13 +181,13 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if 'negative_prompt' in clean:
             clean['negative_prompt'] = len(clean['negative_prompt'])
         if 'prompt_embeds' in clean:
-            clean['prompt_embeds'] = clean['prompt_embeds'].shape
+            clean['prompt_embeds'] = clean['prompt_embeds'].shape if torch.is_tensor(clean['prompt_embeds']) else type(clean['prompt_embeds'])
         if 'pooled_prompt_embeds' in clean:
-            clean['pooled_prompt_embeds'] = clean['pooled_prompt_embeds'].shape
+            clean['pooled_prompt_embeds'] = clean['pooled_prompt_embeds'].shape if torch.is_tensor(clean['pooled_prompt_embeds']) else type(clean['pooled_prompt_embeds'])
         if 'negative_prompt_embeds' in clean:
-            clean['negative_prompt_embeds'] = clean['negative_prompt_embeds'].shape
+            clean['negative_prompt_embeds'] = clean['negative_prompt_embeds'].shape if torch.is_tensor(clean['negative_prompt_embeds']) else type(clean['negative_prompt_embeds'])
         if 'negative_pooled_prompt_embeds' in clean:
-            clean['negative_pooled_prompt_embeds'] = clean['negative_pooled_prompt_embeds'].shape
+            clean['negative_pooled_prompt_embeds'] = clean['negative_pooled_prompt_embeds'].shape if torch.is_tensor(clean['negative_pooled_prompt_embeds']) else type(clean['negative_pooled_prompt_embeds'])
         clean['generator'] = generator_device
         shared.log.debug(f'Diffuser pipeline: {pipeline.__class__.__name__} task={sd_models.get_diffusers_task(model)} set={clean}')
         return args
@@ -318,7 +318,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if shared.opts.save and not p.do_not_save_samples and shared.opts.save_images_before_refiner and hasattr(shared.sd_model, 'vae'):
             save_intermediate(latents=output.images, suffix="-before-refiner")
         if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
-            shared.log.debug('Diffusers: Moving base model to CPU')
+            shared.log.debug('Moving to CPU: model=base')
             shared.sd_model.to(devices.cpu)
             devices.torch_gc()
 
@@ -363,7 +363,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     results.append(refiner_image)
 
         if shared.opts.diffusers_move_refiner and not shared.sd_refiner.has_accelerate:
-            shared.log.debug('Diffusers: Moving refiner model to CPU')
+            shared.log.debug('Moving to CPU: model=refiner')
             shared.sd_refiner.to(devices.cpu)
             devices.torch_gc()
 

@@ -232,8 +232,10 @@ def start_common():
     if cmd_opts.debug and hasattr(shared, 'get_version'):
         log.debug(f'Version: {shared.get_version()}')
     logging.disable(logging.NOTSET if cmd_opts.debug else logging.DEBUG)
-    if shared.cmd_opts.data_dir is not None or len(shared.cmd_opts.data_dir) > 0:
+    if shared.cmd_opts.data_dir is not None and len(shared.cmd_opts.data_dir) > 0:
         log.info(f'Using data path: {shared.cmd_opts.data_dir}')
+    if shared.cmd_opts.models_dir is not None and len(shared.cmd_opts.models_dir) > 0:
+        log.info(f'Using models path: {shared.cmd_opts.data_dir}')
     create_paths(opts)
     async_policy()
     initialize()

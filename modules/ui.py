@@ -88,12 +88,12 @@ def add_style(name: str, prompt: str, negative_prompt: str):
     return [gr.Dropdown.update(visible=True, choices=list(modules.shared.prompt_styles.styles)) for _ in range(2)]
 
 
-def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y):
+def calc_resolution_hires(enable, width, height, hr_scale, hr_resize_x, hr_resize_y, hr_upscaler):
     from modules import processing, devices
     if not enable:
         return ""
-    # if modules.shared.backend == modules.shared.Backend.DIFFUSERS:
-    #   return "Hires resize: disabled"
+    if hr_upscaler == "None":
+        return "Hires resize: None"
     p = processing.StableDiffusionProcessingTxt2Img(width=width, height=height, enable_hr=True, hr_scale=hr_scale, hr_resize_x=hr_resize_x, hr_resize_y=hr_resize_y)
     p.init_hr()
     with devices.autocast():
@@ -105,9 +105,7 @@ def resize_from_to_html(width, height, scale_by):
     target_width = int(width * scale_by)
     target_height = int(height * scale_by)
     if not target_width or not target_height:
-        return "no image selected"
-    # if modules.shared.backend == modules.shared.Backend.DIFFUSERS:
-    #   return "Hires resize: disabled"
+        return "Hires resize: no image selected"
     return f"Hires resize: from <span class='resolution'>{width}x{height}</span> to <span class='resolution'>{target_width}x{target_height}</span>"
 
 
@@ -413,7 +411,7 @@ def create_ui(startup_timer = None):
                 with FormGroup(elem_id="txt2img_script_container"):
                     custom_inputs = modules.scripts.scripts_txt2img.setup_ui()
 
-            hr_resolution_preview_inputs = [show_second_pass, width, height, hr_scale, hr_resize_x, hr_resize_y]
+            hr_resolution_preview_inputs = [show_second_pass, width, height, hr_scale, hr_resize_x, hr_resize_y, hr_upscaler]
             for preview_input in hr_resolution_preview_inputs:
                 preview_input.change(
                     fn=calc_resolution_hires,
@@ -460,7 +458,7 @@ def create_ui(startup_timer = None):
             submit.click(**txt2img_args)
 
             def enable_hr_change(visible: bool):
-                return {"visible": visible, "__type__": "update"}, f'Refiner{": disabled" if modules.shared.sd_refiner is None else ""}'
+                return {"visible": visible, "__type__": "update"}, f'Refiner: {"disabled" if modules.shared.opts.sd_model_refiner == "None" else "enabled"}'
 
             res_switch_btn.click(lambda w, h: (h, w), inputs=[width, height], outputs=[width, height], show_progress=False)
             batch_switch_btn.click(lambda w, h: (h, w), inputs=[batch_count, batch_size], outputs=[batch_count, batch_size], show_progress=False)

@@ -57,10 +57,13 @@ def compel_encode_prompts(
         negative_embeds.append(negative_embed)
         negative_pooleds.append(negative_pooled)
 
-    prompt_embeds = torch.cat(prompt_embeds, dim=0)
-    negative_embeds = torch.cat(negative_embeds, dim=0)
-    if shared.sd_model_type == "sdxl":
+    if prompt_embeds is not None:
+        prompt_embeds = torch.cat(prompt_embeds, dim=0)
+    if negative_embeds is not None:
+        negative_embeds = torch.cat(negative_embeds, dim=0)
+    if positive_pooleds is not None and shared.sd_model_type == "sdxl":
         positive_pooleds = torch.cat(positive_pooleds, dim=0)
+    if negative_pooleds is not None and shared.sd_model_type == "sdxl":
         negative_pooleds = torch.cat(negative_pooleds, dim=0)
     return prompt_embeds, positive_pooleds, negative_embeds, negative_pooleds
 

@@ -813,7 +813,7 @@ else:
 opts.data['sd_backend'] = 'diffusers' if backend == Backend.DIFFUSERS else 'original'
 opts.data['uni_pc_lower_order_final'] = opts.schedulers_use_loworder
 opts.data['uni_pc_order'] = opts.schedulers_solver_order
-log.info(f'Pipeline: {backend}')
+log.info(f'Engine: backend={backend}')
 
 
 prompt_styles = modules.styles.StyleDatabase(opts.styles_dir)
