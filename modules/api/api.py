@@ -354,7 +354,7 @@ class Api:
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
-        task_id=txt2imgreq.task_id
+        task_id=img2imgreq.task_id
         #输出任务编号
         print("任务编号为："+str(task_id))
         init_images = img2imgreq.init_images
