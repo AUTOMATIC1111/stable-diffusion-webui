@@ -11,13 +11,14 @@ import numpy as np
 import modules.scripts as scripts
 import gradio as gr
 
-from modules import images, sd_samplers, processing, sd_models, sd_vae, sd_samplers_kdiffusion, errors
+from modules import images, sd_samplers, processing, sd_models, sd_vae, sd_clip, sd_samplers_kdiffusion, errors
 from modules.processing import process_images, Processed, StableDiffusionProcessingTxt2Img
 from modules.shared import opts, state
 import modules.shared as shared
 import modules.sd_samplers
 import modules.sd_models
 import modules.sd_vae
+import modules.sd_clip
 import re
 
 from modules.ui_components import ToolButton
@@ -122,6 +123,23 @@ def find_vae(name: str):
 
 def apply_vae(p, x, xs):
     modules.sd_vae.reload_vae_weights(shared.sd_model, vae_file=find_vae(x))
+
+def find_clip(name: str):
+    if name.lower() in ['auto', 'automatic']:
+        return modules.sd_clip.unspecified
+    if name.lower() == 'none':
+        return None
+    else:
+        choices = [x for x in sorted(modules.sd_clip.clip_dict, key=lambda x: len(x)) if name.lower().strip() in x.lower()]
+        if len(choices) == 0:
+            print(f"No clip found for {name}; using automatic")
+            return modules.sd_clip.unspecified
+        else:
+            return modules.sd_clip.clip_dict[choices[0]]
+
+
+def apply_clip(p, x, xs):
+    modules.sd_clip.reload_clip_weights(shared.sd_model, clip_file=find_clip(x))
 
 
 def apply_styles(p: StableDiffusionProcessingTxt2Img, x: str, _):
@@ -259,6 +277,7 @@ axis_options = [
     AxisOptionTxt2Img("Hires upscaler", str, apply_field("hr_upscaler"), choices=lambda: [*shared.latent_upscale_modes, *[x.name for x in shared.sd_upscalers]]),
     AxisOptionImg2Img("Cond. Image Mask Weight", float, apply_field("inpainting_mask_weight")),
     AxisOption("VAE", str, apply_vae, cost=0.7, choices=lambda: ['None'] + list(sd_vae.vae_dict)),
+    AxisOption("clip", str, apply_clip, cost=0.7, choices=lambda: ['None'] + list(sd_clip.clip_dict)),
     AxisOption("Styles", str, apply_styles, choices=lambda: list(shared.prompt_styles.styles)),
     AxisOption("UniPC Order", int, apply_uni_pc_order, cost=0.5),
     AxisOption("Face restore", str, apply_face_restore, format_value=format_value),
@@ -386,13 +405,16 @@ class SharedSettingsStackHelper(object):
     def __enter__(self):
         self.CLIP_stop_at_last_layers = opts.CLIP_stop_at_last_layers
         self.vae = opts.sd_vae
+        self.clip = opts.sd_clip
         self.uni_pc_order = opts.uni_pc_order
 
     def __exit__(self, exc_type, exc_value, tb):
         opts.data["sd_vae"] = self.vae
+        opts.data["sd_clip"] = self.clip
         opts.data["uni_pc_order"] = self.uni_pc_order
         modules.sd_models.reload_model_weights()
         modules.sd_vae.reload_vae_weights()
+        modules.sd_clip.reload_clip_weights()
 
         opts.data["CLIP_stop_at_last_layers"] = self.CLIP_stop_at_last_layers
 
