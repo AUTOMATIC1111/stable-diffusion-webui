@@ -245,7 +245,8 @@ def create_ui():
                 def civit_search(name, tag, model_type):
                     import requests
                     headers = { 'Content-type': 'application/json' }
-                    url = 'https://civitai.com/api/v1/models?limit=25&types=Checkpoint&Sort=Newest'
+                    types = 'LORA' if model_type == 'LoRA' else 'Checkpoint'
+                    url = f'https://civitai.com/api/v1/models?limit=25&types={types}&Sort=Newest'
                     if name is not None and len(name) > 0:
                         url += f'&query={name}'
                     if tag is not None and len(tag) > 0:
@@ -321,12 +322,12 @@ def create_ui():
                     log.debug(f'CivitAI select: variant={in_data[evt.index[0]]}')
                     return in_data[evt.index[0]][3], in_data[evt.index[0]][0], gr.update(interactive=True)
 
-                def civit_download_model(model_url: str, model_name: str, model_path: str, image_url: str):
+                def civit_download_model(model_url: str, model_name: str, model_path: str, model_type: str, image_url: str):
                     if model_url is None or len(model_url) == 0:
                         return 'No model selected'
                     try:
                         from modules.modelloader import download_civit_model
-                        res = download_civit_model(model_url, model_name, model_path, image_url)
+                        res = download_civit_model(model_url, model_name, model_path, model_type, image_url)
                     except Exception as e:
                         res = f"CivitAI model downloaded error: model={model_url} {e}"
                         log.error(res)
@@ -337,7 +338,7 @@ def create_ui():
 
                 with gr.Row():
                     with gr.Column(scale=1):
-                        civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'Other'], value='SD 1.5')
+                        civit_model_type = gr.Dropdown(label='Model type', choices=['SD 1.5', 'SD XL', 'LoRA', 'Other'], value='LoRA')
                     with gr.Column(scale=15):
                         with gr.Row():
                             civit_search_text = gr.Textbox('', label = 'Seach models', placeholder='keyword')
@@ -369,4 +370,4 @@ def create_ui():
                 civit_results1.select(fn=civit_select1, inputs=[civit_results1], outputs=[civit_results2, models_image])
                 civit_results2.select(fn=civit_select2, inputs=[civit_results2], outputs=[civit_results3])
                 civit_results3.select(fn=civit_select3, inputs=[civit_results3], outputs=[civit_selected, civit_name, civit_search_btn])
-                civit_download_model_btn.click(fn=civit_download_model, inputs=[civit_selected, civit_name, civit_path, models_image], outputs=[models_outcome])
+                civit_download_model_btn.click(fn=civit_download_model, inputs=[civit_selected, civit_name, civit_path, civit_model_type, models_image], outputs=[models_outcome])

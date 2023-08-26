@@ -54,8 +54,11 @@ def walk(top, onerror:callable=None):
     yield top, nondirs
 
 
-def download_civit_model(model_url: str, model_name: str, model_path: str, preview):
-    model_file = os.path.join(shared.opts.ckpt_dir, model_path, model_name)
+def download_civit_model(model_url: str, model_name: str, model_path: str, model_type: str, preview):
+    if model_type == 'LoRA':
+        model_file = os.path.join(shared.opts.lora_dir, model_path, model_name)
+    else:
+        model_file = os.path.join(shared.opts.ckpt_dir, model_path, model_name)
     res = f'CivitAI download: name={model_name} url={model_url} path={model_path}'
     if os.path.isfile(model_file):
         res += ' already exists'

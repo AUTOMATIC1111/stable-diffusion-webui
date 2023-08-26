@@ -248,12 +248,10 @@ class ExtraNetworksPage:
 
     def find_preview(self, path):
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
-        for file in [f'{path}.thumb.{ext}' for ext in preview_extensions]: # use thumbnail if exists
+        for file in [f'{path}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
             if os.path.exists(file):
-                return self.link_preview(file)
-        for file in [f'{path}{mid}{ext}' for ext in preview_extensions for mid in ['.preview.', '.']]:
-            if os.path.exists(file):
-                self.missing_thumbs.append(file)
+                if '.thumb.' not in file:
+                    self.missing_thumbs.append(file)
                 return self.link_preview(file)
         return self.link_preview('html/card-no-preview.png')
 
