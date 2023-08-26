@@ -109,6 +109,7 @@ class State:
     textinfo = None
     time_start = None
     server_start = None
+    task_id = ""
     _server_command_signal = threading.Event()
     _server_command: Optional[str] = None
 

@@ -301,6 +301,9 @@ class Api:
         return script_args
 
     def text2imgapi(self, txt2imgreq: models.StableDiffusionTxt2ImgProcessingAPI):
+        task_id=txt2imgreq.task_id
+        #输出任务编号
+        print("任务编号为："+str(task_id))
         script_runner = scripts.scripts_txt2img
         if not script_runner.scripts:
             script_runner.initialize_scripts(False)
@@ -328,6 +331,7 @@ class Api:
         args.pop('save_images', None)
 
         with self.queue_lock:
+
             with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
                 p.scripts = script_runner
                 p.outpath_grids = opts.outdir_txt2img_grids
@@ -335,6 +339,7 @@ class Api:
 
                 try:
                     shared.state.begin(job="scripts_txt2img")
+                    shared.state.task_id = task_id
                     if selectable_scripts is not None:
                         p.script_args = script_args
                         processed = scripts.scripts_txt2img.run(p, *p.script_args) # Need to pass args as list here
@@ -349,6 +354,9 @@ class Api:
         return models.TextToImageResponse(images=b64images, parameters=vars(txt2imgreq), info=processed.js())
 
     def img2imgapi(self, img2imgreq: models.StableDiffusionImg2ImgProcessingAPI):
+        task_id=txt2imgreq.task_id
+        #输出任务编号
+        print("任务编号为："+str(task_id))
         init_images = img2imgreq.init_images
         if init_images is None:
             raise HTTPException(status_code=404, detail="Init image not found")
@@ -394,6 +402,7 @@ class Api:
 
                 try:
                     shared.state.begin(job="scripts_img2img")
+                    shared.state.task_id = task_id
                     if selectable_scripts is not None:
                         p.script_args = script_args
                         processed = scripts.scripts_img2img.run(p, *p.script_args) # Need to pass args as list here
@@ -453,7 +462,9 @@ class Api:
 
         if shared.state.job_count == 0:
             return models.ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict(), textinfo=shared.state.textinfo)
-
+        task_id = req.task_id
+        if shared.state.task_id != task_id:
+            return models.ProgressResponse(progress=0, eta_relative=0, state=shared.state.dict(), textinfo=shared.state.textinfo)
         # avoid dividing zero
         progress = 0.01
 

@@ -108,6 +108,7 @@ StableDiffusionTxt2ImgProcessingAPI = PydanticModelGenerator(
         {"key": "send_images", "type": bool, "default": True},
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
+        {"key": "task_id", "type": str, "default": None},
     ]
 ).generate_model()
 
@@ -125,6 +126,7 @@ StableDiffusionImg2ImgProcessingAPI = PydanticModelGenerator(
         {"key": "send_images", "type": bool, "default": True},
         {"key": "save_images", "type": bool, "default": False},
         {"key": "alwayson_scripts", "type": dict, "default": {}},
+        {"key": "task_id", "type": str, "default": None},
     ]
 ).generate_model()
 
@@ -180,6 +182,7 @@ class PNGInfoResponse(BaseModel):
     items: dict = Field(title="Items", description="An object containing all the info the image had")
 
 class ProgressRequest(BaseModel):
+    task_id: str = Field(default="", title="task id", description="任务编号")
     skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")
 
 class ProgressResponse(BaseModel):
