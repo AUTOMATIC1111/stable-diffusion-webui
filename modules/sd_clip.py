@@ -46,7 +46,7 @@ def store_base_clip(model):
     global base_clip, checkpoint_info
     if checkpoint_info != model.sd_checkpoint_info:
         assert not loaded_clip_file, "Trying to store non-base clip!"
-        base_clip = deepcopy(model.first_stage_model.state_dict())
+        base_clip = deepcopy(model.cond_stage_model.state_dict())
         checkpoint_info = model.sd_checkpoint_info
 
 
@@ -188,6 +188,11 @@ def resolve_clip(checkpoint_file) -> clipResolution:
 def load_clip_dict(filename, map_location):
     clip_ckpt = sd_models.read_state_dict(filename, map_location=map_location)
     clip_dict_1 = {k: v for k, v in clip_ckpt.items() if k[0:4] != "loss" and k not in clip_ignore_keys}
+    #check key format and fix if transformer. is missing
+    for key in list(clip_dict_1.keys()):
+        if key.startswith("text_model."):
+            new_key = "transformer."+key
+            clip_dict_1[new_key] = clip_dict_1.pop(key)
     return clip_dict_1
 
 
@@ -236,8 +241,8 @@ def load_clip(model, clip_file=None, clip_source="from unknown source"):
 
 # don't call this from outside
 def _load_clip_dict(model, clip_dict_1):
-    model.first_stage_model.load_state_dict(clip_dict_1)
-    model.first_stage_model.to(devices.dtype_clip)
+    model.cond_stage_model.load_state_dict(clip_dict_1)
+    model.cond_stage_model.to(devices.dtype_clip)
 
 
 def clear_loaded_clip():

@@ -77,6 +77,7 @@ device_esrgan: torch.device = None
 device_codeformer: torch.device = None
 dtype: torch.dtype = torch.float16
 dtype_vae: torch.dtype = torch.float16
+dtype_clip: torch.dtype = torch.float16
 dtype_unet: torch.dtype = torch.float16
 unet_needs_upcast = False
 
