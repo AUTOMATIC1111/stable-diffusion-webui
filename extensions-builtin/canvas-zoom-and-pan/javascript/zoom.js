@@ -385,6 +385,8 @@ onUiLoaded(async() => {
                 targetElement.style.overflow = "hidden";
             }
 
+            targetElement.isZoomed = false;
+
             fixCanvas();
             targetElement.style.transform = `scale(${elemData[elemId].zoomLevel}) translate(${elemData[elemId].panX}px, ${elemData[elemId].panY}px)`;
 
@@ -479,7 +481,7 @@ onUiLoaded(async() => {
 
         // Update the zoom level and pan position of the target element based on the values of the zoomLevel, panX and panY variables
         function updateZoom(newZoomLevel, mouseX, mouseY) {
-            newZoomLevel = Math.max(0.5, Math.min(newZoomLevel, 15));
+            newZoomLevel = Math.max(0.1, Math.min(newZoomLevel, 15));
 
             elemData[elemId].panX +=
                 mouseX - (mouseX * newZoomLevel) / elemData[elemId].zoomLevel;
@@ -520,6 +522,8 @@ onUiLoaded(async() => {
                     zoomPosX - targetElement.getBoundingClientRect().left,
                     zoomPosY - targetElement.getBoundingClientRect().top
                 );
+
+                targetElement.isZoomed = true;
             }
         }
 
@@ -596,15 +600,14 @@ onUiLoaded(async() => {
                 `${elemId} canvas[key="interface"]`
             );
 
-            if (isExtension) {
-                targetElement.style.overflow = "visible";
-            }
-
-
             if (!canvas) return;
 
             if (canvas.offsetWidth > 862 || isExtension) {
                 targetElement.style.width = (canvas.offsetWidth + 2) + "px";
+            }
+
+            if (isExtension) {
+                targetElement.style.overflow = "visible";
             }
 
             if (fullScreenMode) {
@@ -867,7 +870,40 @@ onUiLoaded(async() => {
             isMoving = false;
         };
 
+        // Checks for extension
+        function checkForOutBox() {
+            const parentElement = targetElement.closest('[id^="component-"]');
+            if (parentElement.offsetWidth < targetElement.offsetWidth && !targetElement.isExpanded) {
+                resetZoom();
+                targetElement.isExpanded = true;
+            }
+
+            if (parentElement.offsetWidth < targetElement.offsetWidth && elemData[elemId].zoomLevel == 1) {
+                resetZoom();
+            }
+
+            if (parentElement.offsetWidth < targetElement.offsetWidth && targetElement.offsetWidth * elemData[elemId].zoomLevel > parentElement.offsetWidth && elemData[elemId].zoomLevel < 1 && !targetElement.isZoomed) {
+                resetZoom();
+            }
+        }
+
+        if (isExtension) {
+            targetElement.addEventListener("mousemove", checkForOutBox);
+        }
+
+
+        window.addEventListener('resize', (e) => {
+            resetZoom();
+
+            if (isExtension) {
+                targetElement.isExpanded = false;
+                targetElement.isZoomed = false;
+            }
+        });
+
         gradioApp().addEventListener("mousemove", handleMoveByKey);
+
+
     }
 
     applyZoomAndPan(elementIDs.sketch, false);
