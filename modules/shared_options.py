@@ -151,7 +151,7 @@ options_templates.update(options_section(('clip', "CLIP"), {
     "sd_clip": OptionInfo("Automatic", "CLIP", gr.Dropdown, lambda: {"choices": shared_items.sd_clip_items()}, refresh=shared_items.refresh_clip_list).info("choose CLIP model: Automatic = use one with same filename as checkpoint; None = use CLIP from checkpoint"),
     "sd_clip_overrides_per_model_preferences": OptionInfo(True, "Selected clip overrides per-model preferences").info("you can set per-model clip either by editing user metadata for checkpoints, or by making the clip have same name as checkpoint"),
     "CLIP_stop_at_last_layers": OptionInfo(1, "Clip skip", gr.Slider, {"minimum": 1, "maximum": 12, "step": 1}, infotext="Clip skip").link("wiki", "https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#clip-skip").info("ignore last layers of CLIP network; 1 ignores none, 2 ignores one layer"),
-    "sd_vae_checkpoint_cache": OptionInfo(0, "Clip Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "sd_clip_checkpoint_cache": OptionInfo(0, "Clip Checkpoints to cache in RAM", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
 }))
 
 options_templates.update(options_section(('sdxl', "Stable Diffusion XL"), {
