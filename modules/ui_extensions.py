@@ -543,8 +543,8 @@ def create_ui():
                     apply = gr.Button(value=apply_label, variant="primary")
                     check = gr.Button(value="Check for updates")
                     extensions_disable_all = gr.Radio(label="Disable all extensions", choices=["none", "extra", "all"], value=shared.opts.disable_all_extensions, elem_id="extensions_disable_all")
-                    extensions_disabled_list = gr.Text(elem_id="extensions_disabled_list", visible=False, container=False)
-                    extensions_update_list = gr.Text(elem_id="extensions_update_list", visible=False, container=False)
+                    extensions_disabled_list = gr.Textbox(elem_id="extensions_disabled_list", visible=False, show_label=False)
+                    extensions_update_list = gr.Textbox(elem_id="extensions_update_list", visible=False, show_label=False)
 
                 html = ""
 
@@ -579,8 +579,8 @@ def create_ui():
                 with gr.Row():
                     refresh_available_extensions_button = gr.Button(value="Load from:", variant="primary")
                     extensions_index_url = os.environ.get('WEBUI_EXTENSIONS_INDEX', "https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui-extensions/master/index.json")
-                    available_extensions_index = gr.Text(value=extensions_index_url, label="Extension index URL", container=False)
-                    extension_to_install = gr.Text(elem_id="extension_to_install", visible=False)
+                    available_extensions_index = gr.Textbox(value=extensions_index_url, label="Extension index URL", show_label=False)
+                    extension_to_install = gr.Textbox(elem_id="extension_to_install", visible=False)
                     install_extension_button = gr.Button(elem_id="install_extension_button", visible=False)
 
                 with gr.Row():
@@ -588,7 +588,7 @@ def create_ui():
                     sort_column = gr.Radio(value="newest first", label="Order", choices=["newest first", "oldest first", "a-z", "z-a", "internal order",'update time', 'create time', "stars"], type="index")
 
                 with gr.Row():
-                    search_extensions_text = gr.Text(label="Search", container=False)
+                    search_extensions_text = gr.Textbox(label="Search", placeholder="Search...", show_label=False)
 
                 install_result = gr.HTML()
                 available_extensions_table = gr.HTML()
@@ -624,9 +624,9 @@ def create_ui():
                 )
 
             with gr.TabItem("Install from URL", id="install_from_url"):
-                install_url = gr.Text(label="URL for extension's git repository")
-                install_branch = gr.Text(label="Specific branch name", placeholder="Leave empty for default main branch")
-                install_dirname = gr.Text(label="Local directory name", placeholder="Leave empty for auto")
+                install_url = gr.Textbox(label="URL for extension's git repository")
+                install_branch = gr.Textbox(label="Specific branch name", placeholder="Leave empty for default main branch")
+                install_dirname = gr.Textbox(label="Local directory name", placeholder="Leave empty for auto")
                 install_button = gr.Button(value="Install", variant="primary")
                 install_result = gr.HTML(elem_id="extension_install_result")
 

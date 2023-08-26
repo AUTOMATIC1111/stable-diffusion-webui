@@ -159,7 +159,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         self.create_default_editor_elems()
 
         self.taginfo = gr.HighlightedText(label="Training dataset tags")
-        self.edit_activation_text = gr.Text(label='Activation text', info="Will be added to prompt along with Lora")
+        self.edit_activation_text = gr.Textbox(label='Activation text', info="Will be added to prompt along with Lora")
         self.slider_preferred_weight = gr.Slider(label='Preferred weight', info="Set to 0 to disable", minimum=0.0, maximum=2.0, step=0.01)
 
         with gr.Row() as row_random_prompt:
