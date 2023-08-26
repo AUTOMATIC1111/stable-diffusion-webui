@@ -219,9 +219,14 @@ var globalPopupInner = null;
 function closePopup() {
     if (!globalPopup) return;
 
+    if (globalPopupInner && Object.hasOwn(globalPopupInner.firstElementChild, 'originalParent')) {
+        globalPopupInner.firstElementChild.style.display = "none";
+        globalPopupInner.firstElementChild.originalParent.appendChild(globalPopupInner.firstElementChild);
+    }
+
     globalPopup.style.display = "none";
 }
-function popup(contents) {
+function popup(contents, returnToParentOnClose = false) {
     if (!globalPopup) {
         globalPopup = document.createElement('div');
         globalPopup.onclick = closePopup;
@@ -241,6 +246,11 @@ function popup(contents) {
         globalPopup.appendChild(globalPopupInner);
 
         gradioApp().querySelector('.main').appendChild(globalPopup);
+    }
+
+    if (returnToParentOnClose) {
+        contents.originalParent = contents.parentElement;
+        contents.style.display = "block";
     }
 
     globalPopupInner.innerHTML = '';

@@ -103,7 +103,7 @@ class UiPromptStyles:
             show_progress=False,
         ).then(fn=None, _js="function(){update_"+tabname+"_tokens(); closePopup();}", show_progress=False)
 
-        ui_common.setup_dialog(button_show=edit_button, dialog=styles_dialog, button_close=self.close)
+        ui_common.setup_dialog(button_show=edit_button, dialog=styles_dialog, button_close=self.close, return_to_parent_on_close=True)
 
 
 

@@ -252,7 +252,7 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
     return refresh_button
 
 
-def setup_dialog(button_show, dialog, *, button_close=None):
+def setup_dialog(button_show, dialog, *, button_close=None, return_to_parent_on_close=False):
     """Sets up the UI so that the dialog (gr.Box) is invisible, and is only shown when buttons_show is clicked, in a fullscreen modal window."""
 
     dialog.visible = False
@@ -261,7 +261,7 @@ def setup_dialog(button_show, dialog, *, button_close=None):
         fn=lambda: gr.update(visible=True),
         inputs=[],
         outputs=[dialog],
-    ).then(fn=None, _js="function(){ popup(gradioApp().getElementById('" + dialog.elem_id + "')); }")
+    ).then(fn=None, _js="function(){ popup(gradioApp().getElementById('" + dialog.elem_id + "'), returnToParentOnClose=" + ("true" if return_to_parent_on_close else "false") + "); }")
 
     if button_close:
         button_close.click(fn=None, _js="closePopup")
