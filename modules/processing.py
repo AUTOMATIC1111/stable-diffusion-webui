@@ -583,14 +583,15 @@ def validate_sample(sample):
     try:
         sample = sample.astype(np.uint8)
         return sample
-    except Exception as e:
+    except (Warning, Exception) as e:
         shared.log.error(f'Failed to validate sample values: {e}')
         ok = False
     if not ok:
         try:
             sample = np.nan_to_num(sample, nan=0, posinf=255, neginf=0)
             sample = sample.astype(np.uint8)
-        except Exception as e:
+            shared.log.debug('Corrected sample values')
+        except (Warning, Exception) as e:
             shared.log.error(f'Failed to correct sample values: {e}')
             sample = np.zeros_like(sample)
             sample = sample.astype(np.uint8)
