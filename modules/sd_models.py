@@ -14,7 +14,7 @@ import ldm.modules.midas as midas
 
 from ldm.util import instantiate_from_config
 
-from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet, sd_models_xl, cache, extra_networks, processing, lowvram, sd_hijack
+from modules import paths, shared, modelloader, devices, script_callbacks, sd_vae, sd_clip, sd_disable_initialization, errors, hashes, sd_models_config, sd_unet, sd_models_xl, cache, extra_networks, processing, lowvram, sd_hijack
 from modules.timer import Timer
 import tomesd
 
@@ -128,7 +128,7 @@ def list_models():
     else:
         model_url = "https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors"
 
-    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors"])
+    model_list = modelloader.load_models(model_path=model_path, model_url=model_url, command_path=shared.cmd_opts.ckpt_dir, ext_filter=[".ckpt", ".safetensors"], download_name="v1-5-pruned-emaonly.safetensors", ext_blacklist=[".vae.ckpt", ".vae.safetensors", ".clip.ckpt", ".clip.safetensors"])
 
     if os.path.exists(cmd_ckpt):
         checkpoint_info = CheckpointInfo(cmd_ckpt)
@@ -371,6 +371,9 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     model.first_stage_model.to(devices.dtype_vae)
     timer.record("apply dtype to VAE")
 
+    model.cond_stage_model.to(devices.dtype_clip)
+    timer.record("apply dtype to CLIP")
+
     # clean up cache if limit is reached
     while len(checkpoints_loaded) > shared.opts.sd_checkpoint_cache:
         checkpoints_loaded.popitem(last=False)
@@ -388,6 +391,12 @@ def load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer
     vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename).tuple()
     sd_vae.load_vae(model, vae_file, vae_source)
     timer.record("load VAE")
+
+    sd_clip.delete_base_clip()
+    sd_clip.clear_loaded_clip()
+    clip_file, clip_source = sd_clip.resolve_clip(checkpoint_info.filename).tuple()
+    sd_clip.load_clip(model, clip_file, clip_source)
+    timer.record("load clip")
 
 
 def enable_midas_autodownload():
@@ -492,6 +501,9 @@ class SdModelData:
             sd_vae.base_vae = getattr(v, "base_vae", None)
             sd_vae.loaded_vae_file = getattr(v, "loaded_vae_file", None)
             sd_vae.checkpoint_info = v.sd_checkpoint_info
+            sd_clip.base_clip = getattr(v, "base_clip", None)
+            sd_clip.loaded_clip_file = getattr(v, "loaded_clip_file", None)
+            sd_clip.checkpoint_info = v.sd_checkpoint_info
 
         try:
             self.loaded_sd_models.remove(v)
@@ -673,6 +685,7 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
 
         print(f"Using already loaded model {already_loaded.sd_checkpoint_info.title}: done in {timer.summary()}")
         sd_vae.reload_vae_weights(already_loaded)
+        sd_clip.reload_clip_weights(already_loaded)
         return model_data.sd_model
     elif shared.opts.sd_checkpoints_limit > 1 and len(model_data.loaded_sd_models) < shared.opts.sd_checkpoints_limit:
         print(f"Loading model {checkpoint_info.title} ({len(model_data.loaded_sd_models) + 1} out of {shared.opts.sd_checkpoints_limit})")
@@ -687,6 +700,9 @@ def reuse_model_from_already_loaded(sd_model, checkpoint_info, timer):
         sd_vae.base_vae = getattr(sd_model, "base_vae", None)
         sd_vae.loaded_vae_file = getattr(sd_model, "loaded_vae_file", None)
         sd_vae.checkpoint_info = sd_model.sd_checkpoint_info
+        sd_clip.base_clip = getattr(sd_model, "base_clip", None)
+        sd_clip.loaded_clip_file = getattr(sd_model, "loaded_clip_file", None)
+        sd_clip.checkpoint_info = sd_model.sd_checkpoint_info
 
         print(f"Reusing loaded model {sd_model.sd_checkpoint_info.title} to load {checkpoint_info.title}")
         return sd_model

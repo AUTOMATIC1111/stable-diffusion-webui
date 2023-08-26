@@ -159,7 +159,7 @@ def resolve_clip_from_user_metadata(checkpoint_file) -> clipResolution:
 
 def resolve_clip_near_checkpoint(checkpoint_file) -> clipResolution:
     clip_near_checkpoint = find_clip_near_checkpoint(checkpoint_file)
-    if clip_near_checkpoint is not None and (not shared.opts.sd_clip_overrides_per_model_preferences or is_automatic):
+    if clip_near_checkpoint is not None and (not shared.opts.sd_clip_overrides_per_model_preferences or is_automatic()):
         return clipResolution(clip_near_checkpoint, 'found near the checkpoint')
 
     return clipResolution(resolved=False)
