@@ -233,6 +233,7 @@ class Api:
         self.add_api_route("/sdapi/v1/embeddings", self.get_embeddings, methods=["GET"], response_model=models.EmbeddingsResponse)
         self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
         self.add_api_route("/sdapi/v1/refresh-vae", self.refresh_vae, methods=["POST"])
+        self.add_api_route("/sdapi/v1/refresh-clip", self.refresh_clip, methods=["POST"])
         self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=models.CreateResponse)
         self.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=models.CreateResponse)
         self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=models.PreprocessResponse)
@@ -652,6 +653,10 @@ class Api:
     def refresh_vae(self):
         with self.queue_lock:
             shared_items.refresh_vae_list()
+
+    def refresh_clip(self):
+        with self.queue_lock:
+            shared_items.refresh_clip_list()
 
     def create_embedding(self, args: dict):
         try:

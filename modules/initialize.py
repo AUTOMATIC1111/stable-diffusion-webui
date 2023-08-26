@@ -123,6 +123,10 @@ def initialize_rest(*, reload_script_modules=False):
     sd_vae.refresh_vae_list()
     startup_timer.record("refresh VAE")
 
+    from modules import sd_clip
+    sd_clip.refresh_clip_list()
+    startup_timer.record("refresh clip")
+
     from modules import textual_inversion
     textual_inversion.textual_inversion.list_textual_inversion_templates()
     startup_timer.record("refresh textual inversion templates")

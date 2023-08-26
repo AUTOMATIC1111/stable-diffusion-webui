@@ -37,11 +37,22 @@ def sd_unet_items():
 
     return ["Automatic"] + [x.label for x in modules.sd_unet.unet_options] + ["None"]
 
+def sd_clip_items():
+    import modules.sd_clip
+
+    return ["Automatic", "None"] + list(modules.sd_clip.clip_dict)
+
 
 def refresh_unet_list():
     import modules.sd_unet
 
     modules.sd_unet.list_unets()
+
+
+def refresh_clip_list():
+    import modules.sd_clip
+
+    modules.sd_clip.refresh_clip_list()
 
 
 def list_checkpoint_tiles():
