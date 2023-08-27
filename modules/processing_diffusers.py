@@ -152,8 +152,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                     # args['negative_prompt_2'] = None
             else:
                 args['negative_prompt'] = negative_prompts
-        if 'num_inference_steps' in possible:
-            args['num_inference_steps'] = p.steps if not p.is_hr_pass else p.hr_second_pass_steps
         if 'guidance_scale' in possible:
             args['guidance_scale'] = p.cfg_scale
         if 'generator' in possible:
@@ -269,10 +267,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_prompts=negative_prompts,
         prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
         negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
+        num_inference_steps=p.steps,
         eta=shared.opts.eta_ddim,
         guidance_rescale=p.diffusers_guidance_rescale,
-        denoising_start=0 if is_refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
-        denoising_end=p.refiner_start if is_refiner_enabled and p.refiner_start > 0 and p.refiner_start < 1 else None,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
         is_refiner=False,
         clip_skip=p.clip_skip,
@@ -306,6 +303,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 negative_prompts=negative_prompts,
                 prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
                 negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
+                num_inference_steps=int((p.hr_second_pass_steps // p.denoising_strength) + 1),
                 eta=shared.opts.eta_ddim,
                 guidance_rescale=p.diffusers_guidance_rescale,
                 output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
