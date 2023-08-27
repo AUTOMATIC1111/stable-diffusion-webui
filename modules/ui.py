@@ -808,8 +808,6 @@ def create_ui(startup_timer = None):
                 button.click(
                     fn=add_style,
                     _js="ask_for_style_name",
-                    # Have to pass empty dummy component here, because the JavaScript and Python function have to accept
-                    # the same number of parameters, but we only know the style-name after the JavaScript prompt
                     inputs=[dummy_component, prompt, negative_prompt],
                     outputs=[txt2img_prompt_styles, img2img_prompt_styles],
                 )
@@ -1059,31 +1057,10 @@ def create_ui(startup_timer = None):
         def reload_sd_weights():
             modules.sd_models.reload_model_weights()
 
-        unload_sd_model.click(
-            fn=unload_sd_weights,
-            inputs=[],
-            outputs=[]
-        )
-
-        reload_sd_model.click(
-            fn=reload_sd_weights,
-            inputs=[],
-            outputs=[]
-        )
-
-        request_notifications.click(
-            fn=lambda: None,
-            inputs=[],
-            outputs=[],
-            _js='function(){}'
-        )
-
-        preview_theme.click(
-            fn=None,
-            _js='preview_theme',
-            inputs=[dummy_component],
-            outputs=[dummy_component]
-        )
+        unload_sd_model.click(fn=unload_sd_weights, inputs=[], outputs=[])
+        reload_sd_model.click(fn=reload_sd_weights, inputs=[], outputs=[])
+        request_notifications.click(fn=lambda: None, inputs=[], outputs=[], _js='function(){}')
+        preview_theme.click(fn=None, _js='preview_theme', inputs=[dummy_component], outputs=[dummy_component])
 
     startup_timer.record("ui-settings")
 
@@ -1140,7 +1117,6 @@ def create_ui(startup_timer = None):
         for _i, k, _item in quicksettings_list:
             component = component_dict[k]
             info = opts.data_labels[k]
-
             change_handler = component.release if hasattr(component, 'release') else component.change
             change_handler(
                 fn=lambda value, k=k: run_settings_single(value, key=k),

@@ -21,6 +21,7 @@ class UiLoadsave:
     def add_component(self, path, x):
         """adds component to the registry of tracked components"""
         assert not self.finalized_ui
+
         def apply_field(obj, field, condition=None, init_field=None):
             key = f"{path}/{field}"
             if getattr(obj, 'custom_script_source', None) is not None:
@@ -40,6 +41,7 @@ class UiLoadsave:
                     init_field(saved_value)
             if field == 'value' and key not in self.component_mapping:
                 self.component_mapping[key] = x
+
         if type(x) in [gr.Slider, gr.Radio, gr.Checkbox, gr.Textbox, gr.Number, gr.Dropdown, ToolButton, gr.Button] and x.visible:
             apply_field(x, 'visible')
         if type(x) == gr.Slider:
@@ -48,7 +50,14 @@ class UiLoadsave:
             apply_field(x, 'maximum')
             apply_field(x, 'step')
         if type(x) == gr.Radio:
-            apply_field(x, 'value', lambda val: val in x.choices)
+            def check_choices(val):
+                for choice in x.choices:
+                    if type(choice) == tuple:
+                        choice = choice[0]
+                    if choice == val:
+                        return True
+                return False
+            apply_field(x, 'value', check_choices)
         if type(x) == gr.Checkbox:
             apply_field(x, 'value')
         if type(x) == gr.Textbox:
@@ -80,8 +89,7 @@ class UiLoadsave:
         """adds all components inside a gradio block x to the registry of tracked components"""
         if hasattr(x, 'children'):
             if isinstance(x, gr.Tabs) and x.elem_id is not None:
-                # Tabs element can't have a label, have to use elem_id instead
-                self.add_component(f"{path}/Tabs@{x.elem_id}", x)
+                self.add_component(f"{path}/Tabs@{x.elem_id}", x) # Tabs element dont have a label, have to use elem_id instead
             for c in x.children:
                 self.add_block(c, path)
         elif x.label is not None:
@@ -114,6 +122,9 @@ class UiLoadsave:
         for i, name in enumerate(self.component_mapping):
             component = self.component_mapping[name]
             choices = getattr(component, 'choices', None)
+            if type(choices) is list and len(choices) > 0: # fix gradio radio button choices being tuples
+                if type(choices[0]) is tuple:
+                    choices = [c[0] for c in choices]
             new_value = values[i]
             if isinstance(new_value, int) and choices:
                 if new_value >= len(choices):
