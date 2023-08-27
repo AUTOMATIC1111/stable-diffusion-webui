@@ -2,8 +2,6 @@ import sys
 
 import gradio as gr
 
-from modules import shared_cmd_options, shared_gradio_themes, options, shared_items
-from modules.interrogate import InterrogateModels
 from modules import shared_cmd_options, shared_gradio_themes, options, shared_items, sd_models_types
 from modules.paths_internal import models_path, script_path, data_path, sd_configs_path, sd_default_config, sd_model_file, default_sd_model_file, extensions_dir, extensions_builtin_dir  # noqa: F401
 from modules import util
