@@ -131,6 +131,10 @@
  * fix defaults settings page breaking when any of main UI tabs are hidden
  * fix incorrect save/display of new values in Defaults page in settings
  * fix for Reload UI function: if you reload UI on one tab, other opened tabs will no longer stop working
+ * fix an error that prevents VAE being reloaded after an option change if a VAE near the checkpoint exists ([#12797](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12737))
+ * hide broken image crop tool ([#12792](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12737))
+ * don't show hidden samplers in dropdown for XYZ script ([#12780](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12737))
+ * fix style editing dialog breaking if it's opened in both img2img and txt2img tabs
 
 
 ## 1.5.2
