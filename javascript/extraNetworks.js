@@ -249,6 +249,15 @@ function popup(contents) {
     globalPopup.style.display = "flex";
 }
 
+var storedPopupIds = {};
+function popupId(id) {
+    if(! storedPopupIds[id]){
+        storedPopupIds[id] = gradioApp().getElementById(id);
+    }
+
+    popup(storedPopupIds[id]);
+}
+
 function extraNetworksShowMetadata(text) {
     var elem = document.createElement('pre');
     elem.classList.add('popup-metadata');
