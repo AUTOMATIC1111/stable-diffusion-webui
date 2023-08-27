@@ -261,7 +261,7 @@ def setup_dialog(button_show, dialog, *, button_close=None):
         fn=lambda: gr.update(visible=True),
         inputs=[],
         outputs=[dialog],
-    ).then(fn=None, _js="function(){ popup(gradioApp().getElementById('" + dialog.elem_id + "')); }")
+    ).then(fn=None, _js="function(){ popupId('" + dialog.elem_id + "'); }")
 
     if button_close:
         button_close.click(fn=None, _js="closePopup")
