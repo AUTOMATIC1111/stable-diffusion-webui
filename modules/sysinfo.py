@@ -82,7 +82,7 @@ def get_dict():
         "Data path": paths_internal.data_path,
         "Extensions dir": paths_internal.extensions_dir,
         "Checksum": checksum_token,
-        "Commandline": sys.argv,
+        "Commandline": get_argv(),
         "Torch env info": get_torch_sysinfo(),
         "Exceptions": get_exceptions(),
         "CPU": {
@@ -122,6 +122,22 @@ def get_exceptions():
 def get_environment():
     return {k: os.environ[k] for k in sorted(os.environ) if k in environment_whitelist}
 
+
+def get_argv():
+    res = []
+
+    for v in sys.argv:
+        if shared.cmd_opts.gradio_auth and shared.cmd_opts.gradio_auth == v:
+            res.append("<hidden>")
+            continue
+
+        if shared.cmd_opts.api_auth and shared.cmd_opts.api_auth == v:
+            res.append("<hidden>")
+            continue
+
+        res.append(v)
+
+    return res
 
 re_newline = re.compile(r"\r*\n")
 
