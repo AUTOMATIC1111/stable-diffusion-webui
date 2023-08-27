@@ -216,13 +216,17 @@ def update_token_counter(text, steps):
     elif modules.shared.backend == modules.shared.Backend.DIFFUSERS:
         if modules.shared.sd_model is not None and hasattr(modules.shared.sd_model, 'tokenizer'):
             tokenizer = modules.shared.sd_model.tokenizer
-            has_bos_token = tokenizer.bos_token_id is not None
-            has_eos_token = tokenizer.eos_token_id is not None
-            ids = [modules.shared.sd_model.tokenizer(prompt) for prompt in prompts]
-            if len(ids) > 0 and hasattr(ids[0], 'input_ids'):
-                ids = [x.input_ids for x in ids]
-            token_count = max([len(x) for x in ids]) - int(has_bos_token) - int(has_eos_token)
-            max_length = tokenizer.model_max_length - int(has_bos_token) - int(has_eos_token)
+            if tokenizer is None:
+                token_count = 0
+                max_length = 75
+            else:
+                has_bos_token = tokenizer.bos_token_id is not None
+                has_eos_token = tokenizer.eos_token_id is not None
+                ids = [modules.shared.sd_model.tokenizer(prompt) for prompt in prompts]
+                if len(ids) > 0 and hasattr(ids[0], 'input_ids'):
+                    ids = [x.input_ids for x in ids]
+                token_count = max([len(x) for x in ids]) - int(has_bos_token) - int(has_eos_token)
+                max_length = tokenizer.model_max_length - int(has_bos_token) - int(has_eos_token)
         else:
             token_count = 0
             max_length = 75
