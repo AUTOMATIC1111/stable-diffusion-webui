@@ -251,7 +251,7 @@ function popup(contents) {
 
 var storedPopupIds = {};
 function popupId(id) {
-    if(! storedPopupIds[id]){
+    if (!storedPopupIds[id]) {
         storedPopupIds[id] = gradioApp().getElementById(id);
     }
 
