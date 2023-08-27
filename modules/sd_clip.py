@@ -31,7 +31,7 @@ def get_loaded_clip_hash():
     if loaded_clip_file is None:
         return None
 
-    sha256 = hashes.sha256(loaded_clip_file, 'clip')
+    sha256 = hashes.sha256(loaded_clip_file, f'clip/{get_loaded_clip_name()}')
 
     return sha256[0:10] if sha256 else None
 
@@ -101,6 +101,8 @@ def refresh_clip_list():
 
     for filepath in candidates:
         name = get_filename(filepath)
+        if filepath.startswith(clip_path):
+            name = filepath.replace(clip_path, '')
         clip_dict[name] = filepath
 
     clip_dict.update(dict(sorted(clip_dict.items(), key=lambda item: shared.natural_sort_key(item[0]))))

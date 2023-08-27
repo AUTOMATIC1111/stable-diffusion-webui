@@ -418,7 +418,7 @@ class StableDiffusionProcessing:
             hires_steps,
             use_old_scheduling,
             opts.CLIP_stop_at_last_layers,
-            shared.sd_model.loaded_clip_file,
+            self.sd_clip_hash,
             shared.sd_model.sd_checkpoint_info,
             extra_network_data,
             opts.sdxl_crop_left,
