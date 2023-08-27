@@ -395,7 +395,7 @@ def create_ui(startup_timer = None):
                     hr_second_pass_steps, latent_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers, "txt2img", False)
                     with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
                         denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.3, elem_id="txt2img_denoising_strength")
-                        refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Denoise start', value=0.8, elem_id="txt2img_refiner_start")
+                        refiner_steps = gr.Slider(minimum=0, maximum=99, step=1, label="Refiner steps", elem_id="txt2img_refiner_steps", value=4)
                     with FormRow(elem_id="txt2img_hires_finalres", variant="compact"):
                         hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
                     with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
@@ -410,6 +410,7 @@ def create_ui(startup_timer = None):
                     with FormRow(elem_id="txt2img_refiner_row1", variant="compact"):
                         image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
                         diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
+                        refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Refiner start', value=0.8, elem_id="txt2img_refiner_start")
                     with FormRow(elem_id="txt2img_refiner_row2", variant="compact"):
                         refiner_prompt = gr.Textbox(value='', label='Secondary Prompt')
                     with FormRow(elem_id="txt2img_refiner_row3", variant="compact"):
@@ -453,7 +454,7 @@ def create_ui(startup_timer = None):
                     height, width,
                     show_second_pass, denoising_strength,
                     hr_scale, hr_upscaler, hr_second_pass_steps, hr_resize_x, hr_resize_y,
-                    refiner_start, refiner_prompt, refiner_negative,
+                    refiner_steps, refiner_start, refiner_prompt, refiner_negative,
                     override_settings,
                 ] + custom_inputs,
                 outputs=[
@@ -492,6 +493,7 @@ def create_ui(startup_timer = None):
                 (clip_skip, "Clip skip"),
                 (latent_index, "Latent sampler"),
                 (denoising_strength, "Denoising strength"),
+                (refiner_steps, "Refiner steps"),
                 (refiner_start, "Refiner start"),
                 (full_quality, "Full quality"),
                 (restore_faces, "Face restoration"),
@@ -507,6 +509,7 @@ def create_ui(startup_timer = None):
                 (hr_resize_y, "Hires resize-2"),
                 (diffusers_guidance_rescale, "CFG rescale"),
                 (image_cfg_scale, "Refiner CFG scale"),
+                (refiner_steps, "Refiner steps"),
                 (refiner_start, "Refiner start"),
                 (tiling, "Tiling"),
                 (refiner_negative, "Negative2"),
@@ -754,6 +757,7 @@ def create_ui(startup_timer = None):
                     batch_count, batch_size,
                     cfg_scale, image_cfg_scale,
                     diffusers_guidance_rescale,
+                    refiner_steps,
                     refiner_start,
                     clip_skip,
                     denoising_strength,
@@ -848,6 +852,7 @@ def create_ui(startup_timer = None):
                 (clip_skip, "Clip skip"),
                 (latent_index, "Latent sampler"),
                 (denoising_strength, "Denoising strength"),
+                (refiner_steps, "Refiner steps"),
                 (refiner_start, "Refiner start"),
                 (full_quality, "Full quality"),
                 (restore_faces, "Face restoration"),
@@ -863,6 +868,7 @@ def create_ui(startup_timer = None):
                 (hr_resize_y, "Hires resize-2"),
                 (diffusers_guidance_rescale, "CFG rescale"),
                 (image_cfg_scale, "Image CFG scale"),
+                (refiner_steps, "Refiner steps"),
                 (refiner_start, "Refiner start"),
                 (tiling, "Tiling"),
                 (refiner_negative, "Negative2"),

@@ -261,15 +261,19 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
         shared.sd_model.to(devices.device)
 
+    use_denoise_start = (is_refiner_enabled and not p.is_hr_pass and p.refiner_start > 0 and p.refiner_start < 1)
+
     base_args = set_pipeline_args(
         model=shared.sd_model,
         prompts=prompts,
         negative_prompts=negative_prompts,
         prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
         negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
-        num_inference_steps=p.steps,
+        num_inference_steps=int(p.steps // (p.refiner_start if use_denoise_start else 1) + (1 if use_denoise_start else 0)),
         eta=shared.opts.eta_ddim,
         guidance_rescale=p.diffusers_guidance_rescale,
+        denoising_start=0 if use_denoise_start else None,
+        denoising_end=p.refiner_start if use_denoise_start else None,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
         is_refiner=False,
         clip_skip=p.clip_skip,
@@ -303,7 +307,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 negative_prompts=negative_prompts,
                 prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
                 negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
-                num_inference_steps=int((p.hr_second_pass_steps // p.denoising_strength) + 1),
+                num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),
                 eta=shared.opts.eta_ddim,
                 guidance_rescale=p.diffusers_guidance_rescale,
                 output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
@@ -341,7 +345,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 model=shared.sd_refiner,
                 prompts=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts[i],
                 negative_prompts=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts[i],
-                num_inference_steps=p.hr_second_pass_steps,
+                num_inference_steps=int(p.refiner_steps // (1 - p.refiner_start)) if p.refiner_start > 0 and p.refiner_start < 1 else int(p.refiner_steps // p.denoising_strength + 1),
                 eta=shared.opts.eta_ddim,
                 strength=p.denoising_strength,
                 guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
@@ -356,6 +360,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             )
             refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
             p.extra_generation_params['Image CFG scale'] = p.image_cfg_scale if p.image_cfg_scale is not None else None
+            p.extra_generation_params['Refiner steps'] = p.refiner_steps
             p.extra_generation_params['Refiner start'] = p.refiner_start
             p.extra_generation_params["Hires steps"] = p.hr_second_pass_steps
 
