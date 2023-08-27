@@ -21,9 +21,6 @@ class WebuiSdModel(LatentDiffusion):
     sd_checkpoint_info: 'CheckpointInfo'
     """structure with additional information about the file with model's weights"""
 
-    loaded_clip_file: 'str'
-    """path to the clip currently loaded"""
-
     is_sdxl: bool
     """True if the model's architecture is SDXL"""
 
