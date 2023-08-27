@@ -351,7 +351,8 @@ class FilenameGenerator:
         buffered = BytesIO()
         self.image.save(buffered, format="JPEG")
         img_str = base64.b64encode(buffered.getvalue())
-        return hashlib.sha256(img_str).hexdigest()[0:8]
+        shorthash = hashlib.sha256(img_str).hexdigest()[0:8]
+        return shorthash
 
     def prompt_no_style(self):
         if self.p is None or self.prompt is None:
