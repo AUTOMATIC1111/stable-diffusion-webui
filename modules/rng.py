@@ -1,4 +1,5 @@
 import torch
+import torchsde
 
 from modules import devices, rng_philox, shared
 
@@ -94,6 +95,63 @@ def slerp(val, low, high):
     so = torch.sin(omega)
     res = (torch.sin((1.0-val)*omega)/so).unsqueeze(1)*low + (torch.sin(val*omega)/so).unsqueeze(1) * high
     return res
+
+
+class BatchedBrownianTree:
+    def __init__(self, x, t0, t1, seed=None, **kwargs):
+        t0, t1, self.sign = self.sort(t0, t1)
+        w0 = torch.zeros_like(x)
+        if seed is None:
+            seed = torch.randint(0, 2 ** 63 - 1, []).item()
+        self.batched = True
+        try:
+            assert len(seed) == x.shape[0]
+            w0 = w0[0]
+        except TypeError:
+            seed = [seed]
+            self.batched = False
+        self._trees = [torchsde.BrownianTree(t0.cpu(), w0.cpu(), t1.cpu(), entropy=s, **kwargs) for s in seed]
+
+    @staticmethod
+    def sort(a, b):
+        return (a, b, 1) if a < b else (b, a, -1)
+
+    def __call__(self, t0, t1):
+        t0, t1, sign = self.sort(t0, t1)
+        w = torch.stack([tree(t0.cpu().float(), t1.cpu().float()).to(t0.dtype).to(t0.device) for tree in self._trees]) * (self.sign * sign)
+        return w if self.batched else w[0]
+
+
+def torchsde_original_randn(size, dtype, device, seed):
+    generator = torch.Generator(device).manual_seed(int(seed))
+    return torch.randn(size, dtype=dtype, device=device, generator=generator)
+
+
+class VanillaImageRNG:
+    def __init__(self, shape, seeds, subseeds=None, subseed_strength=0.0, seed_resize_from_h=0, seed_resize_from_w=0):
+        self.shape = tuple(map(int, shape))
+        self.seeds = seeds
+        self.subseeds = subseeds
+        self.subseed_strength = subseed_strength
+        self.seed_resize_from_h = seed_resize_from_h
+        self.seed_resize_from_w = seed_resize_from_w
+
+        self.real_shape = [len(seeds)] + list(map(int, shape))
+        self.real_generator = torch.manual_seed(self.seeds[0])
+        self.data = torch.randn(
+            self.real_shape,
+            dtype=torch.float32,
+            layout=torch.strided,
+            generator=self.real_generator,
+            device="cpu")
+
+        import k_diffusion.sampling
+        k_diffusion.sampling.BatchedBrownianTree = BatchedBrownianTree
+        import torchsde._brownian.brownian_interval
+        torchsde._brownian.brownian_interval._randn = torchsde_original_randn
+
+    def next(self):
+        return self.data.to(shared.device)
 
 
 class ImageRNG:

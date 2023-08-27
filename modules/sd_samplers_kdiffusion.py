@@ -197,7 +197,11 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
 
         sigmas = self.get_sigmas(p, steps)
 
-        x = x * sigmas[0]
+        if opts.use_vanilla_random_number_generator:
+            # https://github.com/comfyanonymous/ComfyUI/blob/a57b0c797b0670e6fd48ff3cf1f37dbf0d0a67b5/comfy/samplers.py#L716
+            x = x * torch.sqrt(1.0 + sigmas[0] ** 2.0)
+        else:
+            x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
         parameters = inspect.signature(self.func).parameters
