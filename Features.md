@@ -4,7 +4,11 @@ All examples are non-cherrypicked unless specified otherwise.
 
 # SD-XL
 
-[[PR]](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11757) | [[Stability-AI Github]](https://github.com/Stability-AI/generative-models)
+[[PR]](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/11757) | [[Stability-AI Github]](https://github.com/Stability-AI/generative-models) 
+
+Support for SD-XL was added in version `1.5.0`, with additional memory optimizations and built-in sequenced refiner inference added in version `1.6.0`.
+
+Read here for a list of tips for optimizing inference: [Optimum-SDXL-Usage](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Optimum-SDXL-Usage)
 
 ## Downloads
 
@@ -18,26 +22,12 @@ All examples are non-cherrypicked unless specified otherwise.
 
 # SD-XL BASE
 
-This is a model designed for generating quality `1024×1024`-sized images. It is **not** meant to generate good pictures at `512×512`.
-
+This is a model designed for generating quality `1024×1024`-sized images.
 
 It's tested to produce same (or very close) images as Stability-AI's repo (need to set Random number generator source = CPU in settings)
 
 
 ![img](https://user-images.githubusercontent.com/20920490/253218112-c7c02951-0c1c-47f8-98a4-4fbdcb028712.png)
-
-```
-- textual inversion should not work, embeddings need to be created specifically for SDXL.
-- train tab will not work.
-- DDIM, PLMS, UniPC samplers do not work for SDXL
-```
-
-```
-- --lowvram, --medvram works
-- attention optimizations work
-- SDXL Loras work
-- works at minimum 4gb gpu (30XX)  
-```
 
 ## SD-XL REFINER 
 
@@ -611,6 +601,16 @@ compared to normal operation on my RTX 3090.
 unconditional denoising in the same batch.
 
 This implementation of optimization does not require any modification to the original Stable Diffusion code.
+
+# TAESD
+
+[Standard inference support added](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12311) in version `1.6.0`
+
+With this lightweight VAE enabled via settings, it typically allows for very large, fast generations with a small quality loss.
+This gain can be very large, maximum generations with --lowvram can increase from `1152x1152` to `2560x2560`
+
+![image](https://github.com/AUTOMATIC1111/stable-diffusion-webui/assets/98228077/016fa4be-155d-433b-88b9-00cf7b452a8a)
+
 
 # Face restoration
 Lets you improve faces in pictures using either [GFPGAN](https://github.com/TencentARC/GFPGAN) or [CodeFormer](https://github.com/sczhou/CodeFormer). There is a checkbox in every tab to use face restoration,
