@@ -491,7 +491,7 @@ class ModelData:
         self.lock = threading.Lock()
 
     def get_sd_model(self):
-        if self.sd_model is None:
+        if self.sd_model is None and shared.opts.sd_model_checkpoint != 'None':
             with self.lock:
                 try:
                     if shared.backend == shared.Backend.ORIGINAL:
@@ -511,7 +511,7 @@ class ModelData:
         self.sd_model = v
 
     def get_sd_refiner(self):
-        if self.sd_refiner is None:
+        if self.sd_refiner is None and shared.opts.sd_model_refiner != 'None':
             with self.lock:
                 try:
                     if shared.backend == shared.Backend.ORIGINAL:

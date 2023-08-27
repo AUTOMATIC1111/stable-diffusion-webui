@@ -398,7 +398,6 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_precompile": OptionInfo(False, "Model compile precompile"),
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
-    "disable_gc": OptionInfo(True, "Disable Torch memory garbage collection"),
     "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
     "directml_memory_provider": OptionInfo(default_memory_provider, '[DirectML] Memory stats provider', gr.Dropdown, lambda: {"choices": memory_providers}),
 }))
