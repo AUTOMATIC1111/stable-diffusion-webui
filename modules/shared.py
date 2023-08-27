@@ -33,7 +33,7 @@ state = None
 
 prompt_styles = None
 
-interrogator:InterrogateModels = None
+interrogator = None
 
 face_restorers = []
 
