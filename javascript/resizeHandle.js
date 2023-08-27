@@ -134,6 +134,8 @@
 
 onUiLoaded(function() {
     for (var elem of gradioApp().querySelectorAll('.resize-handle-row')) {
-        setupResizeHandle(elem);
+        if (!elem.querySelector('.resize-handle')) {
+            setupResizeHandle(elem);
+        }
     }
 });
