@@ -14,11 +14,9 @@ All examples are non-cherrypicked unless specified otherwise.
 
 - [sd_xl_refiner_1.0_0.9vae](https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/blob/main/sd_xl_refiner_1.0_0.9vae.safetensors)
 
-These models **specifically** are recommended for generating, merging and training.
+>~~They have a built-in trained vae by [madebyollin](https://github.com/madebyollin) which fixes NaN infinity calculations running in fp16. (Here is the most up-to-date [VAE](https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors) for reference)~~ Bad/Outdated info. Using this model will not fix fp16 issues for all models. You should merge this [VAE](https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors) with the models.
 
->They have a built-in trained vae by [madebyollin](https://github.com/madebyollin) which fixes NaN infinity calculations running in fp16. (Here is the most up-to-date [VAE](https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors) for reference)
-
-## SD-XL BASE
+# SD-XL BASE
 
 This is a model designed for generating quality `1024×1024`-sized images. It is **not** meant to generate good pictures at `512×512`.
 
