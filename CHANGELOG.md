@@ -135,6 +135,7 @@
  * hide broken image crop tool ([#12792](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12737))
  * don't show hidden samplers in dropdown for XYZ script ([#12780](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12737))
  * fix style editing dialog breaking if it's opened in both img2img and txt2img tabs
+ * fix a bug allowing users to bypass gradio and API authentication (reported by vysecurity) 
 
 
 ## 1.5.2
