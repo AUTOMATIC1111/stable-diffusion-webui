@@ -32,6 +32,7 @@ class ParamBinding:
 
 def reset():
     paste_fields.clear()
+    registered_param_bindings.clear()
 
 
 def quote(text):

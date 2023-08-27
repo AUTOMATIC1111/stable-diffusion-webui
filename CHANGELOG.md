@@ -130,6 +130,7 @@
  * fix error that causes some extra networks to be disabled if both <lora:> and <lyco:> are present in the prompt
  * fix defaults settings page breaking when any of main UI tabs are hidden
  * fix incorrect save/display of new values in Defaults page in settings
+ * fix for Reload UI function: if you reload UI on one tab, other opened tabs will no longer stop working
 
 
 ## 1.5.2
