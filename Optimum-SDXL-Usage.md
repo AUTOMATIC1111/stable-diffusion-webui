@@ -17,4 +17,5 @@ Here's a quick listing of things to tune for your setup:
 ## Model weights:
 
 - use vae that will not need to run in fp32  for increased speed and less vram usage: [sdxl_vae.safetensors](https://huggingface.co/madebyollin/sdxl-vae-fp16-fix/blob/main/sdxl_vae.safetensors)
+- use [TAESD](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features#taesd)
 - use fp16 (~7gb) weights for less cpu ram usage
