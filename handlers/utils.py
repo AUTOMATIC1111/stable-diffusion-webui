@@ -296,7 +296,7 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
             if 'parameters' == k:
                 v = str(v).replace('-automatic1111', "-xingzhe")
                 print(f"image parameters:{v}")
-                v = des_encrypt(v)
+                # v = des_encrypt(v)
             pnginfo_data.add_text(k, str(v))
 
         processed_image.save(full_path, pnginfo=pnginfo_data)
