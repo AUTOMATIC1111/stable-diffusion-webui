@@ -42,6 +42,28 @@ preprocessor_aliases = {
     "pidinet_scribble": "scribble_pidinet",
     "inpaint": "inpaint_global_harmonious",
 }
+annotato_args_thr_a_dict = {
+    'canny': [1, 255],
+    'depth_leres': [0, 100],
+    'depth_leres++': [0, 100],
+    'mediapipe_face': [1, 10],
+    'mlsd': [0.01, 2],
+    'normal_midas': [0, 1],
+    'reference_adain': [0, 1],
+    'reference_adain+attn': [0, 1],
+    'reference_only': [0, 1],
+    'scribble_xdog': [1, 64],
+    'threshold': [0, 255],
+    'tile_colorfix': [3, 32],
+    'tile_colorfix+sharp': [3,32],
+    'tile_resample': [1, 8]}  
+annotato_args_thr_b_dict = {
+    'canny': [1, 255],
+    'depth_leres': [0, 100],
+    'depth_leres++': [0, 100],
+    'mediapipe_face': [1, 10],
+    'mlsd': [0.01, 20],
+    'tile_colorfix+sharp': [0,2]}  
 reverse_preprocessor_aliases = {preprocessor_aliases[k]: k for k in preprocessor_aliases.keys()}
 
 
@@ -106,7 +128,16 @@ def build_run_annotato_args(task: Task) -> typing.Tuple[typing.Optional[RunAnnot
     except Exception as err:
         return None, traceback.format_exc()
 
-
+def run_annotato_args_check(module, thr_a, thr_b):
+    thr_a=thr_a
+    thr_b=thr_b
+    if module in annotato_args_thr_a_dict.keys():
+        if not  min(annotato_args_thr_a_dict[module])<=thr_a<=max(annotato_args_thr_a_dict[module]):
+            thr_a=min(annotato_args_thr_a_dict[module]) 
+    if module in annotato_args_thr_b_dict.keys():
+        if not min(annotato_args_thr_b_dict[module])<=thr_b<=max(annotato_args_thr_b_dict[module]):
+            thr_a=min(annotato_args_thr_b_dict[module]) 
+    return thr_a,thr_b
 def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
     progress = TaskProgress.new_ready(task, 'at the ready')
     yield progress
@@ -172,6 +203,8 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
             #     print(f'target_W = {target_W}')
             #     print(f'estimation = {estimation}')
             if args.pres > 64:
+                # 参数校验：超过范围就取最小值
+                args.pthr_a,args.pthr_b=run_annotato_args_check(args.module,args.pthr_a,args.pthr_b)
                 result, is_image = preprocessor(img, res=args.pres, thr_a=args.pthr_a, thr_b=args.pthr_b)
             else:
                 result, is_image = preprocessor(img)
@@ -275,6 +308,10 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                     'pixel_perfect': item.get('pixel_perfect', False),
                     'control_mode': item.get('control_mode', 'Balanced') or 'Balanced'
                 }
+                # 参数校验
+                control_unit['threshold_a'],control_unit['threshold_b']=run_annotato_args_check(control_unit['module'],control_unit['threshold_a'],control_unit['threshold_b'])
+
+
                 control_unit['module'] = strip_model_hash(control_unit['module'])
                 control_unit['model'] = strip_model_hash(control_unit['model'])
                 # if control_unit['model'] == 'None':
