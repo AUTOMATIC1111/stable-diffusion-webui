@@ -404,7 +404,8 @@ def prepare_environment():
         run_pip(f"install -r \"{requirements_file}\"", "requirements")
         startup_timer.record("install requirements")
 
-    run_extensions_installers(settings_file=args.ui_settings_file)
+    if not args.skip_install:
+        run_extensions_installers(settings_file=args.ui_settings_file)
 
     if args.update_check:
         version_check(commit)
