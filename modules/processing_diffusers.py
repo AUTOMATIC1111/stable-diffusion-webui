@@ -23,7 +23,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     results = []
     if p.enable_hr and p.hr_upscaler != 'None' and p.denoising_strength > 0 and len(getattr(p, 'init_images', [])) == 0:
         p.is_hr_pass = True
-    is_refiner_enabled = p.enable_hr and shared.sd_refiner is not None
+    is_refiner_enabled = p.enable_hr and p.refiner_steps > 0 and shared.sd_refiner is not None
 
     def hires_resize(latents): # input=latents output=pil
         latent_upscaler = shared.latent_upscale_modes.get(p.hr_upscaler, None)
