@@ -56,6 +56,8 @@ class ProgressResponse(BaseModel):
     completed: bool = Field(title="Whether the task has already finished")
     progress: float = Field(default=None, title="Progress", description="The progress with a range of 0 to 1")
     eta: float = Field(default=None, title="ETA in secs")
+    sampling_step: int = 0
+    sampling_steps: int = 0
     live_preview: str = Field(default=None, title="Live preview image", description="Current live preview; a data: uri")
     id_live_preview: int = Field(default=None, title="Live preview image ID", description="Send this together with next request to prevent receiving same image")
     textinfo: str = Field(default=None, title="Info text", description="Info text used by WebUI.")
@@ -69,6 +71,8 @@ def progressapi(req: ProgressRequest):
     active = req.id_task == current_task
     queued = req.id_task in pending_tasks
     completed = req.id_task in finished_tasks
+    job_count, job_no ,job= shared.state.job_count, shared.state.job_no ,shared.state.job
+    sampling_steps, sampling_step = shared.state.sampling_steps, shared.state.sampling_step
 
     if not active:
         return ProgressResponse(active=active, queued=queued, completed=completed, id_live_preview=-1, textinfo="In queue..." if queued else "Waiting...")
@@ -115,7 +119,7 @@ def progressapi(req: ProgressRequest):
     else:
         live_preview = None
 
-    return ProgressResponse(active=active, queued=queued, completed=completed, progress=progress, eta=eta, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)
+    return ProgressResponse(active=active, queued=queued, completed=completed, progress=progress, eta=eta,sampling_step=sampling_step,sampling_steps=sampling_steps, live_preview=live_preview, id_live_preview=id_live_preview, textinfo=shared.state.textinfo)
 
 
 def restore_progress(id_task):

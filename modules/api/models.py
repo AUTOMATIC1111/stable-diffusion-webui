@@ -180,15 +180,20 @@ class PNGInfoResponse(BaseModel):
     items: dict = Field(title="Items", description="An object containing all the info the image had")
 
 class ProgressRequest(BaseModel):
-    skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")
+    id_task: str = Field(default=None, title="Task ID", description="id of the task to get progress for")
+    id_live_preview: int = Field(default=-1, title="Live preview image ID", description="id of last received last preview image")
 
 class ProgressResponse(BaseModel):
-    progress: float = Field(title="Progress", description="The progress with a range of 0 to 1")
-    eta_relative: float = Field(title="ETA in secs")
-    state: dict = Field(title="State", description="The current state snapshot")
-    current_image: str = Field(default=None, title="Current image", description="The current image in base64 format. opts.show_progress_every_n_steps is required for this to work.")
+    active: bool = Field(title="Whether the task is being worked on right now")
+    queued: bool = Field(title="Whether the task is in queue")
+    completed: bool = Field(title="Whether the task has already finished")
+    progress: float = Field(default=None, title="Progress", description="The progress with a range of 0 to 1")
+    eta: float = Field(default=None, title="ETA in secs")
+    sampling_step: int = 0
+    sampling_steps: int = 0
     textinfo: str = Field(default=None, title="Info text", description="Info text used by WebUI.")
-
+    id_live_preview: int = Field(default=None, title="Live preview image ID", description="Send this together with next request to prevent receiving same image")    
+    live_preview: str = Field(default=None, title="Live preview image", description="Current live preview; a data: uri")
 class InterrogateRequest(BaseModel):
     image: str = Field(default="", title="Image", description="Image to work on, must be a Base64 string containing the image's data.")
     model: str = Field(default="clip", title="Model", description="The interrogate model used.")
