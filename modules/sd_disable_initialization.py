@@ -188,6 +188,8 @@ class LoadStateDictOnMeta(ReplaceHelper):
 
                 if param.is_meta:
                     dtype = sd_param.dtype if sd_param is not None else param.dtype
+                    if dtype == torch.float64 and device.type == 'mps':
+                        dtype = torch.float32
                     module._parameters[name] = torch.nn.parameter.Parameter(torch.zeros_like(param, device=device, dtype=dtype), requires_grad=param.requires_grad)
 
             for name in module._buffers:
