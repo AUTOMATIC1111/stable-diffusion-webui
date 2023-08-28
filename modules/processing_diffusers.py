@@ -261,7 +261,9 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     if shared.opts.diffusers_move_base and not shared.sd_model.has_accelerate:
         shared.sd_model.to(devices.device)
 
-    use_denoise_start = (is_refiner_enabled and not p.is_hr_pass and p.refiner_start > 0 and p.refiner_start < 1)
+    is_img2img = (sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.IMAGE_2_IMAGE or sd_models.get_diffusers_task(shared.sd_model) == sd_models.DiffusersTaskType.INPAINTING)
+    use_refiner_start = (is_refiner_enabled and not p.is_hr_pass and not is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
+    use_denoise_start = (is_img2img and p.refiner_start > 0 and p.refiner_start < 1)
 
     base_args = set_pipeline_args(
         model=shared.sd_model,
@@ -269,11 +271,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         negative_prompts=negative_prompts,
         prompts_2=[p.refiner_prompt] if len(p.refiner_prompt) > 0 else prompts,
         negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
-        num_inference_steps=int(p.steps // (p.refiner_start if use_denoise_start else 1) + (1 if use_denoise_start else 0)),
+        num_inference_steps=int(p.steps // p.refiner_start + 1) if use_refiner_start else int(p.steps // (1 - p.refiner_start)) if use_denoise_start else int(p.steps // p.denoising_strength + 1) if is_img2img else p.steps,
         eta=shared.opts.eta_ddim,
         guidance_rescale=p.diffusers_guidance_rescale,
-        denoising_start=0 if use_denoise_start else None,
-        denoising_end=p.refiner_start if use_denoise_start else None,
+        denoising_start=0 if use_refiner_start else p.refiner_start if use_denoise_start else None,
+        denoising_end=p.refiner_start if use_refiner_start else 1 if use_denoise_start else None,
         output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
         is_refiner=False,
         clip_skip=p.clip_skip,
