@@ -2,10 +2,29 @@ import datetime
 import html
 import json
 import os.path
+from pathlib import Path
 
 import gradio as gr
 
 from modules import generation_parameters_copypaste, images, sysinfo, errors
+from modules.paths_internal import models_path
+
+
+def windows_to_unix_style(path):
+    return Path(path).as_posix()
+
+
+def exclude_root_path(root_path, path_to_exclude):
+    try:
+        relative_path = os.path.relpath(path_to_exclude, root_path)
+        # 如果路径已经在 root_path 之外，relpath 会返回绝对路径
+        # 所以需要检查路径是否在 root_path 之内
+        if not relative_path.startswith('..'):
+            return windows_to_unix_style(relative_path)
+    except ValueError:
+        pass
+    # 如果路径无法相对化，或者位于 root_path 之外，则返回原始路径
+    return windows_to_unix_style(path_to_exclude)
 
 
 class UserMetadataEditor:
@@ -98,6 +117,7 @@ class UserMetadataEditor:
             stats = os.stat(filename)
             params = [
                 ('Filename: ', os.path.basename(filename)),
+                ('Path: ', exclude_root_path(models_path, filename)),
                 ('File size: ', sysinfo.pretty_bytes(stats.st_size)),
                 ('Hash: ', shorthash),
                 ('Modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
