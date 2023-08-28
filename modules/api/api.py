@@ -4,6 +4,8 @@ import os
 import time
 import datetime
 import uvicorn
+import ipaddress
+import requests
 import gradio as gr
 from threading import Lock
 from io import BytesIO
@@ -15,7 +17,7 @@ from fastapi.encoders import jsonable_encoder
 from secrets import compare_digest
 
 import modules.shared as shared
-from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart
+from modules import sd_samplers, deepbooru, sd_hijack, images, scripts, ui, postprocessing, errors, restart, shared_items, script_callbacks, generation_parameters_copypaste
 from modules.api import models
 from modules.shared import opts
 from modules.processing import StableDiffusionProcessingTxt2Img, StableDiffusionProcessingImg2Img, process_images
@@ -23,8 +25,7 @@ from modules.textual_inversion.textual_inversion import create_embedding, train_
 from modules.textual_inversion.preprocess import preprocess
 from modules.hypernetworks.hypernetwork import create_hypernetwork, train_hypernetwork
 from PIL import PngImagePlugin,Image
-from modules.sd_models import checkpoints_list, unload_model_weights, reload_model_weights, checkpoint_aliases
-from modules.sd_vae import vae_dict
+from modules.sd_models import unload_model_weights, reload_model_weights, checkpoint_aliases
 from modules.sd_models_config import find_checkpoint_config_near_filename
 from modules.realesrgan_model import get_realesrgan_models
 from modules import devices
@@ -56,7 +57,41 @@ def setUpscalers(req: dict):
     return reqDict
 
 
+def verify_url(url):
+    """Returns True if the url refers to a global resource."""
+
+    import socket
+    from urllib.parse import urlparse
+    try:
+        parsed_url = urlparse(url)
+        domain_name = parsed_url.netloc
+        host = socket.gethostbyname_ex(domain_name)
+        for ip in host[2]:
+            ip_addr = ipaddress.ip_address(ip)
+            if not ip_addr.is_global:
+                return False
+    except Exception:
+        return False
+
+    return True
+
+
 def decode_base64_to_image(encoding):
+    if encoding.startswith("http://") or encoding.startswith("https://"):
+        if not opts.api_enable_requests:
+            raise HTTPException(status_code=500, detail="Requests not allowed")
+
+        if opts.api_forbid_local_requests and not verify_url(encoding):
+            raise HTTPException(status_code=500, detail="Request to local resource not allowed")
+
+        headers = {'user-agent': opts.api_useragent} if opts.api_useragent else {}
+        response = requests.get(encoding, timeout=30, headers=headers)
+        try:
+            image = Image.open(BytesIO(response.content))
+            return image
+        except Exception as e:
+            raise HTTPException(status_code=500, detail="Invalid image url") from e
+
     if encoding.startswith("data:image/"):
         encoding = encoding.split(";")[1].split(",")[1]
     try:
@@ -197,6 +232,7 @@ class Api:
         self.add_api_route("/sdapi/v1/prompt-styles", self.get_prompt_styles, methods=["GET"], response_model=List[models.PromptStyleItem])
         self.add_api_route("/sdapi/v1/embeddings", self.get_embeddings, methods=["GET"], response_model=models.EmbeddingsResponse)
         self.add_api_route("/sdapi/v1/refresh-checkpoints", self.refresh_checkpoints, methods=["POST"])
+        self.add_api_route("/sdapi/v1/refresh-vae", self.refresh_vae, methods=["POST"])
         self.add_api_route("/sdapi/v1/create/embedding", self.create_embedding, methods=["POST"], response_model=models.CreateResponse)
         self.add_api_route("/sdapi/v1/create/hypernetwork", self.create_hypernetwork, methods=["POST"], response_model=models.CreateResponse)
         self.add_api_route("/sdapi/v1/preprocess", self.preprocess, methods=["POST"], response_model=models.PreprocessResponse)
@@ -207,6 +243,7 @@ class Api:
         self.add_api_route("/sdapi/v1/reload-checkpoint", self.reloadapi, methods=["POST"])
         self.add_api_route("/sdapi/v1/scripts", self.get_scripts_list, methods=["GET"], response_model=models.ScriptsList)
         self.add_api_route("/sdapi/v1/script-info", self.get_script_info, methods=["GET"], response_model=List[models.ScriptInfo])
+        self.add_api_route("/sdapi/v1/extensions", self.get_extensions_list, methods=["GET"], response_model=List[models.ExtensionItem])
 
         if shared.cmd_opts.api_server_stop:
             self.add_api_route("/sdapi/v1/server-kill", self.kill_webui, methods=["POST"])
@@ -329,6 +366,7 @@ class Api:
 
         with self.queue_lock:
             with closing(StableDiffusionProcessingTxt2Img(sd_model=shared.sd_model, **args)) as p:
+                p.is_api = True
                 p.scripts = script_runner
                 p.outpath_grids = opts.outdir_txt2img_grids
                 p.outpath_samples = opts.outdir_txt2img_samples
@@ -343,6 +381,7 @@ class Api:
                         processed = process_images(p)
                 finally:
                     shared.state.end()
+                    shared.total_tqdm.clear()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -388,6 +427,7 @@ class Api:
         with self.queue_lock:
             with closing(StableDiffusionProcessingImg2Img(sd_model=shared.sd_model, **args)) as p:
                 p.init_images = [decode_base64_to_image(x) for x in init_images]
+                p.is_api = True
                 p.scripts = script_runner
                 p.outpath_grids = opts.outdir_img2img_grids
                 p.outpath_samples = opts.outdir_img2img_samples
@@ -402,6 +442,7 @@ class Api:
                         processed = process_images(p)
                 finally:
                     shared.state.end()
+                    shared.total_tqdm.clear()
 
         b64images = list(map(encode_pil_to_base64, processed.images)) if send_images else []
 
@@ -433,9 +474,6 @@ class Api:
         return models.ExtrasBatchImagesResponse(images=list(map(encode_pil_to_base64, result[0])), html_info=result[1])
 
     def pnginfoapi(self, req: models.PNGInfoRequest):
-        if(not req.image.strip()):
-            return models.PNGInfoResponse(info="")
-
         image = decode_base64_to_image(req.image.strip())
         if image is None:
             return models.PNGInfoResponse(info="")
@@ -444,9 +482,10 @@ class Api:
         if geninfo is None:
             geninfo = ""
 
-        items = {**{'parameters': geninfo}, **items}
+        params = generation_parameters_copypaste.parse_generation_parameters(geninfo)
+        script_callbacks.infotext_pasted_callback(geninfo, params)
 
-        return models.PNGInfoResponse(info=geninfo, items=items)
+        return models.PNGInfoResponse(info=geninfo, items=items, parameters=params)
 
     def progressapi(self, req: models.ProgressRequest = Depends()):
         # copy from check_progress_call of ui.py
@@ -530,7 +569,7 @@ class Api:
             raise RuntimeError(f"model {checkpoint_name!r} not found")
 
         for k, v in req.items():
-            shared.opts.set(k, v)
+            shared.opts.set(k, v, is_api=True)
 
         shared.opts.save(shared.config_filename)
         return
@@ -562,10 +601,12 @@ class Api:
         ]
 
     def get_sd_models(self):
-        return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config_near_filename(x)} for x in checkpoints_list.values()]
+        import modules.sd_models as sd_models
+        return [{"title": x.title, "model_name": x.model_name, "hash": x.shorthash, "sha256": x.sha256, "filename": x.filename, "config": find_checkpoint_config_near_filename(x)} for x in sd_models.checkpoints_list.values()]
 
     def get_sd_vaes(self):
-        return [{"model_name": x, "filename": vae_dict[x]} for x in vae_dict.keys()]
+        import modules.sd_vae as sd_vae
+        return [{"model_name": x, "filename": sd_vae.vae_dict[x]} for x in sd_vae.vae_dict.keys()]
 
     def get_hypernetworks(self):
         return [{"name": name, "path": shared.hypernetworks[name]} for name in shared.hypernetworks]
@@ -607,6 +648,10 @@ class Api:
     def refresh_checkpoints(self):
         with self.queue_lock:
             shared.refresh_checkpoints()
+
+    def refresh_vae(self):
+        with self.queue_lock:
+            shared_items.refresh_vae_list()
 
     def create_embedding(self, args: dict):
         try:
@@ -723,6 +768,25 @@ class Api:
         except Exception as err:
             cuda = {'error': f'{err}'}
         return models.MemoryResponse(ram=ram, cuda=cuda)
+
+    def get_extensions_list(self):
+        from modules import extensions
+        extensions.list_extensions()
+        ext_list = []
+        for ext in extensions.extensions:
+            ext: extensions.Extension
+            ext.read_info_from_repo()
+            if ext.remote is not None:
+                ext_list.append({
+                    "name": ext.name,
+                    "remote": ext.remote,
+                    "branch": ext.branch,
+                    "commit_hash":ext.commit_hash,
+                    "commit_date":ext.commit_date,
+                    "version":ext.version,
+                    "enabled":ext.enabled
+                })
+        return ext_list
 
     def launch(self, server_name, port, root_path):
         self.app.include_router(self.router)

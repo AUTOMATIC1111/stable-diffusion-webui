@@ -50,9 +50,11 @@ class PydanticModelGenerator:
         additional_fields = None,
     ):
         def field_type_generator(k, v):
-            # field_type = str if not overrides.get(k) else overrides[k]["type"]
-            # print(k, v.annotation, v.default)
             field_type = v.annotation
+
+            if field_type == 'Image':
+                # images are sent as base64 strings via API
+                field_type = 'str'
 
             return Optional[field_type]
 
@@ -63,7 +65,6 @@ class PydanticModelGenerator:
                 parameters = {**parameters, **inspect.signature(classes.__init__).parameters}
             return parameters
 
-
         self._model_name = model_name
         self._class_data = merge_class_params(class_instance)
 
@@ -72,7 +73,7 @@ class PydanticModelGenerator:
                 field=underscore(k),
                 field_alias=k,
                 field_type=field_type_generator(k, v),
-                field_value=v.default
+                field_value=None if isinstance(v.default, property) else v.default
             )
             for (k,v) in self._class_data.items() if k not in API_NOT_ALLOWED
         ]
@@ -177,7 +178,8 @@ class PNGInfoRequest(BaseModel):
 
 class PNGInfoResponse(BaseModel):
     info: str = Field(title="Image info", description="A string with the parameters used to generate the image")
-    items: dict = Field(title="Items", description="An object containing all the info the image had")
+    items: dict = Field(title="Items", description="A dictionary containing all the other fields the image had")
+    parameters: dict = Field(title="Parameters", description="A dictionary with parsed generation info fields")
 
 class ProgressRequest(BaseModel):
     skip_current_image: bool = Field(default=False, title="Skip current image", description="Skip current image serialization")
@@ -310,3 +312,12 @@ class ScriptInfo(BaseModel):
     is_alwayson: bool = Field(default=None, title="IsAlwayson", description="Flag specifying whether this script is an alwayson script")
     is_img2img: bool = Field(default=None, title="IsImg2img", description="Flag specifying whether this script is an img2img script")
     args: List[ScriptArg] = Field(title="Arguments", description="List of script's arguments")
+
+class ExtensionItem(BaseModel):
+    name: str = Field(title="Name", description="Extension name")
+    remote: str = Field(title="Remote", description="Extension Repository URL")
+    branch: str = Field(title="Branch", description="Extension Repository Branch")
+    commit_hash: str = Field(title="Commit Hash", description="Extension Repository Commit Hash")
+    version: str = Field(title="Version", description="Extension Version")
+    commit_date: str = Field(title="Commit Date", description="Extension Repository Commit Date")
+    enabled: bool = Field(title="Enabled", description="Flag specifying whether this extension is enabled")
