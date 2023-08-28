@@ -137,6 +137,13 @@ class FileStorage:
             w = MultiThreadWorker(remoting_loc_pairs, self.download, worker_count)
             w.run()
 
+    def download_dir(self, remoting_dir: str, local_dir: str) -> bool:
+        if os.path.isdir(local_dir):
+            shutil.rmtree(local_dir)
+
+        os.makedirs(local_dir, exist_ok=True)
+        return False
+
     def close(self):
         pass
 

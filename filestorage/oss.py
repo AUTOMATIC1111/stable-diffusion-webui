@@ -93,3 +93,12 @@ class OssFileStorage(FileStorage):
         bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
         return bucket.sign_url('GET', key, 10 * 60)
 
+    def download_dir(self, remoting_dir: str, local_dir: str) -> bool:
+        super(OssFileStorage, self).download_dir(remoting_dir, local_dir)
+        bucket, key = self.extract_buack_key_from_path(remoting_dir)
+        bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
+
+        for obj in oss2.ObjectIteratorV2(bucket):
+            pass
+
+        return False

@@ -55,15 +55,15 @@ annotato_args_thr_a_dict = {
     'scribble_xdog': [1, 64],
     'threshold': [0, 255],
     'tile_colorfix': [3, 32],
-    'tile_colorfix+sharp': [3,32],
-    'tile_resample': [1, 8]}  
+    'tile_colorfix+sharp': [3, 32],
+    'tile_resample': [1, 8]}
 annotato_args_thr_b_dict = {
     'canny': [1, 255],
     'depth_leres': [0, 100],
     'depth_leres++': [0, 100],
     'mediapipe_face': [1, 10],
     'mlsd': [0.01, 20],
-    'tile_colorfix+sharp': [0,2]}  
+    'tile_colorfix+sharp': [0, 2]}
 reverse_preprocessor_aliases = {preprocessor_aliases[k]: k for k in preprocessor_aliases.keys()}
 
 
@@ -95,6 +95,10 @@ class RunAnnotatorArgs:
                  annotator_resolution: int = 512,  # 分辨率
                  pthr_a: int = 64,  # 阈值A
                  pthr_b: int = 64,  # 阈值B
+                 t2i_w: int = 1080,
+                 t2i_h: int = 1520,
+                 pp: bool = False,
+                 rm: str = 'Resize and Fill',
                  **kwargs):
         image = get_tmp_local_path(image)
         self.image = np.array(Image.open(image).convert('RGB'))
@@ -119,6 +123,10 @@ class RunAnnotatorArgs:
         self.pres = annotator_resolution
         self.pthr_a = pthr_a
         self.pthr_b = pthr_b
+        self.t2i_w = t2i_w
+        self.t2i_h = t2i_h
+        self.pp = pp
+        self.rm = rm
 
 
 def build_run_annotato_args(task: Task) -> typing.Tuple[typing.Optional[RunAnnotatorArgs], str]:
@@ -128,16 +136,62 @@ def build_run_annotato_args(task: Task) -> typing.Tuple[typing.Optional[RunAnnot
     except Exception as err:
         return None, traceback.format_exc()
 
+
 def run_annotato_args_check(module, thr_a, thr_b):
-    thr_a=thr_a
-    thr_b=thr_b
+    thr_a = thr_a
+    thr_b = thr_b
     if module in annotato_args_thr_a_dict.keys():
-        if not  min(annotato_args_thr_a_dict[module])<=thr_a<=max(annotato_args_thr_a_dict[module]):
-            thr_a=min(annotato_args_thr_a_dict[module]) 
+        if not min(annotato_args_thr_a_dict[module]) <= thr_a <= max(annotato_args_thr_a_dict[module]):
+            thr_a = min(annotato_args_thr_a_dict[module])
     if module in annotato_args_thr_b_dict.keys():
-        if not min(annotato_args_thr_b_dict[module])<=thr_b<=max(annotato_args_thr_b_dict[module]):
-            thr_a=min(annotato_args_thr_b_dict[module]) 
-    return thr_a,thr_b
+        if not min(annotato_args_thr_b_dict[module]) <= thr_b <= max(annotato_args_thr_b_dict[module]):
+            thr_a = min(annotato_args_thr_b_dict[module])
+    return thr_a, thr_b
+
+
+def pixel_perfect_resolution(
+        image: np.ndarray,
+        target_H: int,
+        target_W: int,
+        resize_mode,
+) -> int:
+    """
+    Calculate the estimated resolution for resizing an image while preserving aspect ratio.
+
+    The function first calculates scaling factors for height and width of the image based on the target
+    height and width. Then, based on the chosen resize mode, it either takes the smaller or the larger
+    scaling factor to estimate the new resolution.
+
+    If the resize mode is OUTER_FIT, the function uses the smaller scaling factor, ensuring the whole image
+    fits within the target dimensions, potentially leaving some empty space.
+
+    If the resize mode is not OUTER_FIT, the function uses the larger scaling factor, ensuring the target
+    dimensions are fully filled, potentially cropping the image.
+
+    After calculating the estimated resolution, the function prints some debugging information.
+
+    Args:
+        image (np.ndarray): A 3D numpy array representing an image. The dimensions represent [height, width, channels].
+        target_H (int): The target height for the image.
+        target_W (int): The target width for the image.
+        resize_mode (ResizeMode): The mode for resizing.
+
+    Returns:
+        int: The estimated resolution after resizing.
+    """
+    raw_H, raw_W, _ = image.shape
+
+    k0 = float(target_H) / float(raw_H)
+    k1 = float(target_W) / float(raw_W)
+
+    if resize_mode == "Resize and Fill":
+        estimation = min(k0, k1) * float(min(raw_H, raw_W))
+    else:
+        estimation = max(k0, k1) * float(min(raw_H, raw_W))
+
+    return int(np.round(estimation))
+
+
 def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
     progress = TaskProgress.new_ready(task, 'at the ready')
     yield progress
@@ -181,30 +235,16 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
             #     return global_state.reverse_preprocessor_aliases.get(module, module)
 
             preprocessor = control_net_script.preprocessor[args.module]
-            # if pp:
-            #     raw_H, raw_W, _ = img.shape
-            #     target_H, target_W = t2i_h, t2i_w
-            #     rm = str(rm)
-            #
-            #     k0 = float(target_H) / float(raw_H)
-            #     k1 = float(target_W) / float(raw_W)
-            #
-            #     if rm == external_code.ResizeMode.OUTER_FIT.value:
-            #         estimation = min(k0, k1) * float(min(raw_H, raw_W))
-            #     else:
-            #         estimation = max(k0, k1) * float(min(raw_H, raw_W))
-            #
-            #     pres = int(np.round(estimation))
-            #     print(f'Pixel Perfect Mode Enabled In Preview.')
-            #     print(f'resize_mode = {rm}')
-            #     print(f'raw_H = {raw_H}')
-            #     print(f'raw_W = {raw_W}')
-            #     print(f'target_H = {target_H}')
-            #     print(f'target_W = {target_W}')
-            #     print(f'estimation = {estimation}')
+            if args.pp:
+                args.pres = pixel_perfect_resolution(
+                    img,
+                    target_H=args.t2i_h,
+                    target_W=args.t2i_w,
+                    resize_mode=args.rm,
+                )
             if args.pres > 64:
                 # 参数校验：超过范围就取最小值
-                args.pthr_a,args.pthr_b=run_annotato_args_check(args.module,args.pthr_a,args.pthr_b)
+                args.pthr_a, args.pthr_b = run_annotato_args_check(args.module, args.pthr_a, args.pthr_b)
                 result, is_image = preprocessor(img, res=args.pres, thr_a=args.pthr_a, thr_b=args.pthr_b)
             else:
                 result, is_image = preprocessor(img)
@@ -309,8 +349,8 @@ class ControlnetFormatter(AlwaysonScriptArgsFormatter):
                     'control_mode': item.get('control_mode', 'Balanced') or 'Balanced'
                 }
                 # 参数校验
-                control_unit['threshold_a'],control_unit['threshold_b']=run_annotato_args_check(control_unit['module'],control_unit['threshold_a'],control_unit['threshold_b'])
-
+                control_unit['threshold_a'], control_unit['threshold_b'] = run_annotato_args_check(
+                    control_unit['module'], control_unit['threshold_a'], control_unit['threshold_b'])
 
                 control_unit['module'] = strip_model_hash(control_unit['module'])
                 control_unit['model'] = strip_model_hash(control_unit['model'])
