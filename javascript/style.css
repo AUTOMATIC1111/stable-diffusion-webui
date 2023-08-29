@@ -67,8 +67,6 @@ button.custom-button{
 .performance { font-size: 0.85em; color: #444; }
 .performance p { display: inline-block; color: var(--body-text-color-subdued) !important }
 .performance .time { margin-right: 0; }
-@media screen and (min-width: 2500px) { #txt2img_gallery, #img2img_gallery { min-height: 768px; } }
-#txt2img_gallery img, #img2img_gallery img, #extras_gallery img { object-fit: scale-down; width: -webkit-fill-available !important; }
 #txt2img_footer, #img2img_footer, #extras_footer { height: fit-content; }
 #txt2img_footer, #img2img_footer { height: fit-content; display: none; }
 #txt2img_generate_box, #img2img_generate_box { gap: 0.5em; flex-wrap: wrap-reverse; height: fit-content; }
@@ -133,7 +131,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 #settings .dirtyable.hidden { display: none; }
 #settings .modification-indicator { height: 1.2em; border-radius: 1em !important; padding: 0; width: 0; margin-right: 0.5em; }
 #settings .modification-indicator:disabled { visibility: hidden; }
-#settings .modification-indicator.unsaved { background: var(--color-accent-soft); width: 4px; }
+#settings .modification-indicator.saved { background: var(--color-accent-soft); width: 4px; }
 #settings .modification-indicator.changed { background: var(--color-accent); width: 4px; }
 #settings .modification-indicator.changed.unsaved { background-image: linear-gradient(var(--color-accent) 25%, var(--color-accent-soft) 75%); width: 4px; }
 #settings_result { margin: 0 1.2em; }

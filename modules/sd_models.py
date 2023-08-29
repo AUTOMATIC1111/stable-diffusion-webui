@@ -215,13 +215,13 @@ def model_hash(filename):
     try:
         with open(filename, "rb") as file:
             import hashlib
-            t0 = time.time()
+            # t0 = time.time()
             m = hashlib.sha256()
             file.seek(0x100000)
             m.update(file.read(0x10000))
             shorthash = m.hexdigest()[0:8]
-            t1 = time.time()
-            shared.log.debug(f'Calculating short hash: {filename} hash={shorthash} time={(t1-t0):.2f}')
+            # t1 = time.time()
+            # shared.log.debug(f'Calculating short hash: {filename} hash={shorthash} time={(t1-t0):.2f}')
             return shorthash
     except FileNotFoundError:
         return 'NOFILE'

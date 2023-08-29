@@ -6,7 +6,7 @@ function extensions_apply(extensions_disabled_list, extensions_update_list, disa
     if (x.name.startsWith('update_') && x.checked) update.push(x.name.substring(7));
   });
   restart_reload();
-  console.log('Extensions apply:', { disable, update });
+  log('Extensions apply:', { disable, update });
   return [JSON.stringify(disable), JSON.stringify(update), disable_all];
 }
 
@@ -16,7 +16,7 @@ function extensions_check(info, extensions_disabled_list, search_text, sort_colu
     if (x.name.startsWith('enable_') && !x.checked) disable.push(x.name.substring(7));
   });
   const id = randomId();
-  console.log('Extensions check:', { disable });
+  log('Extensions check:', { disable });
   return [id, JSON.stringify(disable), search_text, sort_column];
 }
 
@@ -27,7 +27,7 @@ function install_extension(button, url) {
   const textarea = gradioApp().querySelector('#extension_to_install textarea');
   textarea.value = url;
   updateInput(textarea);
-  console.log('Extension install:', { url });
+  log('Extension install:', { url });
   gradioApp().querySelector('#install_extension_button').click();
 }
 
@@ -38,7 +38,7 @@ function uninstall_extension(button, url) {
   const textarea = gradioApp().querySelector('#extension_to_install textarea');
   textarea.value = url;
   updateInput(textarea);
-  console.log('Extension uninstall:', { url });
+  log('Extension uninstall:', { url });
   gradioApp().querySelector('#uninstall_extension_button').click();
 }
 
@@ -48,6 +48,6 @@ function update_extension(button, url) {
   const textarea = gradioApp().querySelector('#extension_to_install textarea');
   textarea.value = url;
   updateInput(textarea);
-  console.log('Extension update:', { url });
+  log('Extension update:', { url });
   gradioApp().querySelector('#update_extension_button').click();
 }

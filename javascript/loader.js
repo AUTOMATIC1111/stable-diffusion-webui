@@ -1,3 +1,5 @@
+const appStartTime = performance.now();
+
 async function preloadImages() {
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const imagePromises = [];
@@ -24,7 +26,7 @@ async function preloadImages() {
 
 async function createSplash() {
   const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-  console.log('createSplash', { theme: dark ? 'dark' : 'light' });
+  log('createSplash', { theme: dark ? 'dark' : 'light' });
   const num = Math.floor(11 * Math.random());
   const splash = `
     <div id="splash" class="splash" style="background: ${dark ? 'black' : 'white'}">
@@ -38,8 +40,8 @@ async function createSplash() {
 async function removeSplash() {
   const splash = document.getElementById('splash');
   if (splash) splash.remove();
-  console.log('removeSplash');
-  console.log('startupTime', Math.round(performance.now() - appStartTime) / 1000);
+  log('removeSplash');
+  log('startupTime', Math.round(performance.now() - appStartTime) / 1000);
 }
 
 window.onload = createSplash;

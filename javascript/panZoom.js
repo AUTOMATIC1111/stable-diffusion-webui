@@ -1017,7 +1017,7 @@ function autoRun() {
       return;
     }
     var options = collectOptions(panzoomScript);
-    console.log(options);
+    log(options);
     window[globalName] = createPanZoom(el, options);
   }
 

@@ -26,7 +26,7 @@ function initNotifications() {
     parent.focus();
     this.close();
   };
-  console.log('sendNotification');
+  log('sendNotification');
 }
 
 onAfterUiUpdate(initNotifications);

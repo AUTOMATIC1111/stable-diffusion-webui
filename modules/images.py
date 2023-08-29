@@ -551,9 +551,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
             file_decoration = shared.opts.samples_filename_pattern
         else:
             file_decoration = "[seq]-[prompt_words]"
-        # add_number = shared.opts.save_images_add_number or file_decoration == ''
-        # if file_decoration != "" and add_number:
-        #    file_decoration = f"-{file_decoration}"
         file_decoration = namegen.apply(file_decoration) + suffix
         if shared.opts.save_images_add_number:
             if '[seq]' not in file_decoration:
@@ -578,10 +575,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
     params = script_callbacks.ImageSaveParams(image, p, fullfn, pnginfo)
     script_callbacks.before_image_saved_callback(params)
     exifinfo = params.pnginfo.get('UserComment', '')
-    if len(exifinfo) > 0:
-        exifinfo = exifinfo + ', ' + params.pnginfo.get(pnginfo_section_name, '')
-    else:
-        exifinfo = params.pnginfo.get(pnginfo_section_name, '')
+    exifinfo = (exifinfo + ', ' if len(exifinfo) > 0 else '') + params.pnginfo.get(pnginfo_section_name, '')
     filename, extension = os.path.splitext(params.filename)
     if hasattr(os, 'statvfs'):
         max_name_len = os.statvfs(path).f_namemax
@@ -591,7 +585,6 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
 
     save_queue.put((params.image, filename, extension, params, exifinfo, txt_fullfn)) # actual save is executed in a thread that polls data from queue
     save_queue.join()
-    # atomically_save_image(params.image, filename, extension, params, exifinfo, txt_fullfn)
 
     params.image.already_saved_as = params.filename
     script_callbacks.image_saved_callback(params)

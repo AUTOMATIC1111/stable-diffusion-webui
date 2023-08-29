@@ -3,7 +3,7 @@ let dragDropInitialized = false;
 async function initDragDrop() {
   if (dragDropInitialized) return;
   dragDropInitialized = true;
-  console.log('initDragDrop');
+  log('initDragDrop');
   window.addEventListener('drop', (e) => {
     const target = e.composedPath()[0];
     if (!target.placeholder) return;
@@ -18,7 +18,7 @@ async function initDragDrop() {
     if (fileInput) {
       fileInput.files = files;
       fileInput.dispatchEvent(new Event('change'));
-      console.log('dropEvent');
+      log('dropEvent');
     }
   });
 }

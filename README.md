@@ -119,7 +119,6 @@ Below is partial list of all available parameters, run `webui --help` for the fu
 
 SD.Next comes with several extensions pre-installed:
 
-- [Dynamic Thresholding](https://github.com/mcmonkeyprojects/sd-dynamic-thresholding)
 - [ControlNet](https://github.com/Mikubill/sd-webui-controlnet)
 - [Agent Scheduler](https://github.com/ArtVentureX/sd-webui-agent-scheduler)
 - [Multi-Diffusion Tiled Diffusion and VAE](https://github.com/pkuliyi2015/multidiffusion-upscaler-for-automatic1111)

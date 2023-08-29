@@ -82,8 +82,8 @@ def save_files(js_data, images, html_info, index):
             self.prompt = getattr(self, 'prompt', None) or getattr(self, 'Prompt', None)
             self.all_seeds = getattr(self, 'all_seeds', [self.seed])
             self.all_prompts = getattr(self, 'all_prompts', [self.prompt])
-            self.infotext = html_info
             self.infotexts = getattr(self, 'infotexts', [html_info])
+            self.infotext = self.infotexts[0] if len(self.infotexts) > 0 else html_info
             self.index_of_first_image = getattr(self, 'index_of_first_image', 0)
     try:
         data = json.loads(js_data)
@@ -164,7 +164,8 @@ def create_output_panel(tabname, outdir):
 
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
-            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, elem_id=f"{tabname}_gallery", elem_classes="logo").style(preview=False, container=False, columns=[1,2,3,4,5,6]) # <576px, <768px, <992px, <1200px, <1400px, >1400px
+            # columns are for <576px, <768px, <992px, <1200px, <1400px, >1400px
+            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=[1,2,3,4,5,6], object_fit='scale-down') 
 
         with gr.Column(elem_id=f"{tabname}_footer", elem_classes="gallery_footer"):
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):

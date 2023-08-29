@@ -1,10 +1,9 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-26
+## Update for 2023-08-29
 
 - general:
   - all system and image paths are now relative by default  
-  - fix extra networks previews  
   - add settings validation when performing load/save  
   - settings tab in ui now shows settings that are changed from default values  
   - settings tab switch to compact view  
@@ -20,6 +19,10 @@
     enable with `--use-openvino`  
     thanks @disty0  
   - add model **precompile** option (when model compile is enbled)  
+  - **extra network** folder info caching  
+    results in much faster startup when you have large number of extra networks
+  - fix extra networks previews  
+  - fix gradio gallery
 
 ## Update for 2023-08-20
 

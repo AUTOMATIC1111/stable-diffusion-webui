@@ -52,7 +52,7 @@ async function initLogMonitor() {
   `;
   el.style.display = 'none';
   logMonitor();
-  console.log('initLogMonitor');
+  log('initLogMonitor');
 }
 
 onAfterUiUpdate(initLogMonitor);

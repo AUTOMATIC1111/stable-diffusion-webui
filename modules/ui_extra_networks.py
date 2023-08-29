@@ -1,4 +1,5 @@
 import re
+import time
 import json
 import html
 import os.path
@@ -14,9 +15,22 @@ from modules.ui_components import ToolButton
 
 extra_pages = []
 allowed_dirs = set()
+dir_cache = {}
 
 refresh_symbol = '\U0001f504'  # 🔄
 close_symbol = '\U0000274C'  # ❌
+
+
+def listdir(path):
+    if path in dir_cache and os.path.getmtime(path) == dir_cache[path][0]:
+        return dir_cache[path][1]
+    else:
+        dir_cache[path] = (
+            os.path.getmtime(path),
+            [os.path.join(path, f) for f in os.listdir(path)]
+        )
+        return dir_cache[path][1]
+
 
 def register_page(page):
     """registers extra networks page for the UI; recommend doing it in on_before_ui() callback for extensions"""
@@ -125,7 +139,7 @@ class ExtraNetworksPage:
         return ""
 
     def is_empty(self, folder):
-        for f in os.listdir(folder):
+        for f in listdir(folder):
             _fn, ext = os.path.splitext(f)
             if ext.lower() in ['.ckpt', '.safetensors', '.pt'] or os.path.isdir(os.path.join(folder, f)):
                 return False
@@ -154,6 +168,7 @@ class ExtraNetworksPage:
             self.missing_thumbs.clear()
 
     def create_html(self, tabname, skip = False):
+        t0 = time.time()
         self_name_id = self.name.replace(" ", "_")
         if skip:
             return f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'></div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>Extra network page not ready<br>Click refresh to try again</div>"
@@ -199,7 +214,8 @@ class ExtraNetworksPage:
                 res = f"<div id='{tabname}_{self_name_id}_subdirs' class='extra-network-subdirs'>{subdirs_html}</div><div id='{tabname}_{self_name_id}_cards' class='extra-network-cards'>{self.html}</div>"
             else:
                 return ''
-            shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} subdirs={len(subdirs)}')
+            t1 = time.time()
+            shared.log.debug(f'Extra networks: {self.name} items={len(self.items)} subdirs={len(subdirs)} time={round(t1-t0, 2)}')
             threading.Thread(target=self.create_thumb).start()
             return res
         except Exception as e:
@@ -240,7 +256,6 @@ class ExtraNetworksPage:
                 args['title'] += f'\nAlias: {item["alias"]}'
             if item.get("tags", None) is not None:
                 args['title'] += f'\nTags: {", ".join(tags)}'
-            #self.card.format(**args)
             return self.card.format(**args)
         except Exception as e:
             shared.log.error(f'Extra networks item error: page={tabname} item={item["name"]} {e}')
@@ -248,16 +263,20 @@ class ExtraNetworksPage:
 
     def find_preview(self, path):
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
+        files = listdir(os.path.dirname(path))
         for file in [f'{path}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
-            if os.path.exists(file):
+            # if os.path.exists(file):
+            if file in files:
                 if '.thumb.' not in file:
                     self.missing_thumbs.append(file)
                 return self.link_preview(file)
         return self.link_preview('html/card-no-preview.png')
 
     def find_description(self, path):
+        files = listdir(os.path.dirname(path))
         for file in [f"{path}.txt", f"{path}.description.txt"]:
-            if os.path.exists(file):
+            # if os.path.exists(file):
+            if file in files:
                 try:
                     with open(file, "r", encoding="utf-8", errors="replace") as f:
                         txt = f.read()
@@ -269,8 +288,10 @@ class ExtraNetworksPage:
 
     def find_info(self, path):
         basename, _ext = os.path.splitext(path)
+        files = listdir(os.path.dirname(path))
         for file in [f"{path}.info", f"{path}.civitai.info", f"{basename}.info", f"{basename}.civitai.info"]:
-            if os.path.exists(file):
+            # if os.path.exists(file):
+            if file in files:
                 try:
                     with open(file, "r", encoding="utf-8", errors="replace") as f:
                         txt = f.read()
@@ -278,8 +299,7 @@ class ExtraNetworksPage:
                         return txt
                 except OSError:
                     pass
-        return None
-
+            return None
 
 
 def initialize():

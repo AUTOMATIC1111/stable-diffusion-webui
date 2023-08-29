@@ -31,19 +31,19 @@ async function tooltipHide(e) {
 async function validateHints(elements, data) {
   let original = elements.map((e) => e.textContent.toLowerCase().trim()).sort((a, b) => a > b);
   original = [...new Set(original)];
-  console.log('all hints:', original);
-  console.log('hints-differences', { elements: original.length, hints: data.length });
+  log('all hints:', original);
+  log('hints-differences', { elements: original.length, hints: data.length });
   const current = data.map((e) => e.label.toLowerCase().trim()).sort((a, b) => a > b);
   let missing = [];
   for (let i = 0; i < original.length; i++) {
     if (!current.includes(original[i])) missing.push(original[i]);
   }
-  console.log('missing in locale:', missing);
+  log('missing in locale:', missing);
   missing = [];
   for (let i = 0; i < current.length; i++) {
     if (!original.includes(current[i])) missing.push(current[i]);
   }
-  console.log('in locale but not ui:', missing);
+  log('in locale but not ui:', missing);
 }
 
 async function setHints() {
@@ -84,7 +84,7 @@ async function setHints() {
     }
   }
   const t1 = performance.now();
-  console.log('setHints', { type: localeData.type, elements: elements.length, localized, hints, data: localeData.data.length, time: t1 - t0 });
+  log('setHints', { type: localeData.type, elements: elements.length, localized, hints, data: localeData.data.length, time: t1 - t0 });
   removeSplash();
   // validateHints(elements, localeData.data)
 }

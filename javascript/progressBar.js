@@ -103,7 +103,7 @@ function requestProgress(id_task, progressEl, galleryEl, atEnd = null, onProgres
   };
 
   const done = () => {
-    console.debug('taskEnd:', id_task);
+    debug('taskEnd:', id_task);
     localStorage.removeItem('task');
     setProgress();
     if (parentGallery && livePreview) parentGallery.removeChild(livePreview);

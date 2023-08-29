@@ -62,9 +62,9 @@ const contextMenuInit = () => {
     });
   }
 
-  function addContextMenuEventListener() {
+  async function addContextMenuEventListener() {
     if (eventListenerApplied) return;
-    console.log('initContextMenu');
+    log('initContextMenu');
     gradioApp().addEventListener('click', (e) => {
       if (!e.isTrusted) return;
       const oldMenu = gradioApp().querySelector('#context-menu');

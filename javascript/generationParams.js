@@ -4,7 +4,7 @@ function attachGalleryListeners(tab_name) {
   const gallery = gradioApp().querySelector(`#${tab_name}_gallery`);
   if (!gallery) return null;
   gallery.addEventListener('click', () => setTimeout(() => {
-    console.log('galleryItemSelected:', tab_name);
+    log('galleryItemSelected:', tab_name);
     gradioApp().getElementById(`${tab_name}_generation_info_button`)?.click();
   }, 500));
   gallery?.addEventListener('keydown', (e) => {
@@ -36,7 +36,7 @@ function initiGenerationParams() {
   if (txt2img_gallery && img2img_gallery) generationParamsInitialized = true;
   else return;
   modalObserver.observe(modal, { attributes: true, attributeFilter: ['style'] });
-  console.log('initGenerationParams');
+  log('initGenerationParams');
 }
 
 onAfterUiUpdate(initiGenerationParams);

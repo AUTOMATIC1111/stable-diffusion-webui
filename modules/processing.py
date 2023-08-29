@@ -498,7 +498,8 @@ def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_su
     generation_params.update(p.extra_generation_params)
     generation_params_text = ", ".join([k if k == v else f'{k}: {generation_parameters_copypaste.quote(v)}' for k, v in generation_params.items() if v is not None])
     negative_prompt_text = f"\nNegative prompt: {all_negative_prompts[index]}" if all_negative_prompts[index] else ""
-    return f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
+    infotext = f"{all_prompts[index]}{negative_prompt_text}\n{generation_params_text}".strip()
+    return infotext
 
 
 """
@@ -776,19 +777,19 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                     p.ops.append('color')
                     image = apply_color_correction(p.color_corrections[i], image)
                 image = apply_overlay(image, p.paste_to, i, p.overlay_images)
-                if shared.opts.samples_save and not p.do_not_save_samples:
-                    images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], shared.opts.samples_format, info=infotext(i), p=p)
                 text = infotext(i)
                 infotexts.append(text)
                 image.info["parameters"] = text
                 output_images.append(image)
+                if shared.opts.samples_save and not p.do_not_save_samples:
+                    images.save_image(image, p.outpath_samples, "", p.seeds[i], p.prompts[i], shared.opts.samples_format, info=text, p=p)
                 if hasattr(p, 'mask_for_overlay') and p.mask_for_overlay and any([shared.opts.save_mask, shared.opts.save_mask_composite, shared.opts.return_mask, shared.opts.return_mask_composite]):
                     image_mask = p.mask_for_overlay.convert('RGB')
                     image_mask_composite = Image.composite(image.convert('RGBA').convert('RGBa'), Image.new('RGBa', image.size), images.resize_image(3, p.mask_for_overlay, image.width, image.height).convert('L')).convert('RGBA')
                     if shared.opts.save_mask:
-                        images.save_image(image_mask, p.outpath_samples, "", p.seeds[i], p.prompts[i], shared.opts.samples_format, info=infotext(i), p=p, suffix="-mask")
+                        images.save_image(image_mask, p.outpath_samples, "", p.seeds[i], p.prompts[i], shared.opts.samples_format, info=text, p=p, suffix="-mask")
                     if shared.opts.save_mask_composite:
-                        images.save_image(image_mask_composite, p.outpath_samples, "", p.seeds[i], p.prompts[i], shared.opts.samples_format, info=infotext(i), p=p, suffix="-mask-composite")
+                        images.save_image(image_mask_composite, p.outpath_samples, "", p.seeds[i], p.prompts[i], shared.opts.samples_format, info=text, p=p, suffix="-mask-composite")
                     if shared.opts.return_mask:
                         output_images.append(image_mask)
                     if shared.opts.return_mask_composite:

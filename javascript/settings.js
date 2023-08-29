@@ -1,10 +1,9 @@
+let opts_metadata = {};
+const opts_tabs = {};
+
 const monitoredOpts = [
   { sd_model_checkpoint: null },
-  {
-    sd_backend: () => {
-      gradioApp().getElementById('refresh_sd_model_checkpoint')?.click();
-    },
-  },
+  { sd_backend: () => gradioApp().getElementById('refresh_sd_model_checkpoint')?.click() },
 ];
 
 function updateOpts(json_string) {
@@ -13,7 +12,7 @@ function updateOpts(json_string) {
     const key = Object.keys(op)[0];
     const callback = op[key];
     if (opts[key] && opts[key] !== settings_data.values[key]) {
-      console.log('updateOpts', key, opts[key], settings_data.values[key]);
+      log('updateOpts', key, opts[key], settings_data.values[key]);
       if (callback) callback();
     }
   }
@@ -31,9 +30,7 @@ function updateOpts(json_string) {
 function showAllSettings() {
   // Try to ensure that the show all settings tab is opened by clicking on its tab button
   const tab_dirty_indicator = gradioApp().getElementById('modification_indicator_show_all_pages');
-  if (tab_dirty_indicator && tab_dirty_indicator.nextSibling) {
-    tab_dirty_indicator.nextSibling.click();
-  }
+  if (tab_dirty_indicator && tab_dirty_indicator.nextSibling) tab_dirty_indicator.nextSibling.click();
   gradioApp().querySelectorAll('#settings > .tab-content > .tabitem').forEach((elem) => {
     if (elem.id === 'settings_tab_licenses' || elem.id === 'settings_show_all_pages') return;
     elem.style.display = 'block';
@@ -42,17 +39,16 @@ function showAllSettings() {
 
 function markIfModified(setting_name, value) {
   const elem = gradioApp().getElementById(`modification_indicator_${setting_name}`);
-  if (elem == null) return;
-  // Use JSON.stringify to compare nested objects (e.g. arrays for checkbox-groups)
-  const previous_value_json = JSON.stringify(opts[setting_name]);
-  const changed_value = JSON.stringify(value) !== previous_value_json;
-  if (changed_value) elem.title = `click to revert to previous value: ${previous_value_json}`;
-
-  const is_unsaved = opts_metadata[setting_name].is_stored;
-  if (is_unsaved) elem.title = 'custom value';
-  elem.disabled = !(is_unsaved || changed_value);
+  if (!elem) return;
+  const previous_value = JSON.stringify(opts[setting_name]);
+  const current_value = JSON.stringify(value);
+  const changed_value = previous_value !== current_value;
+  if (changed_value) elem.title = `click to revert to previous value: ${previous_value}`;
+  const is_stored = opts_metadata[setting_name].is_stored;
+  if (is_stored) elem.title = 'custom value';
+  elem.disabled = !changed_value && !is_stored;
   elem.classList.toggle('changed', changed_value);
-  elem.classList.toggle('unsaved', is_unsaved);
+  elem.classList.toggle('saved', is_stored);
 
   const { tab_name } = opts_metadata[setting_name];
   if (!opts_tabs[tab_name].changed) opts_tabs[tab_name].changed = new Set();
@@ -67,7 +63,7 @@ function markIfModified(setting_name, value) {
   tab_nav_indicator.disabled = (changed_items.size === 0) && (unsaved.size === 0);
   tab_nav_indicator.title = '';
   tab_nav_indicator.classList.toggle('changed', changed_items.size > 0);
-  tab_nav_indicator.classList.toggle('unsaved', saved.size > 0);
+  tab_nav_indicator.classList.toggle('saved', saved.size > 0);
   if (changed_items.size > 0) tab_nav_indicator.title += `click to reset ${changed_items.size} unapplied changes in this tab\n`;
   if (saved.size > 0) tab_nav_indicator.title += `${saved.size} custom values\n${unsaved.size} default values}`;
 }

@@ -280,7 +280,7 @@ def disable_extensions():
     else:
         opts.data['disabled_extensions'] = [x for x in opts.disabled_extensions if x != 'Lora']
     if backend == Backend.DIFFUSERS:
-        for ext in ['sd-webui-controlnet', 'sd-dynamic-thresholding', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
+        for ext in ['sd-webui-controlnet', 'multidiffusion-upscaler-for-automatic1111', 'a1111-sd-webui-lycoris']:
             if ext not in opts.disabled_extensions:
                 log.warning(f'Diffusers disabling uncompatible extension: {ext}')
                 opts.data['disabled_extensions'].append(ext)
@@ -385,7 +385,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "upcast_sampling": OptionInfo(True if sys.platform == "darwin" else False, "Enable upcast sampling"),
     "upcast_attn": OptionInfo(False, "Enable upcast cross attention layer"),
     "cuda_cast_unet": OptionInfo(False, "Use fixed UNet precision"),
-    "disable_nan_check": OptionInfo(True, "Disable NaN check in produced images/latent spaces"),
+    "disable_nan_check": OptionInfo(True, "Disable NaN check in produced images/latent spaces", gr.Checkbox, {"visible": False}),
     "rollback_vae": OptionInfo(False, "Attempt VAE roll back when produced NaN values (experimental)"),
     "opt_channelslast": OptionInfo(False, "Use channels last as torch memory format "),
     "cudnn_benchmark": OptionInfo(False, "Enable full-depth cuDNN benchmark feature"),
@@ -399,7 +399,7 @@ options_templates.update(options_section(('cuda', "Compute Settings"), {
     "cuda_compile_verbose": OptionInfo(False, "Model compile verbose mode"),
     "cuda_compile_errors": OptionInfo(True, "Model compile suppress errors"),
     "ipex_optimize": OptionInfo(True if devices.backend == "ipex" else False, "Enable IPEX Optimize for Intel GPUs"),
-    "directml_memory_provider": OptionInfo(default_memory_provider, '[DirectML] Memory stats provider', gr.Dropdown, lambda: {"choices": memory_providers}),
+    "directml_memory_provider": OptionInfo(default_memory_provider, 'DirectML memory stats provider', gr.Dropdown, lambda: {"choices": memory_providers}),
 }))
 
 options_templates.update(options_section(('diffusers', "Diffusers Settings"), {

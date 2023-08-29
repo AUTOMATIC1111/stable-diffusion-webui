@@ -134,7 +134,7 @@ function galleryClickEventHandler(event) {
   }
 }
 
-function initImageViewer() {
+async function initImageViewer() {
   // Each tab has its own gradio-gallery
   const galleryPreviews = gradioApp().querySelectorAll('.gradio-gallery > div.preview');
   if (galleryPreviews.length > 0) {
@@ -241,7 +241,7 @@ function initImageViewer() {
   modalControls.appendChild(modalClose);
 
   gradioApp().appendChild(modal);
-  console.log('initImageViewer');
+  log('initImageViewer');
 }
 
 onAfterUiUpdate(initImageViewer);

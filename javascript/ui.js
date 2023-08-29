@@ -7,8 +7,6 @@ let img2img_textarea;
 const wait_time = 800;
 const token_timeouts = {};
 let uiLoaded = false;
-let opts_metadata = {};
-const opts_tabs = {};
 
 function rememberGallerySelection(name) {
   // dummy
@@ -27,7 +25,7 @@ function update_token_counter(button_id) {
 function clip_gallery_urls(gallery) {
   const files = gallery.map((v) => v.data);
   navigator.clipboard.writeText(JSON.stringify(files)).then(
-    () => console.log('clipboard:', files),
+    () => log('clipboard:', files),
     (err) => console.error('clipboard:', files, err),
   );
 }
@@ -146,7 +144,7 @@ function clearGallery(tabname) {
 }
 
 function submit(...args) {
-  console.log('submitTxt');
+  log('submitTxt');
   clearGallery('txt2img');
   const id = randomId();
   requestProgress(id, null, gradioApp().getElementById('txt2img_gallery'));
@@ -156,7 +154,7 @@ function submit(...args) {
 }
 
 function submit_img2img(...args) {
-  console.log('submitImg');
+  log('submitImg');
   clearGallery('img2img');
   const id = randomId();
   requestProgress(id, null, gradioApp().getElementById('img2img_gallery'));
@@ -167,7 +165,7 @@ function submit_img2img(...args) {
 }
 
 function submit_postprocessing(...args) {
-  console.log('SubmitExtras');
+  log('SubmitExtras');
   clearGallery('extras');
   return args;
 }
@@ -227,7 +225,7 @@ function register_drag_drop() {
     evt.preventDefault();
     evt.dataTransfer.dropEffect = 'copy';
     for (const f of evt.dataTransfer.files) {
-      console.log('QuickSettingsDrop', f);
+      log('QuickSettingsDrop', f);
     }
   });
 }
@@ -259,13 +257,13 @@ function sortUIElements() {
 
   const scriptsImg = gradioApp().getElementById('scripts_alwayson_img2img').children;
   for (const el of Array.from(scriptsImg)) el.style.order = find(el, tabsOrder);
-  console.log('sortUIElements');
+  log('sortUIElements');
 }
 
 onAfterUiUpdate(async () => {
   let promptsInitialized = false;
 
-  function registerTextarea(id, id_counter, id_button) {
+  async function registerTextarea(id, id_counter, id_button) {
     const prompt = gradioApp().getElementById(id);
     if (!prompt) return;
     const counter = gradioApp().getElementById(id_counter);
@@ -275,7 +273,7 @@ onAfterUiUpdate(async () => {
     prompt.parentElement.style.position = 'relative';
     promptTokecountUpdateFuncs[id] = () => { update_token_counter(id_button); };
     localTextarea.addEventListener('input', promptTokecountUpdateFuncs[id]);
-    if (!promptsInitialized) console.log('initPrompts')
+    if (!promptsInitialized) log('initPrompts');
     promptsInitialized = true;
   }
 
@@ -378,16 +376,15 @@ async function preview_theme() {
   }
 }
 
-function reconnectUI() {
+async function reconnectUI() {
+  const gallery = gradioApp().getElementById('txt2img_gallery');
+  if (!gallery) return;
+  const task_id = localStorage.getItem('task');
   const api_logo = Array.from(gradioApp().querySelectorAll('img')).filter((el) => el?.src?.endsWith('api-logo.svg'));
   if (api_logo.length > 0) api_logo[0].remove();
-
-  const gallery = gradioApp().getElementById('txt2img_gallery');
-  const task_id = localStorage.getItem('task');
-  if (!gallery) return;
   clearInterval(start_check); // eslint-disable-line no-use-before-define
   if (task_id) {
-    console.debug('task check:', task_id);
+    debug('task check:', task_id);
     requestProgress(task_id, null, gallery, null, null, true);
   }
   uiLoaded = true;
@@ -411,7 +408,7 @@ function reconnectUI() {
   };
   const sd_model_observer = new MutationObserver(sd_model_callback);
   sd_model_observer.observe(sd_model, { attributes: true, childList: true, subtree: true });
-  console.log('reconnectUI');
+  log('reconnectUI');
 }
 
-const start_check = setInterval(reconnectUI, 50);
+const start_check = setInterval(reconnectUI, 100);
