@@ -8,10 +8,6 @@
   path = extensions-builtin/stable-diffusion-webui-images-browser
   url = https://github.com/AlUlkesh/stable-diffusion-webui-images-browser
   ignore = dirty
-[submodule "extensions-builtin/sd-dynamic-thresholding"]
-  path = extensions-builtin/sd-dynamic-thresholding
-  url = https://github.com/mcmonkeyprojects/sd-dynamic-thresholding
-  ignore = dirty
 [submodule "modules/lora"]
   path = modules/lora
   url = https://github.com/kohya-ss/sd-scripts
