@@ -128,7 +128,7 @@ class TaskType(IntEnum):
     Tagger = 5
     RefineImage = 6
     Digital = 7
-
+    OnePress=8
 
 class TaskStatus(IntEnum):
     Waiting = 0
