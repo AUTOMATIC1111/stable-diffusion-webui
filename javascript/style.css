@@ -113,13 +113,14 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 .tooltip-show { opacity: 0.9; }
 
 /* settings */
+.licenses { display: block !important; }
 #quicksettings { width: fit-content; align-items: end; }
 #quicksettings > div, #quicksettings > fieldset{ max-width: 20em; min-width: 24em; padding: 0; border: none; box-shadow: none; background: none; }
 #quicksettings > button { margin-left: -0.5em; }
 
 #settings { display: flex; gap: var(--layout-gap); }
 #settings div { border: none; display: inline-flex; justify-content: normal; }
-#settings > div.tab-content { flex: 10 0 75%; }
+#settings > div.tab-content { flex: 10 0 75%; display: grid; }
 
 #settings > div.tab-content > div { border: none; padding: 0; }
 #settings > div.tab-content > div > div > div > div > div { flex-direction: unset; }

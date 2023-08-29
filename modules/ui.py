@@ -1049,7 +1049,7 @@ def create_ui(startup_timer = None):
                 loadsave.create_ui()
                 create_dirty_indicator("tab_defaults", [], interactive=False)
             with gr.TabItem("Licenses", id="licenses", elem_id="settings_tab_licenses"):
-                gr.HTML(modules.shared.html("licenses.html"), elem_id="licenses")
+                gr.HTML(modules.shared.html("licenses.html"), elem_id="licenses", elem_classes="licenses")
                 create_dirty_indicator("tab_licenses", [], interactive=False)
             with gr.TabItem("Show all pages", variant='primary', elem_id="settings_show_all_pages"):
                 create_dirty_indicator("show_all_pages", [], interactive=False)

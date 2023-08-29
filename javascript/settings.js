@@ -138,27 +138,18 @@ onUiLoaded(() => {
   const observer = new MutationObserver((mutations) => {
     const show_all_pages_dummy = gradioApp().getElementById('settings_show_all_pages');
     if (show_all_pages_dummy.style.display === 'none') { return; }
-    function mutation_on_style(mut) {
-      return mut.type === 'attributes' && mut.attributeName === 'style';
-    }
-    if (mutations.some(mutation_on_style)) {
-      showAllSettings();
-    }
+    const mutation_on_style = (mut) => mut.type === 'attributes' && mut.attributeName === 'style';
+    if (mutations.some(mutation_on_style)) showAllSettings();
   });
   const tab_content_wrapper = document.createElement('div');
   tab_content_wrapper.className = 'tab-content';
   tab_nav_element.parentElement.insertBefore(tab_content_wrapper, tab_nav_element.nextSibling);
-
   tab_elements.forEach((elem, index) => {
-    // Move the modification indicator to the toplevel tab button
     const tab_name = elem.id.replace('settings_', '');
     const indicator = gradioApp().getElementById(`modification_indicator_${tab_name}`);
     tab_nav_element.insertBefore(indicator, tab_nav_buttons[index]);
-
-    // Add the tab content to the wrapper
     tab_content_wrapper.appendChild(elem);
-
-    // Add the mutation observer to the tab element
     observer.observe(elem, { attributes: true, attributeFilter: ['style'] });
   });
+  log('initSettings');
 });
