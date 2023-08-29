@@ -1009,6 +1009,8 @@ div.block.gradio-box.edit-user-metadata {
 
 .edit-user-metadata .file-metadata th, .edit-user-metadata .file-metadata td{
     padding: 0.3em 1em;
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .edit-user-metadata .wrap.translucent{
