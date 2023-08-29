@@ -145,7 +145,7 @@ def run_annotato_args_check(module, thr_a, thr_b):
             thr_a = min(annotato_args_thr_a_dict[module])
     if module in annotato_args_thr_b_dict.keys():
         if not min(annotato_args_thr_b_dict[module]) <= thr_b <= max(annotato_args_thr_b_dict[module]):
-            thr_a = min(annotato_args_thr_b_dict[module])
+            thr_b = min(annotato_args_thr_b_dict[module])
     return thr_a, thr_b
 
 
