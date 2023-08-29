@@ -621,6 +621,9 @@ table.popup-table .link{
 
 .modalControls {
     display: flex;
+    position: absolute;
+    right: 0px;
+    left: 0px;
     gap: 1em;
     padding: 1em;
     background-color:rgba(0,0,0,0);
