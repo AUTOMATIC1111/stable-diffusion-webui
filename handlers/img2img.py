@@ -247,6 +247,7 @@ class Img2ImgTask(StableDiffusionProcessingImg2Img):
             override_settings=override_settings,
             do_not_save_samples=False
         )
+
         self.scripts = i2i_script_runner
         self.script_name = select_script_name
         self.base_model_path = base_model_path
