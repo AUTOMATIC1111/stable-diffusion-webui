@@ -7,6 +7,7 @@
 # @Software: Hifive
 import os
 import shutil
+import uuid
 
 import oss2
 
@@ -98,7 +99,19 @@ class OssFileStorage(FileStorage):
         bucket, key = self.extract_buack_key_from_path(remoting_dir)
         bucket = oss2.Bucket(self.auth, self.endpoint, bucket)
 
-        for obj in oss2.ObjectIteratorV2(bucket):
-            pass
+        tmp = os.path.join(self.tmp_dir, str(uuid.uuid4()))
+        os.makedirs(tmp, exist_ok=True)
+
+        for i, obj in enumerate(oss2.ObjectIteratorV2(bucket, prefix=key)):
+            if i >= 200:
+                break
+            tmp_file = os.path.join(tmp, os.path.basename(obj.key))
+            local_path = os.path.join(local_dir, os.path.basename(obj.key))
+            oss2.resumable_download(bucket, key, tmp_file)
+            if os.path.isfile(tmp_file):
+                shutil.move(tmp_file, local_path)
+            else:
+
+                raise OSError(f'cannot download file from oss, {obj.key}')
 
         return False
