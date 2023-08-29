@@ -144,7 +144,13 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
         sigmas = self.get_sigmas(p, steps)
         sigma_sched = sigmas[steps - t_enc - 1:]
 
-        xi = x + noise * sigma_sched[0]
+        if opts.sgm_noise_multiplier:
+            p.extra_generation_params["SGM noise multiplier"] = True
+            noise_multiplier = torch.sqrt(1.0 + sigma_sched[0] ** 2.0)
+        else:
+            noise_multiplier = sigma_sched[0]
+
+        xi = x + noise * noise_multiplier
 
         if opts.img2img_extra_noise > 0:
             p.extra_generation_params["Extra noise"] = opts.img2img_extra_noise
@@ -197,7 +203,11 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
 
         sigmas = self.get_sigmas(p, steps)
 
-        x = x * sigmas[0]
+        if opts.sgm_noise_multiplier:
+            p.extra_generation_params["SGM noise multiplier"] = True
+            x = x * torch.sqrt(1.0 + sigmas[0] ** 2.0)
+        else:
+            x = x * sigmas[0]
 
         extra_params_kwargs = self.initialize(p)
         parameters = inspect.signature(self.func).parameters
