@@ -98,8 +98,7 @@ class RunAnnotatorArgs:
                  t2i_w: int = 1080,
                  t2i_h: int = 1520,
                  pp: bool = False,
-                 rm: str = 'Resize and Fill',
-                 **kwargs):
+                 rm: str = 'Resize and Fill'):
         image = get_tmp_local_path(image)
         self.image = np.array(Image.open(image).convert('RGB'))
         if not mask:
@@ -118,7 +117,6 @@ class RunAnnotatorArgs:
             module = 'none'
         elif module in FreePreprocessors:
             module = 'none'
-        self.kwargs = kwargs
         self.module = module
         self.pres = annotator_resolution
         self.pthr_a = pthr_a

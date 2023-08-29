@@ -674,6 +674,23 @@ def train_auto(
             train_callback(2)
 
     lora_name = f"{task_id}"
+
+    # 判断性别
+    girl_count, man_count = 0, 0
+    for f in os.listdir(process_dir):
+        full = os.path.join(process_dir, f)
+        _, ex = os.path.splitext(f)
+        if ex.lower().lstrip('.') == 'txt':
+            with open(full) as f:
+                tags = ' '.join(f.readlines()).lower()
+                if 'girl' in tags:
+                    girl_count += 1
+                elif 'boy' in tags:
+                    man_count += 1
+
+    gender = '1girl' if girl_count > man_count else '1boy'
+    print(f">>>>>> gender:{gender}")
+
     # 3.自动训练出图
     train_with_params(
         pretrained_model_name_or_path=sd_model_path,
@@ -797,4 +814,5 @@ def train_auto(
         # unwrap_model=unwrap_model,
         callback=train_callback,
     )
-    return os.path.join(lora_path, lora_name + ".safetensors")
+
+    return os.path.join(lora_path, lora_name + ".safetensors"), gender

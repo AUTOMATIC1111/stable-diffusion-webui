@@ -59,7 +59,7 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                     dump_func(p)
 
         logger.debug(f">> preprocess and train....")
-        out_path = train_auto(
+        out_path, gender = train_auto(
             train_callback=train_progress_callback,
             train_data_dir=image_dir,
             train_type=task.train_type,
@@ -74,7 +74,8 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
         if out_path and os.path.isfile(out_path):
             result = {
                 'material': None,
-                'models': []
+                'models': [],
+                'gender': gender
             }
 
             cover = task.get_model_cover_key()
@@ -97,7 +98,6 @@ def digital_doppelganger(job: Task, dump_func: typing.Callable = None):
                 'train': result
             }, False)
             fp.train = p.train
-
             yield fp
         else:
             p = TaskProgress.new_failed(job, 'train failed(unknown errors)')
