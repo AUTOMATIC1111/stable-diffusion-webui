@@ -17,6 +17,7 @@ from datetime import datetime
 from worker.task_recv import Tmp
 from PIL.PngImagePlugin import PngInfo
 from tools.encryptor import des_encrypt
+from tools.wrapper import FuncExecTimeWrapper
 from modules.processing import Processed
 from modules.scripts import Script, ScriptRunner
 from modules.sd_models import reload_model_weights, CheckpointInfo
@@ -91,7 +92,7 @@ def get_tmp_local_path(remoting_path: str):
     md5.update(remoting_path.encode())
     hash_str = md5.hexdigest()[:16]
 
-    dst = os.path.join(Tmp, hash_str+ex)
+    dst = os.path.join(Tmp, hash_str + ex)
     return get_local_path(remoting_path, dst)
 
 
@@ -241,6 +242,7 @@ def init_script_args(default_script_args: typing.Sequence, alwayson_scripts: Str
     return script_args
 
 
+@FuncExecTimeWrapper()
 def load_sd_model_weights(filename, sha256=None):
     # 修改文件mtime，便于后续清理
     if filename:
