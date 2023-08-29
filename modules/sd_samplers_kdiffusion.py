@@ -144,7 +144,7 @@ class KDiffusionSampler(sd_samplers_common.Sampler):
         sigmas = self.get_sigmas(p, steps)
         sigma_sched = sigmas[steps - t_enc - 1:]
 
-        if opts.sgm_noise_multiplier:
+        if opts.sgm_noise_multiplier and p.denoising_strength == 1:
             p.extra_generation_params["SGM noise multiplier"] = True
             noise_multiplier = torch.sqrt(1.0 + sigma_sched[0] ** 2.0)
         else:
