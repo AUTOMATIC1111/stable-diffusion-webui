@@ -661,6 +661,9 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         cache[0] = (required_prompts, steps)
         return cache[1]
 
+    def infotext(_inxex=0): # dummy function overriden if there are iterations
+        return ''
+
     ema_scope_context = p.sd_model.ema_scope if shared.backend == shared.Backend.ORIGINAL else nullcontext
     with torch.no_grad(), ema_scope_context():
         with devices.autocast():
@@ -749,7 +752,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
                 p.scripts.postprocess_batch_list(p, batch_params, batch_number=n)
                 x_samples_ddim = batch_params.images
 
-            def infotext(index=0):
+            def infotext(index=0): # pylint: disable=function-redefined # noqa: F811
                 return create_infotext(p, p.prompts, p.seeds, p.subseeds, index=index, all_negative_prompts=p.negative_prompts)
 
             for i, x_sample in enumerate(x_samples_ddim):
@@ -824,7 +827,7 @@ def process_images_inner(p: StableDiffusionProcessing) -> Processed:
         p,
         images_list=output_images,
         seed=p.all_seeds[0],
-        info=infotext() if 'infotext' in globals() else '',
+        info=infotext(),
         comments="\n".join(comments),
         subseed=p.all_subseeds[0],
         index_of_first_image=index_of_first_image,
