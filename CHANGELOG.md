@@ -20,9 +20,10 @@
     thanks @disty0  
   - add model **precompile** option (when model compile is enbled)  
   - **extra network** folder info caching  
-    results in much faster startup when you have large number of extra networks
+    results in much faster startup when you have large number of extra networks  
   - fix extra networks previews  
-  - fix gradio gallery
+  - fix gradio gallery  
+  - css fixes  
 
 ## Update for 2023-08-20
 

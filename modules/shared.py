@@ -1020,7 +1020,25 @@ class Shared(sys.modules[__name__].__class__): # this class is here to provide s
             model_type = 'unknown'
         return model_type
 
+    @property
+    def sd_refiner_type(self):
+        try:
+            if backend == Backend.ORIGINAL:
+                model_type = 'ldm'
+            elif "StableDiffusionXL" in self.sd_refiner.__class__.__name__:
+                model_type = 'sdxl'
+            elif "StableDiffusion" in self.sd_refiner.__class__.__name__:
+                model_type = 'sd'
+            elif "Kandinsky" in self.sd_refiner.__class__.__name__:
+                model_type = 'kandinsky'
+            else:
+                model_type = self.sd_refiner.__class__.__name__
+        except Exception:
+            model_type = 'unknown'
+        return model_type
+
 sd_model = None
 sd_refiner = None
 sd_model_type = ''
+sd_refiner_type = ''
 sys.modules[__name__].__class__ = Shared
