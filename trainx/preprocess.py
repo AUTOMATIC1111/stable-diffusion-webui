@@ -116,7 +116,8 @@ def build_thumbnail_tag(target_dir):
             with open(file) as f:
                 lines = f.readlines()
                 if basename in images:
-                    images[basename]['tag'] = ' '.join(lines)
+                    # 替换掉_为空格
+                    images[basename]['tag'] = ' '.join(lines).replace('_', ' ')
                 else:
                     # 提前预置了TXT，预处理后png名称会重命名。
                     def get_rename_image():
@@ -128,7 +129,7 @@ def build_thumbnail_tag(target_dir):
                         raise KeyError(f'cannot found image key:{basename}')
                     if not images[rename]['tag']:
                         # tag 已经存在可能是反推出来的说明要保留
-                        images[rename]['tag'] = ' '.join(lines)
+                        images[rename]['tag'] = ' '.join(lines).replace('_', ' ')
         except Exception as ex:
             print(f'cannot read caption file:{file}, err:{ex}')
 
