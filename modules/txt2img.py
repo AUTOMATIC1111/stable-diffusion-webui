@@ -64,6 +64,8 @@ def txt2img(id_task: str, prompt: str, negative_prompt: str, prompt_styles, step
     if processed is None:
         processed = processing.process_images(p)
     p.close()
+    if processed is None:
+        return [], '', '', 'Error: processing failed'
     generation_info_js = processed.js()
     shared.log.debug(f'Processed: {len(processed.images)} Memory: {memory_stats()} txt')
     return processed.images, generation_info_js, processed.info, plaintext_to_html(processed.comments)

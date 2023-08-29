@@ -279,7 +279,7 @@ class Processed:
         self.batch_size = p.batch_size
         self.restore_faces = p.restore_faces
         self.face_restoration_model = shared.opts.face_restoration_model if p.restore_faces else None
-        self.sd_model_hash = shared.sd_model.sd_model_hash
+        self.sd_model_hash = getattr(shared.sd_model, 'sd_model_hash', '')
         self.seed_resize_from_w = p.seed_resize_from_w
         self.seed_resize_from_h = p.seed_resize_from_h
         self.denoising_strength = p.denoising_strength
@@ -446,6 +446,8 @@ def fix_seed(p):
 
 
 def create_infotext(p: StableDiffusionProcessing, all_prompts, all_seeds, all_subseeds, comments=None, iteration=0, position_in_batch=0, index=None, all_negative_prompts=None):
+    if not hasattr(shared.sd_model, 'sd_checkpoint_info'):
+        return ''
     if index is None:
         index = position_in_batch + iteration * p.batch_size
     if all_negative_prompts is None:
@@ -533,6 +535,8 @@ def print_profile(profile, msg: str):
 
 
 def process_images(p: StableDiffusionProcessing) -> Processed:
+    if not hasattr(p.sd_model, 'sd_checkpoint_info'):
+        return None
     stored_opts = {}
     for k in p.override_settings.keys():
         stored_opts[k] = shared.opts.data.get(k, None)
@@ -584,7 +588,7 @@ def validate_sample(sample):
     try:
         sample = sample.astype(np.uint8)
         return sample
-    except (Warning, Exception) as e:
+    except (Exception, Warning, RuntimeWarning) as e:
         shared.log.error(f'Failed to validate sample values: {e}')
         ok = False
     if not ok:
@@ -592,7 +596,7 @@ def validate_sample(sample):
             sample = np.nan_to_num(sample, nan=0, posinf=255, neginf=0)
             sample = sample.astype(np.uint8)
             shared.log.debug('Corrected sample values')
-        except (Warning, Exception) as e:
+        except (Exception, Warning, RuntimeWarning) as e:
             shared.log.error(f'Failed to correct sample values: {e}')
             sample = np.zeros_like(sample)
             sample = sample.astype(np.uint8)

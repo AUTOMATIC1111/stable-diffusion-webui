@@ -378,6 +378,7 @@ def get_checkpoint_state_dict(checkpoint_info: CheckpointInfo, timer):
 
 
 def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, state_dict, timer):
+    _pipeline, _model_type = detect_pipeline(checkpoint_info.path, 'model')
     shared.log.debug(f'Model weights loading: {memory_stats()}')
     timer.record("hash")
     if model_data.sd_dict == 'None':
@@ -388,6 +389,7 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
         model.load_state_dict(state_dict, strict=False)
     except Exception as e:
         shared.log.error(f'Error loading model weights: {checkpoint_info.filename} {e}')
+        return False
     del state_dict
     timer.record("apply")
     if shared.opts.sd_checkpoint_cache > 0:
@@ -427,6 +429,7 @@ def load_model_weights(model: torch.nn.Module, checkpoint_info: CheckpointInfo, 
     vae_file, vae_source = sd_vae.resolve_vae(checkpoint_info.filename)
     sd_vae.load_vae(model, vae_file, vae_source)
     timer.record("vae")
+    return True
 
 
 def enable_midas_autodownload():
@@ -554,14 +557,18 @@ def detect_pipeline(f: str, op: str = 'model'):
             size = round(os.path.getsize(f) / 1024 / 1024 / 1024, 2)
             if size < 1:
                 shared.log.warning(f'Model size smaller than expected: {f} size={size} GB')
-            elif size < 5:
+            elif size < 5.5: # maximum size of sd1.5 fp32 unpruned is 5.3GB
                 guess = 'Stable Diffusion'
-            elif size < 6:
+            elif size < 6: # sdxl refiner is 5.7gb
+                if shared.backend == shared.Backend.ORIGINAL:
+                    shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load using backend=original: {f} size={size} GB')
                 if op == 'model':
                     shared.log.warning(f'Model detected as SD-XL refiner model, but attempting to load a base model: {f} size={size} GB')
                 else:
                     guess = 'Stable Diffusion XL'
             elif size < 7:
+                if shared.backend == shared.Backend.ORIGINAL:
+                    shared.log.warning(f'Model detected as SD-XL base model, but attempting to load using backend=original: {f} size={size} GB')
                 if op == 'refiner':
                     shared.log.warning(f'Model size matches SD-XL base model, but attempting to load a refiner model: {f} size={size} GB')
                 else:
@@ -965,9 +972,16 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     shared.log.debug(f"Model created from config: {checkpoint_config}")
     sd_model.used_config = checkpoint_config
     timer.record("create")
-    load_model_weights(sd_model, checkpoint_info, state_dict, timer)
+    ok = load_model_weights(sd_model, checkpoint_info, state_dict, timer)
+    if not ok:
+        model_data.sd_model = sd_model
+        current_checkpoint_info = None
+        unload_model_weights(op=op)
+        shared.log.debug(f'Model weights unloaded: {memory_stats()}')
+        return
+    else:
+        shared.log.debug(f'Model weights loaded: {memory_stats()}')
     timer.record("load")
-    shared.log.debug(f'Model weights loaded: {memory_stats()}')
     if shared.cmd_opts.lowvram or shared.cmd_opts.medvram:
         lowvram.setup_for_low_vram(sd_model, shared.cmd_opts.medvram)
     else:
@@ -990,6 +1004,7 @@ def load_model(checkpoint_info=None, already_loaded_state_dict=None, timer=None,
     current_checkpoint_info = None
     devices.torch_gc(force=True)
     shared.log.info(f'Model load finished: {memory_stats()} cached={len(checkpoints_loaded.keys())}')
+
 
 def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model'):
     load_dict = shared.opts.sd_model_dict != model_data.sd_dict

@@ -15,13 +15,15 @@ from modules.ui_components import ToolButton
 
 extra_pages = []
 allowed_dirs = set()
-dir_cache = {}
+dir_cache = {} # key=path, value=(mtime, listdir(path))
 
 refresh_symbol = '\U0001f504'  # 🔄
 close_symbol = '\U0000274C'  # ❌
 
 
 def listdir(path):
+    if not os.path.exists(path):
+        return []
     if path in dir_cache and os.path.getmtime(path) == dir_cache[path][0]:
         return dir_cache[path][1]
     else:
