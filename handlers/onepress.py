@@ -295,18 +295,18 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
             # i2i
             processed_i2i_1 = self._build_gen_canny_i2i_args(process_args, processed)
             processed_i2i = self._canny_process_i2i(processed_i2i_1,alwayson_scripts)
-
+            processed.images=processed_i2i.images
         shared.state.end()
         process_args.close()
         progress.status = TaskStatus.Uploading
         yield progress
-        images = save_processed_images(processed_i2i if part_canny or full_canny else processed,
+        images = save_processed_images(processed,
                                        process_args.outpath_samples,
                                        process_args.outpath_grids,
                                        process_args.outpath_scripts,
                                        task.id,
                                        inspect=process_args.kwargs.get("need_audit", False))
         progress = TaskProgress.new_finish(task, images)
-        progress.update_seed(processed_i2i.all_seeds, processed_i2i.all_subseeds)
+        progress.update_seed(processed.all_seeds, processed.all_subseeds)
 
         yield progress
