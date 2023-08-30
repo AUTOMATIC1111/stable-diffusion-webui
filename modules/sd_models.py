@@ -27,6 +27,24 @@ checkpoint_alisases = checkpoint_aliases  # for compatibility with old name
 checkpoints_loaded = collections.OrderedDict()
 
 
+def replace_key(d, key, new_key, value):
+    keys = list(d.keys())
+
+    d[new_key] = value
+
+    if key not in keys:
+        return d
+
+    index = keys.index(key)
+    keys[index] = new_key
+
+    new_d = {k: d[k] for k in keys}
+
+    d.clear()
+    d.update(new_d)
+    return d
+
+
 class CheckpointInfo:
     def __init__(self, filename):
         self.filename = filename
@@ -91,9 +109,11 @@ class CheckpointInfo:
         if self.shorthash not in self.ids:
             self.ids += [self.shorthash, self.sha256, f'{self.name} [{self.shorthash}]', f'{self.name_for_extra} [{self.shorthash}]']
 
-        checkpoints_list.pop(self.title, None)
+        old_title = self.title
         self.title = f'{self.name} [{self.shorthash}]'
         self.short_title = f'{self.name_for_extra} [{self.shorthash}]'
+
+        replace_key(checkpoints_list, old_title, self.title, self)
         self.register()
 
         return self.shorthash
