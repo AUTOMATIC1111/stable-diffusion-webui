@@ -294,12 +294,16 @@ def save_processed_images(proc: Processed, output_dir: str, grid_dir: str, scrip
         pnginfo_data = PngInfo()
         pnginfo_data.add_text('by', 'xingzhe')
         size = f"{processed_image.width}*{processed_image.height}"
+        infotexts = proc.infotexts[n].replace('-automatic1111', "-xingzhe")\
+            if proc.infotexts and n < len(proc.infotexts) else ''
         for k, v in processed_image.info.items():
             if 'parameters' == k:
                 v = str(v).replace('-automatic1111', "-xingzhe")
                 print(f"image parameters:{v}")
-                # v = des_encrypt(v)
+                infotexts = v
+                continue
             pnginfo_data.add_text(k, str(v))
+        pnginfo_data.add_text('parameters', infotexts)
 
         processed_image.save(full_path, pnginfo=pnginfo_data)
         out_obj.add_image(full_path)
