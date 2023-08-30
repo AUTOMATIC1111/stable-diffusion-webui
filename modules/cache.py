@@ -81,15 +81,15 @@ def cache(subsection):
             with cache_lock:
                 if cache_data is None:
                     cache_data = cache_db_to_dict(cache_db_path)
-                s = cache_data.get(subsection, {})
-                if not s:
-                    try:
-                        with sqlite3.connect(cache_db_path) as conn:
-                            conn.execute(f'CREATE TABLE IF NOT EXISTS `{subsection}` (path TEXT PRIMARY KEY, mtime REAL, value TEXT)')
-                    except Exception as e:
-                        print(e)
-                cache_data[subsection] = s
-                return s
+        s = cache_data.get(subsection, {})
+        if not s:
+            try:
+                with sqlite3.connect(cache_db_path) as conn:
+                    conn.execute(f'CREATE TABLE IF NOT EXISTS `{subsection}` (path TEXT PRIMARY KEY, mtime REAL, value TEXT)')
+            except Exception as e:
+                print(e)
+        cache_data[subsection] = s
+        return s
 
     if cache_data is None:
         with cache_lock:
