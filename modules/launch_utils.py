@@ -228,7 +228,7 @@ def run_extension_installer(extension_dir):
         env = os.environ.copy()
         env['PYTHONPATH'] = f"{os.path.abspath('.')}{os.pathsep}{env.get('PYTHONPATH', '')}"
 
-        stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env)
+        stdout = run(f'"{python}" "{path_installer}"', errdesc=f"Error running install.py for extension {extension_dir}", custom_env=env).strip()
         if stdout:
             print(stdout)
     except Exception as e:
