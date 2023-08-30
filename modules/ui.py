@@ -315,8 +315,8 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
     return ui_common.create_refresh_button(refresh_component, refresh_method, refreshed_args, elem_id)
 
 
-def create_sampler_and_steps_selection(choices, tabname, primary: bool = True):
-    with FormRow(elem_id=f"sampler_selection_{tabname}{'_alt' if not primary else ''}"):
+def create_sampler_and_steps_selection(choices, tabname):
+    with FormRow(elem_id=f"sampler_selection_{tabname}"):
         sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value='Default', type="index")
         steps = gr.Slider(minimum=0, maximum=99, step=1, label="Sampling steps", elem_id=f"{tabname}_steps", value=20)
     return steps, sampler_index
@@ -361,7 +361,7 @@ def create_ui(startup_timer = None):
         with gr.Row().style(equal_height=False, elem_id="txt2img_interface"):
             with gr.Column(variant='compact', elem_id="txt2img_settings"):
                 modules.sd_samplers.set_samplers()
-                steps, sampler_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers, "txt2img", True)
+                steps, sampler_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers, "txt2img")
 
                 with FormRow():
                     width = gr.Slider(minimum=64, maximum=4096, step=8, label="Width", value=512, elem_id="txt2img_width")
@@ -614,7 +614,7 @@ def create_ui(startup_timer = None):
                     button.click(fn=lambda: None, _js=f"switch_to_{name.replace(' ', '_')}", inputs=[], outputs=[])
 
                 modules.sd_samplers.set_samplers()
-                steps, sampler_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers_for_img2img, "img2img", True)
+                steps, sampler_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers_for_img2img, "img2img")
 
                 with FormRow(elem_classes="checkboxes-row", variant="compact"):
                     show_seed = gr.Checkbox(label='Seed details', value=ui_defaults.get('img2img/Seed details/value', False), elem_id="img2img_show_seed")
