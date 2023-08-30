@@ -19,13 +19,14 @@ dump_cache_thread = None
 
 def cache_db_to_dict(db_path):
     try:
+        database_dict = {}
         with sqlite3.connect(db_path) as conn:
-            database_dict = {}
             for table in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall():
                 table_name = table[0]
                 table_data = conn.execute(f"SELECT * FROM `{table_name}`").fetchall()
-                database_dict[table_name] = {row[0]: {"mtime": row[1], "value": json.loads(row[2])} for row in table_data}
-            return database_dict
+                database_dict[table_name] = {row[0]: {"mtime": row[1], "value": json.loads(row[2])} for row in
+                                             table_data}
+        return database_dict
     except Exception as e:
         print(e)
         return {}
@@ -84,8 +85,10 @@ def cache(subsection):
         s = cache_data.get(subsection, {})
         if not s:
             try:
-                with sqlite3.connect(cache_db_path) as conn:
-                    conn.execute(f'CREATE TABLE IF NOT EXISTS `{subsection}` (path TEXT PRIMARY KEY, mtime REAL, value TEXT)')
+                with cache_lock:
+                    with sqlite3.connect(cache_db_path) as conn:
+                        conn.execute(
+                            f'CREATE TABLE IF NOT EXISTS `{subsection}` (path TEXT PRIMARY KEY, mtime REAL, value TEXT)')
             except Exception as e:
                 print(e)
         cache_data[subsection] = s
@@ -102,7 +105,8 @@ def cache(subsection):
                             cache_data = json.load(file)
                     except Exception:
                         os.replace(cache_filename, os.path.join(script_path, "tmp", "cache.json"))
-                        print('[ERROR] issue occurred while trying to read cache.json, move current cache to tmp/cache.json and create new cache')
+                        print(
+                            '[ERROR] issue occurred while trying to read cache.json, move current cache to tmp/cache.json and create new cache')
                         cache_data = {}
 
     s = cache_data.get(subsection, {})
@@ -111,7 +115,7 @@ def cache(subsection):
     return s
 
 
-def cached_data_for_file(subsection, title, filename, func):
+def cached_data_for_file(subsection, title, filename, func, func_message: str = None):
     """
     Retrieves or generates data for a specific file, using a caching mechanism.
 
@@ -120,7 +124,7 @@ def cached_data_for_file(subsection, title, filename, func):
         title (str): The title of the data entry in the subsection of the cache.
         filename (str): The path to the file to be checked for modifications.
         func (callable): A function that generates the data if it is not available in the cache.
-
+        func_message (str): when non-blank, prints {func_message}{func()} if func is called
     Returns:
         dict or None: The cached or generated data, or None if data generation fails.
 
@@ -144,7 +148,11 @@ def cached_data_for_file(subsection, title, filename, func):
             entry = None
 
     if not entry or 'value' not in entry:
+        if func_message:
+            print(f"{func_message}", end="")
         value = func()
+        if func_message:
+            print(value)
         if value is None:
             return None
 
@@ -154,10 +162,8 @@ def cached_data_for_file(subsection, title, filename, func):
                     with sqlite3.connect(cache_db_path) as conn:
                         insert_or_replace = f"INSERT OR REPLACE INTO `{subsection}` (path, mtime, value) VALUES (?, ?, ?)"
                         conn.execute(insert_or_replace, (title, ondisk_mtime, json.dumps(value)))
-                        existing_cache = cache(subsection)
                         existing_cache[title] = {'mtime': ondisk_mtime, 'value': value}
-                        print(f'{title}: {value}')
-                        return value
+                    return value
             except Exception as e:
                 print(e)
                 return None

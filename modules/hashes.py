@@ -44,7 +44,7 @@ def sha256(filename, title, use_addnet_hash=False):
         else:
             subsection = "hashes"
             calculate_hash = partial(calculate_sha256, filename)
-        return modules.cache.cached_data_for_file(subsection, title, filename, calculate_hash)
+        return modules.cache.cached_data_for_file(subsection, title, filename, calculate_hash, f"Calculating sha256 for {filename}: ")
 
     hashes = cache("hashes-addnet") if use_addnet_hash else cache("hashes")
 
