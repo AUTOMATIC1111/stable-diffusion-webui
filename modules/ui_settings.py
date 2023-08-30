@@ -87,7 +87,7 @@ class UiSettings:
         if not opts.same_type(value, opts.data_labels[key].default):
             return gr.update(visible=True), opts.dumpjson()
 
-        if not opts.set(key, value):
+        if value is None or not opts.set(key, value):
             return gr.update(value=getattr(opts, key)), opts.dumpjson()
 
         opts.save(shared.config_filename)
