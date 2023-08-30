@@ -81,16 +81,17 @@ def cache(subsection):
             with cache_lock:
                 if cache_data is None:
                     cache_data = cache_db_to_dict(cache_db_path)
-        s = cache_data.get(subsection, {})
-        if not s:
-            try:
-                with cache_lock:
-                    with sqlite3.connect(cache_db_path) as conn:
-                        conn.execute(f'CREATE TABLE IF NOT EXISTS `{subsection}` (path TEXT PRIMARY KEY, mtime REAL, value TEXT)')
-            except Exception as e:
-                print(e)
-        cache_data[subsection] = s
-        return s
+
+        if cache_data.get(subsection, None) is None:
+            with cache_lock:
+                if cache_data.get(subsection, None) is None:
+                    try:
+                        with sqlite3.connect(cache_db_path) as conn:
+                            conn.execute(f'CREATE TABLE IF NOT EXISTS `{subsection}` (path TEXT PRIMARY KEY, mtime REAL, value TEXT)')
+                    except Exception as e:
+                        print(e)
+                cache_data[subsection] = {}
+        return cache_data[subsection]
 
     if cache_data is None:
         with cache_lock:
@@ -146,19 +147,16 @@ def cached_data_for_file(subsection, title, filename, func):
         if value is None:
             return None
 
+        entry = {'mtime': ondisk_mtime, 'value': value}
+        existing_cache[title] = entry
         if shared.opts.experimental_sqlite_cache:
             try:
                 with cache_lock:
                     with sqlite3.connect(cache_db_path) as conn:
                         conn.execute(f"INSERT OR REPLACE INTO `{subsection}` (path, mtime, value) VALUES (?, ?, ?)", (title, ondisk_mtime, json.dumps(value)))
-                    existing_cache[title] = {'mtime': ondisk_mtime, 'value': value}
-                    return value
             except Exception as e:
                 print(e)
-                return None
-
-        entry = {'mtime': ondisk_mtime, 'value': value}
-        existing_cache[title] = entry
+            return value
 
         dump_cache()
 
