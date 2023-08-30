@@ -61,7 +61,7 @@ class Extension:
             if os.path.isdir(extension_git_path):
                 d = cache.cached_data_for_file('extensions-git', self.name, extension_git_path, read_from_repo)
                 self.from_dict(d)
-        except (FileNotFoundError, TypeError) as e:
+        except (FileNotFoundError, TypeError):
             pass
         except Exception as e:
             print(e)
