@@ -621,6 +621,9 @@ table.popup-table .link{
 
 .modalControls {
     display: flex;
+    position: absolute;
+    right: 0px;
+    left: 0px;
     gap: 1em;
     padding: 1em;
     background-color:rgba(0,0,0,0);
@@ -658,13 +661,6 @@ table.popup-table .link{
     height: 100%;
     width: 100%;
     min-height: 0;
-}
-
-#modalImage{
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translateX(-50%) translateY(-50%);
 }
 
 .modalPrev,
