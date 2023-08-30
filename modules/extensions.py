@@ -54,13 +54,17 @@ class Extension:
                     return
 
                 self.do_read_info_from_repo()
-
-                return self.to_dict()
+                if self.commit_hash:
+                    return self.to_dict()
         try:
-            d = cache.cached_data_for_file('extensions-git', self.name, os.path.join(self.path, ".git"), read_from_repo)
-            self.from_dict(d)
-        except FileNotFoundError:
+            extension_git_path = os.path.join(self.path, ".git")
+            if os.path.isdir(extension_git_path):
+                d = cache.cached_data_for_file('extensions-git', self.name, extension_git_path, read_from_repo)
+                self.from_dict(d)
+        except (FileNotFoundError, TypeError) as e:
             pass
+        except Exception as e:
+            print(e)
         self.status = 'unknown' if self.status == '' else self.status
 
     def do_read_info_from_repo(self):
