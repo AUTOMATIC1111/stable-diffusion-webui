@@ -66,6 +66,8 @@
  * forbid Full live preview method for medvram and add a setting to undo the forbidding
  * make it possible to localize tooltips and placeholders
  * add option to align with sgm repo's sampling implementation ([#12818](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12818))
+ * Restore faces and Tiling generation parameters have been moved to settings out of main UI
+   * if you want to put them back into main UI, use `Options in main UI` setting on the UI page.
 
 ### Extensions and API:
  * gradio 3.41.2
