@@ -140,7 +140,7 @@ def cached_data_for_file(subsection, title, filename, func):
     entry = existing_cache.get(title)
     if entry:
         cached_mtime = entry.get("mtime", 0)
-        if ondisk_mtime > cached_mtime:
+        if ondisk_mtime != cached_mtime:
             entry = None
 
     if not entry or 'value' not in entry:

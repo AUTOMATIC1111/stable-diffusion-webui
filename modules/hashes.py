@@ -29,7 +29,7 @@ def sha256_from_cache(filename, title, use_addnet_hash=False):
     cached_sha256 = hashes[title].get("value" if shared.opts.experimental_sqlite_cache else "sha256", None)
     cached_mtime = hashes[title].get("mtime", 0)
 
-    if ondisk_mtime > cached_mtime or cached_sha256 is None:
+    if ondisk_mtime != cached_mtime or cached_sha256 is None:
         return None
 
     return cached_sha256
