@@ -6,7 +6,6 @@ import os.path
 import gradio as gr
 
 from modules import generation_parameters_copypaste, images, sysinfo, errors, ui_extra_networks
-from modules.paths_internal import models_path
 
 
 class UserMetadataEditor:
