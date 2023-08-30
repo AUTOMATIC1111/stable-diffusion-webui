@@ -2,6 +2,12 @@
 
 ## Update for 2023-08-30
 
+- diffusers:  
+  - support for **destilled** sd models  
+    just go to models/huggingface and download a model, for example:  
+    `segmind/tiny-sd`, `segmind/small-sd`, `segmind/portrait-finetuned`  
+    those are lower quality, but extremely small and fast  
+    up to 50% faster than sd 1.5 and execute in as little as 2.1gb of vram  
 - general:  
   - redesigned **settings**  
     - new layout with separated sections:  

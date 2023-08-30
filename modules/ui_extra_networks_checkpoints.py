@@ -19,6 +19,8 @@ class ExtraNetworksPageCheckpoints(ui_extra_networks.ExtraNetworksPage):
             yield {
                 "name": checkpoint.name_for_extra,
                 "filename": path,
+                "fullname": checkpoint.filename,
+                "hash": checkpoint.shorthash,
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
                 "search_term": f'{self.search_terms_from_path(checkpoint.filename)} {(checkpoint.sha256 or "")} /{checkpoint.type}/',

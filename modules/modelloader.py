@@ -54,6 +54,40 @@ def walk(top, onerror:callable=None):
     yield top, nondirs
 
 
+def download_civit_preview(model_path: str, preview_url: str):
+    import requests
+    import rich.progress as p
+    _, ext = os.path.splitext(preview_url)
+    model_name, _ = os.path.splitext(os.path.basename(model_path))
+    preview_file = os.path.splitext(model_path)[0] + ext
+    res = f'CivitAI download: name={model_name} url={preview_url}'
+    req = requests.get(preview_url, stream=True, timeout=30)
+    total_size = int(req.headers.get('content-length', 0))
+    block_size = 16384 # 16KB blocks
+    written = 0
+    shared.state.begin()
+    shared.state.job = 'download preview'
+    try:
+        with open(preview_file, 'wb') as f:
+            with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn()) as progress:
+                task = progress.add_task(description="Download starting", total=total_size)
+                for data in req.iter_content(block_size):
+                    written = written + len(data)
+                    f.write(data)
+                    progress.update(task, advance=block_size, description="Downloading")
+        if written < 1024: # min threshold
+            os.remove(preview_file)
+            raise ValueError(f'removed invalid download: bytes={written}')
+    except Exception as e:
+        shared.log.error(f'CivitAI download error: name={model_name} url={preview_url} {e}')
+    if total_size == written:
+        shared.log.info(f'{res} size={total_size}')
+    else:
+        shared.log.error(f'{res} size={total_size} written={written}')
+    shared.state.end()
+    return res
+
+
 def download_civit_model(model_url: str, model_name: str, model_path: str, model_type: str, preview):
     if model_type == 'LoRA':
         model_file = os.path.join(shared.opts.lora_dir, model_path, model_name)
@@ -72,7 +106,7 @@ def download_civit_model(model_url: str, model_name: str, model_path: str, model
     block_size = 16384 # 16KB blocks
     written = 0
     shared.state.begin()
-    shared.state.job = 'downloload model'
+    shared.state.job = 'download model'
     try:
         with open(model_file, 'wb') as f:
             with p.Progress(p.TextColumn('[cyan]{task.description}'), p.DownloadColumn(), p.BarColumn(), p.TaskProgressColumn(), p.TimeRemainingColumn(), p.TimeElapsedColumn(), p.TransferSpeedColumn()) as progress:
@@ -103,7 +137,7 @@ def download_diffusers_model(hub_id: str, cache_dir: str = None, download_config
     from diffusers import DiffusionPipeline
     import huggingface_hub as hf
     shared.state.begin()
-    shared.state.job = 'downloload model'
+    shared.state.job = 'download model'
     if download_config is None:
         download_config = {
             "force_download": False,

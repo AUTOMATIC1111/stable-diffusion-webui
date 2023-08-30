@@ -32,6 +32,8 @@ class ExtraNetworksPageLora(ui_extra_networks.ExtraNetworksPage):
             yield {
                 "name": name,
                 "filename": path,
+                "fullname": lora_on_disk.filename,
+                "hash": lora_on_disk.shorthash,
                 "preview": self.find_preview(path),
                 "description": self.find_description(path),
                 "search_term": self.search_terms_from_path(lora_on_disk.filename),
