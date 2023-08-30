@@ -113,6 +113,7 @@ div#extras_scale_to_tab div.form{ flex-direction: row; }
 .tooltip-show { opacity: 0.9; }
 
 /* settings */
+#si-sparkline-memo, #si-sparkline-load { background-color: #111; }
 .licenses { display: block !important; }
 #quicksettings { width: fit-content; align-items: end; }
 #quicksettings > div, #quicksettings > fieldset{ max-width: 20em; min-width: 24em; padding: 0; border: none; box-shadow: none; background: none; }

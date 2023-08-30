@@ -54,6 +54,7 @@
     "getUICurrentTabContent": "readonly",
     //ui.js
     "opts": "writable",
+    "sortUIElements": "readonly",
     "all_gallery_buttons": "readonly",
     "selected_gallery_button": "readonly",
     "selected_gallery_index": "readonly",

@@ -277,7 +277,7 @@ onAfterUiUpdate(async () => {
     promptsInitialized = true;
   }
 
-  sortUIElements();
+  // sortUIElements();
   registerTextarea('txt2img_prompt', 'txt2img_token_counter', 'txt2img_token_button');
   registerTextarea('txt2img_neg_prompt', 'txt2img_negative_token_counter', 'txt2img_negative_token_button');
   registerTextarea('img2img_prompt', 'img2img_token_counter', 'img2img_token_button');

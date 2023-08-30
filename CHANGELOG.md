@@ -1,29 +1,37 @@
 # Change Log for SD.Next
 
-## Update for 2023-08-29
+## Update for 2023-08-30
 
-- general:
-  - all system and image paths are now relative by default  
-  - add settings validation when performing load/save  
-  - settings tab in ui now shows settings that are changed from default values  
-  - settings tab switch to compact view  
-  - enable batch **img2img** scale-by workflows  
-    now you can batch process with rescaling based on eah individual original image size  
+- general:  
+  - redesigned **settings**  
+    - new layout with separated sections:  
+      *settings, ui config, licenses, system info, benchmark, models*  
+    - **system info** tab is now part of settings  
+      when running outside of sdnext, system info is shown in main ui  
+    - all system and image paths are now relative by default  
+    - add settings validation when performing load/save  
+    - settings tab in ui now shows settings that are changed from default values  
+    - settings tab switch to compact view  
   - update **gradio** major version  
     this may result in some smaller layout changes since its a major version change  
     however, browser page load is now much faster  
-  - optimize model hashing  
-  - add cli param `--skip-all` that skips all installer checks  
-    use at personal discretion, but it can be useful for bulk deployments  
+  - optimizations:
+    - optimize model hashing  
+    - add cli param `--skip-all` that skips all installer checks  
+      use at personal discretion, but it can be useful for bulk deployments  
+    - add model **precompile** option (when model compile is enbled)  
+    - **extra network** folder info caching  
+      results in much faster startup when you have large number of extra networks  
+  - fixes:
+    - fix extra networks previews  
+    - fix gradio gallery  
+    - css fixes  
+    - improved extensions compatibility (e.g. sd-cn-animation)  
   - add **openvino** (experimental) cpu optimized model compile and inference  
     enable with `--use-openvino`  
     thanks @disty0  
-  - add model **precompile** option (when model compile is enbled)  
-  - **extra network** folder info caching  
-    results in much faster startup when you have large number of extra networks  
-  - fix extra networks previews  
-  - fix gradio gallery  
-  - css fixes  
+  - enable batch **img2img** scale-by workflows  
+    now you can batch process with rescaling based on eah individual original image size  
 
 ## Update for 2023-08-20
 

@@ -165,7 +165,7 @@ def create_output_panel(tabname, outdir):
     with gr.Column(variant='panel', elem_id=f"{tabname}_results"):
         with gr.Group(elem_id=f"{tabname}_gallery_container"):
             # columns are for <576px, <768px, <992px, <1200px, <1400px, >1400px
-            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=[1,2,3,4,5,6], object_fit='scale-down') 
+            result_gallery = gr.Gallery(value=[], label='Output', show_label=False, show_download_button=True, elem_id=f"{tabname}_gallery", container=False, preview=True, columns=[1,2,3,4,5,6], object_fit='scale-down')
 
         with gr.Column(elem_id=f"{tabname}_footer", elem_classes="gallery_footer"):
             with gr.Row(elem_id=f"image_buttons_{tabname}", elem_classes="image-buttons"):

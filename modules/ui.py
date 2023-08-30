@@ -33,6 +33,8 @@ modules.errors.install()
 mimetypes.init()
 mimetypes.add_type('application/javascript', '.js')
 log = modules.shared.log
+ui_system_tabs = None
+
 
 if not cmd_opts.share and not cmd_opts.listen:
     # fix gradio phoning home
@@ -326,6 +328,10 @@ def get_value_for_setting(key):
     args = info.component_args() if callable(info.component_args) else info.component_args or {}
     args = {k: v for k, v in args.items() if k not in {'precision'}}
     return gr.update(value=value, **args)
+
+
+def ordered_ui_categories():
+    return [] # dummy
 
 
 def create_override_settings_dropdown(tabname, row): # pylint: disable=unused-argument
@@ -993,66 +999,75 @@ def create_ui(startup_timer = None):
 
     with gr.Blocks(analytics_enabled=False) as settings_interface:
         with gr.Row():
-            settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
             restart_submit = gr.Button(value="Restart server", variant='primary', elem_id="restart_submit")
             shutdown_submit = gr.Button(value="Shutdown server", variant='primary', elem_id="shutdown_submit")
-            preview_theme = gr.Button(value="Preview theme", variant='primary', elem_id="settings_preview_theme")
-            defaults_submit = gr.Button(value="Restore defaults", variant='primary', elem_id="defaults_submit")
             unload_sd_model = gr.Button(value='Unload checkpoint', variant='primary', elem_id="sett_unload_sd_model")
             reload_sd_model = gr.Button(value='Reload checkpoint', variant='primary', elem_id="sett_reload_sd_model")
-            # reload_script_bodies = gr.Button(value='Reload scripts', variant='primary', elem_id="settings_reload_script_bodies")
-        with gr.Row():
-            _settings_search = gr.Text(label="Search", elem_id="settings_search")
 
-        result = gr.HTML(elem_id="settings_result")
-        quicksettings_names = opts.quicksettings_list
-        quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
-        quicksettings_list = []
+        with gr.Tabs(elem_id="system") as system_tabs:
+            global ui_system_tabs # pylint: disable=global-statement
+            ui_system_tabs = system_tabs
+            with gr.TabItem("Settings", id="system_settings", elem_id="system_settings_tab"):
 
-        previous_section = []
-        tab_item_keys = []
-        current_tab = None
-        current_row = None
-        with gr.Tabs(elem_id="settings"):
-            for i, (k, item) in enumerate(opts.data_labels.items()):
-                section_must_be_skipped = item.section[0] is None
-                if previous_section != item.section and not section_must_be_skipped:
-                    elem_id, text = item.section
+                with gr.Row():
+                    settings_submit = gr.Button(value="Apply settings", variant='primary', elem_id="settings_submit")
+                    preview_theme = gr.Button(value="Preview theme", variant='primary', elem_id="settings_preview_theme")
+                    defaults_submit = gr.Button(value="Restore defaults", variant='primary', elem_id="defaults_submit")
+
+                with gr.Row():
+                    _settings_search = gr.Text(label="Search", elem_id="settings_search")
+
+                result = gr.HTML(elem_id="settings_result")
+                quicksettings_names = opts.quicksettings_list
+                quicksettings_names = {x: i for i, x in enumerate(quicksettings_names) if x != 'quicksettings'}
+                quicksettings_list = []
+
+                previous_section = []
+                tab_item_keys = []
+                current_tab = None
+                current_row = None
+                with gr.Tabs(elem_id="settings"):
+                    for i, (k, item) in enumerate(opts.data_labels.items()):
+                        section_must_be_skipped = item.section[0] is None
+                        if previous_section != item.section and not section_must_be_skipped:
+                            elem_id, text = item.section
+                            if current_tab is not None and len(previous_section) > 0:
+                                create_dirty_indicator(previous_section[0], tab_item_keys)
+                                tab_item_keys = []
+                                current_row.__exit__()
+                                current_tab.__exit__()
+                            current_tab = gr.TabItem(elem_id=f"settings_{elem_id}", label=text)
+                            current_tab.__enter__()
+                            current_row = gr.Column(variant='compact')
+                            current_row.__enter__()
+                            previous_section = item.section
+                        if k in quicksettings_names and not modules.shared.cmd_opts.freeze:
+                            quicksettings_list.append((i, k, item))
+                            components.append(dummy_component)
+                        elif section_must_be_skipped:
+                            components.append(dummy_component)
+                        else:
+                            component = create_setting_component(k)
+                            component_dict[k] = component
+                            tab_item_keys.append(k)
+                            components.append(component)
                     if current_tab is not None and len(previous_section) > 0:
                         create_dirty_indicator(previous_section[0], tab_item_keys)
                         tab_item_keys = []
                         current_row.__exit__()
                         current_tab.__exit__()
-                    current_tab = gr.TabItem(elem_id=f"settings_{elem_id}", label=text)
-                    current_tab.__enter__()
-                    current_row = gr.Column(variant='compact')
-                    current_row.__enter__()
-                    previous_section = item.section
-                if k in quicksettings_names and not modules.shared.cmd_opts.freeze:
-                    quicksettings_list.append((i, k, item))
-                    components.append(dummy_component)
-                elif section_must_be_skipped:
-                    components.append(dummy_component)
-                else:
-                    component = create_setting_component(k)
-                    component_dict[k] = component
-                    tab_item_keys.append(k)
-                    components.append(component)
-            if current_tab is not None and len(previous_section) > 0:
-                create_dirty_indicator(previous_section[0], tab_item_keys)
-                tab_item_keys = []
-                current_row.__exit__()
-                current_tab.__exit__()
 
-            request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications", visible=False)
-            with gr.TabItem("User interface defaults", id="defaults", elem_id="settings_tab_defaults"):
+                    request_notifications = gr.Button(value='Request browser notifications', elem_id="request_notifications", visible=False)
+                    with gr.TabItem("Show all pages", variant='primary', elem_id="settings_show_all_pages"):
+                        create_dirty_indicator("show_all_pages", [], interactive=False)
+
+            with gr.TabItem("UI Config", id="system_config", elem_id="system_config_tab"):
                 loadsave.create_ui()
                 create_dirty_indicator("tab_defaults", [], interactive=False)
-            with gr.TabItem("Licenses", id="licenses", elem_id="settings_tab_licenses"):
+
+            with gr.TabItem("Licenses", id="system_licenses", elem_id="system_tab_licenses"):
                 gr.HTML(modules.shared.html("licenses.html"), elem_id="licenses", elem_classes="licenses")
                 create_dirty_indicator("tab_licenses", [], interactive=False)
-            with gr.TabItem("Show all pages", variant='primary', elem_id="settings_show_all_pages"):
-                create_dirty_indicator("show_all_pages", [], interactive=False)
 
         def unload_sd_weights():
             modules.sd_models.unload_model_weights(op='model')
@@ -1076,7 +1091,7 @@ def create_ui(startup_timer = None):
         (models_interface, "Models", "models"),
     ]
     interfaces += script_callbacks.ui_tabs_callback()
-    interfaces += [(settings_interface, "Settings", "settings")]
+    interfaces += [(settings_interface, "System", "system")]
     extensions_interface = ui_extensions.create_ui()
     interfaces += [(extensions_interface, "Extensions", "extensions")]
     startup_timer.record("ui-extensions")
@@ -1095,12 +1110,16 @@ def create_ui(startup_timer = None):
 
         with gr.Tabs(elem_id="tabs") as tabs:
             for interface, label, ifid in interfaces:
-                if label in modules.shared.opts.hidden_tabs:
+                if interface is None:
+                    continue
+                if label in modules.shared.opts.hidden_tabs or label == '':
                     continue
                 with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
             for interface, _label, ifid in interfaces:
-                if ifid in ["extensions", "settings"]:
+                if interface is None:
+                    continue
+                if ifid in ["extensions", "system"]:
                     continue
                 loadsave.add_block(interface, ifid)
             loadsave.add_component(f"webui/Tabs@{tabs.elem_id}", tabs)

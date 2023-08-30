@@ -443,5 +443,4 @@ def on_script_unloaded(callback):
 
 def on_before_ui(callback):
     """register a function to be called before the UI is created."""
-
     add_callback(callback_map['callbacks_before_ui'], callback)
