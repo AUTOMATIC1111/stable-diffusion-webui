@@ -311,6 +311,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 negative_prompts_2=[p.refiner_negative] if len(p.refiner_negative) > 0 else negative_prompts,
                 num_inference_steps=int(p.hr_second_pass_steps // p.denoising_strength + 1),
                 eta=shared.opts.eta_ddim,
+                guidance_scale=p.image_cfg_scale if p.image_cfg_scale is not None else p.cfg_scale,
                 guidance_rescale=p.diffusers_guidance_rescale,
                 output_type='latent' if hasattr(shared.sd_model, 'vae') else 'np',
                 is_refiner=False,

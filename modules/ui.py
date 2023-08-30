@@ -317,8 +317,8 @@ def create_refresh_button(refresh_component, refresh_method, refreshed_args, ele
 
 def create_sampler_and_steps_selection(choices, tabname, primary: bool = True):
     with FormRow(elem_id=f"sampler_selection_{tabname}{'_alt' if not primary else ''}"):
-        sampler_index = gr.Dropdown(label='Sampling method' if primary else 'Secondary sampler', elem_id=f"{tabname}_sampling{'_alt' if not primary else ''}", choices=[x.name for x in choices], value='Default', type="index")
-        steps = gr.Slider(minimum=0, maximum=99, step=1, label="Sampling steps" if primary else 'Secondary steps', elem_id=f"{tabname}_steps{'_alt' if not primary else ''}", value=20)
+        sampler_index = gr.Dropdown(label='Sampling method', elem_id=f"{tabname}_sampling", choices=[x.name for x in choices], value='Default', type="index")
+        steps = gr.Slider(minimum=0, maximum=99, step=1, label="Sampling steps", elem_id=f"{tabname}_steps", value=20)
     return steps, sampler_index
 
 
@@ -386,20 +386,24 @@ def create_ui(startup_timer = None):
                     with FormRow():
                         cfg_scale = gr.Slider(minimum=1.0, maximum=30.0, step=0.1, label='CFG Scale', value=6.0, elem_id="txt2img_cfg_scale")
                         clip_skip = gr.Slider(label='CLIP skip', value=1, minimum=1, maximum=14, step=1, elem_id='txt2img_clip_skip', interactive=True)
+                    with FormRow(elem_id="guidence_scale_row", variant="compact"):
+                        image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
+                        diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
                     with FormRow(elem_classes="checkboxes-row", variant="compact"):
                         full_quality = gr.Checkbox(label='Full quality', value=True, elem_id="txt2img_full_quality")
                         restore_faces = gr.Checkbox(label='Face restore', value=False, visible=len(modules.shared.face_restorers) > 1, elem_id="txt2img_restore_faces")
                         tiling = gr.Checkbox(label='Tiling', value=False, elem_id="txt2img_tiling")
 
                 with FormGroup(visible=show_second_pass.value, elem_id="txt2img_second_pass") as second_pass_group:
-                    hr_second_pass_steps, latent_index = create_sampler_and_steps_selection(modules.sd_samplers.samplers, "txt2img", False)
-                    with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
+                    with FormRow(elem_id="sampler_selection_txt2img_alt_row1"):
+                        latent_index = gr.Dropdown(label='Secondary sampler', elem_id="txt2img_sampling_alt", choices=[x.name for x in modules.sd_samplers.samplers], value='Default', type="index")
                         denoising_strength = gr.Slider(minimum=0.05, maximum=1.0, step=0.01, label='Denoising strength', value=0.3, elem_id="txt2img_denoising_strength")
-                        refiner_steps = gr.Slider(minimum=0, maximum=99, step=1, label="Refiner steps", elem_id="txt2img_refiner_steps", value=4)
                     with FormRow(elem_id="txt2img_hires_finalres", variant="compact"):
                         hr_final_resolution = FormHTML(value="", elem_id="txtimg_hr_finalres", label="Upscaled resolution", interactive=False)
-                    with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
+                    with FormRow(elem_id="txt2img_hires_fix_row1", variant="compact"):
                         hr_upscaler = gr.Dropdown(label="Upscaler", elem_id="txt2img_hr_upscaler", choices=[*modules.shared.latent_upscale_modes, *[x.name for x in modules.shared.sd_upscalers]], value=modules.shared.latent_upscale_default_mode)
+                        hr_second_pass_steps = gr.Slider(minimum=0, maximum=99, step=1, label='Hires steps', elem_id="txt2img_steps_alt", value=20)
+                    with FormRow(elem_id="txt2img_hires_fix_row2", variant="compact"):
                         hr_scale = gr.Slider(minimum=1.0, maximum=4.0, step=0.05, label="Upscale by", value=2.0, elem_id="txt2img_hr_scale")
                     with FormRow(elem_id="txt2img_hires_fix_row3", variant="compact"):
                         hr_resize_x = gr.Slider(minimum=0, maximum=4096, step=8, label="Resize width to", value=0, elem_id="txt2img_hr_resize_x")
@@ -408,12 +412,11 @@ def create_ui(startup_timer = None):
                     with FormRow():
                         hr_refiner = FormHTML(value="Refiner", elem_id="txtimg_hr_refiner", interactive=False)
                     with FormRow(elem_id="txt2img_refiner_row1", variant="compact"):
-                        image_cfg_scale = gr.Slider(minimum=1.1, maximum=30.0, step=0.1, label='Secondary CFG Scale', value=6.0, elem_id="txt2img_image_cfg_scale")
-                        diffusers_guidance_rescale = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Guidance rescale', value=0.7, elem_id="txt2img_image_cfg_rescale")
                         refiner_start = gr.Slider(minimum=0.0, maximum=1.0, step=0.05, label='Refiner start', value=0.8, elem_id="txt2img_refiner_start")
-                    with FormRow(elem_id="txt2img_refiner_row2", variant="compact"):
-                        refiner_prompt = gr.Textbox(value='', label='Secondary Prompt')
+                        refiner_steps = gr.Slider(minimum=0, maximum=99, step=1, label="Refiner steps", elem_id="txt2img_refiner_steps", value=5)
                     with FormRow(elem_id="txt2img_refiner_row3", variant="compact"):
+                        refiner_prompt = gr.Textbox(value='', label='Secondary Prompt')
+                    with FormRow(elem_id="txt2img_refiner_row4", variant="compact"):
                         refiner_negative = gr.Textbox(value='', label='Secondary negative prompt')
 
                 with FormRow(elem_id="txt2img_override_settings_row") as row:
@@ -504,7 +507,7 @@ def create_ui(startup_timer = None):
                 (hr_scale, "Hires upscale"),
                 (hr_upscaler, "Hires upscaler"),
                 (hr_second_pass_steps, "Hires steps"),
-                (hr_second_pass_steps, "Secondary steps"),
+                (hr_second_pass_steps, "Hires steps"),
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
                 (diffusers_guidance_rescale, "CFG rescale"),
@@ -863,7 +866,7 @@ def create_ui(startup_timer = None):
                 (hr_scale, "Hires upscale"),
                 (hr_upscaler, "Hires upscaler"),
                 (hr_second_pass_steps, "Hires steps"),
-                (hr_second_pass_steps, "Secondary steps"),
+                (hr_second_pass_steps, "Hires steps"),
                 (hr_resize_x, "Hires resize-1"),
                 (hr_resize_y, "Hires resize-2"),
                 (diffusers_guidance_rescale, "CFG rescale"),
