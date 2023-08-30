@@ -164,7 +164,7 @@ def cached_data_for_file(subsection, title, filename, func):
 
         entry = {'mtime': ondisk_mtime, 'value': value}
         existing_cache[title] = entry
-        if not shared.opts.experimental_sqlite_cache:
-            dump_cache()
+
+        dump_cache()
 
     return entry['value']
