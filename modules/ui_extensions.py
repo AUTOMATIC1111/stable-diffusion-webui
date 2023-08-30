@@ -177,7 +177,7 @@ def extension_table():
                 <td>{remote}</td>
                 <td>{ext.branch}</td>
                 <td>{version_link}</td>
-                <td>{time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(ext.commit_date))}</td>
+                <td>{datetime.fromtimestamp(ext.commit_date) if ext.commit_date else ""}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
             </tr>
     """
