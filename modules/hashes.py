@@ -26,7 +26,7 @@ def sha256_from_cache(filename, title, use_addnet_hash=False):
     if title not in hashes:
         return None
 
-    cached_sha256 = hashes[title].get("sha256", None)
+    cached_sha256 = hashes[title].get("value" if shared.opts.experimental_sqlite_cache else "sha256", None)
     cached_mtime = hashes[title].get("mtime", 0)
 
     if ondisk_mtime > cached_mtime or cached_sha256 is None:
@@ -36,6 +36,22 @@ def sha256_from_cache(filename, title, use_addnet_hash=False):
 
 
 def sha256(filename, title, use_addnet_hash=False):
+    if shared.opts.experimental_sqlite_cache:
+        if use_addnet_hash:
+            def calculate_addnet_hash_sqlite3():
+                with open(filename, "rb") as file:
+                    return {addnet_hash_safetensors(file)}
+            return modules.cache.cached_data_for_file("hashes-addnet", title, filename, calculate_addnet_hash_sqlite3)
+        else:
+            def calculate_sha256_sqlite3():
+                hash_sha256 = hashlib.sha256()
+                blksize = 1024 * 1024
+                with open(filename, "rb") as f:
+                    for chunk in iter(lambda: f.read(blksize), b""):
+                        hash_sha256.update(chunk)
+                return hash_sha256.hexdigest()
+            return modules.cache.cached_data_for_file("hashes", title, filename, calculate_sha256_sqlite3)
+
     hashes = cache("hashes-addnet") if use_addnet_hash else cache("hashes")
 
     sha256_value = sha256_from_cache(filename, title, use_addnet_hash)

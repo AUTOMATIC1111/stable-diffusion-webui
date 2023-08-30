@@ -109,6 +109,7 @@ options_templates.update(options_section(('system', "System"), {
     "list_hidden_files": OptionInfo(True, "Load models/files in hidden directories").info("directory is hidden if its name starts with \".\""),
     "disable_mmap_load_safetensors": OptionInfo(False, "Disable memmapping for loading .safetensors files.").info("fixes very slow loading speed in some cases"),
     "hide_ldm_prints": OptionInfo(True, "Prevent Stability-AI's ldm/sgm modules from printing noise to console."),
+    "experimental_sqlite_cache": OptionInfo(False, "Use sqlite for cache").needs_restart(),
 }))
 
 options_templates.update(options_section(('API', "API"), {
