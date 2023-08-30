@@ -31,8 +31,8 @@ original_interpolate = torch.nn.functional.interpolate
 #Latent antialias:
 def interpolate(input, size=None, scale_factor=None, mode='nearest', align_corners=None, recompute_scale_factor=None, antialias=False):
     if antialias:
-        return original_interpolate(input.to("cpu"), size=size, scale_factor=scale_factor, mode=mode,
-        align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias).to(devices.device)
+        return original_interpolate(input.to("cpu", dtype=torch.float32), size=size, scale_factor=scale_factor, mode=mode,
+        align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias).to(devices.device, dtype=devices.dtype)
     else:
         return original_interpolate(input, size=size, scale_factor=scale_factor, mode=mode,
         align_corners=align_corners, recompute_scale_factor=recompute_scale_factor, antialias=antialias)
