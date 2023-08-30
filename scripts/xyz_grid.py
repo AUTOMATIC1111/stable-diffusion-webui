@@ -600,13 +600,13 @@ class Script(scripts.Script):
             if shared.state.interrupted:
                 return Processed(p, [], p.seed, "")
             pc = copy(p)
+            pc.override_settings_restore_afterwards = False
             pc.styles = pc.styles[:]
             x_opt.apply(pc, x, xs)
             y_opt.apply(pc, y, ys)
             z_opt.apply(pc, z, zs)
             res = process_images(pc)
-            # Sets subgrid infotexts
-            subgrid_index = 1 + iz
+            subgrid_index = 1 + iz # Sets subgrid infotexts
             if grid_infotext[subgrid_index] is None and ix == 0 and iy == 0:
                 pc.extra_generation_params = copy(pc.extra_generation_params)
                 pc.extra_generation_params['Script'] = self.title()
@@ -621,10 +621,8 @@ class Script(scripts.Script):
                     if y_opt.label in ["Seed", "Var. seed"] and not no_fixed_seeds:
                         pc.extra_generation_params["Fixed Y Values"] = ", ".join([str(y) for y in ys])
                 grid_infotext[subgrid_index] = processing.create_infotext(pc, pc.all_prompts, pc.all_seeds, pc.all_subseeds)
-            # Sets main grid infotext
-            if grid_infotext[0] is None and ix == 0 and iy == 0 and iz == 0:
+            if grid_infotext[0] is None and ix == 0 and iy == 0 and iz == 0: # Sets main grid infotext
                 pc.extra_generation_params = copy(pc.extra_generation_params)
-
                 if z_opt.label != 'Nothing':
                     pc.extra_generation_params["Z Type"] = z_opt.label
                     pc.extra_generation_params["Z Values"] = z_values
@@ -653,22 +651,17 @@ class Script(scripts.Script):
             )
 
         if not processed.images:
-            # It broke, no further handling needed.
-            return processed
+            return processed # It broke, no further handling needed.
         z_count = len(zs)
-        # Set the grid infotexts to the real ones with extra_generation_params (1 main grid + z_count sub-grids)
-        processed.infotexts[:1+z_count] = grid_infotext[:1+z_count]
+        processed.infotexts[:1+z_count] = grid_infotext[:1+z_count] # Set the grid infotexts to the real ones with extra_generation_params (1 main grid + z_count sub-grids)
         if not include_lone_images:
-            # Don't need sub-images anymore, drop from list:
-            processed.images = processed.images[:z_count+1]
-        if shared.opts.grid_save:
-            # Auto-save main and sub-grids:
+            processed.images = processed.images[:z_count+1] # Don't need sub-images anymore, drop from list:
+        if shared.opts.grid_save: # Auto-save main and sub-grids:
             grid_count = z_count + 1 if z_count > 1 else 1
             for g in range(grid_count):
                 adj_g = g-1 if g > 0 else g
                 images.save_image(processed.images[g], p.outpath_grids, "xyz_grid", info=processed.infotexts[g], extension=shared.opts.grid_format, prompt=processed.all_prompts[adj_g], seed=processed.all_seeds[adj_g], grid=True, p=processed)
-        if not include_sub_grids:
-            # Done with sub-grids, drop all related information:
+        if not include_sub_grids: # Done with sub-grids, drop all related information:
             for _sg in range(z_count):
                 del processed.images[1]
                 del processed.all_prompts[1]

@@ -1046,6 +1046,7 @@ def reload_model_weights(sd_model=None, info=None, reuse_dict=False, op='model')
         sd_model = None
         if shared.backend == shared.Backend.ORIGINAL:
             load_model(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer, op=op)
+            model_data.sd_dict = shared.opts.sd_model_dict
         else:
             load_diffuser(checkpoint_info, already_loaded_state_dict=state_dict, timer=timer, op=op)
         if load_dict and next_checkpoint_info is not None:

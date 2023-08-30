@@ -254,8 +254,12 @@ def reload_vae_weights(sd_model=None, vae_file=unspecified):
         script_callbacks.model_loaded_callback(sd_model)
         if vae_file is not None:
             shared.log.info(f"VAE weights loaded: {vae_file}")
-    # else:
-    #    load_vae_diffusers(model_file, vae_file, vae_source)
+    else:
+        if hasattr(shared.sd_model, "vae") and hasattr(shared.sd_model, "sd_checkpoint_info"):
+            vae = load_vae_diffusers(shared.sd_model.sd_checkpoint_info.filename, vae_file, vae_source)
+            if vae is not None:
+                if vae is not None:
+                    sd_model.vae = vae
 
     if not shared.cmd_opts.lowvram and not shared.cmd_opts.medvram and not sd_model.has_accelerate:
         sd_model.to(devices.device)

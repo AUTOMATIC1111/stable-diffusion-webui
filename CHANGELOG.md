@@ -22,16 +22,18 @@
     - add model **precompile** option (when model compile is enbled)  
     - **extra network** folder info caching  
       results in much faster startup when you have large number of extra networks  
-  - fixes:
-    - fix extra networks previews  
-    - fix gradio gallery  
-    - css fixes  
-    - improved extensions compatibility (e.g. sd-cn-animation)  
+    - faster **xyz grid** switching  
+      especially when using different checkpoints  
   - add **openvino** (experimental) cpu optimized model compile and inference  
     enable with `--use-openvino`  
     thanks @disty0  
   - enable batch **img2img** scale-by workflows  
     now you can batch process with rescaling based on eah individual original image size  
+  - fixes:
+    - fix extra networks previews  
+    - css fixes  
+    - improved extensions compatibility (e.g. *sd-cn-animation*)  
+    - allow changing **vae** on-the-fly for both original and diffusers backend
 
 ## Update for 2023-08-20
 
