@@ -1112,8 +1112,8 @@ def create_ui(startup_timer = None):
             for interface, label, ifid in interfaces:
                 if interface is None:
                     continue
-                if label in modules.shared.opts.hidden_tabs or label == '':
-                    continue
+                # if label in modules.shared.opts.hidden_tabs or label == '':
+                #    continue
                 with gr.TabItem(label, id=ifid, elem_id=f"tab_{ifid}"):
                     interface.render()
             for interface, _label, ifid in interfaces:

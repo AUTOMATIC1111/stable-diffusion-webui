@@ -33,6 +33,16 @@ def init_modules():
     extensions_dir = modules.paths_internal.extensions_dir
 
 
+def get_custom_args():
+    custom = {}
+    for arg in vars(args):
+        default = parser.get_default(arg)
+        current = getattr(args, arg)
+        if current != default:
+            custom[arg] = getattr(args, arg)
+    installer.log.info(f'Command line args: {custom}')
+
+
 @lru_cache()
 def commit_hash(): # compatbility function
     global stored_commit_hash # pylint: disable=global-statement
@@ -133,6 +143,7 @@ def start_server(immediate=True, server=None):
     server = importlib.util.module_from_spec(module_spec)
     installer.log.debug(f'Starting module: {server}')
     installer.log.info(f"Server arguments: {sys.argv[1:]}")
+    get_custom_args()
     module_spec.loader.exec_module(server)
     if args.test:
         installer.log.info("Test only")

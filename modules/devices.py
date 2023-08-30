@@ -62,7 +62,10 @@ def torch_gc(force=False):
     mem = memstats.memory_stats()
     gpu = mem.get('gpu', {})
     oom = gpu.get('oom', 0)
-    used = round(100 * gpu.get('used', 0) / gpu.get('total', 1))
+    if backend == "directml":
+        used = round(100 * torch.cuda.memory_allocated() / (1 << 30) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
+    else:
+        used = round(100 * gpu.get('used', 0) / gpu.get('total', 1)) if gpu.get('total', 1) > 1 else 0
     global previous_oom # pylint: disable=global-statement
     if oom > previous_oom:
         previous_oom = oom
@@ -70,9 +73,6 @@ def torch_gc(force=False):
     if used > 95:
         shared.log.info(f'GPU high memory utilization: {used}% {mem}')
         force = True
-        if backend == "directml":
-            practical_used = round(100 * torch.cuda.memory_allocated() / (1 << 30) / gpu.get('total', 1))
-            shared.log.info(f'Practical GPU memory utilization: {practical_used}%')
     if not force:
         return
     collected = gc.collect()
