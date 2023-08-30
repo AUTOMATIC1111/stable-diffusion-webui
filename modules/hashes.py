@@ -1,6 +1,5 @@
 import hashlib
 import os.path
-from functools import partial
 
 from modules import shared
 import modules.cache
@@ -39,12 +38,9 @@ def sha256_from_cache(filename, title, use_addnet_hash=False):
 def sha256(filename, title, use_addnet_hash=False):
     if shared.opts.experimental_sqlite_cache:
         if use_addnet_hash:
-            subsection = "hashes-addnet"
-            calculate_hash = partial(calculate_addnet_hash, filename)
+            return modules.cache.cached_data_for_file("hashes-addnet", title, filename, calculate_hash_with_message(calculate_addnet_hash, filename))
         else:
-            subsection = "hashes"
-            calculate_hash = partial(calculate_sha256, filename)
-        return modules.cache.cached_data_for_file(subsection, title, filename, calculate_hash, f"Calculating sha256 for {filename}: ")
+            return modules.cache.cached_data_for_file("hashes", title, filename, calculate_hash_with_message(calculate_sha256, filename))
 
     hashes = cache("hashes-addnet") if use_addnet_hash else cache("hashes")
 
@@ -93,3 +89,12 @@ def addnet_hash_safetensors(b):
 def calculate_addnet_hash(filename):
     with open(filename, "rb") as f:
         return addnet_hash_safetensors(f)
+
+
+def calculate_hash_with_message(hash_function, filename):
+    def wrapped_function():
+        print(f"Calculating sha256 for {filename}: ", end='')
+        result = hash_function(filename)
+        print(result)
+        return result
+    return wrapped_function
