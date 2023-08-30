@@ -98,7 +98,8 @@ class RunAnnotatorArgs:
                  t2i_w: int = 1080,
                  t2i_h: int = 1520,
                  pp: bool = False,
-                 rm: str = 'Resize and Fill'):
+                 rm: str = 'Resize and Fill',
+                 **kwargs):
         image = get_tmp_local_path(image)
         self.image = np.array(Image.open(image).convert('RGB'))
         if not mask:
@@ -125,6 +126,7 @@ class RunAnnotatorArgs:
         self.t2i_h = t2i_h
         self.pp = pp
         self.rm = rm
+        self.kwargs = kwargs
 
 
 def build_run_annotato_args(task: Task) -> typing.Tuple[typing.Optional[RunAnnotatorArgs], str]:
