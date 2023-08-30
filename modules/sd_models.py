@@ -1105,14 +1105,12 @@ def unload_model_weights(op='model'):
     devices.torch_gc(force=True)
 
 
-def apply_token_merging(sd_model, token_merging_ratio):
+def apply_token_merging(sd_model, token_merging_ratio=0):
     current_token_merging_ratio = getattr(sd_model, 'applied_token_merged_ratio', 0)
-    # shared.log.debug(f'Appplying token merging: current={current_token_merging_ratio} target={token_merging_ratio}')
-    if current_token_merging_ratio == token_merging_ratio:
+    if token_merging_ratio is None or current_token_merging_ratio == token_merging_ratio:
         return
     if current_token_merging_ratio > 0:
         tomesd.remove_patch(sd_model)
-
     if token_merging_ratio > 0:
         tomesd.apply_patch(
             sd_model,

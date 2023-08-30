@@ -18,7 +18,6 @@ class ScriptPostprocessingForMainUI(scripts.Script):
 
     def postprocess_image(self, p, script_pp, *args): # pylint: disable=arguments-differ
         args_dict = dict(zip(self.postprocessing_controls, args))
-
         pp = scripts_postprocessing.PostprocessedImage(script_pp.image)
         pp.info = {}
         self.script.process(pp, **args_dict)
@@ -34,5 +33,4 @@ def create_auto_preprocessing_script_data():
             continue
         constructor = lambda s=script: ScriptPostprocessingForMainUI(s.script_class()) # pylint: disable=unnecessary-lambda-assignment
         res.append(scripts.ScriptClassData(script_class=constructor, path=script.path, basedir=script.basedir, module=script.module))
-
     return res

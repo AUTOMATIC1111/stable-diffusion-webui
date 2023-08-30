@@ -15,6 +15,7 @@ from modules import timer, errors, paths # pylint: disable=unused-import
 startup_timer = timer.Timer()
 local_url = None
 
+logging.getLogger("DeepSpeed").disabled = True
 import torch # pylint: disable=C0411
 try:
     import intel_extension_for_pytorch as ipex # pylint: disable=import-error, unused-import
