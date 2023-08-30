@@ -557,8 +557,12 @@ def create_ui():
                         msg = '"--disable-extra-extensions" was used, remove it to load all extensions again'
                     html = f'<span style="color: var(--primary-400);">{msg}</span>'
 
-                info = gr.HTML(html)
-                extensions_table = gr.HTML('Loading...')
+                with gr.Row():
+                    info = gr.HTML(html)
+
+                with gr.Row(elem_classes="progress-container"):
+                    extensions_table = gr.HTML('Loading...', elem_id="extensions_installed_html")
+
                 ui.load(fn=extension_table, inputs=[], outputs=[extensions_table])
 
                 apply.click(

@@ -517,6 +517,11 @@ table.popup-table .link{
     background: #b4c0cc;
     border-radius: 3px !important;
     top: -20px;
+    width: 100%;
+}
+
+.progress-container{
+    position: relative;
 }
 
 [id$=_results].mobile{
