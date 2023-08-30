@@ -2,7 +2,7 @@ import json
 import os
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import git
 
@@ -177,7 +177,7 @@ def extension_table():
                 <td>{remote}</td>
                 <td>{ext.branch}</td>
                 <td>{version_link}</td>
-                <td>{time.asctime(time.gmtime(ext.commit_date))}</td>
+                <td>{datetime.fromtimestamp(ext.commit_date) if ext.commit_date else ""}</td>
                 <td{' class="extension_status"' if ext.remote is not None else ''}>{ext_status}</td>
             </tr>
     """
@@ -442,7 +442,7 @@ sort_ordering = [
 
 def get_date(info: dict, key):
     try:
-        return datetime.strptime(info.get(key), "%Y-%m-%dT%H:%M:%SZ").strftime("%Y-%m-%d")
+        return datetime.strptime(info.get(key), "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc).astimezone().strftime("%Y-%m-%d")
     except (ValueError, TypeError):
         return ''
 
@@ -557,8 +557,12 @@ def create_ui():
                         msg = '"--disable-extra-extensions" was used, remove it to load all extensions again'
                     html = f'<span style="color: var(--primary-400);">{msg}</span>'
 
-                info = gr.HTML(html)
-                extensions_table = gr.HTML('Loading...')
+                with gr.Row():
+                    info = gr.HTML(html)
+
+                with gr.Row(elem_classes="progress-container"):
+                    extensions_table = gr.HTML('Loading...', elem_id="extensions_installed_html")
+
                 ui.load(fn=extension_table, inputs=[], outputs=[extensions_table])
 
                 apply.click(

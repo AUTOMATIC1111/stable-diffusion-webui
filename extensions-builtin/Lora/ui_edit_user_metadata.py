@@ -70,6 +70,7 @@ class LoraUserMetadataEditor(ui_extra_networks_user_metadata.UserMetadataEditor)
         metadata = item.get("metadata") or {}
 
         keys = {
+            'ss_output_name': "Output name:",
             'ss_sd_model_name': "Model:",
             'ss_clip_skip': "Clip skip:",
             'ss_network_module': "Kohya module:",

@@ -91,8 +91,8 @@ def create_binary_mask(image):
 def txt2img_image_conditioning(sd_model, x, width, height):
     if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
 
-        # The "masked-image" in this case will just be all zeros since the entire image is masked.
-        image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
+        # The "masked-image" in this case will just be all 0.5 since the entire image is masked.
+        image_conditioning = torch.ones(x.shape[0], 3, height, width, device=x.device) * 0.5
         image_conditioning = images_tensor_to_samples(image_conditioning, approximation_indexes.get(opts.sd_vae_encode_method))
 
         # Add the fake full 1s mask to the first dimension.
@@ -1148,18 +1148,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         else:
             decoded_samples = None
 
-        current = shared.sd_model.sd_checkpoint_info
-        try:
-            if self.hr_checkpoint_info is not None:
-                self.sampler = None
-                sd_models.reload_model_weights(info=self.hr_checkpoint_info)
-                devices.torch_gc()
+        with sd_models.SkipWritingToConfig():
+            sd_models.reload_model_weights(info=self.hr_checkpoint_info)
 
-            return self.sample_hr_pass(samples, decoded_samples, seeds, subseeds, subseed_strength, prompts)
-        finally:
-            self.sampler = None
-            sd_models.reload_model_weights(info=current)
-            devices.torch_gc()
+        devices.torch_gc()
+
+        return self.sample_hr_pass(samples, decoded_samples, seeds, subseeds, subseed_strength, prompts)
 
     def sample_hr_pass(self, samples, decoded_samples, seeds, subseeds, subseed_strength, prompts):
         if shared.state.interrupted:

@@ -5,7 +5,7 @@ import os.path
 
 import gradio as gr
 
-from modules import generation_parameters_copypaste, images, sysinfo, errors
+from modules import generation_parameters_copypaste, images, sysinfo, errors, ui_extra_networks
 
 
 class UserMetadataEditor:
@@ -89,6 +89,13 @@ class UserMetadataEditor:
 
         return preview
 
+    def relative_path(self, path):
+        for parent_path in self.page.allowed_directories_for_previews():
+            if ui_extra_networks.path_is_parent(parent_path, path):
+                return os.path.relpath(path, parent_path)
+
+        return os.path.basename(path)
+
     def get_metadata_table(self, name):
         item = self.page.items.get(name, {})
         try:
@@ -97,7 +104,7 @@ class UserMetadataEditor:
 
             stats = os.stat(filename)
             params = [
-                ('Filename: ', os.path.basename(filename)),
+                ('Filename: ', self.relative_path(filename)),
                 ('File size: ', sysinfo.pretty_bytes(stats.st_size)),
                 ('Hash: ', shorthash),
                 ('Modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
