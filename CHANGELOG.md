@@ -2,8 +2,11 @@
 
 ## Update for 2023-08-30
 
+Time for a quite a large update that has been leaking bit-by-bit over the past week or so...  
+*Note*: due to large changes, it is recommended to reset (delete) your `ui-config.json`  
+
 - diffusers:  
-  - support for **destilled** sd models  
+  - support for **distilled** sd models  
     just go to models/huggingface and download a model, for example:  
     `segmind/tiny-sd`, `segmind/small-sd`, `segmind/portrait-finetuned`  
     those are lower quality, but extremely small and fast  
@@ -25,16 +28,19 @@
     - optimize model hashing  
     - add cli param `--skip-all` that skips all installer checks  
       use at personal discretion, but it can be useful for bulk deployments  
-    - add model **precompile** option (when model compile is enbled)  
+    - add model **precompile** option (when model compile is enabled)  
     - **extra network** folder info caching  
       results in much faster startup when you have large number of extra networks  
     - faster **xyz grid** switching  
       especially when using different checkpoints  
+  - update **second pass** options for clarity
+  - models:
+    - civitai download missing model previews
   - add **openvino** (experimental) cpu optimized model compile and inference  
     enable with `--use-openvino`  
     thanks @disty0  
   - enable batch **img2img** scale-by workflows  
-    now you can batch process with rescaling based on eah individual original image size  
+    now you can batch process with rescaling based on each individual original image size  
   - fixes:
     - fix extra networks previews  
     - css fixes  
