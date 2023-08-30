@@ -2,10 +2,20 @@ import datetime
 import html
 import json
 import os.path
+from pathlib import Path
 
 import gradio as gr
 
 from modules import generation_parameters_copypaste, images, sysinfo, errors
+from modules.paths_internal import models_path
+
+
+def exclude_root_path(root_path, path):
+    path_object = Path(path)
+    if path_object.is_relative_to(root_path):
+        path_object = path_object.relative_to(root_path)
+
+    return path_object.as_posix()
 
 
 class UserMetadataEditor:
@@ -98,6 +108,7 @@ class UserMetadataEditor:
             stats = os.stat(filename)
             params = [
                 ('Filename: ', os.path.basename(filename)),
+                ('Path: ', exclude_root_path(models_path, filename)),
                 ('File size: ', sysinfo.pretty_bytes(stats.st_size)),
                 ('Hash: ', shorthash),
                 ('Modified: ', datetime.datetime.fromtimestamp(stats.st_mtime).strftime('%Y-%m-%d %H:%M')),
