@@ -1148,18 +1148,12 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         else:
             decoded_samples = None
 
-        current = shared.sd_model.sd_checkpoint_info
-        try:
-            if self.hr_checkpoint_info is not None:
-                self.sampler = None
-                sd_models.reload_model_weights(info=self.hr_checkpoint_info)
-                devices.torch_gc()
+        with sd_models.SkipWritingToConfig():
+            sd_models.reload_model_weights(info=self.hr_checkpoint_info)
 
-            return self.sample_hr_pass(samples, decoded_samples, seeds, subseeds, subseed_strength, prompts)
-        finally:
-            self.sampler = None
-            sd_models.reload_model_weights(info=current)
-            devices.torch_gc()
+        devices.torch_gc()
+
+        return self.sample_hr_pass(samples, decoded_samples, seeds, subseeds, subseed_strength, prompts)
 
     def sample_hr_pass(self, samples, decoded_samples, seeds, subseeds, subseed_strength, prompts):
         if shared.state.interrupted:
