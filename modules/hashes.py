@@ -40,7 +40,7 @@ def sha256(filename, title, use_addnet_hash=False):
         if use_addnet_hash:
             def calculate_addnet_hash_sqlite3():
                 with open(filename, "rb") as file:
-                    return {addnet_hash_safetensors(file)}
+                    return addnet_hash_safetensors(file)
             return modules.cache.cached_data_for_file("hashes-addnet", title, filename, calculate_addnet_hash_sqlite3)
         else:
             def calculate_sha256_sqlite3():

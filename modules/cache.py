@@ -156,6 +156,7 @@ def cached_data_for_file(subsection, title, filename, func):
                         conn.execute(insert_or_replace, (title, ondisk_mtime, json.dumps(value)))
                         existing_cache = cache(subsection)
                         existing_cache[title] = {'mtime': ondisk_mtime, 'value': value}
+                        print(f'{title}: {value}')
                         return value
             except Exception as e:
                 print(e)
