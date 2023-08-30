@@ -91,8 +91,8 @@ def create_binary_mask(image):
 def txt2img_image_conditioning(sd_model, x, width, height):
     if sd_model.model.conditioning_key in {'hybrid', 'concat'}: # Inpainting models
 
-        # The "masked-image" in this case will just be all zeros since the entire image is masked.
-        image_conditioning = torch.zeros(x.shape[0], 3, height, width, device=x.device)
+        # The "masked-image" in this case will just be all 0.5 since the entire image is masked.
+        image_conditioning = torch.ones(x.shape[0], 3, height, width, device=x.device) * 0.5
         image_conditioning = images_tensor_to_samples(image_conditioning, approximation_indexes.get(opts.sd_vae_encode_method))
 
         # Add the fake full 1s mask to the first dimension.
