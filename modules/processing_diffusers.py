@@ -215,7 +215,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 shared.sd_model.compiled_model_state.batch_size = p.batch_size
                 shared.sd_model.compiled_model_state.first_pass = False
             else:
-                pass #Can be implemented for normal compile or TensorRT
+                pass #Can be implemented for TensorRT or Olive
         else:
             pass #Do nothing if compile is disabled
 

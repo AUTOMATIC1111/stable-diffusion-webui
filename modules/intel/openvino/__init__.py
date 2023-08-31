@@ -9,13 +9,6 @@ from torch.fx.experimental.proxy_tensor import make_fx
 from torch._inductor.compile_fx import compile_fx
 from hashlib import sha256
 
-class ModelState:
-    def __init__(self):
-        self.height = 512
-        self.width = 512
-        self.batch_size = 1
-        self.first_pass = True
-
 @register_backend
 @fake_tensor_unsupported
 def openvino_fx(subgraph, example_inputs):

@@ -113,6 +113,14 @@ class CheckpointInfo:
         return self.shorthash
 
 
+#Used by OpenVINO, can be used with TensorRT or Olive
+class CompiledModelState:
+    def __init__(self):
+        self.height = 512
+        self.width = 512
+        self.batch_size = 1
+        self.first_pass = True
+
 class NoWatermark:
     def apply_watermark(self, img):
         return img
@@ -812,9 +820,10 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     import torch._dynamo # pylint: disable=unused-import,redefined-outer-name
                     if shared.opts.cuda_compile_backend == "openvino_fx":
                         torch._dynamo.reset() # pylint: disable=protected-access
-                        from modules.intel.openvino import openvino_fx, openvino_clear_caches, ModelState # pylint: disable=unused-import
+                        from modules.intel.openvino import openvino_fx, openvino_clear_caches # pylint: disable=unused-import
                         openvino_clear_caches()
-                        sd_model.compiled_model_state = ModelState()
+                        torch._dynamo.eval_frame.check_if_dynamo_supported = lambda: True # pylint: disable=protected-access
+                        sd_model.compiled_model_state = CompiledModelState()
                         sd_model.compiled_model_state.first_pass = True if not shared.opts.cuda_compile_precompile else False
                     log_level = logging.WARNING if shared.opts.cuda_compile_verbose else logging.CRITICAL # pylint: disable=protected-access
                     if hasattr(torch, '_logging'):
