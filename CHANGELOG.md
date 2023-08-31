@@ -3,6 +3,7 @@
 ## Update for 2023-08-31
 
 - diffusers:
+  - ability to interrupt (stop/skip) model generate  
   - add `diffusers_force_zeros` setting  
     create zero-tensor for prompt if prompt is empty (positive or negative)  
   - add `diffusers_aesthetics_score` setting  

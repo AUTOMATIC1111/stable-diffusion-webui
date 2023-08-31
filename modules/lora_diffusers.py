@@ -45,7 +45,6 @@ def load_diffusers_lora(name, lora, strength = 1.0):
         lora_state['multiplier'].append(strength)
         if shared.opts.diffusers_lora_loader == "diffusers default":
             pipe.load_lora_weights(lora.filename, cache_dir=shared.opts.diffusers_dir, local_files_only=True, lora_scale=strength)
-            shared.log.info(f"LoRA loaded: {name} {lora_state['multiplier']}")
         else:
             from safetensors.torch import load_file
             lora_sd = load_file(lora.filename)
@@ -61,9 +60,9 @@ def load_diffusers_lora(name, lora, strength = 1.0):
                 lora_network.to(shared.device, dtype=pipe.unet.dtype)
                 lora_network.apply_to(multiplier=strength)
             lora_state['all_loras'].append(lora_network)
-            shared.log.info(f"LoRA loaded: {name}:{strength} loader={shared.opts.diffusers_lora_loader}")
+        shared.log.info(f"LoRA loaded: {name} strength={strength} loader={shared.opts.diffusers_lora_loader}")
     except Exception as e:
-        shared.log.error(f"Diffusers LoRA loading failed: {name} {e}")
+        shared.log.error(f"LoRA loading failed: {name} {e}")
 
 
 # Diffusersで動くLoRA。このファイル単独で完結する。

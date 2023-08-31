@@ -52,6 +52,8 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
         if p.is_hr_pass:
             shared.state.sampling_steps += p.hr_second_pass_steps
         shared.state.current_latent = latents
+        if shared.state.interrupted or shared.state.skipped:
+            raise AssertionError('Interrupted...')
 
     def full_vae_decode(latents, model):
         shared.log.debug(f'VAE decode: name={sd_vae.loaded_vae_file if sd_vae.loaded_vae_file is not None else "baked"} dtype={model.vae.dtype} upcast={model.vae.config.get("force_upcast", None)} images={latents.shape[0]}')
@@ -162,8 +164,6 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             args['callback_steps'] = 1
         if 'callback' in possible:
             args['callback'] = diffusers_callback
-        if 'cross_attention_kwargs' in possible and lora_state['active'] and shared.opts.diffusers_lora_loader == "diffusers default":
-            args['cross_attention_kwargs'] = { 'scale': lora_state['multiplier'][0]}
         for arg in kwargs:
             if arg in possible:
                 args[arg] = kwargs[arg]
@@ -284,7 +284,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
     )
     p.extra_generation_params['CFG rescale'] = p.diffusers_guidance_rescale
     p.extra_generation_params["Eta DDIM"] = shared.opts.eta_ddim if shared.opts.eta_ddim is not None and shared.opts.eta_ddim > 0 else None
-    output = shared.sd_model(**base_args) # pylint: disable=not-callable
+    try:
+        output = shared.sd_model(**base_args) # pylint: disable=not-callable
+    except AssertionError as e:
+        shared.log.info(e)
 
     if lora_state['active']:
         p.extra_generation_params['LoRA method'] = shared.opts.diffusers_lora_loader
@@ -320,7 +323,10 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 strength=p.denoising_strength,
                 desc='Hires',
             )
-            output = shared.sd_model(**hires_args) # pylint: disable=not-callable
+            try:
+                output = shared.sd_model(**hires_args) # pylint: disable=not-callable
+            except AssertionError as e:
+                shared.log.info(e)
 
     # optional refiner pass or decode
     if is_refiner_enabled:
@@ -361,7 +367,11 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
                 clip_skip=p.clip_skip,
                 desc='Refiner',
             )
-            refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
+            try:
+                refiner_output = shared.sd_refiner(**refiner_args) # pylint: disable=not-callable
+            except AssertionError as e:
+                shared.log.info(e)
+
             p.extra_generation_params['Image CFG scale'] = p.image_cfg_scale if p.image_cfg_scale is not None else None
             p.extra_generation_params['Refiner steps'] = p.refiner_steps
             p.extra_generation_params['Refiner start'] = p.refiner_start

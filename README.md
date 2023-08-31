@@ -48,7 +48,6 @@ All Individual features are not listed here, instead check [ChangeLog](CHANGELOG
   This is the default backend and it is fully compatible with all existing functionality and extensions  
 - **Diffusers**: Based on new [Huggingface Diffusers](https://huggingface.co/docs/diffusers/index) implementation  
   It is also the only backend that supports **Stable Diffusion XL** model  
-  Support for legacy workflows and extensions is limited, but it's being expanded  
   See [wiki article](https://github.com/vladmandic/automatic/wiki/Diffusers) for more information  
 
 ## Model support
@@ -57,9 +56,10 @@ Additional models will be added as they become available and there is public int
 
 - Stable Diffusion 1.x and 2.x including all variants
 - Stable Diffusion XL
-- Kandinsky 2.1
+- Kandinsky 2.1 and 2.2
 - DeepFloyd IF
 - UniDiffusion
+- SD-Distilled (all variants)
 
 ## Platform support
 
