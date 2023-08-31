@@ -61,7 +61,7 @@ annotato_args_thr_b_dict = {
     'canny': [1, 255],
     'depth_leres': [0, 100],
     'depth_leres++': [0, 100],
-    'mediapipe_face': [1, 10],
+    'mediapipe_face': [0.01, 1],
     'mlsd': [0.01, 20],
     'tile_colorfix+sharp': [0, 2]}
 reverse_preprocessor_aliases = {preprocessor_aliases[k]: k for k in preprocessor_aliases.keys()}
@@ -258,7 +258,7 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
             if "clip" in module:
                 result = clip_vision_visualization(result)
                 is_image = True
-                
+
             r, pli_img = None, None
             if is_image:
                 if result.ndim == 3 and result.shape[2] == 4:
