@@ -141,9 +141,12 @@ function setupExtraNetworks() {
 onUiLoaded(setupExtraNetworks);
 
 var re_extranet = /<([^:]+:[^:]+):[\d.]+>(.*)/;
-var re_extranet_g = /\s+<([^:]+:[^:]+):[\d.]+>/g;
+var re_extranet_str = '<([^:]+:[^:]+):[\\d.]+>';
 
 function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
+    function reEscape(s) {
+        return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }
     var m = text.match(re_extranet);
     var replaced = false;
     var newTextareaText;
@@ -151,7 +154,9 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
         var extraTextAfterNet = m[2];
         var partToSearch = m[1];
         var foundAtPosition = -1;
-        newTextareaText = textarea.value.replaceAll(re_extranet_g, function(found, net, pos) {
+        var escapedSeparator = reEscape(opts.extra_networks_add_text_separator);
+        var re = new RegExp(escapedSeparator + re_extranet_str, 'g');
+        newTextareaText = textarea.value.replaceAll(re, function(found, net, pos) {
             m = found.match(re_extranet);
             if (m[1] == partToSearch) {
                 replaced = true;
