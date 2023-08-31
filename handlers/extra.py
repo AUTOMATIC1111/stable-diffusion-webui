@@ -183,8 +183,8 @@ class ExtraTaskHandler(DumpTaskHandler):
             high, low = self._save_images(task, result)
             p.task_progress = random.randint(70, 90)
             yield p
-            high_keys = upload_files(False, *high)
-            low_keys = upload_files(False, *low)
+            high_keys = upload_files(False, *high, dirname='upscaler')
+            low_keys = upload_files(False, *low, dirname='upscaler')
             image_keys = ImageKeys(high_keys, low_keys)
             images = result[0]
             # p.set_finish_result({
