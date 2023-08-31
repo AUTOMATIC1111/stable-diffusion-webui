@@ -86,6 +86,12 @@ def HWC3(x):
         return y
 
 
+def clip_vision_visualization(x):
+    x = x.detach().cpu().numpy()[0]
+    x = np.ascontiguousarray(x).copy()
+    return np.ndarray((x.shape[0] * 4, x.shape[1]), dtype="uint8", buffer=x.tobytes())
+
+
 class RunAnnotatorArgs:
 
     def __init__(self,
@@ -249,6 +255,10 @@ def exec_control_net_annotator(task: Task) -> typing.Iterable[TaskProgress]:
             else:
                 result, is_image = preprocessor(img)
 
+            if "clip" in module:
+                result = clip_vision_visualization(result)
+                is_image = True
+                
             r, pli_img = None, None
             if is_image:
                 if result.ndim == 3 and result.shape[2] == 4:
