@@ -589,6 +589,8 @@ options_templates.update(options_section(('postprocessing', "Postprocessing"), {
     "ESRGAN_tile_overlap": OptionInfo(8, "Tile overlap in pixels for ESRGAN upscalers", gr.Slider, {"minimum": 0, "maximum": 48, "step": 1}),
     "SCUNET_tile": OptionInfo(256, "Tile size for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 512, "step": 16}),
     "SCUNET_tile_overlap": OptionInfo(8, "Tile overlap for SCUNET upscalers", gr.Slider, {"minimum": 0, "maximum": 64, "step": 1}),
+
+    "postprocessing_sep_misc": OptionInfo("<h2>Misc</h2>", "", gr.HTML),
     "use_old_hires_fix_width_height": OptionInfo(False, "Hires fix uses width & height to set final resolution"),
     "dont_fix_second_order_samplers_schedule": OptionInfo(False, "Do not fix prompt schedule for second order samplers"),
     "img2img_color_correction": OptionInfo(False, "Apply color correction to match original colors"),
