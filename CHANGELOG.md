@@ -1,5 +1,13 @@
 # Change Log for SD.Next
 
+## Update for 2023-08-31
+
+- diffusers:
+  - add `diffusers_force_zeros` setting  
+    create zero-tensor for prompt if prompt is empty (positive or negative)  
+  - add `diffusers_aesthetics_score` setting  
+    automatically guide unet towards higher pleasing images  
+
 ## Update for 2023-08-30
 
 Time for a quite a large update that has been leaking bit-by-bit over the past week or so...  

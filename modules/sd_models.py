@@ -134,7 +134,7 @@ def setup_model():
     enable_midas_autodownload()
 
 
-def checkpoint_tiles():
+def checkpoint_tiles(use_short=False): # pylint: disable=unused-argument
     def convert(name):
         return int(name) if name.isdigit() else name.lower()
     def alphanumeric_key(key):
@@ -694,11 +694,14 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
         else:
             diffusers_load_config["local_files_only "] = True
             diffusers_load_config["extract_ema"] = shared.opts.diffusers_extract_ema
-            pipeline, _model_type = detect_pipeline(checkpoint_info.path, op)
+            pipeline, model_type = detect_pipeline(checkpoint_info.path, op)
             if pipeline is None:
                 shared.log.error(f'Diffusers {op} pipeline not initialized: {shared.opts.diffusers_pipeline}')
                 return
             try:
+                if model_type.startswith('Stable Diffusion'):
+                    diffusers_load_config['force_zeros_for_empty_prompt '] = shared.opts.diffusers_force_zeros
+                    diffusers_load_config['requires_aesthetics_score '] = shared.opts.diffusers_aesthetics_score
                 if hasattr(pipeline, 'from_single_file'):
                     diffusers_load_config['use_safetensors'] = True
                     sd_model = pipeline.from_single_file(checkpoint_info.path, **diffusers_load_config)
@@ -708,7 +711,11 @@ def load_diffuser(checkpoint_info=None, already_loaded_state_dict=None, timer=No
                     shared.log.error(f'Diffusers {op} cannot load safetensor model: {checkpoint_info.path} {shared.opts.diffusers_pipeline}')
                     return
                 if sd_model is not None:
-                    shared.log.debug(f'Model {op}: pipeline={sd_model.__class__.__name__}') # pylint: disable=protected-access
+                    diffusers_load_config.pop('vae', None)
+                    diffusers_load_config.pop('safety_checker', None)
+                    diffusers_load_config.pop('requires_safety_checker', None)
+                    diffusers_load_config.pop('load_safety_checker', None)
+                    shared.log.debug(f'Model {op}: pipeline={sd_model.__class__.__name__} config={diffusers_load_config}') # pylint: disable=protected-access
             except Exception as e:
                 shared.log.error(f'Diffusers failed loading model using pipeline: {checkpoint_info.path} {shared.opts.diffusers_pipeline} {e}')
                 return
