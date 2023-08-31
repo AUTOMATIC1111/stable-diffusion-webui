@@ -66,10 +66,10 @@ Additional models will be added as they become available and there is public int
 - *nVidia* GPUs using **CUDA** libraries on both *Windows and Linux*
 - *AMD* GPUs using **ROCm** libraries on *Linux*.  
   Support will be extended to *Windows* once AMD releases ROCm for Windows
+- *Intel Arc* GPUs using **OneAPI** with *IPEX XPU* libraries on both *Windows and Linux*
 - Any GPU compatibile with *DirectX* on *Windows* using **DirectML** libraries.  
   This includes support for AMD GPUs that are not supported by native ROCm libraries
-- *Intel Arc* GPUs using *Intel OneAPI* **Ipex/XPU** libraries
-- *Intel* GPUs using *Intel OneAPI* **OpenVINO** libraries
+- *Intel* GPUs using **OpenVINO** libraries on both *Windows and Linux*
 - *Apple M1/M2* on *OSX* using built-in support in Torch with **MPS** optimizations
 
 ## Install & Run
@@ -83,7 +83,7 @@ Additional models will be added as they become available and there is public int
 - [FAQ](https://github.com/vladmandic/automatic/discussions/1011)
 - Server can run without virtual environment,  
   but it is recommended to use it to avoid library version conflicts with other applications  
-- **nVidia/CUDA** and **AMD/ROCm** are auto-detected if present and available,  
+- **nVidia/CUDA** / **AMD/ROCm** / **Intel/OneAPI** are auto-detected if present and available,  
    but for any other use case specify required parameter explicitly or wrong packages may be installed  
   as installer will assume CPU-only environment  
 - Full startup sequence is logged in `sdnext.log`, so if you encounter any issues, please check it first  

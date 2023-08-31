@@ -121,6 +121,7 @@ class CompiledModelState:
         self.batch_size = 1
         self.first_pass = True
 
+
 class NoWatermark:
     def apply_watermark(self, img):
         return img
