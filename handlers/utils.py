@@ -115,12 +115,15 @@ def upload_files(is_tmp, *files, dirname=None):
     return keys
 
 
-def upload_content(is_tmp, content, name=None):
+def upload_content(is_tmp, content, name=None, dirname=None):
     date = datetime.today().strftime('%Y/%m/%d')
     storage_env = get_file_storage_system_env()
     bucket = storage_env.get(Env_BucketKey) or S3ImageBucket
     file_storage_system = FileStorageCls()
     relative = S3Tmp if is_tmp else S3SDWEB
+    if dirname:
+        relative = os.path.join(relative, dirname)
+
     name = name or str(uuid.uuid1())
     key = os.path.join(bucket, relative, date, name)
     file_storage_system.upload_content(key, content)
