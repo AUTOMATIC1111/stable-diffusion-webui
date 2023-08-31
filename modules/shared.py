@@ -350,19 +350,19 @@ else: # cuda
 
 options_templates.update(options_section(('sd', "Stable Diffusion"), {
     "sd_backend": OptionInfo("diffusers" if cmd_opts.use_openvino else "original", "Stable Diffusion backend", gr.Radio, lambda: {"choices": ["original", "diffusers"] }),
-    "sd_checkpoint_autoload": OptionInfo(True, "Stable Diffusion checkpoint autoload on server start"),
-    "sd_model_checkpoint": OptionInfo(default_checkpoint, "Stable Diffusion checkpoint", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
-    "sd_model_refiner": OptionInfo('None', "Stable Diffusion refiner", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
-    "sd_checkpoint_cache": OptionInfo(0, "Number of cached model checkpoints", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
-    "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAE checkpoints", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
-    "sd_vae": OptionInfo("Automatic", "Select VAE", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
-    "sd_model_dict": OptionInfo('None', "Stable Diffusion checkpoint dict", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
+    "sd_checkpoint_autoload": OptionInfo(True, "Model autoload on server start"),
+    "sd_model_checkpoint": OptionInfo(default_checkpoint, "Base model", gr.Dropdown, lambda: {"choices": list_checkpoint_tiles()}, refresh=refresh_checkpoints),
+    "sd_model_refiner": OptionInfo('None', "Refiner model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
+    "sd_checkpoint_cache": OptionInfo(0, "Number of cached models", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "sd_vae_checkpoint_cache": OptionInfo(0, "Number of cached VAEs", gr.Slider, {"minimum": 0, "maximum": 10, "step": 1}),
+    "sd_vae": OptionInfo("Automatic", "VAE model", gr.Dropdown, lambda: {"choices": shared_items.sd_vae_items()}, refresh=shared_items.refresh_vae_list),
+    "sd_model_dict": OptionInfo('None', "Use dict from model", gr.Dropdown, lambda: {"choices": ['None'] + list_checkpoint_tiles()}, refresh=refresh_checkpoints),
     "stream_load": OptionInfo(False, "Load models using stream loading method"),
     "model_reuse_dict": OptionInfo(False, "When loading models attempt to reuse previous model dictionary"),
     "prompt_attention": OptionInfo("Full parser", "Prompt attention parser", gr.Radio, lambda: {"choices": ["Full parser", "Compel parser", "A1111 parser", "Fixed attention"] }),
     "prompt_mean_norm": OptionInfo(True, "Prompt attention mean normalization"),
     "comma_padding_backtrack": OptionInfo(20, "Prompt padding for long prompts", gr.Slider, {"minimum": 0, "maximum": 74, "step": 1 }),
-    "sd_disable_ckpt": OptionInfo(False, "Disallow usage of checkpoints in ckpt format"),
+    "sd_disable_ckpt": OptionInfo(False, "Disallow usage of models in ckpt format"),
 }))
 
 options_templates.update(options_section(('optimizations', "Optimizations"), {
