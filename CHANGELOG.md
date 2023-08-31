@@ -65,6 +65,9 @@
  * make progress bar work independently from live preview display which results in it being updated a lot more often
  * forbid Full live preview method for medvram and add a setting to undo the forbidding
  * make it possible to localize tooltips and placeholders
+ * add option to align with sgm repo's sampling implementation ([#12818](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12818))
+ * Restore faces and Tiling generation parameters have been moved to settings out of main UI
+   * if you want to put them back into main UI, use `Options in main UI` setting on the UI page.
 
 ### Extensions and API:
  * gradio 3.41.2
@@ -135,6 +138,12 @@
  * hide broken image crop tool ([#12792](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12737))
  * don't show hidden samplers in dropdown for XYZ script ([#12780](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12737))
  * fix style editing dialog breaking if it's opened in both img2img and txt2img tabs
+ * fix a bug allowing users to bypass gradio and API authentication (reported by vysecurity) 
+ * fix notification not playing when built-in webui tab is inactive ([#12834](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12834))
+ * honor `--skip-install` for extension installers ([#12832](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12832))
+ * don't print blank stdout in extension installers ([#12833](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12832), [#12855](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12855))
+ * do not change quicksettings dropdown option when value returned is `None` ([#12854](https://github.com/AUTOMATIC1111/stable-diffusion-webui/pull/12854))
+ * get progressbar to display correctly in extensions tab
 
 
 ## 1.5.2

@@ -95,6 +95,8 @@ def images_tensor_to_samples(image, approximation=None, model=None):
     else:
         if model is None:
             model = shared.sd_model
+        model.first_stage_model.to(devices.dtype_vae)
+
         image = image.to(shared.device, dtype=devices.dtype_vae)
         image = image * 2 - 1
         if len(image) > 1:

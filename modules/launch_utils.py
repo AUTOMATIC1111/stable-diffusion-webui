@@ -434,3 +434,16 @@ def start():
         webui.api_only()
     else:
         webui.webui()
+
+
+def dump_sysinfo():
+    from modules import sysinfo
+    import datetime
+
+    text = sysinfo.get()
+    filename = f"sysinfo-{datetime.datetime.utcnow().strftime('%Y-%m-%d-%H-%M')}.txt"
+
+    with open(filename, "w", encoding="utf8") as file:
+        file.write(text)
+
+    return filename
