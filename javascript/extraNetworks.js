@@ -222,7 +222,8 @@ function popup(contents) {
 
 function readCardMetadata(event, extraPage, cardName) {
   requestGet('./sd_extra_networks/metadata', { page: extraPage, item: cardName }, (data) => {
-    if (data?.metadata && (typeof (data?.metadata) === 'string')) {
+    if (data?.metadata) {
+      if (typeof (data?.metadata) !== 'string') data.metadata = JSON.stringify(data.metadata, null, 2);
       const elem = document.createElement('pre');
       elem.classList.add('popup-metadata');
       elem.textContent = data.metadata;

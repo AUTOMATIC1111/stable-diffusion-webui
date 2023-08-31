@@ -9,9 +9,11 @@ from pathlib import Path
 from collections import OrderedDict
 import gradio as gr
 from PIL import Image
+from starlette.responses import FileResponse, JSONResponse
 from modules import shared, scripts, modelloader
 from modules.generation_parameters_copypaste import image_from_url_text
 from modules.ui_components import ToolButton
+
 
 extra_pages = []
 allowed_dirs = set()
@@ -42,7 +44,6 @@ def register_page(page):
 
 
 def fetch_file(filename: str = ""):
-    from starlette.responses import FileResponse, JSONResponse
     if filename.startswith('html/'):
         return FileResponse(filename, headers={"Accept-Ranges": "bytes"})
     if not any(Path(x).absolute() in Path(filename).absolute().parents for x in allowed_dirs):
@@ -53,20 +54,24 @@ def fetch_file(filename: str = ""):
 
 
 def get_metadata(page: str = "", item: str = ""):
-    from starlette.responses import JSONResponse
     page = next(iter([x for x in extra_pages if x.name == page]), None)
     if page is None:
         return JSONResponse({ 'metadata': 'none' })
     metadata = page.metadata.get(item, 'none')
+    if metadata is None:
+        metadata = ''
+    shared.log.debug(f'Extra networks metadata: page={page} item={item} len={len(metadata)}')
     return JSONResponse({"metadata": metadata})
 
 
 def get_info(page: str = "", item: str = ""):
-    from starlette.responses import JSONResponse
     page = next(iter([x for x in extra_pages if x.name == page]), None)
     if page is None:
         return JSONResponse({ 'info': 'none' })
     info = page.info.get(item, 'none')
+    if info is None:
+        info = ''
+    shared.log.debug(f'Extra networks info: page={page} item={item} len={len(info)}')
     return JSONResponse({"info": info})
 
 
@@ -267,7 +272,6 @@ class ExtraNetworksPage:
         preview_extensions = ["jpg", "jpeg", "png", "webp", "tiff", "jp2"]
         files = listdir(os.path.dirname(path))
         for file in [f'{path}{mid}{ext}' for ext in preview_extensions for mid in ['.thumb.', '.preview.', '.']]:
-            # if os.path.exists(file):
             if file in files:
                 if '.thumb.' not in file:
                     self.missing_thumbs.append(file)
@@ -277,7 +281,6 @@ class ExtraNetworksPage:
     def find_description(self, path):
         files = listdir(os.path.dirname(path))
         for file in [f"{path}.txt", f"{path}.description.txt"]:
-            # if os.path.exists(file):
             if file in files:
                 try:
                     with open(file, "r", encoding="utf-8", errors="replace") as f:
@@ -286,13 +289,12 @@ class ExtraNetworksPage:
                         return txt
                 except OSError:
                     pass
-        return None
+        return ''
 
     def find_info(self, path):
         basename, _ext = os.path.splitext(path)
         files = listdir(os.path.dirname(path))
         for file in [f"{path}.info", f"{path}.civitai.info", f"{basename}.info", f"{basename}.civitai.info"]:
-            # if os.path.exists(file):
             if file in files:
                 try:
                     with open(file, "r", encoding="utf-8", errors="replace") as f:
@@ -301,7 +303,7 @@ class ExtraNetworksPage:
                         return txt
                 except OSError:
                     pass
-            return None
+        return ''
 
 
 def initialize():
