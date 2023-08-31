@@ -551,7 +551,7 @@ def save_image(image, path, basename, seed=None, prompt=None, extension='jpg', i
             file_decoration = shared.opts.samples_filename_pattern
         else:
             file_decoration = "[seq]-[prompt_words]"
-        file_decoration = namegen.apply(file_decoration) + suffix
+        file_decoration = namegen.apply(file_decoration).strip(' ').strip('-') + suffix
         if shared.opts.save_images_add_number:
             if '[seq]' not in file_decoration:
                 file_decoration = f"[seq]-{file_decoration}"

@@ -366,6 +366,7 @@ def process_diffusers(p: StableDiffusionProcessing, seeds, prompts, negative_pro
             p.extra_generation_params['Refiner steps'] = p.refiner_steps
             p.extra_generation_params['Refiner start'] = p.refiner_start
             p.extra_generation_params["Hires steps"] = p.hr_second_pass_steps
+            p.extra_generation_params["Secondary sampler"] = p.latent_sampler
 
             if not shared.state.interrupted and not shared.state.skipped:
                 refiner_images = vae_decode(latents=refiner_output.images, model=shared.sd_refiner, full_quality=True)

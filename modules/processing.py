@@ -931,6 +931,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             self.extra_generation_params["Hires steps"] = self.hr_second_pass_steps
         if self.hr_upscaler is not None:
             self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
+        self.extra_generation_params["Secondary sampler"] = self.latent_sampler
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
 
