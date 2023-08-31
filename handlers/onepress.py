@@ -174,14 +174,14 @@ class ConversionTask(Txt2ImgTask):
                 cn_args_2['weight']=0.4
                 full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args_1)
                 full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args_2)
-            elif t.action=='color': # 色块
+            elif t.action=='sketch': # 草图
                 cn_args=get_cn_args()
                 cn_args['enabled']=True
                 cn_args['module']='canny'
                 cn_args['model']='control_v11p_sd15_canny [d14c016b]'
                 cn_args['image']['image']=t.image
                 full_task['alwayson_scripts']['ControlNet']['args'].append(cn_args)
-            elif t.action=='sketch': # 草图
+            elif t.action=='color': # 色块
                 cn_args=get_cn_args()
                 cn_args['enabled']=True
                 cn_args['module']='tile_colorfix+sharp'
@@ -300,6 +300,9 @@ class OnePressTaskHandler(Txt2ImgTaskHandler):
         process_args.close()
         progress.status = TaskStatus.Uploading
         yield progress
+
+        # 只返回最终结果图
+        processed.images=[processed.images[0]]
         images = save_processed_images(processed,
                                        process_args.outpath_samples,
                                        process_args.outpath_grids,
