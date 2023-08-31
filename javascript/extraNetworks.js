@@ -154,7 +154,7 @@ function tryToRemoveExtraNetworkFromPrompt(textarea, text) {
         var extraTextAfterNet = m[2];
         var partToSearch = m[1];
         var foundAtPosition = -1;
-        var escapedSeparator = reEscape(opts.extra_networks_add_text_separator);
+        var escapedSeparator = `(?:${reEscape(opts.extra_networks_add_text_separator)})?`;
         var re = new RegExp(escapedSeparator + re_extranet_str, 'g');
         newTextareaText = textarea.value.replaceAll(re, function(found, net, pos) {
             m = found.match(re_extranet);
