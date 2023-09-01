@@ -55,6 +55,7 @@ class UpscalerRealESRGAN(Upscaler):
             half=not cmd_opts.no_half and not cmd_opts.upcast_sampling,
             tile=opts.ESRGAN_tile,
             tile_pad=opts.ESRGAN_tile_overlap,
+            device=self.device,
         )
 
         upsampled = upsampler.enhance(np.array(img), outscale=info.scale)[0]
