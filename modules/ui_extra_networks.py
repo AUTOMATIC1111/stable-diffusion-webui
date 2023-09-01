@@ -237,7 +237,7 @@ class ExtraNetworksPage:
         try:
             args = {
                 "tabname": json.dumps(tabname),
-                "name": item["name"],
+                "name": item["name"].replace('_', ' '),
                 "title": item["name"],
                 "tags": '|'.join([item.get("tags")] if isinstance(item.get("tags", {}), str) else list(item.get("tags", {}).keys())),
                 "preview": html.escape(item.get("preview", None)),

@@ -27,10 +27,6 @@ import modules.sd_models as sd_models
 import modules.sd_vae as sd_vae
 
 
-opt_C = 4
-opt_f = 8
-
-
 def setup_color_correction(image):
     shared.log.debug("Calibrating color correction.")
     correction_target = cv2.cvtColor(np.asarray(image.copy()), cv2.COLOR_RGB2LAB)
@@ -907,6 +903,10 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             else:
                 target_w = self.hr_resize_x
                 target_h = self.hr_resize_y
+                """
+                self.hr_upscale_to_x = self.hr_resize_x
+                self.hr_upscale_to_y = self.hr_resize_y
+                """
                 src_ratio = self.width / self.height
                 dst_ratio = self.hr_resize_x / self.hr_resize_y
                 if src_ratio < dst_ratio:
@@ -915,8 +915,8 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
                 else:
                     self.hr_upscale_to_x = self.hr_resize_y * self.width // self.height
                     self.hr_upscale_to_y = self.hr_resize_y
-                self.truncate_x = (self.hr_upscale_to_x - target_w) // opt_f
-                self.truncate_y = (self.hr_upscale_to_y - target_h) // opt_f
+                self.truncate_x = (self.hr_upscale_to_x - target_w) // 8
+                self.truncate_y = (self.hr_upscale_to_y - target_h) // 8
         # special case: the user has chosen to do nothing
         if self.hr_upscale_to_x == self.width and self.hr_upscale_to_y == self.height:
             self.extra_generation_params.pop("Hires upscale", None)
@@ -932,6 +932,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if self.hr_upscaler is not None:
             self.extra_generation_params["Hires upscaler"] = self.hr_upscaler
         self.extra_generation_params["Secondary sampler"] = self.latent_sampler
+        shared.log.debug(f'Init hires: upscaler={self.hr_upscaler} sampler={self.latent_sampler} width={self.hr_upscale_to_x} height={self.hr_upscale_to_y}')
 
     def sample(self, conditioning, unconditional_conditioning, seeds, subseeds, subseed_strength, prompts):
 
@@ -960,7 +961,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
             if len([x for x in shared.sd_upscalers if x.name == self.hr_upscaler]) == 0:
                 shared.log.warning("Could not find upscaler to use with hrfix")
                 self.enable_hr = False
-        x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         samples = self.sampler.sample(self, x, conditioning, unconditional_conditioning, image_conditioning=self.txt2img_image_conditioning(x))
         if not self.enable_hr or shared.state.interrupted or shared.state.skipped:
             return samples
@@ -973,7 +974,7 @@ class StableDiffusionProcessingTxt2Img(StableDiffusionProcessing):
         if latent_scale_mode is not None:
             for i in range(samples.shape[0]):
                 save_intermediate(samples, i)
-            samples = torch.nn.functional.interpolate(samples, size=(target_height // opt_f, target_width // opt_f), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
+            samples = torch.nn.functional.interpolate(samples, size=(target_height // 8, target_width // 8), mode=latent_scale_mode["mode"], antialias=latent_scale_mode["antialias"])
             if getattr(self, "inpainting_mask_weight", shared.opts.inpainting_mask_weight) < 1.0:
                 image_conditioning = self.img2img_image_conditioning(decode_first_stage(self.sd_model, samples.to(dtype=devices.dtype_vae)), samples)
             else:
@@ -1143,7 +1144,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
         image = image.to(device=shared.device, dtype=devices.dtype_vae)
         self.init_latent = self.sd_model.get_first_stage_encoding(self.sd_model.encode_first_stage(image))
         if self.resize_mode == 4:
-            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // opt_f, self.width // opt_f), mode="bilinear")
+            self.init_latent = torch.nn.functional.interpolate(self.init_latent, size=(self.height // 8, self.width // 8), mode="bilinear")
         if image_mask is not None:
             init_mask = latent_mask
             latmask = init_mask.convert('RGB').resize((self.init_latent.shape[3], self.init_latent.shape[2]))
@@ -1167,7 +1168,7 @@ class StableDiffusionProcessingImg2Img(StableDiffusionProcessing):
                 sd_models.set_diffuser_pipe(self.sd_model, sd_models.DiffusersTaskType.INPAINTING)
                 self.sd_model.dtype = self.sd_model.unet.dtype
 
-        x = create_random_tensors([opt_C, self.height // opt_f, self.width // opt_f], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
+        x = create_random_tensors([4, self.height // 8, self.width // 8], seeds=seeds, subseeds=subseeds, subseed_strength=self.subseed_strength, seed_resize_from_h=self.seed_resize_from_h, seed_resize_from_w=self.seed_resize_from_w, p=self)
         if self.initial_noise_multiplier != 1.0:
             self.extra_generation_params["Noise multiplier"] = self.initial_noise_multiplier
             x *= self.initial_noise_multiplier
